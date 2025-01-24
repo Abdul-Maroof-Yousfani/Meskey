@@ -10,12 +10,11 @@ Before you begin, ensure you have the following installed on your system:
 
 - **PHP** (version 8.0 or higher)
 - **Composer** (for dependency management)
-- **Node.js** (for frontend dependencies)
 - **MySQL** or any other supported database
 - **Git** (for version control)
 
 
-## Custom Artisan Command
+<!-- ## Custom Artisan Command
 
 This project includes a custom Artisan command to simplify the setup process. Run the following command:
 
@@ -30,7 +29,7 @@ php artisan app:setup
 4. Runs `migrate:fresh`, `db:seed`, and `storage:link`.
 
 ---
-### Or Follow:
+### Or Follow: -->
 
 
 ## Installation Steps
@@ -50,14 +49,7 @@ php artisan app:setup
    composer install
    ```
 
-3. **Install JavaScript Dependencies**  
-   Install all frontend dependencies using npm:
-
-   ```bash
-   npm install
-   ```
-
-4. **Set Up Environment File**  
+3. **Set Up Environment File**  
    Copy the `.env.example` file to `.env` and update the database credentials:
 
    ```bash
@@ -75,28 +67,28 @@ php artisan app:setup
    DB_PASSWORD=your_database_password
    ```
 
-5. **Generate Application Key**  
+4. **Generate Application Key**  
    Generate a unique application key:
 
    ```bash
    php artisan key:generate
    ```
 
-6. **Run Migrations and Seeders**  
+5. **Run Migrations and Seeders**  
    Set up the database and seed initial data:
 
    ```bash
    php artisan migrate --seed
    ```
 
-7. **Link Storage Folder**  
+6. **Link Storage Folder**  
    Create a symbolic link for the storage folder:
 
    ```bash
    php artisan storage:link
    ```
 
-8. **Run the Application**  
+7. **Run the Application**  
    Start the development server:
 
    ```bash
