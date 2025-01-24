@@ -1,0 +1,73 @@
+
+.shadow {
+    box-shadow: 0 0 1rem rgb(0 0 0 / 15%) !important;
+}
+
+
+
+.Subject-type {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1;
+    color: #212529;
+    text-decoration: none;
+    padding-left: 15px;
+    padding-bottom: 15px;
+}
+
+.order-type {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1;
+    color: #212529;
+    text-decoration: none;
+    padding-left: 17px;
+    padding-top: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.Subject-type:hover {
+    color: #000000;
+    text-decoration: none;
+}
+
+.message-description {
+    font-size: 17px;
+    font-weight: 400;
+    color: #000000;
+    padding-left: 15px;
+    padding-right: 10px;
+    justify-content: center;
+}
+
+/*.types {*/
+/*    background-color: #f1efef;*/
+/*    color: #070808;*/
+/*    font-size: 17px;*/
+/*    font-weight: 500;*/
+/*    letter-spacing: 1.5;*/
+/*    padding: 10px 7px 10px 7px;*/
+/*    border-radius: 20px;*/
+/*    text-align: center;*/
+/*}*/
+.types {
+    font-style: italic;
+    background-color: #f1efef;
+    color: #070808;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 10px 15px 10px 15px;
+    border-radius: 20px;
+    text-align: center;
+    display: inline-block;
+    margin: 3px auto !important;
+}
+.bid-section .card {
+    border-radius: 20px;
+}
+.p-text-color{
+    color: #000000;
+}
+

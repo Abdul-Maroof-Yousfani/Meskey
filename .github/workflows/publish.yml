@@ -1,0 +1,28 @@
+name: Push Laravel Project to Another Branch
+
+on:
+  push:
+    branches:
+      - main # The branch where your changes are committed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Push Laravel Code to Build Branch
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install PHP Dependencies
+        run: |
+          composer install
+          php artisan storage:link # Create symbolic link for storage
+
+      - name: Push Code to Build Branch
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: self
+          BRANCH: main # The branch where you want to push the code
+          FOLDER: . # The folder to push (Laravel root)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MESSAGE: "Laravel Project Push: ({sha}) {msg}"

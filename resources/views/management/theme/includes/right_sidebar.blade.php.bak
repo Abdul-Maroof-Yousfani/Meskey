@@ -1,0 +1,150 @@
+@php
+use App\Models\Notification;
+use Carbon\Carbon;
+
+$notifications = Notification::with('notifiable')
+->whereDate('date', '>=', Carbon::now()->subDays(1))
+->where('user_id',auth()->user()->id)
+->where('status',1)
+->get();
+
+@endphp
+<div class="right-sidebar">
+    <ul class="nav navbar-nav bookmark-icons li-mb">
+
+        <li class="nav-item dropdown dropdown-notification">
+            <a class="nav-link not-bt"  data-toggle="dropdown" title="Notifications" onclick="fetchNotifications()">
+                <i class="fa-solid fa-bell"></i>
+                @if(count($notifications) > 0)
+                    <span class="badge badge-pill badge-danger badge-up">{{count($notifications)}}</span>
+                @endif
+            </a>
+<<<<<<< HEAD
+
+            <ul class="dropdown-menu dropdown-menu-media dropdown-menu-left drp-set" id="notifications">
+                
+
+            <ul class="dropdown-menu dropdown-menu-media dropdown-menu-left drp-set">
+                <li class="dropdown-menu-header bor-b">
+                    <div class="dropdown-header d-flex">
+                        <h4 class="notification-title mb-0 mr-auto">Notifications</h4>
+                        <div class="badge badge-pill badge-light-primary">6 New</div>
+                    </div>
+                </li>
+                <li class="scrollable-container media-list"><a class="d-flex" href="javascript:void(0)">
+                    <a class="d-flex" href="javascript:void(0)">
+                        <div class="media d-flex align-items-start cus-de">
+                            <div class="media-left">
+                                <div class="avatar"><img src="../theme/assets/images/portrait/small/avatar-s-15.jpg" alt="avatar" width="32" height="32"></div>
+                            </div>
+                            <div class="media-body">
+                                <p class="media-heading"><span class="font-weight-bolder">Congratulation Sam 🎉</span>winner!</p><small class="notification-text"> Won the monthly best seller badge.</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="d-flex" href="javascript:void(0)">
+                        <div class="media d-flex align-items-start cus-de">
+                            <div class="media-left">
+                                <div class="avatar"><img src="../theme/assets/images/portrait/small/avatar-s-3.jpg" alt="avatar" width="32" height="32"></div>
+                            </div>
+                            <div class="media-body">
+                                <p class="media-heading"><span class="font-weight-bolder">New message</span>&nbsp;received</p><small class="notification-text"> You have 10 unread messages</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="d-flex" href="javascript:void(0)">
+                        <div class="media d-flex align-items-start cus-de">
+                            <div class="media-left">
+                                <div class="avatar bg-light-danger">
+                                    <div class="avatar-content">MD</div>
+                                </div>
+                            </div>
+                            <div class="media-body">
+                                <p class="media-heading"><span class="font-weight-bolder">Revised Order 👋</span>&nbsp;checkout</p><small class="notification-text"> MD Inc. order updated</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="d-flex" href="javascript:void(0)">
+                        <div class="media d-flex align-items-start cus-de">
+                            <div class="media-left">
+                                <div class="avatar"><img src="../theme/assets/images/portrait/small/avatar-s-3.jpg" alt="avatar" width="32" height="32"></div>
+                            </div>
+                            <div class="media-body">
+                                <p class="media-heading"><span class="font-weight-bolder">New message</span>&nbsp;received</p><small class="notification-text"> You have 10 unread messages</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="d-flex" href="javascript:void(0)">
+                        <div class="media d-flex align-items-start cus-de">
+                            <div class="media-left">
+                                <div class="avatar"><img src="../theme/assets/images/portrait/small/avatar-s-15.jpg" alt="avatar" width="32" height="32"></div>
+                            </div>
+                            <div class="media-body">
+                                <p class="media-heading"><span class="font-weight-bolder">Congratulation Sam 🎉</span>winner!</p><small class="notification-text"> Won the monthly best seller badge.</small>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="text-center mar-bt">
+                        <a href="#" class="btna">
+                            See All Notifications
+                        </a>
+                    </div>
+                </li>
+
+=======
+            <ul class="dropdown-menu dropdown-menu-media dropdown-menu-left drp-set" id="notifications">
+                
+>>>>>>> main
+            </ul>
+        </li>
+        <li class="nav-item d-none d-lg-block">
+            <a class="nav-link r-link msg-em-bt" href="{{route('email')}}" data-toggle="tooltip" data-placement="top" title="Email">
+                <i class="fa-solid fa-envelope"></i>
+            </a>
+        </li>
+        <li class="nav-item d-none d-lg-block">
+            <a class="nav-link r-link msg-em-bt" href="{{route('chatify')}}" data-toggle="tooltip" data-placement="top" title="Chat">
+                <i class="fa-solid fa-comment"></i>
+            </a>
+        </li>
+        <li class="nav-item d-none d-lg-block">
+            <a class="nav-link r-link cal-bt" href="{{route('calendars.index')}}" data-toggle="tooltip" data-placement="top" title="Calendar">
+                <i class="fa-solid fa-calendar-days"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<script>
+    function onNotificaitonClick(message){
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            showMethod: 'slideDown',
+            timeOut: 5000,
+        };
+        toastr.info(message);
+    }
+
+    function fetchNotifications(){
+        $('.loader-container').show();
+        let url='{{ route("fetchNotifications") }}';
+        $('#notifications').html('');
+        $.ajax({
+            url: url,
+            method: "GET",
+            dataType: "html",
+            success: function (res) {
+                $('.loader-container').hide();
+                $('#notifications').html(res);
+            },
+            error: function (error) {
+                // Handle errors here
+                $('.loader-container').hide();
+                console.error("Error:", error);
+            }
+        });
+    }
+
+
+</script>    
