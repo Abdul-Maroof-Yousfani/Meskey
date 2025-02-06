@@ -5,7 +5,7 @@
             @include('management/layouts/navigation')
         @endif
         <!-- BEGIN : Main Content-->
-        <div class="main-content py-4">
+        <div class="main-content py-3">
             <div class="content-overlay"></div>
             @yield('content')
         </div>

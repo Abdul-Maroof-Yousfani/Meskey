@@ -23,21 +23,15 @@ Category
                     <div class="card-header">
                         <form id="filterForm" class="form">
                             <div class="row ">
-                                <div class="col-md-1 my-1">
-                                    <label for="customers" class="form-label">Show Entries</label>
-                                    <select name="per_page" class="form-control">
-                                        <option value="25">25 / Page</option>
-                                        <option value="50">50 / Page</option>
-                                        <option value="100">100 / Page</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-11 my-1 ">
+                                <div class="col-md-12 my-1 ">
                                     <div class="row justify-content-end text-right">
                                         <div class="col-md-2">
                                             <label for="customers" class="form-label">Search</label>
+                                            <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                            <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                             <input type="text" class="form-control" id="search"
-                                                placeholder="Search here" name="search" value="">
+                                                placeholder="Search here" name="search"
+                                                value="{{ request('search', '') }}">
                                         </div>
                                     </div>
                                 </div>
@@ -65,8 +59,6 @@ Category
             </div>
         </div>
     </section>
-
-
 </div>
 @endsection
 @section('script')

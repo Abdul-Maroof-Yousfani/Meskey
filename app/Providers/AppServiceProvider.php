@@ -2,10 +2,11 @@
 
 namespace App\Providers;
 
+
 use Illuminate\Support\ServiceProvider;
 use App\Models\Acl\{Company};
-use App\Models\{User};
-use App\Observers\{UserObserver,CompanyObserver};
+use App\Models\{User,Product};
+use App\Observers\{UserObserver,CompanyObserver,ProductObserver};
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
         Company::observe(CompanyObserver::class);
         User::observe(UserObserver::class);
+        Product::observe(ProductObserver::class);
 
 
          // Register custom Blade directive

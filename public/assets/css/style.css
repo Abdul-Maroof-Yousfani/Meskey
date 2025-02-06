@@ -295,3 +295,26 @@ label.priority-badge.warning {
     }
 
 }
+
+
+.preloader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(44 44 44 / 87%);
+    z-index: 9999;
+    display: flex
+;
+    justify-content: center;
+    align-items: center;
+    /* display: none; */
+    color: white !important;
+}
+
+.preloader-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

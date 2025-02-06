@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Acl\{CompanyController,MenuController,UserController,RoleController};
 
 use App\Http\Controllers\FrontHomeController;
 use App\Http\Controllers\HomeController;
@@ -26,9 +27,41 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
         $layout = $request->input('layout', 'light');
         return response()
             ->json(['message' => 'Cookie set'])
-            ->cookie('layout', $layout, 60 * 24 * 30); // 30 days
+            ->cookie('layout', $layout, 60 * 24 * 30); 
     });
 });
+
+
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('profile-settings', [UserController::class, 'profileSetting'])->name('profile-settings.index');
+    Route::put('profile-settings/{id}', [UserController::class, 'profileSettingUpdate'])->name('profile-settings');
+    Route::put('updatePassword/{id}', [UserController::class, 'updatePassword'])->name('updatePassword');
+    Route::get('select-company', [CompanyController::class, 'selectCompany'])
+        ->name('select.company')
+        ->middleware('auth');
+
+    Route::get('select-company/{key}', [CompanyController::class, 'selectCompany'])
+        ->name('select.company')
+        ->middleware('auth');
+    //Logout
+    Route::post('logouts', function (Request $request) {
+        $user = Auth::user();
+        if ($user) {
+            $user->current_company_id = null;
+            $user->save();
+        }
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/');
+    })->name('logouts');
+});
+
+
+
+
+
 
 Route::get('/migrate-refresh', function () {
     // Rollback migrations
@@ -39,15 +72,7 @@ Route::get('/migrate-refresh', function () {
 
     return 'Migrations rolled back and seeders executed successfully.';
 });
-Route::get('/menu', function () {
 
-Menu::create('Main Menu', function ($menu) {
-    $menu->add('Home', ['url' => '/']);
-    $menu->add('About Us', ['url' => '/about']);
-    $menu->add('Contact', ['url' => '/contact']);
-});
-    return view('management.acl.menu.index');
-});
 
 Route::get('/migrate-specific/{id}', function ($id) {
     // Run a specific migration

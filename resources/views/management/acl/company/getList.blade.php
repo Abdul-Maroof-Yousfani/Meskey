@@ -2,10 +2,11 @@
     <thead>
         <tr>
             <th class="col-sm-1">image.</th>
-            <th class="col-sm-4">Name & Email</th>
-            <th class="col-sm-3">Address</th>
+            <th class="col-sm-3">Name & Email</th>
+            <th class="col-sm-4">Address</th>
             <th class="col-sm-2">Status</th>
-            <th class="col-sm-2">Action</th>
+            <th class="col-sm-1">Created</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -26,9 +27,17 @@
                             <small> {{ $row->address ?? '--' }}</small>
                         </p>
                     </td>
+                   
                     <td>
                         <label class="badge bg-light-{{ $row->status == 1 ? 'primary' : 'danger' }} ">{{ $row->status == 1 ? 'Active' : 'In-active' }}</label>
                     </td>
+                     <td>
+                     <p class="m-0">
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
+
+                        </p>
+                        </td>
                     <td>
                         @canAccess('role-edit')
                             <a onclick="openModal(this,'{{ route('company.edit', $row->id) }}','Edit Role')"

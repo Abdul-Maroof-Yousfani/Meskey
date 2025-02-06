@@ -9,6 +9,7 @@ class CheckCurrentCompany
 {
     public function handle(Request $request, Closure $next, $permission = null)
     {
+
         $user = auth()->user();
 
         // Ensure the user has a current company
@@ -19,7 +20,7 @@ class CheckCurrentCompany
         // Allow super-admin to bypass company and permission checks
         if ($user->user_type === 'super-admin') {
             $request->merge([
-                'current_company_id' => $user->current_company_id,
+                'company_id' => $user->current_company_id,
             ]);
             return $next($request);
         }
@@ -50,7 +51,7 @@ class CheckCurrentCompany
 
         // Merge data into the request
         $request->merge([
-            'current_company_id' => $currentCompanyId,
+            'company_id' => $currentCompanyId,
             'role_id' => $roleId,
             'permissions' => $permissions,
         ]);

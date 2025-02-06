@@ -22,37 +22,48 @@ class RouteServiceProvider extends ServiceProvider
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
      */
-public function boot(): void
-{
-    $this->configureRateLimiting();
+    public function boot(): void
+    {
+        $this->configureRateLimiting();
 
-    $this->routes(function () {
-        // API routes
-        Route::middleware('api')
-            ->prefix('api')
-            ->group(base_path('routes/api.php'));
-
-        // Web routes
-        Route::middleware('web')
-            ->group(function () {
-                // Default web routes
-                require base_path('routes/web.php');
-                require base_path('routes/acl.php');
-                require base_path('routes/master.php');
-                // Load custom modular routes
-             //   Route::middleware(['auth', 'check.company'])
-                 //   ->group(function () {
+        $this->routes(function () {
+            // API routes
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/api.php'));
+            // Arrival routes
+            Route::middleware(['auth', 'web', 'check.company'])
+                ->prefix('arrival')
+                ->group(base_path('routes/arrival.php'));
+            // ACL routes
+            Route::middleware(['auth', 'web', 'check.company'])
+                ->prefix('acl')
+                ->group(base_path('routes/acl.php'));
+            // Master routes
+            Route::middleware(['auth', 'web', 'check.company'])
+                ->prefix('master')
+                ->group(base_path('routes/master.php'));
+            // Web routes
+            Route::middleware('web')
+                ->group(function () {
+                    // Default web routes
+                    require base_path('routes/web.php');
+                    //  require base_path('routes/acl.php');
+                    //require base_path('routes/master.php');
+                    // Load custom modular routes
+                    //   Route::middleware(['auth', 'check.company'])
+                    //   ->group(function () {
                     //    require base_path('routes/acl.php');
-                       // require base_path('routes/dashboard.php');
-                //    });
-
-               // Route::middleware(['auth'])
-                //    ->group(function () {
-                       // require base_path('routes/profile.php');
-                 //   });
-            });
-    });
-}
+                    // require base_path('routes/dashboard.php');
+                    //    });
+    
+                    // Route::middleware(['auth'])
+                    //    ->group(function () {
+                    // require base_path('routes/profile.php');
+                    //   });
+                });
+        });
+    }
 
     /**
      * Configure the rate limiters for the application.

@@ -82,7 +82,7 @@
                                                     </div>
                                                     <div class="avatar-preview">
                                                         <div id="imagePreview"
-                                                            style="background-image: url('{{ asset(auth()->user()->profile_image) }}');">
+                                                            style="background-image: url('{{ image_path(auth()->user()->profile_image) }}');">
                                                         </div>
                                                     </div>
                                                 </div>

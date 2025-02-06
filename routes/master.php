@@ -2,16 +2,23 @@
 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Master\{RegionController,CategoryController};
-
-Route::group(['middleware' => ['auth', 'check.company']], function () {
-    Route::prefix('master')->group(function () {
-        Route::resource('regions', RegionController::class);
-        Route::post('/get-regions', [RegionController::class, 'getList'])->name('get.regions');
+use App\Http\Controllers\Master\{RegionController, CategoryController, UnitOfMeasureController, ProductController, ProductSlabController};
 
 
-        Route::resource('category', CategoryController::class);
-        Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');
-    });
-});
+Route::resource('regions', RegionController::class);
+Route::post('/get-regions', [RegionController::class, 'getList'])->name('get.regions');
+
+
+Route::resource('category', CategoryController::class);
+Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');
+
+Route::resource('unit_of_measure', UnitOfMeasureController::class);
+Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
+
+
+Route::resource('product', ProductController::class);
+Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
+
+Route::resource('product-slab', ProductSlabController::class);
+Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->name('get.product-slab');
 

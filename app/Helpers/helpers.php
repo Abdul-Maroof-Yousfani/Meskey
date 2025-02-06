@@ -131,7 +131,7 @@ if (!function_exists('generateUniqueNumber')) {
         if ($prefix) {
             $formattedUniqueNo = $prefix . str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT);
         } else {
-            $formattedUniqueNo = $newUniqueNo;
+            $formattedUniqueNo = str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT);
         }
 
         return $formattedUniqueNo;

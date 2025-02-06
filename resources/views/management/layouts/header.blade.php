@@ -63,6 +63,13 @@
 <body
     class="horizontal-layout horizontal-menu horizontal-menu-padding 2-columns  navbar-sticky {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="2-columns">
+   <div id="preloader" class="preloader-overlay">
+    <div class="preloader-spinner">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</div>
     <nav class="navbar navbar-expand-lg navbar-light header-navbar navbar-fixed">
         <div class="container-fluid navbar-wrapper">
             <div class="navbar-header d-flex">
