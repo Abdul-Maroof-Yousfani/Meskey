@@ -7,7 +7,8 @@ use App\Models\Order;
 use App\Models\Page;
 use App\Models\States;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Schema;
+use DB;
 class HomeController extends Controller
 {
     /**
@@ -28,7 +29,7 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
-    
+
         return view('management.dashboard.index');
     }
 
@@ -45,4 +46,42 @@ class HomeController extends Controller
         $cities = States::where('country_id', $countryId)->get();
         return response()->json($cities);
     }
+
+
+    public function dynamicFetchData(Request $request)
+    {
+        $search = $request->input('search');
+        $tableName = $request->input('table');
+        $columnName = $request->input('column');
+        $idColumn = $request->input('idColumn', 'id');
+        $enableTags = $request->input('enableTags', false);
+
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
+            return response()->json(['error' => 'Invalid table or column'], 400);
+        }
+
+        $query = DB::table($tableName);
+        if ($search) {
+            $query->where($columnName, 'like', '%' . $search . '%');
+        }
+        $data = $query->limit(10)->get();
+
+        $results = [];
+        foreach ($data as $item) {
+            $results[] = [
+                'id' => $item->$idColumn,
+                'text' => $item->$columnName
+            ];
+        }
+
+        if (count($results) === 0 && $enableTags == "true") {
+            $results[] = [
+                'id' => $search,
+                'text' => $search,
+                'newTag' => true
+            ];
+        }
+        return response()->json(['items' => $results]);
+    }
+
 }

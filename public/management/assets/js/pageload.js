@@ -1,3 +1,5 @@
+hidePreloader();
+
 let isContentLoaded = false;
 
 
@@ -27,7 +29,7 @@ function hidePreloader() {
     $('#preloader').fadeOut();
 }
 
-function loadPageContent(url, updateHistory = true) {
+function loadPageContent(url, updateHistory = true,is_new_tab=false) {
     blockSpecificScript('scripts.js');
     showPreloader();
 

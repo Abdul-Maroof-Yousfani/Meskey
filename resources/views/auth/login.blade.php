@@ -37,7 +37,7 @@
 
 <body class="horizontal-layout horizontal-menu horizontal-menu-padding 1-column auth-page navbar-sticky blank-page {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="1-column">
-    <div class="wrapper">
+    <div class="wrapper p-0">
         <div class="main-panel">
             <!-- BEGIN : Main Content-->
             <div class="main-content">

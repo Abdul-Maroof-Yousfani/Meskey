@@ -1,10 +1,13 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Name </th>
-            <th class="col-sm-4">Description</th>
+            <th class="col-sm-1">Ticket No# </th>
+            <th class="col-sm-2">Commodity</th>
+            <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-1">Truck No</th>
+            <th class="col-sm-1">Bilty No</th>
             <th class="col-sm-2">Created</th>
-            <th class="col-sm-2">Action</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -13,12 +16,26 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
+                            #{{ $row->unique_no }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            {{ optional($row->product)->name ?? 'No Found' }} <br>
+                        </p>
+                    </td>
+                      <td>
+                        <p class="m-0">
+                            {{ $row->supplier_name }} <br>
+                        </p>
+                      <td>
+                        <p class="m-0">
+                            {{ $row->truck_no }} <br>
+                        </p>
+                    </td>
+                      <td>
+                        <p class="m-0">
+                            {{ $row->bilty_no }} <br>
                         </p>
                     </td>
                      <td>
@@ -30,13 +47,13 @@
                         </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('unit_of_measure.edit', $row->id) }}','Edit Unit Of Measure')"
+                            <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','Edit Ticket')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit-2 font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('unit_of_measure.destroy', $row->id) }}','{{ route('get.unit_of_measure') }}')"
+                            <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>

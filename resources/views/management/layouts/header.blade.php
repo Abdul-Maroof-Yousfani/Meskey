@@ -44,6 +44,7 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/components.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/themes/layout-dark.css') }}">
     <link rel="stylesheet" href="{{ asset('management/app-assets/css/plugins/switchery.css') }}">
+    <link rel="stylesheet" href="{{ asset('management/app-assets/vendors/css/select2.min.css') }}">
     <!-- END APEX CSS-->
     <!-- BEGIN Page Level CSS-->
     <link rel="stylesheet" type="text/css"
@@ -63,7 +64,7 @@
 <body
     class="horizontal-layout horizontal-menu horizontal-menu-padding 2-columns  navbar-sticky {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="2-columns">
-   <div id="preloader" class="preloader-overlay">
+   <div id="preloader" class="preloader-overlay" style="display: none;">
     <div class="preloader-spinner">
         <div class="spinner-border" role="status">
             <span class="sr-only">Loading...</span>

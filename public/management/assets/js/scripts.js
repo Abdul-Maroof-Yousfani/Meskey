@@ -94,13 +94,34 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
     });
   }
 
-  // Update URL parameters
-  function updateUrlParams(formData) {
-    const urlParams = new URLSearchParams(formData);
-    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-    window.history.pushState(null, "", newUrl);
+  // // Update URL parameters
+  // function updateUrlParams(formData) {
+  //   const urlParams = new URLSearchParams(formData);
+  //   const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+  //   window.history.pushState(null, "", newUrl);
+  // }
+
+
+// Update URL parameters without duplicates
+function updateUrlParams(formData) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const newParams = new URLSearchParams(formData); // Serialized data
+
+  // Merge newParams into urlParams
+  for (const [key, value] of newParams) {
+    if (value) {
+      urlParams.set(key, value);
+    } else {
+      urlParams.delete(key);
+    }
   }
 
+  const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+  window.history.pushState(null, "", newUrl);
+}
+
+
+  
   // // Load filter values from URL on page load
   // function loadFiltersFromUrl() {
   //   const urlParams = new URLSearchParams(window.location.search);
@@ -587,19 +608,63 @@ $(document).ready(function () {
 
 
 
-$(document).ready(function () {
-    $('body').change('#imageUpload',function (event) {
-        var file = event.target.files[0]; // Get the selected file
-        if (file) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                $('#imagePreview').css('background-image', 'url(' + e.target.result + ')'); // Set the blob URL
-            };
-            reader.readAsDataURL(file); // Read the file as a Data URL
-        }
-    });
-});
 
+
+
+function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
+  $(selector).select2({
+      ajax: {
+          url: '/dynamic-fetch-data', // Your dynamic route
+          type: 'GET',
+          dataType: 'json',
+          delay: 250,
+          data: function(params) {
+              return {
+                  search: params.term, // Search term
+                  table: tableName, // Dynamic table name
+                  column: columnName, // Dynamic column name
+                  idColumn: idColumn, // Dynamic column for ID
+                  enableTags: enableTags // Enable tag creation
+              };
+          },
+          processResults: function(data) {
+              return {
+                  results: data.items // Data from the server
+              };
+          }
+      },
+      minimumInputLength: 3, // Search after 3 characters
+      tags: enableTags, // Enable tag creation if no result found
+      multiple: isMultiple // Allow multiple selections
+  });
+}
+
+// Handle select change event
+function handleSelectChange(selectElement) {
+  const selectedValue = selectElement.value;
+  console.log('Selected Value:', selectedValue);
+  // You can add additional logic here if needed
+}
+
+// Initialize the Select2 on page load
+// $(document).ready(function() {
+//   initializeDynamicSelect2('#dynamicSelect2', 'users', 'name', true, true);
+// });
+
+
+
+$(document).ready(function () {
+  $('body').on('change','#imageUpload',function (event) {
+      var file = event.target.files[0]; // Get the selected file
+      if (file) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+              $('#imagePreview').css('background-image', 'url(' + e.target.result + ')'); // Set the blob URL
+          };
+          reader.readAsDataURL(file); // Read the file as a Data URL
+      }
+  });
+});
 
 (function (window, undefined) {
   "use strict";

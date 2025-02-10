@@ -328,6 +328,9 @@
     <script src="{{ asset('management/app-assets/js/notification-sidebar.js') }}"></script>
     <script src="{{ asset('management/app-assets/js/customizer.js') }}"></script>
     <script src="{{ asset('management/app-assets/js/scroll-top.js') }}"></script>
+    <script src="{{ asset('management/app-assets/vendors/js/select2.full.min.js') }}"></script>
+    <script src="{{ asset('management/app-assets/js/select2.js') }}"></script>
+
     <!-- END APEX JS-->
     <!-- BEGIN PAGE LEVEL JS-->
     <script src="{{ asset('management/app-assets/js/dashboard1.js') }}"></script>

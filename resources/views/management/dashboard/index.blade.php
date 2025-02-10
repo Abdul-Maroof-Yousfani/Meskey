@@ -88,8 +88,8 @@
                     <!--Statistics cards Ends-->
 
                     <!--Line with Area Chart 1 Starts-->
-                    <div class="row">
-                        <div class="col-12">
+                    <div class="row match-height">
+                        <div class="col-8">
                             <div class="card">
                                 <div class="card-header">
                                     <h4 class="card-title">PRODUCTS SALES</h4>
@@ -108,10 +108,23 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-xl-4 col-lg-12 col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Statistics</h4>
+                                </div>
+                                <div class="card-content">
+                                    <div class="card-body">
+                                        <p class="font-medium-2 text-center my-2">Last 6 Months Sales</p>
+                                        <div id="Stack-bar-chart" class="height-300 Stackbarchart mb-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <!--Line with Area Chart 1 Ends-->
 
-                    <div class="row match-height">
+                    <div class="row match-height d-none">
                         <div class="col-xl-4 col-lg-12 col-12">
                             <div class="card">
                                 <div class="card-header">
@@ -146,7 +159,7 @@
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td><img class="height-50" src="../../../app-assets/img/elements/01.png" alt="Generic placeholder image" /></td>
+                                                        <td><img class="height-50" src="{{image_path('')}}" alt="Generic placeholder image" /></td>
                                                         <td>Espresso</td>
                                                         <td>1</td>
                                                         <td>
@@ -158,7 +171,7 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td><img class="height-50" src="../../../app-assets/img/elements/15.png" alt="Generic placeholder image" /></td>
+                                                        <td><img class="height-50" src="{{image_path('')}}" alt="Generic placeholder image" /></td>
                                                         <td>iPhone</td>
                                                         <td>2</td>
                                                         <td>
@@ -170,7 +183,7 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td><img class="height-50" src="../../../app-assets/img/elements/11.png" alt="Generic placeholder image" /></td>
+                                                        <td><img class="height-50" src="{{image_path('')}}" alt="Generic placeholder image" /></td>
                                                         <td>iMac</td>
                                                         <td>1</td>
                                                         <td>
@@ -182,7 +195,19 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td><img class="height-50" src="../../../app-assets/img/elements/14.png" alt="Generic placeholder image" /></td>
+                                                        <td><img class="height-50" src="{{image_path('')}}" alt="Generic placeholder image" /></td>
+                                                        <td>iWatch</td>
+                                                        <td>2</td>
+                                                        <td>
+                                                            <span class="badge badge-pill bg-light-success cursor-pointer">Active</span>
+                                                        </td>
+                                                        <td>$24.51</td>
+                                                        <td>
+                                                            <i class="ft-trash-2"></i>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><img class="height-50" src="{{image_path('')}}" alt="Generic placeholder image" /></td>
                                                         <td>iWatch</td>
                                                         <td>2</td>
                                                         <td>
