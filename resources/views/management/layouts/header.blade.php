@@ -397,9 +397,9 @@
 
                             </div>
                         </li>
-                        <li class="nav-item d-none d-lg-block mr-2 mt-1"><a
+                        {{-- <li class="nav-item d-none d-lg-block mr-2 mt-1"><a
                                 class="nav-link notification-sidebar-toggle" href="javascript:;"><i
-                                    class="ft-align-right font-medium-3"></i></a></li>
+                                    class="ft-align-right font-medium-3"></i></a></li> --}}
                     </ul>
                 </div>
             </div>

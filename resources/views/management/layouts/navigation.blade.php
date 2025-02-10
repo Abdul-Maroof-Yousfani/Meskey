@@ -46,19 +46,20 @@
                     data-toggle="dropdown"><i class="ft-aperture"></i><span data-i18n="UI Kit">Arrival</span></a>
 
 
-                     <ul class="dropdown-menu">
+                <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    href="{{ route('ticket.index') }}"
                             onclick="loadPageContent('{{ route('ticket.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Ticket</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    href="{{ route('company.index') }}"
                             onclick="loadPageContent('{{ route('company.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">First Inpection</span></a>
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">First
+                                Inpection</span></a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                    @routerLink(route('users.index'))
-                    
-                  data-toggle="dropdown"><i
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            @routerLink(route('users.index')) data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manccccage
                                 Users</span></a>
                     </li>
@@ -67,7 +68,7 @@
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Menu</span>
                         </a>
-                    </li>
+                    </li> --}}
                 </ul>
 
             </li>
@@ -77,21 +78,24 @@
                         Control</span></a>
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            onclick="loadPageContent('{{ route('roles.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Manage Roles &
+                            href="{{ route('roles.index') }}" onclick="loadPageContent('{{ route('roles.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Email">Manage Roles &
                                 Permission</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('company.index') }}"
                             onclick="loadPageContent('{{ route('company.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Manage
                                 Company</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            onclick="loadPageContent('{{ route('users.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manage
+                            href="{{ route('users.index') }}" onclick="loadPageContent('{{ route('users.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Chat">Manage
                                 Users</span></a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('menu.index') }}"
                             onclick="loadPageContent('{{ route('menu.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Menu</span>
@@ -112,6 +116,7 @@
 
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('product.index') }}"
                                     onclick="loadPageContent('{{ route('product.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Product</span></a>
@@ -119,6 +124,7 @@
                             @endcanAccess
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('product-slab.index') }}"
                                     onclick="loadPageContent('{{ route('product-slab.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Product Slab</span></a>
@@ -126,6 +132,7 @@
                             @endcanAccess
                             @canAccess('category')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('category.index') }}"
                                     onclick="loadPageContent('{{ route('category.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Category</span></a>
@@ -133,6 +140,7 @@
                             @endcanAccess
                             @canAccess('uom')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('unit_of_measure.index') }}"
                                     onclick="loadPageContent('{{ route('unit_of_measure.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Unit of mesurement</span></a>
