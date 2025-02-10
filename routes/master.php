@@ -2,7 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Master\{RegionController, CategoryController, UnitOfMeasureController, ProductController, ProductSlabController};
+use App\Http\Controllers\Master\{RegionController, CategoryController, UnitOfMeasureController, ProductController, ProductSlabController,SupplierController};
 
 
 Route::resource('regions', RegionController::class);
@@ -18,6 +18,10 @@ Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])
 
 Route::resource('product', ProductController::class);
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
+
+
+Route::resource('supplier', SupplierController::class);
+Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
 
 Route::resource('product-slab', ProductSlabController::class);
 Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->name('get.product-slab');
