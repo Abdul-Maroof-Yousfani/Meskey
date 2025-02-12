@@ -11,7 +11,9 @@ class CheckCurrentCompany
     {
 
         $user = auth()->user();
-
+        if (count($user->companies) == 1) {
+            $user->update(['current_company_id' => $user->companies()->first()->id]);
+        }
         // Ensure the user has a current company
         if (!$user->current_company_id) {
             return redirect('select-company');
