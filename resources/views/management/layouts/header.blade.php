@@ -129,7 +129,7 @@
                     <ul class="navbar-nav">
 
                         @if (getCurrentCompany())
-
+ @if (count(auth()->user()->companies) > 1 ) 
 
                             <li class="nav-item position-relative mr-3">
                                 <button class="btn btn-primary  dropdown-toggle " href="javascript:;"
@@ -176,6 +176,7 @@
 
                                 </ul>
                             </li>
+                            @endif
                         @endif
 
 
