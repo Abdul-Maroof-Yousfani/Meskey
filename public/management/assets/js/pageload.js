@@ -30,6 +30,8 @@ function hidePreloader() {
 }
 
 function loadPageContent(url, updateHistory = true,is_new_tab=false) {
+
+    event.preventDefault();
     blockSpecificScript('scripts.js');
     showPreloader();
 
