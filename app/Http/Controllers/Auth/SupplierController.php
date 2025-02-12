@@ -8,7 +8,7 @@ use App\Models\Master\Supplier;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
-{
+{ 
     /**
      * Display a listing of the resource.
      */
