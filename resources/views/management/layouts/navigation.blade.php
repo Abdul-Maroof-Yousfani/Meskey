@@ -95,12 +95,12 @@
                                 data-i18n="Chat">Manage
                                 Users</span></a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('menu.index') }}"
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('menu.index') }}"
                             onclick="loadPageContent('{{ route('menu.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Menu</span>
                         </a>
-                    </li>
+                    </li> --}}
                 </ul>
             </li>
             <li class="dropdown nav-item" data-menu="dropdown"><a
