@@ -2,7 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Master\{RegionController, CategoryController, UnitOfMeasureController, ProductController, ProductSlabController,SupplierController};
+use App\Http\Controllers\Master\{RegionController, CategoryController, UnitOfMeasureController, ProductController, ProductSlabController, SupplierController};
 
 
 Route::resource('regions', RegionController::class);
