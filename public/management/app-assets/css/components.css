@@ -2663,7 +2663,7 @@ body[data-menu="horizontal-menu"] .app-sidebar .navigation li.active > a:before 
         #modal-sidebar .modal-sidebar-content .modal-tab-content {
           position: relative;
           height: calc(100vh - 3.333333rem);
-          height: calc(var(--vh, 1vh)*100 - 3.333333rem); }
+          height: calc(var(--vh, 1vh)*100 - 6.333333rem); }
           #modal-sidebar .modal-sidebar-content .modal-tab-content .ps__rail-y {
             right: 5px; }
     

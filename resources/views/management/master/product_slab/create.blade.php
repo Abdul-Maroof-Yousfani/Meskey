@@ -1,86 +1,59 @@
-<form action="{{ route('product.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('product-slab.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.product') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.product-slab') }}" />
 
     <div class="row form-mar">
-
-    <div class="col-md-12 mb-4">
-        <div class="avatar-upload">
-            <div class="avatar-edit">
-                <input type='file' id="imageUpload" name="image" accept=".png, .jpg, .jpeg" />
-                <label for="imageUpload">
-                     <i class="ft-camera"></i>
-                </label>
-            </div>
-            <div class="avatar-preview">
-                <div id="imagePreview" style="background-image: url('{{ image_path('') }}');">
-                </div>
-            </div>
-        </div>
-    </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
-                <label>Category:</label>
-                <select class="form-control" name="category_id">
-                    <option value="">Select Category</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                <label>Products:</label>
+                <select class="form-control" name="product_id" id="product_id">
+                    <option value="">Select Product</option>
+                    @foreach ($slab_types as $slab_type)
+                        <option value="{{ $slab_type->id }}">{{ $slab_type->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Slab Types:</label>
+                <select class="form-control" name="product_slab_type_id" id="product_slab_type_id">
+                    <option value="">Select Slab Types</option>
+                    @foreach ($slab_types as $slab_type)
+                        <option value="{{ $slab_type->id }}">{{ $slab_type->name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
+       
+        <div class="col-xs-3 col-sm-3 col-md-3">
             <div class="form-group">
-                <label>Unit of Measure:</label>
-                <select class="form-control" name="unit_of_measure_id">
-                    <option value="">Select Unit of Measure</option>
-                    @foreach ($units as $unitOfMeasure)
-                        <option value="{{ $unitOfMeasure->id }}">{{ $unitOfMeasure->name }}</option>
-                    @endforeach
-                </select>
+                <label>From:</label>
+                <input type="text" name="from" placeholder="From" class="form-control"  />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-3 col-sm-3 col-md-3">
             <div class="form-group">
-                <label>Name:</label>
-                <input type="text" name="name" placeholder="Name" class="form-control"  />
-            </div>
-        </div>
-
-        <!-- Description -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Description:</label>
-                <textarea name="description" placeholder="Description" class="form-control"></textarea>
-            </div>
-        </div>
-
-        <!-- Barcode -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Barcode:</label>
-                <input type="text" name="barcode" placeholder="Barcode" class="form-control" />
-            </div>
-        </div>
-
-
-        <!-- Price -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Price:</label>
-                <input type="text" name="price" placeholder="Price" class="form-control" />
+                <label>To:</label>
+                <input type="text" name="to" placeholder="To" class="form-control"  />
             </div>
         </div>
 
         <!-- Status -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-3 col-sm-3 col-md-3">
             <div class="form-group">
-                <label>Status:</label>
-                <select class="form-control" name="status" >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                <label>Deduction Type:</label>
+                <select class="form-control" name="deduction_type" >
+                    <option value="kg">Kg</option>
+                    <option value="amount">Amount</option>
                 </select>
+            </div>
+        </div>
+        <div class="col-xs-3 col-sm-3 col-md-3">
+            <div class="form-group">
+                <label>Deduction value:</label>
+                <input type="text" name="deduction_value" placeholder="Deduction Value" class="form-control" />
             </div>
         </div>
     </div>
@@ -92,3 +65,13 @@
         </div>
     </div>
 </form>
+
+
+
+<script>
+    $(document).ready(function () {
+        initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
+        initializeDynamicSelect2('#product_slab_type_id', 'product_slab_types', 'name', 'id', false, false);
+        //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
+    });
+</script>

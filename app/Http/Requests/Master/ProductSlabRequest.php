@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Master;
 
+
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\Master\ProductSlab;
 
 class ProductSlabRequest extends FormRequest
 {
@@ -14,43 +16,52 @@ class ProductSlabRequest extends FormRequest
 
     public function rules(): array
     {
-        $productSlabId = $this->route('product_slab');
-
         return [
-            'company_id' => 'required|exists:companies,id',
-            'unique_no' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('product_slabs', 'unique_no')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($productSlabId)
-            ],
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('product_slabs', 'name')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($productSlabId)
-            ],
-            'description' => 'nullable|string|max:500',
-            'status' => ['required', Rule::in(['active', 'inactive'])],
+            'company_id' => ['required', 'exists:companies,id'],
+            'product_id' => ['required', 'exists:products,id'],
+            'product_slab_type_id' => ['required', 'exists:product_slab_types,id'],
+            'from' => ['required', 'numeric'],
+            'to' => ['required', 'numeric', 'gt:from'],
+            'deduction_type' => ['required', 'string', 'in:kg,amount'],
+            'deduction_value' => ['required', 'numeric', 'min:0'],
+            'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->has('from') && $this->has('to') && $this->has('product_id')) {
+                $exists = ProductSlab::where('company_id', $this->company_id)
+                    ->where('product_id', $this->product_id)
+                    ->where('from', $this->from)
+                    ->where('to', $this->to)
+                    ->exists();
+
+                if ($exists) {
+                    $validator->errors()->add('product_id', 'The given product slab range already exists.');
+                }
+            }
+        });
     }
 
     public function messages(): array
     {
         return [
-            'company_id.required' => 'The company ID is required.',
-            'company_id.exists' => 'The selected company does not exist.',
-            'unique_no.required' => 'The unique number is required.',
-            'unique_no.unique' => 'The unique number has already been taken for the selected company.',
-            'name.required' => 'The product slab name is required.',
-            'name.unique' => 'The name has already been taken for the selected company.',
-            'description.max' => 'The description must not exceed 500 characters.',
-            'status.required' => 'The status is required.',
-            'status.in' => 'The status must be either active or inactive.',
+            'company_id.required' => 'Company ID is required.',
+            'company_id.exists' => 'Selected company does not exist.',
+            'product_id.exists' => 'Selected product does not exist.',
+            'product_slab_type_id.exists' => 'Selected slab type does not exist.',
+            'from.numeric' => 'The "From" value must be a number.',
+            'to.numeric' => 'The "To" value must be a number.',
+            'to.gt' => 'The "To" value must be greater than "From".',
+            'deduction_type.in' => 'Deduction type must be either percentage or fixed.',
+            'deduction_value.numeric' => 'Deduction value must be a number.',
+            'deduction_value.min' => 'Deduction value must be at least 0.',
+            'status.required' => 'Status is required.',
+            'status.in' => 'Invalid status value.',
+            'business_id.required' => 'Business ID is required.',
+            'business_id.exists' => 'The selected business does not exist.',
         ];
     }
 }

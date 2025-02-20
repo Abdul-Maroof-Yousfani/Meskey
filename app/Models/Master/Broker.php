@@ -5,31 +5,22 @@ namespace App\Models\Master;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Supplier extends Model
+class Broker extends Model
 {
     use HasFactory;
 
     // Define fillable attributes
- protected $fillable = [
+    protected $fillable = [
         'company_id',
         'unique_no',
         'name',
-        'company_name',
-        'owner_name',
-        'owner_mobile_no',
-        'owner_cnic_no',
-        'next_to_kin',
-        'next_to_kin_mobile_no',
-        'owner_bank_detail',
-        'company_bank_detail',
         'prefix',
         'email',
         'phone',
         'address',
         'ntn',
         'stn',
-        'attachment',
-        'status'
+        'status',
     ];
 
     // Define the relationship with Company (assuming the 'Company' model exists)

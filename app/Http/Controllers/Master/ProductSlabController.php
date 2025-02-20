@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\Master\ProductSlab;
+use App\Models\Master\{ProductSlab,ProductSlabType};
 use Illuminate\Http\Request;
+use App\Http\Requests\Master\ProductSlabRequest;
 
 class ProductSlabController extends Controller
 {
@@ -27,6 +28,8 @@ class ProductSlabController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+                ->where('company_id',$request->company_id)
+
         ->latest()
         ->paginate(request('per_page', 25));
 
@@ -38,18 +41,19 @@ class ProductSlabController extends Controller
      */
     public function create()
     {
-        return view('management.master.product_slab.create');
+        $slab_types = ProductSlabType::where('status','active')->get();
+        return view('management.master.product_slab.create',compact('slab_types'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(UnitOfMeasureRequest $request)
+    public function store(ProductSlabRequest $request)
     {
         $data = $request->validated();
-        $UnitOfMeasure = ProductSlab::create($request->all());
+        $ProductSlabRequest = ProductSlab::create($request->all());
 
-        return response()->json(['success' => 'Category created successfully.', 'data' => $UnitOfMeasure], 201);
+        return response()->json(['success' => 'Category created successfully.', 'data' => $ProductSlabRequest], 201);
     }
 
     /**

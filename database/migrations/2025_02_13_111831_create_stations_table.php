@@ -10,21 +10,16 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('product_slabs', function (Blueprint $table) {
+        Schema::create('stations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id');
-            $table->unsignedBigInteger('product_id')->nullable();
-            $table->unsignedBigInteger('product_slab_type_id')->nullable();
-            $table->string('from')->nullable();
-            $table->string('to')->nullable();
-            $table->string('deduction_type')->nullable();
-            $table->string('deduction_value')->nullable();
+            $table->string('name');
+            $table->string('description')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->softDeletes();
             $table->timestamps();
+
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->foreign('product_id')->references('id')->on('products');
-            $table->foreign('product_slab_type_id')->references('id')->on('product_slab_types');
         });
     }
 
@@ -33,6 +28,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_slabs');
+        Schema::dropIfExists('stations');
     }
 };

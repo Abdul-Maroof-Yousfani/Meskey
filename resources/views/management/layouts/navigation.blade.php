@@ -130,6 +130,14 @@
                                         data-i18n="Basic">Product Slab</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('product')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('product-slab-type.index') }}"
+                                    onclick="loadPageContent('{{ route('product-slab-type.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Product Slab type</span></a>
+                            </li>
+                            @endcanAccess
                             @canAccess('category')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('category.index') }}"
@@ -153,6 +161,12 @@
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Supplier</span>
+                        </a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('broker.index') }}"
+                            onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Broker</span>
                         </a>
                     </li>
                 </ul>

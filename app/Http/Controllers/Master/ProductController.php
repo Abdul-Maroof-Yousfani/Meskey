@@ -29,6 +29,8 @@ class ProductController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->where('company_id', $request->company_id)
+
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -63,17 +65,17 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request , $id)
+    public function edit(Request $request, $id)
     {
 
-        
+
         $product = Product::findOrFail($id);
 
 
-          $categories = Category::where('company_id', $request->company_id)->get();
+        $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
 
-      
+
         return view('management.master.product.edit', [
             'categories' => $categories,
             'units' => $units,

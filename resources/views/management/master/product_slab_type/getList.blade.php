@@ -1,57 +1,48 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">S No. </th>
-            <th class="col-sm-2">Supplier </th>
-            <th class="col-sm-2">Company </th>
-            <th class="col-sm-4">Address</th>
+            <th class="col-sm-4">Name </th>
+            <th class="col-sm-4">Description</th>
+            <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($Suppliers) != 0)
-            @foreach ($Suppliers as $key => $row)
+        @if (count($product_slab_types) != 0)
+            @foreach ($product_slab_types as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->unique_no }}
-
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
                             {{ $row->name }} <br>
-                            <small>{{ $row->email ?? '--' }}</small> <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->company_name }} <br>
-                            <small>{{ $row->company_mobile_no ?? '--' }}</small> <br>
+                            <small> {{ $row->description ?? '--' }}</small>
                         </p>
                     </td>
                     <td>
-                        <p class="m-0">
-                            <small> {{ $row->address ?? '--' }}</small>
-                        </p>
+                      <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
+                    {{ $row->status }}
+                </label>
                     </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
+                     <td>
+                     <p class="m-0">
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                    </td>
+                        </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('supplier.edit', $row->id) }}','Edit Supplier')"
+                            <a onclick="openModal(this,'{{ route('product-slab-type.edit', $row->id) }}','Edit Product Slab Type')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit-2 font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('supplier.destroy', $row->id) }}','{{ route('get.supplier') }}')"
+                            <a onclick="deletemodal('{{ route('product-slab-type.destroy', $row->id) }}','{{ route('get.product-slab-type') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
@@ -85,10 +76,14 @@
         @endif
     </tbody>
 </table>
+{{-- <div id="paginationLinks">
+    {{ $roles->links() }}
+</div> --}}
+
 
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $Suppliers->links() }}
+            {{ $product_slab_types->links() }}
     </div>
 </div>

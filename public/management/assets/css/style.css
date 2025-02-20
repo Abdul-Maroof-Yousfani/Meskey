@@ -153,7 +153,6 @@ img.avatar.lisiavatarlogo {
     }
 }
 
-
 .modal-sidebar-content .bottom-button-bar {
     text-align: right;
 }
@@ -203,8 +202,7 @@ div#filteredData {
     height: 100%;
     background-color: rgb(44 44 44 / 87%);
     z-index: 9999;
-    display: flex
-;
+    display: flex;
     justify-content: center;
     align-items: center;
     /* display: none; */
@@ -233,8 +231,19 @@ div#filteredData {
 }
 
 .select2-container--default .select2-selection--single {
-    background-color: #fff;
+    /* background-color: #fff; */
     border: 1px solid #E0E0E0;
     border-radius: 4px;
     color: #c6c6c6 !important;
+}
+
+
+.header-heading-sepration {
+    background: #e0e0e0;
+    padding: 10px 10px;
+    border-radius: 5px;
+}
+.layout-dark .header-heading-sepration {
+    background: #101010;
+    border: 1px solid #2f2f2f;
 }

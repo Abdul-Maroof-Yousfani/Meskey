@@ -28,6 +28,7 @@ class SupplierController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+        ->where('company_id',$request->company_id)
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -72,7 +73,7 @@ class SupplierController extends Controller
     {
         $data = $request->validated();
         $supplier = Supplier::findOrFail($id);
-        $supplier->update($data);
+        $supplier->update($request->all());
 
         return response()->json(['success' => 'Category updated successfully.', 'data' => $supplier], 200);
     }

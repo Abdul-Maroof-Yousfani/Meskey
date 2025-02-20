@@ -8,12 +8,12 @@ Product Slabs
     <section id="extended">
         <div class="row w-100 mx-auto">
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                <h2 class="page-title"> Product Slabs</h2>
+                <h2 class="page-title"> Product Slabs Type</h2>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                <button onclick="openModal(this,'{{ route('product-slab.create') }}','Add Product Slab')" type="button"
+                <button onclick="openModal(this,'{{ route('product-slab-type.create') }}','Add Product Slab Type')" type="button"
                     class="btn btn-primary position-relative ">
-                  Create  Product Slab
+                  Create  Product Slab Type
                 </button>
             </div>
         </div>
@@ -68,7 +68,7 @@ Product Slabs
 @section('script')
 <script>
     $(document).ready(function () {
-        filterationCommon(`{{ route('get.product-slab') }}`)
+        filterationCommon(`{{ route('get.product-slab-type') }}`)
     });
 </script>
 @endsection

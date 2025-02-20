@@ -200,9 +200,6 @@ function updateUrlParams(formData) {
 $(document).on("submit", "#ajaxSubmit", function (e) {
   var formhunyr = $(this);
 
-
-
-
   e.preventDefault(); // Avoid executing the actual submit of the form.
 
   // Clear previous errors and success messages
@@ -292,95 +289,79 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
       }
     },
 
+
     error: function (xhr, status, error) {
       Swal.close(); // Close loader
       console.log(xhr.responseJSON.errors);
+      
       if (xhr.responseJSON && xhr.responseJSON.errors) {
-        var validationErrors = xhr.responseJSON.errors;
-
-        // Array of names for fields where the error should be shown only on the last field
-        var showErrorOnLastField = ["permission"];
-
-        $.each(validationErrors, function (key, errors) {
-          // Find fields matching the key
-          var fields = $("[name]").filter(function () {
-            return $(this).attr("name").includes(key);
-          });
-
-          // If the field name is in the array, show error only on the last field
-          if (showErrorOnLastField.includes(key) && fields.length > 1) {
-            var lastField = fields.last(); // Select the last field
-            lastField.addClass("is-invalid");
-
-          if (lastField.hasClass("select2")) {
-              lastField
-                .parent()
-                .find(".select2-container")
-                .after(
-                  '<div class="error-message text-danger">' +
-                    errors[0] +
-                    "</div>"
-                );
-            } else {
-              lastField
-                .parents(".form-group")
-                .append(
-                  '<div class="error-message text-danger">' +
-                    errors[0] +
-                    "</div>"
-                );
-            }
-          } else {
-            // Default behavior for fields not in the array
-            fields.addClass("is-invalid");
-
-            fields.each(function () {
-              var field = $(this);
-
-              if (field.hasClass("select2")) {
-                field
-                  .parent()
-                  .find(".select2-container")
-                  .after(
-                    '<div class="error-message text-danger">' +
-                      errors[0] +
-                      "</div>"
-                  );
+          var validationErrors = xhr.responseJSON.errors;
+  
+          // Clear previous errors
+          $(".is-invalid").removeClass("is-invalid");
+          $(".error-message").remove();
+  
+          // Fields where errors should only be displayed on the last occurrence
+          var showErrorOnLastField = ["permission"];
+  
+          $.each(validationErrors, function (key, errors) {
+              var fields = $("[name='" + key + "']"); // Select fields by exact name
+  
+              if (showErrorOnLastField.includes(key) && fields.length > 1) {
+                  var lastField = fields.last(); // Select the last field
+                  lastField.addClass("is-invalid");
+  
+                  if (lastField.hasClass("select2")) {
+                      lastField.parent().find(".select2-container").after(
+                          '<div class="error-message text-danger">' + errors[0] + "</div>"
+                      );
+                  } else {
+                      lastField.parents(".form-group").append(
+                          '<div class="error-message text-danger">' + errors[0] + "</div>"
+                      );
+                  }
               } else {
-                field
-                  .parents(".form-group")
-                  .append(
-                    '<div class="error-message text-danger">' +
-                      errors[0] +
-                      "</div>"
-                  );
+                  // Default behavior for fields not in the array
+                  fields.each(function () {
+                      var field = $(this);
+                      console.log(field);
+                      field.addClass("is-invalid");
+  
+                      if (field.hasClass("select2")) {
+                          field.parent().find(".select2-container").after(
+                              '<div class="error-message text-danger">' + errors[0] + "</div>"
+                          );
+                      } else {
+                          field.parents(".form-group").append(
+                              '<div class="error-message text-danger">' + errors[0] + "</div>"
+                          );
+                      }
+                  });
               }
-            });
-          }
-        });
-
-        Swal.fire({
-          title: "Validation Errors",
-          text: "Some fields are mandatory. Please check and correct the errors.",
-          icon: "error",
-          confirmButtonColor: "#D95000",
-        });
+          });
+  
+          Swal.fire({
+              title: "Validation Errors",
+              text: "Some fields are mandatory. Please check and correct the errors.",
+              icon: "error",
+              confirmButtonColor: "#D95000",
+          });
       } else if (xhr.responseJSON && xhr.responseJSON.message) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: xhr.responseJSON.message,
-          confirmButtonColor: "#D95000",
-        });
+          Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: xhr.responseJSON.message,
+              confirmButtonColor: "#D95000",
+          });
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: xhr.responseText,
-          confirmButtonColor: "#D95000",
-        });
+          Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: xhr.responseText,
+              confirmButtonColor: "#D95000",
+          });
       }
-    },
+  }
   });
 });
 
@@ -611,6 +592,37 @@ $(document).ready(function () {
 
 
 
+// function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
+//   $(selector).select2({
+//       ajax: {
+//           url: '/dynamic-fetch-data', // Your dynamic route
+//           type: 'GET',
+//           dataType: 'json',
+//           delay: 250,
+//           data: function(params) {
+//               return {
+//                   search: params.term, // Search term
+//                   table: tableName, // Dynamic table name
+//                   column: columnName, // Dynamic column name
+//                   idColumn: idColumn, // Dynamic column for ID
+//                   enableTags: enableTags // Enable tag creation
+//               };
+//           },
+//           processResults: function(data) {
+//               return {
+//                   results: data.items // Data from the server
+//               };
+//           }
+//       },
+//       minimumInputLength: 3, // Search after 3 characters
+//       tags: enableTags, // Enable tag creation if no result found
+//       multiple: isMultiple // Allow multiple selections
+//   });
+// }
+
+
+
+
 function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
   $(selector).select2({
       ajax: {
@@ -620,23 +632,23 @@ function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'i
           delay: 250,
           data: function(params) {
               return {
-                  search: params.term, // Search term
-                  table: tableName, // Dynamic table name
-                  column: columnName, // Dynamic column name
-                  idColumn: idColumn, // Dynamic column for ID
-                  enableTags: enableTags // Enable tag creation
+                  search: params.term || '', // Empty by default to load first 10 records
+                  table: tableName,
+                  column: columnName,
+                  idColumn: idColumn,
+                  enableTags: enableTags
               };
           },
           processResults: function(data) {
               return {
-                  results: data.items // Data from the server
+                  results: data.items
               };
           }
       },
-      minimumInputLength: 3, // Search after 3 characters
-      tags: enableTags, // Enable tag creation if no result found
-      multiple: isMultiple // Allow multiple selections
-  });
+      minimumInputLength: 0, // Load data without typing
+      tags: enableTags,
+      multiple: isMultiple
+  }).trigger('select2:open'); // Open dropdown immediately to show data
 }
 
 // Handle select change event

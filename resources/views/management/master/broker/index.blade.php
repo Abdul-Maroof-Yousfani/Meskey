@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-Product Slabs
+Brokers
 @endsection
 @section('content')
 <div class="content-wrapper">
@@ -8,12 +8,12 @@ Product Slabs
     <section id="extended">
         <div class="row w-100 mx-auto">
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                <h2 class="page-title"> Product Slabs</h2>
+                <h2 class="page-title"> Brokers List</h2>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                <button onclick="openModal(this,'{{ route('product-slab.create') }}','Add Product Slab')" type="button"
-                    class="btn btn-primary position-relative ">
-                  Create  Product Slab
+                <button onclick="openModal(this,'{{ route('broker.create') }}','Add Broker')"
+                    type="button" class="btn btn-primary position-relative ">
+                    Create Broker
                 </button>
             </div>
         </div>
@@ -37,6 +37,8 @@ Product Slabs
                                 </div>
                             </div>
                         </form>
+
+
                         {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                     </div>
                     <div class="card-content">
@@ -44,13 +46,10 @@ Product Slabs
                             <table class="table m-0">
                                 <thead>
                                     <tr>
-                                        <th class="col-sm-1">Image </th>
-                                        <th class="col-sm-3">Name </th>
-                                  
+                                        <th class="col-sm-4">Name </th>
                                         <th class="col-sm-4">Description</th>
-                                              <th class="col-sm-1">Name </th>
                                         <th class="col-sm-2">Created</th>
-                                        <th class="col-sm-1">Action</th>
+                                        <th class="col-sm-2">Action</th>
                                     </tr>
                                 </thead>
 
@@ -68,7 +67,7 @@ Product Slabs
 @section('script')
 <script>
     $(document).ready(function () {
-        filterationCommon(`{{ route('get.product-slab') }}`)
+        filterationCommon(`{{ route('get.broker') }}`)
     });
 </script>
 @endsection
