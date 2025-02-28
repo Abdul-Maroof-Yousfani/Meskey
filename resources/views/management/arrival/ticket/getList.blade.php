@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">Ticket No# </th>
+            <th class="col-sm-2">Ticket No# </th>
             <th class="col-sm-2">Commodity</th>
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-1">Truck No</th>

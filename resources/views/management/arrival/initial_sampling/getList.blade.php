@@ -1,43 +1,35 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Product </th>
-            <th class="col-sm-2">Slab Type</th>
-            <th class="col-sm-2">Range</th>
-            <th class="col-sm-2">Deduction</th>
+            <th class="col-sm-2">Ticket No# </th>
+            <th class="col-sm-3">Product</th>
+            <th class="col-sm-4">Remark</th>
             <th class="col-sm-2">Created</th>
-            <th class="col-sm-2">Action</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($ProductSlab) != 0)
-            @foreach ($ProductSlab as $key => $row)
+
+
+
+        @if (count($samplingRequests) != 0)
+            @foreach ($samplingRequests as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->product->name }} <br>
+                            #{{ optional($row->arrivalTicket)->unique_no }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->slabType->name }} <br>
+                            {{ optional(optional($row->arrivalTicket)->product)->name }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->from.' - '.$row->to }} <br>
+                            {{ optional($row->arrivalTicket)->remark ?? '---' }} <br>
                         </p>
                     </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->deduction_value }}  {{ $row->deduction_type }}  <br>
-                        </p>
-                    </td>
-                    {{-- <td>
-                      <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                    {{ $row->status }}
-                </label>
-                    </td> --}}
                      <td>
                      <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
@@ -47,18 +39,18 @@
                         </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('product.edit', $row->id) }}','Edit Product')"
+                            <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-eye font-medium-3"></i>
                             </a>
                         @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('product.destroy', $row->id) }}','{{ route('get.product') }}')"
+                        {{-- @can('role-delete')
+                            <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
                             </a>
-                        @endcan
+                        @endcan --}}
                     </td>
                 </tr>
             @endforeach
@@ -95,6 +87,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $ProductSlab->links() }}
+            {{ $samplingRequests->links() }}
     </div>
 </div>

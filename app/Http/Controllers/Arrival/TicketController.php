@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
- /**
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -29,8 +29,8 @@ class TicketController extends Controller
                 $sq->orWhere('supplier_name', 'like', $searchTerm);
             });
         })
-        ->latest()
-        ->paginate(request('per_page', 25));
+            ->latest()
+            ->paginate(request('per_page', 25));
 
         return view('management.arrival.ticket.getList', compact('UnitOfMeasures'));
     }
@@ -48,7 +48,7 @@ class TicketController extends Controller
      */
     public function store(ArrivalTicketRequest $request)
     {
-     $request->validated();
+        $request->validated();
         $UnitOfMeasure = ArrivalTicket::create($request->all());
 
         return response()->json(['success' => 'Category created successfully.', 'data' => $UnitOfMeasure], 201);
@@ -69,7 +69,7 @@ class TicketController extends Controller
     public function update(ArrivalTicketRequest $request, $id)
     {
 
-                $ArrivalTicket = ArrivalTicket::findOrFail($id);
+        $ArrivalTicket = ArrivalTicket::findOrFail($id);
 
 
         $data = $request->validated();

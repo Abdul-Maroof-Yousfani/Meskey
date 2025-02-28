@@ -9,8 +9,8 @@ use App\Http\Controllers\Master\{
     };
 
 
-Route::resource('regions', RegionController::class);
-Route::post('/get-regions', [RegionController::class, 'getList'])->name('get.regions');
+//Route::resource('regions', RegionController::class);
+//Route::post('/get-regions', [RegionController::class, 'getList'])->name('get.regions');
 
 
 Route::resource('category', CategoryController::class);

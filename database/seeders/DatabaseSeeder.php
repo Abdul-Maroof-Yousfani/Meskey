@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             PermissionTableSeeder::class,
             CreateAdminUserSeeder::class,
             UnitOfMeasureSeeder::class,
+            ProductSlabTypeSeeder::class,
+
         ]);
     }
 }

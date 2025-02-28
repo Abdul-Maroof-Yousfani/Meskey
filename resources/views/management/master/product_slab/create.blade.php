@@ -8,9 +8,6 @@
                 <label>Products:</label>
                 <select class="form-control" name="product_id" id="product_id">
                     <option value="">Select Product</option>
-                    @foreach ($slab_types as $slab_type)
-                        <option value="{{ $slab_type->id }}">{{ $slab_type->name }}</option>
-                    @endforeach
                 </select>
             </div>
         </div>
@@ -19,9 +16,6 @@
                 <label>Slab Types:</label>
                 <select class="form-control" name="product_slab_type_id" id="product_slab_type_id">
                     <option value="">Select Slab Types</option>
-                    @foreach ($slab_types as $slab_type)
-                        <option value="{{ $slab_type->id }}">{{ $slab_type->name }}</option>
-                    @endforeach
                 </select>
             </div>
         </div>

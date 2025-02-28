@@ -29,6 +29,14 @@
                 </select>
             </div>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Accounts Of:</label>
+                <select name="broker_name" id="broker_name" class="form-control select2 ">
+                    <option value="">Accounts Of</option>
+                </select>
+            </div>
+        </div>
 
 
         <div class="col-xs-6 col-sm-6 col-md-6">

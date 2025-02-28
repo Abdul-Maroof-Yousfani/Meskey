@@ -3,6 +3,7 @@
 namespace App\Models;
 
 
+use App\Models\Master\ProductSlab;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -39,5 +40,10 @@ class Product extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function slabs()
+    {
+        return $this->hasMany(ProductSlab::class);
     }
 }

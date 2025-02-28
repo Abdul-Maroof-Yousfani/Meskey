@@ -16,11 +16,16 @@ return new class extends Migration {
             $table->unsignedBigInteger('company_id');
             $table->unsignedBigInteger('product_id')->nullable();
             $table->string('supplier_name')->nullable();
-            $table->string('truck_no');
+            $table->string('broker_name')->nullable();
+            $table->string('truck_no')->nullable();
             $table->string('bilty_no')->nullable();
             $table->date('loading_date')->nullable();
+            $table->string('loading_weight')->nullable();
             $table->string('remarks')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->string('first_weight')->nullable();
+            $table->string('second_weight')->nullable();
+            $table->string('net_weight')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

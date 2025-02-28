@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models\Arrival;
+
+use App\Models\Master\ProductSlabType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class ArrivalSamplingResult extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'company_id',
+        'arrival_sampling_request_id',
+        'product_slab_type_id',
+        'checklist_value',
+        'remark',
+        'product_slab_type_id',
+        'checklist_value',
+    ];
+
+
+
+    public function slabType()
+    {
+        return $this->hasOne(ProductSlabType::class, 'id', 'product_slab_type_id');
+    }
+}

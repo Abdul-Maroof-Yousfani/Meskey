@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\Master\{ProductSlab,ProductSlabType};
+use App\Models\Arrival\ArrivalSamplingRequest;
+use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\{ProductSlab, ProductSlabType};
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\ProductSlabRequest;
 
 class ProductSlabController extends Controller
 {
- /**
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -28,10 +30,10 @@ class ProductSlabController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-                ->where('company_id',$request->company_id)
+            ->where('company_id', $request->company_id)
 
-        ->latest()
-        ->paginate(request('per_page', 25));
+            ->latest()
+            ->paginate(request('per_page', 25));
 
         return view('management.master.product_slab.getList', compact('ProductSlab'));
     }
@@ -41,8 +43,8 @@ class ProductSlabController extends Controller
      */
     public function create()
     {
-        $slab_types = ProductSlabType::where('status','active')->get();
-        return view('management.master.product_slab.create',compact('slab_types'));
+        $slab_types = ProductSlabType::where('status', 'active')->get();
+        return view('management.master.product_slab.create', compact('slab_types'));
     }
 
     /**
@@ -84,4 +86,22 @@ class ProductSlabController extends Controller
         $unit_of_measure->delete();
         return response()->json(['success' => 'Category deleted successfully.'], 200);
     }
+
+public function getSlabsByProduct(Request $request)
+{
+    $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->sampling_request_id);
+
+    // Check if related arrivalTicket exists
+    if (!$arrivalSamplingRequest->arrivalTicket) {
+        return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
+    }
+
+    $product_id = $arrivalSamplingRequest->arrivalTicket->product_id;
+    $slabs = ProductSlab::where('product_id', $product_id)->get()->unique('product_slab_type_id');
+
+    // Render view with the slabs wrapped inside a div
+    $html = view('management.master.product_slab.forInspection', compact('slabs'))->render();
+
+    return response()->json(['success' => true, 'html' => $html]);
+}
 }

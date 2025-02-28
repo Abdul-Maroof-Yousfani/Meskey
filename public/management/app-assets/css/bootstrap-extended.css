@@ -1030,6 +1030,14 @@ form.striped-rows .form-group {
     padding: 1.2rem; }
   form.striped-rows .form-group:nth-child(even) {
     background-color: #F7F7F8; }
+div.striped-rows .form-group {
+  margin: 0; }
+  div.striped-rows .form-group .label-control {
+    padding-top: 1.5rem; }
+    div.striped-rows .form-group > div {
+    padding: 1.2rem; }
+    div.striped-rows .form-group:nth-child(even) {
+    background-color: #F7F7F8; }
 
 form label,
 .form-group label {

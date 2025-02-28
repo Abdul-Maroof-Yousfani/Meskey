@@ -1,5 +1,6 @@
 <?php
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Master\ProductSlabController;
+ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Acl\{CompanyController,MenuController,UserController,RoleController};
@@ -34,6 +35,11 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
 
 
 Route::group(['middleware' => ['auth']], function () {
+
+
+
+
+    Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
     Route::get('profile-settings', [UserController::class, 'profileSetting'])->name('profile-settings.index');
     Route::put('profile-settings/{id}', [UserController::class, 'profileSettingUpdate'])->name('profile-settings');
     Route::put('updatePassword/{id}', [UserController::class, 'updatePassword'])->name('updatePassword');

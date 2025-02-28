@@ -53,10 +53,10 @@
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Ticket</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                    href="#"
+                    href="{{route('initialsampling.index')}}"
                            data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">First
-                                Inpection</span></a>
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Initial
+                                Sampling</span></a>
                     </li>
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             @routerLink(route('users.index')) data-toggle="dropdown"><i

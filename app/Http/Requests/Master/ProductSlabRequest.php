@@ -33,6 +33,7 @@ class ProductSlabRequest extends FormRequest
         $validator->after(function ($validator) {
             if ($this->has('from') && $this->has('to') && $this->has('product_id')) {
                 $exists = ProductSlab::where('company_id', $this->company_id)
+                    ->where('product_slab_type_id', $this->product_slab_type_id)
                     ->where('product_id', $this->product_id)
                     ->where('from', $this->from)
                     ->where('to', $this->to)
