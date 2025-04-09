@@ -27,7 +27,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->arrivalTicket)->remark ?? '---' }} <br>
+                            {{ $row->remark ?? '---' }} <br>
                         </p>
                     </td>
                      <td>

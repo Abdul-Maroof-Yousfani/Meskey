@@ -62,7 +62,7 @@ class HomeController extends Controller
         if ($search) {
             $query->where($columnName, 'like', '%' . $search . '%');
         }
-        $data = $query->limit(10)->get();
+        $data = $query->limit(50)->get();
 
         $results = [];
         foreach ($data as $item) {

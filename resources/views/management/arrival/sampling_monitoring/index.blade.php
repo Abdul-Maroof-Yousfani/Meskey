@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-Sampling Monitoring
+Purchaser's Approval
 @endsection
 @section('content')
 <div class="content-wrapper">
@@ -8,13 +8,13 @@ Sampling Monitoring
     <section id="extended">
         <div class="row w-100 mx-auto">
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                <h2 class="page-title"> Sampling Monitoring</h2>
+                <h2 class="page-title"> Approval Requests</h2>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                <button onclick="openModal(this,'{{ route('initialsampling.create') }}','Create Initial Sampling')" type="button"
+                {{-- <button onclick="openModal(this,'{{ route('initialsampling.create') }}','Create Initial Sampling')" type="button"
                     class="btn btn-primary position-relative ">
                     Create Initial Sampling
-                </button>
+                </button> --}}
             </div>
         </div>
         <div class="row">
@@ -67,10 +67,15 @@ Sampling Monitoring
 
 </div>
 @endsection
+<style>
+tr.bg-orange {
+    background: #ffa5004a;
+}
+</style>
 @section('script')
 <script>
     $(document).ready(function () {
-        filterationCommon(`{{ route('get.initialsampling') }}`)
+        filterationCommon(`{{ route('get.sampling-monitoring') }}`)
     });
 </script>
 @endsection

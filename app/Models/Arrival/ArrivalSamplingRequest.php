@@ -10,13 +10,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ArrivalSamplingRequest extends Model
 {
     use SoftDeletes;
-     protected $fillable = [
+    protected $fillable = [
         'company_id',
         'arrival_ticket_id',
         'sampling_type',
         'is_re_sampling',
         'remark',
         'is_done',
+        'is_resampling_made',
+        'approved_remarks',
+        'approved_status'
+
+
     ];
 
 

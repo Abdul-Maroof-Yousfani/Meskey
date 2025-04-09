@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
-use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult};
+use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult,ArrivalSamplingResultForCompulsury};
 use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use App\Http\Requests\Arrival\ArrivalSamplingResultRequest;
@@ -24,7 +24,7 @@ class InitialSamplingController extends Controller
      */
     public function getList(Request $request)
     {
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->when($request->filled('search'), function ($q) use ($request) {
+        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->where('is_done', 'yes')->where('sampling_type', 'initial')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('unique_no', 'like', $searchTerm);
@@ -42,7 +42,7 @@ class InitialSamplingController extends Controller
      */
     public function create()
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done','no')->get();
+        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no')->get();
         return view('management.arrival.initial_sampling.create', compact('samplingRequests'));
     }
 
@@ -71,6 +71,21 @@ class InitialSamplingController extends Controller
             }
         }
 
+
+ // Save compulsory QC param results
+    if (!empty($request->arrival_compulsory_qc_param_id) && !empty($request->compulsory_checklist_value)) {
+        foreach ($request->arrival_compulsory_qc_param_id as $key => $paramId) {
+            ArrivalSamplingResultForCompulsury::create([
+                'company_id' => $request->company_id,
+                'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
+                'arrival_compulsory_qc_param_id' => $paramId,
+                'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
+                'remark' => null, // optional: update if needed
+            ]);
+        }
+    }
+
+
         return response()->json([
             'success' => 'Data stored successfully',
             'data' => [],
@@ -88,7 +103,7 @@ class InitialSamplingController extends Controller
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
 
-        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'results','arrivalSamplingRequest'));
+        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'results', 'arrivalSamplingRequest'));
     }
 
     /**
@@ -114,4 +129,40 @@ class InitialSamplingController extends Controller
         $ArrivalTicket->delete();
         return response()->json(['success' => 'Ticket deleted successfully.'], 200);
     }
+
+    public function updateStatus(Request $request)
+    {
+
+        $request->validate([
+            'request_id' => 'required|exists:arrival_sampling_requests,id',
+            'status' => 'required|in:approved,rejected,resampling'
+        ]);
+
+        $sampling = ArrivalSamplingRequest::find($request->request_id);
+
+        if ($request->status == 'resampling') {
+
+            ArrivalSamplingRequest::create([
+                'company_id' => $sampling->company_id,
+                'arrival_ticket_id' => $sampling->arrival_ticket_id,
+                'sampling_type' => 'initial',
+                'is_re_sampling' => 'yes',
+                'is_done' => 'no',
+                'remark' => null,
+            ]);
+            $sampling->is_resampling_made = 'yes';
+        }
+
+
+
+        $sampling->approved_status = $request->status;
+        $sampling->save();
+
+       
+        //$sampling = ArrivalSamplingRequest::find($request->request_id);
+
+
+        return response()->json(['message' => 'Request status updated successfully!']);
+    }
+
 }

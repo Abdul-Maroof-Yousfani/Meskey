@@ -137,6 +137,26 @@ if (!function_exists('generateUniqueNumber')) {
         return $formattedUniqueNo;
     }
 }
+if (!function_exists('getDeductionSuggestion')) {
+    function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult) {
+        //dd($productSlabTypeId, $productId, $inspectionResult);
+        return \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
+            ->where('product_id', $productId)
+            ->where('from', '<=', $inspectionResult)
+            ->where('to', '>=', $inspectionResult)
+            ->where('status', 1) // Assuming active slabs have status = 1
+            ->select('deduction_type', 'deduction_value')
+            ->first();
+    }
+}
+if (!function_exists('getTableData')) {
+    function getTableData($table, $columns = ['*']) {
+        return DB::table($table)->select($columns)->get();
+    }
+}
+
+
+
 
 
 

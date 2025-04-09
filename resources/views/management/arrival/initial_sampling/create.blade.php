@@ -1,6 +1,6 @@
 <form action="{{ route('initialsampling.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.initialsampling') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -11,7 +11,8 @@
                         <option value="{{ $samplingRequest->id }}">
                             Ticket No: {{ optional($samplingRequest->arrivalTicket)->unique_no }} --
                             ITEM: {{ optional(optional($samplingRequest->arrivalTicket)->product)->name }}
-                        </option>
+                            {{$samplingRequest->is_re_sampling == 'yes' ? '- Resampling' : ''}}
+                                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -22,14 +23,20 @@
 </div>
 
 
-    <div class="row ">
+    {{-- <div class="row ">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
-                <label>Remarks (Optional):</label>
-                <textarea name="remarks" row="4" class="form-control" placeholder="Description"></textarea>
+                <label>QC Remarks (Optional):</label>
+                <textarea name="remarks" row="4" class="form-control" placeholder="QC Remarks"></textarea>
             </div>
         </div>
-    </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Unloading Instructions (Optional):</label>
+                <textarea name="unloading_instruction" row="4" class="form-control" placeholder="Unloading Instructions"></textarea>
+            </div>
+        </div>
+    </div> --}}
 
 
     <div class="row bottom-button-bar">

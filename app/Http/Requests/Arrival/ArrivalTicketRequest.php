@@ -26,6 +26,8 @@ class ArrivalTicketRequest extends FormRequest
             'product_id' => 'required|exists:products,id',
             'supplier_name' => 'required|string|max:255',
             'truck_no' => 'required|string|max:255',
+            'bags' => 'required|string|max:255',
+            'arrival_truck_type_id' => 'required|max:255',
             'bilty_no' => 'required|string|max:255',
             'loading_date' => 'nullable|date',
             'remarks' => 'nullable|string|max:500',
@@ -44,6 +46,8 @@ class ArrivalTicketRequest extends FormRequest
             'company_id.required' => 'The company field is required.',
             'company_id.exists' => 'The selected company does not exist.',
             'truck_no.required' => 'The truck number is required.',
+            'arrival_truck_type_id.required' => 'The truck type is required.',
+            'bags.required' => 'The No of bags field is required.',
             'status.required' => 'The status field is required.',
             'status.in' => 'The status must be either active or inactive.',
         ];

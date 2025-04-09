@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\{ProductSlab, ProductSlabType};
+use App\Models\Master\ArrivalCompulsoryQcParam;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\ProductSlabRequest;
 
@@ -90,6 +91,8 @@ class ProductSlabController extends Controller
 public function getSlabsByProduct(Request $request)
 {
     $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->sampling_request_id);
+$compulsoryParams  = ArrivalCompulsoryQcParam::get();
+
 
     // Check if related arrivalTicket exists
     if (!$arrivalSamplingRequest->arrivalTicket) {
@@ -100,7 +103,7 @@ public function getSlabsByProduct(Request $request)
     $slabs = ProductSlab::where('product_id', $product_id)->get()->unique('product_slab_type_id');
 
     // Render view with the slabs wrapped inside a div
-    $html = view('management.master.product_slab.forInspection', compact('slabs'))->render();
+    $html = view('management.master.product_slab.forInspection', compact('slabs','compulsoryParams'))->render();
 
     return response()->json(['success' => true, 'html' => $html]);
 }

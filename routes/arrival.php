@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Arrival\{TicketController,InitialSamplingController,SamplingMonitoringController};
+use App\Http\Controllers\Arrival\{TicketController,InitialSamplingController,SamplingMonitoringController,
+ InnerSamplingController, InnersampleRequestController, ArrivalLocationTransferController, ArrivalApproveController, SecondWeighbridgeController, ArrivalSlipController};
 
 
 Route::resource('ticket', TicketController::class);
@@ -9,11 +10,31 @@ Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.tick
 
 Route::resource('initialsampling', InitialSamplingController::class);
 Route::post('/get-initialsampling', [InitialSamplingController::class, 'getList'])->name('get.initialsampling');
+Route::post('/initial-sampling/update-status', [InitialSamplingController::class, 'updateStatus'])->name('initialsampling.updateStatus');
 
 
 
 Route::resource('sampling-monitoring', SamplingMonitoringController::class);
 Route::post('/get-sampling-monitoring', [SamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');
+
+Route::resource('location-transfer', ArrivalLocationTransferController::class);
+Route::post('/get-location-transfer', [ArrivalLocationTransferController::class, 'getList'])->name('get.location-transfer');
+
+Route::resource('inner-sampling-request', InnersampleRequestController::class);
+Route::post('/get-inner-sampling-request', [InnersampleRequestController::class, 'getList'])->name('get.inner-sampling-request');
+
+Route::resource('inner-sampling', InnersamplingController::class);
+Route::post('/get-inner-sampling', [InnersamplingController::class, 'getList'])->name('get.inner-sampling');
+
+Route::resource('arrival-approve', ArrivalApproveController::class);
+Route::post('/get-arrival-approve', [ArrivalApproveController::class, 'getList'])->name('get.arrival-approve');
+
+
+Route::resource('second-weighbridge', SecondWeighbridgeController::class);
+Route::post('/get-second-weighbridge', [SecondWeighbridgeController::class, 'getList'])->name('get.second-weighbridge');
+
+Route::resource('arrival-slip', ArrivalSlipController::class);
+Route::post('/get-arrival-slip', [ArrivalSlipController::class, 'getList'])->name('get.arrival-slip');
 
 
 

@@ -17,7 +17,7 @@ class ArrivalSamplingResult extends Model
         'checklist_value',
         'remark',
         'product_slab_type_id',
-        'checklist_value',
+        'applied_deduction',
     ];
 
 

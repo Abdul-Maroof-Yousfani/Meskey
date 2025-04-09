@@ -19,11 +19,23 @@ return new class extends Migration {
             $table->string('remark')->nullable();
             $table->enum('is_done', ['yes', 'no'])->default('no');
             $table->unsignedBigInteger('done_by')->nullable();
+            //Purchaser
+            $table->enum('is_request_by_purchaser', ['yes', 'no'])->default('no');
+            $table->string('purchaser_remarks')->nullable();
+            $table->enum('is_auto_approved', ['yes', 'no'])->default('no');
+           // if Resampling Made then this request is closed & another new request genearted against ticked id with  'is_re_sampling' key yes
+            $table->enum('is_resampling_made', ['yes', 'no'])->default('no');
+
+            $table->string('approved_remarks')->nullable();
+            $table->enum('approved_status', ['pending', 'approved', 'rejected','resampling'])->default('pending');
+
+            $table->unsignedBigInteger('approved_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('arrival_ticket_id')->references('id')->on('arrival_tickets')->onDelete('cascade');
             $table->foreign('done_by')->references('id')->on('users');
+            $table->foreign('approved_by')->references('id')->on('users');
         });
     }
 

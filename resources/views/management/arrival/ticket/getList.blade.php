@@ -6,6 +6,7 @@
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-1">Truck No</th>
             <th class="col-sm-1">Bilty No</th>
+            <th class="col-sm-1">First QC</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -37,6 +38,11 @@
                         <p class="m-0">
                             {{ $row->bilty_no }} <br>
                         </p>
+                    </td>
+                      <td>
+                        <label  class="badge text-uppercase m-0 {{$row->first_qc_status == 'rejected' ? 'badge-danger' : 'badge-primary'}}">
+                            {{ $row->first_qc_status }} <br>
+                        </label>
                     </td>
                      <td>
                      <p class="m-0">

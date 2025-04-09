@@ -1,60 +1,229 @@
-<form action="{{ route('initialsampling.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('sampling-monitoring.update',$arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
+    @method('PUT')
+    <input type="hidden" id="listRefresh" value="{{ route('get.sampling-monitoring') }}" />
     <div class="row form-mar">
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Product:</label>
-                <select name="arrival_sampling_request_id" id="arrival_sampling_request_id" class="form-control select2">
-                    <option value="">Select Ticket</option>
-                    @foreach ($samplingRequests as $samplingRequest)
-                        <option {{ $samplingRequest->id == $arrivalSamplingRequest->id ? 'selected' : ''}}  value="{{ $samplingRequest->id }}">
-                            Ticket No: {{ optional($samplingRequest->arrivalTicket)->unique_no }} --
-                            ITEM: {{ optional(optional($samplingRequest->arrivalTicket)->product)->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Ticket Detail
+            </h6>
         </div>
-    </div>
 
-<div id="slabsContainer">
-<div class="row">
-    <div class="col-12">
-        <h6 class="header-heading-sepration">
-            QC Checklist
-        </h6>
-    </div>
-</div>
-<div class="striped-rows">
-    @if (count($results) != 0)
-        @foreach ($results as $slab)
-            <div class="form-group row">
-                <input type="hidden" name="product_slab_type_id[]" value="{{$slab->slabType->id}}">
-                <label class="col-md-3 label-control font-weight-bold" for="striped-form-1">{{$slab->slabType->name}}</label>
-                <div class="col-md-9">
-                    <input type="text" id="striped-form-1" class="form-control" name="checklist_value[]" value="{{$slab->checklist_value}}" placeholder="%">
+
+        <div class="col-xs-6 col-sm-6 col-md-6">
+
+            <fieldset data-toggle="collapse" href="#collapse11" aria-expanded="true" aria-controls="collapse11">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-primary" type="button">Lead No#</button>
+                    </div>
+                    <input type="text" disabled="" class="form-control"
+                        value=" {{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no }}"
+                        placeholder="Button on left">
+                </div>
+            </fieldset>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div id="collapse11" role="tabpanel" aria-labelledby="headingCollapse11" class="collapse " style="">
+                <div class="row form-mar">
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>Supplier:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{optional($arrivalSamplingRequest->arrivalTicket)->supplier_name}}">
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>Broker:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{optional($arrivalSamplingRequest->arrivalTicket)->broker_name}}">
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group ">
+                            <label>Truck No:</label>
+                            <input type="text" name="truck_no" disabled
+                                value="{{optional($arrivalSamplingRequest->arrivalTicket)->truck_no}}"
+                                placeholder="Truck No" class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group ">
+                            <label>Bilty No: </label>
+                            <input type="text" name="bilty_no" disabled
+                                value="{{optional($arrivalSamplingRequest->arrivalTicket)->bilty_no}}"
+                                placeholder="Bilty No" class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group ">
+                            <label>LOading Date: (Optional)</label>
+                            <input type="date" name="loading_date" disabled
+                                value="{{optional($arrivalSamplingRequest->arrivalTicket)->loading_date}}"
+                                placeholder="Bilty No" class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group ">
+                            <label>Loading Weight:</label>
+                            <input type="text" name="loading_weight" disabled
+                                value="{{optional($arrivalSamplingRequest->arrivalTicket)->loading_weight}}"
+                                placeholder="Loading Weight" class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="form-group ">
+                            <label>Ticket Remarks:</label>
+                            <textarea name="remarks" row="2" class="form-control" disabled
+                                placeholder="Remarks">{{optional($arrivalSamplingRequest->arrivalTicket)->remarks}}</textarea>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
-        @endforeach 
-    @else
-        <div class="alert alert-warning">
-            No Slabs Found
-        </div>
-    @endif
-</div>
-</div>
-
-
-    <div class="row ">
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
-                <label>Remarks (Optional):</label>
-                <textarea name="remarks" row="4" class="form-control" placeholder="Description">{{ $arrivalSamplingRequest->remark}}</textarea>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="form-group">
+                        <label>Product:</label>
+                        <input type="text" disabled="" class="form-control"
+                            value="ITEM: {{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name }}"
+                            placeholder="Button on left">
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="form-group ">
+                        <label>Status:</label>
+                        <select name="stage_status" id="stage_status" class="form-control select2 ">
+                            <option value="rejected">Rejected</option>
+                            <option value="approved">Approved</option>
+                            <option value="resampling">Request Resampling</option>
+                        </select>
+                    </div>
+                </div>
             </div>
+
+        </div>
+
+    </div>
+
+    <div id="slabsContainer">
+        <div class="row">
+
+            <div class="col-12">
+                <h6 class="header-heading-sepration">
+                    QC Checklist
+                </h6>
+            </div>
+        </div>
+        <div class="row w-100 mx-auto">
+            <div class="col-md-4">
+
+            </div>
+            <div class="col-md-3 py-2 QcResult">
+                <h6>Result</h6>
+            </div>
+            <div class="col-md-3 py-2 Suggested">
+                <h6>Suggested Deduction</h6>
+            </div>
+            <div class="col-md-2 py-2 QcResult">
+                <h6>Deduction</h6>
+            </div>
+
+        </div>
+        <div class="striped-rows">
+            @if (count($results) != 0)
+                @foreach ($results as $slab)
+                    <?php 
+                    $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                    ?>
+                    <div class="form-group row">
+                        <input type="hidden" name="product_slab_type_id[]" value="{{$slab->slabType->id}}">
+                        <label class="col-md-4 label-control font-weight-bold"
+                            for="striped-form-1">{{$slab->slabType->name}}</label>
+                        <div class="col-md-3 QcResult">
+                            <input type="text" id="striped-form-1" readonly class="form-control" name="checklist_value[]"
+                                value="{{$slab->checklist_value}}" placeholder="%">
+                        </div>
+                        <div class="col-md-3 Suggested">
+                            <input type="text" id="striped-form-1" readonly class="form-control" placehold
+                                name="suggested_value[]" value="{{$getDeductionSuggestion->deduction_value ?? 0}}"
+                                placeholder="Suggested Deduction">
+                        </div>
+                        <div class="col-md-2 QcResult">
+                            <input type="text" id="striped-form-1" class="form-control bg-white" placehold name="applied_deduction[]"
+                                value="{{$slab->applied_deduction ?? 0}}" placeholder="Deduction">
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="alert alert-warning">
+                    No Slabs Found
+                </div>
+            @endif
+        </div>
+
+<br>
+         <div class="row w-100 mx-auto">
+            <div class="col-md-4">
+
+            </div>
+            <div class="col-md-6 py-2 QcResult">
+                <h6>Result</h6>
+            </div>
+            <div class="col-md-2 py-2 QcResult">
+                <h6>Deduction</h6>
+            </div>
+
+        </div>
+        <div class="striped-rows">
+            @if (count($Compulsuryresults) != 0)
+                @foreach ($Compulsuryresults as $slab)
+                {{-- @dd($slab); --}}
+                    <?php 
+                  //  $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                    ?>
+                    <div class="form-group row">
+                        <input type="hidden" name="product_slab_type_id[]" value="{{$slab->qcParam->id}}">
+                        <label class="col-md-4 label-control font-weight-bold"
+                            for="striped-form-1">{{$slab->qcParam->name}}</label>
+                        <div class="col-md-6 QcResult">
+                        @if($slab->qcParam->type == 'dropdown')
+                            <input type="text" id="striped-form-1" readonly class="form-control" name="checklist_value[]"
+                                value="{{$slab->compulsory_checklist_value}}" placeholder="%">
+                                @else
+                                  <textarea type="text" id="striped-form-1" readonly class="form-control" name="checklist_value[]"
+                                 placeholder="%"> {{$slab->compulsory_checklist_value}}</textarea>
+                                 @endif
+                        </div>
+                      
+                        <div class="col-md-2 QcResult">
+                            <input type="text" id="striped-form-1" class="form-control bg-white" placehold name="applied_deduction[]"
+                                value="{{$slab->applied_deduction ?? 0}}" placeholder="Deduction">
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="alert alert-warning">
+                    No Slabs Found
+                </div>
+            @endif
         </div>
     </div>
 
+   
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Your Remarks (Optional):</label>
+                <textarea name="remarks" row="4" class="form-control" 
+                    placeholder="Description">{{ $arrivalSamplingRequest->remark}}</textarea>
+            </div>
+        </div>
+    </div>
 
     <div class="row bottom-button-bar">
         <div class="col-12">
@@ -68,43 +237,43 @@
 
 <script>
 
-$(document).ready(function () {
-    $('#arrival_sampling_request_id').change(function () {
-        var samplingRequestId = $(this).val();
+    $(document).ready(function () {
+        $('#arrival_sampling_request_id').change(function () {
+            var samplingRequestId = $(this).val();
 
-        if (samplingRequestId) {
-            $.ajax({
-                url: '{{ route("getSlabsByProduct") }}',
-                type: 'GET',
-                data: { sampling_request_id: samplingRequestId },
-                dataType: 'json',
-                beforeSend: function () {
-                    Swal.fire({
-                        title: "Processing...",
-                        text: "Please wait while fetching slabs.",
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
+            if (samplingRequestId) {
+                $.ajax({
+                    url: '{{ route("getSlabsByProduct") }}',
+                    type: 'GET',
+                    data: { sampling_request_id: samplingRequestId },
+                    dataType: 'json',
+                    beforeSend: function () {
+                        Swal.fire({
+                            title: "Processing...",
+                            text: "Please wait while fetching slabs.",
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function (response) {
+                        Swal.close();
+                        if (response.success) {
+                            // Append the rendered HTML to a container element
+                            $('#slabsContainer').html(response.html);
+                        } else {
+                            Swal.fire("No Data", "No slabs found for this product.", "info");
                         }
-                    });
-                },
-                success: function (response) {
-                    Swal.close();
-                    if (response.success) {
-                        // Append the rendered HTML to a container element
-                        $('#slabsContainer').html(response.html);
-                    } else {
-                        Swal.fire("No Data", "No slabs found for this product.", "info");
+                    },
+                    error: function () {
+                        Swal.close();
+                        Swal.fire("Error", "Something went wrong. Please try again.", "error");
                     }
-                },
-                error: function () {
-                    Swal.close();
-                    Swal.fire("Error", "Something went wrong. Please try again.", "error");
-                }
-            });
-        }
+                });
+            }
+        });
     });
-});
 
 
     $(document).ready(function () {
@@ -116,3 +285,13 @@ $(document).ready(function () {
         $('.select2').select2();
     });
 </script>
+
+<style>
+    .Suggested {
+        background: #00990078;
+    }
+
+    .QcResult {
+        background: #8080802b;
+    }
+</style>

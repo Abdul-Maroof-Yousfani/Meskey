@@ -1,11 +1,10 @@
 <?php
 
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\{
     RegionController, CategoryController, UnitOfMeasureController,
     ProductController, ProductSlabController, SupplierController,
-    BrokerController, ProductSlabTypeController
+    BrokerController, ProductSlabTypeController, ArrivalLocationController, TruckTypeController , StationController
     };
 
 
@@ -35,4 +34,13 @@ Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getLis
 
 Route::resource('product-slab', ProductSlabController::class);
 Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->name('get.product-slab');
+
+Route::resource('arrival-location', ArrivalLocationController::class);
+Route::post('/get-arrival-location', [ArrivalLocationController::class, 'getList'])->name('get.arrival-location');
+
+Route::resource('truck-type', TruckTypeController::class);
+Route::post('/get-truck-type', [TruckTypeController::class, 'getList'])->name('get.truck-type');
+
+Route::resource('station', StationController::class);
+Route::post('/get-station', [StationController::class, 'getList'])->name('get.station');
 

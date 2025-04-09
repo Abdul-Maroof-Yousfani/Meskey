@@ -343,7 +343,12 @@
     <script>
         var baseUrl = "{{ url('/') }}";
         var loginUrl = "{{ url('login') }}";
+
+
+
+
     </script>
+    
     @yield('script')
     </body>
     <!-- END : Body-->

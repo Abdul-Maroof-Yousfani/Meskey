@@ -23,7 +23,7 @@ class StationController extends Controller
      */
     public function getList(Request $request)
     {
-        $brokers = Station::when($request->filled('search'), function ($q) use ($request) {
+        $stations = Station::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
@@ -32,7 +32,7 @@ class StationController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.master.station.getList', compact('brokers'));
+        return view('management.master.station.getList', compact('stations'));
     }
 
     /**

@@ -1,9 +1,12 @@
+
 <table class="table m-0">
     <thead>
         <tr>
             <th class="col-sm-2">Ticket No# </th>
-            <th class="col-sm-3">Product</th>
-            <th class="col-sm-4">Remark</th>
+            <th class="col-sm-2">Product</th>
+            <th class="col-sm-1">Type</th>
+            <th class="col-sm-3">Remark</th>
+            <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -14,7 +17,19 @@
 
         @if (count($samplingRequests) != 0)
             @foreach ($samplingRequests as $key => $row)
-                <tr>
+            <?php
+if ($row->approved_status == 'pending'){
+ $color = 'orange';
+}elseif($row->approved_status == 'rejected'){
+     $color = 'red';
+}elseif($row->approved_status == 'approved'){
+     $color = 'green';
+}else{
+      $color = 'grey';
+}
+                           
+                        ?>
+                <tr class="bg-{{$color}}">
                     <td>
                         <p class="m-0">
                             #{{ optional($row->arrivalTicket)->unique_no }} <br>
@@ -26,30 +41,73 @@
                         </p>
                     </td>
                     <td>
+                        <label for=""
+                            class="badge text-uppercase {{$row->sampling_type == 'initial' ? 'badge-secondary' : 'Success' }}">
+                            {{ $row->sampling_type }} </label>
+                    </td>
+                    <td>
                         <p class="m-0">
-                            {{ optional($row->arrivalTicket)->remark ?? '---' }} <br>
+                            {{ $row->remark ?? '---' }} <br>
                         </p>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        {{-- @if($row->is_auto_approved == 'no')
+                            <div class="badge badge-danger">Approval Required</div>
+                        @endif --}}
+
+                        @if ($row->approved_status == 'pending')
+                            <div class="badge badge-warning text-uppercase">{{$row->approved_status}}</div>
+                        @elseif($row->approved_status == 'rejected')
+                            <div class="badge badge-danger text-uppercase">{{$row->approved_status}}</div>
+                        @elseif($row->approved_status == 'approved')
+                            <div class="badge badge-success text-uppercase">{{$row->approved_status}}</div>
+                        @else
+                            <div class="badge badge-secondary text-uppercase">{{$row->approved_status}}</div>
+
+                        @endif
+                    </td>
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
+{{-- @if ($row->approved_status == 'pending') --}}
+     {{-- <div class="btn-group dropup mb-1 mb-sm-0">
+                            <button type="button" class="btn btn-primary">Actions</button>
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false" data-reference="parent">
+                            </button>
+                            <div class="dropdown-menu" style="">
+                                <a class="dropdown-item"
+                                    onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')">View</a>
+                                <a class="dropdown-item" href="javascript:;"
+                                    onclick="updateRequestStatus('{{ $row->id }}', 'approved')">Approved</a>
+                                <a class="dropdown-item" href="javascript:;"
+                                    onclick="updateRequestStatus('{{ $row->id }}', 'rejected')">Reject</a>
+                                <a class="dropdown-item" href="javascript:;"
+                                    onclick="updateRequestStatus('{{ $row->id }}', 'resampling')">Request For Resampling</a>
+                            </div>
+                        </div> --}}
+                        {{-- @else
+                       <p style="font-size: 12px;margin:0;font-weight:bold;"><small> No Action Available</small></p> --}}
+{{-- @endif --}}
+                       
+
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
+                        <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
                         @endcan
                         {{-- @can('role-delete')
-                            <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
+                        <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
 
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
                         @endcan --}}
                     </td>
                 </tr>
@@ -87,6 +145,60 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $samplingRequests->links() }}
+        {{ $samplingRequests->links() }}
     </div>
 </div>
+
+
+<script>
+    function updateRequestStatus(requestId, status) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You want to mark this request as " + status + "?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, proceed!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ route('initialsampling.updateStatus') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        request_id: requestId,
+                        status: status
+                    },
+                    beforeSend: function () {
+                        Swal.fire({
+                            title: "Processing...",
+                            text: "Please wait",
+                            allowOutsideClick: false,
+                            showConfirmButton: false,
+                            willOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function (response) {
+                        Swal.fire({
+                            title: "Success!",
+                            text: response.message,
+                            icon: "success"
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            title: "Error!",
+                            text: xhr.responseJSON.message || "Something went wrong!",
+                            icon: "error"
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>

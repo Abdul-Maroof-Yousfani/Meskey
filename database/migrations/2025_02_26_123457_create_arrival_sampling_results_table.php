@@ -17,6 +17,8 @@ return new class extends Migration
             $table->unsignedBigInteger('arrival_sampling_request_id');
             $table->unsignedBigInteger('product_slab_type_id');
             $table->string('checklist_value')->nullable();
+            $table->string('suggested_deduction')->nullable();
+            $table->string('applied_deduction')->nullable();
             $table->string('remark')->nullable();
             $table->timestamps();
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');

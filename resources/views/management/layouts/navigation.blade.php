@@ -48,15 +48,48 @@
 
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                    href="{{ route('ticket.index') }}"
-                            onclick="loadPageContent('{{ route('ticket.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Ticket</span></a>
+                            href="{{ route('ticket.index') }}" onclick="loadPageContent('{{ route('ticket.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Email">Ticket</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                    href="{{route('initialsampling.index')}}"
-                           data-toggle="dropdown"><i
+                            href="{{route('initialsampling.index')}}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Initial
                                 Sampling</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('sampling-monitoring.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchaser's
+                                Approval</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('location-transfer.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Location
+                                Transfer</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('inner-sampling-request.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Request For Inner
+                                Sampling</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('inner-sampling.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Inner
+                                Sampling</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('arrival-approve.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Half/Full
+                                Approved</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('second-weighbridge.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Second
+                                Weighbridge</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('arrival-slip.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Arrival Slip </span></a>
                     </li>
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             @routerLink(route('users.index')) data-toggle="dropdown"><i
@@ -95,9 +128,9 @@
                                 data-i18n="Chat">Manage
                                 Users</span></a>
                     </li>
-                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('menu.index') }}"
-                            onclick="loadPageContent('{{ route('menu.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Menu</span>
                         </a>
                     </li> --}}
@@ -116,7 +149,7 @@
 
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('product.index') }}"
+                                    href="{{ route('product.index') }}"
                                     onclick="loadPageContent('{{ route('product.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Product</span></a>
@@ -124,7 +157,7 @@
                             @endcanAccess
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('product-slab.index') }}"
+                                    href="{{ route('product-slab.index') }}"
                                     onclick="loadPageContent('{{ route('product-slab.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Product Slab</span></a>
@@ -132,7 +165,7 @@
                             @endcanAccess
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('product-slab-type.index') }}"
+                                    href="{{ route('product-slab-type.index') }}"
                                     onclick="loadPageContent('{{ route('product-slab-type.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Product Slab type</span></a>
@@ -140,7 +173,7 @@
                             @endcanAccess
                             @canAccess('category')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('category.index') }}"
+                                    href="{{ route('category.index') }}"
                                     onclick="loadPageContent('{{ route('category.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Category</span></a>
@@ -148,7 +181,7 @@
                             @endcanAccess
                             @canAccess('uom')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('unit_of_measure.index') }}"
+                                    href="{{ route('unit_of_measure.index') }}"
                                     onclick="loadPageContent('{{ route('unit_of_measure.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Unit of mesurement</span></a>
@@ -156,19 +189,54 @@
                             @endcanAccess
                         </ul>
                     </li>
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Bootstrap Tables">Manage Arrival</span></a>
+                        <ul class="dropdown-menu">
 
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('supplier.index') }}"
+                            @canAccess('product')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('broker.index') }}"
+                                    onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Arrival Location</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('uom')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('truck-type.index') }}"
+                                    onclick="loadPageContent('{{ route('truck-type.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Truck Type</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('uom')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('station.index') }}"
+                                    onclick="loadPageContent('{{ route('truck-type.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Stations</span></a>
+                            </li>
+                            @endcanAccess
+                        </ul>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Supplier</span>
                         </a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('broker.index') }}"
-                            onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('broker.index') }}" onclick="loadPageContent('{{ route('broker.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Broker</span>
                         </a>
                     </li>
+                  
                 </ul>
             </li>
 

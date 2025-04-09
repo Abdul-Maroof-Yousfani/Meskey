@@ -49,9 +49,11 @@ class TicketController extends Controller
     public function store(ArrivalTicketRequest $request)
     {
         $request->validated();
-        $UnitOfMeasure = ArrivalTicket::create($request->all());
+        $request= $request->all();
+        $request['first_qc_status'] = 'pending';
+        $UnitOfMeasure = ArrivalTicket::create($request);
 
-        return response()->json(['success' => 'Category created successfully.', 'data' => $UnitOfMeasure], 201);
+        return response()->json(['success' => 'Arrival Ticket created successfully.', 'data' => $UnitOfMeasure], 201);
     }
 
     /**
@@ -75,7 +77,7 @@ class TicketController extends Controller
         $data = $request->validated();
         $ArrivalTicket->update($request->all());
 
-        return response()->json(['success' => 'Ticket updated successfully.', 'data' => $ArrivalTicket], 200);
+        return response()->json(['success' => 'Arrival Ticket updated successfully.', 'data' => $ArrivalTicket], 200);
     }
 
     /**
@@ -84,6 +86,6 @@ class TicketController extends Controller
     public function destroy(ArrivalTicket $ArrivalTicket): JsonResponse
     {
         $ArrivalTicket->delete();
-        return response()->json(['success' => 'Ticket deleted successfully.'], 200);
+        return response()->json(['success' => 'Arrival Ticket deleted successfully.'], 200);
     }
 }
