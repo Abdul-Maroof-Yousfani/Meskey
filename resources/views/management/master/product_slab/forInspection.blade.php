@@ -16,10 +16,11 @@
                     {{ $slab->slabType->name }}
                 </label>
                 <div class="col-md-9">
-                    <input type="text" id="slab-input-{{ $loop->index }}" class="form-control" name="checklist_value[]" placeholder="%">
+                    <input type="text" id="slab-input-{{ $loop->index }}" class="form-control"
+                        name="checklist_value[]" placeholder="%">
                 </div>
             </div>
-        @endforeach 
+        @endforeach
     @else
         <div class="alert alert-warning">
             No Slabs Found
@@ -36,14 +37,17 @@
                 </label>
                 <div class="col-md-9">
                     @if ($param->type == 'dropdown')
-                        <select name="compulsory_checklist_value[]" id="qc-param-{{ $loop->index }}" class="form-control">
+                        <select name="compulsory_checklist_value[]" id="qc-param-{{ $loop->index }}"
+                            class="form-control">
                             <option value="">Select Option</option>
                             @foreach (json_decode($param->options, true) ?? [] as $key => $option)
-                                <option value="{{ $option }}" {{$key == 0 ? 'selected' : ''}}>{{ $option }}</option>
+                                <option value="{{ $option }}" {{ $key == 0 ? 'selected' : '' }}>
+                                    {{ $option }}</option>
                             @endforeach
                         </select>
                     @else
-                        <input type="text" id="qc-param-{{ $loop->index }}" class="form-control" name="compulsory_checklist_value[]" placeholder="Enter value">
+                        <input type="text" id="qc-param-{{ $loop->index }}" class="form-control"
+                            name="compulsory_checklist_value[]" placeholder="Enter value">
                     @endif
                 </div>
             </div>

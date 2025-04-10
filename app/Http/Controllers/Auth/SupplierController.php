@@ -8,7 +8,7 @@ use App\Models\Master\Supplier;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
-{ 
+{
     /**
      * Display a listing of the resource.
      */
@@ -50,7 +50,7 @@ class SupplierController extends Controller
         $data = $request->validated();
         $request = $request->all();
 
-        $request['unique_no'] = generateUniqueNumber(null, 'suppliers', null, 'unique_no');
+        $request['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
         $Supplier = Supplier::create($request);
 
         return response()->json(['success' => 'Supplier created successfully.', 'data' => $Supplier], 201);

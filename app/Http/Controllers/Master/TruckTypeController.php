@@ -9,7 +9,7 @@ use App\Http\Requests\Master\TruckTypeRequest;
 
 class TruckTypeController extends Controller
 {
-   /**
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -50,7 +50,7 @@ class TruckTypeController extends Controller
         $data = $request->validated();
         $request = $request->all();
 
-        $request['unique_no'] = generateUniqueNumber(null, 'brokers', null, 'unique_no');
+        $request['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
         $ArrivalTruckType = ArrivalTruckType::create($request);
 
         return response()->json(['success' => 'Station created successfully.', 'data' => $ArrivalTruckType], 201);

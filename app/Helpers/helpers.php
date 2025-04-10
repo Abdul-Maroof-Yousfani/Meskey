@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Acl\{Company,Menu};
+use App\Models\Acl\{Company, Menu};
 use App\Models\{User};
 
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +30,7 @@ if (!function_exists('canAccess')) {
         if ($role) {
             $permissions = $role->permissions->pluck('name')->toArray();
 
-            if ($permission && !in_array($permission, $permissions)) { 
+            if ($permission && !in_array($permission, $permissions)) {
                 return false;
                 abort(403, 'User does not have the required permission for this company.');
             }
@@ -92,18 +92,18 @@ if (!function_exists('getMenu')) {
 
     function getMenu()
     {
-        $menus = Menu::leftJoin('permissions','permissions.id','menus.permission_id')
-        ->where('menus.parent_id',2000000)
+        $menus = Menu::leftJoin('permissions', 'permissions.id', 'menus.permission_id')
+            ->where('menus.parent_id', 2000000)
             ->latest()
-            ->select('permissions.name as permission_name','menus.*')
+            ->select('permissions.name as permission_name', 'menus.*')
             ->get();
-         return $menus;
+        return $menus;
     }
-
 }
 
 if (!function_exists('generateUniqueNumber')) {
-    function generateUniqueNumber($prefix = null, $tableName, $company_id = null, $uniqueColumn = 'unique_no') {
+    function generateUniqueNumber($tableName, $prefix = null, $company_id = null, $uniqueColumn = 'unique_no')
+    {
         // If company_id is null, use the authenticated user's current company ID
         if (is_null($company_id)) {
             $company_id = auth()->user()->current_company_id;
@@ -111,11 +111,11 @@ if (!function_exists('generateUniqueNumber')) {
 
         // Get the latest record from the table
         $latestRecord = DB::table($tableName)
-                          ->when($company_id, function ($query) use ($company_id) {
-                              return $query->where('company_id', $company_id);
-                          })
-                          ->orderBy($uniqueColumn, 'desc')
-                          ->first();
+            ->when($company_id, function ($query) use ($company_id) {
+                return $query->where('company_id', $company_id);
+            })
+            ->orderBy($uniqueColumn, 'desc')
+            ->first();
 
         // Extract the last unique number
         if ($prefix) {
@@ -138,7 +138,8 @@ if (!function_exists('generateUniqueNumber')) {
     }
 }
 if (!function_exists('getDeductionSuggestion')) {
-    function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult) {
+    function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
+    {
         //dd($productSlabTypeId, $productId, $inspectionResult);
         return \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
             ->where('product_id', $productId)
@@ -150,13 +151,8 @@ if (!function_exists('getDeductionSuggestion')) {
     }
 }
 if (!function_exists('getTableData')) {
-    function getTableData($table, $columns = ['*']) {
+    function getTableData($table, $columns = ['*'])
+    {
         return DB::table($table)->select($columns)->get();
     }
 }
-
-
-
-
-
-

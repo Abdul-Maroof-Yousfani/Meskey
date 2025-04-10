@@ -50,7 +50,7 @@ class BrokerController extends Controller
         $data = $request->validated();
         $request = $request->all();
 
-        $request['unique_no'] = generateUniqueNumber(null, 'brokers', null, 'unique_no');
+        $request['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
         $broker = Broker::create($request);
 
         return response()->json(['success' => 'Broker created successfully.', 'data' => $broker], 201);

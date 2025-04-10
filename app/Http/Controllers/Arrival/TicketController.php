@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Arrival;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Arrival\ArrivalTicketRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
@@ -38,9 +39,17 @@ class TicketController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('management.arrival.ticket.create');
+        $authUserCompany = $request->company_id;
+
+        $accountsOf = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
+
+        return view('management.arrival.ticket.create', ['accountsOf' => $accountsOf]);
     }
 
     /**
@@ -49,8 +58,11 @@ class TicketController extends Controller
     public function store(ArrivalTicketRequest $request)
     {
         $request->validated();
-        $request= $request->all();
+        $request = $request->all();
         $request['first_qc_status'] = 'pending';
+        $request['accounts_of_id'] = $request['accounts_of'] ?? NULL;
+        $request['truck_type_id'] = $request['arrival_truck_type_id'] ?? NULL;
+
         $UnitOfMeasure = ArrivalTicket::create($request);
 
         return response()->json(['success' => 'Arrival Ticket created successfully.', 'data' => $UnitOfMeasure], 201);
@@ -59,10 +71,18 @@ class TicketController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
-        $ArrivalTicket = ArrivalTicket::findOrFail($id);
-        return view('management.arrival.ticket.edit', compact('ArrivalTicket'));
+        $authUserCompany = $request->company_id;
+
+        $accountsOf = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
+
+        $arrivalTicket = ArrivalTicket::findOrFail($id);
+        return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf'));
     }
 
     /**
@@ -71,21 +91,23 @@ class TicketController extends Controller
     public function update(ArrivalTicketRequest $request, $id)
     {
 
-        $ArrivalTicket = ArrivalTicket::findOrFail($id);
+        $arrivalTicket = ArrivalTicket::findOrFail($id);
 
 
         $data = $request->validated();
-        $ArrivalTicket->update($request->all());
+        $request['accounts_of_id'] = $request['accounts_of'] ?? NULL;
+        $request['truck_type_id'] = $request['arrival_truck_type_id'] ?? NULL;
+        $arrivalTicket->update($request->all());
 
-        return response()->json(['success' => 'Arrival Ticket updated successfully.', 'data' => $ArrivalTicket], 200);
+        return response()->json(['success' => 'Arrival Ticket updated successfully.', 'data' => $arrivalTicket], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ArrivalTicket $ArrivalTicket): JsonResponse
+    public function destroy(ArrivalTicket $arrivalTicket): JsonResponse
     {
-        $ArrivalTicket->delete();
+        $arrivalTicket->delete();
         return response()->json(['success' => 'Arrival Ticket deleted successfully.'], 200);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -8,7 +9,7 @@ class ArrivalCompulsoryQcParamSeeder extends Seeder
 {
     public function run()
     {
-         $params = [
+        $params = [
             ['name' => 'Yeild (%)', 'type' => 'text', 'options' => null],
             ['name' => 'Overall Look', 'type' => 'dropdown', 'options' => json_encode(['Bad Look', 'Normal Look', 'Creamish Look'])],
             ['name' => 'Bad Smell', 'type' => 'dropdown', 'options' => json_encode(['Yes', 'No'])],

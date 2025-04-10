@@ -1,4 +1,3 @@
-
 <table class="table m-0">
     <thead>
         <tr>
@@ -17,19 +16,19 @@
 
         @if (count($samplingRequests) != 0)
             @foreach ($samplingRequests as $key => $row)
-            <?php
-if ($row->approved_status == 'pending'){
- $color = 'orange';
-}elseif($row->approved_status == 'rejected'){
-     $color = 'red';
-}elseif($row->approved_status == 'approved'){
-     $color = 'green';
-}else{
-      $color = 'grey';
-}
-                           
-                        ?>
-                <tr class="bg-{{$color}}">
+                <?php
+                if ($row->approved_status == 'pending') {
+                    $color = 'orange';
+                } elseif ($row->approved_status == 'rejected') {
+                    $color = 'red';
+                } elseif ($row->approved_status == 'approved') {
+                    $color = 'green';
+                } else {
+                    $color = 'grey';
+                }
+                
+                ?>
+                <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
                             #{{ optional($row->arrivalTicket)->unique_no }} <br>
@@ -42,7 +41,7 @@ if ($row->approved_status == 'pending'){
                     </td>
                     <td>
                         <label for=""
-                            class="badge text-uppercase {{$row->sampling_type == 'initial' ? 'badge-secondary' : 'Success' }}">
+                            class="badge text-uppercase {{ $row->sampling_type == 'initial' ? 'badge-secondary' : 'Success' }}">
                             {{ $row->sampling_type }} </label>
                     </td>
                     <td>
@@ -51,19 +50,18 @@ if ($row->approved_status == 'pending'){
                         </p>
                     </td>
                     <td>
-                        {{-- @if($row->is_auto_approved == 'no')
+                        {{-- @if ($row->is_auto_approved == 'no')
                             <div class="badge badge-danger">Approval Required</div>
                         @endif --}}
 
                         @if ($row->approved_status == 'pending')
-                            <div class="badge badge-warning text-uppercase">{{$row->approved_status}}</div>
+                            <div class="badge badge-warning text-uppercase">{{ $row->approved_status }}</div>
                         @elseif($row->approved_status == 'rejected')
-                            <div class="badge badge-danger text-uppercase">{{$row->approved_status}}</div>
+                            <div class="badge badge-danger text-uppercase">{{ $row->approved_status }}</div>
                         @elseif($row->approved_status == 'approved')
-                            <div class="badge badge-success text-uppercase">{{$row->approved_status}}</div>
+                            <div class="badge badge-success text-uppercase">{{ $row->approved_status }}</div>
                         @else
-                            <div class="badge badge-secondary text-uppercase">{{$row->approved_status}}</div>
-
+                            <div class="badge badge-secondary text-uppercase">{{ $row->approved_status }}</div>
                         @endif
                     </td>
                     <td>
@@ -74,8 +72,8 @@ if ($row->approved_status == 'pending'){
                         </p>
                     </td>
                     <td>
-{{-- @if ($row->approved_status == 'pending') --}}
-     {{-- <div class="btn-group dropup mb-1 mb-sm-0">
+                        {{-- @if ($row->approved_status == 'pending') --}}
+                        {{-- <div class="btn-group dropup mb-1 mb-sm-0">
                             <button type="button" class="btn btn-primary">Actions</button>
                             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
                                 aria-haspopup="true" aria-expanded="false" data-reference="parent">
@@ -93,14 +91,14 @@ if ($row->approved_status == 'pending'){
                         </div> --}}
                         {{-- @else
                        <p style="font-size: 12px;margin:0;font-weight:bold;"><small> No Action Available</small></p> --}}
-{{-- @endif --}}
-                       
+                        {{-- @endif --}}
+
 
                         @can('role-edit')
-                        <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')"
-                            class="info p-1 text-center mr-2 position-relative ">
-                            <i class="ft-eye font-medium-3"></i>
-                        </a>
+                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')"
+                                class="info p-1 text-center mr-2 position-relative ">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
                         @endcan
                         {{-- @can('role-delete')
                         <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
@@ -170,7 +168,7 @@ if ($row->approved_status == 'pending'){
                         request_id: requestId,
                         status: status
                     },
-                    beforeSend: function () {
+                    beforeSend: function() {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait",
@@ -181,7 +179,7 @@ if ($row->approved_status == 'pending'){
                             }
                         });
                     },
-                    success: function (response) {
+                    success: function(response) {
                         Swal.fire({
                             title: "Success!",
                             text: response.message,
@@ -190,7 +188,7 @@ if ($row->approved_status == 'pending'){
                             location.reload();
                         });
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         Swal.fire({
                             title: "Error!",
                             text: xhr.responseJSON.message || "Something went wrong!",

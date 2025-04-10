@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Arrival\{ArrivalSamplingRequest,ArrivalSamplingResult,ArrivalSamplingResultForCompulsury};
+use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury};
+use App\Models\User;
+
 class SamplingMonitoringController extends Controller
 {
     /**
@@ -84,86 +86,85 @@ class SamplingMonitoringController extends Controller
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
         $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
+        $sampleTakenByUsers = User::all();
 
-
-        return view('management.arrival.sampling_monitoring.edit', compact('samplingRequests', 'results','arrivalSamplingRequest','Compulsuryresults'));
+        return view('management.arrival.sampling_monitoring.edit', compact('samplingRequests', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest', 'Compulsuryresults'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-public function update(Request $request, $id)
-{
-    try {
-        $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        try {
+            $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
 
-        // Update main entry
-        $ArrivalSamplingRequest->update([
-            'remark' => $request->remarks,
-            'is_done' => 'yes',
-            'done_by' => auth()->user()->id,
-        ]);
-
-        // Delete existing records for this request ID
-$records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
-
-foreach ($records as $record) {
-    $record->delete();
-}
-        // Check if arrays exist before inserting new records
-        if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
-            foreach ($request->product_slab_type_id as $key => $slabTypeId) {
-                ArrivalSamplingResult::create([
-                    'company_id' => $request->company_id,
-                    'arrival_sampling_request_id' => $id,
-                    'product_slab_type_id' => $slabTypeId,
-                    'checklist_value' => $request->checklist_value[$key] ?? null,
-                    'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
-                    'applied_deduction' => $request->applied_deduction[$key] ?? null,
-                ]);
-            }
-        }
-
-        // If resampling is required, create a new request
-        if ($request->stage_status == 'resampling') {
-            ArrivalSamplingRequest::create([
-                'company_id' => $ArrivalSamplingRequest->company_id,
-                'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
-                'sampling_type' => 'initial',
-                'is_re_sampling' => 'yes',
-                'is_done' => 'no',
-                'remark' => null,
+            // Update main entry
+            $ArrivalSamplingRequest->update([
+                'remark' => $request->remarks,
+                'is_done' => 'yes',
+                'done_by' => auth()->user()->id,
             ]);
-            $ArrivalSamplingRequest->is_resampling_made = 'yes';
+
+            // Delete existing records for this request ID
+            $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+
+            foreach ($records as $record) {
+                $record->delete();
+            }
+            // Check if arrays exist before inserting new records
+            if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
+                foreach ($request->product_slab_type_id as $key => $slabTypeId) {
+                    ArrivalSamplingResult::create([
+                        'company_id' => $request->company_id,
+                        'arrival_sampling_request_id' => $id,
+                        'product_slab_type_id' => $slabTypeId,
+                        'checklist_value' => $request->checklist_value[$key] ?? null,
+                        'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
+                        'applied_deduction' => $request->applied_deduction[$key] ?? null,
+                    ]);
+                }
+            }
+
+            // If resampling is required, create a new request
+            if ($request->stage_status == 'resampling') {
+                ArrivalSamplingRequest::create([
+                    'company_id' => $ArrivalSamplingRequest->company_id,
+                    'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
+                    'sampling_type' => 'initial',
+                    'is_re_sampling' => 'yes',
+                    'is_done' => 'no',
+                    'remark' => null,
+                ]);
+                $ArrivalSamplingRequest->is_resampling_made = 'yes';
+            }
+
+            // Update status
+
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending']);
+            $ArrivalSamplingRequest->approved_status = $request->stage_status;
+            $ArrivalSamplingRequest->save();
+
+            return response()->json([
+                'success' => 'Data stored successfully',
+                'data' => [],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        // Update status
-
-        $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status'=>$request->stage_status,'location_transfer_status'=>'pending']);
-        $ArrivalSamplingRequest->approved_status = $request->stage_status;
-        $ArrivalSamplingRequest->save();
-
-        return response()->json([
-            'success' => 'Data stored successfully',
-            'data' => [],
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Something went wrong!',
-            'error' => $e->getMessage(),
-        ], 500);
     }
-}
 
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ArrivalTicket $ArrivalTicket): JsonResponse
+    public function destroy(ArrivalTicket $arrivalTicket): JsonResponse
     {
-        $ArrivalTicket->delete();
+        $arrivalTicket->delete();
         return response()->json(['success' => 'Ticket deleted successfully.'], 200);
     }
 }

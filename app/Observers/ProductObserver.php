@@ -12,7 +12,7 @@ class ProductObserver
      */
     public function creating(Product $product)
     {
-       $product->unique_no  =  generateUniqueNumber(null,'products',null,'unique_no');
+        $product->unique_no  =  generateUniqueNumber('products', null, null, 'unique_no');
         if (request()->hasFile('image')) {
             $product->image = 'storage/' . $this->storeProfileImage(request()->file('image'), $product);
         }
@@ -30,7 +30,7 @@ class ProductObserver
         $logoOriginalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
 
         $sluggedName = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $logoOriginalName));
-        $filename = 'product-'.Str::slug($logoOriginalName) . '-' . now()->format('YmdHis') . '.' . $image->getClientOriginalExtension();
+        $filename = 'product-' . Str::slug($logoOriginalName) . '-' . now()->format('YmdHis') . '.' . $image->getClientOriginalExtension();
 
         return $image->storeAs('images', $filename, 'public');
     }

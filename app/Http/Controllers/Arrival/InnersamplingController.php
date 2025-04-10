@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Arrival;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Arrival\ArrivalSamplingRequest;
+
 class InnersamplingController extends Controller
 {
     /**
@@ -93,21 +94,21 @@ class InnersamplingController extends Controller
     public function update(ArrivalTicketRequest $request, $id)
     {
 
-        $ArrivalTicket = ArrivalTicket::findOrFail($id);
+        $arrivalTicket = ArrivalTicket::findOrFail($id);
 
 
         $data = $request->validated();
-        $ArrivalTicket->update($request->all());
+        $arrivalTicket->update($request->all());
 
-        return response()->json(['success' => 'Ticket updated successfully.', 'data' => $ArrivalTicket], 200);
+        return response()->json(['success' => 'Ticket updated successfully.', 'data' => $arrivalTicket], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ArrivalTicket $ArrivalTicket): JsonResponse
+    public function destroy(ArrivalTicket $arrivalTicket): JsonResponse
     {
-        $ArrivalTicket->delete();
+        $arrivalTicket->delete();
         return response()->json(['success' => 'Ticket deleted successfully.'], 200);
     }
 
@@ -139,11 +140,10 @@ class InnersamplingController extends Controller
         $sampling->approved_status = $request->status;
         $sampling->save();
 
-       
+
         //$sampling = ArrivalSamplingRequest::find($request->request_id);
 
 
         return response()->json(['message' => 'Request status updated successfully!']);
     }
-
 }

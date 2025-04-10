@@ -1,14 +1,15 @@
 <?php
+
 use App\Http\Controllers\Master\ProductSlabController;
- use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Acl\{CompanyController,MenuController,UserController,RoleController};
-
+use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController, RoleController};
+use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
 use App\Http\Controllers\FrontHomeController;
 use App\Http\Controllers\HomeController;
 
- use Harimayco\Menu\Facades\Menu;
+use Harimayco\Menu\Facades\Menu;
 
 
 Auth::routes();
@@ -29,16 +30,13 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
         $layout = $request->input('layout', 'light');
         return response()
             ->json(['message' => 'Cookie set'])
-            ->cookie('layout', $layout, 60 * 24 * 30); 
+            ->cookie('layout', $layout, 60 * 24 * 30);
     });
 });
 
 
 Route::group(['middleware' => ['auth']], function () {
-
-
-
-
+    Route::resource('arrival-custom-sampling', ArrivalCustomSamplingController::class);
     Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
     Route::get('profile-settings', [UserController::class, 'profileSetting'])->name('profile-settings.index');
     Route::put('profile-settings/{id}', [UserController::class, 'profileSettingUpdate'])->name('profile-settings');

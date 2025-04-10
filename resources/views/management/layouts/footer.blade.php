@@ -336,19 +336,15 @@
     <script src="{{ asset('management/app-assets/js/dashboard1.js') }}"></script>
     <!-- END PAGE LEVEL JS-->
     <!-- BEGIN: Custom CSS-->
-        <script src="{{ asset('management/assets/js/pageload.js') }}"></script>
+    <script src="{{ asset('management/assets/js/pageload.js') }}"></script>
 
     <script src="{{ asset('management/assets/js/scripts.js') }}"></script>
     <!-- END: Custom CSS-->
     <script>
         var baseUrl = "{{ url('/') }}";
         var loginUrl = "{{ url('login') }}";
-
-
-
-
     </script>
-    
+
     @yield('script')
     </body>
     <!-- END : Body-->

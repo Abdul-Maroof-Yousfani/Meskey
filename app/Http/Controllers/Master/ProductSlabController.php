@@ -88,23 +88,23 @@ class ProductSlabController extends Controller
         return response()->json(['success' => 'Category deleted successfully.'], 200);
     }
 
-public function getSlabsByProduct(Request $request)
-{
-    $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->sampling_request_id);
-$compulsoryParams  = ArrivalCompulsoryQcParam::get();
+    public function getSlabsByProduct(Request $request)
+    {
+        $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->sampling_request_id);
+        $compulsoryParams  = ArrivalCompulsoryQcParam::get();
 
 
-    // Check if related arrivalTicket exists
-    if (!$arrivalSamplingRequest->arrivalTicket) {
-        return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
+        // Check if related arrivalTicket exists
+        if (!$arrivalSamplingRequest->arrivalTicket) {
+            return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
+        }
+
+        $product_id = $arrivalSamplingRequest->arrivalTicket->product_id;
+        $slabs = ProductSlab::where('product_id', $product_id)->get()->unique('product_slab_type_id');
+
+        // Render view with the slabs wrapped inside a div
+        $html = view('management.master.product_slab.forInspection', compact('slabs', 'compulsoryParams'))->render();
+
+        return response()->json(['success' => true, 'html' => $html]);
     }
-
-    $product_id = $arrivalSamplingRequest->arrivalTicket->product_id;
-    $slabs = ProductSlab::where('product_id', $product_id)->get()->unique('product_slab_type_id');
-
-    // Render view with the slabs wrapped inside a div
-    $html = view('management.master.product_slab.forInspection', compact('slabs','compulsoryParams'))->render();
-
-    return response()->json(['success' => true, 'html' => $html]);
-}
 }

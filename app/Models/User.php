@@ -6,7 +6,7 @@ use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Encoder\QrCode;
 use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Acl\{LoginHistory,Company};
+use App\Models\Acl\{LoginHistory, Company};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -35,21 +35,18 @@ class User extends Authenticatable
      */
     protected $hidden = ['password', 'remember_token'];
 
-
-
-
-public function companies()
+    public function companies()
     {
         return $this->belongsToMany(Company::class, 'company_user_role')
-                    ->withPivot('role_id')
-                    ->withTimestamps();
+            ->withPivot('role_id')
+            ->withTimestamps();
     }
-
 
     public function currentCompany()
     {
         return $this->hasOne(Company::class, 'id', 'current_company_id');
     }
+
     public function loginHistories()
     {
         return $this->hasMany(LoginHistory::class, 'user_id')->orderBy('id', 'desc');
@@ -131,6 +128,4 @@ public function companies()
     {
         return $this->hasMany(Task::class, 'assign_to');
     }
-
-
 }

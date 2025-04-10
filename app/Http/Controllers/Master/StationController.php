@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class StationController extends Controller
 {
-   /**
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -51,7 +51,7 @@ class StationController extends Controller
         $data = $request->validated();
         $request = $request->all();
 
-        $request['unique_no'] = generateUniqueNumber(null, 'brokers', null, 'unique_no');
+        $request['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
         $broker = Station::create($request);
 
         return response()->json(['success' => 'Station created successfully.', 'data' => $broker], 201);

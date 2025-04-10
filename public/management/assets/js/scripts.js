@@ -2,7 +2,6 @@
 //   renderLoadingTable("#filteredData table", 10);
 // }
 
-
 // renderLoadingTable("#filteredData table", 12);
 
 function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
@@ -101,27 +100,24 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
   //   window.history.pushState(null, "", newUrl);
   // }
 
+  // Update URL parameters without duplicates
+  function updateUrlParams(formData) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const newParams = new URLSearchParams(formData); // Serialized data
 
-// Update URL parameters without duplicates
-function updateUrlParams(formData) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const newParams = new URLSearchParams(formData); // Serialized data
-
-  // Merge newParams into urlParams
-  for (const [key, value] of newParams) {
-    if (value) {
-      urlParams.set(key, value);
-    } else {
-      urlParams.delete(key);
+    // Merge newParams into urlParams
+    for (const [key, value] of newParams) {
+      if (value) {
+        urlParams.set(key, value);
+      } else {
+        urlParams.delete(key);
+      }
     }
+
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.pushState(null, "", newUrl);
   }
 
-  const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-  window.history.pushState(null, "", newUrl);
-}
-
-
-  
   // // Load filter values from URL on page load
   // function loadFiltersFromUrl() {
   //   const urlParams = new URLSearchParams(window.location.search);
@@ -267,7 +263,7 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
             var url = form.find("#url").val();
             var listRefresh = form.find("#listRefresh").val();
             var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
-            $(formhunyr).parents('.modal-sidebar').removeClass('open');
+            $(formhunyr).parents(".modal-sidebar").removeClass("open");
             $(".main-content").css("cursor", "auto");
             console.log(listRefresh);
 
@@ -289,79 +285,96 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
       }
     },
 
-
     error: function (xhr, status, error) {
       Swal.close(); // Close loader
       console.log(xhr.responseJSON.errors);
-      
+
       if (xhr.responseJSON && xhr.responseJSON.errors) {
-          var validationErrors = xhr.responseJSON.errors;
-  
-          // Clear previous errors
-          $(".is-invalid").removeClass("is-invalid");
-          $(".error-message").remove();
-  
-          // Fields where errors should only be displayed on the last occurrence
-          var showErrorOnLastField = ["permission"];
-  
-          $.each(validationErrors, function (key, errors) {
-              var fields = $("[name='" + key + "']"); // Select fields by exact name
-  
-              if (showErrorOnLastField.includes(key) && fields.length > 1) {
-                  var lastField = fields.last(); // Select the last field
-                  lastField.addClass("is-invalid");
-  
-                  if (lastField.hasClass("select2")) {
-                      lastField.parent().find(".select2-container").after(
-                          '<div class="error-message text-danger">' + errors[0] + "</div>"
-                      );
-                  } else {
-                      lastField.parents(".form-group").append(
-                          '<div class="error-message text-danger">' + errors[0] + "</div>"
-                      );
-                  }
+        var validationErrors = xhr.responseJSON.errors;
+
+        // Clear previous errors
+        $(".is-invalid").removeClass("is-invalid");
+        $(".error-message").remove();
+
+        // Fields where errors should only be displayed on the last occurrence
+        var showErrorOnLastField = ["permission"];
+
+        $.each(validationErrors, function (key, errors) {
+          var fields = $("[name='" + key + "']"); // Select fields by exact name
+
+          if (showErrorOnLastField.includes(key) && fields.length > 1) {
+            var lastField = fields.last(); // Select the last field
+            lastField.addClass("is-invalid");
+
+            if (lastField.hasClass("select2")) {
+              lastField
+                .parent()
+                .find(".select2-container")
+                .after(
+                  '<div class="error-message text-danger">' +
+                    errors[0] +
+                    "</div>"
+                );
+            } else {
+              lastField
+                .parents(".form-group")
+                .append(
+                  '<div class="error-message text-danger">' +
+                    errors[0] +
+                    "</div>"
+                );
+            }
+          } else {
+            // Default behavior for fields not in the array
+            fields.each(function () {
+              var field = $(this);
+              console.log(field);
+              field.addClass("is-invalid");
+
+              if (field.hasClass("select2")) {
+                field
+                  .parent()
+                  .find(".select2-container")
+                  .after(
+                    '<div class="error-message text-danger">' +
+                      errors[0] +
+                      "</div>"
+                  );
               } else {
-                  // Default behavior for fields not in the array
-                  fields.each(function () {
-                      var field = $(this);
-                      console.log(field);
-                      field.addClass("is-invalid");
-  
-                      if (field.hasClass("select2")) {
-                          field.parent().find(".select2-container").after(
-                              '<div class="error-message text-danger">' + errors[0] + "</div>"
-                          );
-                      } else {
-                          field.parents(".form-group").append(
-                              '<div class="error-message text-danger">' + errors[0] + "</div>"
-                          );
-                      }
-                  });
+                field
+                  .parents(".form-group")
+                  .append(
+                    '<div class="error-message text-danger">' +
+                      errors[0] +
+                      "</div>"
+                  );
               }
-          });
-  
-          Swal.fire({
-              title: "Validation Errors",
-              text: "Some fields are mandatory. Please check and correct the errors.",
-              icon: "error",
-              confirmButtonColor: "#D95000",
-          });
+            });
+          }
+        });
+
+        Swal.fire({
+          title: "Validation Errors",
+          text: "Some fields are mandatory. Please check and correct the errors.",
+          icon: "error",
+          confirmButtonColor: "#D95000",
+        });
       } else if (xhr.responseJSON && xhr.responseJSON.message) {
-          Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: xhr.responseJSON.message,
-              confirmButtonColor: "#D95000",
-          });
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: xhr.responseJSON.message,
+          confirmButtonColor: "#D95000",
+        });
       } else {
-          Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: xhr.responseText,
-              confirmButtonColor: "#D95000",
-          });
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: xhr.responseText,
+          confirmButtonColor: "#D95000",
+        });
       }
-  }
+    },
   });
 });
 
@@ -417,22 +430,15 @@ function openModal(button, url, title, viewonly = false) {
       $button.prop("disabled", false).html(originalText); // Reset button
     },
     error: function (xhr, status, error) {
-      handleAjaxError(xhr,status,error);
+      handleAjaxError(xhr, status, error);
       $(".loader-container").hide();
       $button.prop("disabled", false).html(originalText); // Reset button
     },
   });
 }
 
-
-
-
 //Handles Errors
-function handleAjaxError(
-  xhr,
-  status,
-  error,
-){
+function handleAjaxError(xhr, status, error) {
   console.error("Error loading content:", status);
   console.error("Error loading content:", xhr.status);
 
@@ -495,102 +501,87 @@ function handleAjaxError(
   }
 }
 
-
-
-
-
-
 function renderLoadingTable(tableId, rows) {
   // Select the table by ID
   const table = $(tableId);
   if (table.length === 0) {
-      console.error("Table not found!");
-      return;
+    console.error("Table not found!");
+    return;
   }
 
   // Find thead and count columns
   const thead = table.find("thead");
   if (thead.length === 0) {
-      console.error("Thead not found! Please define <thead> with columns.");
-      return;
+    console.error("Thead not found! Please define <thead> with columns.");
+    return;
   }
 
   const columns = thead.find("th").length; // Count the <th> elements
   if (columns === 0) {
-      console.error("No columns found in <thead>!");
-      return;
+    console.error("No columns found in <thead>!");
+    return;
   }
 
   // Clear tbody if it exists
   let tbody = table.find("tbody");
   if (tbody.length === 0) {
-      tbody = $("<tbody class='shimmer-table'></tbody>");
-      table.append(tbody);
+    tbody = $("<tbody class='shimmer-table'></tbody>");
+    table.append(tbody);
   } else {
-      tbody.empty();
-      tbody.addClass('shimmer-table')
+    tbody.empty();
+    tbody.addClass("shimmer-table");
   }
 
   // Generate rows and cells with loading-shimmer
   for (let i = 0; i < rows; i++) {
-      const tr = $("<tr></tr>");
-      for (let j = 0; j < columns; j++) {
-        // const td = $(`<td colspan="${columns}">-<span class="loading-shimmer">Loading</span></td>`); // Add shimmer class
-        const td = $(`<td >-<span class="loading-shimmer">Loading</span></td>`); 
-        tr.append(td);
-      }
-      tbody.append(tr);
+    const tr = $("<tr></tr>");
+    for (let j = 0; j < columns; j++) {
+      // const td = $(`<td colspan="${columns}">-<span class="loading-shimmer">Loading</span></td>`); // Add shimmer class
+      const td = $(`<td >-<span class="loading-shimmer">Loading</span></td>`);
+      tr.append(td);
+    }
+    tbody.append(tr);
   }
 }
 
-
-
-
 $(document).ready(function () {
-  const body = $('body');
-  const switchElement = $('#color-switch-1');
+  const body = $("body");
+  const switchElement = $("#color-switch-1");
 
   // Check initial state from Laravel rendered class
-  if (switchElement.is(':checked')) {
-      body.addClass('layout-dark');
+  if (switchElement.is(":checked")) {
+    body.addClass("layout-dark");
   }
 
   // On switch toggle
-  switchElement.on('change', function () {
-      if ($(this).is(':checked')) {
-          body.addClass('layout-dark');
-          saveTheme('dark');
-      } else {
-          body.removeClass('layout-dark');
-          saveTheme('light');
-      }
+  switchElement.on("change", function () {
+    if ($(this).is(":checked")) {
+      body.addClass("layout-dark");
+      saveTheme("dark");
+    } else {
+      body.removeClass("layout-dark");
+      saveTheme("light");
+    }
   });
 
   // Function to save the theme in cookies
   function saveTheme(theme) {
     $.ajax({
-        url: '/set-layout-cookie',
-        method: 'POST',
-        data: { layout: theme },
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-        },
-        success: function () {
-            console.log('Cookie saved successfully');
-        },
-        error: function () {
-            console.error('Failed to save cookie');
-        },
+      url: "/set-layout-cookie",
+      method: "POST",
+      data: { layout: theme },
+      headers: {
+        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+      },
+      success: function () {
+        console.log("Cookie saved successfully");
+      },
+      error: function () {
+        console.error("Failed to save cookie");
+      },
     });
-}
+  }
 });
-
-
-
-
-
-
-
 
 // function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 //   $(selector).select2({
@@ -620,41 +611,47 @@ $(document).ready(function () {
 //   });
 // }
 
-
-
-
-function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
-  $(selector).select2({
+function initializeDynamicSelect2(
+  selector,
+  tableName,
+  columnName,
+  idColumn = "id",
+  enableTags = false,
+  isMultiple = true
+) {
+  $(selector)
+    .select2({
       ajax: {
-          url: '/dynamic-fetch-data', // Your dynamic route
-          type: 'GET',
-          dataType: 'json',
-          delay: 250,
-          data: function(params) {
-              return {
-                  search: params.term || '', // Empty by default to load first 10 records
-                  table: tableName,
-                  column: columnName,
-                  idColumn: idColumn,
-                  enableTags: enableTags
-              };
-          },
-          processResults: function(data) {
-              return {
-                  results: data.items
-              };
-          }
+        url: "/dynamic-fetch-data", // Your dynamic route
+        type: "GET",
+        dataType: "json",
+        delay: 250,
+        data: function (params) {
+          return {
+            search: params.term || "", // Empty by default to load first 10 records
+            table: tableName,
+            column: columnName,
+            idColumn: idColumn,
+            enableTags: enableTags,
+          };
+        },
+        processResults: function (data) {
+          return {
+            results: data.items,
+          };
+        },
       },
       minimumInputLength: 0, // Load data without typing
       tags: enableTags,
-      multiple: isMultiple
-  }).trigger('select2:open'); // Open dropdown immediately to show data
+      multiple: isMultiple,
+    })
+    .trigger("select2:open"); // Open dropdown immediately to show data
 }
 
 // Handle select change event
 function handleSelectChange(selectElement) {
   const selectedValue = selectElement.value;
-  console.log('Selected Value:', selectedValue);
+  console.log("Selected Value:", selectedValue);
   // You can add additional logic here if needed
 }
 
@@ -663,18 +660,19 @@ function handleSelectChange(selectElement) {
 //   initializeDynamicSelect2('#dynamicSelect2', 'users', 'name', true, true);
 // });
 
-
-
 $(document).ready(function () {
-  $('body').on('change','#imageUpload',function (event) {
-      var file = event.target.files[0]; // Get the selected file
-      if (file) {
-          var reader = new FileReader();
-          reader.onload = function (e) {
-              $('#imagePreview').css('background-image', 'url(' + e.target.result + ')'); // Set the blob URL
-          };
-          reader.readAsDataURL(file); // Read the file as a Data URL
-      }
+  $("body").on("change", "#imageUpload", function (event) {
+    var file = event.target.files[0]; // Get the selected file
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        $("#imagePreview").css(
+          "background-image",
+          "url(" + e.target.result + ")"
+        ); // Set the blob URL
+      };
+      reader.readAsDataURL(file); // Read the file as a Data URL
+    }
   });
 });
 

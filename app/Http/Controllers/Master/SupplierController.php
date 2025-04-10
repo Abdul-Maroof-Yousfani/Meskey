@@ -8,7 +8,7 @@ use App\Models\Master\Supplier;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
-{ 
+{
     /**
      * Display a listing of the resource.
      */
@@ -28,7 +28,7 @@ class SupplierController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-        ->where('company_id',$request->company_id)
+            ->where('company_id', $request->company_id)
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -51,7 +51,7 @@ class SupplierController extends Controller
         $data = $request->validated();
         $request = $request->all();
 
-        $request['unique_no'] = generateUniqueNumber(null, 'suppliers', null, 'unique_no');
+        $request['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
         $Supplier = Supplier::create($request);
 
         return response()->json(['success' => 'Supplier created successfully.', 'data' => $Supplier], 201);

@@ -2,9 +2,9 @@
 
 namespace App\Models\Arrival;
 
-use App\Models\{Product,User};
+use App\Models\{Product, User};
 use App\Models\ACL\Company;
-use App\Models\Master\{ArrivalTruckType,Station};
+use App\Models\Master\{ArrivalTruckType, Station};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,7 +24,6 @@ class ArrivalTicket extends Model
         'product_id',
         'supplier_name',
         'broker_name',
-        'accounts_off_name',
         'decision_id',
         'truck_type_id',
         'truck_no',
@@ -38,8 +37,9 @@ class ArrivalTicket extends Model
         'net_weight',
         'remarks',
         'status',
-        
-        
+        'accounts_of_id',
+
+
         'first_qc_status',
         'location_transfer_status',
         'second_qc_status',
@@ -64,7 +64,7 @@ class ArrivalTicket extends Model
     {
         return $this->belongsTo(Product::class);
     }
-      public function arrivalSamplingRequests()
+    public function arrivalSamplingRequests()
     {
         return $this->hasMany(ArrivalSamplingRequest::class, 'arrival_ticket_id');
     }
@@ -75,7 +75,7 @@ class ArrivalTicket extends Model
 
 
 
-      // Relationships
+    // Relationships
     public function station()
     {
         return $this->belongsTo(Station::class);
@@ -90,6 +90,4 @@ class ArrivalTicket extends Model
     {
         return $this->belongsTo(ArrivalTruckType::class, 'truck_type_id');
     }
-
-
 }

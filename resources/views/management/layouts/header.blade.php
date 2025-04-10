@@ -7,11 +7,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
- <meta name="description"
-      content="Innovative Network ERP is a robust, user-friendly, and modern ERP solution designed to streamline business operations with unmatched flexibility and efficiency.">
-<meta name="keywords"
-      content="Innovative Network ERP, business management software, ERP solution, powerful ERP system, enterprise resource planning, efficient operations">
-<meta name="author" content="Innovative Network">
+    <meta name="description"
+        content="Innovative Network ERP is a robust, user-friendly, and modern ERP solution designed to streamline business operations with unmatched flexibility and efficiency.">
+    <meta name="keywords"
+        content="Innovative Network ERP, business management software, ERP solution, powerful ERP system, enterprise resource planning, efficient operations">
+    <meta name="author" content="Innovative Network">
 
     <title>@yield('title') - {{ config('app.name') }}</title>
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('management') }}/app-assets/img/ico/favicon.ico">
@@ -65,13 +65,13 @@
 <body
     class="horizontal-layout horizontal-menu horizontal-menu-padding 2-columns  navbar-sticky {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="2-columns">
-   <div id="preloader" class="preloader-overlay" style="display: none;">
-    <div class="preloader-spinner">
-        <div class="spinner-border" role="status">
-            <span class="sr-only">Loading...</span>
+    <div id="preloader" class="preloader-overlay" style="display: none;">
+        <div class="preloader-spinner">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
         </div>
     </div>
-</div>
     <nav class="navbar navbar-expand-lg navbar-light header-navbar navbar-fixed">
         <div class="container-fluid navbar-wrapper">
             <div class="navbar-header d-flex">
@@ -129,53 +129,56 @@
                     <ul class="navbar-nav">
 
                         @if (getCurrentCompany())
- @if (count(auth()->user()->companies) > 1 ) 
+                            @if (count(auth()->user()->companies) > 1)
 
-                            <li class="nav-item position-relative mr-3">
-                                <button class="btn btn-primary  dropdown-toggle " href="javascript:;"
-                                    data-toggle="dropdown">
-                                    <i class="ft-refresh-cw"></i>
-                                    {{getCurrentCompany()->name}} 
-                                </button>
-                                <ul class="notification-dropdown dropdown-menu dropdown-menu-media dropdown-menu-right m-0 overflow-hidden">
-                                    <li class="dropdown-menu-header">
-                                        <div
-                                            class="dropdown-header d-flex justify-content-between m-0 px-3 py-2 white bg-primary">
-                                            <div class="d-flex"><span class="noti-title">Switct Company</span></div>
-                                        </div>
-                                    </li>
-                                    <li class="scrollable-container">
-                                        @foreach (getUserAllCompanies(auth()->user()->id) as $v)
-                                            <a class="d-flex justify-content-between"
-                                                {{ auth()->user()->current_company_id == $v->id ? 'disabled' : '' }}
-                                                href="{{ route('select.company', $v->app_key) }}">
-                                                <div class="media d-flex align-items-center">
-                                                    <div class="media-left">
-                                                        <div class="mr-3"><img class="avatar"
-                                                                src="{{ image_path($v->logo) }}" alt="avatar"
-                                                                height="45" width="45"></div>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="m-0"><span>{{ $v->name }}</span>
-                                                            <small class="success lighten-1 font-italic float-right">
-                                                                <i class="{{ auth()->user()->current_company_id == $v->id ? 'ft-check active' : 'ft-arrow-up-right primary' }}"
-                                                                    style="font-size: 30px;"></i>
-                                                            </small>
-
-
-
-
-                                                        </h6><small class="noti-text">Commented on your
-                                                            photo</small>
-
-                                                    </div>
+                                <li class="nav-item position-relative mr-3">
+                                    <button class="btn btn-primary  dropdown-toggle " href="javascript:;"
+                                        data-toggle="dropdown">
+                                        <i class="ft-refresh-cw"></i>
+                                        {{ getCurrentCompany()->name }}
+                                    </button>
+                                    <ul
+                                        class="notification-dropdown dropdown-menu dropdown-menu-media dropdown-menu-right m-0 overflow-hidden">
+                                        <li class="dropdown-menu-header">
+                                            <div
+                                                class="dropdown-header d-flex justify-content-between m-0 px-3 py-2 white bg-primary">
+                                                <div class="d-flex"><span class="noti-title">Switct Company</span>
                                                 </div>
-                                            </a>
-                                        @endforeach
-                                    </li>
+                                            </div>
+                                        </li>
+                                        <li class="scrollable-container">
+                                            @foreach (getUserAllCompanies(auth()->user()->id) as $v)
+                                                <a class="d-flex justify-content-between"
+                                                    {{ auth()->user()->current_company_id == $v->id ? 'disabled' : '' }}
+                                                    href="{{ route('select.company', $v->app_key) }}">
+                                                    <div class="media d-flex align-items-center">
+                                                        <div class="media-left">
+                                                            <div class="mr-3"><img class="avatar"
+                                                                    src="{{ image_path($v->logo) }}" alt="avatar"
+                                                                    height="45" width="45"></div>
+                                                        </div>
+                                                        <div class="media-body">
+                                                            <h6 class="m-0"><span>{{ $v->name }}</span>
+                                                                <small
+                                                                    class="success lighten-1 font-italic float-right">
+                                                                    <i class="{{ auth()->user()->current_company_id == $v->id ? 'ft-check active' : 'ft-arrow-up-right primary' }}"
+                                                                        style="font-size: 30px;"></i>
+                                                                </small>
 
-                                </ul>
-                            </li>
+
+
+
+                                                            </h6><small class="noti-text">Commented on your
+                                                                photo</small>
+
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            @endforeach
+                                        </li>
+
+                                    </ul>
+                                </li>
                             @endif
                         @endif
 

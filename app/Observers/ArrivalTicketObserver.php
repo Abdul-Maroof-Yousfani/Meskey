@@ -9,8 +9,8 @@ class ArrivalTicketObserver
 {
     public function creating(ArrivalTicket $arrivalTicket)
     {
-         $datePrefix = date('m-d-Y').'-';
-        $arrivalTicket->unique_no = generateUniqueNumber($datePrefix, 'arrival_tickets', null, 'unique_no');
+        $datePrefix = date('m-d-Y') . '-';
+        $arrivalTicket->unique_no = generateUniqueNumber('arrival_tickets', $datePrefix, null, 'unique_no');
     }
 
     /**
@@ -20,7 +20,7 @@ class ArrivalTicketObserver
     {
         ArrivalSamplingRequest::create([
             'company_id'       => $arrivalTicket->company_id,
-            'arrival_ticket_id'=> $arrivalTicket->id,
+            'arrival_ticket_id' => $arrivalTicket->id,
             'sampling_type'    => 'initial',
             'is_re_sampling'   => 'no',
             'is_done'          => 'no',
