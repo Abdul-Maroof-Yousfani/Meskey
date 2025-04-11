@@ -261,17 +261,17 @@
                         <div class="col-md-6 QcResult">
                             @if ($slab->qcParam->type == 'dropdown')
                                 <input type="text" id="striped-form-1" readonly class="form-control"
-                                    name="checklist_value[]" value="{{ $slab->compulsory_checklist_value }}"
+                                    name="compulsory_checklist_value[]" value="{{ $slab->compulsory_checklist_value }}"
                                     placeholder="%">
                             @else
-                                <textarea type="text" id="striped-form-1" readonly class="form-control" name="checklist_value[]"
+                                <textarea type="text" id="striped-form-1" readonly class="form-control" name="compulsory_checklist_value[]"
                                     placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
                             @endif
                         </div>
 
                         <div class="col-md-2 QcResult">
                             <input type="text" id="striped-form-1" class="form-control bg-white" placehold
-                                name="applied_deduction[]" value="{{ $slab->applied_deduction ?? 0 }}"
+                                name="compulsory_aapplied_deduction[]" value="{{ $slab->applied_deduction ?? 0 }}"
                                 placeholder="Deduction">
                         </div>
                     </div>

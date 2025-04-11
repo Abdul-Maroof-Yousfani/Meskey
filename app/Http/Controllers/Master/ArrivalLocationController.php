@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Master;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\Arrival\ArrivalSamplingResult;
+use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Master\ArrivalLocation;
+use App\Models\Arrival\ArrivalSamplingRequest;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\ArrivalLocationRequest;
 
@@ -84,4 +87,33 @@ class ArrivalLocationController extends Controller
         $arrival_location->delete();
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
     }
+
+
+    public function getInitialSamplingResultByTicketId(Request $request)
+    {
+        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id',$request->arrival_ticket_id)
+        ->where('sampling_type','initial')
+        ->where('approved_status','approved')
+
+        
+        ->get()->last();
+
+         // Check if related arrivalTicket exists
+        if (!$arrivalSamplingRequest) {
+            return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
+        }
+      //  dd($arrivalSamplingRequest);
+        $compulsoryArrivalSamplingResult  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id',$arrivalSamplingRequest->id)->get();
+        $ArrivalSamplingResult  = ArrivalSamplingResult::where('arrival_sampling_request_id',$arrivalSamplingRequest->id)->get();
+
+       
+
+
+        // Render view with the slabs wrapped inside a div
+        $html = view('management.arrival.location_transfer.getInitialQcDetail', compact( 'compulsoryArrivalSamplingResult','ArrivalSamplingResult'))->render();
+
+        return response()->json(['success' => true, 'html' => $html]);
+    }
+
+
 }

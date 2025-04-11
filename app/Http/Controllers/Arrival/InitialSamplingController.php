@@ -163,4 +163,7 @@ class InitialSamplingController extends Controller
 
         return response()->json(['message' => 'Request status updated successfully!']);
     }
+
+
+
 }

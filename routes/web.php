@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Arrival\InitialSamplingController;
+use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
@@ -38,6 +40,7 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
 Route::group(['middleware' => ['auth']], function () {
     Route::resource('arrival-custom-sampling', ArrivalCustomSamplingController::class);
     Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
+    Route::get('getInitialSamplingResultByTicketId', [ArrivalLocationController::class, 'getInitialSamplingResultByTicketId'])->name('getInitialSamplingResultByTicketId');
     Route::get('profile-settings', [UserController::class, 'profileSetting'])->name('profile-settings.index');
     Route::put('profile-settings/{id}', [UserController::class, 'profileSettingUpdate'])->name('profile-settings');
     Route::put('updatePassword/{id}', [UserController::class, 'updatePassword'])->name('updatePassword');
