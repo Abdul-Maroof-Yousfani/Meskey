@@ -202,10 +202,13 @@
         </div>
         <div class="striped-rows">
             @if (count($results) != 0)
+            
                 @foreach ($results as $slab)
                     <?php
                     // dd(optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value, $slab->slabType->id);
                     $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                    
+                  
                     ?>
                     <div class="form-group row">
                         <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
@@ -255,7 +258,7 @@
                     //  $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
                     ?>
                     <div class="form-group row">
-                        <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->qcParam->id }}">
+                        <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
                         <label class="col-md-4 label-control font-weight-bold"
                             for="striped-form-1">{{ $slab->qcParam->name }}</label>
                         <div class="col-md-6 QcResult">

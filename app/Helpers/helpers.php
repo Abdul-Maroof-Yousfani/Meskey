@@ -143,8 +143,8 @@ if (!function_exists('getDeductionSuggestion')) {
         //dd($productSlabTypeId, $productId, $inspectionResult);
         return \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
             ->where('product_id', $productId)
-            ->where('from', '<=', $inspectionResult)
-            ->where('to', '>=', $inspectionResult)
+            ->where('from', '<=', $inspectionResult ?? 0)
+            ->where('to', '>=', $inspectionResult ?? 0)
             ->where('status', 1) // Assuming active slabs have status = 1
             ->select('deduction_type', 'deduction_value')
             ->first();
