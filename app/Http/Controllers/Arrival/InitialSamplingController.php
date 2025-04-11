@@ -25,13 +25,16 @@ class InitialSamplingController extends Controller
      */
     public function getList(Request $request)
     {
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->where('is_done', 'yes')->where('sampling_type', 'initial')->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('unique_no', 'like', $searchTerm);
-                $sq->orWhere('supplier_name', 'like', $searchTerm);
-            });
-        })
+        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+            ->where('is_done', 'yes')
+            ->where('sampling_type', 'initial')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                $q->whereHas('arrivalTicket', function ($sq) use ($searchTerm) {
+                    $sq->where('unique_no', 'like', $searchTerm)
+                        ->orWhere('supplier_name', 'like', $searchTerm);
+                });
+            })
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -103,8 +106,12 @@ class InitialSamplingController extends Controller
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+        $compulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
 
-        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'results', 'arrivalSamplingRequest'));
+        $arrivalCustomSampling = ArrivalCustomSampling::all();
+        $sampleTakenByUsers = User::all();
+
+        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'arrivalCustomSampling', 'compulsuryResults', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest'));
     }
 
     /**
@@ -163,7 +170,4 @@ class InitialSamplingController extends Controller
 
         return response()->json(['message' => 'Request status updated successfully!']);
     }
-
-
-
 }

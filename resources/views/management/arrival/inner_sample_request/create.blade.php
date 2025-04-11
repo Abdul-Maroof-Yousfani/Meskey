@@ -1,19 +1,18 @@
-<form action="{{ route('arrival-location.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('inner-sampling-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.arrival-location') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.inner-sampling-request') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Ticket:</label>
-                <select class="form-control select2" name="status">
-                    <option value="active">Select Ticket</option>
+                <select class="form-control select2" name="ticket_id">
+                    <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
                         <option value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             ITEM: {{ optional($arrivalTicket->product)->name }}
                         </option>
                     @endforeach
-
                 </select>
             </div>
         </div>
@@ -37,8 +36,7 @@
 
 
 <script>
-$(document).ready(function () {
-            $('.select2').select2();
-});
-
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
 </script>

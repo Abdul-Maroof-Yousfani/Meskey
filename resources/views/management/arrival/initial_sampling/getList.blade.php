@@ -17,7 +17,7 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            #{{ optional($row->arrivalTicket)->unique_no }} <br>
+                            #{{ optional($row->arrivalTicket)->unique_no ?? '' }} <br>
                         </p>
                     </td>
                     <td>
@@ -30,13 +30,13 @@
                             {{ $row->remark ?? '---' }} <br>
                         </p>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
@@ -87,6 +87,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $samplingRequests->links() }}
+        {{ $samplingRequests->links() }}
     </div>
 </div>

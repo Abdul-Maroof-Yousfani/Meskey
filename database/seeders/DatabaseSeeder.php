@@ -10,7 +10,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ArrivalTruckTypeSeeder::class,
-            SaudaTypeSeeder::class
+            SaudaTypeSeeder::class,
+            UpdateArrivalCompulsoryQcParamPropertiesSeeder::class
         ]);
     }
 }

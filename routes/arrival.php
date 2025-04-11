@@ -1,8 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Arrival\{TicketController,InitialSamplingController,SamplingMonitoringController,
- InnerSamplingController, InnersampleRequestController, ArrivalLocationTransferController, ArrivalApproveController, SecondWeighbridgeController, ArrivalSlipController};
+use App\Http\Controllers\Arrival\{
+    TicketController,
+    InitialSamplingController,
+    SamplingMonitoringController,
+    InnerSamplingController,
+    InnersampleRequestController,
+    ArrivalLocationTransferController,
+    ArrivalApproveController,
+    SecondWeighbridgeController,
+    ArrivalSlipController
+};
 
 
 Route::resource('ticket', TicketController::class);
@@ -35,6 +44,3 @@ Route::post('/get-second-weighbridge', [SecondWeighbridgeController::class, 'get
 
 Route::resource('arrival-slip', ArrivalSlipController::class);
 Route::post('/get-arrival-slip', [ArrivalSlipController::class, 'getList'])->name('get.arrival-slip');
-
-
-

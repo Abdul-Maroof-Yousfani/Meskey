@@ -41,7 +41,7 @@
                     </td>
                     <td>
                         <label for=""
-                            class="badge text-uppercase {{ $row->sampling_type == 'initial' ? 'badge-secondary' : 'Success' }}">
+                            class="badge text-uppercase {{ $row->sampling_type == 'initial' ? 'badge-secondary' : 'badge-success' }}">
                             {{ $row->sampling_type }} </label>
                     </td>
                     <td>

@@ -23,16 +23,20 @@
                     <option value="">Select Location</option>
                     @foreach ($ArrivalLocations as $ArrivalLocations)
                         <option value="{{ $ArrivalLocations->id }}">
-                           {{ $ArrivalLocations->name }}
-                           
+                            {{ $ArrivalLocations->name }}
+
                         </option>
                     @endforeach
 
                 </select>
             </div>
         </div>
+    </div>
 
-        <!-- Description -->
+    <div id="slabsContainer">
+    </div>
+
+    <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
@@ -47,11 +51,12 @@
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
+
 </form>
 
 
 <script>
-$(document).ready(function () {
+    $(document).ready(function() {
 
 
         $('#arrival_ticket_id').change(function() {
@@ -97,7 +102,6 @@ $(document).ready(function () {
 
 
 
-            $('.select2').select2();
-});
-
+        $('.select2').select2();
+    });
 </script>

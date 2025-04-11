@@ -67,7 +67,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             filterationCommon(`{{ route('get.inner-sampling-request') }}`)
         });
     </script>

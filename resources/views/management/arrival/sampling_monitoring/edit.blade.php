@@ -162,11 +162,17 @@
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group ">
                         <label>Status:</label>
-                        <select name="stage_status" id="stage_status" class="form-control select2 ">
+                        <select name="stage_status" id="stage_status" class="form-control select2"
+                            @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
                             <option value="" hidden>Choose Status</option>
-                            <option value="approved">Approved</option>
-                            <option value="resampling">Request Resampling</option>
-                            <option value="rejected">Rejected</option>
+                            <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
+                                value="approved">
+                                Approved</option>
+                            <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }}
+                                value="resampling">Request Resampling</option>
+                            <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }}
+                                value="rejected">
+                                Rejected</option>
                         </select>
                     </div>
                 </div>
@@ -178,112 +184,210 @@
 
     <div id="slabsContainer">
         <div class="row">
-
             <div class="col-12">
                 <h6 class="header-heading-sepration">
                     QC Checklist
                 </h6>
             </div>
         </div>
-        <div class="row w-100 mx-auto">
-            <div class="col-md-4">
+        @if ($initialRequestForInnerReq && $initialRequestResults && $initialRequestCompulsuryResults)
+            <ul class="nav nav-tabs" id="qcChecklistTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link" id="initial-tab" data-toggle="tab" href="#initial" role="tab"
+                        aria-controls="initial" aria-selected="true">Initial Checklist</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" id="inner-tab" data-toggle="tab" href="#inner" role="tab"
+                        aria-controls="inner" aria-selected="false">Inner Checklist</a>
+                </li>
+            </ul>
+        @endif
 
-            </div>
-            <div class="col-md-3 py-2 QcResult">
-                <h6>Result</h6>
-            </div>
-            <div class="col-md-3 py-2 Suggested">
-                <h6>Suggested Deduction</h6>
-            </div>
-            <div class="col-md-2 py-2 QcResult">
-                <h6>Deduction</h6>
-            </div>
-
-        </div>
-        <div class="striped-rows">
-            @if (count($results) != 0)
-            
-                @foreach ($results as $slab)
-                    <?php
-                    // dd(optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value, $slab->slabType->id);
-                    $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
-                    
-                  
-                    ?>
-                    <div class="form-group row">
-                        <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
-                        <label class="col-md-4 label-control font-weight-bold"
-                            for="striped-form-1">{{ $slab->slabType->name }}</label>
-                        <div class="col-md-3 QcResult">
-                            <input type="text" id="striped-form-1" readonly class="form-control"
-                                name="checklist_value[]" value="{{ $slab->checklist_value }}" placeholder="%">
+        <div class="tab-content" id="qcChecklistTabsContent">
+            @if ($initialRequestForInnerReq && $initialRequestResults && $initialRequestCompulsuryResults)
+                <div class="tab-pane fade " id="initial" role="tabpanel" aria-labelledby="initial-tab">
+                    <div class="row w-100 mx-auto">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-3 py-2 QcResult">
+                            <h6>Result</h6>
                         </div>
-                        <div class="col-md-3 Suggested">
-                            <input type="text" id="striped-form-1" readonly class="form-control" placehold
-                                name="suggested_value[]" value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
-                                placeholder="Suggested Deduction">
+                        <div class="col-md-3 py-2 Suggested">
+                            <h6>Suggested Deduction</h6>
                         </div>
-                        <div class="col-md-2 QcResult">
-                            <input type="text" id="striped-form-1" class="form-control bg-white" placehold
-                                name="applied_deduction[]" value="{{ $slab->applied_deduction ?? 0 }}"
-                                placeholder="Deduction">
+                        <div class="col-md-2 py-2 QcResult">
+                            <h6>Deduction</h6>
                         </div>
                     </div>
-                @endforeach
-            @else
-                <div class="alert alert-warning">
-                    No Slabs Found
-                </div>
-            @endif
-        </div>
-
-        <br>
-        <div class="row w-100 mx-auto">
-            <div class="col-md-4">
-
-            </div>
-            <div class="col-md-6 py-2 QcResult">
-                <h6>Result</h6>
-            </div>
-            <div class="col-md-2 py-2 QcResult">
-                <h6>Deduction</h6>
-            </div>
-
-        </div>
-        <div class="striped-rows">
-            @if (count($Compulsuryresults) != 0)
-                @foreach ($Compulsuryresults as $slab)
-                    {{-- @dd($slab); --}}
-                    <?php
-                    //  $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
-                    ?>
-                    <div class="form-group row">
-                        <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
-                        <label class="col-md-4 label-control font-weight-bold"
-                            for="striped-form-1">{{ $slab->qcParam->name }}</label>
-                        <div class="col-md-6 QcResult">
-                            @if ($slab->qcParam->type == 'dropdown')
-                                <input type="text" id="striped-form-1" readonly class="form-control"
-                                    name="compulsory_checklist_value[]" value="{{ $slab->compulsory_checklist_value }}"
-                                    placeholder="%">
-                            @else
-                                <textarea type="text" id="striped-form-1" readonly class="form-control" name="compulsory_checklist_value[]"
-                                    placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
-                            @endif
+                    <div class="striped-rows">
+                        @if (count($initialRequestResults) != 0)
+                            @foreach ($initialRequestResults as $slab)
+                                <?php
+                                $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                                ?>
+                                <div class="form-group row">
+                                    <input type="hidden" name="initial_product_slab_type_id[]"
+                                        value="{{ $slab->slabType->id }}">
+                                    <label class="col-md-4 label-control font-weight-bold"
+                                        for="striped-form-1">{{ $slab->slabType->name }}</label>
+                                    <div class="col-md-3 QcResult">
+                                        <input type="text" id="striped-form-1" readonly class="form-control"
+                                            name="initial_checklist_value[]" value="{{ $slab->checklist_value }}"
+                                            placeholder="%">
+                                    </div>
+                                    <div class="col-md-3 Suggested">
+                                        <input type="text" id="striped-form-1" readonly class="form-control"
+                                            placehold name="initial_suggested_value[]"
+                                            value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                            placeholder="Suggested Deduction">
+                                    </div>
+                                    <div class="col-md-2 QcResult">
+                                        <input type="text" id="striped-form-1" class="form-control bg-white"
+                                            placehold name="initial_applied_deduction[]"
+                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="alert alert-warning">
+                                No Initial Slabs Found
+                            </div>
+                        @endif
+                    </div>
+                    <br>
+                    <div class="row w-100 mx-auto">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-6 py-2 QcResult">
+                            <h6>Result</h6>
                         </div>
-
-                        <div class="col-md-2 QcResult">
-                            <input type="text" id="striped-form-1" class="form-control bg-white" placehold
-                                name="compulsory_aapplied_deduction[]" value="{{ $slab->applied_deduction ?? 0 }}"
-                                placeholder="Deduction">
+                        <div class="col-md-2 py-2 QcResult">
+                            <h6>Deduction</h6>
                         </div>
                     </div>
-                @endforeach
-            @else
-                <div class="alert alert-warning">
-                    No Slabs Found
+                    <div class="striped-rows">
+                        @if (count($initialRequestCompulsuryResults) != 0)
+                            @foreach ($initialRequestCompulsuryResults as $slab)
+                                <div class="form-group row">
+                                    <input type="hidden" name="initial_compulsory_param_id[]"
+                                        value="{{ $slab->qcParam->id }}">
+                                    <label class="col-md-4 label-control font-weight-bold"
+                                        for="striped-form-1">{{ $slab->qcParam->name }}</label>
+                                    <div class="col-md-6 QcResult">
+                                        @if ($slab->qcParam->type == 'dropdown')
+                                            <input type="text" id="striped-form-1" readonly class="form-control"
+                                                name="initial_compulsory_checklist_value[]"
+                                                value="{{ $slab->compulsory_checklist_value }}" placeholder="%">
+                                        @else
+                                            <textarea type="text" id="striped-form-1" readonly class="form-control"
+                                                name="initial_compulsory_checklist_value[]" placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
+                                        @endif
+                                    </div>
+                                    <div class="col-md-2 QcResult">
+                                        <input type="text" id="striped-form-1" class="form-control bg-white"
+                                            placehold name="initial_compulsory_aapplied_deduction[]"
+                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="alert alert-warning">
+                                No Initial Compulsory Slabs Found
+                            </div>
+                        @endif
+                    </div>
                 </div>
             @endif
+
+            <div class="tab-pane fade show active @if (!$initialRequestForInnerReq || !$initialRequestResults || !$initialRequestCompulsuryResults) show active @endif" id="inner"
+                role="tabpanel" aria-labelledby="inner-tab">
+                <div class="row w-100 mx-auto">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-3 py-2 QcResult">
+                        <h6>Result</h6>
+                    </div>
+                    <div class="col-md-3 py-2 Suggested">
+                        <h6>Suggested Deduction</h6>
+                    </div>
+                    <div class="col-md-2 py-2 QcResult">
+                        <h6>Deduction</h6>
+                    </div>
+                </div>
+                <div class="striped-rows">
+                    @if (count($results) != 0)
+                        @foreach ($results as $slab)
+                            <?php
+                            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                            ?>
+                            <div class="form-group row">
+                                <input type="hidden" name="product_slab_type_id[]"
+                                    value="{{ $slab->slabType->id }}">
+                                <label class="col-md-4 label-control font-weight-bold"
+                                    for="striped-form-1">{{ $slab->slabType->name }}</label>
+                                <div class="col-md-3 QcResult">
+                                    <input type="text" id="striped-form-1" readonly class="form-control"
+                                        name="checklist_value[]" value="{{ $slab->checklist_value }}"
+                                        placeholder="%">
+                                </div>
+                                <div class="col-md-3 Suggested">
+                                    <input type="text" id="striped-form-1" readonly class="form-control" placehold
+                                        name="suggested_value[]"
+                                        value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                        placeholder="Suggested Deduction">
+                                </div>
+                                <div class="col-md-2 QcResult">
+                                    <input type="text" id="striped-form-1" class="form-control bg-white" placehold
+                                        name="applied_deduction[]" value="{{ $slab->applied_deduction ?? 0 }}"
+                                        placeholder="Deduction">
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="alert alert-warning">
+                            No Slabs Found
+                        </div>
+                    @endif
+                </div>
+
+                <br>
+                <div class="row w-100 mx-auto">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-6 py-2 QcResult">
+                        <h6>Result</h6>
+                    </div>
+                    <div class="col-md-2 py-2 QcResult">
+                        <h6>Deduction</h6>
+                    </div>
+                </div>
+                <div class="striped-rows">
+                    @if (count($Compulsuryresults) != 0)
+                        @foreach ($Compulsuryresults as $slab)
+                            <div class="form-group row">
+                                <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
+                                <label class="col-md-4 label-control font-weight-bold"
+                                    for="striped-form-1">{{ $slab->qcParam->name }}</label>
+                                <div class="col-md-6 QcResult">
+                                    @if ($slab->qcParam->type == 'dropdown')
+                                        <input type="text" id="striped-form-1" readonly class="form-control"
+                                            name="compulsory_checklist_value[]"
+                                            value="{{ $slab->compulsory_checklist_value }}" placeholder="%">
+                                    @else
+                                        <textarea type="text" id="striped-form-1" readonly class="form-control" name="compulsory_checklist_value[]"
+                                            placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
+                                    @endif
+                                </div>
+                                <div class="col-md-2 QcResult">
+                                    <input type="text" id="striped-form-1" class="form-control bg-white" placehold
+                                        name="compulsory_aapplied_deduction[]"
+                                        value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="alert alert-warning">
+                            No Slabs Found
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
         <div class="row mt-3">
             <div class="col-12">

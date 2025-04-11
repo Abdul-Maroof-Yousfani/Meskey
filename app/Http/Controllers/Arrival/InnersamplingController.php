@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Arrival\ArrivalSamplingResultRequest;
 use Illuminate\Http\Request;
 use App\Models\Arrival\ArrivalSamplingRequest;
+use App\Models\Arrival\ArrivalSamplingResult;
+use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 
 class InnersamplingController extends Controller
 {
@@ -39,7 +42,7 @@ class InnersamplingController extends Controller
      */
     public function create()
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no')->get();
+        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_done', 'no')->get();
         return view('management.arrival.inner_sampling.create', compact('samplingRequests'));
     }
 
@@ -49,17 +52,13 @@ class InnersamplingController extends Controller
     public function store(ArrivalSamplingResultRequest $request)
     {
         $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
-        // Create main entry
-        $ArrivalSamplingRequest->update([
-            'remark' => $request->remarks,
-            'is_done' => 'yes',
-            'done_by' => auth()->user()->id,
-        ]);
+        $createdSamplingData = [];
+        $createdCompulsuryData = [];
+        $initialStatus = 'pending';
 
-        // Check if arrays exist
         if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
             foreach ($request->product_slab_type_id as $key => $slabTypeId) {
-                ArrivalSamplingResult::create([
+                $createdSamplingData[] = ArrivalSamplingResult::create([
                     'company_id' => $request->company_id,
                     'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                     'product_slab_type_id' => $slabTypeId,
@@ -67,6 +66,86 @@ class InnersamplingController extends Controller
                 ]);
             }
         }
+
+        if (!empty($request->arrival_compulsory_qc_param_id) && !empty($request->compulsory_checklist_value)) {
+            foreach ($request->arrival_compulsory_qc_param_id as $key => $paramId) {
+                $createdCompulsuryData[] = ArrivalSamplingResultForCompulsury::create([
+                    'company_id' => $request->company_id,
+                    'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
+                    'arrival_compulsory_qc_param_id' => $paramId,
+                    'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
+                    'remark' => null,
+                ]);
+            }
+        }
+
+        $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
+            ->where('arrival_ticket_id', $ArrivalSamplingRequest->arrival_ticket_id)
+            ->where('approved_status', 'approved')
+            ->latest()
+            ->first();
+
+        if ($initialRequestForInnerReq) {
+            $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+            $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+
+            $resultsMatch = true;
+            $compulsoryResultsMatch = true;
+
+            if (count($initialRequestResults) === count($createdSamplingData)) {
+                foreach ($initialRequestResults as $index => $initialResult) {
+                    if (!isset($createdSamplingData[$index])) {
+                        $resultsMatch = false;
+                        break;
+                    }
+
+                    if (
+                        $initialResult->product_slab_type_id != $createdSamplingData[$index]->product_slab_type_id ||
+                        $initialResult->checklist_value != $createdSamplingData[$index]->checklist_value
+                    ) {
+                        $resultsMatch = false;
+                        break;
+                    }
+                }
+            } else {
+                $resultsMatch = false;
+            }
+
+            if (count($initialRequestCompulsuryResults) === count($createdCompulsuryData)) {
+                foreach ($initialRequestCompulsuryResults as $index => $initialCompulsoryResult) {
+                    if ($initialCompulsoryResult->qcParam->properties['is_protected_for_inner_req']) {
+                        continue;
+                    }
+
+                    if (!isset($createdCompulsuryData[$index])) {
+                        $compulsoryResultsMatch = false;
+                        break;
+                    }
+                    if (
+                        $initialCompulsoryResult->arrival_compulsory_qc_param_id != $createdCompulsuryData[$index]->arrival_compulsory_qc_param_id ||
+                        $initialCompulsoryResult->compulsory_checklist_value != $createdCompulsuryData[$index]->compulsory_checklist_value
+                    ) {
+                        $compulsoryResultsMatch = false;
+                        break;
+                    }
+                }
+            } else {
+                $compulsoryResultsMatch = false;
+            }
+
+            if ($resultsMatch && $compulsoryResultsMatch) {
+                $initialStatus = 'approved';
+            }
+        }
+
+        $ArrivalSamplingRequest->update([
+            'remark' => $request->remarks,
+            'is_done' => 'yes',
+            'party_ref_no' => $request->party_ref_no ?? NULL,
+            'sample_taken_by' => $request->sample_taken_by ?? NULL,
+            'done_by' => auth()->user()->id,
+            'approved_status' => $initialStatus,
+        ]);
 
         return response()->json([
             'success' => 'Data stored successfully',

@@ -1,32 +1,34 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No. </th>
-            <th class="col-sm-2">Sampling Status</th>
-            <th class="col-sm-2">Sampling Approval Status</th>
-            <th class="col-sm-1">Is Re-sampling</th>
-            <th class="col-sm-2">Created At</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-2">Ticket No# </th>
+            <th class="col-sm-3">Product</th>
+            <th class="col-sm-4">Remark</th>
+            <th class="col-sm-2">Created</th>
+            {{-- <th class="col-sm-1">Action</th> --}}
         </tr>
     </thead>
     <tbody>
+
+
+
         @if (count($ArrivalSamplingRequests) != 0)
             @foreach ($ArrivalSamplingRequests as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->unique_no }} <br>
+                            #{{ optional($row->arrivalTicket)->unique_no }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            {{ optional(optional($row->arrivalTicket)->product)->name }} <br>
                         </p>
                     </td>
                     <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                            {{ $row->status }}
-                        </label>
+                        <p class="m-0">
+                            {{ $row->remark ?? '---' }} <br>
+                        </p>
                     </td>
                     <td>
                         <p class="m-0">
@@ -35,21 +37,15 @@
 
                         </p>
                     </td>
-                    <td>
+                    {{-- <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('inner-sampling-request.edit', $row->id) }}','Edit Inner Sampling Request')"
+                          <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
-                            </a>
+                                <i class="ft-eye font-medium-3"></i>
+                            </a> 
                         @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('inner-sampling-request.destroy', $row->id) }}','{{ route('get.inner-sampling-request') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
-                    </td>
+                     
+                    </td> --}}
                 </tr>
             @endforeach
         @else

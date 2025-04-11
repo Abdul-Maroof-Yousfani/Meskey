@@ -9,13 +9,15 @@ class ArrivalCompulsoryQcParam extends Model
 {
     use HasFactory;
 
-      protected $fillable = [
+    protected $fillable = [
         'name',
         'type',
         'options',
+        'properties',
     ];
 
     protected $casts = [
         'options' => 'array',
+        'properties' => 'array',
     ];
 }

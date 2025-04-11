@@ -8,6 +8,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalLocationTransfer;
 use App\Models\Master\ArrivalLocation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class InnersampleRequestController extends Controller
 {
@@ -17,7 +18,7 @@ class InnersampleRequestController extends Controller
     public function index()
     {
         return view('management.arrival.inner_sample_request.index');
-}
+    }
 
     /**
      * Get list of categories.
@@ -43,20 +44,36 @@ class InnersampleRequestController extends Controller
      */
     public function create()
     {
-       $data['ArrivalLocations'] =  ArrivalLocation::where('status','active')->get();
-       $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status','pending')->get();
+        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status', 'pending')->get();
         return view('management.arrival.inner_sample_request.create', $data);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalLocationRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
-        $arrival_locations = ArrivalLocation::create($request->all());
+        $validator = Validator::make($request->all(), [
+            'ticket_id' => 'required',
+        ]);
 
-        return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // $arrival_locations = ArrivalLocation::create($request->all());
+
+        $arrivalSampleReq = ArrivalSamplingRequest::create([
+            'company_id'       => $request->company_id,
+            'arrival_ticket_id' => $request->ticket_id,
+            'sampling_type'    => 'inner',
+            'is_re_sampling'   => 'no',
+            'is_done'          => 'no',
+            'remark'           => null,
+        ]);
+
+        return response()->json(['success' => 'Inner Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
     }
 
     /**

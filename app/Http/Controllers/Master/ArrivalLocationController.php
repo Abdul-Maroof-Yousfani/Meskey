@@ -91,29 +91,27 @@ class ArrivalLocationController extends Controller
 
     public function getInitialSamplingResultByTicketId(Request $request)
     {
-        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id',$request->arrival_ticket_id)
-        ->where('sampling_type','initial')
-        ->where('approved_status','approved')
+        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->arrival_ticket_id)
+            ->where('sampling_type', 'initial')
+            ->where('approved_status', 'approved')
 
-        
-        ->get()->last();
 
-         // Check if related arrivalTicket exists
+            ->get()->last();
+
+        // Check if related arrivalTicket exists
         if (!$arrivalSamplingRequest) {
             return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
         }
-      //  dd($arrivalSamplingRequest);
-        $compulsoryArrivalSamplingResult  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id',$arrivalSamplingRequest->id)->get();
-        $ArrivalSamplingResult  = ArrivalSamplingResult::where('arrival_sampling_request_id',$arrivalSamplingRequest->id)->get();
+        //  dd($arrivalSamplingRequest);
+        $compulsoryParams  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+        $slabs  = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
-       
 
 
         // Render view with the slabs wrapped inside a div
-        $html = view('management.arrival.location_transfer.getInitialQcDetail', compact( 'compulsoryArrivalSamplingResult','ArrivalSamplingResult'))->render();
+        $html = view('management.arrival.location_transfer.getInitialQcDetail', compact('compulsoryParams', 'slabs'))->render();
+        // dd($html);
 
         return response()->json(['success' => true, 'html' => $html]);
     }
-
-
 }

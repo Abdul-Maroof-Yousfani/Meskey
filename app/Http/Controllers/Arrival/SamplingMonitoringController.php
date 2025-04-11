@@ -98,8 +98,24 @@ class SamplingMonitoringController extends Controller
                 $q->where('companies.id', $authUserCompany);
             })
             ->get();
+        $initialRequestForInnerReq = null;
+        $initialRequestResults = null;
+        $initialRequestCompulsuryResults = null;
 
-        return view('management.arrival.sampling_monitoring.edit', compact('samplingRequests', 'saudaTypes', 'arrivalPurchaseOrders', 'accountsOf', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest', 'Compulsuryresults'));
+        if ($arrivalSamplingRequest->sampling_type == 'inner') {
+            $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
+                ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+                ->where('approved_status', 'approved')
+                ->latest()
+                ->first();
+
+            if ($initialRequestForInnerReq) {
+                $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+                $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+            }
+        }
+
+        return view('management.arrival.sampling_monitoring.edit', compact('initialRequestForInnerReq', 'initialRequestResults', 'initialRequestCompulsuryResults', 'samplingRequests', 'saudaTypes', 'arrivalPurchaseOrders', 'accountsOf', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest', 'Compulsuryresults'));
     }
 
     /**

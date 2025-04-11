@@ -1,26 +1,27 @@
-<form action="{{ route('initialsampling.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('inner-sampling.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.initialsampling') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.inner-sampling') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Product:</label>
-                <select name="arrival_sampling_request_id" id="arrival_sampling_request_id" class="form-control select2">
+                <select name="arrival_sampling_request_id" id="arrival_sampling_request_id"
+                    class="form-control select2">
                     <option value="">Select Ticket</option>
                     @foreach ($samplingRequests as $samplingRequest)
                         <option value="{{ $samplingRequest->id }}">
                             Ticket No: {{ optional($samplingRequest->arrivalTicket)->unique_no }} --
                             ITEM: {{ optional(optional($samplingRequest->arrivalTicket)->product)->name }}
-                            {{$samplingRequest->is_re_sampling == 'yes' ? '- Resampling' : ''}}
-                                                    </option>
+                            {{ $samplingRequest->is_re_sampling == 'yes' ? '- Resampling' : '' }}
+                        </option>
                     @endforeach
                 </select>
             </div>
         </div>
     </div>
 
-<div id="slabsContainer">
-</div>
+    <div id="slabsContainer">
+    </div>
 
 
     <div class="row ">
@@ -44,47 +45,50 @@
 
 
 <script>
+    $(document).ready(function() {
+        $('#arrival_sampling_request_id').change(function() {
+            var samplingRequestId = $(this).val();
 
-$(document).ready(function () {
-    $('#arrival_sampling_request_id').change(function () {
-        var samplingRequestId = $(this).val();
-
-        if (samplingRequestId) {
-            $.ajax({
-                url: '{{ route("getSlabsByProduct") }}',
-                type: 'GET',
-                data: { sampling_request_id: samplingRequestId },
-                dataType: 'json',
-                beforeSend: function () {
-                    Swal.fire({
-                        title: "Processing...",
-                        text: "Please wait while fetching slabs.",
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
+            if (samplingRequestId) {
+                $.ajax({
+                    url: '{{ route('getSlabsByProduct') }}',
+                    type: 'GET',
+                    data: {
+                        sampling_request_id: samplingRequestId
+                    },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: "Processing...",
+                            text: "Please wait while fetching slabs.",
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function(response) {
+                        Swal.close();
+                        if (response.success) {
+                            // Append the rendered HTML to a container element
+                            $('#slabsContainer').html(response.html);
+                        } else {
+                            Swal.fire("No Data", "No slabs found for this product.",
+                                "info");
                         }
-                    });
-                },
-                success: function (response) {
-                    Swal.close();
-                    if (response.success) {
-                        // Append the rendered HTML to a container element
-                        $('#slabsContainer').html(response.html);
-                    } else {
-                        Swal.fire("No Data", "No slabs found for this product.", "info");
+                    },
+                    error: function() {
+                        Swal.close();
+                        Swal.fire("Error", "Something went wrong. Please try again.",
+                            "error");
                     }
-                },
-                error: function () {
-                    Swal.close();
-                    Swal.fire("Error", "Something went wrong. Please try again.", "error");
-                }
-            });
-        }
+                });
+            }
+        });
     });
-});
 
 
-    $(document).ready(function () {
+    $(document).ready(function() {
 
         //initializeDynamicSelect2('#sampling_request_id', 'arrival_sampling_requests', 'name', 'id', false, false);
         //initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);

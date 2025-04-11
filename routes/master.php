@@ -2,10 +2,18 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\{
-    RegionController, CategoryController, UnitOfMeasureController,
-    ProductController, ProductSlabController, SupplierController,
-    BrokerController, ProductSlabTypeController, ArrivalLocationController, TruckTypeController , StationController
-    };
+    RegionController,
+    CategoryController,
+    UnitOfMeasureController,
+    ProductController,
+    ProductSlabController,
+    SupplierController,
+    BrokerController,
+    ProductSlabTypeController,
+    ArrivalLocationController,
+    TruckTypeController,
+    StationController
+};
 
 
 //Route::resource('regions', RegionController::class);
@@ -43,4 +51,3 @@ Route::post('/get-truck-type', [TruckTypeController::class, 'getList'])->name('g
 
 Route::resource('station', StationController::class);
 Route::post('/get-station', [StationController::class, 'getList'])->name('get.station');
-
