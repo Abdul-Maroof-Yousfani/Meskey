@@ -122,6 +122,8 @@
             }
         });
 
+        $('.select2').select2();
+
         initializeDynamicSelect2('#party_ref_no', 'arrival_custom_sampling', 'party_ref_no', 'party_ref_no',
             true,
             false);
@@ -129,6 +131,5 @@
         //initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
         //initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
-        // $('.select2').select2();
     });
 </script>

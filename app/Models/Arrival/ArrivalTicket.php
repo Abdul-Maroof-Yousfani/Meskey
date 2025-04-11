@@ -2,7 +2,7 @@
 
 namespace App\Models\Arrival;
 
-use App\Models\{Product, User};
+use App\Models\{ArrivalPurchaseOrder, Product, SaudaType, User};
 use App\Models\ACL\Company;
 use App\Models\Master\{ArrivalTruckType, Station};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,6 +38,8 @@ class ArrivalTicket extends Model
         'remarks',
         'status',
         'accounts_of_id',
+        'arrival_purchase_order_id',
+        'sauda_type_id',
 
 
         'first_qc_status',
@@ -69,7 +71,15 @@ class ArrivalTicket extends Model
         return $this->hasMany(ArrivalSamplingRequest::class, 'arrival_ticket_id');
     }
 
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
+    }
 
+    public function saudaType()
+    {
+        return $this->belongsTo(SaudaType::class, 'sauda_type_id');
+    }
 
 
 
@@ -89,5 +99,10 @@ class ArrivalTicket extends Model
     public function truckType()
     {
         return $this->belongsTo(ArrivalTruckType::class, 'truck_type_id');
+    }
+
+    public function accountsOf()
+    {
+        return $this->belongsTo(User::class, 'accounts_of_id');
     }
 }

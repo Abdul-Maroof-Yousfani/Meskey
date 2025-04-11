@@ -260,3 +260,7 @@ div#paginationLinks {
   transition: transform 0.3s ease;
   margin-left: 5px;
 }
+
+.full .select2-container {
+  width: 100% !important;
+}

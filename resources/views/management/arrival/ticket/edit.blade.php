@@ -53,7 +53,6 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
-                {{-- @dd($arrivalTicket) --}}
                 <label>Truck Type:</label>
                 <select name="arrival_truck_type_id" id="arrival_truck_type_id" class="form-control select2 ">
                     <option value="">Truck Type</option>

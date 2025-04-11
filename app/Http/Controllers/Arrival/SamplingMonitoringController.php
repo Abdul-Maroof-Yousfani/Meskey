@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury};
+use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalTicket};
+use App\Models\SaudaType;
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 
 class SamplingMonitoringController extends Controller
 {
@@ -79,16 +82,24 @@ class SamplingMonitoringController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
         $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->get();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
         $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
         $sampleTakenByUsers = User::all();
+        $authUserCompany = $request->company_id;
+        $saudaTypes = SaudaType::all();
+        $accountsOf = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
 
-        return view('management.arrival.sampling_monitoring.edit', compact('samplingRequests', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest', 'Compulsuryresults'));
+        return view('management.arrival.sampling_monitoring.edit', compact('samplingRequests', 'saudaTypes', 'arrivalPurchaseOrders', 'accountsOf', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest', 'Compulsuryresults'));
     }
 
     /**
@@ -96,8 +107,19 @@ class SamplingMonitoringController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $validator = Validator::make($request->all(), [
+            'supplier' => 'required',
+            'broker' => 'required',
+            'stage_status' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
         try {
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
+            // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
 
             // Update main entry
             $ArrivalSamplingRequest->update([
@@ -141,7 +163,7 @@ class SamplingMonitoringController extends Controller
 
             // Update status
 
-            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending']);
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'supplier_name' => $request->supplier, 'broker_name' => $request->broker, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 
