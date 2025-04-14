@@ -44,7 +44,7 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-4">Company</th>
+                                            {{-- <th class="col-sm-4">Company</th> --}}
                                             <th class="col-sm-4">Ticket</th>
                                             <th class="col-sm-1">Location</th>
                                             <th class="col-sm-2">Created By</th>

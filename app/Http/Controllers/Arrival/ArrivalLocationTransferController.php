@@ -72,7 +72,7 @@ class ArrivalLocationTransferController extends Controller
         $arrival_location = ArrivalLocationTransfer::create($request->all());
 
         ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['location_transfer_status' => 'transfered']);
+            ->update(['location_transfer_status' => 'transfered', 'first_weighbridge_status' => 'pending']);
 
         return response()->json([
             'success' => 'Arrival Location Transfer created successfully.',

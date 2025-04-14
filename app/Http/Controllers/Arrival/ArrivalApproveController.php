@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Arrival;
 use App\Http\Controllers\Controller;
 use App\Models\ArrivalApprove;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\BagCondition;
+use App\Models\BagPacking;
+use App\Models\BagType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ArrivalApproveController extends Controller
 {
@@ -22,18 +26,17 @@ class ArrivalApproveController extends Controller
      */
     public function getList(Request $request)
     {
-        $ArrivalSamplingRequests = ArrivalApprove::when($request->filled('search'), function ($q) use ($request) {
+        $ArrivalApproves = ArrivalApprove::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-            ->where('company_id', $request->company_id)
-
+            ->with(['bagType', 'bagCondition', 'bagPacking', 'arrivalTicket'])
             ->latest()
             ->paginate(request('per_page', 25));
-
-        return view('management.arrival.approved_arrival.getList', compact('ArrivalSamplingRequests'));
+        // dd($ArrivalApproves);
+        return view('management.arrival.approved_arrival.getList', compact('ArrivalApproves'));
     }
 
     /**
@@ -41,19 +44,46 @@ class ArrivalApproveController extends Controller
      */
     public function create()
     {
-        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
+        $data['bagTypes'] = BagType::all();
+        $data['bagConditions'] = BagCondition::all();
+        $data['bagPackings'] = BagPacking::all();
+
         return view('management.arrival.approved_arrival.create', $data);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalLocationRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
-        $arrival_locations = ArrivalLocation::create($request->all());
+        $validator = Validator::make($request->all(), [
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'gala_name' => 'required|string',
+            'truck_no' => 'required|string',
+            'filling_bags_no' => 'required|integer',
+            'bag_type_id' => 'required|exists:bag_types,id',
+            'bag_condition_id' => 'required|exists:bag_conditions,id',
+            'bag_packing_id' => 'required|exists:bag_packings,id',
+            'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
+            'total_bags' => 'required|integer',
+            'total_rejection' => 'nullable|integer',
+            'amanat' => 'required|in:Yes,No',
+            'note' => 'nullable|string'
+        ]);
 
-        return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $request['creator_id'] = auth()->user()->id;
+        $request['remark'] = $request->note ?? '';
+        $arrivalApprove = ArrivalApprove::create($request->all());
+
+        return response()->json([
+            'success' => 'Arrival Approval created successfully.',
+            'data' => $arrivalApprove
+        ], 201);
     }
 
     /**
@@ -61,18 +91,55 @@ class ArrivalApproveController extends Controller
      */
     public function edit($id)
     {
-        $arrival_location = ArrivalLocation::findOrFail($id);
-        return view('management.master.arrival_location.edit', compact('arrival_location'));
+        $arrivalApprove = ArrivalApprove::with(['arrivalTicket', 'bagType', 'bagCondition', 'bagPacking'])
+            ->findOrFail($id);
+
+        $arrivalTickets = ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
+        $bagTypes = BagType::all();
+        $bagConditions = BagCondition::all();
+        $bagPackings = BagPacking::all();
+
+        return view('management.arrival.approved_arrival.edit', compact(
+            'arrivalApprove',
+            'arrivalTickets',
+            'bagTypes',
+            'bagConditions',
+            'bagPackings'
+        ));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(ArrivalLocationRequest $request, ArrivalLocation $arrival_location)
+    public function update(Request $request, $id)
     {
-        $data = $request->validated();
-        $arrival_location->update($data);
-        return response()->json(['success' => 'Arrival Location updated successfully.', 'data' => $arrival_location], 200);
+        $validator = Validator::make($request->all(), [
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'gala_name' => 'required|string',
+            'truck_no' => 'required|string',
+            'filling_bags_no' => 'required|integer',
+            'bag_type_id' => 'required|exists:bag_types,id',
+            'bag_condition_id' => 'required|exists:bag_conditions,id',
+            'bag_packing_id' => 'required|exists:bag_packings,id',
+            'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
+            'total_bags' => 'required|integer',
+            'total_rejection' => 'nullable|integer',
+            'amanat' => 'required|in:Yes,No',
+            'note' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $arrivalApprove = ArrivalApprove::findOrFail($id);
+        $request['remark'] = $request->note ?? '';
+        $arrivalApprove->update($request->all());
+
+        return response()->json([
+            'success' => 'Arrival Approval updated successfully.',
+            'data' => $arrivalApprove
+        ], 200);
     }
 
     /**

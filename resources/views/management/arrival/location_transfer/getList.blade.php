@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Company</th>
+            {{-- <th class="col-sm-4">Company</th> --}}
             <th class="col-sm-4">Ticket</th>
             <th class="col-sm-1">Location</th>
             <th class="col-sm-2">Created By</th>
@@ -13,11 +13,11 @@
         @if (count($arrival_locations) != 0)
             @foreach ($arrival_locations as $key => $row)
                 <tr>
-                    <td>
+                    {{-- <td>
                         <p class="m-0">
                             {{ $row->company->name ?? '' }} <br>
                         </p>
-                    </td>
+                    </td> --}}
                     <td>
                         <p class="m-0">
                             <small>Ticket No: {{ $row->arrivalTicket->unique_no ?? '-' }} -- ITEM:
