@@ -1,9 +1,10 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Name </th>
-            <th class="col-sm-4">Description</th>
-            <th class="col-sm-1">Status</th>
+            <th class="col-sm-4">Company</th>
+            <th class="col-sm-4">Ticket</th>
+            <th class="col-sm-1">Location</th>
+            <th class="col-sm-2">Created By</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -14,40 +15,32 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
+                            {{ $row->company->name ?? '' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            <small>Ticket No: {{ $row->arrivalTicket->unique_no ?? '-' }} -- ITEM:
+                                {{ $row->arrivalTicket->product->name ?? '-' }}</small>
                         </p>
                     </td>
                     <td>
-                      <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                    {{ $row->status }}
-                </label>
+                        <p class="m-0"> {{ $row->arrivalLocation->name ?? '-' }} </p>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <p class="m-0"> {{ $row->createdBy->name ?? '-' }} </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
-
                         </p>
-                        </td>
+                    </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('location-transfer.edit', $row->id) }}','View Location Transfer')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
+                        <a onclick="openModal(this,'{{ route('location-transfer.edit', $row->id) }}','View Location Transfer', true)"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach
@@ -76,14 +69,9 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $arrival_locations->links() }}
+        {{ $arrival_locations->links() }}
     </div>
 </div>

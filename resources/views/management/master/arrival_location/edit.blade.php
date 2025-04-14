@@ -1,38 +1,129 @@
-<form action="{{ route('arrival-location.update',$arrival_location->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
-    @csrf
-    @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('get.arrival-location') }}" />
-    <div class="row form-mar">
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Name:</label>
-                <input type="text" name="name" value="{{$arrival_location->name}}" placeholder="Name" class="form-control"  />
-            </div>
-        </div>
+ <div class="row form-mar">
+     <div class="col-xs-12 col-sm-12 col-md-12">
+         <div class="form-group">
+             <label>Ticket:</label>
+             <input type="text" class="form-control"
+                 value="Ticket No: {{ $locationTransfer->arrivalTicket->unique_no ?? '-' }} -- ITEM: {{ $locationTransfer->arrivalTicket->product->name ?? '-' }}">
+         </div>
+     </div>
+     <div class="col-xs-12 col-sm-12 col-md-12">
+         <div class="form-group">
+             <label>Location:</label>
+             <input type="text" class="form-control" value="{{ $locationTransfer->arrivalLocation->name ?? '-' }}">
+         </div>
+     </div>
+ </div>
+ <div class="row">
+     <div class="col-xs-12 col-sm-12 col-md-12">
+         <div class="form-group">
+             <label>Remarks:</label>
+             <textarea name="remark" placeholder="Remarks" class="form-control">{{ $locationTransfer->remark }}</textarea>
+         </div>
+     </div>
+ </div>
 
-        <!-- Description -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Description:</label>
-                <textarea name="description" placeholder="Description" class="form-control">{{$arrival_location->description}}</textarea>
-            </div>
-        </div>
-        <!-- Status -->
-       <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
-                <label>Status:</label>
-                <select name="status" class="form-control">
-                    <option {{$arrival_location->status == 'active' ? 'selected' : ''}} value="active">Active</option>
-                    <option {{$arrival_location->status == 'inactive' ? 'selected' : ''}}  value="inactive">Inactive</option>
-                </select>
-            </div>
-        </div>
-    </div>
+ <div id="slabsContainer">
+     <div class="row">
+         <div class="col-12">
+             <h6 class="header-heading-sepration">
+                 QC Checklist
+             </h6>
+         </div>
+     </div>
 
-    <div class="row bottom-button-bar">
-        <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
-        </div>
-    </div>
-</form>
+     <div class="row w-100 mx-auto">
+         <div class="col-md-4"></div>
+         <div class="col-md-3 py-2 QcResult">
+             <h6>Result</h6>
+         </div>
+     </div>
+     <div class="striped-rows">
+         @if (count($initialRequestResults) != 0)
+             @foreach ($initialRequestResults as $slab)
+                 <?php
+                 $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($initialRequestForInnerReq->arrivalTicket)->product->id, $slab->checklist_value);
+                 ?>
+                 <div class="form-group row">
+                     <input type="hidden" name="initial_product_slab_type_id[]" value="{{ $slab->slabType->id }}">
+                     <label class="col-md-4 label-control font-weight-bold"
+                         for="striped-form-1">{{ $slab->slabType->name }}</label>
+                     <div class="col-md-8 QcResult">
+                         <input type="text" id="striped-form-1" readonly class="form-control"
+                             name="initial_checklist_value[]" value="{{ $slab->checklist_value }}" placeholder="%">
+                     </div>
+                 </div>
+             @endforeach
+         @else
+             <div class="alert alert-warning">
+                 No Initial Slabs Found
+             </div>
+         @endif
+     </div>
+     <br>
+     <div class="row w-100 mx-auto">
+         <div class="col-md-4"></div>
+         <div class="col-md-6 py-2 QcResult">
+             <h6>Result</h6>
+         </div>
+     </div>
+     <div class="striped-rows">
+         @if (count($initialRequestCompulsuryResults) != 0)
+             @foreach ($initialRequestCompulsuryResults as $slab)
+                 <div class="form-group row">
+                     <input type="hidden" name="initial_compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
+                     <label class="col-md-4 label-control font-weight-bold"
+                         for="striped-form-1">{{ $slab->qcParam->name }}</label>
+                     <div class="col-md-8 QcResult">
+                         @if ($slab->qcParam->type == 'dropdown')
+                             <input type="text" id="striped-form-1" readonly class="form-control"
+                                 name="initial_compulsory_checklist_value[]"
+                                 value="{{ $slab->compulsory_checklist_value }}" placeholder="%">
+                         @else
+                             <textarea type="text" id="striped-form-1" readonly class="form-control" name="initial_compulsory_checklist_value[]"
+                                 placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
+                         @endif
+                     </div>
+                 </div>
+             @endforeach
+         @else
+             <div class="alert alert-warning">
+                 No Initial Compulsory Slabs Found
+             </div>
+         @endif
+     </div>
+     <div class="row mt-3">
+         <div class="col-12">
+             <h6 class="header-heading-sepration">
+                 Other Details
+             </h6>
+         </div>
+         <div class="col-12 px-3">
+             <div class="form-group ">
+                 <label>Sample Taken By:</label>
+                 <select name="sample_taken_by" id="sample_taken_by" class="form-control select2" disabled>
+                     <option value="">Sample Taken By</option>
+                     @foreach ($sampleTakenByUsers as $sampleTakenUser)
+                         <option @selected($initialRequestForInnerReq->sample_taken_by == $sampleTakenUser->id) value="{{ $sampleTakenUser->id }}">
+                             {{ $sampleTakenUser->name }}</option>
+                     @endforeach
+                 </select>
+             </div>
+         </div>
+         <div class="col-12 px-3">
+             <div class="form-group ">
+                 <label>Sample Analysis By: </label>
+                 <input type="text" readonly disabled name="sample_analysis_by" placeholder="Sample Analysis By"
+                     class="form-control" autocomplete="off" value="{{ auth()->user()->name ?? '' }}" />
+             </div>
+         </div>
+         <div class="col-12 px-3">
+             <div class="form-group ">
+                 <label>Party Ref. No: </label>
+                 <select name="party_ref_no" id="party_ref_no" class="form-control select2" disabled>
+                     <option value="{{ $initialRequestForInnerReq->party_ref_no }}">
+                         {{ $initialRequestForInnerReq->party_ref_no }}</option>
+                 </select>
+             </div>
+         </div>
+     </div>
+ </div>

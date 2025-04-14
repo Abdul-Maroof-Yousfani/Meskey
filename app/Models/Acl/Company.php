@@ -15,14 +15,13 @@ class Company extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['name', 'prefix', 'email', 'phone', 'address', 'registration_no', 'logo', 'connection_database', 'app_key', 'status','ntn','stn'];
+    protected $fillable = ['name', 'prefix', 'email', 'phone', 'address', 'registration_no', 'logo', 'connection_database', 'app_key', 'status', 'ntn', 'stn'];
 
-    
- public function users()
+
+    public function users()
     {
         return $this->belongsToMany(User::class, 'company_user_role')
-                    ->withPivot('role_id')
-                    ->withTimestamps();
+            ->withPivot('role_id')
+            ->withTimestamps();
     }
-
 }

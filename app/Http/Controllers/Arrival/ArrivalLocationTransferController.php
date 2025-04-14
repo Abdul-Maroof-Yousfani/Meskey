@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Master\ArrivalLocation;
 
 use App\Models\Arrival\ArrivalLocationTransfer;
+use App\Models\Arrival\ArrivalSamplingRequest;
+use App\Models\Arrival\ArrivalSamplingResult;
+use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
-
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -33,7 +36,6 @@ class ArrivalLocationTransferController extends Controller
             });
         })
             ->where('company_id', $request->company_id)
-
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -67,18 +69,37 @@ class ArrivalLocationTransferController extends Controller
 
         $request['creator_id'] = auth()->user()->id;
 
-        $arrival_locations = ArrivalLocationTransfer::create($request->all());
+        $arrival_location = ArrivalLocationTransfer::create($request->all());
 
-        return response()->json(['success' => 'Arrival Location Transfer created successfully.', 'data' => $arrival_locations], 201);
+        ArrivalTicket::where('id', $request->arrival_ticket_id)
+            ->update(['location_transfer_status' => 'transfered']);
+
+        return response()->json([
+            'success' => 'Arrival Location Transfer created successfully.',
+            'data' => $arrival_location
+        ], 201);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
-        $arrival_location = ArrivalLocation::findOrFail($id);
-        return view('management.master.arrival_location.edit', compact('arrival_location'));
+        $locationTransfer = ArrivalLocationTransfer::findOrFail($id);
+        $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $locationTransfer->arrival_ticket_id)
+            ->where('sampling_type', 'initial')
+            ->where('approved_status', 'approved')
+            ->get()->last();
+
+        if (!$initialRequestForInnerReq) {
+            return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
+        }
+
+        $initialRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+        $initialRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+        $sampleTakenByUsers = User::all();
+
+        return view('management.master.arrival_location.edit', compact('locationTransfer', 'initialRequestCompulsuryResults', 'initialRequestResults', 'sampleTakenByUsers', 'initialRequestForInnerReq'));
     }
 
     /**
