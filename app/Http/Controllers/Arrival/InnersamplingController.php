@@ -159,12 +159,12 @@ class InnersamplingController extends Controller
      */
     public function edit($id)
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->get();
+        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->get();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
 
-        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'results', 'arrivalSamplingRequest'));
+        return view('management.arrival.inner_sampling.edit', compact('samplingRequests', 'results', 'arrivalSamplingRequest'));
     }
 
     /**
