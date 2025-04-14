@@ -68,6 +68,9 @@ class SecondWeighbridgeController extends Controller
         $request['weight'] = $request->second_weight ?? 0;
         $arrival_locations = SecondWeighbridge::create($request->all());
 
+        ArrivalTicket::where('id', $request->arrival_ticket_id)
+            ->update(['second_weighbridge_status' => 'completed']);
+
         return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
     }
 
