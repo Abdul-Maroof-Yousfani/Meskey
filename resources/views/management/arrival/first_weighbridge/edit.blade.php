@@ -1,15 +1,16 @@
-<form action="{{ route('arrival-location.update',$arrival_location->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('arrival-location.update', $arrival_location->id) }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-location') }}" />
-   <div class="row form-mar">
+    <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Ticket:</label>
                 <select class="form-control select2" name="arrival_ticket_id">
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}">
+                        <option @selected($arrival_location->arrival_ticket_id == $arrivalTicket->id) value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             ITEM: {{ optional($arrivalTicket->product)->name }}
                         </option>
@@ -18,18 +19,10 @@
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Location:</label>
-                <select class="form-control select2" name="arrival_location_id">
-                    <option value="">Select Location</option>
-                    @foreach ($ArrivalLocations as $ArrivalLocations)
-                        <option value="{{ $ArrivalLocations->id }}">
-                           {{ $ArrivalLocations->name }}
-                           
-                        </option>
-                    @endforeach
-
-                </select>
+            <div class="form-group ">
+                <label>Weight:</label>
+                <input type="text" name="first_weight" placeholder="Weight" class="form-control" autocomplete="off"
+                    value="{{ $arrival_location->weight }}" />
             </div>
         </div>
 
@@ -37,7 +30,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
-                <textarea name="remark" placeholder="Remarks" class="form-control"></textarea>
+                <textarea name="remark" placeholder="Remarks" class="form-control">{{ $arrival_location->remark }}</textarea>
             </div>
         </div>
     </div>

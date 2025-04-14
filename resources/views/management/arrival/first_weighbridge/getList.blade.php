@@ -1,8 +1,9 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Ticket No# </th>
-            <th class="col-sm-4">weight</th>
+            <th class="col-sm-1">Ticket No.</th>
+            <th class="col-sm-1">Product</th>
+            <th class="col-sm-4">Weight</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -13,36 +14,33 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
+                            <small> {{ $row->arrivalTicket->unique_no ?? '-' }} </small>
                         </p>
                     </td>
+                    <td>{{ $row->arrivalTicket->product->name ?? '-' }}</td>
+                    <td>{{ $row->weight ?? '-' }}</td>
+
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
-                        </p>
-                    </td>
-                    
-                     <td>
-                     <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('first-weighbridge.edit', $row->id) }}','View Location Transfer')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
-                            </a>
-                        @endcan
+                        {{-- @can('role-edit') --}}
+                        <a onclick="openModal(this,'{{ route('first-weighbridge.edit', $row->id) }}','View Location Transfer', true)"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        {{-- @endcan
                         @can('role-delete')
                             <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.first-weighbridge') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
                             </a>
-                        @endcan
+                        @endcan --}}
                     </td>
                 </tr>
             @endforeach
@@ -71,14 +69,9 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $ArrivalSamplingRequests->links() }}
+        {{ $ArrivalSamplingRequests->links() }}
     </div>
 </div>

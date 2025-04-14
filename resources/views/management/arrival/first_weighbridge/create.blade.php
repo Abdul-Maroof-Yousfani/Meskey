@@ -1,6 +1,6 @@
-<form action="{{ route('location-transfer.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('first-weighbridge.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.arrival-location') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.first-weighbridge') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -21,18 +21,19 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Weight:</label>
-                <input type="text" name="first_weight" placeholder="Weight" class="form-control" autocomplete="off" />
+                <input type="text" name="first_weight" placeholder="Weight" class="form-control"
+                    autocomplete="off" />
             </div>
         </div>
 
-       
-            <div class="col-xs-12 col-sm-12 col-md-12">
-                <div class="form-group">
-                    <label>Comment:</label>
-                    <textarea name="remark" placeholder="Remarks" class="form-control"></textarea>
-                </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Comment:</label>
+                <textarea name="remark" placeholder="Remarks" class="form-control"></textarea>
             </div>
-        
+        </div>
+
     </div>
 
     <div class="row bottom-button-bar">
@@ -45,8 +46,7 @@
 
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         $('.select2').select2();
     });
-
 </script>

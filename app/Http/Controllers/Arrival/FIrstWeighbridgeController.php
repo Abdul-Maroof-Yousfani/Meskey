@@ -10,10 +10,11 @@ use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalLocationTransfer;
 use App\Models\Master\ArrivalLocation;
-use App\Models\FIrstWeighbridge;
+use App\Models\FirstWeighbridge;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-class FIrstWeighbridgeController extends Controller
+class FirstWeighbridgeController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -21,21 +22,20 @@ class FIrstWeighbridgeController extends Controller
     public function index()
     {
         return view('management.arrival.first_weighbridge.index');
-}
+    }
 
     /**
      * Get list of categories.
      */
     public function getList(Request $request)
     {
-        $ArrivalSamplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->when($request->filled('search'), function ($q) use ($request) {
+        $ArrivalSamplingRequests = FirstWeighbridge::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
             });
         })
             ->where('company_id', $request->company_id)
-
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -47,8 +47,8 @@ class FIrstWeighbridgeController extends Controller
      */
     public function create()
     {
-       $data['ArrivalLocations'] =  ArrivalLocation::where('status','active')->get();
-       $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status','pending')->get();
+        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
         return view('management.arrival.first_weighbridge.create', $data);
     }
 
@@ -57,8 +57,19 @@ class FIrstWeighbridgeController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validated();
-        $arrival_locations = ArrivalLocation::create($request->all());
+        $validator = Validator::make($request->all(), [
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'first_weight' => 'required|numeric',
+            'remark' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $request['created_by'] = auth()->user()->id;
+        $request['weight'] = $request->first_weight ?? 0;
+        $arrival_locations = FirstWeighbridge::create($request->all());
 
         return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
     }
@@ -68,8 +79,11 @@ class FIrstWeighbridgeController extends Controller
      */
     public function edit($id)
     {
-        $arrival_location = ArrivalLocation::findOrFail($id);
-        return view('management.master.first_weighbridge.edit', compact('arrival_location'));
+        $data['arrival_location'] = FirstWeighbridge::findOrFail($id);
+        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
+
+        return view('management.arrival.first_weighbridge.edit', $data);
     }
 
     /**
