@@ -80,9 +80,8 @@ class ArrivalApproveController extends Controller
         $request['remark'] = $request->note ?? '';
         $arrivalApprove = ArrivalApprove::create($request->all());
 
-
         ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['document_approval_status' => $request->bag_packing_approval == 'Half Approved' ? 'half_approved' : 'full_approved', 'second_weighbridge_status' => 'pending']);
+            ->update(['document_approval_status' => $request->bag_packing_approval == 'Half Approved' ? 'half_approved' : 'fully_approved', 'second_weighbridge_status' => 'pending']);
 
         return response()->json([
             'success' => 'Arrival Approval created successfully.',
