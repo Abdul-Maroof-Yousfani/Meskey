@@ -10,6 +10,7 @@ use App\Models\Master\ArrivalLocation;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\ArrivalLocationRequest;
+use App\Models\User;
 
 class ArrivalLocationController extends Controller
 {
@@ -91,25 +92,22 @@ class ArrivalLocationController extends Controller
 
     public function getInitialSamplingResultByTicketId(Request $request)
     {
-        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->arrival_ticket_id)
+        $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $request->arrival_ticket_id)
             ->where('sampling_type', 'initial')
             ->where('approved_status', 'approved')
-
-
             ->get()->last();
 
         // Check if related arrivalTicket exists
-        if (!$arrivalSamplingRequest) {
+        if (!$initialRequestForInnerReq) {
             return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
         }
-        //  dd($arrivalSamplingRequest);
-        $compulsoryParams  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
-        $slabs  = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
-
+        $initialRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+        $initialRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+        $sampleTakenByUsers = User::all();
 
         // Render view with the slabs wrapped inside a div
-        $html = view('management.arrival.location_transfer.getInitialQcDetail', compact('compulsoryParams', 'slabs'))->render();
+        $html = view('management.arrival.location_transfer.getInitialQcDetail', compact('initialRequestCompulsuryResults', 'sampleTakenByUsers', 'initialRequestForInnerReq', 'initialRequestResults', 'initialRequestCompulsuryResults', 'initialRequestResults'))->render();
         // dd($html);
 
         return response()->json(['success' => true, 'html' => $html]);

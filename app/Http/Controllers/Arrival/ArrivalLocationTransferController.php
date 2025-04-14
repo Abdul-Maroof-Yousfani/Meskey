@@ -9,6 +9,7 @@ use App\Models\Arrival\ArrivalLocationTransfer;
 use App\Models\Arrival\ArrivalTicket;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ArrivalLocationTransferController extends Controller
 {
@@ -18,7 +19,7 @@ class ArrivalLocationTransferController extends Controller
     public function index()
     {
         return view('management.arrival.location_transfer.index');
-}
+    }
 
     /**
      * Get list of categories.
@@ -44,20 +45,31 @@ class ArrivalLocationTransferController extends Controller
      */
     public function create()
     {
-       $data['ArrivalLocations'] =  ArrivalLocation::where('status','active')->get();
-       $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status','pending')->get();
+        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status', 'pending')->get();
         return view('management.arrival.location_transfer.create', $data);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalLocationRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
-        $arrival_locations = ArrivalLocation::create($request->all());
+        $validator = Validator::make($request->all(), [
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'arrival_location_id' => 'required|exists:arrival_locations,id',
+            'remark' => 'nullable|string',
+        ]);
 
-        return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $request['creator_id'] = auth()->user()->id;
+
+        $arrival_locations = ArrivalLocationTransfer::create($request->all());
+
+        return response()->json(['success' => 'Arrival Location Transfer created successfully.', 'data' => $arrival_locations], 201);
     }
 
     /**

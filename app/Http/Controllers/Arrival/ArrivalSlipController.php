@@ -17,7 +17,7 @@ class ArrivalSlipController extends Controller
     public function index()
     {
         return view('management.arrival.arrival_slip.index');
-}
+    }
 
     /**
      * Get list of categories.
@@ -43,8 +43,8 @@ class ArrivalSlipController extends Controller
      */
     public function create()
     {
-       $data['ArrivalLocations'] =  ArrivalLocation::where('status','active')->get();
-       $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status','pending')->get();
+        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status', 'pending')->get();
         return view('management.arrival.arrival_slip.create', $data);
     }
 

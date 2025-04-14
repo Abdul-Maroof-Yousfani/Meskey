@@ -6,55 +6,98 @@
     </div>
 </div>
 
+<div class="row w-100 mx-auto">
+    <div class="col-md-4"></div>
+    <div class="col-md-3 py-2 QcResult">
+        <h6>Result</h6>
+    </div>
+</div>
 <div class="striped-rows">
-    {{-- Slabs --}}
-    @if (count($slabs) != 0)
-        @foreach ($slabs as $slab)
+    @if (count($initialRequestResults) != 0)
+        @foreach ($initialRequestResults as $slab)
+            <?php
+            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($initialRequestForInnerReq->arrivalTicket)->product->id, $slab->checklist_value);
+            ?>
             <div class="form-group row">
-                <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
-                <label class="col-md-3 label-control font-weight-bold" for="slab-input-{{ $loop->index }}">
-                    {{ $slab->slabType->name }}
-                </label>
-                <div class="col-md-9">
-                    <input type="text" id="slab-input-{{ $loop->index }}" class="form-control"
-                        name="checklist_value[]" placeholder="%">
+                <input type="hidden" name="initial_product_slab_type_id[]" value="{{ $slab->slabType->id }}">
+                <label class="col-md-4 label-control font-weight-bold"
+                    for="striped-form-1">{{ $slab->slabType->name }}</label>
+                <div class="col-md-8 QcResult">
+                    <input type="text" id="striped-form-1" readonly class="form-control"
+                        name="initial_checklist_value[]" value="{{ $slab->checklist_value }}" placeholder="%">
                 </div>
             </div>
         @endforeach
     @else
         <div class="alert alert-warning">
-            No Slabs Found
+            No Initial Slabs Found
         </div>
     @endif
-
-    {{-- Compulsory QC Params --}}
-    @if (count($compulsoryParams) != 0)
-        @foreach ($compulsoryParams as $param)
+</div>
+<br>
+<div class="row w-100 mx-auto">
+    <div class="col-md-4"></div>
+    <div class="col-md-6 py-2 QcResult">
+        <h6>Result</h6>
+    </div>
+</div>
+<div class="striped-rows">
+    @if (count($initialRequestCompulsuryResults) != 0)
+        @foreach ($initialRequestCompulsuryResults as $slab)
             <div class="form-group row">
-                <input type="hidden" name="arrival_compulsory_qc_param_id[]" value="{{ $param->id }}">
-                <label class="col-md-3 label-control font-weight-bold" for="qc-param-{{ $loop->index }}">
-                    {{ $param->name }}
-                </label>
-                <div class="col-md-9">
-                    @if ($param->type == 'dropdown')
-                        <select name="compulsory_checklist_value[]" id="qc-param-{{ $loop->index }}"
-                            class="form-control">
-                            <option value="">Select Option</option>
-                            @foreach (json_decode($param->options, true) ?? [] as $key => $option)
-                                <option value="{{ $option }}" {{ $key == 0 ? 'selected' : '' }}>
-                                    {{ $option }}</option>
-                            @endforeach
-                        </select>
+                <input type="hidden" name="initial_compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
+                <label class="col-md-4 label-control font-weight-bold"
+                    for="striped-form-1">{{ $slab->qcParam->name }}</label>
+                <div class="col-md-8 QcResult">
+                    @if ($slab->qcParam->type == 'dropdown')
+                        <input type="text" id="striped-form-1" readonly class="form-control"
+                            name="initial_compulsory_checklist_value[]" value="{{ $slab->compulsory_checklist_value }}"
+                            placeholder="%">
                     @else
-                        <input type="text" id="qc-param-{{ $loop->index }}" class="form-control"
-                            name="compulsory_checklist_value[]" placeholder="Enter value">
+                        <textarea type="text" id="striped-form-1" readonly class="form-control" name="initial_compulsory_checklist_value[]"
+                            placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
                     @endif
                 </div>
             </div>
         @endforeach
     @else
         <div class="alert alert-warning">
-            No QC Parameters Found
+            No Initial Compulsory Slabs Found
         </div>
     @endif
+</div>
+<div class="row mt-3">
+    <div class="col-12">
+        <h6 class="header-heading-sepration">
+            Other Details
+        </h6>
+    </div>
+    <div class="col-12 px-3">
+        <div class="form-group ">
+            <label>Sample Taken By:</label>
+            <select name="sample_taken_by" id="sample_taken_by" class="form-control select2" disabled>
+                <option value="">Sample Taken By</option>
+                @foreach ($sampleTakenByUsers as $sampleTakenUser)
+                    <option @selected($initialRequestForInnerReq->sample_taken_by == $sampleTakenUser->id) value="{{ $sampleTakenUser->id }}">
+                        {{ $sampleTakenUser->name }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+    <div class="col-12 px-3">
+        <div class="form-group ">
+            <label>Sample Analysis By: </label>
+            <input type="text" readonly disabled name="sample_analysis_by" placeholder="Sample Analysis By"
+                class="form-control" autocomplete="off" value="{{ auth()->user()->name ?? '' }}" />
+        </div>
+    </div>
+    <div class="col-12 px-3">
+        <div class="form-group ">
+            <label>Party Ref. No: </label>
+            <select name="party_ref_no" id="party_ref_no" class="form-control select2" disabled>
+                <option value="{{ $initialRequestForInnerReq->party_ref_no }}">
+                    {{ $initialRequestForInnerReq->party_ref_no }}</option>
+            </select>
+        </div>
+    </div>
 </div>

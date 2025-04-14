@@ -33,8 +33,6 @@
         </div>
     </div>
 
-    <div id="slabsContainer">
-    </div>
 
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -45,6 +43,8 @@
         </div>
     </div>
 
+    <div id="slabsContainer">
+    </div>
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
