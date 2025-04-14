@@ -53,8 +53,8 @@
                                             <th class="col-sm-1">Bag Condition</th>
                                             <th class="col-sm-1">Bag Packing</th>
                                             <th class="col-sm-1">Approval Type</th>
-                                            <th class="col-sm-1">Total Bags</th>
-                                            <th class="col-sm-1">Rejection</th>
+                                            <th class="col-sm-1">Receivings</th>
+                                            <th class="col-sm-1">Rejections</th>
                                             <th class="col-sm-1">Amanat</th>
                                             <th class="col-sm-1">Created At</th>
                                             <th class="col-sm-1">Actions</th>
