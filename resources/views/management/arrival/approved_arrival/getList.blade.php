@@ -1,58 +1,68 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No. </th>
-            <th class="col-sm-2">Approved Type</th>
-            <th class="col-sm-2">Created At</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-1">Ticket No.</th>
+            <th class="col-sm-1">Product</th>
+            <th class="col-sm-1">Gala Name</th>
+            <th class="col-sm-1">Truck No</th>
+            <th class="col-sm-1">Filling Bags</th>
+            <th class="col-sm-1">Bag Type</th>
+            <th class="col-sm-1">Bag Condition</th>
+            <th class="col-sm-1">Bag Packing</th>
+            <th class="col-sm-1">Approval Type</th>
+            <th class="col-sm-1">Total Bags</th>
+            <th class="col-sm-1">Rejection</th>
+            <th class="col-sm-1">Amanat</th>
+            <th class="col-sm-1">Created At</th>
+            <th class="col-sm-1">Actions</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($ArrivalSamplingRequests) != 0)
-            @foreach ($ArrivalSamplingRequests as $key => $row)
+        @if (count($ArrivalApproves) != 0)
+            @foreach ($ArrivalApproves as $approval)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->unique_no }} <br>
+                            <small> {{ $approval->arrivalTicket->unique_no ?? '-' }} </small>
                         </p>
+                    </td>
+                    <td>{{ $approval->arrivalTicket->product->name ?? '-' }}</td>
+                    <td>{{ $approval->gala_name ?? '--' }}</td>
+                    <td>{{ $approval->truck_no ?? '--' }}</td>
+                    <td>{{ $approval->filling_bags_no ?? '--' }}</td>
+                    <td>{{ $approval->bagType->name ?? '--' }}</td>
+                    <td>{{ $approval->bagCondition->name ?? '--' }}</td>
+                    <td>{{ $approval->bagPacking->name ?? '--' }}</td>
+                    <td>
+                        <span
+                            class="badge bg-light-{{ $approval->bag_packing_approval == 'Full Approved' ? 'success' : 'warning' }}">
+                            {{ $approval->bag_packing_approval }}
+                        </span>
+                    </td>
+                    <td>{{ $approval->total_bags ?? '--' }}</td>
+                    <td>{{ $approval->total_rejection ?? '--' }}</td>
+                    <td>
+                        <span class="badge bg-light-{{ $approval->amanat == 'Yes' ? 'danger' : 'success' }}">
+                            {{ $approval->amanat }}
+                        </span>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            {{ \Carbon\Carbon::parse($approval->created_at)->format('Y-m-d') }}<br>
+                            {{ \Carbon\Carbon::parse($approval->created_at)->format('H:i A') }}
                         </p>
                     </td>
                     <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                            {{ $row->status }}
-                        </label>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
-
-                        </p>
-                    </td>
-                    <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('inner-sampling-request.edit', $row->id) }}','Edit Inner Sampling Request')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('inner-sampling-request.destroy', $row->id) }}','{{ route('get.inner-sampling-request') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
+                        <a onclick="openModal(this,'{{ route('arrival-approve.edit', $approval->id) }}','Edit Arrival Approval', true)"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="13" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -75,14 +85,9 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $ArrivalSamplingRequests->links() }}
+        {{ $ArrivalApproves->links() }}
     </div>
 </div>

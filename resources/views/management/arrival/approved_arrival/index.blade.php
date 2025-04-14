@@ -11,10 +11,9 @@
                     <h2 class="page-title"> Half/Full Approved</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button
-                        onclick="openModal(this,'{{ route('arrival-approve.create') }}','Add  Half/Full Approved')"
+                    <button onclick="openModal(this,'{{ route('arrival-approve.create') }}','Add  Half/Full Approved')"
                         type="button" class="btn btn-primary position-relative ">
-                       Create  Half/Full Approved
+                        Create Half/Full Approved
                     </button>
                 </div>
             </div>
@@ -45,12 +44,20 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Ticket No. </th>
-                                            <th class="col-sm-2">Sampling Status</th>
-                                            <th class="col-sm-2">Sampling Approval Status</th>
-                                            <th class="col-sm-1">Is Re-sampling</th>
-                                            <th class="col-sm-2">Created At</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-sm-1">Ticket No.</th>
+                                            <th class="col-sm-1">Product</th>
+                                            <th class="col-sm-1">Gala Name</th>
+                                            <th class="col-sm-1">Truck No</th>
+                                            <th class="col-sm-1">Filling Bags</th>
+                                            <th class="col-sm-1">Bag Type</th>
+                                            <th class="col-sm-1">Bag Condition</th>
+                                            <th class="col-sm-1">Bag Packing</th>
+                                            <th class="col-sm-1">Approval Type</th>
+                                            <th class="col-sm-1">Total Bags</th>
+                                            <th class="col-sm-1">Rejection</th>
+                                            <th class="col-sm-1">Amanat</th>
+                                            <th class="col-sm-1">Created At</th>
+                                            <th class="col-sm-1">Actions</th>
                                         </tr>
                                     </thead>
 
@@ -67,7 +74,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             filterationCommon(`{{ route('get.arrival-approve') }}`)
         });
     </script>
