@@ -10,7 +10,8 @@ use App\Http\Controllers\Arrival\{
     ArrivalLocationTransferController,
     ArrivalApproveController,
     SecondWeighbridgeController,
-    ArrivalSlipController
+    ArrivalSlipController,
+    FIrstWeighbridgeController
 };
 
 
@@ -38,6 +39,9 @@ Route::post('/get-inner-sampling', [InnersamplingController::class, 'getList'])-
 Route::resource('arrival-approve', ArrivalApproveController::class);
 Route::post('/get-arrival-approve', [ArrivalApproveController::class, 'getList'])->name('get.arrival-approve');
 
+
+Route::resource('first-weighbridge', FIrstWeighbridgeController::class);
+Route::post('/get-first-weighbridge', [FIrstWeighbridgeController::class, 'getList'])->name('get.first-weighbridge');
 
 Route::resource('second-weighbridge', SecondWeighbridgeController::class);
 Route::post('/get-second-weighbridge', [SecondWeighbridgeController::class, 'getList'])->name('get.second-weighbridge');

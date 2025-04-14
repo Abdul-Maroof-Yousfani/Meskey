@@ -68,6 +68,11 @@
                                 Transfer</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('first-weighbridge.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">First
+                                Weighbridge</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{route('inner-sampling-request.index')}}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Request For Inner
                                 Sampling</span></a>
