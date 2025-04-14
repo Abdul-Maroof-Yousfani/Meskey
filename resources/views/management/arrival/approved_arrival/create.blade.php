@@ -65,11 +65,13 @@
                 <label>Bag Packing:</label>
                 <div class="input-group mt-2">
                     <div class="radio d-inline-block mr-2 mb-1">
-                        <input type="radio" name="approval_type" id="striped-form-6" name="striped-radio" value="1">
+                        <input type="radio" name="approval_type" id="striped-form-6" name="striped-radio"
+                            value="1">
                         <label for="striped-form-6">Half Approved</label>
                     </div>
                     <div class="radio d-inline-block">
-                        <input type="radio" name="approval_type" id="striped-form-7" checked="" name="striped-radio" value="2">
+                        <input type="radio" name="approval_type" id="striped-form-7" checked=""
+                            name="striped-radio" value="2">
                         <label for="striped-form-7">Full Approved</label>
                     </div>
                 </div>
@@ -87,24 +89,26 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Total Bags : </label>
-                <input type="number" name="bilty_no" placeholder="Total Bags" class="form-control" autocomplete="off" />
+                <input type="number" name="bilty_no" placeholder="Total Bags" class="form-control"
+                    autocomplete="off" />
             </div>
         </div>
     </div>
-<div class="row total-rejection-section">
+    <div class="row total-rejection-section">
         <div class="col-12">
             <h6 class="header-heading-sepration" style="background:#ffafaf">
                 Total Rejection
             </h6>
         </div>
-        
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Total Bags : </label>
-                <input type="number" name="bilty_no" placeholder="Total Bags" class="form-control" autocomplete="off" />
+                <input type="number" name="bilty_no" placeholder="Total Bags" class="form-control"
+                    autocomplete="off" />
             </div>
         </div>
-         <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Amanat:</label>
                 <select class="form-control" name="status">
@@ -115,14 +119,14 @@
         </div>
     </div>
 
-<div class="row">
-    <!-- Description -->
-    <div class="col-xs-12 col-sm-12 col-md-12">
-        <div class="form-group">
-            <label>Note:</label>
-            <textarea name="remark" placeholder="Note" class="form-control" rows="5"></textarea>
+    <div class="row">
+        <!-- Description -->
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Note:</label>
+                <textarea name="remark" placeholder="Note" class="form-control" rows="5"></textarea>
+            </div>
         </div>
-    </div>
     </div>
 
     <div class="row bottom-button-bar">
@@ -135,18 +139,16 @@
 
 
 <script>
-$(document).ready(function () {
-    $('input[name="approval_type"]').change(function () {
-        if ($(this).val() == "1") {
-            $(".total-rejection-section").slideDown();
-        } else {
-            $(".total-rejection-section").slideUp();
-        }
-    }).trigger('change'); // Page load pe bhi check karne ke liye
+    $(document).ready(function() {
+        $('input[name="approval_type"]').change(function() {
+            if ($(this).val() == "1") {
+                $(".total-rejection-section").slideDown();
+            } else {
+                $(".total-rejection-section").slideUp();
+            }
+        }).trigger('change'); // Page load pe bhi check karne ke liye
 
 
-            $('.select2').select2();
-});
-
-
+        $('.select2').select2();
+    });
 </script>

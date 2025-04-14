@@ -15,7 +15,7 @@ class ArrivalApproveController extends Controller
     public function index()
     {
         return view('management.arrival.approved_arrival.index');
-}
+    }
 
     /**
      * Get list of categories.
@@ -41,7 +41,7 @@ class ArrivalApproveController extends Controller
      */
     public function create()
     {
-       $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status','pending')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
         return view('management.arrival.approved_arrival.create', $data);
     }
 

@@ -46,6 +46,7 @@ class ArrivalTicket extends Model
         'location_transfer_status',
         'second_qc_status',
         'document_approval_status',
+        'first_weighbridge_status',
         'second_weighbridge_status',
         'arrival_slip_status',
 
