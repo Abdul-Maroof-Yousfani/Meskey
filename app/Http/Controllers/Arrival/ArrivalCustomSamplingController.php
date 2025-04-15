@@ -59,7 +59,9 @@ class ArrivalCustomSamplingController extends Controller
     {
         $arrivalCustomSampling->delete();
 
+
+
         return redirect()->route('arrival-custom-sampling.index')
             ->with('success', 'Custom sampling deleted successfully.');
-    }
+    } 
 }
