@@ -66,7 +66,7 @@ class ArrivalSlipController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-    $request['creator_id'] = auth()->user()->id;
+        $request['creator_id'] = auth()->user()->id;
         $request['remark'] = $request->note ?? '';
         $arrivalApprove = ArrivalSlip::create($request->all());
 
@@ -88,7 +88,7 @@ class ArrivalSlipController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ArrivalLocationRequest $request, ArrivalLocation $arrival_location)
+    public function update(Request $request, ArrivalLocation $arrival_location)
     {
         $data = $request->validated();
         $arrival_location->update($data);
@@ -106,12 +106,13 @@ class ArrivalSlipController extends Controller
     }
 
 
-    public function getTicketDataForArrival(Request $request){
-       $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+    public function getTicketDataForArrival(Request $request)
+    {
+        $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
 
 
 
-                $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('ArrivalTicket'))->render();
+        $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('ArrivalTicket'))->render();
         // dd($html);
 
         return response()->json(['success' => true, 'html' => $html]);
