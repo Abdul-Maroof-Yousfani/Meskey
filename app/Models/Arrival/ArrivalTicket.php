@@ -106,4 +106,14 @@ class ArrivalTicket extends Model
     {
         return $this->belongsTo(User::class, 'accounts_of_id');
     }
+
+
+        public function unloadingLocation()
+    {
+        return $this->hasOne(ArrivalLocationTransfer::class, 'arrival_ticket_id');
+    }
+        public function arrivalSlip()
+    {
+        return $this->hasOne(ArrivalSlip::class, 'arrival_ticket_id');
+    }
 }

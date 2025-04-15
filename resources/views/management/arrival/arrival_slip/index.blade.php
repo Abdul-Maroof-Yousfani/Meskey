@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-Second Weighbridge
+Arrival Slip
 @endsection
 @section('content')
 <div class="content-wrapper">
@@ -68,7 +68,7 @@ Second Weighbridge
 @section('script')
 <script>
     $(document).ready(function () {
-        filterationCommon(`{{ route('get.second-weighbridge') }}`)
+        filterationCommon(`{{ route('get.arrival-slip') }}`)
     });
 </script>
 @endsection

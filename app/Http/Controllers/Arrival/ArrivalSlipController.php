@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Arrival\ArrivalSlip;
 use App\Models\Master\ArrivalLocation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
+
 
 class ArrivalSlipController extends Controller
 {
@@ -24,7 +28,7 @@ class ArrivalSlipController extends Controller
      */
     public function getList(Request $request)
     {
-        $ArrivalSamplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->when($request->filled('search'), function ($q) use ($request) {
+        $ArrivalSlip = ArrivalSlip::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
@@ -35,7 +39,7 @@ class ArrivalSlipController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.arrival.arrival_slip.getList', compact('ArrivalSamplingRequests'));
+        return view('management.arrival.arrival_slip.getList', compact('ArrivalSlip'));
     }
 
     /**
@@ -44,19 +48,32 @@ class ArrivalSlipController extends Controller
     public function create()
     {
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status', 'pending')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('second_weighbridge_status', 'completed')->get();
         return view('management.arrival.arrival_slip.create', $data);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalLocationRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
-        $arrival_locations = ArrivalLocation::create($request->all());
+        $validator = Validator::make($request->all(), [
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'remarks' => 'nullable|string'
+        ]);
 
-        return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+    $request['creator_id'] = auth()->user()->id;
+        $request['remark'] = $request->note ?? '';
+        $arrivalApprove = ArrivalSlip::create($request->all());
+
+        return response()->json([
+            'success' => 'Arrival Slip generated successfully.',
+            'data' => $arrivalApprove
+        ], 201);
     }
 
     /**
@@ -86,5 +103,17 @@ class ArrivalSlipController extends Controller
         $arrival_location = ArrivalLocation::findOrFail($id);
         $arrival_location->delete();
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
+    }
+
+
+    public function getTicketDataForArrival(Request $request){
+       $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+
+
+
+                $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('ArrivalTicket'))->render();
+        // dd($html);
+
+        return response()->json(['success' => true, 'html' => $html]);
     }
 }

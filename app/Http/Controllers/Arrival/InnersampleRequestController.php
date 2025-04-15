@@ -10,6 +10,7 @@ use App\Models\Master\ArrivalLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+
 class InnersampleRequestController extends Controller
 {
     /**
@@ -45,7 +46,8 @@ class InnersampleRequestController extends Controller
     public function create()
     {
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status', 'pending')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
+
         return view('management.arrival.inner_sample_request.create', $data);
     }
 

@@ -1,26 +1,33 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Ticket No# </th>
-            <th class="col-sm-4">weight</th>
-            <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-2">Ticket No# </th>
+            <th class="col-sm-2">Product</th>
+            <th class="col-sm-2">Unloading Location</th>
+            <th class="col-sm-2">Created at</th>
+            <th class="col-sm-2">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($ArrivalSamplingRequests) != 0)
-            @foreach ($ArrivalSamplingRequests as $key => $row)
+        @if (count($ArrivalSlip) != 0)
+            @foreach ($ArrivalSlip as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
+                            {{ $row->arrivalTicket->unique_no }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            {{ $row->arrivalTicket->product->name }} <br>
                         </p>
                     </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name }} <br>
+                        </p>
+                    </td>
+                 
                     
                      <td>
                      <p class="m-0">
@@ -79,6 +86,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $ArrivalSamplingRequests->links() }}
+            {{ $ArrivalSlip->links() }}
     </div>
 </div>
