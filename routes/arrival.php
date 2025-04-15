@@ -5,7 +5,7 @@ use App\Http\Controllers\Arrival\{
     TicketController,
     InitialSamplingController,
     SamplingMonitoringController,
-    InnerSamplingController,
+    InnersamplingController,
     InnersampleRequestController,
     ArrivalLocationTransferController,
     ArrivalApproveController,
