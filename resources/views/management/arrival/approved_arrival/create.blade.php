@@ -8,25 +8,25 @@
                 <select class="form-control select2" name="arrival_ticket_id" required>
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}">
-                            Ticket No: {{ $arrivalTicket->unique_no }} --
-                            ITEM: {{ optional($arrivalTicket->product)->name }}
+                        <option  data-trucknumber="{{ $arrivalTicket->truck_no }}" value="{{ $arrivalTicket->id }}">
+                            Ticket No: {{ $arrivalTicket->unique_no }} 
+                            {{-- -- ITEM: {{ optional($arrivalTicket->product)->name }} --}}
                         </option>
                     @endforeach
                 </select>
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Gala Name:</label>
                 <input type="text" name="gala_name" placeholder="Gala Name" class="form-control" autocomplete="off"
                     required />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Truck No:</label>
-                <input type="text" name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off"
+                <input type="text" readonly name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off"
                     required />
             </div>
         </div>
@@ -155,5 +155,16 @@
         }).trigger('change');
 
         $('.select2').select2();
+
+
+
+
+
+
+        // Autofill truck_no based on selected ticket
+        $('select[name="arrival_ticket_id"]').on('change', function() {
+            let truckNo = $(this).find(':selected').data('trucknumber') || '';
+            $('input[name="truck_no"]').val(truckNo);
+        });
     });
 </script>
