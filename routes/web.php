@@ -37,7 +37,7 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
     });
 
 
-        Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
+    Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
     Route::get('getInitialSamplingResultByTicketId', [ArrivalLocationController::class, 'getInitialSamplingResultByTicketId'])->name('getInitialSamplingResultByTicketId');
     Route::get('getTicketDataForArrival', [ArrivalSlipController::class, 'getTicketDataForArrival'])->name('getTicketDataForArrival');
 });

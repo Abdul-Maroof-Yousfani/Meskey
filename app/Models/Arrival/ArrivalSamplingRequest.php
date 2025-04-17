@@ -4,6 +4,7 @@ namespace App\Models\Arrival;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Acl\Company;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,6 +13,7 @@ class ArrivalSamplingRequest extends Model
     use SoftDeletes;
     protected $fillable = [
         'company_id',
+        'arrival_product_id',
         'arrival_ticket_id',
         'sampling_type',
         'is_re_sampling',
@@ -21,7 +23,9 @@ class ArrivalSamplingRequest extends Model
         'approved_remarks',
         'approved_status',
         'party_ref_no',
-        'sample_taken_by'
+        'sample_taken_by',
+        'lumpsum_deduction',
+        'is_lumpsum_deduction',
     ];
 
 
@@ -39,6 +43,11 @@ class ArrivalSamplingRequest extends Model
     public function arrivalTicket()
     {
         return $this->belongsTo(ArrivalTicket::class);
+    }
+
+    public function arrivalProduct()
+    {
+        return $this->belongsTo(Product::class, 'arrival_product_id');
     }
 
     public function takenByUser()

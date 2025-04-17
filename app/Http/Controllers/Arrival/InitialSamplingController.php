@@ -8,6 +8,7 @@ use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use App\Http\Requests\Arrival\ArrivalSamplingResultRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Product;
 use App\Models\User;
 
 class InitialSamplingController extends Controller
@@ -49,8 +50,9 @@ class InitialSamplingController extends Controller
         $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no')->get();
         $arrivalCustomSampling = ArrivalCustomSampling::all();
         $sampleTakenByUsers = User::all();
+        $products = Product::all();
 
-        return view('management.arrival.initial_sampling.create', compact('samplingRequests', 'arrivalCustomSampling', 'sampleTakenByUsers'));
+        return view('management.arrival.initial_sampling.create', compact('samplingRequests', 'arrivalCustomSampling', 'sampleTakenByUsers', 'products'));
     }
 
     /**
@@ -62,6 +64,7 @@ class InitialSamplingController extends Controller
 
         $ArrivalSamplingRequest->update([
             'remark' => $request->remarks,
+            'arrival_product_id' => $request->arrival_product_id,
             'is_done' => 'yes',
             'party_ref_no' => $request->party_ref_no ?? NULL,
             'sample_taken_by' => $request->sample_taken_by ?? NULL,

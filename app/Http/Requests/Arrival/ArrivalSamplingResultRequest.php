@@ -21,6 +21,7 @@ class ArrivalSamplingResultRequest extends FormRequest
     {
         return [
             'company_id' => 'required|exists:companies,id',
+            'arrival_product_id' => 'required|exists:products,id',
             'arrival_sampling_request_id' => 'required|exists:arrival_sampling_requests,id',
             'product_slab_type_id' => 'required|array',
             'product_slab_type_id.*' => 'required|exists:product_slab_types,id',

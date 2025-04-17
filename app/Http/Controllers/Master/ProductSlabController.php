@@ -90,9 +90,18 @@ class ProductSlabController extends Controller
 
     public function getSlabsByProduct(Request $request)
     {
+        if (isset($request->product_id)) {
+            $compulsoryParams  = ArrivalCompulsoryQcParam::get();
+
+            $slabs = ProductSlab::where('product_id', $request->product_id)->get()->unique('product_slab_type_id');
+
+            $html = view('management.master.product_slab.forInspection', compact('slabs', 'compulsoryParams'))->render();
+
+            return response()->json(['success' => true, 'html' => $html]);
+        }
+
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->sampling_request_id);
         $compulsoryParams  = ArrivalCompulsoryQcParam::get();
-
 
         // Check if related arrivalTicket exists
         if (!$arrivalSamplingRequest->arrivalTicket) {
