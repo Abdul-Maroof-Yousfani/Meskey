@@ -4,15 +4,27 @@
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Product:</label>
+                <label>Ticket:</label>
                 <select name="arrival_sampling_request_id" id="arrival_sampling_request_id"
                     class="form-control select2">
                     <option value="">Select Ticket</option>
                     @foreach ($samplingRequests as $samplingRequest)
                         <option {{ $samplingRequest->id == $arrivalSamplingRequest->id ? 'selected' : '' }}
                             value="{{ $samplingRequest->id }}">
-                            Ticket No: {{ optional($samplingRequest->arrivalTicket)->unique_no }} --
-                            ITEM: {{ optional(optional($samplingRequest->arrivalTicket)->product)->name }}
+                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Product:</label>
+                <select name="arrival_product_id" id="arrival_product_id" class="form-control select2">
+                    <option value="">Select Product</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}" @selected($arrivalSamplingRequest->arrival_product_id == $product->id)>
+                            {{ $product->name ?? '' }}
                         </option>
                     @endforeach
                 </select>

@@ -106,6 +106,7 @@ class InitialSamplingController extends Controller
     public function edit($id)
     {
         $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->get();
+        $products = Product::all();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
@@ -114,7 +115,7 @@ class InitialSamplingController extends Controller
         $arrivalCustomSampling = ArrivalCustomSampling::all();
         $sampleTakenByUsers = User::all();
 
-        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'arrivalCustomSampling', 'compulsuryResults', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest'));
+        return view('management.arrival.initial_sampling.edit', compact('samplingRequests', 'products', 'arrivalCustomSampling', 'compulsuryResults', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest'));
     }
 
     /**

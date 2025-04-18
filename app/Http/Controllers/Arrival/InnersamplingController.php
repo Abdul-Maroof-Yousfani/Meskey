@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\Product;
 
 class InnersamplingController extends Controller
 {
@@ -43,7 +44,9 @@ class InnersamplingController extends Controller
     public function create()
     {
         $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_done', 'no')->get();
-        return view('management.arrival.inner_sampling.create', compact('samplingRequests'));
+        $products = Product::all();
+
+        return view('management.arrival.inner_sampling.create', compact('samplingRequests', 'products'));
     }
 
     /**
@@ -141,6 +144,7 @@ class InnersamplingController extends Controller
         $ArrivalSamplingRequest->update([
             'remark' => $request->remarks,
             'is_done' => 'yes',
+            'arrival_product_id' => $request->arrival_product_id,
             'party_ref_no' => $request->party_ref_no ?? NULL,
             'sample_taken_by' => $request->sample_taken_by ?? NULL,
             'done_by' => auth()->user()->id,
@@ -160,11 +164,12 @@ class InnersamplingController extends Controller
     public function edit($id)
     {
         $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->get();
+        $products = Product::all();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
 
-        return view('management.arrival.inner_sampling.edit', compact('samplingRequests', 'results', 'arrivalSamplingRequest'));
+        return view('management.arrival.inner_sampling.edit', compact('samplingRequests', 'products', 'results', 'arrivalSamplingRequest'));
     }
 
     /**

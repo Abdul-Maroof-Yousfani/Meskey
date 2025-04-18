@@ -4,15 +4,26 @@
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Product:</label>
+                <label>Ticket:</label>
                 <select name="arrival_sampling_request_id" id="arrival_sampling_request_id"
                     class="form-control select2">
                     <option value="">Select Ticket</option>
                     @foreach ($samplingRequests as $samplingRequest)
                         <option value="{{ $samplingRequest->id }}">
-                            Ticket No: {{ optional($samplingRequest->arrivalTicket)->unique_no }} --
-                            ITEM: {{ optional(optional($samplingRequest->arrivalTicket)->product)->name }}
-                            {{ $samplingRequest->is_re_sampling == 'yes' ? '- Resampling' : '' }}
+                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Product:</label>
+                <select name="arrival_product_id" id="arrival_product_id" class="form-control select2">
+                    <option value="">Select Product</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}">
+                            {{ $product->name ?? '' }}
                         </option>
                     @endforeach
                 </select>
@@ -46,7 +57,7 @@
 
 <script>
     $(document).ready(function() {
-        $('#arrival_sampling_request_id').change(function() {
+        $('#arrival_product_id').change(function() {
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
@@ -54,7 +65,7 @@
                     url: '{{ route('getSlabsByProduct') }}',
                     type: 'GET',
                     data: {
-                        sampling_request_id: samplingRequestId
+                        product_id: samplingRequestId
                     },
                     dataType: 'json',
                     beforeSend: function() {
