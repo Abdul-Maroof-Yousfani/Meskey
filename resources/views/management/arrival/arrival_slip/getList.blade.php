@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No# </th>
+            <th class="col-sm-2">Ticket No. </th>
             <th class="col-sm-2">Product</th>
             <th class="col-sm-2">Unloading Location</th>
             <th class="col-sm-2">Created at</th>
@@ -27,15 +27,15 @@
                             {{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name }} <br>
                         </p>
                     </td>
-                 
-                    
-                     <td>
-                     <p class="m-0">
+
+
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('location-transfer.edit', $row->id) }}','View Location Transfer')"
@@ -86,6 +86,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $ArrivalSlip->links() }}
+        {{ $ArrivalSlip->links() }}
     </div>
 </div>

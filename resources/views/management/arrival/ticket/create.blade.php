@@ -6,9 +6,7 @@
         <?php
         $datePrefix = date('m-d-Y') . '-';
         $unique_no = generateUniqueNumber('arrival_tickets', $datePrefix, null, 'unique_no');
-        
         ?>
-
 
         <div class="col-xs-6 col-sm-6 col-md-6">
             <fieldset>
@@ -32,18 +30,48 @@
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group ">
-                <label>Supplier:</label>
-                <select name="supplier_name" id="supplier_name" class="form-control select2">
-                    <option value="">Supplier Name</option>
+            <div class="form-group">
+                <label class="d-block">Contract Detail:</label>
+                <select name="arrival_purchase_order_id" id="arrival_purchase_order_id" class="form-control select2 ">
+                    <option value="">N/A</option>
+                    @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
+                        <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"
+                            data-brokerid="{{ $arrivalPurchaseOrder->broker->id ?? '' }}"
+                            data-brokername="{{ $arrivalPurchaseOrder->broker->name ?? '' }}"
+                            data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
+                            data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
+                            value="{{ $arrivalPurchaseOrder->id }}">
+                            {{ $arrivalPurchaseOrder->unique_no }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
+                <label>Supplier:</label>
+                <select name="supplier_name_display" id="supplier_name" class="form-control select2">
+                    <option value="">Supplier Name</option>
+                </select>
+                <input type="hidden" name="supplier_name" id="supplier_name_submit">
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_name" id="broker_name" class="form-control select2">
+                <select name="broker_name_display" id="broker_name" class="form-control select2">
                     <option value="">Broker Name</option>
+                </select>
+                <input type="hidden" name="broker_name" id="broker_name_submit">
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Decision Of:</label>
+                <select name="decision_id" id="decision_id" class="form-control select2">
+                    <option value="" hidden>Decision Of</option>
+                    @foreach ($accountsOf as $account)
+                        <option value="{{ $account->id }}">{{ $account->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -52,9 +80,6 @@
                 <label>Accounts Of:</label>
                 <select name="accounts_of" id="accounts_of" class="form-control select2">
                     <option value="" hidden>Accounts Of</option>
-                    @foreach ($accountsOf as $account)
-                        <option value="{{ $account->id }}">{{ $account->name }}</option>
-                    @endforeach
                 </select>
             </div>
         </div>
@@ -102,7 +127,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>No of bags: </label>
-                <input type="text" name="bags" placeholder="No of bags" class="form-control" autocomplete="off" />
+                <input type="text" name="bags" placeholder="No of bags" class="form-control"
+                    autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -185,14 +211,56 @@
     $(document).ready(function() {
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 
-        $('[name="arrival_truck_type_id"], [name="accounts_of"]').select2();
+        $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
 
         $(document).on('change', '[name="arrival_truck_type_id"]', function() {
             let sampleMoney = $(this).find(':selected').data('samplemoney');
             $('input[name="sample_money"]').val(sampleMoney ?? '');
+        });
+
+        $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
+            var selectedOption = $(this).find('option:selected');
+            var brokerName = selectedOption.data('brokername');
+            var supplierName = selectedOption.data('suppliername');
+
+            // Handle supplier
+            if (supplierName) {
+                $('#supplier_name').html('<option value="' + supplierName + '" selected>' +
+                    supplierName + '</option>');
+                $('#supplier_name').prop('disabled', true);
+                $('#supplier_name_submit').val(supplierName); // Set hidden field
+            } else {
+                $('#supplier_name').html('<option value="">Supplier Name</option>');
+                $('#supplier_name').prop('disabled', false);
+                $('#supplier_name_submit').val(''); // Clear hidden field
+                initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
+            }
+
+            // Handle broker
+            if (brokerName) {
+                $('#broker_name').html('<option value="' + brokerName + '" selected>' + brokerName +
+                    '</option>');
+                $('#broker_name').prop('disabled', true);
+                $('#broker_name_submit').val(brokerName); // Set hidden field
+            } else {
+                $('#broker_name').html('<option value="">Broker Name</option>');
+                $('#broker_name').prop('disabled', false);
+                $('#broker_name_submit').val(''); // Clear hidden field
+                initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
+            }
+        });
+
+        // Sync values on any change (just in case)
+        $(document).on('change', '#supplier_name, #broker_name', function() {
+            if ($(this).attr('id') === 'supplier_name') {
+                $('#supplier_name_submit').val($(this).val());
+            } else {
+                $('#broker_name_submit').val($(this).val());
+            }
         });
     });
 </script>

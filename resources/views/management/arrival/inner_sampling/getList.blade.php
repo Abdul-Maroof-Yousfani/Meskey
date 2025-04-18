@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No# </th>
+            <th class="col-sm-2">Ticket No. </th>
             <th class="col-sm-2">Product</th>
             {{-- <th class="col-sm-2">Arroval Status</th> --}}
             <th class="col-sm-4">Remark</th>

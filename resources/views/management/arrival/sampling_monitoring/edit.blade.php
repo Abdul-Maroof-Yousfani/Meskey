@@ -1,3 +1,9 @@
+@php
+    $isLumpSumEnabled = $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? true : false;
+    $isLumpSumEnabledForInitial =
+        isset($initialRequestForInnerReq) && $initialRequestForInnerReq->is_lumpsum_deduction == 1 ? true : false;
+    $valuesOfInitialSlabs = [];
+@endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
@@ -15,13 +21,13 @@
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <button class="btn btn-primary" type="button">
-                            Ticket No#
+                            Ticket No.
                             <i class="fa fa-chevron-down ml-2 toggle-icon" aria-hidden="true"></i>
                         </button>
                     </div>
                     <input type="text" disabled class="form-control"
                         value="{{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no }}"
-                        placeholder="Button on left">
+                        placeholder="Ticket No.">
                 </div>
             </fieldset>
         </div>
@@ -29,42 +35,37 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div id="collapse11" role="tabpanel" aria-labelledby="headingCollapse11" class="collapse " style="">
                 <div class="row form-mar">
+                    <div class="col-xs-4 col-sm-4 col-md-12">
+                        <div class="form-group">
+                            <label>Ticket Product:</label>
+                            <input type="text" disabled="" class="form-control"
+                                value=" {{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name }}"
+                                placeholder="Ticket Product">
+                        </div>
+                    </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
                             <label>Supplier:</label>
                             <input type="text" class="form-control" name="supplier"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->supplier_name }}">
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->supplier_name }}" disabled>
                         </div>
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
                             <label>Broker:</label>
                             <input type="text" class="form-control" name="broker"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name }}">
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name }}" disabled>
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4 full">
-                        <div class="form-group">
-                            <label class="d-block">Contract Detail:</label>
-                            <select name="arrival_purchase_order_id" id="arrival_purchase_order_id"
-                                class="form-control select2 ">
-                                <option value="">N/A</option>
-                                @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
-                                    <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"
-                                        @selected(optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id == $arrivalPurchaseOrder->id) value="{{ $arrivalPurchaseOrder->id }}">
-                                        {{ $arrivalPurchaseOrder->unique_no }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+
                     <div class="col-xs-4 col-sm-4 col-md-4 full">
                         <div class="form-group">
                             <label class="d-block">Sauda Type:</label>
                             <input type="hidden" name="sauda_type_id" id="actual_sauda_type_id"
                                 value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
-                            <select name="sauda_type_id_display" id="sauda_type_id" @disabled(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
-                                    (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ?? null))
-                                class="form-control w-100 select2">
+                            <select disabled name="sauda_type_id_display" id="sauda_type_id"
+                                @disabled(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
+                                        (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ?? null)) class="form-control w-100 select2">
                                 <option value="">N/A</option>
                                 @foreach ($saudaTypes as $saudaType)
                                     <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
@@ -76,9 +77,18 @@
 
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group ">
+                            <label class="d-block">Decisioned Of:</label>
+                            <input type="text" name="accounts_of" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->decisionBy->name ?? '' }}"
+                                placeholder="Truck No" class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group ">
                             <label class="d-block">Accounts Of:</label>
                             <input type="text" name="accounts_of" disabled
-                                value=" {{ optional($arrivalSamplingRequest->arrivalTicket)->accountsOf->name ?? '' }}"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_id ?? '' }}"
                                 placeholder="Truck No" class="form-control" autocomplete="off" />
                         </div>
                     </div>
@@ -146,24 +156,24 @@
                             <textarea name="remarks" row="2" class="form-control" disabled placeholder="Remarks">{{ optional($arrivalSamplingRequest->arrivalTicket)->remarks }}</textarea>
                         </div>
                     </div>
-
-
                 </div>
             </div>
             <div class="row">
+
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group">
-                        <label>Product:</label>
+                        <label>QC Product:</label>
                         <input type="text" disabled="" class="form-control"
-                            value="ITEM: {{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name }}"
-                            placeholder="Button on left">
+                            value="{{ $arrivalSamplingRequest->arrivalProduct->name ?? '' }}"
+                            placeholder="QC Product">
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group ">
+                        {{-- @dd($arrivalSamplingRequest) --}}
                         <label>Status:</label>
                         <select name="stage_status" id="stage_status" class="form-control select2"
-                            @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
+                            {{-- @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected'])) --}}>
                             <option value="" hidden>Choose Status</option>
                             <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
                                 value="approved">
@@ -223,6 +233,8 @@
                             @foreach ($initialRequestResults as $slab)
                                 <?php
                                 $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                                $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
+                                $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
                                 ?>
                                 <div class="form-group row">
                                     <input type="hidden" name="initial_product_slab_type_id[]"
@@ -232,21 +244,42 @@
                                     <div class="col-md-3 QcResult">
                                         <input type="text" id="striped-form-1" readonly class="form-control"
                                             name="initial_checklist_value[]" value="{{ $slab->checklist_value }}"
-                                            placeholder="%">
+                                            placeholder="%" disabled>
                                     </div>
                                     <div class="col-md-3 Suggested">
                                         <input type="text" id="striped-form-1" readonly class="form-control"
                                             placehold name="initial_suggested_value[]"
                                             value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
-                                            placeholder="Suggested Deduction">
+                                            placeholder="Suggested Deduction" disabled>
                                     </div>
                                     <div class="col-md-2 QcResult">
                                         <input type="text" id="striped-form-1" class="form-control bg-white"
-                                            placehold name="initial_applied_deduction[]"
-                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                            placehold name="initial_applied_deduction[]" disabled
+                                            value="{{ $deductionValue }}" placeholder="Deduction">
                                     </div>
                                 </div>
                             @endforeach
+                            <div class="form-group row">
+                                <label class="col-md-4 label-control font-weight-bold"
+                                    for="lumpsum-toggle-initial">Apply
+                                    Lumpsum
+                                    Deduction</label>
+                                <div class="col-md-3">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" name="is_lumpsum_deduction_initial"
+                                            class="custom-control-input" id="lumpsum-toggle-initial"
+                                            @checked($isLumpSumEnabledForInitial) disabled>
+                                        <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" id="lumpsum-value-initial" class="form-control"
+                                        name="lumpsum_deduction_initial" disabled
+                                        {{ $isLumpSumEnabledForInitial ? '' : 'readonly' }}
+                                        value="{{ $initialRequestForInnerReq->lumpsum_deduction ?? 0 }}"
+                                        placeholder="Lumpsum Deduction">
+                                </div>
+                            </div>
                         @else
                             <div class="alert alert-warning">
                                 No Initial Slabs Found
@@ -316,7 +349,7 @@
                         @foreach ($results as $slab)
                             <?php
                             $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
-                            ?>
+                            $innerDeductionValue = $isLumpSumEnabled ? 0 : (isset($slab->applied_deduction) && $slab->applied_deduction !== null && $slab->applied_deduction != 0 ? $slab->applied_deduction : $valuesOfInitialSlabs[$slab->slabType->id] ?? 0); ?>
                             <div class="form-group row">
                                 <input type="hidden" name="product_slab_type_id[]"
                                     value="{{ $slab->slabType->id }}">
@@ -328,18 +361,37 @@
                                         placeholder="%">
                                 </div>
                                 <div class="col-md-3 Suggested">
-                                    <input type="text" id="striped-form-1" readonly class="form-control" placehold
+                                    <input type="text" id="striped-form-1" readonly class="form-control"
                                         name="suggested_value[]"
                                         value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
                                         placeholder="Suggested Deduction">
                                 </div>
                                 <div class="col-md-2 QcResult">
-                                    <input type="text" id="striped-form-1" class="form-control bg-white" placehold
-                                        name="applied_deduction[]" value="{{ $slab->applied_deduction ?? 0 }}"
-                                        placeholder="Deduction">
+                                    <input type="text" id="deduction-{{ $slab->slabType->id }}"
+                                        class="form-control bg-white deduction-field" name="applied_deduction[]"
+                                        value="{{ $innerDeductionValue }}"
+                                        placeholder="Deduction {{ $innerDeductionValue }}"
+                                        {{ $isLumpSumEnabled ? 'readonly' : '' }}>
                                 </div>
                             </div>
                         @endforeach
+                        <div class="form-group row">
+                            <label class="col-md-4 label-control font-weight-bold" for="lumpsum-toggle">Apply Lumpsum
+                                Deduction</label>
+                            <div class="col-md-3">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" name="is_lumpsum_deduction" class="custom-control-input"
+                                        id="lumpsum-toggle" @checked($isLumpSumEnabled)>
+                                    <label class="custom-control-label" for="lumpsum-toggle"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" id="lumpsum-value" class="form-control"
+                                    name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
+                                    placeholder="Lumpsum Deduction">
+                            </div>
+                        </div>
                     @else
                         <div class="alert alert-warning">
                             No Slabs Found
@@ -451,6 +503,58 @@
 
 <script>
     $(document).ready(function() {
+        // if (typeof calculateTotal !== 'function') {
+        // function calculateTotal() {
+        //     let total = 0;
+        //     $('.deduction-field').each(function() {
+        //         total += parseFloat($(this).val()) || 0;
+        //     });
+        //     $('#lumpsum-value').val(total.toFixed(2));
+        // }
+        // }
+
+        function calculateTotal() {
+            let total = 0;
+            $('.deduction-field').each(function() {
+                total += parseFloat($(this).val()) || 0;
+            });
+            $('#lumpsum-value').val(total.toFixed(2));
+        }
+
+        calculateTotal();
+
+        if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
+            $('#lumpsum-value').val({{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}.toFixed(2));
+        }
+
+        $('.deduction-field').on('input', calculateTotal);
+
+        $('#lumpsum-toggle').change(function() {
+            if ($(this).is(':checked')) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This will reset all individual deductions!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, apply lumpsum!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('.deduction-field').val('0').prop('readonly', true);
+                        $('#lumpsum-value').prop('readonly', false);
+                        calculateTotal();
+                    } else {
+                        $(this).prop('checked', false);
+                    }
+                });
+            } else {
+                $('.deduction-field').prop('readonly', false);
+                $('#lumpsum-value').prop('readonly', true).val('0');
+                calculateTotal();
+            }
+        });
+
         $('#arrival_sampling_request_id').change(function() {
             var samplingRequestId = $(this).val();
 

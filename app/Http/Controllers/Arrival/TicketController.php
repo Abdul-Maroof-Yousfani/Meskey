@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Arrival;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Arrival\ArrivalTicketRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
@@ -42,6 +44,7 @@ class TicketController extends Controller
     public function create(Request $request)
     {
         $authUserCompany = $request->company_id;
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::all();
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -49,7 +52,7 @@ class TicketController extends Controller
             })
             ->get();
 
-        return view('management.arrival.ticket.create', ['accountsOf' => $accountsOf]);
+        return view('management.arrival.ticket.create', ['accountsOf' => $accountsOf, 'arrivalPurchaseOrders' => $arrivalPurchaseOrders]);
     }
 
     /**
@@ -59,6 +62,17 @@ class TicketController extends Controller
     {
         $request->validated();
         $request = $request->all();
+
+        $exists = ArrivalTicket::where('truck_no', $request['truck_no'])
+            ->where('bilty_no', $request['bilty_no'])
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'truck_no' => ['Truck with this Bilty No already exists.'],
+            ]);
+        }
+
         $request['first_qc_status'] = 'pending';
         $request['accounts_of_id'] = $request['accounts_of'] ?? NULL;
         $request['truck_type_id'] = $request['arrival_truck_type_id'] ?? NULL;

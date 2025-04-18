@@ -124,8 +124,8 @@ class SamplingMonitoringController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'supplier' => 'required',
-            'broker' => 'required',
+            // 'supplier' => 'required',
+            // 'broker' => 'required',
             'stage_status' => 'required',
         ]);
 
@@ -137,9 +137,12 @@ class SamplingMonitoringController extends Controller
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
             // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
 
+            $isLumpsum = ($request->is_lumpsum_deduction ?? 'off') == 'on' ? 1 : 0;
             // Update main entry
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
+                'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
+                'is_lumpsum_deduction' => $isLumpsum,
                 'is_done' => 'yes',
                 'done_by' => auth()->user()->id,
             ]);
@@ -179,7 +182,8 @@ class SamplingMonitoringController extends Controller
 
             // Update status
 
-            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'supplier_name' => $request->supplier, 'broker_name' => $request->broker, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
+            // $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'supplier_name' => $request->supplier, 'broker_name' => $request->broker, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 

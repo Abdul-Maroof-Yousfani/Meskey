@@ -10,6 +10,7 @@ class FirstWeighbridge extends Model
 {
     use HasFactory;
 
+
     protected $fillable = [
         'arrival_ticket_id',
         'company_id',

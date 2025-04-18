@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No# </th>
+            <th class="col-sm-2">Ticket No. </th>
             <th class="col-sm-2">Commodity</th>
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-1">Truck No</th>
@@ -25,32 +25,33 @@
                             {{ optional($row->product)->name ?? 'No Found' }} <br>
                         </p>
                     </td>
-                      <td>
+                    <td>
                         <p class="m-0">
                             {{ $row->supplier_name }} <br>
                         </p>
-                      <td>
+                    <td>
                         <p class="m-0">
                             {{ $row->truck_no }} <br>
                         </p>
                     </td>
-                      <td>
+                    <td>
                         <p class="m-0">
                             {{ $row->bilty_no }} <br>
                         </p>
                     </td>
-                      <td>
-                        <label  class="badge text-uppercase m-0 {{$row->first_qc_status == 'rejected' ? 'badge-danger' : 'badge-primary'}}">
+                    <td>
+                        <label
+                            class="badge text-uppercase m-0 {{ $row->first_qc_status == 'rejected' ? 'badge-danger' : 'badge-primary' }}">
                             {{ $row->first_qc_status }} <br>
                         </label>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','Edit Ticket')"
@@ -101,6 +102,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $UnitOfMeasures->links() }}
+        {{ $UnitOfMeasures->links() }}
     </div>
 </div>
