@@ -40,11 +40,15 @@ Route::resource('arrival-approve', ArrivalApproveController::class);
 Route::post('/get-arrival-approve', [ArrivalApproveController::class, 'getList'])->name('get.arrival-approve');
 
 
-Route::resource('first-weighbridge', FIrstWeighbridgeController::class);
-Route::post('/get-first-weighbridge', [FIrstWeighbridgeController::class, 'getList'])->name('get.first-weighbridge');
+Route::resource('first-weighbridge', FirstWeighbridgeController::class);
+Route::post('/get-first-weighbridge', [FirstWeighbridgeController::class, 'getList'])->name('get.first-weighbridge');
+Route::get('/getFirstWeighbridgeRelatedData', [FirstWeighbridgeController::class, 'getFirstWeighbridgeRelatedData'])->name('getFirstWeighbridgeRelatedData');
+
+
 
 Route::resource('second-weighbridge', SecondWeighbridgeController::class);
 Route::post('/get-second-weighbridge', [SecondWeighbridgeController::class, 'getList'])->name('get.second-weighbridge');
+Route::get('/getSecondWeighbridgeRelatedData', [SecondWeighbridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
 
 Route::resource('arrival-slip', ArrivalSlipController::class);
 Route::post('/get-arrival-slip', [ArrivalSlipController::class, 'getList'])->name('get.arrival-slip');
