@@ -1,5 +1,8 @@
 @php
     $isLumpSumEnabled = $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? true : false;
+    $isLumpSumEnabledForInitial =
+        isset($initialRequestForInnerReq) && $initialRequestForInnerReq->is_lumpsum_deduction == 1 ? true : false;
+    $valuesOfInitialSlabs = [];
 @endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
@@ -18,13 +21,13 @@
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <button class="btn btn-primary" type="button">
-                            Ticket No#
+                            Ticket No.
                             <i class="fa fa-chevron-down ml-2 toggle-icon" aria-hidden="true"></i>
                         </button>
                     </div>
                     <input type="text" disabled class="form-control"
                         value="{{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no }}"
-                        placeholder="Button on left">
+                        placeholder="Ticket No.">
                 </div>
             </fieldset>
         </div>
@@ -37,7 +40,7 @@
                             <label>Ticket Product:</label>
                             <input type="text" disabled="" class="form-control"
                                 value=" {{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name }}"
-                                placeholder="Button on left">
+                                placeholder="Ticket Product">
                         </div>
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
@@ -162,7 +165,7 @@
                         <label>QC Product:</label>
                         <input type="text" disabled="" class="form-control"
                             value="{{ $arrivalSamplingRequest->arrivalProduct->name ?? '' }}"
-                            placeholder="Button on left">
+                            placeholder="QC Product">
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-12">
@@ -230,6 +233,8 @@
                             @foreach ($initialRequestResults as $slab)
                                 <?php
                                 $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                                $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
+                                $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
                                 ?>
                                 <div class="form-group row">
                                     <input type="hidden" name="initial_product_slab_type_id[]"
@@ -249,12 +254,32 @@
                                     </div>
                                     <div class="col-md-2 QcResult">
                                         <input type="text" id="striped-form-1" class="form-control bg-white"
-                                            placehold name="initial_applied_deduction[]"
-                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction"
-                                            disabled>
+                                            placehold name="initial_applied_deduction[]" disabled
+                                            value="{{ $deductionValue }}" placeholder="Deduction">
                                     </div>
                                 </div>
                             @endforeach
+                            <div class="form-group row">
+                                <label class="col-md-4 label-control font-weight-bold"
+                                    for="lumpsum-toggle-initial">Apply
+                                    Lumpsum
+                                    Deduction</label>
+                                <div class="col-md-3">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" name="is_lumpsum_deduction_initial"
+                                            class="custom-control-input" id="lumpsum-toggle-initial"
+                                            @checked($isLumpSumEnabledForInitial) disabled>
+                                        <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" id="lumpsum-value-initial" class="form-control"
+                                        name="lumpsum_deduction_initial" disabled
+                                        {{ $isLumpSumEnabledForInitial ? '' : 'readonly' }}
+                                        value="{{ $initialRequestForInnerReq->lumpsum_deduction ?? 0 }}"
+                                        placeholder="Lumpsum Deduction">
+                                </div>
+                            </div>
                         @else
                             <div class="alert alert-warning">
                                 No Initial Slabs Found
@@ -324,7 +349,7 @@
                         @foreach ($results as $slab)
                             <?php
                             $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
-                            ?>
+                            $innerDeductionValue = $isLumpSumEnabled ? 0 : (isset($slab->applied_deduction) && $slab->applied_deduction !== null && $slab->applied_deduction != 0 ? $slab->applied_deduction : $valuesOfInitialSlabs[$slab->slabType->id] ?? 0); ?>
                             <div class="form-group row">
                                 <input type="hidden" name="product_slab_type_id[]"
                                     value="{{ $slab->slabType->id }}">
@@ -344,8 +369,9 @@
                                 <div class="col-md-2 QcResult">
                                     <input type="text" id="deduction-{{ $slab->slabType->id }}"
                                         class="form-control bg-white deduction-field" name="applied_deduction[]"
-                                        value="{{ $isLumpSumEnabled ? 0 : $slab->applied_deduction ?? 0 }}"
-                                        placeholder="Deduction" {{ $isLumpSumEnabled ? 'readonly' : '' }}>
+                                        value="{{ $innerDeductionValue }}"
+                                        placeholder="Deduction {{ $innerDeductionValue }}"
+                                        {{ $isLumpSumEnabled ? 'readonly' : '' }}>
                                 </div>
                             </div>
                         @endforeach
@@ -476,9 +502,17 @@
 
 
 <script>
-    var lumpSumValue = {{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }};
-
     $(document).ready(function() {
+        // if (typeof calculateTotal !== 'function') {
+        // function calculateTotal() {
+        //     let total = 0;
+        //     $('.deduction-field').each(function() {
+        //         total += parseFloat($(this).val()) || 0;
+        //     });
+        //     $('#lumpsum-value').val(total.toFixed(2));
+        // }
+        // }
+
         function calculateTotal() {
             let total = 0;
             $('.deduction-field').each(function() {
@@ -489,8 +523,8 @@
 
         calculateTotal();
 
-        if ({{ $isLumpSumEnabled }}) {
-            $('#lumpsum-value').val(lumpSumValue.toFixed(2));
+        if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
+            $('#lumpsum-value').val({{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}.toFixed(2));
         }
 
         $('.deduction-field').on('input', calculateTotal);
@@ -520,10 +554,6 @@
                 calculateTotal();
             }
         });
-
-        // $('#lumpsum-value').on('input', function() {
-        //     $('#lumpsum-value').val($(this).val() || '0');
-        // });
 
         $('#arrival_sampling_request_id').change(function() {
             var samplingRequestId = $(this).val();
