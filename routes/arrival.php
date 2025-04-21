@@ -50,5 +50,8 @@ Route::resource('second-weighbridge', SecondWeighbridgeController::class);
 Route::post('/get-second-weighbridge', [SecondWeighbridgeController::class, 'getList'])->name('get.second-weighbridge');
 Route::get('/getSecondWeighbridgeRelatedData', [SecondWeighbridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
 
+Route::resource('frieght', ArrivalSlipController::class);
+Route::post('/get-frieght', [ArrivalSlipController::class, 'getList'])->name('get.frieght');
+
 Route::resource('arrival-slip', ArrivalSlipController::class);
 Route::post('/get-arrival-slip', [ArrivalSlipController::class, 'getList'])->name('get.arrival-slip');

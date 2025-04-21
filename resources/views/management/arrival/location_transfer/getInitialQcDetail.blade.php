@@ -1,7 +1,7 @@
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12" bis_skin_checked="1">
         <div class="form-group " bis_skin_checked="1">
-            <label data-name="QC Product">Product:</label>
+            <label data-name="QC Product">Commodity:</label>
             <input type="text" value="{{optional($initialRequestForInnerReq->arrivalProduct)->name ?? 'Undeifined'}}" disabled=""
                 placeholder="Qc Product" class="form-control" autocomplete="off">
         </div>

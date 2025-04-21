@@ -5,10 +5,10 @@
             <th class="col-sm-1">Product</th>
             <th class="col-sm-1">Gala Name</th>
             <th class="col-sm-1">Truck No</th>
-            <th class="col-sm-1">Filling Bags</th>
-            <th class="col-sm-1">Bag Type</th>
+            <th class="col-sm-2">Bags Detail</th>
+            {{-- <th class="col-sm-1">Bag</th>
             <th class="col-sm-1">Bag Condition</th>
-            <th class="col-sm-1">Bag Packing</th>
+            <th class="col-sm-1">Bag Packing</th> --}}
             <th class="col-sm-1">Approval Type</th>
             <th class="col-sm-1">Receivings</th>
             <th class="col-sm-1">Rejections</th>
@@ -29,10 +29,18 @@
                     <td>{{ $approval->arrivalTicket->product->name ?? '-' }}</td>
                     <td>{{ $approval->gala_name ?? '--' }}</td>
                     <td>{{ $approval->truck_no ?? '--' }}</td>
-                    <td>{{ $approval->filling_bags_no ?? '--' }}</td>
-                    <td>{{ $approval->bagType->name ?? '--' }}</td>
+                    <td>
+                        <div class="div-box-b">
+                            <small>
+                                Filling Bags: {{ $approval->filling_bags_no ?? '--' }} <br>
+                                Bag: {{ $approval->bagType->name ?? '--' }} <br>
+                                Bag Condition: {{ $approval->bagCondition->name ?? '--' }} <br>
+                                Bag Packing: {{ $approval->bagPacking->name ?? '--' }} <br></small>
+                        </div>
+                    </td>
+                    {{-- <td>{{ $approval->bagType->name ?? '--' }}</td>
                     <td>{{ $approval->bagCondition->name ?? '--' }}</td>
-                    <td>{{ $approval->bagPacking->name ?? '--' }}</td>
+                    <td>{{ $approval->bagPacking->name ?? '--' }}</td> --}}
                     <td>
                         <span
                             class="badge bg-light-{{ $approval->bag_packing_approval == 'Full Approved' ? 'success' : 'warning' }}">
@@ -91,3 +99,12 @@
         {{ $ArrivalApproves->links() }}
     </div>
 </div>
+
+<style>
+.div-box-b{
+        background: #ececec;
+    padding: 7px;
+    border-radius: 5px;
+}
+
+</style>
