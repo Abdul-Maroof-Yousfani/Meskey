@@ -9,8 +9,10 @@
                     class="form-control select2">
                     <option value="">Select Ticket</option>
                     @foreach ($samplingRequests as $samplingRequest)
-                        <option value="{{ $samplingRequest->id }}">
-                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}  
+                        <option value="{{ $samplingRequest->id }}"
+                            data-product-id="{{ optional($samplingRequest->arrivalTicket)->qc_product }}"
+                            data-ticket-id="{{ optional($samplingRequest->arrivalTicket)->id }}">
+                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}
                         </option>
                     @endforeach
                 </select>
@@ -19,7 +21,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Product:</label>
-                <select name="arrival_product_id" id="arrival_product_id" class="form-control select2">
+                <select name="arrival_product_id" id="arrival_product_id" class="form-control select2" disabled
+                    readonly>
                     <option value="">Select Product</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}">
@@ -34,7 +37,6 @@
     <div id="slabsContainer">
     </div>
 
-
     <div class="row ">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
@@ -44,7 +46,6 @@
         </div>
     </div>
 
-
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -53,19 +54,36 @@
     </div>
 </form>
 
-
-
 <script>
     $(document).ready(function() {
-        $('#arrival_product_id').change(function() {
+        $('.select2').select2();
+
+        $('#arrival_sampling_request_id').change(function() {
+            var selectedTicket = $(this).find(':selected');
+            var productId = selectedTicket.data('product-id');
+            var ticketId = selectedTicket.data('ticket-id');
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
+                $('#arrival_product_id').val(productId).trigger('change');
+
+                loadSlabs(productId, ticketId, samplingRequestId);
+            } else {
+                $('#arrival_product_id').val('');
+                $('#slabsContainer').empty();
+            }
+        });
+
+        function loadSlabs(productId, ticketId, samplingRequestId) {
+            if (productId && samplingRequestId) {
                 $.ajax({
                     url: '{{ route('getSlabsByProduct') }}',
                     type: 'GET',
                     data: {
-                        product_id: samplingRequestId
+                        product_id: productId,
+                        ticket_id: ticketId,
+                        sampling_request_id: samplingRequestId,
+                        isInner: true
                     },
                     dataType: 'json',
                     beforeSend: function() {
@@ -81,30 +99,18 @@
                     success: function(response) {
                         Swal.close();
                         if (response.success) {
-                            // Append the rendered HTML to a container element
                             $('#slabsContainer').html(response.html);
                         } else {
-                            Swal.fire("No Data", "No slabs found for this product.",
-                                "info");
+                            Swal.fire("No Data", "No slabs found for this product.", "info");
+                            $('#slabsContainer').empty();
                         }
                     },
                     error: function() {
                         Swal.close();
-                        Swal.fire("Error", "Something went wrong. Please try again.",
-                            "error");
+                        Swal.fire("Error", "Something went wrong. Please try again.", "error");
                     }
                 });
             }
-        });
-    });
-
-
-    $(document).ready(function() {
-
-        //initializeDynamicSelect2('#sampling_request_id', 'arrival_sampling_requests', 'name', 'id', false, false);
-        //initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
-        //initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
-        //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
-        $('.select2').select2();
+        }
     });
 </script>

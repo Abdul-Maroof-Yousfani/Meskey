@@ -7,17 +7,22 @@
 </div>
 
 <div class="striped-rows">
-    {{-- Slabs --}}
     @if (count($slabs) != 0)
         @foreach ($slabs as $slab)
-            <div class="form-group row">
+            <div class="form-group row slab-row" data-max-range="{{ $slab->max_range }}">
                 <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
                 <label class="col-md-3 label-control font-weight-bold" for="slab-input-{{ $loop->index }}">
                     {{ $slab->slabType->name }}
                 </label>
                 <div class="col-md-9">
-                    <input type="text" id="slab-input-{{ $loop->index }}" class="form-control"
-                        name="checklist_value[]" placeholder="%">
+                    <div class="input-group">
+                        <input type="number" id="slab-input-{{ $loop->index }}" class="form-control slab-input"
+                            data-max-range="{{ $slab->max_range }}" name="checklist_value[]" placeholder="%"
+                            min="0" step="0.01" value="{{ $isInner ? $slab->checklist_value : 0 }}">
+                        <div class="input-group-append">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         @endforeach
@@ -27,7 +32,6 @@
         </div>
     @endif
 
-    {{-- Compulsory QC Params --}}
     @if (count($compulsoryParams) != 0)
         @foreach ($compulsoryParams as $param)
             <div class="form-group row">
@@ -41,13 +45,14 @@
                             class="form-control">
                             <option value="">Select Option</option>
                             @foreach (json_decode($param->options, true) ?? [] as $key => $option)
-                                <option value="{{ $option }}" {{ $key == 0 ? 'selected' : '' }}>
+                                <option value="{{ $option }}" @selected($param->checklist_value == $option || $key == 0)>
                                     {{ $option }}</option>
                             @endforeach
                         </select>
                     @else
                         <input type="text" id="qc-param-{{ $loop->index }}" class="form-control"
-                            name="compulsory_checklist_value[]" placeholder="Enter value">
+                            value="{{ $param->checklist_value }}" name="compulsory_checklist_value[]"
+                            placeholder="Enter value">
                     @endif
                 </div>
             </div>
@@ -58,3 +63,17 @@
         </div>
     @endif
 </div>
+
+<script>
+    var slabInputs = document.querySelectorAll('.slab-input');
+
+    slabInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            validateSlabInput(this);
+        });
+
+        input.addEventListener('blur', function() {
+            validateSlabInput(this);
+        });
+    });
+</script>

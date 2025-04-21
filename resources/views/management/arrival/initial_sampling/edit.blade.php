@@ -43,13 +43,21 @@
         <div class="striped-rows">
             @if (count($results) != 0)
                 @foreach ($results as $slab)
-                    <div class="form-group row">
+                    <div class="form-group row slab-row" data-max-range="{{ $slab->max_range }}">
                         <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
-                        <label class="col-md-3 label-control font-weight-bold"
-                            for="striped-form-1">{{ $slab->slabType->name }}</label>
+                        <label class="col-md-3 label-control font-weight-bold" for="slab-input-{{ $loop->index }}">
+                            {{ $slab->slabType->name }}
+                        </label>
                         <div class="col-md-9">
-                            <input type="text" id="striped-form-1" class="form-control" name="checklist_value[]"
-                                value="{{ $slab->checklist_value }}" placeholder="%">
+                            <div class="input-group">
+                                <input type="number" id="slab-input-{{ $loop->index }}"
+                                    value="{{ $slab->checklist_value }}" class="form-control slab-input"
+                                    data-max-range="{{ $slab->max_range }}" name="checklist_value[]" placeholder="%"
+                                    min="0" step="0.01">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -137,8 +145,13 @@
 </form>
 
 
-
 <script>
+    var slabInputs = document.querySelectorAll('.slab-input');
+
+    slabInputs.forEach(input => {
+        validateSlabInput(input);
+    });
+
     $(document).ready(function() {
         $('#arrival_sampling_request_id').change(function() {
             var samplingRequestId = $(this).val();

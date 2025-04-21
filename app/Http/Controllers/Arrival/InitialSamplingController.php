@@ -114,7 +114,22 @@ class InitialSamplingController extends Controller
         $products = Product::all();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
-        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+
+        $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
+        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+
+        $results->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            return $item;
+        });
+
         $compulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
 
         $arrivalCustomSampling = ArrivalCustomSampling::all();

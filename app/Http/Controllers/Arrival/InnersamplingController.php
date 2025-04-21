@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\Master\ProductSlab;
 use App\Models\Product;
 
 class InnersamplingController extends Controller
@@ -167,7 +168,21 @@ class InnersamplingController extends Controller
         $products = Product::all();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
+
+        $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+
+        $results->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            return $item;
+        });
 
         return view('management.arrival.inner_sampling.edit', compact('samplingRequests', 'products', 'results', 'arrivalSamplingRequest'));
     }

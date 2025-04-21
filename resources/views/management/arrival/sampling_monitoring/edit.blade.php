@@ -60,7 +60,25 @@
                                 value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name }}" disabled>
                         </div>
                     </div>
-
+                    <div class="col-xs-4 col-sm-4 col-md-4 full">
+                        <div class="form-group">
+                            <label class="d-block">Contract Detail:</label>
+                            <select name="arrival_purchase_order_id" id="arrival_purchase_order_id"
+                                class="form-control select2" disabled>
+                                <option value="">N/A</option>
+                                @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
+                                    <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"
+                                        data-brokerid="{{ $arrivalPurchaseOrder->broker->id ?? '' }}"
+                                        data-brokername="{{ $arrivalPurchaseOrder->broker->name ?? '' }}"
+                                        data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
+                                        data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
+                                        value="{{ $arrivalPurchaseOrder->id }}" @selected(optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id == $arrivalPurchaseOrder->id)>
+                                        {{ $arrivalPurchaseOrder->unique_no }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                     <div class="col-xs-4 col-sm-4 col-md-4 full">
                         <div class="form-group">
                             <label class="d-block">Sauda Type:</label>
@@ -134,6 +152,16 @@
                             <input type="text" name="bags" placeholder="No of bags" class="form-control"
                                 disabled autocomplete="off"
                                 value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bags }}" />
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group ">
+                            <label>Sample Money Type:</label>
+                            <select name="sample_money_type" class="form-control" disabled>
+                                <option value="">Select Type</option>
+                                <option value="single">Single</option>
+                                <option value="double">Double</option>
+                            </select>
                         </div>
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">

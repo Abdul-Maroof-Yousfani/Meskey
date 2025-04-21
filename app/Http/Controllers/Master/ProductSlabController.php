@@ -9,6 +9,8 @@ use App\Models\Master\{ProductSlab, ProductSlabType};
 use App\Models\Master\ArrivalCompulsoryQcParam;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\ProductSlabRequest;
+use App\Models\Arrival\ArrivalSamplingResult;
+use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 
 class ProductSlabController extends Controller
 {
@@ -82,7 +84,7 @@ class ProductSlabController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ProductSlab $unit_of_measure): JsonResponse
+    public function destroy(ProductSlab $unit_of_measure)
     {
         $unit_of_measure->delete();
         return response()->json(['success' => 'Category deleted successfully.'], 200);
@@ -91,11 +93,68 @@ class ProductSlabController extends Controller
     public function getSlabsByProduct(Request $request)
     {
         if (isset($request->product_id)) {
-            $compulsoryParams  = ArrivalCompulsoryQcParam::get();
+            $initialRequestForInnerReq = null;
+            $initialRequestResults = null;
+            $initialRequestCompulsuryResults = null;
+            $isInner = $request->isInner ?? false;
 
-            $slabs = ProductSlab::where('product_id', $request->product_id)->get()->unique('product_slab_type_id');
+            if (isset($request->ticket_id)) {
+                $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
+                    ->where('arrival_ticket_id', $request->ticket_id)
+                    ->where('approved_status', 'approved')
+                    ->latest()
+                    ->first();
+                if ($initialRequestForInnerReq) {
+                    $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+                    $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+                }
+            }
 
-            $html = view('management.master.product_slab.forInspection', compact('slabs', 'compulsoryParams'))->render();
+            $compulsoryParams = ArrivalCompulsoryQcParam::get();
+            $slabs = ProductSlab::where('product_id', $request->product_id)
+                ->get()
+                ->groupBy('product_slab_type_id')
+                ->map(function ($group) {
+                    $minFrom = $group->sortBy('from')->first();
+                    $minFrom->max_range = $minFrom->to;
+                    return $minFrom;
+                })
+                ->values();
+
+            $slabs = $slabs->map(function ($slab) use ($initialRequestResults) {
+                $slab->checklist_value = null;
+
+                if ($initialRequestResults) {
+                    $matchingResult = $initialRequestResults->firstWhere('product_slab_type_id', $slab->product_slab_type_id);
+                    if ($matchingResult) {
+                        $slab->checklist_value = $matchingResult->checklist_value;
+                    }
+                }
+
+                return $slab;
+            });
+
+            $compulsoryParams = $compulsoryParams->map(function ($param) use ($initialRequestCompulsuryResults) {
+                $param->checklist_value = null;
+
+                if ($initialRequestCompulsuryResults) {
+                    $matchingResult = $initialRequestCompulsuryResults->firstWhere('arrival_compulsory_qc_param_id', $param->id);
+                    if ($matchingResult) {
+                        $param->checklist_value = $matchingResult->compulsory_checklist_value;
+                    }
+                }
+
+                return $param;
+            });
+
+            $html = view('management.master.product_slab.forInspection', compact(
+                'slabs',
+                'compulsoryParams',
+                'initialRequestForInnerReq',
+                'initialRequestResults',
+                'initialRequestCompulsuryResults',
+                'isInner'
+            ))->render();
 
             return response()->json(['success' => true, 'html' => $html]);
         }

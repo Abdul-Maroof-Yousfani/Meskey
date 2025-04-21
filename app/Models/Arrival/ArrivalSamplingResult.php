@@ -20,8 +20,6 @@ class ArrivalSamplingResult extends Model
         'applied_deduction',
     ];
 
-
-
     public function slabType()
     {
         return $this->hasOne(ProductSlabType::class, 'id', 'product_slab_type_id');

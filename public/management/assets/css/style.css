@@ -273,3 +273,31 @@ select[readonly].select2-hidden-accessible + .select2-container {
 .text-sm {
   font-size: 13px;
 }
+
+.slab-input.warning {
+  border-color: #ffc107;
+  background-color: #fff8e1;
+}
+
+.slab-input.warning:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+.slab-input.warning + .input-group-append > .input-group-text {
+  border-color: #ffc107;
+  background-color: #fff8e1;
+}
+
+.slab-input.danger {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.slab-input.danger:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.slab-input.danger + .input-group-append > .input-group-text {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
