@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalTicket};
 use App\Models\SaudaType;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\ProductSlab;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
@@ -87,20 +88,37 @@ class SamplingMonitoringController extends Controller
         $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->get();
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
+
+        $productSlabCalculations = null;
+        if ($arrivalSamplingRequest->arrival_product_id) {
+            $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
+        }
+
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+
+        foreach ($results as $result) {
+            $matchingSlabs = [];
+            if ($productSlabCalculations) {
+                $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
+                    ->values()
+                    ->all();
+            }
+            $result->matching_slabs = $matchingSlabs;
+        }
+
         $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
         $sampleTakenByUsers = User::all();
         $authUserCompany = $request->company_id;
         $saudaTypes = SaudaType::all();
+        $initialRequestForInnerReq = null;
+        $initialRequestResults = null;
+        $initialRequestCompulsuryResults = null;
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
                 $q->where('companies.id', $authUserCompany);
             })
             ->get();
-        $initialRequestForInnerReq = null;
-        $initialRequestResults = null;
-        $initialRequestCompulsuryResults = null;
 
         if ($arrivalSamplingRequest->sampling_type == 'inner') {
             $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
@@ -142,6 +160,7 @@ class SamplingMonitoringController extends Controller
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
                 'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
+                'lumpsum_deduction_kgs' => (float)$request->lumpsum_deduction_kgs ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
                 'is_done' => 'yes',
                 'done_by' => auth()->user()->id,

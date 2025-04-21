@@ -16,7 +16,7 @@
     @if (count($initialRequestResults) != 0)
         @foreach ($initialRequestResults as $slab)
             <?php
-            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($initialRequestForInnerReq->arrivalTicket)->product->id, $slab->checklist_value);
+            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($initialRequestForInnerReq->arrivalTicket)->qc_product, $slab->checklist_value);
             ?>
             <div class="form-group row">
                 <input type="hidden" name="initial_product_slab_type_id[]" value="{{ $slab->slabType->id }}">

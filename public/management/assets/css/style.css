@@ -269,3 +269,7 @@ select[readonly].select2-hidden-accessible + .select2-container {
   opacity: 0.7;
   pointer-events: none;
 }
+
+.text-sm {
+  font-size: 13px;
+}

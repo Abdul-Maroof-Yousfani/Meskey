@@ -73,7 +73,7 @@
                             $('#slabsContainer').html(response.html);
                         } else {
                             Swal.fire("No Data", "No slabs found for this product.",
-                            "info");
+                                "info");
                         }
                     },
                     error: function() {

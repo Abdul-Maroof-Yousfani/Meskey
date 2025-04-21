@@ -61,6 +61,11 @@ class InitialSamplingController extends Controller
     public function store(ArrivalSamplingResultRequest $request)
     {
         $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
+        $arrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
+
+        $arrivalTicket->update([
+            'qc_product' => $request->arrival_product_id
+        ]);
 
         $ArrivalSamplingRequest->update([
             'remark' => $request->remarks,
