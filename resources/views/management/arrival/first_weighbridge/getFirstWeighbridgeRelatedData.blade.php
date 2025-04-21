@@ -6,7 +6,7 @@
 <div class="col-xs-12 col-sm-12 col-md-12">
     <div class="form-group ">
         <label>Commodity:</label>
-        <input type="text"  placeholder="First Weight" value="{{$ArrivalTicket->first_weight}}" disabled
+        <input type="text"  placeholder="First Weight" value="{{optional($ArrivalTicket->qcProduct)->name ?? 'N/A'}}" disabled
             class="form-control" autocomplete="off" />
     </div>
 </div>

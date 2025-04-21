@@ -1,4 +1,11 @@
 <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12" bis_skin_checked="1">
+        <div class="form-group " bis_skin_checked="1">
+            <label data-name="QC Product">Product:</label>
+            <input type="text" value="{{optional($initialRequestForInnerReq->arrivalProduct)->name ?? 'Undeifined'}}" disabled=""
+                placeholder="Qc Product" class="form-control" autocomplete="off">
+        </div>
+    </div>
     <div class="col-12">
         <h6 class="header-heading-sepration">
             QC Checklist
@@ -16,15 +23,14 @@
     @if (count($initialRequestResults) != 0)
         @foreach ($initialRequestResults as $slab)
             <?php
-            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($initialRequestForInnerReq->arrivalTicket)->qc_product, $slab->checklist_value);
-            ?>
+                $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($initialRequestForInnerReq->arrivalTicket)->qc_product, $slab->checklist_value);
+                            ?>
             <div class="form-group row">
                 <input type="hidden" name="initial_product_slab_type_id[]" value="{{ $slab->slabType->id }}">
-                <label class="col-md-4 label-control font-weight-bold"
-                    for="striped-form-1">{{ $slab->slabType->name }}</label>
+                <label class="col-md-4 label-control font-weight-bold" for="striped-form-1">{{ $slab->slabType->name }}</label>
                 <div class="col-md-8 QcResult">
-                    <input type="text" id="striped-form-1" readonly class="form-control"
-                        name="initial_checklist_value[]" value="{{ $slab->checklist_value }}" placeholder="%">
+                    <input type="text" id="striped-form-1" readonly class="form-control" name="initial_checklist_value[]"
+                        value="{{ $slab->checklist_value }}" placeholder="%">
                 </div>
             </div>
         @endforeach
@@ -46,15 +52,15 @@
         @foreach ($initialRequestCompulsuryResults as $slab)
             <div class="form-group row">
                 <input type="hidden" name="initial_compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
-                <label class="col-md-4 label-control font-weight-bold"
-                    for="striped-form-1">{{ $slab->qcParam->name }}</label>
+                <label class="col-md-4 label-control font-weight-bold" for="striped-form-1">{{ $slab->qcParam->name }}</label>
                 <div class="col-md-8 QcResult">
                     @if ($slab->qcParam->type == 'dropdown')
                         <input type="text" id="striped-form-1" readonly class="form-control"
                             name="initial_compulsory_checklist_value[]" value="{{ $slab->compulsory_checklist_value }}"
                             placeholder="%">
                     @else
-                        <textarea type="text" id="striped-form-1" readonly class="form-control" name="initial_compulsory_checklist_value[]"
+                        <textarea type="text" id="striped-form-1" readonly class="form-control"
+                            name="initial_compulsory_checklist_value[]"
                             placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
                     @endif
                 </div>
@@ -78,8 +84,10 @@
             <select name="sample_taken_by" id="sample_taken_by" class="form-control select2" disabled>
                 <option value="">Sample Taken By</option>
                 @foreach ($sampleTakenByUsers as $sampleTakenUser)
-                    <option @selected($initialRequestForInnerReq->sample_taken_by == $sampleTakenUser->id) value="{{ $sampleTakenUser->id }}">
-                        {{ $sampleTakenUser->name }}</option>
+                    <option @selected($initialRequestForInnerReq->sample_taken_by == $sampleTakenUser->id)
+                        value="{{ $sampleTakenUser->id }}">
+                        {{ $sampleTakenUser->name }}
+                    </option>
                 @endforeach
             </select>
         </div>
@@ -96,7 +104,8 @@
             <label>Party Ref. No: </label>
             <select name="party_ref_no" id="party_ref_no" class="form-control select2" disabled>
                 <option value="{{ $initialRequestForInnerReq->party_ref_no }}">
-                    {{ $initialRequestForInnerReq->party_ref_no }}</option>
+                    {{ $initialRequestForInnerReq->party_ref_no }}
+                </option>
             </select>
         </div>
     </div>
