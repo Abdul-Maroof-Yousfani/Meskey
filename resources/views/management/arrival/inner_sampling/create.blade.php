@@ -20,9 +20,10 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
+                <input type="hidden" name="arrival_product_id" id="arrival_product_id">
                 <label>Product:</label>
-                <select name="arrival_product_id" id="arrival_product_id" class="form-control select2" disabled
-                    readonly>
+                <select name="arrival_product_id_display" id="arrival_product_id_display" class="form-control select2"
+                    disabled readonly>
                     <option value="">Select Product</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}">
@@ -65,10 +66,12 @@
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
-                $('#arrival_product_id').val(productId).trigger('change');
+                $('#arrival_product_id_display').val(productId).trigger('change');
+                $('#arrival_product_id').val(productId);
 
                 loadSlabs(productId, ticketId, samplingRequestId);
             } else {
+                $('#arrival_product_id_display').val('');
                 $('#arrival_product_id').val('');
                 $('#slabsContainer').empty();
             }

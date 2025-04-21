@@ -68,6 +68,8 @@
     var slabInputs = document.querySelectorAll('.slab-input');
 
     slabInputs.forEach(input => {
+        validateSlabInput(input);
+
         input.addEventListener('input', function() {
             validateSlabInput(this);
         });
