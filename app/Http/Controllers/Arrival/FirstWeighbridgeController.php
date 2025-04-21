@@ -47,8 +47,8 @@ class FirstWeighbridgeController extends Controller
      */
     public function create()
     {
-        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
+        $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
         return view('management.arrival.first_weighbridge.create', $data);
     }
 
@@ -83,8 +83,8 @@ class FirstWeighbridgeController extends Controller
     public function edit($id)
     {
         $data['arrival_location'] = FirstWeighbridge::findOrFail($id);
-        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
+        $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
 
         return view('management.arrival.first_weighbridge.edit', $data);
     }
@@ -107,5 +107,19 @@ class FirstWeighbridgeController extends Controller
         $arrival_location = ArrivalLocation::findOrFail($id);
         $arrival_location->delete();
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
+    }
+
+
+    public function getFirstWeighbridgeRelatedData(Request $request)
+    {
+
+        $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+     
+
+        // Render view with the slabs wrapped inside a div
+        $html = view('management.arrival.first_weighbridge.getFirstWeighbridgeRelatedData', compact('ArrivalTicket'))->render();
+
+        return response()->json(['success' => true, 'html' => $html]);
+
     }
 }
