@@ -2,10 +2,20 @@
 
 use App\Models\Acl\{Company, Menu};
 use App\Models\{User};
-
 use Illuminate\Support\Facades\Auth;
 
-//UserCanAccess
+const SLAB_TYPE_PERCENTAGE = 1;
+const SLAB_TYPE_KG = 2;
+const SLAB_TYPE_PRICE = 3;
+const SLAB_TYPE_QTY = 4;
+
+const SLAB_TYPES_CALCULATED_ON = [
+    SLAB_TYPE_PERCENTAGE => '%',
+    SLAB_TYPE_KG => 'Kg',
+    SLAB_TYPE_PRICE => 'Rs.',
+    SLAB_TYPE_QTY => 'Qty.'
+];
+
 if (!function_exists('canAccess')) {
     function canAccess($permission)
     {
@@ -15,6 +25,7 @@ if (!function_exists('canAccess')) {
             //For Developers
             return true;
         }
+
         $currentCompanyId = $user->current_company_id;
 
         $companyRolePermissions = $user->companies()->where('company_id', $currentCompanyId)->first();
@@ -34,12 +45,14 @@ if (!function_exists('canAccess')) {
                 return false;
                 abort(403, 'User does not have the required permission for this company.');
             }
+
             return true;
         } else {
             return false;
         }
     }
 }
+
 //GetCurrentSelectedCompany
 if (!function_exists('getCurrentCompany')) {
     function getCurrentCompany()
@@ -145,7 +158,7 @@ if (!function_exists('getDeductionSuggestion')) {
             ->where('product_id', $productId)
             ->where('from', '<=', $inspectionResult ?? 0)
             ->where('to', '>=', $inspectionResult ?? 0)
-            ->where('status', 1) // Assuming active slabs have status = 1
+            ->where('status', 'active') // Assuming active slabs have status = 1
             ->select('deduction_type', 'deduction_value')
             ->first();
     }

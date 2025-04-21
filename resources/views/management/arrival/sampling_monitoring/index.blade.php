@@ -55,7 +55,6 @@
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
-
                                 </table>
                             </div>
                         </div>
@@ -63,8 +62,6 @@
                 </div>
             </div>
         </section>
-
-
     </div>
 @endsection
 <style>

@@ -25,6 +25,7 @@ class ArrivalSamplingRequest extends Model
         'party_ref_no',
         'sample_taken_by',
         'lumpsum_deduction',
+        'lumpsum_deduction_kgs',
         'is_lumpsum_deduction',
     ];
 

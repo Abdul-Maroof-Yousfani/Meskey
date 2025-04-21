@@ -22,6 +22,7 @@ class ArrivalTicket extends Model
         'unique_no',
         'company_id',
         'product_id',
+        'qc_product',
         'supplier_name',
         'broker_name',
         'decision_id',
@@ -56,17 +57,21 @@ class ArrivalTicket extends Model
      * Relationships.
      */
 
-    // Company relationship
     public function company()
     {
         return $this->belongsTo(Company::class);
     }
 
-    // Product relationship
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function qcProduct()
+    {
+        return $this->belongsTo(Product::class, 'qc_product');
+    }
+
     public function arrivalSamplingRequests()
     {
         return $this->hasMany(ArrivalSamplingRequest::class, 'arrival_ticket_id');
@@ -82,11 +87,6 @@ class ArrivalTicket extends Model
         return $this->belongsTo(SaudaType::class, 'sauda_type_id');
     }
 
-
-
-
-
-    // Relationships
     public function station()
     {
         return $this->belongsTo(Station::class);
@@ -111,6 +111,7 @@ class ArrivalTicket extends Model
     {
         return $this->hasOne(ArrivalLocationTransfer::class, 'arrival_ticket_id');
     }
+
     public function arrivalSlip()
     {
         return $this->hasOne(ArrivalSlip::class, 'arrival_ticket_id');

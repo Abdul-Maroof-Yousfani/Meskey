@@ -232,7 +232,7 @@
                         @if (count($initialRequestResults) != 0)
                             @foreach ($initialRequestResults as $slab)
                                 <?php
-                                $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
+                                $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->qc_product, $slab->checklist_value);
                                 $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
                                 $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
                                 ?>
@@ -255,7 +255,9 @@
                                     <div class="col-md-2 QcResult">
                                         <input type="text" id="striped-form-1" class="form-control bg-white"
                                             placehold name="initial_applied_deduction[]" disabled
-                                            value="{{ $deductionValue }}" placeholder="Deduction">
+                                            value="{{ $deductionValue }}" placeholder="Deduction"
+                                            data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
+                                            data-slab-id="{{ $slab->slabType->id }}">
                                     </div>
                                 </div>
                             @endforeach
@@ -346,32 +348,59 @@
                 </div>
                 <div class="striped-rows">
                     @if (count($results) != 0)
+                        <?php
+                        $suggestedValue = 0;
+                        ?>
                         @foreach ($results as $slab)
                             <?php
-                            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->product->id, $slab->checklist_value);
-                            $innerDeductionValue = $isLumpSumEnabled ? 0 : (isset($slab->applied_deduction) && $slab->applied_deduction !== null && $slab->applied_deduction != 0 ? $slab->applied_deduction : $valuesOfInitialSlabs[$slab->slabType->id] ?? 0); ?>
+                            $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->qc_product, $slab->checklist_value);
+                            $innerDeductionValue = $isLumpSumEnabled ? 0 : (isset($slab->applied_deduction) && $slab->applied_deduction !== null && $slab->applied_deduction != 0 ? $slab->applied_deduction : $valuesOfInitialSlabs[$slab->slabType->id] ?? 0);
+                            $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
+                            $suggestedValue += $getDeductionSuggestion->deduction_value ?? 0;
+                            ?>
                             <div class="form-group row">
                                 <input type="hidden" name="product_slab_type_id[]"
                                     value="{{ $slab->slabType->id }}">
                                 <label class="col-md-4 label-control font-weight-bold"
                                     for="striped-form-1">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
-                                    <input type="text" id="striped-form-1" readonly class="form-control"
-                                        name="checklist_value[]" value="{{ $slab->checklist_value }}"
-                                        placeholder="%">
+                                    <div class="input-group mb-0">
+                                        <input type="text" id="striped-form-1" readonly class="form-control"
+                                            name="checklist_value[]" value="{{ $slab->checklist_value }}"
+                                            placeholder="%">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text text-sm">%</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-3 Suggested">
-                                    <input type="text" id="striped-form-1" readonly class="form-control"
-                                        name="suggested_value[]"
-                                        value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
-                                        placeholder="Suggested Deduction">
+                                    <div class="input-group mb-0">
+                                        <input type="text" id="striped-form-1" readonly class="form-control"
+                                            name="suggested_value[]"
+                                            value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                            placeholder="Suggested Deduction">
+                                        <div class="input-group-append">
+                                            <span
+                                                class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-2 QcResult">
-                                    <input type="text" id="deduction-{{ $slab->slabType->id }}"
-                                        class="form-control bg-white deduction-field" name="applied_deduction[]"
-                                        value="{{ $innerDeductionValue }}"
-                                        placeholder="Deduction {{ $innerDeductionValue }}"
-                                        {{ $isLumpSumEnabled ? 'readonly' : '' }}>
+                                    <div class="input-group mb-0">
+                                        <input type="text" id="deduction-{{ $slab->slabType->id }}"
+                                            class="form-control bg-white deduction-field" name="applied_deduction[]"
+                                            value="{{ $innerDeductionValue }}" placeholder="Deduction"
+                                            data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
+                                            data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
+                                            data-slab-id="{{ $slab->slabType->id }}"
+                                            data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
+                                            data-checklist="{{ $slab->checklist_value }}"
+                                            {{ $isLumpSumEnabled ? 'readonly' : '' }}>
+                                        <div class="input-group-append">
+                                            <span
+                                                class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -385,11 +414,42 @@
                                     <label class="custom-control-label" for="lumpsum-toggle"></label>
                                 </div>
                             </div>
-                            <div class="col-md-5">
-                                <input type="text" id="lumpsum-value" class="form-control"
-                                    name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
-                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
-                                    placeholder="Lumpsum Deduction">
+                            <div class="col">
+                                <div class="input-group mb-0">
+                                    <input type="text" id="suggessions-sum" class="form-control"
+                                        name="suggessions_sum" disabled value="{{ $suggestedValue }}"
+                                        placeholder="Lumpsum Deduction">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">{{ 'Rs.' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group mb-0">
+                                    <input type="text" id="lumpsum-value" class="form-control"
+                                        name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
+                                        value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
+                                        placeholder="Lumpsum Deduction">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">{{ 'Rs.' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Lumpsum
+                                Deduction</label>
+
+                            <div class="col-md-8">
+                                <div class="input-group mb-0">
+                                    <input type="text" id="lumpsum-kgs-value" class="form-control"
+                                        name="lumpsum_deduction_kgs" readonly
+                                        value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}"
+                                        placeholder="Lumpsum Deduction">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">{{ 'KG\'s' }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @else
@@ -477,10 +537,7 @@
                 </div>
             </div>
         </div>
-
     </div>
-
-
 
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -499,26 +556,43 @@
     </div>
 </form>
 
-
-
 <script>
     $(document).ready(function() {
-        // if (typeof calculateTotal !== 'function') {
-        // function calculateTotal() {
-        //     let total = 0;
-        //     $('.deduction-field').each(function() {
-        //         total += parseFloat($(this).val()) || 0;
-        //     });
-        //     $('#lumpsum-value').val(total.toFixed(2));
-        // }
-        // }
-
         function calculateTotal() {
             let total = 0;
+            let totalKgs = 0;
+
             $('.deduction-field').each(function() {
-                total += parseFloat($(this).val()) || 0;
+                let matchingSlabs = $(this).data('matching-slabs');
+                let calculatedOn = $(this).data('calculated-on');
+                let slabId = $(this).data('slab-id');
+                let val = parseFloat($(this).val()) || 0;
+
+                if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
+                    let deductionValue = 0;
+
+                    if (matchingSlabs && matchingSlabs.length > 0) {
+                        for (let slab of matchingSlabs) {
+                            let from = parseFloat(slab.from);
+                            let to = parseFloat(slab.to);
+
+                            if (val >= from && val <= to) {
+                                deductionValue = parseFloat(slab.deduction_value);
+                            }
+                        }
+                    }
+
+                    total += deductionValue;
+                } else if (calculatedOn == {{ SLAB_TYPE_KG }}) {
+                    totalKgs += (val) || 0;
+                } else {
+                    total += (val) || 0;
+                }
+
             });
+
             $('#lumpsum-value').val(total.toFixed(2));
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
         }
 
         calculateTotal();
