@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Second Weighbridge
+    First Weighbridge
 @endsection
 @section('content')
     <div class="content-wrapper">

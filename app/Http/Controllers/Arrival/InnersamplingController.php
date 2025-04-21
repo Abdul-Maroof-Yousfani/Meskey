@@ -43,7 +43,7 @@ class InnersamplingController extends Controller
      */
     public function create()
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_done', 'no')->get();
+        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->get();
         $products = Product::all();
 
         return view('management.arrival.inner_sampling.create', compact('samplingRequests', 'products'));

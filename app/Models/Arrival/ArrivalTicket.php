@@ -4,6 +4,7 @@ namespace App\Models\Arrival;
 
 use App\Models\{ArrivalPurchaseOrder, Product, SaudaType, User};
 use App\Models\ACL\Company;
+use App\Models\FirstWeighbridge;
 use App\Models\Master\{ArrivalTruckType, Station};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,8 @@ class ArrivalTicket extends Model
         'broker_name',
         'decision_id',
         'truck_type_id',
+        'sample_money_type',
+        'sample_money',
         'truck_no',
         'bilty_no',
         'bags',
@@ -114,5 +117,9 @@ class ArrivalTicket extends Model
     public function arrivalSlip()
     {
         return $this->hasOne(ArrivalSlip::class, 'arrival_ticket_id');
+    }
+    public function firstWeighbridge()
+    {
+        return $this->hasOne(FirstWeighbridge::class, 'arrival_ticket_id');
     }
 }

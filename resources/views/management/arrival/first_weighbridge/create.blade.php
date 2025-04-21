@@ -10,7 +10,7 @@
                     @foreach ($ArrivalTickets as $arrivalTicket)
                         <option value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
-                            ITEM: {{ optional($arrivalTicket->product)->name }}
+                            Truck No: {{ $arrivalTicket->truck_no }}
                         </option>
                     @endforeach
                 </select>
@@ -73,4 +73,9 @@
             }
         });
     });
+
+     $(document).ready(function() {
+        $('.select2').select2();
+    });
 </script>
+

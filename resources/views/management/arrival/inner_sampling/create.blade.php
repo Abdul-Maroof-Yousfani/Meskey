@@ -10,7 +10,7 @@
                     <option value="">Select Ticket</option>
                     @foreach ($samplingRequests as $samplingRequest)
                         <option value="{{ $samplingRequest->id }}">
-                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}
+                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}  
                         </option>
                     @endforeach
                 </select>

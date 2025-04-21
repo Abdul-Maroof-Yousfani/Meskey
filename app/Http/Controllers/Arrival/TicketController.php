@@ -63,13 +63,16 @@ class TicketController extends Controller
         $request->validated();
         $request = $request->all();
 
-        $exists = ArrivalTicket::where('truck_no', $request['truck_no'])
-            ->where('bilty_no', $request['bilty_no'])
-            ->exists();
+        $previouscheck = ArrivalTicket::where('truck_no', $request['truck_no'])
+            ->where('bilty_no', $request['bilty_no']);
+            
 
-        if ($exists) {
+        if ($previouscheck->exists()) {
+              $viewLink = ' <a href="'.route('ticket.show', $previouscheck->first()->id).'" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
+
             throw ValidationException::withMessages([
-                'truck_no' => ['Truck with this Bilty No already exists.'],
+            
+                'truck_no' => ['Truck with this Bilty No already exists.'.$viewLink],
             ]);
         }
 
@@ -97,6 +100,19 @@ class TicketController extends Controller
 
         $arrivalTicket = ArrivalTicket::findOrFail($id);
         return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf'));
+    }
+    public function show(Request $request, $id)
+    {
+        $authUserCompany = $request->company_id;
+
+        $accountsOf = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
+
+        $arrivalTicket = ArrivalTicket::findOrFail($id);
+        return view('management.arrival.ticket.show', compact('arrivalTicket', 'accountsOf'));
     }
 
     /**

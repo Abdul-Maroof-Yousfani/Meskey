@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\FirstWeighbridge;
 use App\Models\Arrival\ArrivalLocationTransfer;
 use App\Models\Arrival\SecondWeighbridge;
 use App\Models\Master\ArrivalLocation;
@@ -110,5 +111,20 @@ class SecondWeighbridgeController extends Controller
         $arrival_location = ArrivalLocation::findOrFail($id);
         $arrival_location->delete();
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
+    }
+
+     public function getSecondWeighbridgeRelatedData(Request $request)
+    {
+
+       // dd($request);
+
+        $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+   $first = FirstWeighbridge::where('arrival_ticket_id',$request->arrival_ticket_id)->first();
+
+        // Render view with the slabs wrapped inside a div
+        $html = view('management.arrival.second_weighbridge.getSecondWeighbridgeRelatedData', compact('ArrivalTicket'))->render();
+
+        return response()->json(['success' => true, 'html' => $html]);
+
     }
 }

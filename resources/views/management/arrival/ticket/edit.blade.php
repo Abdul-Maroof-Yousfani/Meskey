@@ -65,6 +65,25 @@
                 </select>
             </div>
         </div>
+       
+
+         <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Sample Money Type :</label>
+                <select name="sample_money_type" class="form-control">
+                    <option value="">Select Type</option>
+                    <option {{ $arrivalTicket->sample_money_type == 'single'  ? 'selected' : '' }} value="single">Single</option>
+                    <option  {{ $arrivalTicket->sample_money_type == 'double'  ? 'selected' : '' }}  value="double">Double</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Sample Money:</label>
+                <input type="text" name="sample_money"  readonly value="{{ $arrivalTicket->sample_money }}" placeholder="Sample money"
+                    class="form-control" autocomplete="off" />
+            </div>
+        </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Truck No:</label>
@@ -86,14 +105,7 @@
                     value="{{ $arrivalTicket->bags }}" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group ">
-                <label>Sample Money: </label>
-                <input type="text" readonly name="sample_money"
-                    value="{{ $arrivalTicket->truckType->sample_money ?? 0 }}" placeholder="No of bags"
-                    class="form-control" autocomplete="off" />
-            </div>
-        </div>
+
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>LOading Date: (Optional)</label>
@@ -136,18 +148,7 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
-                <label>Status:</label>
-                <select name="status" class="form-control">
-                    <option @selected($arrivalTicket->status == 'active') value="active">Active</option>
-                    <option @selected($arrivalTicket->status == 'inactive') value="inactive">Inactive
-                    </option>
-                </select>
-            </div>
-        </div>
-    </div>
+   
 
     <div class="row bottom-button-bar">
         <div class="col-12">
@@ -160,6 +161,31 @@
 
 
 <script>
+
+function calculateSampleMoney() {
+    let truckTypeSelect = $('[name="arrival_truck_type_id"]');
+    let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
+    
+    let holidayType = $('[name="sample_money_type"]').val();
+    
+    if (holidayType === 'double') {
+        sampleMoney = sampleMoney * 2;
+    }
+    
+    $('input[name="sample_money"]').val(sampleMoney || 0);
+}
+
+$(document).ready(function() {
+    calculateSampleMoney();
+    
+    $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
+    
+    $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
+});
+
+
+
+
     $(document).ready(function() {
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);

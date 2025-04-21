@@ -49,7 +49,7 @@
 
             if (arrival_ticket_id) {
                 $.ajax({
-                    url: '{{ route('getFirstWeighbridgeRelatedData') }}',
+                    url: '{{ route('getSecondWeighbridgeRelatedData') }}',
                     type: 'GET',
                     data: {
                         arrival_ticket_id: arrival_ticket_id

@@ -4,8 +4,8 @@
     <div class="row form-mar">
 
         <?php
-        $datePrefix = date('m-d-Y') . '-';
-        $unique_no = generateUniqueNumber('arrival_tickets', $datePrefix, null, 'unique_no');
+$datePrefix = date('m-d-Y') . '-';
+$unique_no = generateUniqueNumber('arrival_tickets', $datePrefix, null, 'unique_no');
         ?>
 
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -41,7 +41,8 @@
                             data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
                             data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
                             value="{{ $arrivalPurchaseOrder->id }}">
-                            {{ $arrivalPurchaseOrder->unique_no }}</option>
+                            {{ $arrivalPurchaseOrder->unique_no }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -86,12 +87,24 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Station:</label>
-                <input type="text" name="station_name" placeholder="Station" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="station_name" placeholder="Station" class="form-control" autocomplete="off" />
             </div>
         </div>
 
 
+
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Truck No:</label>
+                <input type="text" name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off" />
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Bilty No: </label>
+                <input type="text" name="bilty_no" placeholder="Bilty No" class="form-control" autocomplete="off" />
+            </div>
+        </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Truck Type:</label>
@@ -107,14 +120,12 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
-                <label>Truck No:</label>
-                <input type="text" name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off" />
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group ">
-                <label>Bilty No: </label>
-                <input type="text" name="bilty_no" placeholder="Bilty No" class="form-control" autocomplete="off" />
+                <label>Sample Money Type (Holiday):</label>
+                <select name="sample_money_type" class="form-control">
+                    <option value="">Select Type</option>
+                    <option value="single">Single</option>
+                    <option value="double">Double</option>
+                </select>
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -127,15 +138,13 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>No of bags: </label>
-                <input type="text" name="bags" placeholder="No of bags" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="bags" placeholder="No of bags" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Loading Date: (Optional)</label>
-                <input type="date" name="loading_date" placeholder="Bilty No" class="form-control"
-                    autocomplete="off" />
+                <input type="date" name="loading_date" placeholder="Bilty No" class="form-control" autocomplete="off" />
             </div>
         </div>
         {{-- <div class="col-xs-6 col-sm-6 col-md-6">
@@ -146,7 +155,7 @@
             </div>
         </div> --}}
 
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        {{-- <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>
                 <select name="status" class="form-control">
@@ -154,7 +163,7 @@
                     <option value="inactive">Inactive</option>
                 </select>
             </div>
-        </div>
+        </div> --}}
     </div>
 
     <div class="row ">
@@ -180,8 +189,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Net Weight: </label>
-                <input type="text" name="net_weight" placeholder="Net Weight" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="net_weight" placeholder="Net Weight" class="form-control" autocomplete="off" />
             </div>
         </div>
     </div>
@@ -208,7 +216,32 @@
 
 
 <script>
-    $(document).ready(function() {
+
+function calculateSampleMoney() {
+    let truckTypeSelect = $('[name="arrival_truck_type_id"]');
+    let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
+    
+    let holidayType = $('[name="sample_money_type"]').val();
+    
+    if (holidayType === 'double') {
+        sampleMoney = sampleMoney * 2;
+    }
+    
+    $('input[name="sample_money"]').val(sampleMoney || 0);
+}
+
+$(document).ready(function() {
+    calculateSampleMoney();
+    
+    $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
+    
+    $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
+});
+
+
+
+
+    $(document).ready(function () {
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
@@ -217,12 +250,12 @@
 
         $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
 
-        $(document).on('change', '[name="arrival_truck_type_id"]', function() {
-            let sampleMoney = $(this).find(':selected').data('samplemoney');
-            $('input[name="sample_money"]').val(sampleMoney ?? '');
-        });
+     //   $(document).on('change', '[name="arrival_truck_type_id"]', function () {
+          //  let sampleMoney = $(this).find(':selected').data('samplemoney');
+         //   $('input[name="sample_money"]').val(sampleMoney ?? '');
+        //});
 
-        $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
+        $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
             var selectedOption = $(this).find('option:selected');
             var brokerName = selectedOption.data('brokername');
             var supplierName = selectedOption.data('suppliername');
@@ -255,7 +288,7 @@
         });
 
         // Sync values on any change (just in case)
-        $(document).on('change', '#supplier_name, #broker_name', function() {
+        $(document).on('change', '#supplier_name, #broker_name', function () {
             if ($(this).attr('id') === 'supplier_name') {
                 $('#supplier_name_submit').val($(this).val());
             } else {
