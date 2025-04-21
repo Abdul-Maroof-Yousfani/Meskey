@@ -72,6 +72,14 @@ class ArrivalApproveController extends Controller
             'note' => 'nullable|string'
         ]);
 
+
+
+// Add conditional validation for total_rejection
+$validator->sometimes('total_rejection', 'required|integer|min:1', function($input) {
+    return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
+
+});
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }

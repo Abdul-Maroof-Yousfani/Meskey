@@ -43,7 +43,7 @@
             </li>
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
-                    data-toggle="dropdown"><i class="ft-aperture"></i><span data-i18n="UI Kit">Arrival</span></a>
+                    data-toggle="dropdown"><i class="ft-truck"></i><span data-i18n="UI Kit">Arrival</span></a>
 
 
                 <ul class="dropdown-menu">
@@ -112,7 +112,31 @@
             </li>
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
-                    data-toggle="dropdown"><i class="ft-box"></i><span data-i18n="Apps">Access
+                    data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Purchase Contract</span></a>
+
+
+                <ul class="dropdown-menu">
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('ticket.index') }}" onclick="loadPageContent('{{ route('ticket.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Email">Purchase Request</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('initialsampling.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
+                                </span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{route('sampling-monitoring.index')}}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
+                                </span></a>
+                    </li>
+                </ul>
+
+            </li>
+            <li class="dropdown nav-item" data-menu="dropdown"><a
+                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+                    data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Access
                         Control</span></a>
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
