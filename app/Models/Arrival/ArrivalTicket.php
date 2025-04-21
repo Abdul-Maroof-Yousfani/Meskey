@@ -23,6 +23,7 @@ class ArrivalTicket extends Model
         'unique_no',
         'company_id',
         'product_id',
+        'decision_making',
         'qc_product',
         'supplier_name',
         'broker_name',

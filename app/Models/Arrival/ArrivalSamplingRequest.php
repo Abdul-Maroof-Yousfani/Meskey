@@ -18,6 +18,7 @@ class ArrivalSamplingRequest extends Model
         'sampling_type',
         'is_re_sampling',
         'remark',
+        'decision_making',
         'is_done',
         'is_resampling_made',
         'approved_remarks',

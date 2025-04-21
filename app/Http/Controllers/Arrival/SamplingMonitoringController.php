@@ -144,7 +144,7 @@ class SamplingMonitoringController extends Controller
         $validator = Validator::make($request->all(), [
             // 'supplier' => 'required',
             // 'broker' => 'required',
-            'stage_status' => 'required',
+            'stage_status' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -156,9 +156,11 @@ class SamplingMonitoringController extends Controller
             // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
 
             $isLumpsum = ($request->is_lumpsum_deduction ?? 'off') == 'on' ? 1 : 0;
-            // Update main entry
+            $isDecisionMaking = ($request->decision_making ?? 'off') == 'on' ? 1 : 0;
+
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
+                'decision_making' => $isDecisionMaking,
                 'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
                 'lumpsum_deduction_kgs' => (float)$request->lumpsum_deduction_kgs ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
@@ -166,13 +168,12 @@ class SamplingMonitoringController extends Controller
                 'done_by' => auth()->user()->id,
             ]);
 
-            // Delete existing records for this request ID
             $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
 
             foreach ($records as $record) {
                 $record->delete();
             }
-            // Check if arrays exist before inserting new records
+
             if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
                     ArrivalSamplingResult::create([
@@ -186,7 +187,6 @@ class SamplingMonitoringController extends Controller
                 }
             }
 
-            // If resampling is required, create a new request
             if ($request->stage_status == 'resampling') {
                 ArrivalSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
@@ -199,10 +199,7 @@ class SamplingMonitoringController extends Controller
                 $ArrivalSamplingRequest->is_resampling_made = 'yes';
             }
 
-            // Update status
-
-            // $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'supplier_name' => $request->supplier, 'broker_name' => $request->broker, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
-            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'decision_making' => $isDecisionMaking, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 
