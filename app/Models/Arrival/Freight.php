@@ -11,12 +11,13 @@ class Freight extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'ticket_id',
         'estimated_freight',
         'loaded_weight',
         'arrived_weight',
         'difference',
         'exempted_weight',
-        'pq_rate',
+        'po_rate',
         'net_shortage',
         'shortage_weight_freight_deduction',
         'freight_per_ton',
@@ -24,10 +25,10 @@ class Freight extends Model
         'other_labour_charges',
         'other_deduction',
         'unpaid_labor_charges',
-        'freight_written_on_billy',
+        'freight_written_on_bilty',
         'gross_freight_amount',
         'net_freight',
-        'billy_document',
+        'bilty_document',
         'loading_weight_document',
         'other_document',
         'other_document_2',
@@ -36,4 +37,9 @@ class Freight extends Model
     ];
 
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
+
+    public function arrivalTicket()
+    {
+        return $this->belongsTo(ArrivalTicket::class, 'ticket_id');
+    }
 }

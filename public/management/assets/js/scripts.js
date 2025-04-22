@@ -436,6 +436,7 @@ function openModal(button, url, title, viewonly = false) {
         $("#modal-sidebar select").prop("disabled", true);
         $("#modal-sidebar textarea").prop("readonly", true);
         $("#modal-sidebar :checkbox").prop("disabled", true);
+        $("#modal-sidebar :file").prop("disabled", true);
         $('#modal-sidebar [type="submit"]').remove();
         // tinymce.editors.forEach(function (editor) {
         //   editor.setMode("readonly");

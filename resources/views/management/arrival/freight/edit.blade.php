@@ -8,66 +8,97 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Ticket #</label>
-                <input type="text" name="ticket_number" class="form-control" value="{{ $freight->ticket_number }}"
-                    required />
+                <input type="text" name="ticket_number" class="form-control"
+                    value="{{ $freight->arrivalTicket->unique_no }}" readonly />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Supplier</label>
-                <input type="text" name="supplier" class="form-control" value="{{ $freight->supplier }}" required />
+                <input type="text" name="supplier" class="form-control"
+                    value="{{ $freight->arrivalTicket->supplier_name }}" readonly />
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="form-group">
                 <label>Commodity</label>
-                <input type="text" name="commodity" class="form-control" value="{{ $freight->commodity }}"
-                    required />
+                <input type="text" name="commodity" class="form-control"
+                    value="{{ $freight->arrivalTicket->product->name ?? '' }}" readonly />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Truck #</label>
-                <input type="text" name="truck_number" class="form-control" value="{{ $freight->truck_number }}"
-                    required />
+                <input type="text" name="truck_number" class="form-control"
+                    value="{{ $freight->arrivalTicket->truck_no }}" readonly />
             </div>
         </div>
-
         <div class="col-md-6">
             <div class="form-group">
                 <label>Billy #</label>
-                <input type="text" name="billy_number" class="form-control" value="{{ $freight->billy_number }}"
-                    required />
+                <input type="text" name="billy_number" class="form-control"
+                    value="{{ $freight->arrivalTicket->bilty_no }}" readonly />
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Estimated Freight</label>
-                <input type="number" step="0.01" name="estimated_freight" class="form-control"
-                    value="{{ $freight->estimated_freight }}" />
-            </div>
+
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Estimated Freight
+            </h6>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label>Loaded Weight</label>
-                <input type="number" name="loaded_weight" class="form-control" value="{{ $freight->loaded_weight }}"
-                    required />
+                <input type="number" name="loaded_weight" class="form-control"
+                    value="{{ $freight->arrivalTicket->net_weight }}" disabled />
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Arrived Weight</label>
-                <input type="number" name="arrived_weight" class="form-control" value="{{ $freight->arrived_weight }}"
-                    required />
+                <input type="number" name="arrived_weight" class="form-control"
+                    value="{{ $freight->arrivalTicket->arrived_net_weight }}" disabled />
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Difference</label>
-                <input type="number" name="difference" class="form-control" value="{{ $freight->difference }}"
-                    readonly />
+                <input type="number" name="difference" class="form-control"
+                    value="{{ ($freight->arrivalTicket->net_weight ?? 0) - ($freight->arrivalTicket->arrived_net_weight ?? 0) }}"
+                    disabled />
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Exempted Weight</label>
+                <input type="number" name="exempted_weight" class="form-control"
+                    value="{{ $freight->exempted_weight }}" />
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>PO Rate</label>
+                <input type="number" step="0.01" name="po_rate" class="form-control"
+                    value="{{ $freight->po_rate }}" />
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Net Shortage</label>
+                <input type="number" name="net_shortage" class="form-control" value="{{ $freight->net_shortage }}" />
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Shortage Weight Freight Deduction</label>
+                <input type="number" step="0.01" name="shortage_weight_freight_deduction" class="form-control"
+                    value="{{ $freight->shortage_weight_freight_deduction }}" />
             </div>
         </div>
 
@@ -87,7 +118,7 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label>Other/Labour Charges</label>
+                <label>Other (+)/Labour Charges</label>
                 <input type="number" step="0.01" name="other_labour_charges" class="form-control"
                     value="{{ $freight->other_labour_charges }}" />
             </div>
@@ -107,11 +138,11 @@
                     value="{{ $freight->unpaid_labor_charges }}" />
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Freight Written on Billy</label>
-                <input type="number" step="0.01" name="freight_written_on_billy" class="form-control"
-                    value="{{ $freight->freight_written_on_billy }}" />
+                <input type="number" step="0.01" name="freight_written_on_bilty" class="form-control"
+                    value="{{ $freight->freight_written_on_bilty }}" />
             </div>
         </div>
 
@@ -119,61 +150,18 @@
             <div class="form-group">
                 <label>Gross Freight Amount</label>
                 <input type="number" step="0.01" name="gross_freight_amount" class="form-control"
-                    value="{{ $freight->gross_freight_amount }}" readonly />
+                    value="{{ $freight->gross_freight_amount }}" />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Net Freight</label>
                 <input type="number" step="0.01" name="net_freight" class="form-control"
-                    value="{{ $freight->net_freight }}" readonly />
+                    value="{{ $freight->net_freight }}" />
             </div>
         </div>
 
         <div class="col-md-6">
-            <div class="form-group">
-                <label>Attach Billy</label>
-                <input type="file" name="billy_document" class="form-control-file" />
-                @if ($freight->billy_document)
-                    <a href="{{ asset('storage/' . $freight->billy_document) }}" target="_blank">View Current
-                        File</a>
-                @endif
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Attach Loading Weight</label>
-                <input type="file" name="loading_weight_document" class="form-control-file" />
-                @if ($freight->loading_weight_document)
-                    <a href="{{ asset('storage/' . $freight->loading_weight_document) }}" target="_blank">View
-                        Current
-                        File</a>
-                @endif
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Other Document (Optional)</label>
-                <input type="file" name="other_document" class="form-control-file" />
-                @if ($freight->other_document)
-                    <a href="{{ asset('storage/' . $freight->other_document) }}" target="_blank">View Current
-                        File</a>
-                @endif
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Other Document 2 (Optional)</label>
-                <input type="file" name="other_document_2" class="form-control-file" />
-                @if ($freight->other_document_2)
-                    <a href="{{ asset('storage/' . $freight->other_document_2) }}" target="_blank">View Current
-                        File</a>
-                @endif
-            </div>
-        </div>
-
-        <div class="col-md-12">
             <div class="form-group">
                 <label>Status</label>
                 <select name="status" class="form-control">
@@ -183,6 +171,45 @@
                 </select>
             </div>
         </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Attach Billy</label>
+                <input type="file" name="bilty_document" class="form-control-file" />
+                @if ($freight->bilty_document)
+                    <a href="{{ asset($freight->bilty_document) }}" target="_blank">View Current File</a>
+                @endif
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Attach Loading Weight</label>
+                <input type="file" name="loading_weight_document" class="form-control-file" />
+                @if ($freight->loading_weight_document)
+                    <a href="{{ asset($freight->loading_weight_document) }}" target="_blank">View Current File</a>
+                @endif
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Other Document (Optional)</label>
+                <input type="file" name="other_document" class="form-control-file" />
+                @if ($freight->other_document)
+                    <a href="{{ asset($freight->other_document) }}" target="_blank">View Current File</a>
+                @endif
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Other Document 2 (Optional)</label>
+                <input type="file" name="other_document_2" class="form-control-file" />
+                @if ($freight->other_document_2)
+                    <a href="{{ asset($freight->other_document_2) }}" target="_blank">View Current File</a>
+                @endif
+            </div>
+        </div>
+
     </div>
 
     <div class="row bottom-button-bar">
@@ -194,18 +221,16 @@
 </form>
 
 <script>
-    $(document).ready(function() {
-        $('input[name="loaded_weight"], input[name="arrived_weight"]').on('change', function() {
-            const loaded = parseFloat($('input[name="loaded_weight"]').val()) || 0;
-            const arrived = parseFloat($('input[name="arrived_weight"]').val()) || 0;
-            $('input[name="difference"]').val(loaded - arrived);
-        });
+    //  $('input[name="arrived_weight"]').on('change', function() {
+    //      const loaded = parseFloat($('input[name="loaded_weight"]').val()) || 0;
+    //      const arrived = parseFloat($('input[name="arrived_weight"]').val()) || 0;
+    //      $('input[name="difference"]').val(loaded - arrived);
+    //  });
 
-        $('input[name="freight_per_ton"], input[name="loaded_weight"]').on('change', function() {
-            const freightPerTon = parseFloat($('input[name="freight_per_ton"]').val()) || 0;
-            const loadedWeight = parseFloat($('input[name="loaded_weight"]').val()) || 0;
-            const netFreight = freightPerTon * (loadedWeight / 1000);
-            $('input[name="net_freight"]').val(netFreight.toFixed(2));
-        });
-    });
+    //  $('input[name="freight_per_ton"], input[name="loaded_weight"]').on('change', function() {
+    //      const freightPerTon = parseFloat($('input[name="freight_per_ton"]').val()) || 0;
+    //      const loadedWeight = parseFloat($('input[name="loaded_weight"]').val()) || 0;
+    //      const netFreight = freightPerTon * (loadedWeight / 1000);
+    //      $('input[name="net_freight"]').val(netFreight.toFixed(2));
+    //  });
 </script>
