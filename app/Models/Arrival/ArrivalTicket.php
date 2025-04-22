@@ -54,7 +54,8 @@ class ArrivalTicket extends Model
         'document_approval_status',
         'first_weighbridge_status',
         'second_weighbridge_status',
-        'arrival_slip_status',
+        'freight_status',
+        'arrival_slip_status'
 
     ];
 

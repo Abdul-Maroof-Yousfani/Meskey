@@ -29,8 +29,8 @@
 
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
+                                        <div class="row justify-content-end text-left">
+                                            <div class="col-md-2 ">
                                                 <label for="from_date" class="form-label">From Date</label>
                                                 <input type="date" class="form-control" id="from_date" name="from_date"
                                                     value="{{ request('from_date', $oneMonthAgo) }}">

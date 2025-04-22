@@ -25,19 +25,33 @@ class SamplingMonitoringController extends Controller
      * Get list of categories.
      */
     public function getList(Request $request)
-    {
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->where('is_done', 'yes')->when($request->filled('search'), function ($q) use ($request) {
+{
+    $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+        ->where('is_done', 'yes')
+        ->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('unique_no', 'like', $searchTerm);
-                $sq->orWhere('supplier_name', 'like', $searchTerm);
+
+            return $q->where(function ($sq) use ($searchTerm,$request) {
+                $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
+                        $aq->where('unique_no', 'like', $searchTerm)
+                    ->orWhere('supplier_name', 'like', $searchTerm);
+                                        });
             });
         })
-            ->latest()
-            ->paginate(request('per_page', 25));
+                ->when($request->filled('sampling_type'), function ($q) use ($request) {
+return $q->where(function ($sq) use ($request) {
+    $sq->where('sampling_type', 'like', $request->sampling_type);
+                    
+});
 
-        return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
-    }
+                })
+
+        ->latest()
+        ->paginate(request('per_page', 25));
+
+    return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
+}
+
 
     /**
      * Show the form for creating a new resource.

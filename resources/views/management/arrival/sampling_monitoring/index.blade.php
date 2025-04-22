@@ -11,10 +11,10 @@
                     <h2 class="page-title"> Approval Requests</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    {{-- <button onclick="openModal(this,'{{ route('initialsampling.create') }}','Create Initial Sampling')" type="button"
-                    class="btn btn-primary position-relative ">
-                    Create Initial Sampling
-                </button> --}}
+                    {{-- <button onclick="openModal(this,'{{ route('initialsampling.create') }}','Create Initial Sampling')"
+                        type="button" class="btn btn-primary position-relative ">
+                        Create Initial Sampling
+                    </button> --}}
                 </div>
             </div>
             <div class="row">
@@ -22,11 +22,34 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
+                                @php
+                                    $today = \Carbon\Carbon::today()->format('Y-m-d');
+                                    $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
+                                @endphp
+
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
+                                            <div class="col-md-2 text-left">
+                                                <label for="from_date" class="form-label">Sampling Type</label>
+                                                <select class="form-control" name="sampling_type">
+                                                    <option value="">All</option>
+                                                    <option value="initial">Initial</option>
+                                                    <option value="inner">Inner</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="from_date" class="form-label">From Date</label>
+                                                <input type="date" class="form-control" id="from_date" name="from_date"
+                                                    value="{{ request('from_date', $oneMonthAgo) }}">
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="to_date" class="form-label">To Date</label>
+                                                <input type="date" class="form-control" id="to_date" name="to_date"
+                                                    value="{{ request('to_date', $today) }}">
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
@@ -36,6 +59,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </form>
 
 
@@ -71,7 +95,7 @@
 </style>
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.sampling-monitoring') }}`)
         });
     </script>
