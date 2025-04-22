@@ -40,6 +40,7 @@ class ArrivalTicket extends Model
         'first_weight',
         'second_weight',
         'net_weight',
+        'arrived_net_weight',
         'remarks',
         'status',
         'accounts_of_id',

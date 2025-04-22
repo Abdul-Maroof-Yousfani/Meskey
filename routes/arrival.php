@@ -11,7 +11,8 @@ use App\Http\Controllers\Arrival\{
     ArrivalApproveController,
     SecondWeighbridgeController,
     ArrivalSlipController,
-    FirstWeighbridgeController
+    FirstWeighbridgeController,
+    FreightController
 };
 
 
@@ -50,8 +51,19 @@ Route::resource('second-weighbridge', SecondWeighbridgeController::class);
 Route::post('/get-second-weighbridge', [SecondWeighbridgeController::class, 'getList'])->name('get.second-weighbridge');
 Route::get('/getSecondWeighbridgeRelatedData', [SecondWeighbridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
 
-Route::resource('frieght', ArrivalSlipController::class);
-Route::post('/get-frieght', [ArrivalSlipController::class, 'getList'])->name('get.frieght');
+Route::resource('freight', FreightController::class);
+Route::post('/get-freight', [FreightController::class, 'getList'])->name('get.freight');
+Route::get('/get-freight-form', [FreightController::class, 'getFreightForm'])->name('freight.getFreightForm');
+
+// Route::group(['prefix' => 'freight', 'as' => 'freight.'], function () {
+// Route::get('/', [FreightController::class, 'index'])->name('index');
+// Route::get('/get-list', [FreightController::class, 'getList'])->name('get');
+// Route::get('/create', [FreightController::class, 'create'])->name('create');
+// Route::post('/store', [FreightController::class, 'store'])->name('store');
+// Route::get('/edit/{id}', [FreightController::class, 'edit'])->name('edit');
+// Route::put('/update/{freight}', [FreightController::class, 'update'])->name('update');
+// Route::delete('/destroy/{freight}', [FreightController::class, 'destroy'])->name('destroy');
+// });
 
 Route::resource('arrival-slip', ArrivalSlipController::class);
 Route::post('/get-arrival-slip', [ArrivalSlipController::class, 'getList'])->name('get.arrival-slip');
