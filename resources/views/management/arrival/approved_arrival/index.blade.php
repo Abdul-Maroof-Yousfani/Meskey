@@ -44,17 +44,17 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Ticket No.</th>
+                                            <th class="col-sm-2">Ticket No.</th>
                                             <th class="col-sm-1">Product</th>
                                             <th class="col-sm-1">Gala Name</th>
                                             <th class="col-sm-1">Truck No</th>
-                                            <th class="col-sm-1">Filling Bags</th>
-                                            <th class="col-sm-1">Bag Type</th>
+                                            <th class="col-sm-2">Bags Detail</th>
+                                            {{-- <th class="col-sm-1">Bag</th>
                                             <th class="col-sm-1">Bag Condition</th>
-                                            <th class="col-sm-1">Bag Packing</th>
+                                            <th class="col-sm-1">Bag Packing</th> --}}
                                             <th class="col-sm-1">Approval Type</th>
-                                            <th class="col-sm-1">Receivings</th>
-                                            <th class="col-sm-1">Rejections</th>
+                                            <th class="col-sm-1">Recv. / Rej.</th>
+                                            {{-- <th class="col-sm-1">Rejections</th> --}}
                                             <th class="col-sm-1">Amanat</th>
                                             <th class="col-sm-1">Created At</th>
                                             <th class="col-sm-1">Actions</th>
@@ -74,7 +74,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.arrival-approve') }}`)
         });
     </script>

@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">Ticket No.</th>
+            <th class="col-sm-2">Ticket No.</th>
             <th class="col-sm-1">Product</th>
             <th class="col-sm-1">Gala Name</th>
             <th class="col-sm-1">Truck No</th>
@@ -10,8 +10,8 @@
             <th class="col-sm-1">Bag Condition</th>
             <th class="col-sm-1">Bag Packing</th> --}}
             <th class="col-sm-1">Approval Type</th>
-            <th class="col-sm-1">Receivings</th>
-            <th class="col-sm-1">Rejections</th>
+            <th class="col-sm-1">Recv. / Rej.</th>
+            {{-- <th class="col-sm-1">Rejections</th> --}}
             <th class="col-sm-1">Amanat</th>
             <th class="col-sm-1">Created At</th>
             <th class="col-sm-1">Actions</th>
@@ -32,10 +32,10 @@
                     <td>
                         <div class="div-box-b">
                             <small>
-                                Filling Bags: {{ $approval->filling_bags_no ?? '--' }} <br>
-                                Bag: {{ $approval->bagType->name ?? '--' }} <br>
-                                Bag Condition: {{ $approval->bagCondition->name ?? '--' }} <br>
-                                Bag Packing: {{ $approval->bagPacking->name ?? '--' }} <br></small>
+                                <strong>Filling Bags:</strong> {{ $approval->filling_bags_no ?? '--' }} <br>
+                                <strong>Bag Type:</strong> {{ $approval->bagType->name ?? '--' }} <br>
+                                <strong>Bag Condition:</strong> {{ $approval->bagCondition->name ?? '--' }} <br>
+                                <strong>Bag Packing:</strong> {{ $approval->bagPacking->name ?? '--' }} <br></small>
                         </div>
                     </td>
                     {{-- <td>{{ $approval->bagType->name ?? '--' }}</td>
@@ -47,8 +47,15 @@
                             {{ $approval->bag_packing_approval }}
                         </span>
                     </td>
-                    <td>{{ $approval->total_bags ?? '--' }}</td>
-                    <td>{{ $approval->total_rejection ?? '--' }}</td>
+                    <td>
+                        <div class="div-box-b">
+                            <small>
+                                <strong>Recieved:</strong> {{ $approval->total_bags ?? '--' }} <br>
+                                <strong>Rejected:</strong> {{ $approval->total_rejection ?? '0' }}
+                            </small>
+                        </div>
+                    </td>
+                    {{-- <td>{{ $approval->total_rejection ?? '--' }}</td> --}}
                     <td>
                         <span class="badge bg-light-{{ $approval->amanat == 'Yes' ? 'danger' : 'success' }}">
                             {{ $approval->amanat }}
@@ -101,10 +108,9 @@
 </div>
 
 <style>
-.div-box-b{
+    .div-box-b {
         background: #ececec;
-    padding: 7px;
-    border-radius: 5px;
-}
-
+        padding: 7px;
+        border-radius: 5px;
+    }
 </style>
