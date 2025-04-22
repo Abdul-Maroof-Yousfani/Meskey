@@ -10,6 +10,8 @@ class Freight extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = "arrival_freights";
+
     protected $fillable = [
         'arrival_ticket_id',
         'estimated_freight',
