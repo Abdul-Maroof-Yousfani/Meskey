@@ -34,7 +34,7 @@ return new class extends Migration
             $table->decimal('freight_written_on_billy', 10, 2)->default(0);
             $table->decimal('gross_freight_amount', 10, 2)->default(0);
             $table->decimal('net_freight', 10, 2)->default(0);
-            $table->string('billy_document')->nullable();
+            $table->string('bilty_document')->nullable();
             $table->string('loading_weight_document')->nullable();
             $table->string('other_document')->nullable();
             $table->string('other_document_2')->nullable();

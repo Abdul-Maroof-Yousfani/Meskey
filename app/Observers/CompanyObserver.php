@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Models\Acl\Company;
 use Illuminate\Support\Str;
 
-
 class CompanyObserver
 {
     /**
@@ -96,9 +95,9 @@ class CompanyObserver
     protected function storeProfileImage($image, Company $company)
     {
 
-            $logoOriginalName = pathinfo($company->logo->getClientOriginalName(), PATHINFO_FILENAME);
+        $logoOriginalName = pathinfo($company->logo->getClientOriginalName(), PATHINFO_FILENAME);
 
-         $sluggedName = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $logoOriginalName));
+        $sluggedName = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $logoOriginalName));
         $filename = Str::slug($logoOriginalName) . '-' . now()->format('YmdHis') . '.' . $image->getClientOriginalExtension();
 
         return $image->storeAs('company_logos', $filename, 'public');

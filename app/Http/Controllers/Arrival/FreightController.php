@@ -21,7 +21,7 @@ class FreightController extends Controller
 
     public function getList(Request $request)
     {
-        $freights = Freight::when($request->filled('search'), function ($q) use ($request) {
+        $freights = Freight::with('arrivalTicket')->when($request->filled('search'), function ($q) use ($request) {
             $q->where('ticket_number', 'like', '%' . $request->search . '%')
                 ->orWhere('truck_number', 'like', '%' . $request->search . '%')
                 ->orWhere('billy_number', 'like', '%' . $request->search . '%');
@@ -45,28 +45,13 @@ class FreightController extends Controller
     public function store(FreightRequest $request)
     {
         $data = $request->validated();
+        // $ticket = ArrivalTicket::findOrFail($request->ticket_id);
 
-        $data['difference'] = $data['loaded_weight'] - $data['arrived_weight'];
-        $data['net_freight'] = $data['freight_per_ton'] * ($data['loaded_weight'] / 1000);
+        $data['arrived_weight'] = $request->company_id;
+        $data['loaded_weight'] = $request->company_id;
         $data['company_id'] = $request->company_id;
 
-        if ($request->hasFile('billy_document')) {
-            $data['billy_document'] = $request->file('billy_document')->store('freight_documents');
-        }
-
-        if ($request->hasFile('loading_weight_document')) {
-            $data['loading_weight_document'] = $request->file('loading_weight_document')->store('freight_documents');
-        }
-
-        if ($request->hasFile('other_document')) {
-            $data['other_document'] = $request->file('other_document')->store('freight_documents');
-        }
-
-        if ($request->hasFile('other_document_2')) {
-            $data['other_document_2'] = $request->file('other_document_2')->store('freight_documents');
-        }
-
-        $freight = Freight::create($data);
+        $freight = Freight::create($request->all());
 
         return response()->json(['success' => 'Freight created successfully.', 'data' => $freight], 201);
     }
@@ -83,22 +68,6 @@ class FreightController extends Controller
 
         $data['difference'] = $data['loaded_weight'] - $data['arrived_weight'];
         $data['net_freight'] = $data['freight_per_ton'] * ($data['loaded_weight'] / 1000);
-
-        if ($request->hasFile('billy_document')) {
-            $data['billy_document'] = $request->file('billy_document')->store('freight_documents');
-        }
-
-        if ($request->hasFile('loading_weight_document')) {
-            $data['loading_weight_document'] = $request->file('loading_weight_document')->store('freight_documents');
-        }
-
-        if ($request->hasFile('other_document')) {
-            $data['other_document'] = $request->file('other_document')->store('freight_documents');
-        }
-
-        if ($request->hasFile('other_document_2')) {
-            $data['other_document_2'] = $request->file('other_document_2')->store('freight_documents');
-        }
 
         $freight->update($data);
 

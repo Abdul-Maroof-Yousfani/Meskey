@@ -14,10 +14,10 @@
          @if (count($freights) != 0)
              @foreach ($freights as $freight)
                  <tr>
-                     <td>{{ $freight->ticket_number }}</td>
-                     <td>{{ $freight->supplier }}</td>
-                     <td>{{ $freight->truck_number }}</td>
-                     <td>{{ $freight->billy_number }}</td>
+                     <td>{{ $freight->arrivalTicket->unique_no }}</td>
+                     <td>{{ $freight->arrivalTicket->supplier_name }}</td>
+                     <td>{{ $freight->arrivalTicket->truck_no }}</td>
+                     <td>{{ $freight->arrivalTicket->bilty_no }}</td>
                      <td>{{ number_format($freight->net_freight, 2) }}</td>
                      <td>
                          <span
@@ -26,9 +26,9 @@
                          </span>
                      </td>
                      <td>
-                         <a onclick="openModal(this,'{{ route('freight.edit', $freight->id) }}','Edit Freight')"
+                         <a onclick="openModal(this,'{{ route('freight.edit', $freight->id) }}','View Freight', true)"
                              class="info p-1 text-center mr-2 position-relative">
-                             <i class="ft-edit-2 font-medium-3"></i>
+                             <i class="ft-eye font-medium-3"></i>
                          </a>
                          <a onclick="deletemodal('{{ route('freight.destroy', $freight->id) }}','{{ route('get.freight') }}')"
                              class="danger p-1 text-center mr-2 position-relative">

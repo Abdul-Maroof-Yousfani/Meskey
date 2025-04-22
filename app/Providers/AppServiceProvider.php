@@ -5,8 +5,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Acl\{Company};
-use App\Models\{User,Product,Arrival\ArrivalTicket};
-use App\Observers\{UserObserver,CompanyObserver,ProductObserver,ArrivalTicketObserver};
+use App\Models\{User, Product, Arrival\ArrivalTicket};
+use App\Models\Arrival\Freight;
+use App\Observers\{UserObserver, CompanyObserver, ProductObserver, ArrivalTicketObserver, FreightObserver};
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 
@@ -30,10 +31,11 @@ class AppServiceProvider extends ServiceProvider
         Company::observe(CompanyObserver::class);
         User::observe(UserObserver::class);
         Product::observe(ProductObserver::class);
+        Freight::observe(FreightObserver::class);
         ArrivalTicket::observe(ArrivalTicketObserver::class);
 
 
-         // Register custom Blade directive
+        // Register custom Blade directive
         Blade::directive('canAccess', function ($expression) {
             return "<?php if (canAccess($expression)): ?>";
         });
@@ -43,9 +45,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
 
-    Blade::directive('routerLink', function ($routeUrl) {
-        // Properly wrap the URL in single quotes and ensure escaping
-        return "<?php echo 'href=\"' . $routeUrl . '\" onclick=\"loadPageContent(\\\".'. $routeUrl .'.\\\")\"'; ?>";
-    });
+        Blade::directive('routerLink', function ($routeUrl) {
+            return "<?php echo 'href=\"' . $routeUrl . '\" onclick=\"loadPageContent(\\\".'. $routeUrl .'.\\\")\"'; ?>";
+        });
     }
 }

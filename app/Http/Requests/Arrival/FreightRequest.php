@@ -22,15 +22,16 @@ class FreightRequest extends FormRequest
     public function rules()
     {
         return [
+            'ticket_id' => 'required|exists:arrival_tickets,id',
             'ticket_number' => 'required|string|max:255',
             'supplier' => 'required|string|max:255',
             'commodity' => 'required|string|max:255',
             'truck_number' => 'required|string|max:255',
             'billy_number' => 'required|string|max:255',
-            'loaded_weight' => 'required|integer',
-            'arrived_weight' => 'required|integer',
+            // 'loaded_weight' => 'required|integer',
+            // 'arrived_weight' => 'required|integer',
             'freight_per_ton' => 'required|numeric',
-            'billy_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'bilty_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'loading_weight_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'other_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'other_document_2' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

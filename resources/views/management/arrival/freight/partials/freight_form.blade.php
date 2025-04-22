@@ -33,7 +33,6 @@
                      readonly />
              </div>
          </div>
-
          <div class="col-md-6">
              <div class="form-group">
                  <label>Billy #</label>
@@ -41,30 +40,59 @@
                      readonly />
              </div>
          </div>
-         <div class="col-md-6">
-             <div class="form-group">
-                 <label>Estimated Freight</label>
-                 <input type="number" step="0.01" name="estimated_freight" class="form-control" />
-             </div>
+         <div class="col-12" bis_skin_checked="1">
+             <h6 class="header-heading-sepration">
+                 Estimated Freight
+             </h6>
          </div>
-
          <div class="col-md-4">
              <div class="form-group">
                  <label>Loaded Weight</label>
-                 <input type="number" name="loaded_weight" class="form-control"
-                     value="{{ $ticket->loading_weight }}" />
+                 <input type="number" name="loaded_weight" class="form-control" value="{{ $ticket->net_weight }}"
+                     disabled />
              </div>
          </div>
          <div class="col-md-4">
              <div class="form-group">
                  <label>Arrived Weight</label>
-                 <input type="number" name="arrived_weight" class="form-control" required />
+                 <input type="number" name="arrived_weight" class="form-control"
+                     value="{{ $ticket->arrived_net_weight }}" disabled />
              </div>
          </div>
          <div class="col-md-4">
              <div class="form-group">
                  <label>Difference</label>
-                 <input type="number" name="difference" class="form-control" />
+                 <input type="number" name="difference" class="form-control"
+                     value="{{ ($ticket->net_weight ?? 0) - ($ticket->arrived_net_weight ?? 0) }}" disabled />
+             </div>
+         </div>
+
+         <div class="col-md-4">
+             <div class="form-group">
+                 <label>Exempted Weight</label>
+                 <input type="number" name="exempted_weight" class="form-control" value="0" />
+             </div>
+         </div>
+
+         <div class="col-md-4">
+             <div class="form-group">
+                 <label>PO Rate</label>
+                 <input type="number" step="0.01" name="po_rate" class="form-control" />
+             </div>
+         </div>
+
+         <div class="col-md-4">
+             <div class="form-group">
+                 <label>Net Shortage</label>
+                 <input type="number" name="net_shortage" class="form-control" value="0" />
+             </div>
+         </div>
+
+         <div class="col-md-4">
+             <div class="form-group">
+                 <label>Shortage Weight Freight Deduction</label>
+                 <input type="number" step="0.01" name="shortage_weight_freight_deduction" class="form-control"
+                     value="0" />
              </div>
          </div>
 
@@ -83,7 +111,7 @@
          </div>
          <div class="col-md-4">
              <div class="form-group">
-                 <label>Other/Labour Charges</label>
+                 <label>Other (+)/Labour Charges</label>
                  <input type="number" step="0.01" name="other_labour_charges" class="form-control" />
              </div>
          </div>
@@ -100,10 +128,10 @@
                  <input type="number" step="0.01" name="unpaid_labor_charges" class="form-control" />
              </div>
          </div>
-         <div class="col-md-4">
+         <div class="col-md-6">
              <div class="form-group">
                  <label>Freight Written on Billy</label>
-                 <input type="number" step="0.01" name="freight_written_on_billy" class="form-control"
+                 <input type="number" step="0.01" name="freight_written_on_bilty" class="form-control"
                      value="0" />
              </div>
          </div>
@@ -124,8 +152,19 @@
 
          <div class="col-md-6">
              <div class="form-group">
+                 <label>Status</label>
+                 <select name="status" class="form-control">
+                     <option value="pending">Pending</option>
+                     <option value="approved">Approved</option>
+                     <option value="rejected">Rejected</option>
+                 </select>
+             </div>
+         </div>
+
+         <div class="col-md-6">
+             <div class="form-group">
                  <label>Attach Billy</label>
-                 <input type="file" name="billy_document" class="form-control-file" />
+                 <input type="file" name="bilty_document" class="form-control-file" />
              </div>
          </div>
          <div class="col-md-6">
