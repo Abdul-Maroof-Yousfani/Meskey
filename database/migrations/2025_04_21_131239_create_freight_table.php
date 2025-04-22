@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('freights', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('arrival_ticket_id');
             // $table->string('ticket_number');
             // $table->string('supplier');
             // $table->string('commodity');
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->integer('arrived_weight')->default(0);
             $table->integer('difference')->default(0);
             $table->integer('exempted_weight')->default(0);
-            $table->decimal('pq_rate', 10, 2)->nullable();
+            $table->decimal('po_rate', 10, 2)->nullable();
             $table->integer('net_shortage')->default(0);
             $table->decimal('shortage_weight_freight_deduction', 10, 2)->default(0);
             $table->decimal('freight_per_ton', 10, 2)->default(0);
@@ -31,7 +32,7 @@ return new class extends Migration
             $table->decimal('other_labour_charges', 10, 2)->nullable();
             $table->decimal('other_deduction', 10, 2)->nullable();
             $table->decimal('unpaid_labor_charges', 10, 2)->nullable();
-            $table->decimal('freight_written_on_billy', 10, 2)->default(0);
+            $table->decimal('freight_written_on_bilty', 10, 2)->default(0);
             $table->decimal('gross_freight_amount', 10, 2)->default(0);
             $table->decimal('net_freight', 10, 2)->default(0);
             $table->string('bilty_document')->nullable();
