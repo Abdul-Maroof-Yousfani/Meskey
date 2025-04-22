@@ -1,6 +1,8 @@
-<form action="{{ route('initialsampling.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route($isResampling ? 'initial-resampling.store' : 'initialsampling.store') }}" method="POST"
+    id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.initialsampling') }}" />
+    <input type="hidden" id="listRefresh"
+        value="{{ route($isResampling ? 'get.initial-resampling' : 'get.initialsampling') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">

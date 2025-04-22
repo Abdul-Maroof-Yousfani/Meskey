@@ -18,7 +18,8 @@ class InnersamplingController extends Controller
      */
     public function index()
     {
-        return view('management.arrival.inner_sampling.index');
+        $isResampling = request()->route()->getName() === 'inner-resampling.index';
+        return view('management.arrival.inner_sampling.index', compact('isResampling'));
     }
 
     /**
@@ -26,7 +27,15 @@ class InnersamplingController extends Controller
      */
     public function getList(Request $request)
     {
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->where('is_done', 'yes')->where('sampling_type', 'inner')->when($request->filled('search'), function ($q) use ($request) {
+        $isResampling = request()->route()->getName() === 'get.inner-resampling';
+
+        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->where('is_done', 'yes');
+
+        if ($isResampling) {
+            $samplingRequests->where('is_re_sampling', 'yes');
+        }
+
+        $samplingRequests = $samplingRequests->where('sampling_type', 'inner')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('unique_no', 'like', $searchTerm);
@@ -36,7 +45,7 @@ class InnersamplingController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.arrival.inner_sampling.getList', compact('samplingRequests'));
+        return view('management.arrival.inner_sampling.getList', compact('samplingRequests', 'isResampling'));
     }
 
     /**
@@ -44,10 +53,22 @@ class InnersamplingController extends Controller
      */
     public function create()
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->get();
+        $isResampling = request()->route()->getName() === 'inner-resampling.create';
+
+        $query = ArrivalSamplingRequest::where('sampling_type', 'inner');
+
+        if ($isResampling) {
+            $query->where('is_re_sampling', 'yes');
+        } else {
+            $query->where('is_re_sampling', 'no');
+        }
+
+        $samplingRequests = $query->get();
+
+
         $products = Product::all();
 
-        return view('management.arrival.inner_sampling.create', compact('samplingRequests', 'products'));
+        return view('management.arrival.inner_sampling.create', compact('samplingRequests', 'isResampling', 'products'));
     }
 
     /**

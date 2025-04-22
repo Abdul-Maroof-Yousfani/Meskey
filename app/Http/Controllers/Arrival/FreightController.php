@@ -35,7 +35,7 @@ class FreightController extends Controller
 
     public function create()
     {
-        $tickets = ArrivalTicket::where('second_weighbridge_status', 'completed')
+        $tickets = ArrivalTicket::where('freight_status', 'pending')
             ->whereNotNull('qc_product')
             ->get();
 
@@ -46,6 +46,9 @@ class FreightController extends Controller
     {
         $data = $request->validated();
         // $ticket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+
+        ArrivalTicket::where('id', $request->arrival_ticket_id)
+            ->update(['freight_status' => 'completed', 'arrival_slip_status' => 'pending']);
 
         $data['arrived_weight'] = $request->company_id;
         $data['loaded_weight'] = $request->company_id;

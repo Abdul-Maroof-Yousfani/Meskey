@@ -32,10 +32,6 @@
                 @endcanAccess
             @endforeach
 
-
-
-
-
             <li class="nav-item" data-menu="dropdown">
                 <a class="dropdown-toggle nav-link d-flex align-items-center"
                     onclick="loadPageContent('{{ url('dashboard') }}')" data-toggle="dropdown"><i
@@ -56,6 +52,11 @@
                             href="{{ route('initialsampling.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Initial
                                 Sampling</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('initial-resampling.index') }}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Initial
+                                Re-Sampling</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sampling-monitoring.index') }}" data-toggle="dropdown"><i
@@ -81,6 +82,11 @@
                             href="{{ route('inner-sampling.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Inner
                                 Sampling</span></a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('inner-resampling.index') }}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Inner
+                                Re-Sampling</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('arrival-approve.index') }}" data-toggle="dropdown"><i

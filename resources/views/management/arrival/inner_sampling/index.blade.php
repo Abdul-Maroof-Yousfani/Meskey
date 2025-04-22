@@ -8,12 +8,13 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Inner Sampling</h2>
+                    <h2 class="page-title"> {{ $isResampling ? 'Inner Re-Sampling' : 'Inner Sampling' }}</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('inner-sampling.create') }}','Create Inner Sampling')"
-                        type="button" class="btn btn-primary position-relative ">
-                        Create Inner Sampling
+                    <button
+                        onclick="openModal(this,'{{ route($isResampling ? 'inner-resampling.create' : 'inner-sampling.create') }}','{{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}')"
+                        type="button" class="btn btn-primary position-relative">
+                        {{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}
                     </button>
                 </div>
             </div>
@@ -69,7 +70,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('get.inner-sampling') }}`)
+            filterationCommon(`{{ route($isResampling ? 'get.inner-sampling' : 'get.inner-resampling') }}`)
         });
     </script>
 @endsection

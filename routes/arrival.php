@@ -20,7 +20,9 @@ Route::resource('ticket', TicketController::class);
 Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.ticket');
 
 Route::resource('initialsampling', InitialSamplingController::class);
+Route::resource('initial-resampling', InitialSamplingController::class);
 Route::post('/get-initialsampling', [InitialSamplingController::class, 'getList'])->name('get.initialsampling');
+Route::post('/get-initial-resampling', [InitialSamplingController::class, 'getList'])->name('get.initial-resampling');
 Route::post('/initial-sampling/update-status', [InitialSamplingController::class, 'updateStatus'])->name('initialsampling.updateStatus');
 
 
@@ -36,10 +38,11 @@ Route::post('/get-inner-sampling-request', [InnersampleRequestController::class,
 
 Route::resource('inner-sampling', InnersamplingController::class);
 Route::post('/get-inner-sampling', [InnersamplingController::class, 'getList'])->name('get.inner-sampling');
+Route::resource('inner-resampling', InnersamplingController::class);
+Route::post('/get-inner-resampling', [InnersamplingController::class, 'getList'])->name('get.inner-resampling');
 
 Route::resource('arrival-approve', ArrivalApproveController::class);
 Route::post('/get-arrival-approve', [ArrivalApproveController::class, 'getList'])->name('get.arrival-approve');
-
 
 Route::resource('first-weighbridge', FirstWeighbridgeController::class);
 Route::post('/get-first-weighbridge', [FirstWeighbridgeController::class, 'getList'])->name('get.first-weighbridge');

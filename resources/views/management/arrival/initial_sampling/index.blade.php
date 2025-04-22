@@ -8,12 +8,13 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Initial Sampling</h2>
+                    <h2 class="page-title"> {{ $isResampling ? 'Initial Re-Sampling' : 'Initial Sampling' }} </h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('initialsampling.create') }}','Create Initial Sampling')"
+                    <button
+                        onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}',{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }})"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Initial Sampling
+                        {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
                     </button>
                 </div>
             </div>
@@ -37,9 +38,6 @@
                                     </div>
                                 </div>
                             </form>
-
-
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
@@ -63,14 +61,12 @@
                 </div>
             </div>
         </section>
-
-
     </div>
 @endsection
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('get.initialsampling') }}`)
+            filterationCommon(`{{ route($isResampling ? 'get.initial-resampling' : 'get.initialsampling') }}`)
         });
     </script>
 @endsection

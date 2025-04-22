@@ -18,7 +18,8 @@ class InitialSamplingController extends Controller
      */
     public function index()
     {
-        return view('management.arrival.initial_sampling.index');
+        $isResampling = request()->route()->getName() === 'initial-resampling.index';
+        return view('management.arrival.initial_sampling.index', compact('isResampling'));
     }
 
     /**
@@ -26,9 +27,16 @@ class InitialSamplingController extends Controller
      */
     public function getList(Request $request)
     {
+        $isResampling = request()->route()->getName() === 'get.initial-resampling';
+
         $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
-            ->where('is_done', 'yes')
-            ->where('sampling_type', 'initial')
+            ->where('is_done', 'yes');
+
+        if ($isResampling) {
+            $samplingRequests->where('is_re_sampling', 'yes');
+        }
+
+        $samplingRequests = $samplingRequests->where('sampling_type', 'initial')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 $q->whereHas('arrivalTicket', function ($sq) use ($searchTerm) {
@@ -39,7 +47,7 @@ class InitialSamplingController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.arrival.initial_sampling.getList', compact('samplingRequests'));
+        return view('management.arrival.initial_sampling.getList', compact('samplingRequests', 'isResampling'));
     }
 
     /**
@@ -47,12 +55,22 @@ class InitialSamplingController extends Controller
      */
     public function create()
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no')->get();
+        $isResampling = request()->route()->getName() === 'initial-resampling.create';
+
+        $query = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no');
+
+        if ($isResampling) {
+            $query->where('is_re_sampling', 'yes');
+        } else {
+            $query->where('is_re_sampling', 'no');
+        }
+
+        $samplingRequests = $query->get();
         $arrivalCustomSampling = ArrivalCustomSampling::all();
         $sampleTakenByUsers = User::all();
         $products = Product::all();
 
-        return view('management.arrival.initial_sampling.create', compact('samplingRequests', 'arrivalCustomSampling', 'sampleTakenByUsers', 'products'));
+        return view('management.arrival.initial_sampling.create', compact('samplingRequests', 'isResampling', 'arrivalCustomSampling', 'sampleTakenByUsers', 'products'));
     }
 
     /**

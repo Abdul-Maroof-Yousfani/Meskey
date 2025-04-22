@@ -40,7 +40,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('inner-sampling.edit', $row->id) }}','View Inner Sampling',true)"
+                            <a onclick="openModal(this,'{{ route($isResampling ? 'inner-sampling.edit' : 'inner-resampling.edit', $row->id) }}','{{ $isResampling ? 'View Inner Re-Sampling' : 'View Inner Sampling' }}',true)"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>

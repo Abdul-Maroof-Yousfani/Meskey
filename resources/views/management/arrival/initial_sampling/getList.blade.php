@@ -9,9 +9,6 @@
         </tr>
     </thead>
     <tbody>
-
-
-
         @if (count($samplingRequests) != 0)
             @foreach ($samplingRequests as $key => $row)
                 <tr>
@@ -39,7 +36,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
+                            <a onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.edit' : 'initialsampling.edit', $row->id) }}','{{ $isResampling ? 'View Initial Re-Sampling' : 'View Initial Sampling' }}',true)"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
