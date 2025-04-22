@@ -12,7 +12,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}',{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }})"
+                        onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}','{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}')"
                         type="button" class="btn btn-primary position-relative ">
                         {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
                     </button>

@@ -46,7 +46,6 @@
                 <label>Sample Taken By:</label>
                 <select name="sample_taken_by" id="sample_taken_by" class="form-control select2 ">
                     <option value="">Sample Taken By</option>
-
                     @foreach ($sampleTakenByUsers as $sampleTakenUser)
                         <option value="{{ $sampleTakenUser->id }}">{{ $sampleTakenUser->name }}</option>
                     @endforeach
@@ -63,7 +62,10 @@
         <div class="col-12 px-3">
             <div class="form-group ">
                 <label>Party Ref. No: </label>
-                <select name="party_ref_no" id="party_ref_no" class="form-control select2 "></select>
+                <select name="party_ref_no" id="party_ref_no" class="form-control select2">
+                    <option value="N/A">
+                        N/A</option>
+                </select>
             </div>
         </div>
     </div>

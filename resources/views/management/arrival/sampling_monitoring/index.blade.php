@@ -95,7 +95,7 @@
 </style>
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             filterationCommon(`{{ route('get.sampling-monitoring') }}`)
         });
     </script>

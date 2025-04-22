@@ -70,7 +70,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route($isResampling ? 'get.inner-sampling' : 'get.inner-resampling') }}`)
+            filterationCommon(`{{ route($isResampling ? 'get.inner-resampling' : 'get.inner-sampling') }}`)
         });
     </script>
 @endsection

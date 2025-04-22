@@ -131,21 +131,21 @@
                      class="form-control calculate-final" value="0" />
              </div>
          </div>
-         <div class="col-md-6">
+         <div class="col-md-4">
              <div class="form-group">
                  <label>Freight Written on Billy</label>
                  <input type="number" step="0.01" name="freight_written_on_bilty"
                      class="form-control calculate-final" value="0" />
              </div>
          </div>
-         <div class="col-md-6">
+         <div class="col-md-4">
              <div class="form-group">
                  <label>Gross Freight Amount</label>
                  <input type="number" step="0.01" name="gross_freight_amount" class="form-control"
                      value="0" readonly />
              </div>
          </div>
-         <div class="col-md-6">
+         <div class="col-md-4">
              <div class="form-group">
                  <label>Net Freight</label>
                  <input type="number" step="0.01" name="net_freight" class="form-control" value="0"
@@ -153,14 +153,10 @@
              </div>
          </div>
 
-         <div class="col-md-6">
+         <div class="col-md-6 d-none">
              <div class="form-group">
                  <label>Status</label>
-                 <select name="status" class="form-control">
-                     <option value="pending">Pending</option>
-                     <option value="approved">Approved</option>
-                     <option value="rejected">Rejected</option>
-                 </select>
+                 <input type="hidden" name="status" value="approved">
              </div>
          </div>
 

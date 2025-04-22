@@ -25,32 +25,30 @@ class SamplingMonitoringController extends Controller
      * Get list of categories.
      */
     public function getList(Request $request)
-{
-    $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
-        ->where('is_done', 'yes')
-        ->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+    {
+        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+            ->where('is_done', 'yes')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
 
-            return $q->where(function ($sq) use ($searchTerm,$request) {
-                $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
+                return $q->where(function ($sq) use ($searchTerm, $request) {
+                    $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
                         $aq->where('unique_no', 'like', $searchTerm)
-                    ->orWhere('supplier_name', 'like', $searchTerm);
-                                        });
-            });
-        })
-                ->when($request->filled('sampling_type'), function ($q) use ($request) {
-return $q->where(function ($sq) use ($request) {
-    $sq->where('sampling_type', 'like', $request->sampling_type);
-                    
-});
+                            ->orWhere('supplier_name', 'like', $searchTerm);
+                    });
+                });
+            })
+            ->when($request->filled('sampling_type'), function ($q) use ($request) {
+                return $q->where(function ($sq) use ($request) {
+                    $sq->where('sampling_type', 'like', $request->sampling_type);
+                });
+            })
 
-                })
+            ->latest()
+            ->paginate(request('per_page', 25));
 
-        ->latest()
-        ->paginate(request('per_page', 25));
-
-    return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
-}
+        return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
+    }
 
 
     /**
@@ -205,7 +203,7 @@ return $q->where(function ($sq) use ($request) {
                 ArrivalSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
                     'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
-                    'sampling_type' => 'initial',
+                    'sampling_type' => $ArrivalSamplingRequest->sampling_type,
                     'is_re_sampling' => 'yes',
                     'is_done' => 'no',
                     'remark' => null,

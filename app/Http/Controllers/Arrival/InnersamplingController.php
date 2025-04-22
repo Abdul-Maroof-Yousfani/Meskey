@@ -29,17 +29,21 @@ class InnersamplingController extends Controller
     {
         $isResampling = request()->route()->getName() === 'get.inner-resampling';
 
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')->where('is_done', 'yes');
+        $query = ArrivalSamplingRequest::with('arrivalTicket')
+            ->where('is_done', 'yes')
+            ->where('sampling_type', 'inner');
 
         if ($isResampling) {
-            $samplingRequests->where('is_re_sampling', 'yes');
+            $query->where('is_re_sampling', 'yes');
+        } else {
+            $query->where('is_re_sampling', 'no');
         }
 
-        $samplingRequests = $samplingRequests->where('sampling_type', 'inner')->when($request->filled('search'), function ($q) use ($request) {
+        $samplingRequests = $query->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('unique_no', 'like', $searchTerm);
-                $sq->orWhere('supplier_name', 'like', $searchTerm);
+            return $q->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                $ticketQuery->where('unique_no', 'like', $searchTerm)
+                    ->orWhere('supplier_name', 'like', $searchTerm);
             });
         })
             ->latest()

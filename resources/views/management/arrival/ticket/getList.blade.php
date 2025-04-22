@@ -54,17 +54,17 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','Edit Ticket')"
+                            <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-eye font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
+                            {{-- <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
-                            </a>
+                            </a> --}}
                         @endcan
                     </td>
                 </tr>

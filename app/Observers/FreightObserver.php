@@ -46,8 +46,8 @@ class FreightObserver
             }
         }
 
-        $freight->difference = $freight->loaded_weight - $freight->arrived_weight;
-        $freight->net_freight = $freight->freight_per_ton * ($freight->loaded_weight / 1000);
+        // $freight->difference = $freight->loaded_weight - $freight->arrived_weight;
+        // $freight->net_freight = $freight->freight_per_ton * ($freight->loaded_weight / 1000);
     }
 
     /**
