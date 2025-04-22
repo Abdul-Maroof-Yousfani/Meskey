@@ -71,7 +71,7 @@ class SecondWeighbridgeController extends Controller
 
         ArrivalTicket::where('id', $request->arrival_ticket_id)
             ->update(
-                ['second_weighbridge_status' => 'completed', 'arrived_net_weight' => $request->weighbridge_net_weight]
+                ['second_weighbridge_status' => 'completed', 'arrived_net_weight' => $request->weighbridge_net_weight,'freight_status'=>'pending']
                 );
 
         return response()->json(['success' => 'Second Weighbridge created successfully.', 'data' => $arrival_locations], 201);
