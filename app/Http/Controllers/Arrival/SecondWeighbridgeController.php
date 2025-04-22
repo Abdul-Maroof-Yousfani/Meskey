@@ -70,9 +70,11 @@ class SecondWeighbridgeController extends Controller
         $arrival_locations = SecondWeighbridge::create($request->all());
 
         ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['second_weighbridge_status' => 'completed']);
+            ->update(
+                ['second_weighbridge_status' => 'completed', 'arrived_net_weight' => $request->weighbridge_net_weight]
+                );
 
-        return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
+        return response()->json(['success' => 'Second Weighbridge created successfully.', 'data' => $arrival_locations], 201);
     }
 
     /**
@@ -86,9 +88,10 @@ class SecondWeighbridgeController extends Controller
 
     public function edit($id)
     {
-        $data['arrival_location'] = SecondWeighbridge::findOrFail($id);
+        $data['SecondWeighbridge'] = SecondWeighbridge::findOrFail($id);
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
         $data['ArrivalTickets'] =  ArrivalTicket::where('second_weighbridge_status', 'pending')->get();
+        $data['ArrivalTicket'] =  ArrivalTicket::where('id',  $data['SecondWeighbridge']->arrival_ticket_id)->first();
 
         return view('management.arrival.second_weighbridge.edit', $data);
     }
