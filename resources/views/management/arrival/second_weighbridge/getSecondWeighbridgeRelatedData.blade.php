@@ -3,6 +3,13 @@
         Ticket Detail
     </h6>
 </div>
+<div class="col-xs-12 col-sm-12 col-md-12">
+    <div class="form-group ">
+        <label>Commodity:</label>
+        <input type="text"  placeholder="First Weight" value="{{optional($ArrivalTicket->qcProduct)->name ?? 'N/A'}}" disabled
+            class="form-control" autocomplete="off" />
+    </div>
+</div>
 <div class="col-xs-6 col-sm-6 col-md-6">
     <div class="form-group">
         <label><i class="ft-truck"></i> Truck Type:</label>
@@ -60,7 +67,7 @@
 <div class="col-xs-4 col-sm-4 col-md-4">
     <div class="form-group">
         <label>2nd Weighbridge Weight:</label>
-        <input type="number" id="second_weighbridge" name="second_weighbridge" 
+        <input type="number" id="second_weighbridge" name="second_weight" 
                placeholder="Enter Second Weighbridge" 
                class="form-control" 
                autocomplete="off"

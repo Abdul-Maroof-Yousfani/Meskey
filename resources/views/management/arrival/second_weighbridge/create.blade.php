@@ -10,7 +10,7 @@
                     @foreach ($ArrivalTickets as $arrivalTicket)
                         <option value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
-                            ITEM: {{ optional($arrivalTicket->product)->name }}
+                            Truck: {{ $arrivalTicket->truck_no }}
                         </option>
                     @endforeach
                 </select>
