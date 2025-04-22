@@ -1,6 +1,6 @@
  <form action="{{ route('freight.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
      @csrf
-     <input type="hidden" name="ticket_id" value="{{ $ticket->id }}" />
+     <input type="hidden" name="arrival_ticket_id" value="{{ $ticket->id }}" />
      <input type="hidden" id="listRefresh" value="{{ route('get.freight') }}" />
 
      <div class="row form-mar">

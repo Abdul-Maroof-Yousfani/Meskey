@@ -45,7 +45,7 @@ class FreightController extends Controller
     public function store(FreightRequest $request)
     {
         $data = $request->validated();
-        // $ticket = ArrivalTicket::findOrFail($request->ticket_id);
+        // $ticket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
 
         $data['arrived_weight'] = $request->company_id;
         $data['loaded_weight'] = $request->company_id;
@@ -82,7 +82,7 @@ class FreightController extends Controller
 
     public function getFreightForm(Request $request)
     {
-        $ticket = ArrivalTicket::with('product')->find($request->ticket_id);
+        $ticket = ArrivalTicket::with('product')->find($request->arrival_ticket_id);
 
         if (!$ticket) {
             return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);

@@ -2,7 +2,7 @@
     <div class="col-xs-12 col-sm-12 col-md-12">
         <div class="form-group">
             <label>Select Ticket:</label>
-            <select name="ticket_id" id="ticket_id" class="form-control select2">
+            <select name="arrival_ticket_id" id="arrival_ticket_id" class="form-control select2">
                 <option value="">Select Ticket</option>
                 @foreach ($tickets as $ticket)
                     <option value="{{ $ticket->id }}">
@@ -20,7 +20,7 @@
     $(document).ready(function() {
         $('.select2').select2();
 
-        $('#ticket_id').change(function() {
+        $('#arrival_ticket_id').change(function() {
             var ticketId = $(this).val();
 
             if (ticketId) {
@@ -28,7 +28,7 @@
                     url: '{{ route('freight.getFreightForm') }}',
                     type: 'GET',
                     data: {
-                        ticket_id: ticketId
+                        arrival_ticket_id: ticketId
                     },
                     beforeSend: function() {
                         Swal.fire({

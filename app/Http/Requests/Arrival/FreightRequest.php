@@ -22,7 +22,7 @@ class FreightRequest extends FormRequest
     public function rules()
     {
         return [
-            'ticket_id' => 'required|exists:arrival_tickets,id',
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'ticket_number' => 'required|string|max:255',
             'supplier' => 'required|string|max:255',
             'commodity' => 'required|string|max:255',

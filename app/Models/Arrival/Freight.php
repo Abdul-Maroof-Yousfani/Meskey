@@ -11,7 +11,7 @@ class Freight extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'ticket_id',
+        'arrival_ticket_id',
         'estimated_freight',
         'loaded_weight',
         'arrived_weight',
@@ -40,6 +40,6 @@ class Freight extends Model
 
     public function arrivalTicket()
     {
-        return $this->belongsTo(ArrivalTicket::class, 'ticket_id');
+        return $this->belongsTo(ArrivalTicket::class, 'arrival_ticket_id');
     }
 }
