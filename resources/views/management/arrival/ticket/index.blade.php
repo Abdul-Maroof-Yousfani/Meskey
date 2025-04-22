@@ -22,11 +22,26 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
+                                @php
+                                    $today = \Carbon\Carbon::today()->format('Y-m-d');
+                                    $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
+                                @endphp
+
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
+                                                <label for="from_date" class="form-label">From Date</label>
+                                                <input type="date" class="form-control" id="from_date" name="from_date"
+                                                    value="{{ request('from_date', $oneMonthAgo) }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="to_date" class="form-label">To Date</label>
+                                                <input type="date" class="form-control" id="to_date" name="to_date"
+                                                    value="{{ request('to_date', $today) }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
@@ -36,6 +51,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </form>
 
 
@@ -67,7 +83,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.ticket') }}`)
         });
     </script>

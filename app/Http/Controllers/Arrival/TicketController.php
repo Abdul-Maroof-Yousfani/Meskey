@@ -23,20 +23,29 @@ class TicketController extends Controller
     /**
      * Get list of categories.
      */
-    public function getList(Request $request)
-    {
-        $UnitOfMeasures = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('unique_no', 'like', $searchTerm);
-                $sq->orWhere('supplier_name', 'like', $searchTerm);
-            });
-        })
-            ->latest()
-            ->paginate(request('per_page', 25));
+public function getList(Request $request)
+{
+    $UnitOfMeasures = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
+        $searchTerm = '%' . $request->search . '%';
+        $q->where(function ($sq) use ($searchTerm) {
+            $sq->where('unique_no', 'like', $searchTerm)
+               ->orWhere('supplier_name', 'like', $searchTerm)
+               ->orWhere('truck_no', 'like', $searchTerm)
+               ->orWhere('bilty_no', 'like', $searchTerm);
+        });
+    })
+    ->when($request->filled('from_date'), function ($q) use ($request) {
+        $q->whereDate('created_at', '>=', $request->from_date);
+    })
+    ->when($request->filled('to_date'), function ($q) use ($request) {
+        $q->whereDate('created_at', '<=', $request->to_date);
+    })
+    ->latest()
+    ->paginate($request->get('per_page', 25));
 
-        return view('management.arrival.ticket.getList', compact('UnitOfMeasures'));
-    }
+    return view('management.arrival.ticket.getList', compact('UnitOfMeasures'));
+}
+
 
     /**
      * Show the form for creating a new resource.
