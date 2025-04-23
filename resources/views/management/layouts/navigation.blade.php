@@ -130,8 +130,8 @@
 
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('ticket.index') }}"
-                            onclick="loadPageContent('{{ route('ticket.index') }}')" data-toggle="dropdown"><i
+                            href="{{ route('raw-material.purchase-request.index') }}"
+                            onclick="loadPageContent('{{ route('raw-material.purchase-request.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase
                                 Request</span></a>
                     </li>
@@ -278,6 +278,13 @@
                             onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Broker</span>
+                        </a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('company-location.index') }}"
+                            onclick="loadPageContent('{{ route('company-location.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Company Location </span>
                         </a>
                     </li>
 

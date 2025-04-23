@@ -1,24 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Arrival;
+namespace App\Http\Controllers\Procurement\RawMaterial;
+
 
 use App\Http\Controllers\Controller;
-use App\Models\ArrivalApprove;
-use App\Models\Arrival\ArrivalTicket;
-use App\Models\BagCondition;
-use App\Models\BagPacking;
-use App\Models\BagType;
+use App\Models\Procurement\RawMaterialPurchaseRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
-class ArrivalApproveController extends Controller
+class PurchaseRequestController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return view('management.arrival.approved_arrival.index');
+        return view('management.procurement.raw_material.purchase_request.index');
     }
 
     /**
@@ -26,7 +22,7 @@ class ArrivalApproveController extends Controller
      */
     public function getList(Request $request)
     {
-        $ArrivalApproves = ArrivalApprove::when($request->filled('search'), function ($q) use ($request) {
+        $ArrivalApproves = RawMaterialPurchaseRequest::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
