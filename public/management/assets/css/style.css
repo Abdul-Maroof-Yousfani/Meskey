@@ -301,3 +301,37 @@ select[readonly].select2-hidden-accessible + .select2-container {
   border-color: #dc3545;
   background-color: #fff5f5;
 }
+
+#modal-sidebar.open {
+  right: 0 !important;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  width: 100vw;
+  height: 100vh;
+  background-color: #00000066;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1013;
+  transition: all 0.3s ease;
+  transform: translateX(100%);
+}
+
+body.drawer-opened::before {
+  transition: all 0.3s ease;
+  transform: translateX(0%);
+}
+
+body.drawer-opened {
+  overflow: hidden;
+}
+
+#modal-sidebar {
+  z-index: 1068 !important;
+}

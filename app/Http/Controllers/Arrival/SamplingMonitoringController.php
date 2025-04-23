@@ -211,7 +211,17 @@ class SamplingMonitoringController extends Controller
                 $ArrivalSamplingRequest->is_resampling_made = 'yes';
             }
 
-            $ArrivalSamplingRequest->arrivalTicket()->first()->update(['first_qc_status' => $request->stage_status, 'decision_making' => $isDecisionMaking, 'location_transfer_status' => 'pending', 'sauda_type_id' => $request->sauda_type_id, 'arrival_purchase_order_id' => $request->arrival_purchase_order_id]);
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update([
+                'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
+                'lumpsum_deduction_kgs' => (float)$request->lumpsum_deduction_kgs ?? 0.00,
+                'is_lumpsum_deduction' => $isLumpsum,
+                'first_qc_status' => $request->stage_status,
+                'decision_making' => $isDecisionMaking,
+                'location_transfer_status' => 'pending',
+                'sauda_type_id' => $request->sauda_type_id,
+                'arrival_purchase_order_id' => $request->arrival_purchase_order_id
+            ]);
+
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 

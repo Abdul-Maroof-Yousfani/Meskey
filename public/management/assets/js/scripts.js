@@ -404,7 +404,7 @@ function printErrorMsg(msg) {
   });
 }
 
-function openModal(button, url, title, viewonly = false) {
+function openModal(button, url, title, viewonly = false, drawerWidth = null) {
   var $button = $(button); // Get the button element
   var originalText = $button.html(); // Store the original button text
   $button
@@ -427,7 +427,14 @@ function openModal(button, url, title, viewonly = false) {
     url: url,
     method: "GET",
     success: function (data) {
+      if (drawerWidth) {
+        $("#modal-sidebar").css("width", drawerWidth);
+        $("#modal-sidebar").css("right", `-${drawerWidth}`);
+      }
+
       $("#modal-sidebar").addClass("open");
+      $("body").addClass("drawer-opened");
+
       // Inject modal content into the page
       $("#modal-sidebar .modal-tab-content").html(data);
       //  initTinyMCE();

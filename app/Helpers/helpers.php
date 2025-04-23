@@ -53,6 +53,22 @@ if (!function_exists('canAccess')) {
     }
 }
 
+function numberToWords($number)
+{
+    $number = floatval($number);
+    $whole = floor($number);
+    $fraction = round(($number - $whole) * 100);
+
+    $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+    $words = $formatter->format($whole) . ' Rupees';
+
+    if ($fraction > 0) {
+        $words .= ' and ' . $formatter->format($fraction) . ' Paise';
+    }
+
+    return ucfirst($words) . ' Only';
+}
+
 //GetCurrentSelectedCompany
 if (!function_exists('getCurrentCompany')) {
     function getCurrentCompany()
@@ -150,6 +166,31 @@ if (!function_exists('generateUniqueNumber')) {
         return $formattedUniqueNo;
     }
 }
+
+function generateUniqueNumberByDate($tableName, $prefix = null, $company_id = null, $uniqueColumn = 'unique_no')
+{
+    if (is_null($company_id)) {
+        $company_id = auth()->user()->current_company_id;
+    }
+
+    $latestRecord = DB::table($tableName)
+        ->when($company_id, function ($query) use ($company_id) {
+            return $query->where('company_id', $company_id);
+        })
+        ->when($prefix, function ($query) use ($prefix, $uniqueColumn) {
+            return $query->where($uniqueColumn, 'like', $prefix . '%');
+        })
+        ->orderBy($uniqueColumn, 'desc')
+        ->first();
+
+    $lastUniqueNo = $latestRecord ? intval(substr($latestRecord->{$uniqueColumn}, strlen($prefix))) : 0;
+    $newUniqueNo = $lastUniqueNo + 1;
+
+    return $prefix
+        ? $prefix . str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT)
+        : str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT);
+}
+
 if (!function_exists('getDeductionSuggestion')) {
     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
     {
@@ -163,6 +204,7 @@ if (!function_exists('getDeductionSuggestion')) {
             ->first();
     }
 }
+
 if (!function_exists('getTableData')) {
     function getTableData($table, $columns = ['*'])
     {
