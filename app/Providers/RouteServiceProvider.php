@@ -43,6 +43,10 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware(['auth', 'web', 'check.company'])
                 ->prefix('master')
                 ->group(base_path('routes/master.php'));
+                //procurement
+            Route::middleware(['auth', 'web', 'check.company'])
+                ->prefix('procurement')
+                ->group(base_path('routes/procurement.php'));
             // Web routes
             Route::middleware('web')
                 ->group(function () {

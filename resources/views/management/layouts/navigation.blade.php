@@ -280,6 +280,13 @@
                             <span data-i18n="Task Board">Manage Broker</span>
                         </a>
                     </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('company-location.index') }}"
+                            onclick="loadPageContent('{{ route('company-location.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Company Location </span>
+                        </a>
+                    </li>
 
                 </ul>
             </li>
