@@ -14,18 +14,19 @@ class StationRequest extends FormRequest
 
     public function rules()
     {
- return [
+        return [
             'company_id' => 'required|exists:companies,id',
             'name' => [
                 'required',
                 'string',
                 'max:255',
-  
-                       Rule::unique('arrival_truck_types', 'name')
+
+                Rule::unique('arrival_truck_types', 'name')
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->truck_type)
             ],
             'description' => 'nullable|string|max:500',
+            'line_type' => 'required',
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];
     }

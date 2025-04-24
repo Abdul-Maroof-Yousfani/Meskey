@@ -1,11 +1,12 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Name </th>
-            <th class="col-sm-4">Description</th>
-            <th class="col-sm-1">Status</th>
-            <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 15%;">Name</th>
+            <th style="width: 35%;">Description</th>
+            <th style="width: 20%;">Line Type</th>
+            <th style="width: 10%;">Status</th>
+            <th style="width: 10%;">Created</th>
+            <th style="width: 10%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -19,21 +20,25 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            <small>{{ $row->description ?? 'N/A' }}</small>
                         </p>
                     </td>
                     <td>
-                      <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                    {{ $row->status }}
-                </label>
+                        <p class="m-0">
+                            {{ ucwOrds($row->line_type ?? 'N/A') }} <br>
+                        </p>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
+                            {{ $row->status }}
+                        </label>
+                    </td>
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
-
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('arrival-location.edit', $row->id) }}','Edit Arrival Location')"
@@ -84,6 +89,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $stations->links() }}
+        {{ $stations->links() }}
     </div>
 </div>

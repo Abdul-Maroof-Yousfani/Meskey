@@ -14,6 +14,7 @@ class Station extends Model
     protected $fillable = [
         'company_id',
         'name',
+        'line_type',
         'description',
         'status',
     ];

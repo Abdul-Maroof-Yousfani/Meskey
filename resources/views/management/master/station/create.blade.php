@@ -5,22 +5,28 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Name" class="form-control"  />
+                <input type="text" name="name" placeholder="Name" class="form-control" />
             </div>
         </div>
-
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
-        <!-- Status -->
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Line Type:</label>
+                <select class="form-control" name="line_type">
+                    <option value="bari">Bari</option>
+                    <option value="choti">Choti</option>
+                </select>
+            </div>
+        </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Status:</label>
-                <select class="form-control" name="status" >
+                <select class="form-control" name="status">
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
