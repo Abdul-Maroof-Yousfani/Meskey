@@ -302,7 +302,7 @@ select[readonly].select2-hidden-accessible + .select2-container {
   background-color: #fff5f5;
 }
 
-#modal-sidebar.open {
+/* #modal-sidebar.open {
   right: 0 !important;
 }
 
@@ -333,9 +333,6 @@ body.drawer-opened {
 }
 
 #modal-sidebar {
-  z-index: 1068 !important;
+  z-index: 1050 !important;
 }
-
-.select2-dropdown {
-  z-index: 1069;
-}
+ */

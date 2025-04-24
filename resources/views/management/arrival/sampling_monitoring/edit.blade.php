@@ -117,9 +117,9 @@
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group ">
                             <label>Station:</label>
-                            <input type="text" name="station_name" placeholder="Station" class="form-control"
-                                disabled autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->station_name }}" />
+                            <input type="text" name="station_id" placeholder="Station" class="form-control" disabled
+                                autocomplete="off"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->station->name ?? 'N/A' }}" />
                         </div>
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">

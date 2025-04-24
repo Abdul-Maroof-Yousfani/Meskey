@@ -8,7 +8,7 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Arrival Summary: {{$arrivalTicket->unique_no}}</h2>
+                    <h2 class="page-title"> Arrival Summary: {{ $arrivalTicket->unique_no }}</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button onclick="openModal(this,'{{ route('ticket.create') }}','Add Ticket')" type="button"
@@ -41,7 +41,7 @@
                                                                 No#</button>
                                                         </div>
                                                         <input type="text" disabled class="form-control"
-                                                            value="{{$arrivalTicket->unique_no}}"
+                                                            value="{{ $arrivalTicket->unique_no }}"
                                                             placeholder="Button on left">
                                                     </div>
                                                 </fieldset>
@@ -99,9 +99,9 @@
                                             <div class="col-xs-4 col-sm-4 col-md-4">
                                                 <div class="form-group ">
                                                     <label>Station:</label>
-                                                    <input type="text" name="station_name" placeholder="Station"
+                                                    <input type="text" name="station_id" placeholder="Station"
                                                         class="form-control" disabled autocomplete="off"
-                                                        value="{{ $arrivalTicket->station_name }}" />
+                                                        value="{{ $arrivalTicket->station->name ?? 'N/A' }}" />
                                                 </div>
                                             </div>
                                             <div class="col-xs-4 col-sm-4 col-md-4">
@@ -123,16 +123,20 @@
                                                 </div>
                                             </div>
                                             <div class="col-xs-4 col-sm-4 col-md-4">
-                                                <div class="form-group " >
+                                                <div class="form-group ">
                                                     <label>Sample Money Type :</label>
                                                     <select name="sample_money_type" class="form-control" disabled>
                                                         <option value="">Select Type</option>
-                                                        <option {{ $arrivalTicket->sample_money_type == 'single' ? 'selected' : '' }} value="single">Single</option>
-                                                        <option {{ $arrivalTicket->sample_money_type == 'double' ? 'selected' : '' }} value="double">Double</option>
+                                                        <option
+                                                            {{ $arrivalTicket->sample_money_type == 'single' ? 'selected' : '' }}
+                                                            value="single">Single</option>
+                                                        <option
+                                                            {{ $arrivalTicket->sample_money_type == 'double' ? 'selected' : '' }}
+                                                            value="double">Double</option>
                                                     </select>
                                                 </div>
                                             </div>
-                            
+
                                             <div class="col-xs-4 col-sm-4 col-md-4">
                                                 <div class="form-group ">
                                                     <label>Truck No:</label>
@@ -162,7 +166,8 @@
                                                     <label>Sample Money: </label>
                                                     <input type="text" readonly name="sample_money" disabled
                                                         value="{{ $arrivalTicket->truckType->sample_money ?? 0 }}"
-                                                        placeholder="No of bags" class="form-control" autocomplete="off" />
+                                                        placeholder="No of bags" class="form-control"
+                                                        autocomplete="off" />
                                                 </div>
                                             </div>
                                             <div class="col-xs-4 col-sm-4 col-md-4">
@@ -176,8 +181,7 @@
                                             <div class="col-xs-12 col-sm-12 col-md-12">
                                                 <div class="form-group ">
                                                     <label>Remarks (Optional):</label>
-                                                    <textarea name="remarks" row="2" disabled class="form-control"
-                                                        placeholder="Remarks">{{ $arrivalTicket->remarks }}</textarea>
+                                                    <textarea name="remarks" row="2" disabled class="form-control" placeholder="Remarks">{{ $arrivalTicket->remarks }}</textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -192,23 +196,23 @@
                                                 <div class="form-group ">
                                                     <label>1st Weight:</label>
                                                     <input type="text" name="first_weight" disabled
-                                                        placeholder="First Weight" class="form-control" autocomplete="off"
-                                                        value="{{ $arrivalTicket->first_weight }}" />
+                                                        placeholder="First Weight" class="form-control"
+                                                        autocomplete="off" value="{{ $arrivalTicket->first_weight }}" />
                                                 </div>
                                             </div>
                                             <div class="col-xs-4 col-sm-4 col-md-4">
                                                 <div class="form-group ">
                                                     <label>Second Weight: </label>
                                                     <input type="text" name="second_weight" disabled
-                                                        placeholder="Second Weight" class="form-control" autocomplete="off"
-                                                        value="{{ $arrivalTicket->second_weight }}" />
+                                                        placeholder="Second Weight" class="form-control"
+                                                        autocomplete="off" value="{{ $arrivalTicket->second_weight }}" />
                                                 </div>
                                             </div>
                                             <div class="col-xs-4 col-sm-4 col-md-4">
                                                 <div class="form-group ">
                                                     <label>Net Weight: </label>
-                                                    <input type="text" name="net_weight" disabled placeholder="Net Weight"
-                                                        class="form-control" autocomplete="off"
+                                                    <input type="text" name="net_weight" disabled
+                                                        placeholder="Net Weight" class="form-control" autocomplete="off"
                                                         value="{{ $arrivalTicket->net_weight }}" />
                                                 </div>
                                             </div>
@@ -227,7 +231,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             //filterationCommon(`{{ route('get.ticket') }}`)
         });
     </script>

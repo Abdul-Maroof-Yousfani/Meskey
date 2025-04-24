@@ -244,7 +244,7 @@
         initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
-        initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', true, false);
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 
         $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();

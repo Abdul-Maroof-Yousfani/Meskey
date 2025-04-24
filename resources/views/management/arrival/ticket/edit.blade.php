@@ -47,8 +47,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Station:</label>
-                <input type="text" name="station_name" placeholder="Station" class="form-control" autocomplete="off"
-                    value="{{ $arrivalTicket->station_name }}" />
+                <input type="text" name="station_id" placeholder="Station" class="form-control" autocomplete="off"
+                    value="{{ $arrivalTicket->station->name ?? 'N/A' }}" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -65,23 +65,25 @@
                 </select>
             </div>
         </div>
-       
 
-         <div class="col-xs-6 col-sm-6 col-md-6">
+
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Sample Money Type :</label>
                 <select name="sample_money_type" class="form-control">
                     <option value="">Select Type</option>
-                    <option {{ $arrivalTicket->sample_money_type == 'single'  ? 'selected' : '' }} value="single">Single</option>
-                    <option  {{ $arrivalTicket->sample_money_type == 'double'  ? 'selected' : '' }}  value="double">Double</option>
+                    <option {{ $arrivalTicket->sample_money_type == 'single' ? 'selected' : '' }} value="single">
+                        Single</option>
+                    <option {{ $arrivalTicket->sample_money_type == 'double' ? 'selected' : '' }} value="double">
+                        Double</option>
                 </select>
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Sample Money:</label>
-                <input type="text" name="sample_money"  readonly value="{{ $arrivalTicket->sample_money }}" placeholder="Sample money"
-                    class="form-control" autocomplete="off" />
+                <input type="text" name="sample_money" readonly value="{{ $arrivalTicket->sample_money }}"
+                    placeholder="Sample money" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -148,7 +150,7 @@
             </div>
         </div>
     </div>
-   
+
 
     <div class="row bottom-button-bar">
         <div class="col-12">
@@ -161,27 +163,26 @@
 
 
 <script>
+    function calculateSampleMoney() {
+        let truckTypeSelect = $('[name="arrival_truck_type_id"]');
+        let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
 
-function calculateSampleMoney() {
-    let truckTypeSelect = $('[name="arrival_truck_type_id"]');
-    let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
-    
-    let holidayType = $('[name="sample_money_type"]').val();
-    
-    if (holidayType === 'double') {
-        sampleMoney = sampleMoney * 2;
+        let holidayType = $('[name="sample_money_type"]').val();
+
+        if (holidayType === 'double') {
+            sampleMoney = sampleMoney * 2;
+        }
+
+        $('input[name="sample_money"]').val(sampleMoney || 0);
     }
-    
-    $('input[name="sample_money"]').val(sampleMoney || 0);
-}
 
-$(document).ready(function() {
-    calculateSampleMoney();
-    
-    $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
-    
-    $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
-});
+    $(document).ready(function() {
+        calculateSampleMoney();
+
+        $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
+
+        $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
+    });
 
 
 

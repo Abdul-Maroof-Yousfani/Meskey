@@ -36,7 +36,7 @@ class ArrivalTicketRequest extends FormRequest
             'bags' => 'required|string|max:255',
             'loading_date' => 'nullable|date',
             'remarks' => 'nullable|string|max:500',
-            'station_name' => 'required|string|max:255',
+            'station_id' => 'required|exists:stations,id',
             'status' => 'nullable|in:active,inactive',
             'first_weight' => 'required|numeric',
             'second_weight' => 'required|numeric',
@@ -48,59 +48,58 @@ class ArrivalTicketRequest extends FormRequest
 
     /**
      * Get custom messages for validation errors.
-     */public function messages(): array
-{
-    return [
-        'unique_no.required' => 'The unique number is required.',
-        'unique_no.unique' => 'The unique number must be unique for the selected company.',
+     */ public function messages(): array
+    {
+        return [
+            'unique_no.required' => 'The unique number is required.',
+            'unique_no.unique' => 'The unique number must be unique for the selected company.',
 
-        'company_id.required' => 'The company field is required.',
-        'company_id.exists' => 'The selected company does not exist.',
+            'company_id.required' => 'The company field is required.',
+            'company_id.exists' => 'The selected company does not exist.',
 
-        'product_id.required' => 'The product field is required.',
-        'product_id.exists' => 'The selected product does not exist.',
+            'product_id.required' => 'The product field is required.',
+            'product_id.exists' => 'The selected product does not exist.',
 
-        'supplier_name.required' => 'The supplier name is required.',
+            'supplier_name.required' => 'The supplier name is required.',
 
 
-        'accounts_of.required' => 'The accounts of field is required.',
-//        'accounts_of.string' => 'The accounts of field must be text.',
+            'accounts_of.required' => 'The accounts of field is required.',
+            //        'accounts_of.string' => 'The accounts of field must be text.',
 
-        'decision_id.required' => 'The decision of field is required.',
-        'decision_id.exists' => 'The selected decision user does not exist.',
+            'decision_id.required' => 'The decision of field is required.',
+            'decision_id.exists' => 'The selected decision user does not exist.',
 
-        
-        'arrival_truck_type_id.required' => 'The truck type is required.',
 
-        'sample_money_type.required' => 'The sample money type is required.',
-        'sample_money_type.in' => 'The sample money type must be either single or double.',
+            'arrival_truck_type_id.required' => 'The truck type is required.',
 
-        'sample_money.required' => 'The sample money is required.',
-        'sample_money.numeric' => 'The sample money must be a number.',
+            'sample_money_type.required' => 'The sample money type is required.',
+            'sample_money_type.in' => 'The sample money type must be either single or double.',
 
-        'truck_no.required' => 'The truck number is required.',
-        'bilty_no.required' => 'The bilty number is required.',
+            'sample_money.required' => 'The sample money is required.',
+            'sample_money.numeric' => 'The sample money must be a number.',
 
-        'bags.required' => 'The number of bags is required.',
+            'truck_no.required' => 'The truck number is required.',
+            'bilty_no.required' => 'The bilty number is required.',
 
-        'loading_date.date' => 'The loading date must be a valid date.',
+            'bags.required' => 'The number of bags is required.',
 
-        'remarks.string' => 'Remarks must be a valid text.',
+            'loading_date.date' => 'The loading date must be a valid date.',
 
-        'station_name.required' => 'The Station field is required.',
+            'remarks.string' => 'Remarks must be a valid text.',
 
-        'status.in' => 'The status must be either active or inactive.',
+            'station_id.required' => 'The Station field is required.',
 
-        'first_weight.required' => 'The first weight is required.',
-        'first_weight.numeric' => 'The first weight must be a number.',
+            'status.in' => 'The status must be either active or inactive.',
 
-        'second_weight.required' => 'The second weight is required.',
-        'second_weight.numeric' => 'The second weight must be a number.',
+            'first_weight.required' => 'The first weight is required.',
+            'first_weight.numeric' => 'The first weight must be a number.',
 
-        'net_weight.required' => 'The net weight is required.',
-        'net_weight.numeric' => 'The net weight must be a number.',
+            'second_weight.required' => 'The second weight is required.',
+            'second_weight.numeric' => 'The second weight must be a number.',
 
-    ];
-}
+            'net_weight.required' => 'The net weight is required.',
+            'net_weight.numeric' => 'The net weight must be a number.',
 
+        ];
+    }
 }

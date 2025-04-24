@@ -48,7 +48,8 @@
     <div class="col-md-6">
         <div class="form-group">
             <label class="font-weight-bold">Station</label>
-            <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->station_name }}" readonly>
+            <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->station->name ?? 'N/A' }}"
+                readonly>
         </div>
     </div>
     <div class="col-md-6">

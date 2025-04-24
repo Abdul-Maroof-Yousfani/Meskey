@@ -34,7 +34,7 @@ class ArrivalTicket extends Model
         'truck_no',
         'bilty_no',
         'bags',
-        'station_name',
+        'station_id',
         'loading_date',
         'loading_weight',
         'first_weight',

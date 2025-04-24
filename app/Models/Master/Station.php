@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Models\Arrival\ArrivalTicket;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,4 +17,9 @@ class Station extends Model
         'description',
         'status',
     ];
+
+    public function arrivalTickets()
+    {
+        return $this->hasMany(ArrivalTicket::class);
+    }
 }
