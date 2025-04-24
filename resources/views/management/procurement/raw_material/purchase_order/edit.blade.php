@@ -1,25 +1,24 @@
-<form action="{{ route('raw-material.purchase-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('truck-type.update',$ArrivalTruckType->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.raw-material.purchase-request') }}" />
+    @method('PUT')
+    <input type="hidden" id="listRefresh" value="{{ route('get.truck-type') }}" />
     <div class="row form-mar">
-  <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
-                <label>Product:</label>
-                <select name="product_id" id="product_id" class="form-control select2">
-                    <option value="">Product Name</option>
-                </select>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" name="name" value="{{$ArrivalTruckType->name}}" placeholder="Name" class="form-control"  />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Sample Money:</label>
-                <input type="text" name="sample_money" placeholder="Sample Money" class="form-control"  />
+                <input type="text" name="sample_money"  value="{{$ArrivalTruckType->sample_money}}" placeholder="Sample Money" class="form-control"  />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Weighbridge Amount:</label>
-                <input type="text" name="weighbridge_amount" placeholder="Weighbridge Amount" class="form-control"  />
+                <input type="text" name="weighbridge_amount"  value="{{$ArrivalTruckType->weighbridge_money}}"  placeholder="Weighbridge Amount" class="form-control"  />
             </div>
         </div>
 
@@ -27,7 +26,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea name="description" placeholder="Description" class="form-control"></textarea>
+                <textarea name="description" placeholder="Description" class="form-control">{{$ArrivalTruckType->description}}</textarea>
             </div>
         </div>
         <!-- Status -->
@@ -49,18 +48,3 @@
         </div>
     </div>
 </form>
-
-
-
-
-<script>
-
-
-
-    $(document).ready(function() {
-        initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
-
-
-    });
-    </script>
