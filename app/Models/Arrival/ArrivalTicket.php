@@ -2,7 +2,7 @@
 
 namespace App\Models\Arrival;
 
-use App\Models\{ArrivalPurchaseOrder, Product, SaudaType, User};
+use App\Models\{ArrivalApprove, ArrivalPurchaseOrder, Product, SaudaType, User};
 use App\Models\ACL\Company;
 use App\Models\FirstWeighbridge;
 use App\Models\Master\{ArrivalTruckType, Station};
@@ -46,8 +46,6 @@ class ArrivalTicket extends Model
         'accounts_of_id',
         'arrival_purchase_order_id',
         'sauda_type_id',
-
-
         'first_qc_status',
         'location_transfer_status',
         'second_qc_status',
@@ -55,8 +53,10 @@ class ArrivalTicket extends Model
         'first_weighbridge_status',
         'second_weighbridge_status',
         'freight_status',
-        'arrival_slip_status'
-
+        'arrival_slip_status',
+        'lumpsum_deduction',
+        'lumpsum_deduction_kgs',
+        'is_lumpsum_deduction',
     ];
 
     /**
@@ -86,6 +86,11 @@ class ArrivalTicket extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
+    }
+
+    public function approvals()
+    {
+        return $this->hasOne(ArrivalApprove::class, 'arrival_ticket_id');
     }
 
     public function saudaType()
@@ -122,8 +127,14 @@ class ArrivalTicket extends Model
     {
         return $this->hasOne(ArrivalSlip::class, 'arrival_ticket_id');
     }
+
     public function firstWeighbridge()
     {
         return $this->hasOne(FirstWeighbridge::class, 'arrival_ticket_id');
+    }
+
+    public function freight()
+    {
+        return $this->hasOne(Freight::class, 'arrival_ticket_id');
     }
 }

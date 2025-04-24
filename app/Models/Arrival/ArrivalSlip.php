@@ -9,7 +9,8 @@ class ArrivalSlip extends Model
 {
     use HasFactory;
 
-     protected $fillable = [
+    protected $fillable = [
+        'unique_no',
         'company_id',
         'arrival_ticket_id',
         'remark',
@@ -17,7 +18,7 @@ class ArrivalSlip extends Model
     ];
 
 
-       public function arrivalTicket()
+    public function arrivalTicket()
     {
         return $this->belongsTo(ArrivalTicket::class);
     }

@@ -27,8 +27,6 @@
                             {{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name }} <br>
                         </p>
                     </td>
-
-
                     <td>
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
@@ -38,17 +36,16 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('location-transfer.edit', $row->id) }}','View Location Transfer')"
+                            <a onclick="openModal(this,'{{ route('arrival-slip.edit', $row->id) }}','View Location Transfer', true, '90%')"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-eye font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
+                            {{-- <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
-
                                 <i class="ft-x font-medium-3"></i>
-                            </a>
+                            </a> --}}
                         @endcan
                     </td>
                 </tr>

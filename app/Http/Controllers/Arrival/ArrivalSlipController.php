@@ -66,6 +66,8 @@ class ArrivalSlipController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $datePrefix = date('m-d-Y') . '-';
+        $request['unique_no'] = generateUniqueNumberByDate('arrival_slips', $datePrefix, null, 'unique_no');
         $request['creator_id'] = auth()->user()->id;
         $request['remark'] = $request->note ?? '';
         $arrivalApprove = ArrivalSlip::create($request->all());
@@ -81,8 +83,24 @@ class ArrivalSlipController extends Controller
      */
     public function edit($id)
     {
-        $arrival_location = ArrivalLocation::findOrFail($id);
-        return view('management.master.arrival_location.edit', compact('arrival_location'));
+        $ArrivalTickets =  ArrivalTicket::where('second_weighbridge_status', 'completed')->get();
+        $arrival_slip = ArrivalSlip::findOrFail($id);
+
+        $arrivalTicket = ArrivalTicket::with([
+            'product',
+            'unloadingLocation.arrivalLocation',
+            'arrivalSlip',
+            'firstWeighbridge',
+            'purchaseOrder'
+        ])->findOrFail($arrival_slip->arrival_ticket_id);
+
+        $isNotGeneratable = false;
+
+        if ($arrivalTicket->decision_making == 1) {
+            $isNotGeneratable = ($arrivalTicket->lumpsum_deduction == 0.00 && $arrivalTicket->lumpsum_deduction_kgs == 0.00);
+        }
+
+        return view('management.arrival.arrival_slip.edit', compact('ArrivalTickets', 'arrival_slip', 'arrivalTicket', 'isNotGeneratable'));
     }
 
     /**
@@ -108,13 +126,22 @@ class ArrivalSlipController extends Controller
 
     public function getTicketDataForArrival(Request $request)
     {
-        $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+        $arrivalTicket = ArrivalTicket::with([
+            'product',
+            'unloadingLocation.arrivalLocation',
+            'arrivalSlip',
+            'firstWeighbridge',
+            'purchaseOrder'
+        ])->findOrFail($request->arrival_ticket_id);
 
+        $isNotGeneratable = false;
 
+        if ($arrivalTicket->decision_making == 1) {
+            $isNotGeneratable = ($arrivalTicket->lumpsum_deduction == 0.00 && $arrivalTicket->lumpsum_deduction_kgs == 0.00);
+        }
 
-        $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('ArrivalTicket'))->render();
-        // dd($html);
+        $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('arrivalTicket', 'isNotGeneratable'))->render();
 
-        return response()->json(['success' => true, 'html' => $html]);
+        return response()->json(['success' => true, 'html' => $html, 'isNotGeneratable' => $isNotGeneratable]);
     }
 }

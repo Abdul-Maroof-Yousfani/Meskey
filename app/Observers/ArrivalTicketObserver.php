@@ -10,7 +10,7 @@ class ArrivalTicketObserver
     public function creating(ArrivalTicket $arrivalTicket)
     {
         $datePrefix = date('m-d-Y') . '-';
-        $arrivalTicket->unique_no = generateUniqueNumber('arrival_tickets', $datePrefix, null, 'unique_no');
+        $arrivalTicket->unique_no = generateUniqueNumberByDate('arrival_tickets', $datePrefix, null, 'unique_no');
     }
 
     /**
