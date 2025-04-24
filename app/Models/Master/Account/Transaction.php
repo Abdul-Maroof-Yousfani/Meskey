@@ -13,6 +13,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'voucher_no',
+        'company_id',
         'voucher_date',
         'transaction_voucher_type_id',
         'account_id',

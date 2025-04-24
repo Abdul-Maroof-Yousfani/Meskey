@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('company_id');
             $table->string('unique_no');
             $table->string('name');
             $table->text('description')->nullable();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->index(['parent_id']);
             $table->index(['unique_no']);
             $table->index(['status']);

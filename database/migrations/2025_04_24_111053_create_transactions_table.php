@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('company_id');
             $table->string('voucher_no');
             $table->date('voucher_date');
             $table->foreignId('transaction_voucher_type_id')->constrained('transaction_voucher_types')->cascadeOnDelete();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->index(['account_id', 'type']);
             $table->index(['voucher_no']);
             $table->index(['voucher_date']);

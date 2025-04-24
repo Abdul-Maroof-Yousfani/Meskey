@@ -404,7 +404,7 @@ function printErrorMsg(msg) {
   });
 }
 
-function openModal(button, url, title, viewonly = false, drawerWidth = null) {
+function openModal(button, url, title, viewonly = false, drawerWidth = "50%") {
   var $button = $(button); // Get the button element
   var originalText = $button.html(); // Store the original button text
   $button

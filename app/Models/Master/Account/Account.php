@@ -13,6 +13,7 @@ class Account extends Model
 
     protected $fillable = [
         'unique_no',
+        'company_id',
         'name',
         'description',
         'account_type',

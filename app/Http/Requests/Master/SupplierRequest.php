@@ -9,7 +9,7 @@ class SupplierRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Set to true if the user is authorized to make this request
+        return true;
     }
 
     public function rules(): array
@@ -17,7 +17,6 @@ class SupplierRequest extends FormRequest
         return [
             'company_id' => 'required|exists:companies,id',
             'unique_no' => 'nullable|string|max:255|unique:suppliers,unique_no',
-            // 'name' => 'required|string|max:255',
             'name' => [
                 'required',
                 'string',
@@ -26,10 +25,8 @@ class SupplierRequest extends FormRequest
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->supplier)
             ],
-
-
-
             'company_name' => 'required|string|max:255',
+            // 'account_type' => 'required|in:credit,debit',
             'owner_name' => 'required|string|max:255',
             'owner_mobile_no' => 'required|string|max:20',
             'owner_cnic_no' => 'nullable|string|max:15',
@@ -56,7 +53,6 @@ class SupplierRequest extends FormRequest
             'unique_no.required' => 'The unique number is required.',
             'unique_no.unique' => 'The unique number must be unique.',
             'name.unique' => 'The name has already been taken for the selected company.',
-
             'name.required' => 'The name is required.',
             'company_name.required' => 'The company name is required.',
             'owner_name.required' => 'The owner name is required.',

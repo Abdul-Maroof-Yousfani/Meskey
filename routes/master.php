@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\{
+    AccountController,
     RegionController,
     CategoryController,
     UnitOfMeasureController,
@@ -55,3 +56,6 @@ Route::post('/get-truck-type', [TruckTypeController::class, 'getList'])->name('g
 
 Route::resource('station', StationController::class);
 Route::post('/get-station', [StationController::class, 'getList'])->name('get.station');
+
+Route::resource('account', AccountController::class);
+Route::post('/get-account', [AccountController::class, 'getList'])->name('get.account');

@@ -302,11 +302,11 @@ select[readonly].select2-hidden-accessible + .select2-container {
   background-color: #fff5f5;
 }
 
-/* #modal-sidebar.open {
+#modal-sidebar.open {
   right: 0 !important;
 }
 
-body {
+/* body {
   overflow-x: hidden;
 }
 
