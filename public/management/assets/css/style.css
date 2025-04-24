@@ -335,3 +335,7 @@ body.drawer-opened {
 #modal-sidebar {
   z-index: 1068 !important;
 }
+
+.select2-dropdown {
+  z-index: 1069;
+}

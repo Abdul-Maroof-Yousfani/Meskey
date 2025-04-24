@@ -87,13 +87,11 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Station:</label>
-                <input type="text" name="station_name" placeholder="Station" class="form-control"
-                    autocomplete="off" />
+                <select name="station_id" id="station_id" class="form-control select2">
+                    <option value="" hidden>Station</option>
+                </select>
             </div>
         </div>
-
-
-
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Truck No:</label>
@@ -241,14 +239,12 @@
         $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
     });
 
-
-
-
     $(document).ready(function() {
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 
         $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
