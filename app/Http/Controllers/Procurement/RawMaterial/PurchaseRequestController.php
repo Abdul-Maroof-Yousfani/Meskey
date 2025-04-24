@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 use App\Http\Controllers\Controller;
 use App\Models\Procurement\RawMaterialPurchaseRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PurchaseRequestController extends Controller
 {
@@ -31,7 +32,7 @@ class PurchaseRequestController extends Controller
             ->with(['bagType', 'bagCondition', 'bagPacking', 'arrivalTicket'])
             ->latest()
             ->paginate(request('per_page', 25));
-        // dd($ArrivalApproves);
+
         return view('management.arrival.approved_arrival.getList', compact('ArrivalApproves'));
     }
 
@@ -40,12 +41,8 @@ class PurchaseRequestController extends Controller
      */
     public function create()
     {
-        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->where('document_approval_status',null)->get();
-        $data['bagTypes'] = BagType::all();
-        $data['bagConditions'] = BagCondition::all();
-        $data['bagPackings'] = BagPacking::all();
 
-        return view('management.arrival.approved_arrival.create', $data);
+        return view('management.procurement.raw_material.create');
     }
 
     /**
@@ -54,26 +51,12 @@ class PurchaseRequestController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
-            'gala_name' => 'required|string',
-            'truck_no' => 'required|string',
-            'filling_bags_no' => 'required|integer',
-            'bag_type_id' => 'required|exists:bag_types,id',
-            'bag_condition_id' => 'required|exists:bag_conditions,id',
-            'bag_packing_id' => 'required|exists:bag_packings,id',
-            'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
-            'total_bags' => 'required|integer',
-            'total_rejection' => 'nullable|integer',
+            'product_id' => 'required|exists:products,id',
+            'rare_per_kg' => 'required|string',
+            'quantity' => 'required|string',
             'amanat' => 'required|in:Yes,No',
-            'note' => 'nullable|string'
+            'remarks' => 'nullable|string'
         ]);
-
-
-
-        // Add conditional validation for total_rejection
-        $validator->sometimes('total_rejection', 'required|integer|min:1', function ($input) {
-            return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
-        });
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -81,11 +64,9 @@ class PurchaseRequestController extends Controller
 
         $request['creator_id'] = auth()->user()->id;
         $request['remark'] = $request->note ?? '';
-        $arrivalApprove = ArrivalApprove::create($request->all());
+        $arrivalApprove = RawMaterialPurchaseRequest::create($request->all());
 
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['document_approval_status' => $request->bag_packing_approval == 'Half Approved' ? 'half_approved' : 'fully_approved', 'second_weighbridge_status' => 'pending']);
-
+      
         return response()->json([
             'success' => 'Arrival Approval created successfully.',
             'data' => $arrivalApprove
@@ -97,7 +78,7 @@ class PurchaseRequestController extends Controller
      */
     public function edit($id)
     {
-        $arrivalApprove = ArrivalApprove::with(['arrivalTicket', 'bagType', 'bagCondition', 'bagPacking'])
+        $arrivalApprove = RawMaterialPurchaseRequest::with(['arrivalTicket', 'bagType', 'bagCondition', 'bagPacking'])
             ->findOrFail($id);
 
         $arrivalTickets = ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
@@ -119,35 +100,10 @@ class PurchaseRequestController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
-            'gala_name' => 'required|string',
-            'truck_no' => 'required|string',
-            'filling_bags_no' => 'required|integer',
-            'bag_type_id' => 'required|exists:bag_types,id',
-            'bag_condition_id' => 'required|exists:bag_conditions,id',
-            'bag_packing_id' => 'required|exists:bag_packings,id',
-            'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
-            'total_bags' => 'required|integer',
-            'total_rejection' => 'nullable|integer',
-            'amanat' => 'required|in:Yes,No',
-            'note' => 'nullable|string'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $arrivalApprove = ArrivalApprove::findOrFail($id);
-        $request['remark'] = $request->note ?? '';
-        $arrivalApprove->update($request->all());
-
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['document_approval_status' => $request->bag_packing_approval == 'Half Approved' ? 'half_approved' : 'full_approved', 'second_weighbridge_status' => 'pending']);
-
+       
         return response()->json([
             'success' => 'Arrival Approval updated successfully.',
-            'data' => $arrivalApprove
+            'data' => []
         ], 200);
     }
 
@@ -156,7 +112,7 @@ class PurchaseRequestController extends Controller
      */
     public function destroy($id)
     {
-        $arrival_location = ArrivalLocation::findOrFail($id);
+        $arrival_location = RawMaterialPurchaseRequest::findOrFail($id);
         $arrival_location->delete();
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
     }
