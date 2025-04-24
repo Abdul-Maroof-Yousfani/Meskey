@@ -7,6 +7,8 @@ use BaconQrCode\Encoder\QrCode;
 use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Acl\{LoginHistory, Company};
+use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -124,8 +126,23 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function assignedtasks()
+    public function createdAccounts()
     {
-        return $this->hasMany(Task::class, 'assign_to');
+        return $this->hasMany(Account::class, 'created_by');
+    }
+
+    public function updatedAccounts()
+    {
+        return $this->hasMany(Account::class, 'updated_by');
+    }
+
+    public function createdTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'created_by');
+    }
+
+    public function updatedTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'updated_by');
     }
 }

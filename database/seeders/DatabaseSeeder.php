@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             BagTypesSeeder::class,
             BagPackingsSeeder::class,
             BagConditionsSeeder::class,
+            TransactionVoucherTypesSeeder::class,
         ]);
     }
 }
