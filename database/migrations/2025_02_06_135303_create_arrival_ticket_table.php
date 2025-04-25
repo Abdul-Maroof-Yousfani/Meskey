@@ -25,7 +25,7 @@ return new class extends Migration {
             $table->string('sample_money')->nullable();
             $table->string('bilty_no')->nullable();
             $table->string('bags')->nullable();
-            $table->string('station_id')->nullable();
+            $table->string('station_name')->nullable();
             $table->date('loading_date')->nullable();
             $table->string('loading_weight')->nullable();
             $table->string('remarks')->nullable();
@@ -45,7 +45,7 @@ return new class extends Migration {
             $table->enum('second_weighbridge_status', ['pending', 'completed'])->nullable();
             $table->enum('arrival_slip_status', ['pending', 'generated'])->nullable();
 
-            $table->foreign('station_id')->references('id')->on('stations');
+            // $table->foreign('station_id')->references('id')->on('stations');
             $table->foreign('decision_id')->references('id')->on('users');
             $table->foreign('truck_type_id')->references('id')->on('arrival_truck_types');
             $table->foreign('product_id')->references('id')->on('products');

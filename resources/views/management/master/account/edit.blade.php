@@ -1,7 +1,7 @@
 <form action="{{ route('account.update', $account->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('account.index') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.account') }}" />
     <div class="row form-mar">
 
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -83,12 +83,11 @@
             </div>
         </div>
 
-        <div class="row bottom-button-bar">
-            <div class="col-12">
-                <a type="button"
-                    class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-                <button type="submit" class="btn btn-primary submitbutton">Update</button>
-            </div>
+    </div>
+    <div class="row bottom-button-bar">
+        <div class="col-12">
+            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+            <button type="submit" class="btn btn-primary submitbutton">Update</button>
         </div>
     </div>
 </form>

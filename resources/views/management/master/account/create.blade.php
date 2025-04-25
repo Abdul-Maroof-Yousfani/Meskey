@@ -1,6 +1,6 @@
 <form action="{{ route('account.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('account.index') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.account') }}" />
     <div class="row form-mar">
 
         <?php
@@ -76,13 +76,11 @@
                 <textarea name="description" rows="3" class="form-control" placeholder="Account description"></textarea>
             </div>
         </div>
-
-        <div class="row bottom-button-bar">
-            <div class="col-12">
-                <a type="button"
-                    class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-                <button type="submit" class="btn btn-primary submitbutton">Save</button>
-            </div>
+    </div>
+    <div class="row bottom-button-bar">
+        <div class="col-12">
+            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+            <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
