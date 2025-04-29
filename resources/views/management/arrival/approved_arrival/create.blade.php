@@ -72,7 +72,7 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Bag Packing Approval:</label>
+                {{-- <label>Bag Packing Approval:</label> --}}
                 <div class="input-group mt-2">
                     <div class="radio d-inline-block mr-2 mb-1">
                         <input type="radio" name="bag_packing_approval" id="half-approved" value="Half Approved">
