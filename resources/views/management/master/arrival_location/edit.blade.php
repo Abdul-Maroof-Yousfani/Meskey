@@ -1,15 +1,25 @@
  <div class="row form-mar">
-     <div class="col-xs-12 col-sm-12 col-md-12">
+     <div class="col-xs-12 col-sm-12 col-md-6">
          <div class="form-group">
-             <label>Ticket:</label>
-             <input type="text" class="form-control"
-                 value="Ticket No: {{ $locationTransfer->arrivalTicket->unique_no ?? '-' }} -- ITEM: {{ $locationTransfer->arrivalTicket->product->name ?? '-' }}">
+             <label>Ticket No:</label>
+             <input type="text" class="form-control" readonly
+                 value="Ticket No: {{ $locationTransfer->arrivalTicket->unique_no ?? '-' }} -- Truck No: {{ $locationTransfer->arrivalTicket->truck_no ?? '-' }}">
          </div>
      </div>
+
+     <div class="col-xs-12 col-sm-12 col-md-6">
+         <div class="form-group">
+             <label>Commodity:</label>
+             <input type="text" class="form-control" readonly
+                 value="{{ $locationTransfer->arrivalTicket->product->name ?? '-' }}">
+         </div>
+     </div>
+
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Location:</label>
-             <input type="text" class="form-control" value="{{ $locationTransfer->arrivalLocation->name ?? '-' }}">
+             <input type="text" class="form-control" value="{{ $locationTransfer->arrivalLocation->name ?? '-' }}"
+                 readonly>
          </div>
      </div>
  </div>

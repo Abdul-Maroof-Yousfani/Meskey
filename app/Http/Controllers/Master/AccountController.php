@@ -24,13 +24,14 @@ class AccountController extends Controller
      */
     public function getList(Request $request)
     {
-        $accounts = Account::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
-            ->latest()
+        $accounts = Account::with('children')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm);
+                });
+            })
+            ->whereNull('parent_id')
             ->paginate(request('per_page', 25));
 
         return view('management.master.account.getList', compact('accounts'));
@@ -41,7 +42,7 @@ class AccountController extends Controller
      */
     public function create()
     {
-        return view('management.master.account.create', ['parentAccounts' => Account::all()]);
+        return view('management.master.account.create', ['parentAccounts' => Account::where('is_operational', 'no')->get()]);
     }
 
     /**
@@ -76,7 +77,7 @@ class AccountController extends Controller
     public function edit($id)
     {
         $account = Account::findOrFail($id);
-        return view('management.master.account.edit', ['account' => $account, 'parentAccounts' => Account::all()]);
+        return view('management.master.account.edit', ['account' => $account, 'parentAccounts' => Account::where('is_operational', 'no')->get()]);
     }
 
     /**

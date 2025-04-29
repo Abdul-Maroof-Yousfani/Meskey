@@ -343,6 +343,48 @@
     <script>
         var baseUrl = "{{ url('/') }}";
         var loginUrl = "{{ url('login') }}";
+
+        function markRequiredFields() {
+            const requiredFields = @json($requiredFields ?? []);
+
+            requiredFields.forEach(fieldName => {
+                document.querySelectorAll(`[name="${fieldName}"]`).forEach(input => {
+                    let label = document.querySelector(`label[for="${fieldName}"]`);
+
+                    if (!label) {
+                        label = input.previousElementSibling;
+
+                        if (label && label.tagName !== 'LABEL') {
+                            label = null;
+                        }
+                    }
+
+                    if (label && !label.querySelector('.required-asterisk')) {
+                        const asterisk = document.createElement('span');
+                        asterisk.className = 'text-danger required-asterisk';
+                        asterisk.textContent = '*';
+                        label.insertBefore(asterisk, label.firstChild);
+
+                        // label.appendChild(asterisk);
+                    }
+                });
+            });
+        }
+
+        markRequiredFields();
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length) {
+                    markRequiredFields();
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     </script>
 
     @yield('script')

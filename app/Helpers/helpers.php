@@ -211,3 +211,11 @@ if (!function_exists('getTableData')) {
         return DB::table($table)->select($columns)->get();
     }
 }
+
+if (!function_exists('checkIfNameExists')) {
+    function checkIfNameExists(string $name)
+    {
+        $validNames = ['Unloading Instructions', 'QC Remarks', 'Yeild (%)', 'Yield (%)'];
+        return in_array($name, $validNames);
+    }
+}

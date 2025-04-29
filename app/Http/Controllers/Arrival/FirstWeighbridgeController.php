@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Arrival;
 
 
 use App\Http\Controllers\Controller;
-
-
+use App\Http\Requests\Master\FirstWeighbridgeRequest;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalLocationTransfer;
@@ -55,18 +54,8 @@ class FirstWeighbridgeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(FirstWeighbridgeRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
-            'first_weight' => 'required|numeric',
-            'remark' => 'nullable|string'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $request['created_by'] = auth()->user()->id;
         $request['weight'] = $request->first_weight ?? 0;
         $arrival_locations = FirstWeighbridge::create($request->all());
@@ -92,10 +81,9 @@ class FirstWeighbridgeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ArrivalLocationRequest $request, ArrivalLocation $arrival_location)
+    public function update(FirstWeighbridgeRequest $request, ArrivalLocation $arrival_location)
     {
-        $data = $request->validated();
-        $arrival_location->update($data);
+        $arrival_location->update($request->all());
         return response()->json(['success' => 'Arrival Location updated successfully.', 'data' => $arrival_location], 200);
     }
 
@@ -114,12 +102,11 @@ class FirstWeighbridgeController extends Controller
     {
 
         $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
-     
+
 
         // Render view with the slabs wrapped inside a div
         $html = view('management.arrival.first_weighbridge.getFirstWeighbridgeRelatedData', compact('ArrivalTicket'))->render();
 
         return response()->json(['success' => true, 'html' => $html]);
-
     }
 }

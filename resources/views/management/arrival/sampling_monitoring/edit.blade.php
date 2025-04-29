@@ -400,9 +400,10 @@
                                 <div class="form-group row">
                                     <input type="hidden" name="initial_compulsory_param_id[]"
                                         value="{{ $slab->qcParam->id }}">
-                                    <label class="col-md-4 label-control font-weight-bold"
+                                    <label class="label-control font-weight-bold col-md-4"
                                         for="striped-form-1">{{ $slab->qcParam->name }}</label>
-                                    <div class="col-md-6 QcResult">
+                                    <div
+                                        class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                         @if ($slab->qcParam->type == 'dropdown')
                                             <input type="text" id="striped-form-1" readonly class="form-control"
                                                 name="initial_compulsory_checklist_value[]"
@@ -413,12 +414,14 @@
                                                 name="initial_compulsory_checklist_value[]" placeholder="%" disabled>{{ $slab->compulsory_checklist_value }}</textarea>
                                         @endif
                                     </div>
-                                    <div class="col-md-2 QcResult">
-                                        <input type="text" id="striped-form-1" class="form-control bg-white"
-                                            placehold name="initial_compulsory_aapplied_deduction[]"
-                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction"
-                                            disabled>
-                                    </div>
+                                    @if (!checkIfNameExists($slab->qcParam->name))
+                                        <div class="col-md-2 QcResult">
+                                            <input type="text" id="striped-form-1" class="form-control bg-white"
+                                                placehold name="initial_compulsory_aapplied_deduction[]"
+                                                value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction"
+                                                disabled>
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         @else
@@ -583,9 +586,10 @@
                         @foreach ($Compulsuryresults as $slab)
                             <div class="form-group row">
                                 <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
-                                <label class="col-md-4 label-control font-weight-bold"
+                                <label class="label-control font-weight-bold col-md-4"
                                     for="striped-form-1">{{ $slab->qcParam->name }}</label>
-                                <div class="col-md-6 QcResult">
+                                <div
+                                    class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
                                         <input type="text" id="striped-form-1" readonly class="form-control"
                                             name="compulsory_checklist_value[]"
@@ -595,11 +599,13 @@
                                             placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
                                     @endif
                                 </div>
-                                <div class="col-md-2 QcResult">
-                                    <input type="text" id="striped-form-1" class="form-control bg-white" placehold
-                                        name="compulsory_aapplied_deduction[]"
-                                        value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
-                                </div>
+                                @if (!checkIfNameExists($slab->qcParam->name))
+                                    <div class="col-md-2 QcResult">
+                                        <input type="text" id="striped-form-1" class="form-control bg-white"
+                                            name="compulsory_aapplied_deduction[]"
+                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     @else

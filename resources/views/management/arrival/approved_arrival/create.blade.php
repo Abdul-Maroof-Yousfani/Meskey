@@ -5,12 +5,13 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Ticket:</label>
-                <select class="form-control select2" name="arrival_ticket_id" required >
+                <select class="form-control select2" name="arrival_ticket_id" required>
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option data-secondqcstatus="{{$arrivalTicket->second_qc_status}}"  data-trucknumber="{{ $arrivalTicket->truck_no }}" value="{{ $arrivalTicket->id }}">
-                            Ticket No: {{ $arrivalTicket->unique_no }} 
-                            {{-- -- ITEM: {{ optional($arrivalTicket->product)->name }} --}}
+                        <option data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
+                            data-trucknumber="{{ $arrivalTicket->truck_no }}" value="{{ $arrivalTicket->id }}">
+                            Ticket No: {{ $arrivalTicket->unique_no }}
+                            {{-- -- Truck No: {{ $arrivalTicket->truck_no ?? '-' }} --}}
                         </option>
                     @endforeach
                 </select>
@@ -26,8 +27,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Truck No:</label>
-                <input type="text" readonly name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off"
-                    required />
+                <input type="text" readonly name="truck_no" placeholder="Truck No" class="form-control"
+                    autocomplete="off" required />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -162,42 +163,42 @@
 
 
         // Autofill truck_no based on selected ticket
-    //    $('select[name="arrival_ticket_id"]').on('change', function() {
-            let truckNo = $(this).find(':selected').data('trucknumber') || '';
-       //     $('input[name="truck_no"]').val(truckNo);
-     //   });
+        //    $('select[name="arrival_ticket_id"]').on('change', function() {
+        let truckNo = $(this).find(':selected').data('trucknumber') || '';
+        //     $('input[name="truck_no"]').val(truckNo);
+        //   });
 
 
 
 
 
-// Autofill truck_no and check QC status when ticket is selected
-    $('select[name="arrival_ticket_id"]').on('change', function() {
-        let selectedOption = $(this).find(':selected');
-        let truckNo = selectedOption.data('trucknumber') || '';
-        let qcStatus = selectedOption.data('secondqcstatus') || '';
-        
-        $('input[name="truck_no"]').val(truckNo);
-        
-        // If QC status is Rejected
-        if (qcStatus.toLowerCase() === 'rejected') {
-            // Auto-select Half Approved and disable both radio buttons
-            $('#half-approved').prop('checked', true).trigger('change');
-            $('input[name="bag_packing_approval"]').prop('disabled', true);
+        // Autofill truck_no and check QC status when ticket is selected
+        $('select[name="arrival_ticket_id"]').on('change', function() {
+            let selectedOption = $(this).find(':selected');
+            let truckNo = selectedOption.data('trucknumber') || '';
+            let qcStatus = selectedOption.data('secondqcstatus') || '';
+
+            $('input[name="truck_no"]').val(truckNo);
+
+            // If QC status is Rejected
+            if (qcStatus.toLowerCase() === 'rejected') {
+                // Auto-select Half Approved and disable both radio buttons
+                $('#half-approved').prop('checked', true).trigger('change');
+                $('input[name="bag_packing_approval"]').prop('disabled', true);
 
 
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'bag_packing_approval',
-                class: 'tempfield',
-                value: 'Half Approved'
-            }).insertAfter($('input[name="bag_packing_approval"]').last());
-        } else {
-            // Select Full Approved and enable both radio buttons
-            $('#full-approved').prop('checked', true).trigger('change');
-            $('input[name="bag_packing_approval"]').prop('disabled', false);
-            $('.tempfield').remove();
-        }
-    });
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'bag_packing_approval',
+                    class: 'tempfield',
+                    value: 'Half Approved'
+                }).insertAfter($('input[name="bag_packing_approval"]').last());
+            } else {
+                // Select Full Approved and enable both radio buttons
+                $('#full-approved').prop('checked', true).trigger('change');
+                $('input[name="bag_packing_approval"]').prop('disabled', false);
+                $('.tempfield').remove();
+            }
+        });
     });
 </script>

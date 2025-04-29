@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\ArrivalLocationTransferRequest;
 use App\Models\Master\ArrivalLocation;
 
 use App\Models\Arrival\ArrivalLocationTransfer;
@@ -55,18 +56,8 @@ class ArrivalLocationTransferController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ArrivalLocationTransferRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
-            'arrival_location_id' => 'required|exists:arrival_locations,id',
-            'remark' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $request['creator_id'] = auth()->user()->id;
 
         $arrival_location = ArrivalLocationTransfer::create($request->all());
@@ -105,7 +96,7 @@ class ArrivalLocationTransferController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ArrivalLocationRequest $request, ArrivalLocation $arrival_location)
+    public function update(ArrivalLocationTransferRequest $request, ArrivalLocation $arrival_location)
     {
         $data = $request->validated();
         $arrival_location->update($data);

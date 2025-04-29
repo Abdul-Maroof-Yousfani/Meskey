@@ -23,28 +23,28 @@ class TicketController extends Controller
     /**
      * Get list of categories.
      */
-public function getList(Request $request)
-{
-    $UnitOfMeasures = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
-        $searchTerm = '%' . $request->search . '%';
-        $q->where(function ($sq) use ($searchTerm) {
-            $sq->where('unique_no', 'like', $searchTerm)
-               ->orWhere('supplier_name', 'like', $searchTerm)
-               ->orWhere('truck_no', 'like', $searchTerm)
-               ->orWhere('bilty_no', 'like', $searchTerm);
-        });
-    })
-    ->when($request->filled('from_date'), function ($q) use ($request) {
-        $q->whereDate('created_at', '>=', $request->from_date);
-    })
-    ->when($request->filled('to_date'), function ($q) use ($request) {
-        $q->whereDate('created_at', '<=', $request->to_date);
-    })
-    ->latest()
-    ->paginate($request->get('per_page', 25));
+    public function getList(Request $request)
+    {
+        $UnitOfMeasures = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
+            $searchTerm = '%' . $request->search . '%';
+            $q->where(function ($sq) use ($searchTerm) {
+                $sq->where('unique_no', 'like', $searchTerm)
+                    ->orWhere('supplier_name', 'like', $searchTerm)
+                    ->orWhere('truck_no', 'like', $searchTerm)
+                    ->orWhere('bilty_no', 'like', $searchTerm);
+            });
+        })
+            ->when($request->filled('from_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->from_date);
+            })
+            ->when($request->filled('to_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->to_date);
+            })
+            ->latest()
+            ->paginate($request->get('per_page', 25));
 
-    return view('management.arrival.ticket.getList', compact('UnitOfMeasures'));
-}
+        return view('management.arrival.ticket.getList', compact('UnitOfMeasures'));
+    }
 
 
     /**
@@ -74,14 +74,14 @@ public function getList(Request $request)
 
         $previouscheck = ArrivalTicket::where('truck_no', $request['truck_no'])
             ->where('bilty_no', $request['bilty_no']);
-            
+
 
         if ($previouscheck->exists()) {
-              $viewLink = ' <a href="'.route('ticket.show', $previouscheck->first()->id).'" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
+            $viewLink = ' <a href="' . route('ticket.show', $previouscheck->first()->id) . '" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
 
             throw ValidationException::withMessages([
-            
-                'truck_no' => ['Truck with this Bilty No already exists.'.$viewLink],
+
+                'truck_no' => ['Truck with this Bilty No already exists.' . $viewLink],
             ]);
         }
 

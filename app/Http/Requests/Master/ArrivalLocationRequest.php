@@ -4,6 +4,7 @@ namespace App\Http\Requests\Master;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+
 class ArrivalLocationRequest extends FormRequest
 {
     /**
@@ -27,8 +28,8 @@ class ArrivalLocationRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-  
-                       Rule::unique('arrival_locations', 'name')
+
+                Rule::unique('arrival_locations', 'name')
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->arrival_location)
             ],

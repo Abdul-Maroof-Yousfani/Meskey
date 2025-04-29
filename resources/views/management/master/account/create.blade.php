@@ -22,7 +22,7 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Account Name:</label>
+                <label for="name">Account Name:</label>
                 <input type="text" name="name" class="form-control" placeholder="Enter Account Name">
             </div>
         </div>
