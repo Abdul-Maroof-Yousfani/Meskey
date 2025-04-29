@@ -174,24 +174,24 @@
             </h6>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group ">
+            <div class="form-group">
                 <label>1st Weight:</label>
-                <input type="text" name="first_weight" placeholder="First Weight" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="first_weight" id="first_weight" placeholder="First Weight"
+                    class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group ">
-                <label>Second Weight: </label>
-                <input type="text" name="second_weight" placeholder="Second Weight" class="form-control"
-                    autocomplete="off" />
+            <div class="form-group">
+                <label>Second Weight:</label>
+                <input type="text" name="second_weight" id="second_weight" placeholder="Second Weight"
+                    class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group ">
-                <label>Net Weight: </label>
-                <input type="text" name="net_weight" placeholder="Net Weight" class="form-control"
-                    autocomplete="off" />
+            <div class="form-group">
+                <label>Net Weight:</label>
+                <input type="text" name="net_weight" id="net_weight" placeholder="Net Weight"
+                    class="form-control" readonly autocomplete="off" />
             </div>
         </div>
     </div>
@@ -248,6 +248,19 @@
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 
         $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
+
+        function calculateNetWeight() {
+            const firstWeight = parseFloat($('#first_weight').val()) || 0;
+            const secondWeight = parseFloat($('#second_weight').val()) || 0;
+
+            const netWeight = firstWeight + secondWeight;
+
+            $('#net_weight').val(netWeight > 0 ? netWeight : 0);
+        }
+
+        $('#first_weight, #second_weight').on('input', function() {
+            calculateNetWeight();
+        });
 
         //   $(document).on('change', '[name="arrival_truck_type_id"]', function () {
         //  let sampleMoney = $(this).find(':selected').data('samplemoney');

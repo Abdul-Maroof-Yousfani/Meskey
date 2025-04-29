@@ -12,7 +12,7 @@
                         <option value="{{ $arrivalTicket->id }}"
                             {{ $arrivalTicket->id == $arrivalApprove->arrival_ticket_id ? 'selected' : '' }}>
                             Ticket No: {{ $arrivalTicket->unique_no }} --
-                            ITEM: {{ optional($arrivalTicket->product)->name }}
+                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
                         </option>
                     @endforeach
                 </select>

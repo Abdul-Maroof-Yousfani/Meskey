@@ -8,7 +8,8 @@
                 <select class="form-control select2" name="arrival_ticket_id" id="arrival_ticket_id">
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}">
+                        <option value="{{ $arrivalTicket->id }}"
+                            data-product="{{ $arrivalTicket->product->name ?? 'N/A' }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             Truck No: {{ $arrivalTicket->truck_no }}
                         </option>
@@ -16,6 +17,14 @@
                 </select>
             </div>
         </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Commodity:</label>
+                <input type="text" class="form-control" id="commodity_name" disabled>
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Location:</label>
@@ -24,16 +33,14 @@
                     @foreach ($ArrivalLocations as $ArrivalLocations)
                         <option value="{{ $ArrivalLocations->id }}">
                             {{ $ArrivalLocations->name }}
-
                         </option>
                     @endforeach
-
                 </select>
             </div>
         </div>
     </div>
 
-
+    <!-- Rest of your form remains the same -->
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -51,15 +58,19 @@
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
-
 </form>
-
 
 <script>
     $(document).ready(function() {
-
+        $('.select2').select2();
 
         $('#arrival_ticket_id').change(function() {
+            var selectedOption = $(this).find('option:selected');
+            var productName = selectedOption.data('product');
+
+            // Update commodity field
+            $('#commodity_name').val(productName);
+
             var arrival_ticket_id = $(this).val();
             if (arrival_ticket_id) {
                 $.ajax({
@@ -82,7 +93,6 @@
                     success: function(response) {
                         Swal.close();
                         if (response.success) {
-                            // Append the rendered HTML to a container element
                             $('#slabsContainer').html(response.html);
                         } else {
                             Swal.fire("No Data", "No slabs found for this product.",
@@ -95,13 +105,10 @@
                             "error");
                     }
                 });
+            } else {
+                // Clear commodity field if no ticket selected
+                $('#commodity_name').val('');
             }
         });
-
-
-
-
-
-        $('.select2').select2();
     });
 </script>

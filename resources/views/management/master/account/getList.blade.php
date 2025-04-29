@@ -4,69 +4,22 @@
             <th class="col-sm-2">Account No.</th>
             <th class="col-sm-3">Account Name</th>
             <th class="col-sm-2">Type</th>
-            <th class="col-sm-2">Parent Account</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($accounts) != 0)
+        @if ($accounts->count() != 0)
             @foreach ($accounts as $account)
-                <tr>
-                    <td>
-                        <p class="m-0">
-                            #{{ $account->unique_no }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $account->name }} <br>
-                            <small class="text-muted">{{ $account->description }}</small>
-                        </p>
-                    </td>
-                    <td>
-                        <span class="badge badge-{{ $account->account_type == 'debit' ? 'primary' : 'success' }}">
-                            {{ ucfirst($account->account_type) }}
-                        </span>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional($account->parent)->name ?? 'N/A' }} <br>
-                            <small class="text-muted">{{ optional($account->parent)->unique_no }}</small>
-                        </p>
-                    </td>
-                    <td>
-                        <label
-                            class="badge text-uppercase m-0 {{ $account->status == 'active' ? 'badge-success' : 'badge-danger' }}">
-                            {{ $account->status }}
-                        </label>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($account->created_at)->format('Y-m-d') }} <br>
-                            {{ \Carbon\Carbon::parse($account->created_at)->format('H:i A') }}
-                        </p>
-                    </td>
-                    <td>
-                        {{-- @can('account-edit') --}}
-                        <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', true)"
-                            class="info p-1 text-center mr-2 position-relative">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
-                        {{-- @endcan
-                        @can('account-delete')
-                            <a onclick="deletemodal('{{ route('account.destroy', $account->id) }}','{{ route('get.account') }}')"
-                                class="danger p-1 text-center mr-2 position-relative">
-                                <i class="ft-trash-2 font-medium-3"></i>
-                            </a>
-                        @endcan --}}
-                    </td>
-                </tr>
+                @include('management.master.account.partials.account_row', [
+                    'account' => $account,
+                    'level' => 0,
+                ])
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="7" class="ant-table-cell text-center">
+                <td colspan="6" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

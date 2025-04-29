@@ -31,8 +31,8 @@ class FreightRequest extends FormRequest
             // 'loaded_weight' => 'required|integer',
             // 'arrived_weight' => 'required|integer',
             'freight_per_ton' => 'required|numeric',
-            'bilty_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'loading_weight_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'bilty_document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'loading_weight_document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'other_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'other_document_2' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ];

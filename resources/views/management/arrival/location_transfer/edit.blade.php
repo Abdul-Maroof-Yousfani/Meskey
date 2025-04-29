@@ -1,8 +1,9 @@
-<form action="{{ route('arrival-location.update',$arrival_location->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('arrival-location.update', $arrival_location->id) }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-location') }}" />
-   <div class="row form-mar">
+    <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Ticket:</label>
@@ -11,7 +12,7 @@
                     @foreach ($ArrivalTickets as $arrivalTicket)
                         <option value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
-                            ITEM: {{ optional($arrivalTicket->product)->name }}
+                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
                         </option>
                     @endforeach
                 </select>
@@ -24,11 +25,9 @@
                     <option value="">Select Location</option>
                     @foreach ($ArrivalLocations as $ArrivalLocations)
                         <option value="{{ $ArrivalLocations->id }}">
-                           {{ $ArrivalLocations->name }}
-                           
+                            {{ $ArrivalLocations->name }}
                         </option>
                     @endforeach
-
                 </select>
             </div>
         </div>
