@@ -30,21 +30,21 @@
                             Arrival Slip
                         </h6>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Date</label>
                             <input type="text" class="form-control bg-light" value="{{ now()->format('d-M-Y') }}"
                                 readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">No. of Bags</label>
                             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->bags }}"
                                 readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Packing</label>
                             <input type="text" class="form-control bg-light"
@@ -53,69 +53,69 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Party Name</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->supplier_name }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Broker Name</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->broker_name ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">On A/C of</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->accounts_of_id ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Station</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->station->name ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Commodity</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->product->name }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">U/L Slip #</label>
                             <input type="text" class="form-control bg-light" value="00013:44:42" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Deductions</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->lumpsum_deduction ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Sauda Term</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Gala No.</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->approvals->gala_name ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label class="font-weight-bold">Godown</label>
                             <input type="text" class="form-control bg-light"
@@ -129,7 +129,7 @@
                             Weight Information
                         </h6>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-sm-3">
                         <div class="form-group">
                             <label>Gross Weight</label>
                             <input type="text" class="form-control bg-light"
@@ -137,21 +137,21 @@
                                 readonly>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-sm-3">
                         <div class="form-group">
                             <label>Net Weight</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-sm-3">
                         <div class="form-group">
                             <label>Loading Weight</label>
                             <input type="text" class="form-control bg-light"
                                 value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-sm-3">
                         <div class="form-group">
                             <label>Avg. Weight</label>
                             <input type="text" class="form-control bg-light"
@@ -164,7 +164,7 @@
                             Freight Information
                         </h6>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-sm-4">
                         <div class="form-group">
                             <label>Filling:</label>
                             <div class="row w-100 mx-auto">
@@ -179,21 +179,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-sm-4">
                         <div class="form-group">
                             <label>Freight (Rs.)</label>
                             <input type="text" class="form-control bg-light mb-1"
                                 value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-sm-4">
                         <div class="form-group">
                             <label>Freight per Ton</label>
                             <input type="text" class="form-control bg-light mb-1"
                                 value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label>Other (+)/ Labour Charges</label>
                             <input type="text" class="form-control bg-light mb-1"
@@ -203,7 +203,7 @@
                                 readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label>Other Deduction</label>
                             <input type="text" class="form-control bg-light mb-1"
@@ -212,7 +212,7 @@
                                 value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label>Total Freight Payable (Rs.)</label>
                             <input type="text" class="form-control bg-light mb-1"
@@ -222,7 +222,7 @@
                                 readonly>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-sm-6">
                         <div class="form-group">
                             <label>Unpaid Labour Charge</label>
                             <input type="text" class="form-control bg-light mb-1"
@@ -246,21 +246,21 @@
 
                     <div class="col-12 mt-4">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-4 col-sm-4">
                                 <div class="form-group">
                                     <label class="font-weight-bold">Confirmed Form</label>
                                     <input type="text" class="form-control bg-light"
                                         value="{{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}" readonly>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 col-sm-4">
                                 <div class="form-group">
                                     <label class="font-weight-bold">Contract Number</label>
                                     <input type="text" class="form-control bg-light"
                                         value="{{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}" readonly>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 col-sm-4">
                                 <div class="form-group">
                                     <label class="font-weight-bold">Prepared By:</label>
                                     <input type="text" class="form-control bg-light"
