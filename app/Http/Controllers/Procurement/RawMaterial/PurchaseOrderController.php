@@ -40,12 +40,10 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->where('document_approval_status',null)->get();
-        $data['bagTypes'] = BagType::all();
-        $data['bagConditions'] = BagCondition::all();
-        $data['bagPackings'] = BagPacking::all();
 
-        return view('management.arrival.approved_arrival.create', $data);
+        $data['bagPackings'] = [];
+
+        return view('management.procurement.raw_material.purchase_order.create', $data);
     }
 
     /**
@@ -158,6 +156,11 @@ class PurchaseOrderController extends Controller
     {
         $arrival_location = ArrivalLocation::findOrFail($id);
         $arrival_location->delete();
+        return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
+    }
+    public function getMainSlabByProduct(Request $request)
+    {
+      dd('ddddd');
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
     }
 }
