@@ -6,6 +6,8 @@
     $isDecisionMakingForInitial =
         isset($initialRequestForInnerReq) && $initialRequestForInnerReq->decision_making == 1 ? true : false;
     $valuesOfInitialSlabs = [];
+    $suggestedValueForInner = 0;
+    $suggestedValue = 0;
 @endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
@@ -201,10 +203,14 @@
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group ">
-                        {{-- @dd($arrivalSamplingRequest) --}}
                         <label>Status:</label>
-                        <select name="stage_status" id="stage_status" class="form-control select2"
-                            @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
+                        @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
+                            <input type="hidden" name="stage_status"
+                                value="{{ $arrivalSamplingRequest->approved_status }}">
+                        @endif
+                        <select
+                            name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status_display' : 'stage_status' }}"
+                            id="stage_status" class="form-control select2" @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
                             <option value="" hidden>Choose Status</option>
                             <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
                                 value="approved">
@@ -261,16 +267,13 @@
                     </div>
                     <div class="striped-rows">
                         @if (count($initialRequestResults) != 0)
-                            <?php
-                            $suggestedValue = 0;
-                            ?>
                             @foreach ($initialRequestResults as $slab)
                                 <?php
                                 $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->qc_product, $slab->checklist_value);
                                 $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
                                 $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
                                 $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
-                                $suggestedValue += $getDeductionSuggestion->deduction_value ?? 0;
+                                $suggestedValueForInner += $getDeductionSuggestion->deduction_value ?? 0;
                                 ?>
                                 <div class="form-group row">
                                     <input type="hidden" name="initial_product_slab_type_id[]"
@@ -314,70 +317,6 @@
                                     </div>
                                 </div>
                             @endforeach
-                            <div class="form-group row">
-                                <label class="col-md-4 label-control font-weight-bold"
-                                    for="lumpsum-toggle-initial">Apply
-                                    Lumpsum
-                                    Deduction</label>
-                                <div class="col-md-3">
-                                    <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="is_lumpsum_deduction_initial"
-                                            class="custom-control-input" id="lumpsum-toggle-initial"
-                                            @checked($isLumpSumEnabledForInitial) disabled>
-                                        <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="input-group mb-0">
-                                        <input type="text" id="suggessions-sum-initial" class="form-control"
-                                            name="suggessions_sum_initial" disabled
-                                            value="{{ $suggestedValue ?? 0 }}" placeholder="Suggested Sum">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text text-sm">Rs.</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="input-group mb-0">
-                                        <input type="text" id="lumpsum-value-initial" class="form-control"
-                                            name="lumpsum_deduction_initial" disabled
-                                            value="{{ $initialRequestForInnerReq->lumpsum_deduction ?? 0 }}"
-                                            placeholder="Lumpsum Deduction">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text text-sm">Rs.</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label class="col-md-4 label-control font-weight-bold"
-                                    for="lumpsum-kgs-value-initial">Lumpsum
-                                    Deduction</label>
-                                <div class="col-md-8">
-                                    <div class="input-group mb-0">
-                                        <input type="text" id="lumpsum-kgs-value-initial" class="form-control"
-                                            name="lumpsum_deduction_kgs_initial" readonly
-                                            value="{{ $initialRequestForInnerReq->lumpsum_deduction_kgs ?? 0 }}"
-                                            placeholder="Lumpsum Deduction">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text text-sm">KG's</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label class="col-md-4 label-control font-weight-bold"
-                                    for="decision_making_initial">Decision
-                                    Making</label>
-                                <div class="col-md-3">
-                                    <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="decision_making_initial"
-                                            class="custom-control-input" id="decision_making_initial"
-                                            @checked($isDecisionMakingForInitial) disabled>
-                                        <label class="custom-control-label" for="decision_making_initial"></label>
-                                    </div>
-                                </div>
-                            </div>
                         @else
                             <div class="alert alert-warning">
                                 No Initial Slabs Found
@@ -429,6 +368,69 @@
                                 No Initial Compulsory Slabs Found
                             </div>
                         @endif
+                        <div class="form-group row">
+                            <label class="col-md-4 label-control font-weight-bold" for="lumpsum-toggle-initial">Apply
+                                Lumpsum
+                                Deduction</label>
+                            <div class="col-md-3">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" name="is_lumpsum_deduction_initial"
+                                        class="custom-control-input" id="lumpsum-toggle-initial"
+                                        @checked($isLumpSumEnabledForInitial) disabled>
+                                    <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group mb-0">
+                                    <input type="text" id="suggessions-sum-initial" class="form-control"
+                                        name="suggessions_sum_initial" disabled
+                                        value="{{ $suggestedValueForInner ?? 0 }}" placeholder="Suggested Sum">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">Rs.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group mb-0">
+                                    <input type="text" id="lumpsum-value-initial" class="form-control"
+                                        name="lumpsum_deduction_initial" disabled
+                                        value="{{ $initialRequestForInnerReq->lumpsum_deduction ?? 0 }}"
+                                        placeholder="Lumpsum Deduction">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">Rs.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-4 label-control font-weight-bold"
+                                for="lumpsum-kgs-value-initial">Lumpsum
+                                Deduction</label>
+                            <div class="col-md-8">
+                                <div class="input-group mb-0">
+                                    <input type="text" id="lumpsum-kgs-value-initial" class="form-control"
+                                        name="lumpsum_deduction_kgs_initial" readonly
+                                        value="{{ $initialRequestForInnerReq->lumpsum_deduction_kgs ?? 0 }}"
+                                        placeholder="Lumpsum Deduction">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">KG's</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-4 label-control font-weight-bold"
+                                for="decision_making_initial">Decision
+                                Making on Avg.</label>
+                            <div class="col-md-3">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" name="decision_making_initial"
+                                        class="custom-control-input" id="decision_making_initial"
+                                        @checked($isDecisionMakingForInitial) disabled>
+                                    <label class="custom-control-label" for="decision_making_initial"></label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -449,9 +451,6 @@
                 </div>
                 <div class="striped-rows">
                     @if (count($results) != 0)
-                        <?php
-                        $suggestedValue = 0;
-                        ?>
                         @foreach ($results as $slab)
                             <?php
                             $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->qc_product, $slab->checklist_value);
@@ -505,65 +504,6 @@
                                 </div>
                             </div>
                         @endforeach
-                        <div class="form-group row">
-                            <label class="col-md-4 label-control font-weight-bold" for="lumpsum-toggle">Apply Lumpsum
-                                Deduction</label>
-                            <div class="col-md-3">
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" name="is_lumpsum_deduction" class="custom-control-input"
-                                        id="lumpsum-toggle" @checked($isLumpSumEnabled)>
-                                    <label class="custom-control-label" for="lumpsum-toggle"></label>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="input-group mb-0">
-                                    <input type="text" id="suggessions-sum" class="form-control"
-                                        name="suggessions_sum" disabled value="{{ $suggestedValue }}"
-                                        placeholder="Lumpsum Deduction">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text text-sm">{{ 'Rs.' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="input-group mb-0">
-                                    <input type="text" id="lumpsum-value" class="form-control"
-                                        name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
-                                        value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
-                                        placeholder="Lumpsum Deduction">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text text-sm">{{ 'Rs.' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Lumpsum
-                                Deduction</label>
-
-                            <div class="col-md-8">
-                                <div class="input-group mb-0">
-                                    <input type="text" id="lumpsum-kgs-value" class="form-control"
-                                        name="lumpsum_deduction_kgs" readonly
-                                        value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}"
-                                        placeholder="Lumpsum Deduction">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text text-sm">{{ 'KG\'s' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-md-4 label-control font-weight-bold" for="decision_making">Decision
-                                Making</label>
-                            <div class="col-md-3">
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" name="decision_making" class="custom-control-input"
-                                        id="decision_making" @checked($isDecisionMaking)>
-                                    <label class="custom-control-label" for="decision_making"></label>
-                                </div>
-                            </div>
-                        </div>
                     @else
                         <div class="alert alert-warning">
                             No Slabs Found
@@ -583,6 +523,7 @@
                 </div>
                 <div class="striped-rows">
                     @if (count($Compulsuryresults) != 0)
+                        {{-- @dd($Compulsuryresults) --}}
                         @foreach ($Compulsuryresults as $slab)
                             <div class="form-group row">
                                 <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
@@ -591,20 +532,32 @@
                                 <div
                                     class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
-                                        <input type="text" id="striped-form-1" readonly class="form-control"
+                                        <input type="text" id="striped-form-1" readonly class="form-control "
                                             name="compulsory_checklist_value[]"
                                             value="{{ $slab->compulsory_checklist_value }}" placeholder="%">
                                     @else
-                                        <textarea type="text" id="striped-form-1" readonly class="form-control" name="compulsory_checklist_value[]"
+                                        <textarea type="text" id="striped-form-1" readonly class="form-control  " name="compulsory_checklist_value[]"
                                             placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
                                     @endif
                                 </div>
                                 @if (!checkIfNameExists($slab->qcParam->name))
                                     <div class="col-md-2 QcResult">
-                                        <input type="text" id="striped-form-1" class="form-control bg-white"
-                                            name="compulsory_aapplied_deduction[]"
-                                            value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                        <div class="input-group mb-0">
+                                            <input type="text" id="inp-{{ $slab->qcParam->id }}"
+                                                class="form-control bg-white deduction-field"
+                                                data-slab-id="{{ $slab->qcParam->id }}"
+                                                data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
+                                                data-checklist="{{ $slab->compulsory_checklist_value }}"
+                                                name="compulsory_aapplied_deduction[]"
+                                                value="{{ $slab->applied_deduction ?? 0 }}" placeholder="Deduction">
+                                            <div class="input-group-append">
+                                                <span
+                                                    class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
+                                            </div>
+                                        </div>
                                     </div>
+                                @else
+                                    <input type="hidden" name="compulsory_aapplied_deduction[]" value="0">
                                 @endif
                             </div>
                         @endforeach
@@ -613,6 +566,65 @@
                             No Slabs Found
                         </div>
                     @endif
+                    <div class="form-group row">
+                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-toggle">Apply Lumpsum
+                            Deduction</label>
+                        <div class="col-md-3">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" name="is_lumpsum_deduction" class="custom-control-input"
+                                    id="lumpsum-toggle" @checked($isLumpSumEnabled)>
+                                <label class="custom-control-label" for="lumpsum-toggle"></label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-0">
+                                <input type="text" id="suggessions-sum" class="form-control"
+                                    name="suggessions_sum" disabled value="{{ $suggestedValue }}"
+                                    placeholder="Lumpsum Deduction">
+                                <div class="input-group-append">
+                                    <span class="input-group-text text-sm">{{ 'Rs.' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-0">
+                                <input type="text" id="lumpsum-value" class="form-control"
+                                    name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
+                                    placeholder="Lumpsum Deduction">
+                                <div class="input-group-append">
+                                    <span class="input-group-text text-sm">{{ 'Rs.' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Lumpsum
+                            Deduction</label>
+
+                        <div class="col-md-8">
+                            <div class="input-group mb-0">
+                                <input type="text" id="lumpsum-kgs-value" class="form-control"
+                                    name="lumpsum_deduction_kgs" readonly
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}"
+                                    placeholder="Lumpsum Deduction">
+                                <div class="input-group-append">
+                                    <span class="input-group-text text-sm">{{ 'KG\'s' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-md-4 label-control font-weight-bold" for="decision_making">Decision
+                            Making on Avg.</label>
+                        <div class="col-md-3">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" name="decision_making" class="custom-control-input"
+                                    id="decision_making" @checked($isDecisionMaking)>
+                                <label class="custom-control-label" for="decision_making"></label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

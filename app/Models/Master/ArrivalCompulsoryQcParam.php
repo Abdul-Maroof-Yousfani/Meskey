@@ -13,6 +13,7 @@ class ArrivalCompulsoryQcParam extends Model
         'name',
         'type',
         'options',
+        'calculation_base_type',
         'properties',
     ];
 
