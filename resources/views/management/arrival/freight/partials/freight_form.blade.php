@@ -101,8 +101,8 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Karachi Kanta Charges</label>
-                <input type="number" step="0.01" name="karachi_kanta_charges" class="form-control calculate-final"
-                    value="{{ $ticket->weighbridge_amount ?? 0 }}" />
+                <input type="number" step="0.01" name="karachi_kanta_charges" readonly
+                    class="form-control calculate-final" value="{{ $ticket->truckType->weighbridge_amount ?? 0 }}" />
             </div>
         </div>
 
@@ -161,7 +161,7 @@
             </div>
         </div>
 
-        <div class="col-12" bis_skin_checked="1">
+        <div class="col-12 d-none" bis_skin_checked="1">
             <h6 class="header-heading-sepration">
                 Document Attachments
             </h6>

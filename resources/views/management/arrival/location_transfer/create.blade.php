@@ -20,13 +20,6 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Commodity:</label>
-                <input type="text" class="form-control" id="commodity_name" disabled>
-            </div>
-        </div>
-
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
                 <label>Location:</label>
                 <select class="form-control select2" name="arrival_location_id">
                     <option value="">Select Location</option>

@@ -10,7 +10,7 @@ class ArrivalTruckType extends Model
 {
     use SoftDeletes;
 
-    
+
     protected $fillable = [
         'company_id',
         'name',
