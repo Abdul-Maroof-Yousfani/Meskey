@@ -253,7 +253,7 @@
             const firstWeight = parseFloat($('#first_weight').val()) || 0;
             const secondWeight = parseFloat($('#second_weight').val()) || 0;
 
-            const netWeight = firstWeight + secondWeight;
+            const netWeight = secondWeight - firstWeight;
 
             $('#net_weight').val(netWeight > 0 ? netWeight : 0);
         }

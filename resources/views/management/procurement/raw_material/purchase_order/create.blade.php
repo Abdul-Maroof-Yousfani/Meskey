@@ -301,12 +301,12 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label class=" label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement / No Replacement
+                <label class=" label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement 
                 </label>
                 <div class="custom-control custom-switch">
-                    <input type="checkbox" name="is_lumpsum_deduction_initial" class="custom-control-input"
+                    <input type="checkbox" checked name="is_lumpsum_deduction_initial" class="custom-control-input"
                         id="lumpsum-toggle-initial">
-                    <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
+                    <label class="custom-control-label"  for="lumpsum-toggle-initial"></label>
                 </div>
             </div>
         </div>
