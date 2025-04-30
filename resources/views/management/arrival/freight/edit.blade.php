@@ -167,14 +167,12 @@
                     value="{{ $freight->net_freight }}" />
             </div>
         </div>
-
         <div class="col-md-6 d-none">
             <div class="form-group">
                 <label>Status</label>
                 <input type="hidden" name="status" value="approved">
             </div>
         </div>
-
         <div class="col-md-6">
             <div class="form-group">
                 <label>Attach Bilty</label>

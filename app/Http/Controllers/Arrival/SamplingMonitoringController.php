@@ -98,8 +98,6 @@ class SamplingMonitoringController extends Controller
      */
     public function edit(Request $request, $id)
     {
-        $samplingRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')->get();
-
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
 
         $productSlabCalculations = null;
@@ -108,7 +106,6 @@ class SamplingMonitoringController extends Controller
         }
 
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
-
         foreach ($results as $result) {
             $matchingSlabs = [];
             if ($productSlabCalculations) {
@@ -125,14 +122,12 @@ class SamplingMonitoringController extends Controller
         $sampleTakenByUsers = User::all();
         $authUserCompany = $request->company_id;
         $saudaTypes = SaudaType::all();
+
         $initialRequestForInnerReq = null;
         $initialRequestResults = null;
         $initialRequestCompulsuryResults = null;
-        $accountsOf = User::role('Purchaser')
-            ->whereHas('companies', function ($q) use ($authUserCompany) {
-                $q->where('companies.id', $authUserCompany);
-            })
-            ->get();
+
+        $allInnerRequests = [];
 
         if ($arrivalSamplingRequest->sampling_type == 'inner') {
             $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
@@ -145,9 +140,43 @@ class SamplingMonitoringController extends Controller
                 $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
                 $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
             }
+
+            $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
+                ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+                ->where('id', '!=', $id) // Exclude current request
+                ->orderBy('created_at', 'desc')
+                ->get();
         }
 
-        return view('management.arrival.sampling_monitoring.edit', compact('initialRequestForInnerReq', 'initialRequestResults', 'initialRequestCompulsuryResults', 'samplingRequests', 'saudaTypes', 'arrivalPurchaseOrders', 'accountsOf', 'sampleTakenByUsers', 'results', 'arrivalSamplingRequest', 'Compulsuryresults'));
+        $innerRequestsData = [];
+        foreach ($allInnerRequests as $innerReq) {
+            $innerResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $innerReq->id)->get();
+            $innerCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $innerReq->id)->get();
+
+            $innerRequestsData[] = [
+                'request' => $innerReq,
+                'results' => $innerResults,
+                'compulsuryResults' => $innerCompulsuryResults
+            ];
+        }
+
+        return view('management.arrival.sampling_monitoring.edit', [
+            'initialRequestForInnerReq' => $initialRequestForInnerReq,
+            'initialRequestResults' => $initialRequestResults,
+            'initialRequestCompulsuryResults' => $initialRequestCompulsuryResults,
+            'innerRequestsData' => $innerRequestsData,
+            'samplingRequests' => ArrivalSamplingRequest::where('sampling_type', 'initial')->get(),
+            'saudaTypes' => $saudaTypes,
+            'arrivalPurchaseOrders' => $arrivalPurchaseOrders,
+            'accountsOf' => User::role('Purchaser')
+                ->whereHas('companies', function ($q) use ($authUserCompany) {
+                    $q->where('companies.id', $authUserCompany);
+                })->get(),
+            'sampleTakenByUsers' => $sampleTakenByUsers,
+            'results' => $results,
+            'arrivalSamplingRequest' => $arrivalSamplingRequest,
+            'Compulsuryresults' => $Compulsuryresults
+        ]);
     }
 
     /**

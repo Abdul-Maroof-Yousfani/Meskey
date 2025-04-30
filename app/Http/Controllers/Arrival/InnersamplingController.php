@@ -59,7 +59,7 @@ class InnersamplingController extends Controller
     {
         $isResampling = request()->route()->getName() === 'inner-resampling.create';
 
-        $query = ArrivalSamplingRequest::where('sampling_type', 'inner');
+        $query = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_done', 'no');
 
         if ($isResampling) {
             $query->where('is_re_sampling', 'yes');
@@ -114,6 +114,7 @@ class InnersamplingController extends Controller
             ->latest()
             ->first();
 
+        // Matching if initial params and inner submittted params exactly matchs..
         if ($initialRequestForInnerReq) {
             $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
             $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
