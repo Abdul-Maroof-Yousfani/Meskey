@@ -31,7 +31,7 @@ class SamplingMonitoringController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
 
-                return $q->where(function ($sq) use ($searchTerm, $request) {
+                return $q->where(function ($sq) use ($searchTerm) {
                     $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
                         $aq->where('unique_no', 'like', $searchTerm)
                             ->orWhere('supplier_name', 'like', $searchTerm);
@@ -39,11 +39,12 @@ class SamplingMonitoringController extends Controller
                 });
             })
             ->when($request->filled('sampling_type'), function ($q) use ($request) {
-                return $q->where(function ($sq) use ($request) {
-                    $sq->where('sampling_type', 'like', $request->sampling_type);
-                });
+                return $q->where('sampling_type', 'like', $request->sampling_type);
             })
-
+            ->where(function ($q) {
+                $q->where('approved_status', 'pending')
+                    ->orWhere('decision_making', 1);
+            })
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -119,6 +120,7 @@ class SamplingMonitoringController extends Controller
         }
 
         $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
+
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
         $sampleTakenByUsers = User::all();
         $authUserCompany = $request->company_id;
@@ -186,6 +188,12 @@ class SamplingMonitoringController extends Controller
                 $record->delete();
             }
 
+            $recordsQc = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
+
+            foreach ($recordsQc as $recordQc) {
+                $recordQc->delete();
+            }
+
             if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
                     ArrivalSamplingResult::create([
@@ -195,6 +203,19 @@ class SamplingMonitoringController extends Controller
                         'checklist_value' => $request->checklist_value[$key] ?? null,
                         'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
                         'applied_deduction' => $request->applied_deduction[$key] ?? null,
+                    ]);
+                }
+            }
+
+            if (!empty($request->compulsory_param_id)) {
+                foreach ($request->compulsory_param_id as $key => $slabTypeId) {
+                    ArrivalSamplingResultForCompulsury::create([
+                        'company_id' => $request->company_id,
+                        'arrival_sampling_request_id' => $id,
+                        'arrival_compulsory_qc_param_id' => $slabTypeId,
+                        'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
+                        'applied_deduction' => $request->compulsory_aapplied_deduction[$key] ?? 0,
+                        'remark' => $request->remarks ?? null,
                     ]);
                 }
             }

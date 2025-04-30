@@ -13,9 +13,9 @@ class ArrivalSamplingResultForCompulsury extends Model
     use HasFactory;
 
 
-   protected $table = "arrival_sampling_results_for_compulsury";
+    protected $table = "arrival_sampling_results_for_compulsury";
 
-     protected $fillable = [
+    protected $fillable = [
         'company_id',
         'arrival_sampling_request_id',
         'arrival_compulsory_qc_param_id',
