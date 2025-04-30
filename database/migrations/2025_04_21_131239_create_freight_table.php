@@ -29,6 +29,7 @@ return new class extends Migration
             $table->decimal('shortage_weight_freight_deduction', 10, 2)->default(0);
             $table->decimal('freight_per_ton', 10, 2)->default(0);
             $table->decimal('kanta_golarchi_charges', 10, 2)->default(0);
+            $table->decimal('karachi_kanta_charges', 10, 2)->default(0);
             $table->decimal('other_labour_charges', 10, 2)->nullable();
             $table->decimal('other_deduction', 10, 2)->nullable();
             $table->decimal('unpaid_labor_charges', 10, 2)->nullable();

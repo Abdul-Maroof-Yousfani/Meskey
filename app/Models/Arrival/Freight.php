@@ -24,6 +24,7 @@ class Freight extends Model
         'shortage_weight_freight_deduction',
         'freight_per_ton',
         'kanta_golarchi_charges',
+        'karachi_kanta_charges',
         'other_labour_charges',
         'other_deduction',
         'unpaid_labor_charges',

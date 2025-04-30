@@ -78,14 +78,14 @@
                     value="{{ $freight->exempted_weight }}" />
             </div>
         </div>
-
+        {{-- 
         <div class="col-md-4">
             <div class="form-group">
                 <label>PO Rate</label>
                 <input type="number" step="0.01" name="po_rate" class="form-control"
                     value="{{ $freight->po_rate }}" />
             </div>
-        </div>
+        </div> --}}
 
         <div class="col-md-4">
             <div class="form-group">
@@ -94,13 +94,13 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        {{-- <div class="col-md-4">
             <div class="form-group">
                 <label>Shortage Weight Freight Deduction</label>
                 <input type="number" step="0.01" name="shortage_weight_freight_deduction" class="form-control"
                     value="{{ $freight->shortage_weight_freight_deduction }}" />
             </div>
-        </div>
+        </div> --}}
 
         <div class="col-md-4">
             <div class="form-group">
@@ -114,6 +114,13 @@
                 <label>Kanta - Golarchi Charges</label>
                 <input type="number" step="0.01" name="kanta_golarchi_charges" class="form-control"
                     value="{{ $freight->kanta_golarchi_charges }}" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Karachi Kanta Charges</label>
+                <input type="number" step="0.01" name="karachi_kanta_charges" class="form-control"
+                    value="{{ $freight->karachi_kanta_charges }}" />
             </div>
         </div>
         <div class="col-md-4">
@@ -146,14 +153,14 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Gross Freight Amount</label>
                 <input type="number" step="0.01" name="gross_freight_amount" class="form-control"
                     value="{{ $freight->gross_freight_amount }}" />
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Net Freight</label>
                 <input type="number" step="0.01" name="net_freight" class="form-control"
@@ -170,7 +177,7 @@
 
         <div class="col-md-6">
             <div class="form-group">
-                <label>Attach Billy</label>
+                <label>Attach Bilty</label>
                 <input type="file" name="bilty_document" class="form-control-file" />
                 @if ($freight->bilty_document)
                     <a href="{{ asset($freight->bilty_document) }}" target="_blank">View Current File</a>

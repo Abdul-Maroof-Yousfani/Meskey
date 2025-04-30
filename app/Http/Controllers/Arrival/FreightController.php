@@ -36,8 +36,7 @@ class FreightController extends Controller
     public function create()
     {
         $tickets = ArrivalTicket::where('freight_status', 'pending')
-            ->whereNotNull('qc_product')
-            ->get();
+            ->whereNotNull('qc_product')->get();
 
         return view('management.arrival.freight.create', ['tickets' => $tickets]);
     }
