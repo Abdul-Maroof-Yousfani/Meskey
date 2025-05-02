@@ -149,4 +149,17 @@ class TicketController extends Controller
         $arrivalTicket->delete();
         return response()->json(['success' => 'Arrival Ticket deleted successfully.'], 200);
     }
+
+    public function confirmBiltyReturn(ArrivalTicket $ticket)
+    {
+        try {
+            $ticket->update([
+                'bilty_return_confirmation' => 1
+            ]);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false]);
+        }
+    }
 }

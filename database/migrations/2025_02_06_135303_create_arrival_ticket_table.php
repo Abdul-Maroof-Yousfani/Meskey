@@ -39,6 +39,8 @@ return new class extends Migration {
             //extra for stages status
 
             $table->enum('first_qc_status', ['reinspection', 'pending', 'rejected', 'approved'])->nullable();
+            $table->tinyInteger('bilty_return_confirmation')->default(0);
+
             $table->enum('location_transfer_status', ['pending', 'transfered'])->nullable();
             $table->enum('second_qc_status', ['reinspection', 'pending', 'rejected', 'approved'])->nullable();
             $table->enum('document_approval_status', ['half_approved', 'fully_approved'])->nullable();

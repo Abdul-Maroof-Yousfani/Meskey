@@ -7,14 +7,14 @@
             <th class="col-sm-1">Truck No</th>
             <th class="col-sm-1">Bilty No</th>
             <th class="col-sm-1">First QC</th>
-            <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-1">Created</th>
+            <th class="col-sm-2">Action</th>
         </tr>
     </thead>
     <tbody>
         @if (count($UnitOfMeasures) != 0)
             @foreach ($UnitOfMeasures as $key => $row)
-                <tr>
+                <tr class="@if ($row->first_qc_status == 'rejected') bg-red @endif">
                     <td>
                         <p class="m-0">
                             #{{ $row->unique_no }} <br>
@@ -46,26 +46,28 @@
                         </label>
                     </td>
                     <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
-
+                        <p class="m-0 white-nowrap">
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
                         </p>
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            {{-- <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
-                            </a> --}}
-                        @endcan
+                        <div class="d-flex gap-2 align-items-center justify-content-center">
+                            @can('role-edit')
+                                <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
+                                    class="info p-1 text-center mr-2 position-relative">
+                                    <i class="ft-eye font-medium-3"></i>
+                                </a>
+                            @endcan
+                            @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)
+                                <button onclick="confirmBiltyReturn({{ $row->id }})"
+                                    class="btn btn-sm btn-danger">
+                                    Confirm Bilty Return
+                                </button>
+                            @elseif($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 1)
+                                <span class="badge badge-success">Return Confirmed</span>
+                            @endif
+                        </div>
                     </td>
                 </tr>
             @endforeach
@@ -94,14 +96,58 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         {{ $UnitOfMeasures->links() }}
     </div>
 </div>
+
+<script>
+    function confirmBiltyReturn(ticketId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You want to confirm the bilty return?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, confirm it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/arrival/ticket/' + ticketId + '/confirm-bilty-return',
+                    type: 'PUT',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'PUT'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire(
+                                'Confirmed!',
+                                'Bilty return has been confirmed.',
+                                'success'
+                            ).then(() => {
+                                filterationCommon(`{{ route('get.ticket') }}`)
+                            });
+                        } else {
+                            Swal.fire(
+                                'Error!',
+                                'Something went wrong.',
+                                'error'
+                            );
+                        }
+                    },
+                    error: function() {
+                        Swal.fire(
+                            'Error!',
+                            'Something went wrong.',
+                            'error'
+                        );
+                    }
+                });
+            }
+        });
+    }
+</script>

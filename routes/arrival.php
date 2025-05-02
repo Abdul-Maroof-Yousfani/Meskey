@@ -18,6 +18,7 @@ use App\Http\Controllers\Arrival\{
 
 Route::resource('ticket', TicketController::class);
 Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.ticket');
+Route::put('/ticket/{ticket}/confirm-bilty-return', [TicketController::class, 'confirmBiltyReturn'])->name('ticket.confirm-bilty-return');
 
 Route::resource('initialsampling', InitialSamplingController::class);
 Route::resource('initial-resampling', InitialSamplingController::class);

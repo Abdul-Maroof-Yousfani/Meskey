@@ -21,6 +21,7 @@ class ArrivalTicket extends Model
      */
     protected $fillable = [
         'unique_no',
+        'bilty_return_confirmation',
         'company_id',
         'product_id',
         'decision_making',

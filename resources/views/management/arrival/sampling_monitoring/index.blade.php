@@ -88,11 +88,6 @@
         </section>
     </div>
 @endsection
-<style>
-    tr.bg-orange {
-        background: #ffa5004a;
-    }
-</style>
 @section('script')
     <script>
         $(document).ready(function() {

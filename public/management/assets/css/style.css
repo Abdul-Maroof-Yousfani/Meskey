@@ -353,3 +353,15 @@ body.drawer-opened {
   padding-right: 4px;
   font-size: 16px;
 }
+
+tr.bg-orange {
+  background: #ffa5004a;
+}
+
+tr.bg-red {
+  background: #ff00004a;
+}
+
+.white-nowrap {
+  white-space: nowrap;
+}
