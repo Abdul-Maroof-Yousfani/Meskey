@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-
+use App\Models\Acl\Company;
 use App\Models\Master\ProductSlab;
+use App\Models\Master\QcReliefParameter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -45,5 +46,10 @@ class Product extends Model
     public function slabs()
     {
         return $this->hasMany(ProductSlab::class);
+    }
+
+    public function reliefParameters()
+    {
+        return $this->hasMany(QcReliefParameter::class);
     }
 }

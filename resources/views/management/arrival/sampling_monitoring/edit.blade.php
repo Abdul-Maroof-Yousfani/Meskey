@@ -616,7 +616,9 @@
                                         }
                                     }
                                 }
-                                $displayValue = $previousValue ?? $slab->checklist_value;
+
+                                $displayValue =
+                                    ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
 
                                 $getDeductionSuggestion = getDeductionSuggestion(
                                     $slab->slabType->id,

@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class ProductSlabTypeController extends Controller
 {
- /**
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -28,10 +28,10 @@ class ProductSlabTypeController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-                ->where('company_id',$request->company_id)
+            ->where('company_id', $request->company_id)
 
-        ->latest()
-        ->paginate(request('per_page', 25));
+            ->latest()
+            ->paginate(request('per_page', 25));
 
         return view('management.master.product_slab_type.getList', compact('product_slab_types'));
     }
@@ -80,7 +80,7 @@ class ProductSlabTypeController extends Controller
      */
     public function destroy($id)
     {
-                $product_slab_type = ProductSlabType::findOrFail($id);
+        $product_slab_type = ProductSlabType::findOrFail($id);
 
         $product_slab_type->delete();
         return response()->json(['success' => 'Product Slab Type deleted successfully.'], 200);

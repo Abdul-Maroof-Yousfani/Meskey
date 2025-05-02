@@ -8,6 +8,7 @@ use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use App\Http\Requests\Arrival\ArrivalSamplingResultRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\QcReliefParameter;
 use App\Models\Product;
 use App\Models\User;
 
@@ -95,12 +96,24 @@ class InitialSamplingController extends Controller
         ]);
 
         if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
+            $reliefParameters = QcReliefParameter::where('product_id', $request->arrival_product_id)
+                ->where('parameter_type', 'slab')
+                ->get()
+                ->keyBy('slab_type_id');
+
             foreach ($request->product_slab_type_id as $key => $slabTypeId) {
+                $reliefDeduction = 0;
+
+                if (isset($reliefParameters[$slabTypeId])) {
+                    $reliefDeduction = $reliefParameters[$slabTypeId]->relief_percentage;
+                }
+
                 ArrivalSamplingResult::create([
                     'company_id' => $request->company_id,
                     'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                     'product_slab_type_id' => $slabTypeId,
                     'checklist_value' => $request->checklist_value[$key] ?? null,
+                    'relief_deduction' => $reliefDeduction,
                 ]);
             }
         }
@@ -112,7 +125,7 @@ class InitialSamplingController extends Controller
                     'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                     'arrival_compulsory_qc_param_id' => $paramId,
                     'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
-                    'remark' => null, // optional: update if needed
+                    'remark' => null,
                 ]);
             }
         }

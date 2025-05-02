@@ -18,6 +18,7 @@ class ArrivalSamplingResult extends Model
         'remark',
         'product_slab_type_id',
         'applied_deduction',
+        'relief_deduction',
     ];
 
     public function slabType()

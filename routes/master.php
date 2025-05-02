@@ -14,7 +14,8 @@ use App\Http\Controllers\Master\{
     ArrivalLocationController,
     TruckTypeController,
     StationController,
-    CompanyLocationController
+    CompanyLocationController,
+    QcReliefController
 };
 
 
@@ -59,3 +60,9 @@ Route::post('/get-station', [StationController::class, 'getList'])->name('get.st
 
 Route::resource('account', AccountController::class);
 Route::post('/get-account', [AccountController::class, 'getList'])->name('get.account');
+
+Route::prefix('qc-relief')->group(function () {
+    Route::get('/', [QcReliefController::class, 'index'])->name('qc-relief.index');
+    Route::get('/get-parameters', [QcReliefController::class, 'getParameters'])->name('qc-relief.get-parameters');
+    Route::post('/save-parameters', [QcReliefController::class, 'saveParameters'])->name('qc-relief.save-parameters');
+});
