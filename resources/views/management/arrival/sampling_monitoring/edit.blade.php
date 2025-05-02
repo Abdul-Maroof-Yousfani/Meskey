@@ -519,7 +519,7 @@
                     <div class="striped-rows">
                         @if (count($innerData['compulsuryResults']) != 0)
                             @foreach ($innerData['compulsuryResults'] as $slab)
-                                <div class="form-group row">
+                                {{-- <div class="form-group row">
                                     <label
                                         class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
                                     <div class="col-md-6 QcResult">
@@ -530,6 +530,38 @@
                                         <input type="text" readonly class="form-control"
                                             value="{{ $slab->applied_deduction ?? 0 }}">
                                     </div>
+                                </div> --}}
+                                <div class="form-group row">
+                                    <input type="hidden" readonly value="{{ $slab->qcParam->id }}">
+                                    <label
+                                        class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
+                                    <div
+                                        class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                        @if ($slab->qcParam->type == 'dropdown')
+                                            <input type="text" class="form-control"
+                                                value="{{ $slab->compulsory_checklist_value }}" readonly>
+                                        @else
+                                            <textarea class="form-control" readonly>{{ $slab->compulsory_checklist_value }}</textarea>
+                                        @endif
+                                    </div>
+                                    @if (!checkIfNameExists($slab->qcParam->name))
+                                        <div class="col-md-2 QcResult">
+                                            <div class="input-group mb-0">
+                                                <input type="text" id="inp-{{ $slab->qcParam->id }}"
+                                                    class="form-control bg-white deduction-field" readonly
+                                                    value="{{ $slab->applied_deduction }}" placeholder="Deduction"
+                                                    data-slab-id="{{ $slab->qcParam->id }}"
+                                                    data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
+                                                    data-checklist="{{ $slab->compulsory_checklist_value }}">
+                                                <div class="input-group-append">
+                                                    <span
+                                                        class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <input type="hidden" name="compulsory_aapplied_deduction[]" value="0">
+                                    @endif
                                 </div>
                             @endforeach
                         @else
@@ -744,7 +776,8 @@
                                 <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
                                 <label
                                     class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
-                                <div class="col-md-6 QcResult">
+                                <div
+                                    class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
                                         <input type="text" class="form-control"
                                             name="compulsory_checklist_value[]" value="{{ $displayCompValue }}"
