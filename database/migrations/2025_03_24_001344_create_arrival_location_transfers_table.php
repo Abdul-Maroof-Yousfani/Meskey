@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('arrival_ticket_id');
             $table->unsignedBigInteger('creator_id');
             $table->unsignedBigInteger('arrival_location_id');
-            $table->string('remark');
+            $table->string('remark')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
@@ -24,7 +24,6 @@ return new class extends Migration {
             $table->foreign('creator_id')->references('id')->on('users');
             $table->foreign('arrival_ticket_id')->references('id')->on('arrival_tickets')->onDelete('cascade');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-
         });
     }
 
