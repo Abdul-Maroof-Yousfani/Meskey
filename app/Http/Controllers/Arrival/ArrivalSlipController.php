@@ -116,7 +116,7 @@ class ArrivalSlipController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ArrivalLocation $arrival_location)l
+    public function update(Request $request, ArrivalLocation $arrival_location)
     {
         $data = $request->validated();
         $arrival_location->update($data);
