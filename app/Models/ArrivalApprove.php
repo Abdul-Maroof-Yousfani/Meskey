@@ -29,7 +29,8 @@ class ArrivalApprove extends Model
         'total_bags',
         'total_rejection',
         'amanat',
-        'remark'
+        'remark',
+        'company_id'
     ];
 
     /**
