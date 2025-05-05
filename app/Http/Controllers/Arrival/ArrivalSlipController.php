@@ -96,13 +96,21 @@ class ArrivalSlipController extends Controller
             'purchaseOrder'
         ])->findOrFail($arrival_slip->arrival_ticket_id);
 
+        $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
+            // ->where('sampling_type', 'initial')
+            ->where('approved_status', 'approved')
+            ->get()->last();
+
+        $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+
         $isNotGeneratable = false;
 
         if ($arrivalTicket->decision_making == 1) {
             $isNotGeneratable = ($arrivalTicket->lumpsum_deduction == 0.00 && $arrivalTicket->lumpsum_deduction_kgs == 0.00);
         }
 
-        return view('management.arrival.arrival_slip.edit', compact('ArrivalTickets', 'arrival_slip', 'arrivalTicket', 'isNotGeneratable'));
+        return view('management.arrival.arrival_slip.edit', compact('ArrivalTickets', 'arrival_slip', 'arrivalTicket', 'isNotGeneratable', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'));
     }
 
     /**

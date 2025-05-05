@@ -1,8 +1,29 @@
+@php
+    $isSlabs = false;
+    $isCompulsury = false;
+
+    foreach ($samplingRequestCompulsuryResults as $slab) {
+        if (!$slab->applied_deduction) {
+            continue;
+        }
+        $isCompulsury = true;
+    }
+
+    foreach ($samplingRequestResults as $slab) {
+        if (!$slab->applied_deduction) {
+            continue;
+        }
+        $isSlabs = true;
+    }
+@endphp
+
 <style>
     [readonly] {
         background-color: white !important
     }
 </style>
+<link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}">
+
 <form action="{{ route('arrival-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-slip') }}" />
@@ -24,260 +45,365 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div id="slabsContainer">
-                <div class="row form-mar">
-                    <div class="col-12" bis_skin_checked="1">
-                        <h6 class="header-heading-sepration">
-                            Arrival Slip
-                        </h6>
+                <!-- Header with company info -->
+                <div style="display: flex; margin-bottom: 15px;">
+                    <div style="width: 120px; padding-right: 15px;">
+                        <img src="{{ asset('images/logo.png') }}" alt="Company Logo" style="max-width: 100%;">
                     </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Date</label>
-                            <input type="text" class="form-control bg-light" value="{{ now()->format('d-M-Y') }}"
-                                readonly>
+                    <div style="flex: 1;">
+                        <div style="font-size: 12px; line-height: 1.4;">
+                            <p><strong>Head office:</strong> Saima Trade Tower, Tower B, Room # 1511,1512 & 1513, I. I.
+                                Chundrigar Road, Karachi.</p>
+                            <p><strong>Factory:</strong> Plot No A-43, A-45 & A-46, Eastern, Industrial Zone, Port
+                                Qasim, Karachi, Pakistan.</p>
+                            <p><strong>Retail Outlet:</strong> Shop No. 4, K.A.I Center, Opp City Court, Dandia Bazar,
+                                Karachi Ph. + 92 21 32733369, 3370</p>
+                            <p><strong>Tel: = 03012740216, 0 Fax:</strong></p>
+                            <p><strong>email: info@m6.com.pk, web: www.m6.com.pk</strong></p>
                         </div>
                     </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">No. of Bags</label>
-                            <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->bags }}"
-                                readonly>
-                        </div>
+                    <div style="text-align: right; padding-left: 15px; white-space: nowrap;">
+                        <strong>Arrival Slip</strong>
                     </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Packing</label>
-                            <input type="text" class="form-control bg-light"
+                </div>
+
+                <!-- Main form table -->
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <tr>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Arrival
+                            Slip #</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->unique_no }}" readonly>
+                        </td>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Date
+                        </td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ now()->format('d-M-Y') }}" readonly>
+                        </td>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Truck
+                            No.</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Bill/T No.</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->bilty_no }}" readonly>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">No. of Bags</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->bags }}" readonly>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Packing</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->approvals->bagType->name ?? 'N/A' }} ⸺ {{ $arrivalTicket->approvals->bagPacking->name ?? 'N/A' }}"
                                 readonly>
-                        </div>
-                    </div>
+                        </td>
 
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Party Name</label>
-                            <input type="text" class="form-control bg-light"
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Party Name</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->supplier_name }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Broker Name</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Broker Name</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="3">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->broker_name ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">On A/C of</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">On A/C of</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->accounts_of_id ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Station</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Station</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="3">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->station->name ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Commodity</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Commodity</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->product->name }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">U/L Slip #</label>
-                            <input type="text" class="form-control bg-light" value="00013:44:42" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Deductions</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">U/L Slip #</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="00013:44:42" readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Deductions</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->lumpsum_deduction ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Sauda Term</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Sauda Term</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="3">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Gala No.</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Gala No.</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->approvals->gala_name ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Godown</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Godown</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="3">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->unloadingLocation->arrivalLocation->name ?? 'N/A' }}"
                                 readonly>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
+                </table>
 
-                    <div class="col-12" bis_skin_checked="1">
-                        <h6 class="header-heading-sepration">
-                            Weight Information
-                        </h6>
-                    </div>
-                    <div class="col-md-3 col-sm-3">
-                        <div class="form-group">
-                            <label>Gross Weight</label>
-                            <input type="text" class="form-control bg-light"
+                <!-- Weights Section -->
+                <div style="margin-top: 15px; font-weight: bold; border-bottom: 1px solid #000; padding: 5px 0;">
+                    Weights</div>
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <tr>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Gross
+                            Weight</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ ($arrivalTicket->first_weight ?? 0) - ($arrivalTicket->second_weight ?? 0) }}"
                                 readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-sm-3">
-                        <div class="form-group">
-                            <label>Net Weight</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Net
+                            Weight</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-sm-3">
-                        <div class="form-group">
-                            <label>Loading Weight</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">
+                            Loading Weight</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-sm-3">
-                        <div class="form-group">
-                            <label>Avg. Weight</label>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Avg. Weight</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="5">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
+                </table>
 
-                    <div class="col-12" bis_skin_checked="1">
-                        <h6 class="header-heading-sepration">
-                            Freight Information
-                        </h6>
-                    </div>
-                    <div class="col-md-4 col-sm-4">
-                        <div class="form-group">
-                            <label>Filling:</label>
-                            <div class="row w-100 mx-auto">
-                                <input type="text" class="col form-control bg-light"
+                <!-- Freight Section -->
+                <div style="margin-top: 15px; font-weight: bold; border-bottom: 1px solid #000; padding: 5px 0;">
+                    Freight</div>
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <tr>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">
+                            Filling</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center;">
+                                <input type="text"
+                                    style="width: 40px; border: none; background: transparent; text-align: center;"
                                     value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }}" readonly>
-                                <div class="col">
-                                    <span class="input-group-text" readonly>x 10 =</span>
-                                </div>
-                                <input type="text" class="col form-control bg-light"
+                                <span style="padding: 0 5px;">× 10 =</span>
+                                <input type="text"
+                                    style="width: 50px; border: none; background: transparent; text-align: center;"
                                     value="{{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
                                     readonly>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 col-sm-4">
-                        <div class="form-group">
-                            <label>Freight (Rs.)</label>
-                            <input type="text" class="form-control bg-light mb-1"
+                        </td>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">
+                            Freight (Rs.)</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-4 col-sm-4">
-                        <div class="form-group">
-                            <label>Freight per Ton</label>
-                            <input type="text" class="form-control bg-light mb-1"
+                        </td>
+                        <td style="width: 15%; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">
+                            Freight per Ton</td>
+                        <td style="width: 18%; padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label>Other (+)/ Labour Charges</label>
-                            <input type="text" class="form-control bg-light mb-1"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Karachi Kanta
+                            Charges </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}" readonly>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Kanta - Golarchi
+                            Charges
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="3">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}" readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Other (+)/ Labour
+                            Charges</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="2">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}" readonly>
-                            <input type="text" class="form-control bg-light"
-                                value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
-                                readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label>Other Deduction</label>
-                            <input type="text" class="form-control bg-light mb-1"
+                        </td>
+
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Other Deduction
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="3">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}" readonly>
-                            <input type="text" class="form-control bg-light"
-                                value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label>Total Freight Payable (Rs.)</label>
-                            <input type="text" class="form-control bg-light mb-1"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Total Freight
+                            Payable (Rs.)</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}" readonly>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="4">
+                            <input type="text"
+                                style="width: 100%; border: none; background: transparent; font-style: italic; font-size: 11px;"
                                 value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
                                 readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        <div class="form-group">
-                            <label>Unpaid Labour Charge</label>
-                            <input type="text" class="form-control bg-light mb-1"
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Unpaid Labour
+                            Charge</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
                                 value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}" readonly>
-                            <input type="text" class="form-control bg-light"
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="4">
+                            <input type="text"
+                                style="width: 100%; border: none; background: transparent; font-style: italic; font-size: 11px;"
                                 value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
                                 readonly>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="form-group">
-                            <label>Final Figure</label>
-                            <div class="d-flex">
-                                <input type="text" class="form-control bg-light mb-1"
-                                    value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}" readonly>
-                                <input type="text" class="form-control bg-light"
-                                    value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}" readonly>
-                            </div>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Final Figure</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <input type="text" style="width: 100%; border: none; background: transparent;"
+                                value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}" readonly>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;" colspan="4">
+                            <input type="text"
+                                style="width: 100%; border: none; background: transparent; font-style: italic; font-size: 11px;"
+                                value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}" readonly>
+                        </td>
+                    </tr>
+                </table>
 
-                    <div class="col-12 mt-4">
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4">
-                                <div class="form-group">
-                                    <label class="font-weight-bold">Confirmed Form</label>
-                                    <input type="text" class="form-control bg-light"
-                                        value="{{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}" readonly>
-                                </div>
+                @if ($isCompulsury || $isSlabs)
+                    <!-- Sampling Results Section -->
+                    <div style="margin-top: 15px; font-weight: bold; border-bottom: 1px solid #000; padding: 5px 0;">
+                        Sampling Results</div>
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th
+                                    style="width: 60%; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;">
+                                    Parameter</th>
+                                <th
+                                    style="width: 40%; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;">
+                                    Applied Deduction (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (count($samplingRequestResults) != 0)
+                                @foreach ($samplingRequestResults as $slab)
+                                    @php
+                                        if (!$slab->applied_deduction) {
+                                            continue;
+                                        }
+                                    @endphp
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{{ $slab->slabType->name }}
+                                        </td>
+                                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                                            {{ $slab->applied_deduction }}</td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="2"
+                                        style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
+                                        No Initial Slabs Found</td>
+                                </tr>
+                            @endif
+
+                            @if ($isCompulsury)
+                                @if (count($samplingRequestCompulsuryResults) != 0)
+                                    @foreach ($samplingRequestCompulsuryResults as $slab)
+                                        @php
+                                            if (!$slab->applied_deduction) {
+                                                continue;
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td style="padding: 8px; border: 1px solid #ddd;">
+                                                {{ $slab->qcParam->name }}</td>
+                                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                                                {{ $slab->applied_deduction }}</td>
+                                        </tr>
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td colspan="2"
+                                            style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
+                                            No Compulsory Slabs Found</td>
+                                    </tr>
+                                @endif
+                            @endif
+                        </tbody>
+                    </table>
+                @endif
+
+                <!-- Footer Section -->
+                <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+                    <tr>
+                        <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">Confirmed Form</div>
+                            <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
+                                {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                             </div>
-                            <div class="col-md-4 col-sm-4">
-                                <div class="form-group">
-                                    <label class="font-weight-bold">Contract Number</label>
-                                    <input type="text" class="form-control bg-light"
-                                        value="{{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}" readonly>
-                                </div>
+                        </td>
+                        <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">Contract Number</div>
+                            <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
+                                {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                             </div>
-                            <div class="col-md-4 col-sm-4">
-                                <div class="form-group">
-                                    <label class="font-weight-bold">Prepared By:</label>
-                                    <input type="text" class="form-control bg-light"
-                                        value="{{ auth()->user()->name }}" readonly>
-                                </div>
+                        </td>
+                        <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">Prepared By:</div>
+                            <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
+                                {{ auth()->user()->name }}
                             </div>
-                        </div>
+                        </td>
+                    </tr>
+                </table>
+
+                @if ($isNotGeneratable)
+                    <div
+                        style="margin-top: 15px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;">
+                        <strong>Important!</strong> Please apply deductions first before generating the arrival slip.
                     </div>
-                    @if ($isNotGeneratable)
-                        <div class="col-12 mt-4">
-                            <div class="alert alert-danger">
-                                <strong>Important!</strong> Please apply deductions first before generating the arrival
-                                slip.
-                            </div>
-                        </div>
-                    @endif
-                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -292,27 +418,23 @@
     </div>
 </form>
 
-
 <script>
     $('#printButton').click(function() {
-        // Use Print.js to print just the slabsContainer content
         printJS({
             printable: 'slabsContainer',
             type: 'html',
             css: [
-                // Add any additional CSS files if needed
                 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css',
-                // Add your custom CSS file if needed
             ],
             style: `
-            @page { size: auto; margin: 5mm; }
-            body { padding: 20px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-        `,
-            scanStyles: false, // Set to true if you want to use the page styles
-            targetStyles: ['*'] // Include all styles
+                @page { size: auto; margin: 5mm; }
+                body { padding: 20px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+            `,
+            scanStyles: true,
+            targetStyles: ['*']
         });
     });
 </script>
