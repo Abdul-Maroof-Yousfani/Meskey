@@ -182,6 +182,9 @@ div#filteredData {
   border: 1px solid #aaa;
   border-radius: 4px;
 }
+.layout-dark div.striped-rows .form-group:nth-child(even) {
+  background-color: #101010;
+}
 
 div#paginationLinks {
   padding-top: 20px;

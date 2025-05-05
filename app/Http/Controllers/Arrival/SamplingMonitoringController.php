@@ -267,7 +267,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
                 'decision_making' => $isDecisionMaking,
-                'location_transfer_status' => 'pending',
+                'location_transfer_status' => $request->stage_status == 'rejected' ? null : 'pending',
                 'sauda_type_id' => $request->sauda_type_id,
                 'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
             ];
