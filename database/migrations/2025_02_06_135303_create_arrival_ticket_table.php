@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->string('broker_name')->nullable();
 
             $table->unsignedBigInteger('decision_id')->nullable();
-            $table->unsignedBigInteger('accounts_of_id')->nullable();
+            $table->string('accounts_of_id')->nullable();
 
             $table->unsignedBigInteger('arrival_purchase_order_id')->nullable();
             $table->unsignedBigInteger('sauda_type_id')->nullable();
@@ -64,7 +64,7 @@ return new class extends Migration {
             $table->foreign('truck_type_id')->references('id')->on('arrival_truck_types');
             $table->foreign('product_id')->references('id')->on('products');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->foreign('accounts_of_id')->references('id')->on('users');
+            // $table->foreign('accounts_of_id')->references('id')->on('users');
             $table->foreign('arrival_purchase_order_id')->references('id')->on('arrival_purchase_orders');
             $table->foreign('sauda_type_id')->references('id')->on('sauda_types');
             $table->foreign('qc_product')->references('id')->on('products')->onDelete('set null');
