@@ -366,19 +366,19 @@ tr.bg-red {
   white-space: nowrap;
 }
 
-.permissions-header {
+.perm_permissions-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
 }
 
-.permissions-actions {
+.perm_permissions-actions {
   display: flex;
   gap: 10px;
 }
 
-.btn-action {
+.perm_btn-action {
   background: #f0f2f5;
   border: none;
   padding: 6px 12px;
@@ -390,16 +390,16 @@ tr.bg-red {
   transition: all 0.2s ease;
 }
 
-.btn-action:hover {
+.perm_btn-action:hover {
   background: #e6e9ef;
   color: #3a56d4;
 }
 
-.permissions-search {
+.perm_permissions-search {
   margin-bottom: 20px;
 }
 
-.permissions-search input {
+.perm_permissions-search input {
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   padding: 10px 15px;
@@ -407,19 +407,19 @@ tr.bg-red {
   transition: all 0.3s ease;
 }
 
-.permissions-search input:focus {
+.perm_permissions-search input:focus {
   border-color: #4361ee;
   box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
 }
 
-.permissions-tree {
+.perm_permissions-tree {
   max-width: 100%;
   margin: 0;
   border-radius: 10px;
   overflow: hidden;
 }
 
-.permission-card {
+.perm_permission-card {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
@@ -429,12 +429,12 @@ tr.bg-red {
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.permission-card:hover {
+.perm_permission-card:hover {
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
-.permission-header {
+.perm_permission-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -445,17 +445,17 @@ tr.bg-red {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.permission-header:hover {
+.perm_permission-header:hover {
   background: linear-gradient(to right, #f1f3f5, #e9ecef);
 }
 
-.permission-meta {
+.perm_permission-meta {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.permission-count {
+.perm_permission-count {
   background: rgba(67, 97, 238, 0.1);
   color: #4361ee;
   font-size: 12px;
@@ -466,19 +466,19 @@ tr.bg-red {
   text-align: center;
 }
 
-.permission-title {
+.perm_permission-title {
   display: flex;
   align-items: center;
 }
 
-.permission-name {
+.perm_permission-name {
   margin-left: 10px;
   font-weight: 500;
   color: #333;
   transition: color 0.2s ease;
 }
 
-.toggle-icon {
+.perm_toggle-icon {
   width: 24px;
   height: 24px;
   display: flex;
@@ -489,7 +489,7 @@ tr.bg-red {
   border-radius: 50%;
 }
 
-.toggle-arrow {
+.perm_toggle-arrow {
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -499,23 +499,23 @@ tr.bg-red {
   transition: transform 0.3s ease;
 }
 
-.toggle-arrow.rotated {
+.perm_toggle-arrow.perm_rotated {
   transform: rotate(-135deg);
 }
 
-.permission-children {
+.perm_permission-children {
   display: none;
   background: #fff;
   padding: 0;
 }
 
-.permission-children.show {
+.perm_permission-children.perm_show {
   display: block;
   padding: 10px 0;
-  animation: fadeIn 0.3s ease;
+  animation: perm_fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
+@keyframes perm_fadeIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
@@ -527,29 +527,26 @@ tr.bg-red {
   }
 }
 
-.child-permission {
-  margin-left: 30px;
-  border-left: 2px solid rgba(67, 97, 238, 0.2);
+.perm_permission-item {
   position: relative;
 }
 
-.child-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.perm_level-1 {
+  margin-left: 30px;
+  border-left: 2px solid rgba(67, 97, 238, 0.2);
+}
+
+.perm_level-1 > .perm_permission-header {
   padding: 12px 15px;
-  cursor: pointer;
-  position: relative;
-  transition: background 0.2s ease;
   border-radius: 0 8px 8px 0;
   margin-right: 10px;
 }
 
-.child-header:hover {
+.perm_level-1 > .perm_permission-header:hover {
   background: rgba(67, 97, 238, 0.05);
 }
 
-.child-header:before {
+.perm_level-1 > .perm_permission-header:before {
   content: "";
   position: absolute;
   left: -30px;
@@ -559,42 +556,101 @@ tr.bg-red {
   background: rgba(67, 97, 238, 0.2);
 }
 
-.grandchild-permissions {
-  display: none;
-  padding: 0;
-}
-
-.grandchild-permissions.show {
-  display: block;
-  padding: 5px 0;
-  animation: fadeIn 0.3s ease;
-}
-
-.grandchild-permission {
+.perm_level-2 {
   margin-left: 30px;
+  border-left: 2px solid rgba(67, 97, 238, 0.15);
+}
+
+.perm_level-2 > .perm_permission-header {
   padding: 10px 15px;
-  position: relative;
-  border-left: 2px solid rgba(67, 97, 238, 0.1);
-  transition: background 0.2s ease;
   border-radius: 0 8px 8px 0;
   margin-right: 10px;
 }
 
-.grandchild-permission:hover {
+.perm_level-2 > .perm_permission-header:hover {
   background: rgba(67, 97, 238, 0.03);
 }
 
-.grandchild-permission:before {
+.perm_level-2 > .perm_permission-header:before {
   content: "";
   position: absolute;
   left: -30px;
   top: 50%;
   width: 28px;
   height: 2px;
+  background: rgba(67, 97, 238, 0.15);
+}
+
+.perm_level-3 {
+  margin-left: 30px;
+  border-left: 2px solid rgba(67, 97, 238, 0.1);
+}
+
+.perm_level-3 > .perm_permission-header:before {
   background: rgba(67, 97, 238, 0.1);
 }
 
-.custom-checkbox {
+.perm_level-4 {
+  margin-left: 30px;
+  border-left: 2px solid rgba(67, 97, 238, 0.08);
+}
+
+.perm_level-4 > .perm_permission-header:before {
+  background: rgba(67, 97, 238, 0.08);
+}
+
+.perm_level-5,
+.perm_level-6,
+.perm_level-7,
+.perm_level-8,
+.perm_level-9,
+.perm_level-10 {
+  margin-left: 30px;
+  border-left: 2px solid rgba(67, 97, 238, 0.05);
+}
+
+.perm_level-5 > .perm_permission-header:before,
+.perm_level-6 > .perm_permission-header:before,
+.perm_level-7 > .perm_permission-header:before,
+.perm_level-8 > .perm_permission-header:before,
+.perm_level-9 > .perm_permission-header:before,
+.perm_level-10 > .perm_permission-header:before {
+  background: rgba(67, 97, 238, 0.05);
+}
+
+.perm_level-1 > .perm_permission-header,
+.perm_level-2 > .perm_permission-header,
+.perm_level-3 > .perm_permission-header,
+.perm_level-4 > .perm_permission-header,
+.perm_level-5 > .perm_permission-header,
+.perm_level-6 > .perm_permission-header,
+.perm_level-7 > .perm_permission-header,
+.perm_level-8 > .perm_permission-header,
+.perm_level-9 > .perm_permission-header,
+.perm_level-10 > .perm_permission-header {
+  background: transparent;
+  border-bottom: none;
+}
+
+.perm_level-1 > .perm_permission-header:before,
+.perm_level-2 > .perm_permission-header:before,
+.perm_level-3 > .perm_permission-header:before,
+.perm_level-4 > .perm_permission-header:before,
+.perm_level-5 > .perm_permission-header:before,
+.perm_level-6 > .perm_permission-header:before,
+.perm_level-7 > .perm_permission-header:before,
+.perm_level-8 > .perm_permission-header:before,
+.perm_level-9 > .perm_permission-header:before,
+.perm_level-10 > .perm_permission-header:before {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  width: 28px;
+  height: 2px;
+}
+
+.perm_custom-checkbox {
   display: flex;
   align-items: center;
   position: relative;
@@ -605,7 +661,7 @@ tr.bg-red {
   margin: 0;
 }
 
-.custom-checkbox input {
+.perm_custom-checkbox input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -613,7 +669,7 @@ tr.bg-red {
   width: 0;
 }
 
-.checkmark {
+.perm_checkmark {
   position: absolute;
   left: 0;
   height: 22px;
@@ -625,28 +681,28 @@ tr.bg-red {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.custom-checkbox:hover input ~ .checkmark {
+.perm_custom-checkbox:hover input ~ .perm_checkmark {
   border-color: #4361ee;
 }
 
-.custom-checkbox input:checked ~ .checkmark {
+.perm_custom-checkbox input:checked ~ .perm_checkmark {
   background-color: #4361ee;
   border-color: #4361ee;
   box-shadow: 0 1px 3px rgba(67, 97, 238, 0.3);
 }
 
-.checkmark:after {
+.perm_checkmark:after {
   content: "";
   position: absolute;
   display: none;
 }
 
-.custom-checkbox input:checked ~ .checkmark:after {
+.perm_custom-checkbox input:checked ~ .perm_checkmark:after {
   display: block;
-  animation: checkmark 0.2s ease-in-out;
+  animation: perm_checkmark 0.2s ease-in-out;
 }
 
-@keyframes checkmark {
+@keyframes perm_checkmark {
   0% {
     transform: scale(0) rotate(45deg);
     opacity: 0;
@@ -658,7 +714,7 @@ tr.bg-red {
   }
 }
 
-.custom-checkbox .checkmark:after {
+.perm_custom-checkbox .perm_checkmark:after {
   left: 7px;
   top: 3px;
   width: 6px;
@@ -668,9 +724,46 @@ tr.bg-red {
   transform: rotate(45deg);
 }
 
-.bottom-button-bar {
+.perm_bottom-button-bar {
   margin-top: 30px;
   display: flex;
   justify-content: flex-end;
   gap: 15px;
+}
+
+.perm_highlight {
+  background-color: rgba(67, 97, 238, 0.2);
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+.perm_row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+.perm_col-12,
+.perm_col-xs-12,
+.perm_col-sm-12,
+.perm_col-md-12 {
+  position: relative;
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+.perm_form-group {
+  margin-bottom: 1rem;
+}
+
+.perm_form-label {
+  margin-bottom: 0.5rem;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.perm_form-mar {
+  margin-bottom: 20px;
 }

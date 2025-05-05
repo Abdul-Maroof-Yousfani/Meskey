@@ -1,16 +1,16 @@
 {!! Form::open(['route' => 'roles.store', 'method' => 'POST', 'id' => 'ajaxSubmit']) !!}
 <input type="hidden" id="listRefresh" value="{{ route('get.roles') }}" />
 
-<div class="row form-mar">
-    <div class="col-xs-12 col-sm-12 col-md-12">
-        <div class="form-group">
-            <label class="form-label">Name:</label>
+<div class="perm_row perm_form-mar">
+    <div class="perm_col-xs-12 perm_col-sm-12 perm_col-md-12">
+        <div class="perm_form-group">
+            <label class="perm_form-label">Name:</label>
             {!! Form::text('name', null, ['placeholder' => 'Name', 'class' => 'form-control']) !!}
         </div>
     </div>
-    <div class="col-xs-12 col-sm-12 col-md-12">
-        <div class="form-group errorappend">
-            <label class="form-label">Description:</label>
+    <div class="perm_col-xs-12 perm_col-sm-12 perm_col-md-12">
+        <div class="perm_form-group perm_errorappend">
+            <label class="perm_form-label">Description:</label>
             {!! Form::textarea('description', null, [
                 'placeholder' => 'Description',
                 'class' => 'form-control',
@@ -18,96 +18,117 @@
             ]) !!}
         </div>
     </div>
-    <div class="col-xs-12 col-sm-12 col-md-12">
-        <div class="form-group">
-            <div class="permissions-header">
-                <label class="form-label">Permissions:</label>
-                <div class="permissions-actions">
-                    <button type="button" class="btn-action" id="expandAll">Expand All</button>
-                    <button type="button" class="btn-action" id="collapseAll">Collapse All</button>
+    <div class="perm_col-xs-12 perm_col-sm-12 perm_col-md-12">
+        <div class="perm_form-group">
+            <div class="perm_permissions-header">
+                <label class="perm_form-label">Permissions:</label>
+                <div class="perm_permissions-actions">
+                    <button type="button" class="perm_btn-action" id="expandAll">Expand All</button>
+                    <button type="button" class="perm_btn-action" id="collapseAll">Collapse All</button>
                 </div>
             </div>
-            <div class="permissions-search">
+            <div class="perm_permissions-search">
                 <input type="text" id="searchPermissions" placeholder="Search permissions..." class="form-control">
             </div>
-            <div class="permissions-tree">
-                @foreach ($permission as $parent)
-                    @if ($parent->parent_id === null)
-                        <div class="permission-card">
-                            <div class="permission-header" onclick="togglePermission('parent-{{ $parent->id }}')">
-                                <div class="permission-title">
-                                    <label class="custom-checkbox">
-                                        <input type="checkbox" name="permission[]" value="{{ $parent->name }}"
-                                            class="parent-checkbox" id="parent-{{ $parent->id }}">
-                                        <span class="checkmark"></span>
-                                        <span class="permission-name">{{ $parent->name }}</span>
-                                    </label>
+            <div class="perm_permissions-tree">
+                @php
+                    function renderPermissionItems($items, $permission, $level = 0)
+                    {
+                        foreach ($items as $item) {
+                            $children = $permission->where('parent_id', $item->id);
+                            $hasChildren = $children->count() > 0;
+                            $itemClass = 'perm_permission-item perm_level-' . $level;
+                            $itemId = 'item-' . $item->id;
+
+                            echo '<div class="' . $itemClass . '">';
+                            echo '<div class="perm_permission-header" onclick="togglePermission(\'' . $itemId . '\')">';
+                            echo '<div class="perm_permission-title">';
+                            echo '<label class="perm_custom-checkbox">';
+                            echo '<input type="checkbox" name="permission[]" value="' .
+                                $item->name .
+                                '" class="perm_checkbox" ';
+                            echo 'id="' .
+                                $itemId .
+                                '" data-level="' .
+                                $level .
+                                '" data-parent="' .
+                                ($level > 0 ? 'item-' . $item->parent_id : '') .
+                                '">';
+                            echo '<span class="perm_checkmark"></span>';
+                            echo '<span class="perm_permission-name">' . $item->name . '</span>';
+                            echo '</label>';
+                            echo '</div>';
+
+                            if ($hasChildren) {
+                                echo '<div class="perm_permission-meta">';
+                                echo '<span class="perm_permission-count">' . $children->count() . '</span>';
+                                echo '<div class="perm_toggle-icon">';
+                                echo '<i class="perm_toggle-arrow"></i>';
+                                echo '</div>';
+                                echo '</div>';
+                            }
+
+                            echo '</div>';
+
+                            if ($hasChildren) {
+                                echo '<div class="perm_permission-children" id="' . $itemId . '-children">';
+                                renderPermissionItems($children, $permission, $level + 1);
+                                echo '</div>';
+                            }
+
+                            echo '</div>';
+                        }
+                    }
+                @endphp
+
+                @php
+                    $rootPermissions = $permission->where('parent_id', null);
+                @endphp
+
+                @foreach ($rootPermissions as $rootPermission)
+                    <div class="perm_permission-card">
+                        @php
+                            $rootChildren = $permission->where('parent_id', $rootPermission->id);
+                            $hasRootChildren = $rootChildren->count() > 0;
+                            $rootId = 'item-' . $rootPermission->id;
+                        @endphp
+
+                        <div class="perm_permission-header" onclick="togglePermission('{{ $rootId }}')">
+                            <div class="perm_permission-title">
+                                <label class="perm_custom-checkbox">
+                                    <input type="checkbox" name="permission[]" value="{{ $rootPermission->name }}"
+                                        class="perm_checkbox perm_root-checkbox" id="{{ $rootId }}"
+                                        data-level="0">
+                                    <span class="perm_checkmark"></span>
+                                    <span class="perm_permission-name">{{ $rootPermission->name }}</span>
+                                </label>
+                            </div>
+                            @if ($hasRootChildren)
+                                <div class="perm_permission-meta">
+                                    <span class="perm_permission-count">{{ $rootChildren->count() }}</span>
+                                    <div class="perm_toggle-icon">
+                                        <i class="perm_toggle-arrow"></i>
+                                    </div>
                                 </div>
-                                @if ($permission->where('parent_id', $parent->id)->count() > 0)
-                                    <div class="permission-meta">
-                                        <span
-                                            class="permission-count">{{ $permission->where('parent_id', $parent->id)->count() }}</span>
-                                        <div class="toggle-icon">
-                                            <i class="toggle-arrow"></i>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="permission-children" id="parent-{{ $parent->id }}-children">
-                                @foreach ($permission->where('parent_id', $parent->id) as $child)
-                                    <div class="child-permission">
-                                        <div class="child-header"
-                                            onclick="togglePermission('child-{{ $child->id }}')">
-                                            <div class="permission-title">
-                                                <label class="custom-checkbox">
-                                                    <input type="checkbox" name="permission[]"
-                                                        value="{{ $child->name }}" class="child-checkbox"
-                                                        id="child-{{ $child->id }}"
-                                                        data-parent="parent-{{ $parent->id }}">
-                                                    <span class="checkmark"></span>
-                                                    <span class="permission-name">{{ $child->name }}</span>
-                                                </label>
-                                            </div>
-                                            @if ($permission->where('parent_id', $child->id)->count() > 0)
-                                                <div class="permission-meta">
-                                                    <span
-                                                        class="permission-count">{{ $permission->where('parent_id', $child->id)->count() }}</span>
-                                                    <div class="toggle-icon">
-                                                        <i class="toggle-arrow"></i>
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <div class="grandchild-permissions" id="child-{{ $child->id }}-children">
-                                            @foreach ($permission->where('parent_id', $child->id) as $grandchild)
-                                                <div class="grandchild-permission">
-                                                    <label class="custom-checkbox">
-                                                        <input type="checkbox" name="permission[]"
-                                                            value="{{ $grandchild->name }}" class="grandchild-checkbox"
-                                                            id="grandchild-{{ $grandchild->id }}"
-                                                            data-parent="parent-{{ $parent->id }}"
-                                                            data-child="child-{{ $child->id }}">
-                                                        <span class="checkmark"></span>
-                                                        <span class="permission-name">{{ $grandchild->name }}</span>
-                                                    </label>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
+                            @endif
                         </div>
-                    @endif
+
+                        @if ($hasRootChildren)
+                            <div class="perm_permission-children" id="{{ $rootId }}-children">
+                                @php
+                                    renderPermissionItems($rootChildren, $permission, 1);
+                                @endphp
+                            </div>
+                        @endif
+                    </div>
                 @endforeach
             </div>
         </div>
     </div>
 </div>
 
-<div class="row bottom-button-bar">
-    <div class="col-12">
+<div class="perm_row perm_bottom-button-bar">
+    <div class="perm_col-12">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
         <button type="submit" class="btn btn-primary submitbutton">Save</button>
     </div>
@@ -123,86 +144,75 @@
         }
 
         $('#' + id + '-children').slideToggle(200);
-
-        $(event.currentTarget).find('.toggle-arrow').toggleClass('rotated');
+        $(event.currentTarget).find('.perm_toggle-arrow').toggleClass('perm_rotated');
     }
 
     $(document).ready(function() {
-        $('.custom-checkbox').on('click', function(e) {
+        $('.perm_custom-checkbox').on('click', function(e) {
             e.stopPropagation();
         });
 
-        $('.parent-checkbox').change(function() {
+        $('.perm_checkbox').change(function() {
             var isChecked = $(this).prop('checked');
-            var parentId = $(this).attr('id');
+            var itemId = $(this).attr('id');
 
-            $('[data-parent="' + parentId + '"]').prop('checked', isChecked);
-        });
+            $('#' + itemId + '-children').find('.perm_checkbox').prop('checked', isChecked);
 
-        $('.child-checkbox').change(function() {
-            var isChecked = $(this).prop('checked');
-            var childId = $(this).attr('id');
-
-            $('[data-child="' + childId + '"]').prop('checked', isChecked);
-
-            updateParentState($(this));
-        });
-
-        $('.grandchild-checkbox').change(function() {
             updateParentState($(this));
         });
 
         function updateParentState($checkbox) {
-            var childId = $checkbox.data('child');
-            if (childId) {
-                var anyGrandchildChecked = $('[data-child="' + childId + '"]:checked').length > 0;
-                $('#' + childId).prop('checked', anyGrandchildChecked);
-            }
-
             var parentId = $checkbox.data('parent');
+
             if (parentId) {
-                var anyChildChecked = $('[data-parent="' + parentId + '"]:checked').length > 0;
-                $('#' + parentId).prop('checked', anyChildChecked);
+                var $parent = $('#' + parentId);
+                var $siblings = $('[data-parent="' + parentId + '"]');
+                var anyChecked = false;
+
+                $siblings.each(function() {
+                    if ($(this).prop('checked')) {
+                        anyChecked = true;
+                        return false;
+                    }
+                });
+
+                $parent.prop('checked', anyChecked);
+
+                updateParentState($parent);
             }
         }
 
         $('#expandAll').click(function() {
-            $('.permission-children, .grandchild-permissions').slideDown(200).addClass('show');
-            $('.toggle-arrow').addClass('rotated');
+            $('.perm_permission-children').slideDown(200).addClass('perm_show');
+            $('.perm_toggle-arrow').addClass('perm_rotated');
         });
 
         $('#collapseAll').click(function() {
-            $('.permission-children, .grandchild-permissions').slideUp(200).removeClass('show');
-            $('.toggle-arrow').removeClass('rotated');
+            $('.perm_permission-children').slideUp(200).removeClass('perm_show');
+            $('.perm_toggle-arrow').removeClass('perm_rotated');
         });
 
         $('#searchPermissions').on('keyup', function() {
             var searchText = $(this).val().toLowerCase();
 
             if (searchText.length > 0) {
-                $('.permission-children, .grandchild-permissions').slideDown(200).addClass('show');
-                $('.toggle-arrow').addClass('rotated');
+                $('.perm_permission-children').slideDown(200).addClass('perm_show');
+                $('.perm_toggle-arrow').addClass('perm_rotated');
 
-                $('.permission-name').each(function() {
+                $('.perm_permission-name').each(function() {
                     var permissionText = $(this).text().toLowerCase();
                     var permissionItem = $(this).closest(
-                        '.permission-card, .child-permission, .grandchild-permission');
+                        '.perm_permission-card, .perm_permission-item');
 
                     if (permissionText.indexOf(searchText) > -1) {
                         permissionItem.show();
                         $(this).html(highlightText($(this).text(), searchText));
-                    } else {
-                        var hasMatchingChildren = false;
 
-                        if (permissionItem.hasClass('permission-card')) {
-                            hasMatchingChildren = permissionItem.find(
-                                '.child-permission .permission-name, .grandchild-permission .permission-name'
-                            ).text().toLowerCase().indexOf(searchText) > -1;
-                        } else if (permissionItem.hasClass('child-permission')) {
-                            hasMatchingChildren = permissionItem.find(
-                                    '.grandchild-permission .permission-name').text()
-                                .toLowerCase().indexOf(searchText) > -1;
-                        }
+                        permissionItem.parents('.perm_permission-card, .perm_permission-item')
+                            .show();
+                    } else {
+                        var hasMatchingChildren = permissionItem.find('.perm_permission-name')
+                            .text().toLowerCase().indexOf(searchText) > -1;
 
                         if (hasMatchingChildren) {
                             permissionItem.show();
@@ -212,8 +222,8 @@
                     }
                 });
             } else {
-                $('.permission-card, .child-permission, .grandchild-permission').show();
-                $('.permission-name').each(function() {
+                $('.perm_permission-card, .perm_permission-item').show();
+                $('.perm_permission-name').each(function() {
                     $(this).html($(this).text());
                 });
             }
@@ -228,7 +238,7 @@
 
             if (index >= 0) {
                 return text.substring(0, index) +
-                    '<span class="highlight">' +
+                    '<span class="perm_highlight">' +
                     text.substring(index, index + searchText.length) +
                     '</span>' +
                     text.substring(index + searchText.length);
@@ -236,8 +246,5 @@
 
             return text;
         }
-
-        $('<style>.highlight { background-color: rgba(67, 97, 238, 0.2); padding: 0 2px; border-radius: 3px; }</style>')
-            .appendTo('head');
     });
 </script>
