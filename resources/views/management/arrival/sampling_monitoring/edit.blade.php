@@ -743,18 +743,18 @@
                         @foreach ($Compulsuryresults as $slab)
                             @php
                                 $previousCompValue = null;
-                                if (
-                                    ($slab->compulsory_checklist_value === null ||
-                                        $slab->compulsory_checklist_value == '') &&
-                                    $previousInnerRequest
-                                ) {
-                                    foreach ($previousInnerRequest['compulsuryResults'] as $prevComp) {
-                                        if ($prevComp->qcParam->id == $slab->qcParam->id) {
-                                            $previousCompValue = $prevComp->compulsory_checklist_value;
-                                            break;
-                                        }
-                                    }
-                                }
+                                // if (
+                                //     ($slab->compulsory_checklist_value === null ||
+                                //         $slab->compulsory_checklist_value == '') &&
+                                //     $previousInnerRequest
+                                // ) {
+                                //     foreach ($previousInnerRequest['compulsuryResults'] as $prevComp) {
+                                //         if ($prevComp->qcParam->id == $slab->qcParam->id) {
+                                //             $previousCompValue = $prevComp->compulsory_checklist_value;
+                                //             break;
+                                //         }
+                                //     }
+                                // }
                                 $displayCompValue = $previousCompValue ?? $slab->compulsory_checklist_value;
 
                                 $previousCompDeduction = null;

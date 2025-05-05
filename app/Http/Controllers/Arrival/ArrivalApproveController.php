@@ -44,7 +44,7 @@ class ArrivalApproveController extends Controller
      */
     public function create()
     {
-        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->where('document_approval_status',null)->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->where('document_approval_status', null)->get();
         $data['bagTypes'] = BagType::all();
         $data['bagConditions'] = BagCondition::all();
         $data['bagPackings'] = BagPacking::all();

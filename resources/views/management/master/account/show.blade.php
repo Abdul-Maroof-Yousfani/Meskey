@@ -108,7 +108,7 @@
                                                 <div class="form-group ">
                                                     <label>Truck Type:</label>
                                                     <select name="arrival_truck_type_id" id="arrival_truck_type_id" disabled
-                                                        class="form-control select2 ">
+                                                        class="form-control select2">
                                                         <option value="">Truck Type</option>
 
                                                         @foreach (getTableData('arrival_truck_types', ['id', 'name', 'sample_money']) as $arrival_truck_types)

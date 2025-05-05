@@ -46,6 +46,7 @@ class SamplingMonitoringController extends Controller
                     ->orWhere('decision_making', 1);
             })
             ->latest()
+            // ->orderBy('created_at', 'asc')
             ->paginate(request('per_page', 25));
 
         return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
@@ -261,16 +262,23 @@ class SamplingMonitoringController extends Controller
                 $ArrivalSamplingRequest->is_resampling_made = 'yes';
             }
 
-            $ArrivalSamplingRequest->arrivalTicket()->first()->update([
-                'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
-                'lumpsum_deduction_kgs' => (float)$request->lumpsum_deduction_kgs ?? 0.00,
+            $updateData = [
+                'lumpsum_deduction' => (float)($request->lumpsum_deduction ?? 0.00),
+                'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
-                'first_qc_status' => $request->stage_status,
                 'decision_making' => $isDecisionMaking,
                 'location_transfer_status' => 'pending',
                 'sauda_type_id' => $request->sauda_type_id,
-                'arrival_purchase_order_id' => $request->arrival_purchase_order_id
-            ]);
+                'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
+            ];
+
+            if ($ArrivalSamplingRequest->sampling_type == 'inner') {
+                $updateData['second_qc_status'] = $request->stage_status;
+            } else {
+                $updateData['first_qc_status'] = $request->stage_status;
+            }
+
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update($updateData);
 
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();

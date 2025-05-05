@@ -196,8 +196,16 @@
             } else {
                 // Select Full Approved and enable both radio buttons
                 $('#full-approved').prop('checked', true).trigger('change');
-                $('input[name="bag_packing_approval"]').prop('disabled', false);
-                $('.tempfield').remove();
+                $('input[name="bag_packing_approval"]').prop('disabled', true);
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'bag_packing_approval',
+                    class: 'tempfield',
+                    value: 'Full Approved'
+                }).insertAfter($('input[name="bag_packing_approval"]').last());
+
+
             }
         });
     });

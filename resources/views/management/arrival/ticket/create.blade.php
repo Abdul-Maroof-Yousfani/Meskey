@@ -32,7 +32,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label class="d-block">Contract Detail:</label>
-                <select name="arrival_purchase_order_id" id="arrival_purchase_order_id" class="form-control select2 ">
+                <select name="arrival_purchase_order_id" id="arrival_purchase_order_id" class="form-control select2">
                     <option value="">N/A</option>
                     @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
                         <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"

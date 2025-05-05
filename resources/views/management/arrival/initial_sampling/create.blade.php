@@ -44,7 +44,7 @@
         <div class="col-12 px-3">
             <div class="form-group ">
                 <label>Sample Taken By:</label>
-                <select name="sample_taken_by" id="sample_taken_by" class="form-control select2 ">
+                <select name="sample_taken_by" id="sample_taken_by" class="form-control select2">
                     <option value="">Sample Taken By</option>
                     @foreach ($sampleTakenByUsers as $sampleTakenUser)
                         <option value="{{ $sampleTakenUser->id }}">{{ $sampleTakenUser->name }}</option>

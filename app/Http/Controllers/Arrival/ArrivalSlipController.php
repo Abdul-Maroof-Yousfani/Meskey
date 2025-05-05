@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Arrival;
 use App\Http\Controllers\Controller;
 
 use App\Models\Arrival\ArrivalSamplingRequest;
+use App\Models\Arrival\ArrivalSamplingResult;
+use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSlip;
 use App\Models\Master\ArrivalLocation;
@@ -134,13 +136,21 @@ class ArrivalSlipController extends Controller
             'purchaseOrder'
         ])->findOrFail($request->arrival_ticket_id);
 
+        $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->arrival_ticket_id)
+            // ->where('sampling_type', 'initial')
+            ->where('approved_status', 'approved')
+            ->get()->last();
+
+        $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+
         $isNotGeneratable = false;
 
         if ($arrivalTicket->decision_making == 1) {
             $isNotGeneratable = ($arrivalTicket->lumpsum_deduction == 0.00 && $arrivalTicket->lumpsum_deduction_kgs == 0.00);
         }
 
-        $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('arrivalTicket', 'isNotGeneratable'))->render();
+        $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('arrivalTicket', 'isNotGeneratable', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'))->render();
 
         return response()->json(['success' => true, 'html' => $html, 'isNotGeneratable' => $isNotGeneratable]);
     }
