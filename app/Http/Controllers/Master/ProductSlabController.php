@@ -27,10 +27,10 @@ class ProductSlabController extends Controller
      */
     public function getList(Request $request)
     {
-        $ProductSlab = ProductSlab::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
+        $ProductSlab = ProductSlab::when($request->filled('product_id'), function ($q) use ($request) {
+         
+            return $q->where(function ($sq) use ($request) {
+                $sq->where('product_id', $request->product_id)->where('product_slab_type_id', $request->product_slab_type_id);
             });
         })
             ->where('company_id', $request->company_id)

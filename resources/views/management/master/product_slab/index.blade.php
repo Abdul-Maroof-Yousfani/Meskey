@@ -24,8 +24,11 @@ Product Slabs
                         <form id="filterForm" class="form">
                             <div class="row ">
                                 <div class="col-md-12 my-1 ">
-                                    <div class="row justify-content-end text-right">
-                                        <div class="col-md-2">
+                                    <div class="row justify-content-end text-left">
+
+
+
+                                    <div class="col-md-2 d-none">
                                             <label for="customers" class="form-label">Search</label>
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -33,6 +36,26 @@ Product Slabs
                                                 placeholder="Search here" name="search"
                                                 value="{{ request('search', '') }}">
                                         </div>
+                                    
+        <div class="col-xs-2 col-sm-2 col-md-2">
+            <div class="form-group">
+                <label>Products:</label>
+                <select class="form-control" name="product_id" id="product_id">
+                    <option value="">Select Product</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-2 col-sm-2 col-md-2">
+            <div class="form-group">
+                <label>Slab Types:</label>
+                <select class="form-control" name="product_slab_type_id" id="product_slab_type_id">
+                    <option value="">Select Slab Types</option>
+                </select>
+            </div>
+        </div>
+
+
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -69,6 +92,16 @@ Product Slabs
 <script>
     $(document).ready(function () {
         filterationCommon(`{{ route('get.product-slab') }}`)
+    });
+</script>
+
+
+
+<script>
+    $(document).ready(function () {
+        initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
+        initializeDynamicSelect2('#product_slab_type_id', 'product_slab_types', 'name', 'id', false, false);
+        //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
     });
 </script>
 @endsection
