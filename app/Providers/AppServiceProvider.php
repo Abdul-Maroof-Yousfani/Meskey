@@ -80,6 +80,7 @@ class AppServiceProvider extends ServiceProvider
                     'UpdateCustomerController' => \App\Http\Requests\Customer\UpdateCustomerRequest::class,
                     'AddExpenseController' => \App\Http\Requests\Expense\AddExpenseRequest::class,
                     'UpdateExpenseController' => \App\Http\Requests\Expense\UpdateExpenseRequest::class,
+                    'IndicativePriceController' => \App\Http\Requests\Master\IndicativePriceRequest::class,
                 ];
 
                 $routeAction = request()->route()?->getAction();

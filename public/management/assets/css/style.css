@@ -936,3 +936,15 @@ tr.bg-red {
     margin: 10mm;
   }
 }
+
+.select2-container--default .select2-selection--single.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+tr.editing {
+  background: #ffa5004a;
+}
+
+#indicativePricesTable :is(input, select) {
+  background-color: white;
+}
