@@ -121,11 +121,10 @@ class IndicativePriceController extends Controller
                 $q->whereDate('created_at', now()->format('Y-m-d'));
             })
             ->orderBy('product_id')
-            ->orderBy('location_id') // Add this to sort by location within product
+            ->orderBy('location_id')
             ->orderBy('created_at')
             ->get();
 
-        // Group by product_id first, then by location_id
         $reports = $reports->groupBy('product_id')->map(function ($productGroup) {
             return $productGroup->groupBy('location_id');
         });

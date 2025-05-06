@@ -9,6 +9,12 @@
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">Indicative Price Daily Report</h2>
                 </div>
+
+                <div class="col-md-6 text-right">
+                    <button id="exportToExcel" class="btn btn-success">
+                        <i class="fa fa-file-excel-o"></i> Export to Excel
+                    </button>
+                </div>
             </div>
             <div class="row">
                 <div class="col-12">
@@ -99,6 +105,7 @@
 @endsection
 
 @section('script')
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {
             filterationCommon(`{{ route('indicative-prices.reports.get-list') }}`)
@@ -150,6 +157,54 @@
                         .removeClass('location-hover');
                 }
             });
+        });
+
+        $('#exportToExcel').on('click', function() {
+            const selectedDate = $('#reportDateFilter').val();
+            const formattedDate = formatDateForFilename(selectedDate);
+
+            const wb = XLSX.utils.book_new();
+
+            const tableClone = $('table.table-bordered').clone();
+
+            tableClone.find('.commodity-hover, .location-hover').removeClass('commodity-hover location-hover');
+
+            const ws = XLSX.utils.table_to_sheet(tableClone[0]);
+
+            const colWidths = [];
+            tableClone.find('thead tr:first th').each(function() {
+                colWidths.push({
+                    wch: 15
+                });
+            });
+            ws['!cols'] = colWidths;
+
+            XLSX.utils.book_append_sheet(wb, ws, "Indicative Prices");
+
+            const fileName = `Indicative_Prices_${formattedDate}.xlsx`;
+
+            XLSX.writeFile(wb, fileName);
+        });
+
+        function formatDateForFilename(dateString) {
+            if (!dateString) {
+                const today = new Date();
+                return today.toISOString().split('T')[0];
+            }
+            return dateString;
+        }
+
+        function updateExportButtonText() {
+            const selectedDate = $('#reportDateFilter').val();
+            $('#exportToExcel').html(
+                `<i class="fa fa-file-excel-o"></i> Export ${selectedDate} Report`
+            );
+        }
+
+        updateExportButtonText();
+
+        $('#reportDateFilter').on('input', function() {
+            updateExportButtonText();
         });
     </script>
 @endsection
