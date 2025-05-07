@@ -237,11 +237,12 @@
                 </select>
             </div>
         </div>
-
         <div class="col-xs-4 col-sm-4 col-md-4 fields-hidable">
             <div class="form-group">
                 <label for="truck_size_range">Truck Size Ranges:</label>
-                <select name="truck_size_range" id="truck_size_range" class="form-control select2">
+                <select name="truck_size_range" id="truck_size_range" class="form-control select2"
+                    data-default-min="{{ $truckSizeRanges->first()->min_number }}"
+                    data-default-max="{{ $truckSizeRanges->first()->max_number }}">
                     @foreach ($truckSizeRanges as $range)
                         <option value="{{ $range->id }}" data-min="{{ $range->min_number }}"
                             data-max="{{ $range->max_number }}" {{ $loop->first ? 'selected' : '' }}>
@@ -257,7 +258,9 @@
                 <label>No of Trucks:</label>
                 <input type="number" name="no_of_trucks" id="no_of_trucks" placeholder="Number of Trucks"
                     class="form-control" min="1" />
-                <small class="text-muted">Each truck carries <span id="minMax">25,000-30,000</span> kg</small>
+                <small class="text-muted">Each truck carries <span
+                        id="minMax">{{ $truckSizeRanges->first()->min_number ?? 0 }}-{{ $truckSizeRanges->first()->max_number ?? 0 }}</span>
+                    kg</small>
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4" id="quantity-field" style="display:none;">
@@ -442,8 +445,8 @@
         $('#truck_size_range').trigger('change')
 
         $(document).ready(function() {
-            let TRUCK_MIN = 0;
-            let TRUCK_MAX = 0;
+            let TRUCK_MIN = {{ $truckSizeRanges->first()->min_number ?? 0 }};
+            let TRUCK_MAX = {{ $truckSizeRanges->first()->max_number ?? 0 }};
 
             $('#truck_size_range').on('change', function() {
                 const selectedOption = $(this).find('option:selected');
@@ -459,7 +462,9 @@
                     TRUCK_MIN = 0;
                     TRUCK_MAX = 0;
 
-                    $('#minMax').text('25,000-30,000');
+                    $('#minMax').text(
+                        '{{ $truckSizeRanges->first()->min_number ?? 0 }}-{{ $truckSizeRanges->first()->max_number ?? 0 }}'
+                    );
                 }
                 calculateQuantityAndBags();
             });
