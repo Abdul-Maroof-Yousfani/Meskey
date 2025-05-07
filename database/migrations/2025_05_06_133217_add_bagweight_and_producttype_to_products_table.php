@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             $table->float('bag_weight_for_purchasing')->nullable()->after('description');
-            $table->enum('product_type', ['raw_material', 'finished_good'])->default('raw_material')->after('bag_weight_for_purchasing');
+            $table->enum('product_type', ['raw_material', 'finish_good'])->default('raw_material')->after('bag_weight_for_purchasing');
         });
     }
 

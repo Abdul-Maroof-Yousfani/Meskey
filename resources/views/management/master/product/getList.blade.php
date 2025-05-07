@@ -4,6 +4,7 @@
             <th class="col-sm-1">Image </th>
             <th class="col-sm-3">Name </th>
             <th class="col-sm-4">Description</th>
+            <th class="col-sm-2">Product Type</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
@@ -13,8 +14,8 @@
         @if (count($UnitOfMeasures) != 0)
             @foreach ($UnitOfMeasures as $key => $row)
                 <tr>
-                <td>
-                    <img src="{{ image_path($row->image) }}" class="avatar lisiavatarlogo"/>
+                    <td>
+                        <img src="{{ image_path($row->image) }}" class="avatar lisiavatarlogo" />
                     </td>
                     <td>
                         <p class="m-0">
@@ -27,17 +28,22 @@
                         </p>
                     </td>
                     <td>
-                      <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                    {{ $row->status }}
-                </label>
+                        <p class="m-0">
+                            <small> {{ formatEnumValue($row->product_type) ?? '--' }}</small>
+                        </p>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
+                            {{ $row->status }}
+                        </label>
+                    </td>
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('product.edit', $row->id) }}','Edit Product')"
@@ -88,6 +94,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $UnitOfMeasures->links() }}
+        {{ $UnitOfMeasures->links() }}
     </div>
 </div>

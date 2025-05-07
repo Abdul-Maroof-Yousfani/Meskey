@@ -12,14 +12,41 @@ class ArrivalPurchaseOrder extends Model
     use HasFactory;
 
     protected $fillable = [
-        'unique_no',
         'company_id',
-        'product_id',
+        'contract_no',
+        'contract_date',
+        'company_location_id',
+        'sauda_type_id',
+        'truck_size_range_id',
+        'account_of',
         'supplier_id',
-        'broker_id',
-        'po_date',
+        'supplier_commission',
+        'broker_one_id',
+        'broker_one_commission',
+        'broker_two_id',
+        'broker_two_commission',
+        'broker_three_id',
+        'broker_three_commission',
+        'product_id',
+        'line_type',
+        'bag_weight',
+        'bag_rate',
+        'delivery_date',
+        'credit_days',
+        'delivery_address',
+        'rate_per_kg',
+        'rate_per_mound',
+        'rate_per_100kg',
+        'calculation_type',
+        'no_of_trucks',
+        'total_quantity',
+        'min_quantity',
+        'max_quantity',
+        'no_of_bags',
+        'is_replacement',
+        'weighbridge_from',
         'remarks',
-        'sauda_type_id'
+        'status'
     ];
 
     public function broker()

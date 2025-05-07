@@ -191,6 +191,13 @@ function generateUniqueNumberByDate($tableName, $prefix = null, $company_id = nu
         : str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT);
 }
 
+if (!function_exists('formatEnumValue')) {
+    function formatEnumValue($value)
+    {
+        return ucwords(str_replace('_', ' ', $value));
+    }
+}
+
 if (!function_exists('getDeductionSuggestion')) {
     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
     {

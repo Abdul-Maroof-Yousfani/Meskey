@@ -19,7 +19,6 @@ return new class extends Migration {
             $table->date('contract_date');
             $table->unsignedBigInteger('company_location_id');
             $table->unsignedBigInteger('sauda_type_id');
-            $table->unsignedBigInteger('truck_size_range_id')->nullable()->after('product_id');
 
             // Supplier information
             $table->unsignedBigInteger('account_of')->nullable();
@@ -36,6 +35,8 @@ return new class extends Migration {
 
             // Product information
             $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('truck_size_range_id')->nullable();
+
             $table->enum('line_type', ['bari', 'choti'])->nullable();
             $table->integer('bag_weight')->nullable(); // in kg
             $table->decimal('bag_rate', 10, 2)->nullable();

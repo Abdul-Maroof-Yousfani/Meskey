@@ -1,11 +1,13 @@
-<form action="{{ route('raw-material.purchase-order.create') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('raw-material.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-request') }}" />
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Contract No:</label>
-                <input type="text" readonly name="contract_no" placeholder="Contract No" class="form-control" />
+            <div class="form-group ">
+                <label>Location:</label>
+                <select name="company_location_id" id="company_location_id" class="form-control select2">
+                    <option value="">Location</option>
+                </select>
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -14,12 +16,11 @@
                 <input type="date" name="contract_date" placeholder="Contract Date" class="form-control" />
             </div>
         </div>
+
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group ">
-                <label>Location:</label>
-                <select name="company_location_id" id="company_location_id" class="form-control select2">
-                    <option value="">Location</option>
-                </select>
+            <div class="form-group">
+                <label>Contract No:</label>
+                <input type="text" readonly name="contract_no" placeholder="Contract No" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -51,7 +52,6 @@
             <div class="form-group ">
                 <label>Commission:</label>
                 <input type="number" name="supplier_commission" placeholder="Commission" class="form-control" />
-
             </div>
         </div>
     </div>
@@ -75,7 +75,6 @@
             <div class="form-group ">
                 <label>Commission:</label>
                 <input type="number" name="supplier_commission" placeholder="Commission" class="form-control" />
-
             </div>
         </div>
     </div>
@@ -137,6 +136,8 @@
                     @endforeach
                 </select>
             </div>
+        </div>
+        <div id="slabsContainer" class="col-xs-12 col-sm-12 col-md-12">
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
@@ -323,22 +324,29 @@
                 <input type="text" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
-
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Delivery Address:</label>
                 <textarea name="remarks" placeholder="Remarks" class="form-control"></textarea>
             </div>
         </div>
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks (Optional):</label>
                 <textarea name="remarks" placeholder="Remarks" class="form-control"></textarea>
             </div>
         </div>
-        <!-- Status -->
+        <div class="col-xs-12 col-sm-12 col-md-12 d-none">
+            <div class="form-group">
+                <label>delivery_address:</label>
+                <textarea name="delivery_address" placeholder="delivery_address" class="form-control"></textarea>
+
+                <input type="text" name="no_of_bags" id="bags_range" placeholder="Bags Range"
+                    class="form-control" readonly />
+                <input name="min_quantity" id="minQty" placeholder="minQty" class="form-control">
+                <input name="max_quantity" id="maxQty" placeholder="maxQty" class="form-control">
+            </div>
+        </div>
         {{-- <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Status:</label>
@@ -361,6 +369,38 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        $('[name="company_location_id"], [name="contract_date"]').change(function() {
+            generateContractNumber();
+        });
+
+        function generateContractNumber() {
+            const locationId = $('[name="company_location_id"]').val();
+            const contractDate = $('[name="contract_date"]').val();
+
+            if (locationId && contractDate) {
+                $.ajax({
+                    url: '{{ route('raw-material.generate.contract.number') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        location_id: locationId,
+                        contract_date: contractDate
+                    },
+                    beforeSend: function() {
+                        // Show loading if needed
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('[name="contract_no"]').val(response.contract_no);
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            }
+        }
 
         $('#product_id').change(function() {
             var selectedOption = $(this).find('option:selected');
@@ -504,10 +544,18 @@
                 if ($('#calculation_type').val() === 'trucks') {
                     $('#quantity_range').val(minQuantity.toLocaleString() + ' - ' + maxQuantity
                         .toLocaleString() + ' kg');
+
+                    $('#minQty').val(minQuantity);
+                    $('#maxQty').val(maxQuantity);
+
                     $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
                         ' bags');
                 } else {
                     $('#quantity_range').val(minQuantity.toLocaleString() + ' kg');
+
+                    $('#minQty').val(minQuantity);
+                    $('#maxQty').val(minQuantity);
+
                     $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
                         ' bags');
                 }

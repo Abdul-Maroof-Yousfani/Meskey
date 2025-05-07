@@ -4,20 +4,20 @@
 
     <div class="row form-mar">
 
-    <div class="col-md-12 mb-4">
-        <div class="avatar-upload">
-            <div class="avatar-edit">
-                <input type='file' id="imageUpload" name="image" accept=".png, .jpg, .jpeg" />
-                <label for="imageUpload">
-                     <i class="ft-camera"></i>
-                </label>
-            </div>
-            <div class="avatar-preview">
-                <div id="imagePreview" style="background-image: url('{{ image_path('') }}');">
+        <div class="col-md-12 mb-4">
+            <div class="avatar-upload">
+                <div class="avatar-edit">
+                    <input type='file' id="imageUpload" name="image" accept=".png, .jpg, .jpeg" />
+                    <label for="imageUpload">
+                        <i class="ft-camera"></i>
+                    </label>
+                </div>
+                <div class="avatar-preview">
+                    <div id="imagePreview" style="background-image: url('{{ image_path('') }}');">
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Category:</label>
@@ -44,40 +44,48 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Name" class="form-control"  />
+                <input type="text" name="name" placeholder="Name" class="form-control" />
             </div>
         </div>
-
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
-
-        <!-- Barcode -->
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Bag Weight for Purchasing:</label>
+                <input type="text" name="bag_weight_for_purchasing" placeholder="Bag Weight for Purchasing"
+                    class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Product Type:</label>
+                <select class="form-control" name="product_type">
+                    <option value="">Select Product Type</option>
+                    <option value="raw_material">Raw Material</option>
+                    <option value="finish_good">Finish Good</option>
+                </select>
+            </div>
+        </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Barcode:</label>
                 <input type="text" name="barcode" placeholder="Barcode" class="form-control" />
             </div>
         </div>
-
-
-        <!-- Price -->
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Price:</label>
                 <input type="text" name="price" placeholder="Price" class="form-control" />
             </div>
         </div>
-
-        <!-- Status -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Status:</label>
-                <select class="form-control" name="status" >
+                <select class="form-control" name="status">
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>

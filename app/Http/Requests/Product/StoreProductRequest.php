@@ -18,6 +18,8 @@ class StoreProductRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'unit_of_measure_id' => 'required|exists:unit_of_measures,id',
             'unique_no' => 'nullable|unique:products,unique_no',
+            'bag_weight_for_purchasing' => 'required|numeric',
+            'product_type' => 'required|in:raw_material,finish_good',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'bardcode' => 'nullable|string|max:255',

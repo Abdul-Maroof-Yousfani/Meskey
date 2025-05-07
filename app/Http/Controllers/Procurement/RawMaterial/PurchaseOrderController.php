@@ -4,10 +4,17 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ArrivalPurchaseOrderRequest;
+use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\ProductSlab;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Product;
+use App\Models\ProductSlabForRmPo;
 use App\Models\TruckSizeRange;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
@@ -52,44 +59,41 @@ class PurchaseOrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ArrivalPurchaseOrderRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
-            'gala_name' => 'required|string',
-            'truck_no' => 'required|string',
-            'filling_bags_no' => 'required|integer',
-            'bag_type_id' => 'required|exists:bag_types,id',
-            'bag_condition_id' => 'required|exists:bag_conditions,id',
-            'bag_packing_id' => 'required|exists:bag_packings,id',
-            'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
-            'total_bags' => 'required|integer',
-            'total_rejection' => 'nullable|integer',
-            'amanat' => 'required|in:Yes,No',
-            'note' => 'nullable|string'
-        ]);
+        $data = $request->validated();
+        $data = $request->all();
+        $arrivalPurchaseOrder = null;
 
+        DB::transaction(function () use ($data) {
+            $arrivalPOData = collect($data)->except(['slabs', 'quantity_range', 'truck_size_range'])->toArray();
 
+            // Rename 'truck_size_range' to match db column
+            if (isset($data['truck_size_range'])) {
+                $arrivalPOData['truck_size_range_id'] = $data['truck_size_range'];
+            }
 
-        // Add conditional validation for total_rejection
-        $validator->sometimes('total_rejection', 'required|integer|min:1', function ($input) {
-            return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
+            $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
+
+            foreach ($data['slabs'] as $slabId => $range) {
+                ProductSlabForRmPo::create([
+                    'arrival_purchase_order_id' => $arrivalPurchaseOrder->id,
+                    'slab_id' => $slabId,
+                    'company_id' => $data['company_id'],
+                    'product_id' => $data['product_id'],
+                    'product_slab_type_id' => null, // if available, set accordingly
+                    'from' => $range['from'],
+                    'to' => $range['to'],
+                    'deduction_type' => null, // if available, set accordingly
+                    'deduction_value' => null, // if available, set accordingly
+                    'status' => 1, // or default status
+                ]);
+            }
         });
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $request['creator_id'] = auth()->user()->id;
-        $request['remark'] = $request->note ?? '';
-        $arrivalApprove = ArrivalApprove::create($request->all());
-
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['document_approval_status' => $request->bag_packing_approval == 'Half Approved' ? 'half_approved' : 'fully_approved', 'second_weighbridge_status' => 'pending']);
-
         return response()->json([
-            'success' => 'Arrival Approval created successfully.',
-            'data' => $arrivalApprove
+            'success' => 'Purchase Order Created Successfully.',
+            'data' => $arrivalPurchaseOrder
         ], 201);
     }
 
@@ -161,9 +165,58 @@ class PurchaseOrderController extends Controller
         $arrival_location->delete();
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
     }
+
     public function getMainSlabByProduct(Request $request)
     {
-        dd('ddddd');
-        return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
+        $data = ProductSlab::with('slabType')
+            ->where('product_id', $request->product_id)
+            ->where('company_id', $request->company_id)
+            ->where('is_purchase_field', 1)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy(function ($item) {
+                    return (float) $item->from;
+                })->first();
+            })
+            ->values()
+            ->map(function ($item) {
+                $item['slab_type_name'] = $item->slabType->name ?? null;
+                return $item;
+            });
+
+        $html = view('management.procurement.raw_material.purchase_order.slab-form', ['slabs' => $data, 'success' => '.'])->render();
+
+        return response()->json(['html' => $html, 'success' => '.'], 200);
+    }
+
+    public function getContractNumber(Request $request)
+    {
+        $location = CompanyLocation::find($request->location_id);
+        $date = Carbon::parse($request->contract_date)->format('Y-m-d');
+
+        $prefix = $location->code . '-' . Carbon::parse($request->contract_date)->format('Ymd');
+
+        $latestContract = ArrivalPurchaseOrder::where('contract_no', 'like', "$prefix-%")
+            ->latest()
+            ->first();
+
+        $locationCode = $location->code ?? 'LOC';
+        $datePart = Carbon::parse($date)->format('Y-m-d');
+
+        if ($latestContract) {
+            $parts = explode('-', $latestContract->contract_no);
+            $lastNumber = (int)end($parts);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        $contractNo = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'success' => true,
+            'contract_no' => $contractNo
+        ]);
     }
 }
