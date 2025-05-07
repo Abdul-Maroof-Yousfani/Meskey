@@ -50,10 +50,10 @@ return new class extends Migration {
             $table->timestamps();
 
             //extra for stages status
-            $table->enum('first_qc_status', ['reinspection', 'pending', 'rejected', 'approved'])->nullable();
+            $table->enum('first_qc_status', ['resampling', 'pending', 'rejected', 'approved'])->nullable();
             $table->tinyInteger('bilty_return_confirmation')->default(0);
             $table->enum('location_transfer_status', ['pending', 'transfered'])->nullable();
-            $table->enum('second_qc_status', ['reinspection', 'pending', 'rejected', 'approved'])->nullable();
+            $table->enum('second_qc_status', ['resampling', 'pending', 'rejected', 'approved'])->nullable();
             $table->enum('document_approval_status', ['half_approved', 'fully_approved'])->nullable();
             $table->enum('first_weighbridge_status', ['pending', 'completed'])->nullable();
             $table->enum('second_weighbridge_status', ['pending', 'completed'])->nullable();

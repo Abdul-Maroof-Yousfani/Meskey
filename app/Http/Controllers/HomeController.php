@@ -9,6 +9,7 @@ use App\Models\States;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use DB;
+
 class HomeController extends Controller
 {
     /**
@@ -46,7 +47,7 @@ class HomeController extends Controller
         $cities = States::where('country_id', $countryId)->get();
         return response()->json($cities);
     }
-        public function dynamicFetchData(Request $request)
+    public function dynamicFetchData(Request $request)
     {
         $search = $request->input('search');
         $tableName = $request->input('table');
@@ -81,5 +82,4 @@ class HomeController extends Controller
         }
         return response()->json(['items' => $results]);
     }
-
 }

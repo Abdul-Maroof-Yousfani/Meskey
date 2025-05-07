@@ -11,8 +11,6 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('arrival_purchase_orders', function (Blueprint $table) {
-
-
             $table->id();
             $table->unsignedBigInteger('company_id');
 
@@ -21,6 +19,7 @@ return new class extends Migration {
             $table->date('contract_date');
             $table->unsignedBigInteger('company_location_id');
             $table->unsignedBigInteger('sauda_type_id');
+            $table->unsignedBigInteger('truck_size_range_id')->nullable()->after('product_id');
 
             // Supplier information
             $table->unsignedBigInteger('account_of')->nullable();
@@ -80,27 +79,9 @@ return new class extends Migration {
             $table->foreign('product_id')->references('id')->on('products');
 
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            $table->foreign('truck_size_range_id')
+                ->references('id')->on('truck_size_ranges')
+                ->onDelete('set null');
         });
     }
 

@@ -255,7 +255,7 @@
 
             const netWeight = secondWeight - firstWeight;
 
-            $('#net_weight').val(netWeight > 0 ? netWeight : 0);
+            $('#net_weight').val(netWeight || 0);
         }
 
         $('#first_weight, #second_weight').on('input', function() {

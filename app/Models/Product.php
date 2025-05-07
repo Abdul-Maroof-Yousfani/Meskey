@@ -17,14 +17,16 @@ class Product extends Model
     protected $fillable = [
         'company_id',
         'category_id',
+        'bag_weight_for_purchasing',
         'unit_of_measure_id',
-        'unique_no',
-        'name',
+        'product_type',
         'description',
+        'unique_no',
         'bardcode',
+        'status',
         'image',
         'price',
-        'status'
+        'name',
     ];
 
     // Relationships

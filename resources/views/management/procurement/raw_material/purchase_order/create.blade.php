@@ -14,8 +14,6 @@
                 <input type="date" name="contract_date" placeholder="Contract Date" class="form-control" />
             </div>
         </div>
-
-
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Location:</label>
@@ -32,11 +30,7 @@
                 </select>
             </div>
         </div>
-
-
     </div>
-
-
 
     <div class="row">
         <div class="col-12">
@@ -135,6 +129,12 @@
                 <label>Commodity:</label>
                 <select name="product_id" id="product_id" class="form-control select2">
                     <option value="">Commodity</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}"
+                            data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
+                            {{ $product->name }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -150,8 +150,8 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
-                <label>Bags Weight:</label>
-                <select name="bag_weight" id="bag_weight" class="form-control select2">
+                <label>Bags Weight (kg):</label>
+                {{-- <select name="bag_weight" id="bag_weight" class="form-control select2">
                     <option value="">Bags Weight</option>
                     <option value="5">5Kg</option>
                     <option value="10">10Kg</option>
@@ -159,13 +159,14 @@
                     <option value="20">20Kg</option>
                     <option value="25">25Kg</option>
                     <option value="30">30Kg</option>
-                </select>
+                </select> --}}
+                <input type="number" name="bag_weight" placeholder="Bags Weight (kg)" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Bags Rate:</label>
-                <select name="line_type" id="line_type" class="form-control select2">
+                {{-- <select name="line_type" id="line_type" class="form-control select2">
                     <option value="">Bags Rate</option>
                     <option value="5">5Kg</option>
                     <option value="10">10Kg</option>
@@ -173,7 +174,8 @@
                     <option value="20">20Kg</option>
                     <option value="25">25Kg</option>
                     <option value="30">30Kg</option>
-                </select>
+                </select> --}}
+                <input type="number" name="bag_rate" placeholder="Bags Rate" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -185,12 +187,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Credit Days:</label>
-                <select name="line_type" id="line_type" class="form-control select2">
-                    <option value="">Credit Days</option>
-                    <option value="7">7 Days</option>
-                    <option value="15">15 Days</option>
-                    <option value="30">30 Days</option>
-                </select>
+                <input type="number" name="credit_days" placeholder="Credit Days" class="form-control" />
             </div>
         </div>
     </div>
@@ -220,15 +217,9 @@
             <div class="form-group ">
                 <label>Rate Per 100KG:</label>
                 <input type="number" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
-
             </div>
         </div>
-
     </div>
-
-
-
-
 
     <div class="row">
         <div class="col-12">
@@ -247,15 +238,28 @@
             </div>
         </div>
 
-        <div class="col-xs-4 col-sm-4 col-md-4" id="trucks-field">
+        <div class="col-xs-4 col-sm-4 col-md-4 fields-hidable">
+            <div class="form-group">
+                <label for="truck_size_range">Truck Size Ranges:</label>
+                <select name="truck_size_range" id="truck_size_range" class="form-control select2">
+                    @foreach ($truckSizeRanges as $range)
+                        <option value="{{ $range->id }}" data-min="{{ $range->min_number }}"
+                            data-max="{{ $range->max_number }}" {{ $loop->first ? 'selected' : '' }}>
+                            {{ $range->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-4 col-sm-4 col-md-4 fields-hidable">
             <div class="form-group">
                 <label>No of Trucks:</label>
                 <input type="number" name="no_of_trucks" id="no_of_trucks" placeholder="Number of Trucks"
                     class="form-control" min="1" />
-                <small class="text-muted">Each truck carries 25,000-30,000 kg</small>
+                <small class="text-muted">Each truck carries <span id="minMax">25,000-30,000</span> kg</small>
             </div>
         </div>
-
         <div class="col-xs-4 col-sm-4 col-md-4" id="quantity-field" style="display:none;">
             <div class="form-group">
                 <label>Total Quantity (kg):</label>
@@ -275,8 +279,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>No of Bags Range:</label>
-                <input type="text" name="bags_range" id="bags_range" placeholder="Bags Range" class="form-control"
-                    readonly />
+                <input type="text" name="bags_range" id="bags_range" placeholder="Bags Range"
+                    class="form-control" readonly />
             </div>
         </div>
 
@@ -301,20 +305,19 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label class=" label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement 
+                <label class=" label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement
                 </label>
                 <div class="custom-control custom-switch">
                     <input type="checkbox" checked name="is_lumpsum_deduction_initial" class="custom-control-input"
                         id="lumpsum-toggle-initial">
-                    <label class="custom-control-label"  for="lumpsum-toggle-initial"></label>
+                    <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
                 </div>
             </div>
         </div>
-         <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Weighbridge only From:</label>
-                <input type="number" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
-
+                <input type="text" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
 
@@ -352,23 +355,12 @@
     </div>
 </form>
 
-
-
-
-
-
-
-
-
-
-
 <script>
     $(document).ready(function() {
         $('.select2').select2();
 
         $('#product_id').change(function() {
             var selectedOption = $(this).find('option:selected');
-
 
             var product_id = $(this).val();
             if (product_id) {
@@ -405,21 +397,13 @@
                     }
                 });
             } else {
-                // Clear commodity field if no ticket selected
                 $('#commodity_name').val('');
             }
         });
-    });
-</script>
 
+        const KG_PER_MOUND = 40;
+        const KG_PER_100KG = 100;
 
-<script>
-    $(document).ready(function () {
-        // Conversion factors
-        const KG_PER_MOUND = 40; // 1 mound = 40 kg
-        const KG_PER_100KG = 100; // self-explanatory
-
-        // Function to calculate rates based on the changed field
         function calculateRates(changedField) {
             const ratePerKg = parseFloat($('[name="rate_per_kg"]').val()) || 0;
             const ratePerMound = parseFloat($('[name="rate_per_mound"]').val()) || 0;
@@ -427,65 +411,76 @@
 
             switch (changedField) {
                 case 'rate_per_kg':
-                    // Calculate mound and 100kg rates based on kg rate
                     $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(2));
                     $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(2));
                     break;
 
                 case 'rate_per_mound':
-                    // Calculate kg and 100kg rates based on mound rate
                     $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(2));
                     $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(2));
                     break;
 
                 case 'rate_per_100kg':
-                    // Calculate kg and mound rates based on 100kg rate
                     $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(2));
                     $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(2));
                     break;
             }
         }
 
-        // Set up event listeners for all rate fields
-        $('[name="rate_per_kg"]').on('input', function () {
+        $('[name="rate_per_kg"]').on('input', function() {
             calculateRates('rate_per_kg');
         });
 
-        $('[name="rate_per_mound"]').on('input', function () {
+        $('[name="rate_per_mound"]').on('input', function() {
             calculateRates('rate_per_mound');
         });
 
-        $('[name="rate_per_100kg"]').on('input', function () {
+        $('[name="rate_per_100kg"]').on('input', function() {
             calculateRates('rate_per_100kg');
         });
 
+        $('#truck_size_range').trigger('change')
 
+        $(document).ready(function() {
+            let TRUCK_MIN = 0;
+            let TRUCK_MAX = 0;
 
+            $('#truck_size_range').on('change', function() {
+                const selectedOption = $(this).find('option:selected');
+                const min = selectedOption.data('min');
+                const max = selectedOption.data('max');
 
+                if (min && max) {
+                    TRUCK_MIN = min;
+                    TRUCK_MAX = max;
 
+                    $('#minMax').text(min.toLocaleString() + '-' + max.toLocaleString());
+                } else {
+                    TRUCK_MIN = 0;
+                    TRUCK_MAX = 0;
 
-        $(document).ready(function () {
-            const TRUCK_MIN = 25000; // 25,000 kg per truck
-            const TRUCK_MAX = 30000; // 30,000 kg per truck
+                    $('#minMax').text('25,000-30,000');
+                }
+                calculateQuantityAndBags();
+            });
 
-            // Toggle between trucks and quantity input
-            $('#calculation_type').change(function () {
+            $('#calculation_type').change(function() {
                 if ($(this).val() === 'trucks') {
-                    $('#trucks-field').show();
+                    $('.fields-hidable').show();
                     $('#quantity-field').hide();
                 } else {
-                    $('#trucks-field').hide();
+                    $('.fields-hidable').hide();
                     $('#quantity-field').show();
                 }
             });
 
-            // Calculate ranges when values change
-            $('#no_of_trucks, #total_quantity, #bag_weight').on('input change', function () {
-                calculateQuantityAndBags();
-            });
+            $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change',
+                function() {
+                    calculateQuantityAndBags();
+                });
 
             function calculateQuantityAndBags() {
-                const bagWeight = parseInt($('#bag_weight').val()) || 100;
+                const bagWeight = $('#product_id option:selected').data('bag-weight') || 0;
                 let minQuantity, maxQuantity;
 
                 if ($('#calculation_type').val() === 'trucks') {
@@ -498,28 +493,25 @@
                     maxQuantity = quantity;
                 }
 
-                // Calculate bags
                 const minBags = Math.ceil(minQuantity / bagWeight);
                 const maxBags = Math.ceil(maxQuantity / bagWeight);
 
-                // Update display fields
                 if ($('#calculation_type').val() === 'trucks') {
-                    $('#quantity_range').val(minQuantity.toLocaleString() + ' - ' + maxQuantity.toLocaleString() + ' kg');
-                    $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() + ' bags');
+                    $('#quantity_range').val(minQuantity.toLocaleString() + ' - ' + maxQuantity
+                        .toLocaleString() + ' kg');
+                    $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
+                        ' bags');
                 } else {
                     $('#quantity_range').val(minQuantity.toLocaleString() + ' kg');
-                    $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() + ' bags');
+                    $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
+                        ' bags');
                 }
             }
 
-            // Initialize calculation
             calculateQuantityAndBags();
         });
 
-
-
-        // Your existing select2 initialization code
-        initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
+        // initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         initializeDynamicSelect2('#supplier_id', 'brokers', 'name', 'id', true, false);

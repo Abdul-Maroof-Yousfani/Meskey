@@ -144,8 +144,9 @@ class SamplingMonitoringController extends Controller
 
             $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
                 ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+                ->where('approved_status', '!=', 'pending')
                 ->where('id', '!=', $id) // Exclude current request
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'asc')
                 ->get();
         }
 

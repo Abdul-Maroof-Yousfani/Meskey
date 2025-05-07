@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 
 use App\Http\Controllers\Controller;
 use App\Models\Procurement\PurchaseOrder;
+use App\Models\Product;
+use App\Models\TruckSizeRange;
 use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
@@ -40,8 +42,9 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-
         $data['bagPackings'] = [];
+        $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
+        $data['products'] = Product::where('product_type', 'raw_material')->get();
 
         return view('management.procurement.raw_material.purchase_order.create', $data);
     }
@@ -160,7 +163,7 @@ class PurchaseOrderController extends Controller
     }
     public function getMainSlabByProduct(Request $request)
     {
-      dd('ddddd');
+        dd('ddddd');
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
     }
 }

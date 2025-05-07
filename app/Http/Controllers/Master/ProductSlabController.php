@@ -28,7 +28,7 @@ class ProductSlabController extends Controller
     public function getList(Request $request)
     {
         $ProductSlab = ProductSlab::when($request->filled('product_id'), function ($q) use ($request) {
-         
+
             return $q->where(function ($sq) use ($request) {
                 $sq->where('product_id', $request->product_id)->where('product_slab_type_id', $request->product_slab_type_id);
             });
@@ -99,9 +99,8 @@ class ProductSlabController extends Controller
             $isInner = $request->isInner ?? false;
 
             if (isset($request->ticket_id)) {
-                $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
-                    ->where('arrival_ticket_id', $request->ticket_id)
-                    ->where('approved_status', 'approved')
+                $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $request->ticket_id)
+                    ->where('approved_status', '!=', 'pending')
                     ->latest()
                     ->first();
                 if ($initialRequestForInnerReq) {
