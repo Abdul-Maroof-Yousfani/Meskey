@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Master\Broker;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,20 +43,46 @@ class ArrivalPurchaseOrder extends Model
         'total_quantity',
         'min_quantity',
         'max_quantity',
-        'no_of_bags',
+        'min_bags',
+        'max_bags',
         'is_replacement',
         'weighbridge_from',
         'remarks',
         'status'
     ];
 
+    protected $casts = [
+        'contract_date' => 'date',
+        'delivery_date' => 'date',
+    ];
+
     public function broker()
     {
-        return $this->belongsTo(Broker::class);
+        return $this->belongsTo(Broker::class, 'broker_one_id');
+    }
+
+    public function brokerTwo()
+    {
+        return $this->belongsTo(Broker::class, 'broker_two_id');
+    }
+
+    public function brokerThree()
+    {
+        return $this->belongsTo(Broker::class, 'broker_three_id');
     }
 
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function saudaType()
+    {
+        return $this->belongsTo(SaudaType::class, 'sauda_type_id');
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(CompanyLocation::class, 'company_location_id');
     }
 }

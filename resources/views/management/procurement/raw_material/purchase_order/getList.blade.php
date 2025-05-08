@@ -1,56 +1,42 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Name </th>
-            <th class="col-sm-2">Sample Money </th>
-            <th class="col-sm-2">Weighbridge Amount </th>
+            <th class="col-sm-2">Contract No</th>
+            <th class="col-sm-2">Rate Per KG</th>
+            <th class="col-sm-2">No of Trucks</th>
+            <th class="col-sm-2">Quantity Range</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($trucktypes) != 0)
-            @foreach ($trucktypes as $key => $row)
+        @if (count($arrivalPurchaseOrder) != 0)
+            @foreach ($arrivalPurchaseOrder as $key => $row)
                 <tr>
+                    <td>{{ $row->contract_no }}</td>
+                    <td>{{ $row->rate_per_kg ?? '-' }}</td>
+                    <td>{{ $row->no_of_trucks ?? '-' }}</td>
+                    <td>{{ ($row->min_quantity ?? '-') . ' - ' . ($row->max_quantity ?? '-') }}</td>
                     <td>
-                        <p class="m-0">
-                            {{ $row->name }} <br>
-                        </p>
+                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
+                            {{ ucwords($row->status) }}
+                        </label>
                     </td>
                     <td>
-                        <p class="m-0">
-                            <small> {{ $row->sample_money ?? '--' }}</small>
-                        </p>
+                        {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
+                        {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
                     </td>
-                    <td>
-                        <p class="m-0">
-                            <small> {{ $row->weighbridge_amount ?? '--' }}</small>
-                        </p>
-                    </td>
-                    <td>
-                      <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                    {{ $row->status }}
-                </label>
-                    </td>
-                     <td>
-                     <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
-
-                        </p>
-                        </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('truck-type.edit', $row->id) }}','Edit Arrival Location')"
-                                class="info p-1 text-center mr-2 position-relative ">
+                            <a onclick="openModal(this,'{{ route('raw-material.purchase-order.edit', $row->id) }}','Edit Purchase Order')"
+                                class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit-2 font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('truck-type.destroy', $row->id) }}','{{ route('get.truck-type') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
+                            <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}','{{ route('raw-material.get.purchase-order') }}')"
+                                class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
@@ -59,7 +45,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="7" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -82,14 +68,9 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $trucktypes->links() }}
+        {{ $arrivalPurchaseOrder->links() }}
     </div>
 </div>

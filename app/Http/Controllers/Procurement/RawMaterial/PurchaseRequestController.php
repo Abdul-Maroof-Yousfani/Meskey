@@ -66,7 +66,7 @@ class PurchaseRequestController extends Controller
         $request['remark'] = $request->note ?? '';
         $arrivalApprove = RawMaterialPurchaseRequest::create($request->all());
 
-      
+
         return response()->json([
             'success' => 'Arrival Approval created successfully.',
             'data' => $arrivalApprove
@@ -100,7 +100,7 @@ class PurchaseRequestController extends Controller
      */
     public function update(Request $request, $id)
     {
-       
+
         return response()->json([
             'success' => 'Arrival Approval updated successfully.',
             'data' => []

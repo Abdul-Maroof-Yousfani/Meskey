@@ -14,18 +14,15 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('company_id');
 
-            // Basic information
             $table->string('contract_no')->unique();
             $table->date('contract_date');
             $table->unsignedBigInteger('company_location_id');
             $table->unsignedBigInteger('sauda_type_id');
 
-            // Supplier information
             $table->unsignedBigInteger('account_of')->nullable();
             $table->unsignedBigInteger('supplier_id');
             $table->decimal('supplier_commission', 10, 2)->nullable();
 
-            // Broker information (up to 3 brokers)
             $table->unsignedBigInteger('broker_one_id')->nullable();
             $table->decimal('broker_one_commission', 10, 2)->nullable();
             $table->unsignedBigInteger('broker_two_id')->nullable();
@@ -33,43 +30,37 @@ return new class extends Migration {
             $table->unsignedBigInteger('broker_three_id')->nullable();
             $table->decimal('broker_three_commission', 10, 2)->nullable();
 
-            // Product information
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('truck_size_range_id')->nullable();
 
             $table->enum('line_type', ['bari', 'choti'])->nullable();
-            $table->integer('bag_weight')->nullable(); // in kg
+            $table->integer('bag_weight')->nullable();
             $table->decimal('bag_rate', 10, 2)->nullable();
 
-            // Delivery information
             $table->date('delivery_date');
             $table->integer('credit_days')->nullable();
             $table->text('delivery_address');
 
-            // Rate information
             $table->decimal('rate_per_kg', 10, 2);
             $table->decimal('rate_per_mound', 10, 2);
             $table->decimal('rate_per_100kg', 10, 2);
 
-            // Quantity information
             $table->enum('calculation_type', ['trucks', 'quantity']);
             $table->integer('no_of_trucks')->nullable();
-            $table->decimal('total_quantity', 12, 2)->nullable(); // in kg
-            $table->decimal('min_quantity', 12, 2); // in kg
-            $table->decimal('max_quantity', 12, 2); // in kg
-            $table->integer('no_of_bags');
+            $table->decimal('total_quantity', 12, 2)->nullable();
+            $table->decimal('min_quantity', 12, 2);
+            $table->decimal('max_quantity', 12, 2);
+            $table->integer('min_bags');
+            $table->integer('max_bags');
 
-            // Other information
             $table->boolean('is_replacement')->default(false);
             $table->decimal('weighbridge_from', 10, 2)->nullable();
             $table->text('remarks')->nullable();
 
-            // Status and timestamps
             $table->enum('status', ['draft', 'confirmed', 'completed', 'cancelled'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
 
-            // Foreign keys
             $table->foreign('company_location_id')->references('id')->on('company_locations');
             $table->foreign('sauda_type_id')->references('id')->on('sauda_types');
             $table->foreign('account_of')->references('id')->on('users');

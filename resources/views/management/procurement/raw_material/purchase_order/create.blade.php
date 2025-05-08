@@ -1,6 +1,6 @@
 <form action="{{ route('raw-material.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-request') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-order') }}" />
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
@@ -39,7 +39,6 @@
                 Supplier
             </h6>
         </div>
-        {{-- Supplier & Borkers --}}
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Supplier:</label>
@@ -152,30 +151,12 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Bags Weight (kg):</label>
-                {{-- <select name="bag_weight" id="bag_weight" class="form-control select2">
-                    <option value="">Bags Weight</option>
-                    <option value="5">5Kg</option>
-                    <option value="10">10Kg</option>
-                    <option value="15">15Kg</option>
-                    <option value="20">20Kg</option>
-                    <option value="25">25Kg</option>
-                    <option value="30">30Kg</option>
-                </select> --}}
                 <input type="number" name="bag_weight" placeholder="Bags Weight (kg)" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Bags Rate:</label>
-                {{-- <select name="line_type" id="line_type" class="form-control select2">
-                    <option value="">Bags Rate</option>
-                    <option value="5">5Kg</option>
-                    <option value="10">10Kg</option>
-                    <option value="15">15Kg</option>
-                    <option value="20">20Kg</option>
-                    <option value="25">25Kg</option>
-                    <option value="30">30Kg</option>
-                </select> --}}
                 <input type="number" name="bag_rate" placeholder="Bags Rate" class="form-control" />
             </div>
         </div>
@@ -287,18 +268,6 @@
                     class="form-control" readonly />
             </div>
         </div>
-
-
-        {{-- <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group">
-                <label>Bags Weight:</label>
-                <select name="bag_weight" id="bag_weight" class="form-control select2">
-                    <option value="100">100 kg</option>
-                    <option value="50">50 kg</option>
-                    <option value="25">25 kg</option>
-                </select>
-            </div>
-        </div> --}}
     </div>
 
     <div class="row">
@@ -312,22 +281,22 @@
                 <label class=" label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement
                 </label>
                 <div class="custom-control custom-switch">
-                    <input type="checkbox" checked name="is_lumpsum_deduction_initial" class="custom-control-input"
+                    <input type="checkbox" checked name="is_replacement" class="custom-control-input"
                         id="lumpsum-toggle-initial">
                     <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
                 </div>
             </div>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Weighbridge only From:</label>
                 <input type="text" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Delivery Address:</label>
-                <textarea name="remarks" placeholder="Remarks" class="form-control"></textarea>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>delivery_address:</label>
+                <input type="text" name="delivery_address" placeholder="delivery_address" class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -338,24 +307,14 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 d-none">
             <div class="form-group">
-                <label>delivery_address:</label>
-                <textarea name="delivery_address" placeholder="delivery_address" class="form-control"></textarea>
-
-                <input type="text" name="no_of_bags" id="bags_range" placeholder="Bags Range"
-                    class="form-control" readonly />
+                <input type="text" name="min_bags" id="minBags" placeholder="Bags Range"
+                    class="form-control" />
+                <input type="text" name="max_bags" id="maxBags" placeholder="Bags Range"
+                    class="form-control" />
                 <input name="min_quantity" id="minQty" placeholder="minQty" class="form-control">
                 <input name="max_quantity" id="maxQty" placeholder="maxQty" class="form-control">
             </div>
         </div>
-        {{-- <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Status:</label>
-                <select class="form-control" name="status">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-            </div>
-        </div> --}}
     </div>
 
     <div class="row bottom-button-bar">
@@ -387,9 +346,7 @@
                         location_id: locationId,
                         contract_date: contractDate
                     },
-                    beforeSend: function() {
-                        // Show loading if needed
-                    },
+                    beforeSend: function() {},
                     success: function(response) {
                         if (response.success) {
                             $('[name="contract_no"]').val(response.contract_no);
@@ -548,6 +505,9 @@
                     $('#minQty').val(minQuantity);
                     $('#maxQty').val(maxQuantity);
 
+                    $('#minBags').val(minBags);
+                    $('#maxBags').val(maxBags);
+
                     $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
                         ' bags');
                 } else {
@@ -555,6 +515,9 @@
 
                     $('#minQty').val(minQuantity);
                     $('#maxQty').val(minQuantity);
+
+                    $('#minBags').val(minBags);
+                    $('#maxBags').val(maxBags);
 
                     $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
                         ' bags');
@@ -564,10 +527,9 @@
             calculateQuantityAndBags();
         });
 
-        // initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
-        initializeDynamicSelect2('#supplier_id', 'brokers', 'name', 'id', true, false);
+        initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
         initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
         initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
         initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);
