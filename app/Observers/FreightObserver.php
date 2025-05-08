@@ -68,7 +68,15 @@ class FreightObserver
         $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $sluggedName = Str::slug($originalName);
         $filename = 'freight-' . $fieldName . '-' . $sluggedName . '-' . now()->format('YmdHis') . '.' . $extension;
-        $path = 'freight_documents/' . $filename;
+        // $path = 'freight_documents/' . $filename;
+        // $filePath = $file->getRealPath();
+
+        $directory = public_path('storage/freight_documents');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $path = $directory . '/' . $filename;
         $filePath = $file->getRealPath();
 
         list($originalWidth, $originalHeight, $type) = getimagesize($filePath);
@@ -134,19 +142,29 @@ class FreightObserver
             $originalHeight
         );
 
+        // switch ($type) {
+        //     case IMAGETYPE_JPEG:
+        //         imagejpeg($newImage, Storage::disk('public')->path($path), self::IMAGE_QUALITY);
+        //         break;
+        //     case IMAGETYPE_PNG:
+        //         imagepng($newImage, Storage::disk('public')->path($path), round(9 * self::IMAGE_QUALITY / 100));
+        //         break;
+        // }
+
         switch ($type) {
             case IMAGETYPE_JPEG:
-                imagejpeg($newImage, Storage::disk('public')->path($path), self::IMAGE_QUALITY);
+                imagejpeg($newImage, $path, self::IMAGE_QUALITY);
                 break;
             case IMAGETYPE_PNG:
-                imagepng($newImage, Storage::disk('public')->path($path), round(9 * self::IMAGE_QUALITY / 100));
+                imagepng($newImage, $path, round(9 * self::IMAGE_QUALITY / 100));
                 break;
         }
 
         imagedestroy($image);
         imagedestroy($newImage);
 
-        return $path;
+        // return $path;
+        return 'freight_documents/' . $filename;
     }
 
     /**
@@ -166,9 +184,13 @@ class FreightObserver
      */
     protected function deleteFile($filePath)
     {
-        $storagePath = str_replace('storage/', '', $filePath);
-        if (Storage::disk('public')->exists($storagePath)) {
-            Storage::disk('public')->delete($storagePath);
+        // $storagePath = str_replace('storage/', '', $filePath);
+        // if (Storage::disk('public')->exists($storagePath)) {
+        //     Storage::disk('public')->delete($storagePath);
+        // }
+        $path = public_path('storage/' . str_replace('storage/', '', $filePath));
+        if (file_exists($path)) {
+            unlink($path);
         }
     }
 
