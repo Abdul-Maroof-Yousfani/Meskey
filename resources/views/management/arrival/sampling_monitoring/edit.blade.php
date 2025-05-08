@@ -164,8 +164,12 @@
                             <label>Sample Money Type:</label>
                             <select name="sample_money_type" class="form-control" disabled>
                                 <option value="">Select Type</option>
-                                <option {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'single' ? 'selected' : ''}} value="single">Single</option>
-                                <option {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'double' ? 'selected' : ''}} value="double">Double</option>
+                                <option
+                                    {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'single' ? 'selected' : '' }}
+                                    value="single">Single</option>
+                                <option
+                                    {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'double' ? 'selected' : '' }}
+                                    value="double">Double</option>
                             </select>
                         </div>
                     </div>
