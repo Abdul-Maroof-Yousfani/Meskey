@@ -6,7 +6,8 @@
                 <option value="">Select Ticket</option>
                 @foreach ($tickets as $ticket)
                     <option value="{{ $ticket->id }}">
-                        {{ $ticket->unique_no }} - {{ $ticket->supplier_name }} - {{ optional($ticket->product)->name }}
+                        Ticket No: {{ $ticket->unique_no }} --
+                        Truck No: {{ $ticket->truck_no ?? '-' }}
                     </option>
                 @endforeach
             </select>

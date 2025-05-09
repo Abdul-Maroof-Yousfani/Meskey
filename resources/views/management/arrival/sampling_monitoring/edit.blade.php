@@ -961,7 +961,9 @@
                             let to = parseFloat(slab.to);
 
                             if (val >= from && val <= to) {
-                                deductionValue = parseFloat(slab.deduction_value);
+                                let diff = Math.max(0, Math.min(val, to) - from);
+
+                                deductionValue = parseFloat(slab.deduction_value) * (diff);
                             }
                         }
                     }

@@ -10,8 +10,8 @@
                     @foreach ($ArrivalTickets as $arrivalTicket)
                         <option data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
                             data-trucknumber="{{ $arrivalTicket->truck_no }}" value="{{ $arrivalTicket->id }}">
-                            Ticket No: {{ $arrivalTicket->unique_no }}
-                            {{-- -- Truck No: {{ $arrivalTicket->truck_no ?? '-' }} --}}
+                            Ticket No: {{ $arrivalTicket->unique_no }} --
+                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
                         </option>
                     @endforeach
                 </select>
