@@ -161,9 +161,11 @@
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group ">
-                            <label>Sample Money Type:</label>
+                            <label>Sample Money Type: </label>
                             <select name="sample_money_type" class="form-control" disabled>
-                                <option value="">Select Type</option>
+                                <option
+                                    {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'n/a' ? 'selected' : '' }}
+                                    value="n/a">N/A</option>
                                 <option
                                     {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'single' ? 'selected' : '' }}
                                     value="single">Single</option>
@@ -264,7 +266,8 @@
             <li class="nav-item">
                 <a class="nav-link active" id="current-inner-tab" data-toggle="tab" href="#current-inner"
                     role="tab" aria-controls="current-inner" aria-selected="true">
-                    Current Inner Checklist
+                    {{ ucwords(($arrivalSamplingRequest->sampling_type == 'inner' ? 'Current ' : '') . $arrivalSamplingRequest->sampling_type) }}
+                    Checklist
                 </a>
             </li>
         </ul>
@@ -595,7 +598,7 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-md-4 label-control font-weight-bold">Lumpsum Deduction (KG's)</label>
+                            <label class="col-md-4 label-control font-weight-bold">Moisture Deduction (KG's)</label>
                             <div class="col-md-8">
                                 <div class="input-group mb-0">
                                     <input type="text" class="form-control" readonly
@@ -851,7 +854,7 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Lumpsum
+                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Moisture
                             Deduction (KG's)</label>
                         <div class="col-md-8">
                             <div class="input-group mb-0">
@@ -956,14 +959,21 @@
                     let deductionValue = 0;
 
                     if (matchingSlabs && matchingSlabs.length > 0) {
+                        matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
+
                         for (let slab of matchingSlabs) {
                             let from = parseFloat(slab.from);
                             let to = parseFloat(slab.to);
 
-                            if (val >= from && val <= to) {
-                                let diff = Math.max(0, Math.min(val, to) - from);
+                            if (val > from) {
+                                let applicableAmount = 0;
+                                if (val >= to) {
+                                    applicableAmount = to - from;
+                                } else {
+                                    applicableAmount = val - from;
+                                }
 
-                                deductionValue = parseFloat(slab.deduction_value) * (diff);
+                                deductionValue += parseFloat(slab.deduction_value) * applicableAmount;
                             }
                         }
                     }

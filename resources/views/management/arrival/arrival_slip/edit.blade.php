@@ -46,7 +46,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div id="slabsContainer">
                 <!-- Header with company info -->
-                <div style="display: flex; margin-bottom: 15px;">
+                <div style="display: none; margin-bottom: 15px;">
                     <div style="width: 120px; padding-right: 15px;">
                         <img src="{{ asset('images/logo.png') }}" alt="Company Logo" style="max-width: 100%;">
                     </div>

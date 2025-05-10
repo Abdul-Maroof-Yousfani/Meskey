@@ -28,7 +28,7 @@ class ArrivalTicketRequest extends FormRequest
             'supplier_name' => 'required|string|max:255',
             //truck detail
             'arrival_truck_type_id' => 'required|max:255',
-            'sample_money_type' => 'required|in:single,double',
+            'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',
             'truck_no' => 'required|string|max:255',
             'bilty_no' => 'required|string|max:255',

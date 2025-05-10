@@ -60,9 +60,15 @@ class HomeController extends Controller
         }
 
         $query = DB::table($tableName);
+
+        if (Schema::hasColumn($tableName, 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
         if ($search) {
             $query->where($columnName, 'like', '%' . $search . '%');
         }
+
         $data = $query->limit(50)->get();
 
         $results = [];
@@ -80,6 +86,7 @@ class HomeController extends Controller
                 'newTag' => true
             ];
         }
+
         return response()->json(['items' => $results]);
     }
 }

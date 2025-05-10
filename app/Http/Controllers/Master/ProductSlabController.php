@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Master\ProductSlabRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 class ProductSlabController extends Controller
 {
@@ -44,10 +46,141 @@ class ProductSlabController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    // public function create()
+    // {
+    //     $slab_types = ProductSlabType::where('status', 'active')->get();
+    //     return view('management.master.product_slab.create', compact('slab_types'));
+    // }
+
+    // Add this to your ProductSlabController
     public function create()
     {
         $slab_types = ProductSlabType::where('status', 'active')->get();
         return view('management.master.product_slab.create', compact('slab_types'));
+    }
+
+    public function storeMultiple(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'slabs' => 'required|array',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            ProductSlab::where('product_id', $request->product_id)->delete();
+
+            foreach ($request->slabs as $slabTypeId => $slabData) {
+                if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
+                    $deductionType = $slabData['deduction_type'] ?? 'kg';
+
+                    if (isset($slabData['ranges'])) {
+                        $validRanges = collect($slabData['ranges'])
+                            ->filter(function ($range) {
+                                return !is_null($range['from'] ?? null) &&
+                                    !is_null($range['to'] ?? null) &&
+                                    !is_null($range['deduction_value'] ?? null);
+                            })
+                            ->sortBy('from')
+                            ->values()
+                            ->all();
+
+                        foreach ($validRanges as $range) {
+                            if ($range['from'] >= $range['to']) {
+                                throw new \Exception("Invalid range: 'From' value must be less than 'To' value for slab type $slabTypeId");
+                            }
+
+                            ProductSlab::create([
+                                'company_id' => $request->company_id,
+                                'product_id' => $request->product_id,
+                                'product_slab_type_id' => $slabTypeId,
+                                'from' => $range['from'],
+                                'to' => $range['to'],
+                                'deduction_type' => $deductionType,
+                                'deduction_value' => $range['deduction_value'],
+                                'is_enabled' => true,
+                                'status' => 'active'
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Product slabs created successfully.',
+                'redirect' => route('get.product-slab')
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Failed to create product slabs: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateMultiple(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'slabs' => 'required|array',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            ProductSlab::where('product_id', $request->product_id)->delete();
+
+            foreach ($request->slabs as $slabTypeId => $slabData) {
+                if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
+                    $deductionType = $slabData['deduction_type'] ?? 'kg';
+
+                    if (isset($slabData['ranges'])) {
+                        $validRanges = collect($slabData['ranges'])
+                            ->filter(function ($range) {
+                                return !is_null($range['from'] ?? null) &&
+                                    !is_null($range['to'] ?? null) &&
+                                    !is_null($range['deduction_value'] ?? null);
+                            })
+                            ->sortBy('from')
+                            ->values()
+                            ->all();
+
+                        foreach ($validRanges as $range) {
+                            if ($range['from'] >= $range['to']) {
+                                throw new \Exception("Invalid range: 'From' value must be less than 'To' value for slab type $slabTypeId");
+                            }
+
+                            ProductSlab::create([
+                                'company_id' => $request->company_id,
+                                'product_id' => $request->product_id,
+                                'product_slab_type_id' => $slabTypeId,
+                                'from' => $range['from'],
+                                'to' => $range['to'],
+                                'deduction_type' => $deductionType,
+                                'deduction_value' => $range['deduction_value'],
+                                'is_enabled' => true,
+                                'status' => 'active'
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Product slabs updated successfully.',
+                'redirect' => route('get.product-slab')
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Failed to update product slabs: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -64,11 +197,21 @@ class ProductSlabController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    // public function edit($id)
+    // {
+    //     $unit_of_measure = ProductSlab::findOrFail($id);
+    //     return view('management.master.product_slab.edit', compact('unit_of_measure'));
+    // }
+
+    public function edit($productId)
     {
-        $unit_of_measure = ProductSlab::findOrFail($id);
-        return view('management.master.product_slab.edit', compact('unit_of_measure'));
+        $product = Product::findOrFail($productId);
+        $slab_types = ProductSlabType::where('status', 'active')->get();
+        $productSlabs = ProductSlab::where('product_id', $productId)->get();
+
+        return view('management.master.product_slab.edit', compact('product', 'slab_types', 'productSlabs'));
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -88,6 +231,12 @@ class ProductSlabController extends Controller
     {
         $unit_of_measure->delete();
         return response()->json(['success' => 'Category deleted successfully.'], 200);
+    }
+
+    public function destroyMultiple($productId)
+    {
+        ProductSlab::where('product_id', $productId)->delete();
+        return response()->json(['success' => 'Product slabs deleted successfully.'], 200);
     }
 
     public function getSlabsByProduct(Request $request)

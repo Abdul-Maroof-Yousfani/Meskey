@@ -131,7 +131,7 @@ class InnersamplingController extends Controller
 
                     if (
                         $initialResult->product_slab_type_id != $createdSamplingData[$index]->product_slab_type_id ||
-                        $initialResult->checklist_value != $createdSamplingData[$index]->checklist_value
+                        $createdSamplingData[$index]->checklist_value > $initialResult->checklist_value
                     ) {
                         $resultsMatch = false;
                         break;
@@ -153,7 +153,7 @@ class InnersamplingController extends Controller
                     }
                     if (
                         $initialCompulsoryResult->arrival_compulsory_qc_param_id != $createdCompulsuryData[$index]->arrival_compulsory_qc_param_id ||
-                        $initialCompulsoryResult->compulsory_checklist_value != $createdCompulsuryData[$index]->compulsory_checklist_value
+                        $createdCompulsuryData[$index]->compulsory_checklist_value > $initialCompulsoryResult->compulsory_checklist_value
                     ) {
                         $compulsoryResultsMatch = false;
                         break;

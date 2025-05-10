@@ -948,3 +948,8 @@ tr.editing {
 #indicativePricesTable :is(input, select) {
   background-color: white;
 }
+
+.valid-screen .form-control.is-invalid:disabled,
+.valid-screen .form-control.is-invalid[readonly] {
+  border-color: #f55252 !important;
+}

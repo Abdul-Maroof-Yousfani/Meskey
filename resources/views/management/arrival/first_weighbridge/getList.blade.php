@@ -29,7 +29,7 @@
                     </td>
                     <td>
                         {{-- @can('role-edit') --}}
-                        <a onclick="openModal(this,'{{ route('first-weighbridge.edit', $row->id) }}','View Location Transfer', true)"
+                        <a onclick="openModal(this,'{{ route('first-weighbridge.edit', $row->id) }}','View First Weighbridge', true)"
                             class="info p-1 text-center mr-2 position-relative ">
                             <i class="ft-eye font-medium-3"></i>
                         </a>

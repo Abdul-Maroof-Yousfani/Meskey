@@ -1,119 +1,279 @@
-<form method="POST" action="{{ route('product.update', $product->id) }}" method="POST" id="ajaxSubmit"
-    autocomplete="off">
+<form action="{{ route('product-slab.update-multiple', $product->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('get.product') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.product-slab') }}" />
+    <input type="hidden" name="product_id" value="{{ $product->id }}" />
 
     <div class="row form-mar">
-
-        <div class="col-md-12 mb-4">
-            <div class="avatar-upload">
-                <div class="avatar-edit">
-                    <input type='file' id="imageUpload" name="image" accept=".png, .jpg, .jpeg" />
-                    <label for="imageUpload">
-                        <i class="ft-camera"></i>
-                    </label>
-                </div>
-                <div class="avatar-preview">
-                    <div id="imagePreview" style="background-image: url('{{ image_path($product->image) }}');">
-                    </div>
-                </div>
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Product:</label>
+                <select class="form-control" id="product_id_c" disabled>
+                    <option value="{{ $product->id }}" selected>{{ $product->name }}</option>
+                </select>
             </div>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">Slab Types Configuration</h6>
+        </div>
+    </div>
 
-            <fieldset>
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <button class="btn btn-primary" type="button">Product Code#</button>
+    <div id="slabs-container">
+        @foreach ($slab_types as $slab_type)
+            @php
+                $slabsForType = $productSlabs->where('product_slab_type_id', $slab_type->id);
+                $isEnabled = $slabsForType->count() > 0;
+                $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'kg';
+            @endphp
+            <div class="slab-type-group mb-4 p-3 border rounded">
+                <div class="row align-items-center">
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input slab-enable-switch"
+                                    id="enable_{{ $slab_type->id }}" name="slabs[{{ $slab_type->id }}][is_enabled]"
+                                    value="1" {{ $isEnabled ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="enable_{{ $slab_type->id }}"></label>
+                            </div>
+                        </div>
                     </div>
-                    <input type="text" disabled class="form-control" value="{{$product->unique_no}}"
-                        placeholder="Button on left">
+                    <div class="col-md-5">
+                        <h5>{{ $slab_type->name }}</h5>
+                        <input type="hidden" name="slabs[{{ $slab_type->id }}][product_slab_type_id]"
+                            value="{{ $slab_type->id }}">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Deduction Type:</label>
+                            <select class="form-control deduction-type"
+                                name="slabs[{{ $slab_type->id }}][deduction_type]">
+                                <option value="kg" {{ $deductionType == 'kg' ? 'selected' : '' }}>Kg</option>
+                                <option value="amount" {{ $deductionType == 'amount' ? 'selected' : '' }}>Amount
+                                </option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-            </fieldset>
-        </div>
 
+                <div class="slab-ranges-container" data-slab-type="{{ $slab_type->id }}"
+                    {{ !$isEnabled ? 'style="display: none;"' : '' }}>
+                    <div class="slab-range-template" style="display: none;">
+                        <div class="row slab-range-row mb-2">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Deduction Value:</label>
+                                    <input type="number" step="0.01" class="form-control deduction-value"
+                                        name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]"
+                                        placeholder="Value">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Range (From - To):</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" class="form-control range-from"
+                                            name="slabs[{{ $slab_type->id }}][ranges][0][from]" placeholder="From">
+                                        <div class="input-group-prepend input-group-append">
+                                            <span class="input-group-text">-</span>
+                                        </div>
+                                        <input type="number" step="0.01" class="form-control range-to"
+                                            name="slabs[{{ $slab_type->id }}][ranges][0][to]" placeholder="To">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-range"
+                                    style="margin-bottom: 15px;">
+                                    <i class="ft-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($slabsForType->count() > 0)
+                        @foreach ($slabsForType as $index => $slab)
+                            <div class="row slab-range-row mb-2">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Deduction Value:</label>
+                                        <input type="number" step="0.01" class="form-control deduction-value"
+                                            name="slabs[{{ $slab_type->id }}][ranges][{{ $index }}][deduction_value]"
+                                            placeholder="Value" value="{{ $slab->deduction_value }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Range (From - To):</label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.01" class="form-control range-from"
+                                                name="slabs[{{ $slab_type->id }}][ranges][{{ $index }}][from]"
+                                                placeholder="From" value="{{ $slab->from }}">
+                                            <div class="input-group-prepend input-group-append">
+                                                <span class="input-group-text">-</span>
+                                            </div>
+                                            <input type="number" step="0.01" class="form-control range-to"
+                                                name="slabs[{{ $slab_type->id }}][ranges][{{ $index }}][to]"
+                                                placeholder="To" value="{{ $slab->to }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-range"
+                                        style="margin-bottom: 15px;">
+                                        <i class="ft-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="row slab-range-row mb-2">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Deduction Value:</label>
+                                    <input type="number" step="0.01" class="form-control deduction-value"
+                                        name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]"
+                                        placeholder="Value">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Range (From - To):</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" class="form-control range-from"
+                                            name="slabs[{{ $slab_type->id }}][ranges][0][from]" placeholder="From">
+                                        <div class="input-group-prepend input-group-append">
+                                            <span class="input-group-text">-</span>
+                                        </div>
+                                        <input type="number" step="0.01" class="form-control range-to"
+                                            name="slabs[{{ $slab_type->id }}][ranges][0][to]" placeholder="To">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-range"
+                                    style="margin-bottom: 15px;">
+                                    <i class="ft-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 text-right">
+                        <button type="button" class="btn btn-primary btn-sm add-range"
+                            data-slab-type="{{ $slab_type->id }}">
+                            <i class="ft-plus"></i> Add Range
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endforeach
     </div>
-    <div class="row">
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Category:</label>
-                <select class="form-control" name="category_id">
-                    <option value="">Select Category</option>
-                    @foreach ($categories as $category)
-                        <option {{ $category->id == $product->category_id ? 'selected' : ''}} value="{{ $category->id }}">
-                            {{ $category->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Unit of Measure:</label>
-                <select class="form-control" name="unit_of_measure_id">
-                    <option value="">Select Unit of Measure</option>
-                    @foreach ($units as $unitOfMeasure)
-                        <option {{ $unitOfMeasure->id == $product->unit_of_measure_id ? 'selected' : ''}}
-                            value="{{ $unitOfMeasure->id }}">{{ $unitOfMeasure->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Name:</label>
-                <input type="text" name="name" value="{{$product->name}}" placeholder="Name" class="form-control" />
-            </div>
-        </div>
-
-        <!-- Description -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Description:</label>
-                <textarea name="description" value="{{$product->description}}" placeholder="Description"
-                    class="form-control"></textarea>
-            </div>
-        </div>
-
-        <!-- Barcode -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Barcode:</label>
-                <input type="text" name="barcode" value="{{$product->barcode}}" placeholder="Barcode"
-                    class="form-control" />
-            </div>
-        </div>
-
-
-        <!-- Price -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Price:</label>
-                <input type="text" name="price" value="{{$product->price}}" placeholder="Price" class="form-control" />
-            </div>
-        </div>
-
-        <!-- Status -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
-                <label>Status:</label>
-                <select name="status" class="form-control">
-                    <option {{$product->name == 'active' ? 'selected' : ''}} value="active">Active</option>
-                    <option {{$product->name == 'inactive' ? 'selected' : ''}} value="inactive">Inactive</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar mt-3">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <button type="submit" class="btn btn-primary submitbutton">Update All</button>
         </div>
     </div>
 </form>
+
+<script>
+    $(document).ready(function() {
+        function toggleSlabRanges($switch) {
+            const slabTypeId = $switch.attr('id').replace('enable_', '');
+            const $container = $(`.slab-ranges-container[data-slab-type="${slabTypeId}"]`);
+
+            if ($switch.is(':checked')) {
+                $container.find('input, select').prop('disabled', false);
+                $container.show();
+            } else {
+                $container.find('input, select').prop('disabled', true);
+                $container.hide();
+            }
+        }
+
+        $('.slab-enable-switch').each(function() {
+            toggleSlabRanges($(this));
+        });
+
+        $('.slab-enable-switch').change(function() {
+            toggleSlabRanges($(this));
+        });
+
+        $(document).on('click', '.add-range', function() {
+            const slabTypeId = $(this).data('slab-type');
+            const $container = $(`.slab-ranges-container[data-slab-type="${slabTypeId}"]`);
+            const $template = $container.find('.slab-range-template').html();
+            const newIndex = $container.find('.slab-range-row').length;
+
+            const $newRow = $($template.replace(/\[0\]/g, `[${newIndex}]`));
+            $container.append($newRow);
+        });
+
+        $(document).on('click', '.remove-range', function() {
+            if ($(this).closest('.slab-ranges-container').find('.slab-range-row').length > 1) {
+                $(this).closest('.slab-range-row').remove();
+
+                const $container = $(this).closest('.slab-ranges-container');
+                $container.find('.slab-range-row').each(function(index) {
+                    $(this).find('input').each(function() {
+                        const name = $(this).attr('name').replace(/\[\d+\]/,
+                            `[${index}]`);
+                        $(this).attr('name', name);
+                    });
+                });
+            } else {
+                alert('At least one range must exist for each slab type.');
+            }
+        });
+
+        $(document).on('input keyup', '.range-from, .range-to', function() {
+            const $row = $(this).closest('.slab-range-row');
+            const $container = $(this).closest('.slab-ranges-container');
+            const $formGroup = $(this).closest('.form-group');
+            const slabTypeId = $container.data('slab-type');
+            const from = parseFloat($row.find('.range-from').val());
+            const to = parseFloat($row.find('.range-to').val());
+
+            $row.find('.range-from, .range-to').removeClass('is-invalid');
+            $formGroup.find('.error-message').remove();
+
+            if (!isNaN(from) && !isNaN(to)) {
+                if (from >= to) {
+                    $row.find('.range-to').addClass('is-invalid');
+                    $formGroup.append(
+                        '<div class="error-message text-danger">"To" value must be greater than "From" value</div>'
+                    );
+                    return;
+                }
+
+                let hasOverlap = false;
+                $container.find('.slab-range-row').not($row).each(function() {
+                    const otherFrom = parseFloat($(this).find('.range-from').val());
+                    const otherTo = parseFloat($(this).find('.range-to').val());
+
+                    if (!isNaN(otherFrom) && !isNaN(otherTo)) {
+                        if ((from >= otherFrom && from <= otherTo) ||
+                            (to >= otherFrom && to <= otherTo) ||
+                            (from <= otherFrom && to >= otherTo)) {
+                            hasOverlap = true;
+                            return false;
+                        }
+                    }
+                });
+
+                if (hasOverlap) {
+                    $row.find('.range-from, .range-to').addClass('is-invalid');
+                    $formGroup.append(
+                        '<div class="error-message text-danger">This range overlaps with another range</div>'
+                    );
+                }
+            }
+        });
+    });
+</script>

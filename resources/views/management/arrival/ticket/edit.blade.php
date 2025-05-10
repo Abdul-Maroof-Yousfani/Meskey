@@ -68,6 +68,8 @@
                 <label>Sample Money Type :</label>
                 <select name="sample_money_type" class="form-control">
                     <option value="">Select Type</option>
+                    <option {{ $arrivalTicket->sample_money_type == 'n/a' ? 'selected' : '' }} value="n/a">
+                        N/A</option>
                     <option {{ $arrivalTicket->sample_money_type == 'single' ? 'selected' : '' }} value="single">
                         Single</option>
                     <option {{ $arrivalTicket->sample_money_type == 'double' ? 'selected' : '' }} value="double">

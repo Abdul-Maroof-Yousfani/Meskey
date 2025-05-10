@@ -9,7 +9,8 @@
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
                         <option data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
-                            data-trucknumber="{{ $arrivalTicket->truck_no }}" value="{{ $arrivalTicket->id }}">
+                            data-trucknumber="{{ $arrivalTicket->truck_no }}" data-bags="{{ $arrivalTicket->bags }}"
+                            value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
                         </option>
@@ -113,8 +114,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Total Rejection Bags : </label>
-                <input type="number" name="total_rejection" placeholder="Total Rejection Bags" class="form-control"
-                    autocomplete="off" />
+                <input type="number" readonly name="total_rejection" id="total_rejection"
+                    placeholder="Total Rejection Bags" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -158,19 +159,15 @@
         $('.select2').select2();
 
 
+        $('input[name="total_bags"]').on('change input', function() {
+            let selectedTicket = $('select[name="arrival_ticket_id"]').find(':selected');
+            let totalTicketBags = selectedTicket.data('bags') || 0;
+            let enteredBags = parseInt($(this).val()) || 0;
 
+            let totalRejection = totalTicketBags - enteredBags;
 
-
-
-        // Autofill truck_no based on selected ticket
-        //    $('select[name="arrival_ticket_id"]').on('change', function() {
-        let truckNo = $(this).find(':selected').data('trucknumber') || '';
-        //     $('input[name="truck_no"]').val(truckNo);
-        //   });
-
-
-
-
+            $('#total_rejection').val(totalRejection);
+        });
 
         // Autofill truck_no and check QC status when ticket is selected
         $('select[name="arrival_ticket_id"]').on('change', function() {

@@ -222,7 +222,7 @@ if (!function_exists('getTableData')) {
 if (!function_exists('checkIfNameExists')) {
     function checkIfNameExists(string $name)
     {
-        $validNames = ['Unloading Instructions', 'QC Remarks', 'Yeild (%)', 'Yield (%)'];
+        $validNames = ['Unloading Instructions', 'QC Advice', 'QC Remarks', 'Yeild (%)', 'Yield (%)'];
         return in_array($name, $validNames);
     }
 }

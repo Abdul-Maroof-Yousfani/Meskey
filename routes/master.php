@@ -45,6 +45,9 @@ Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getLis
 
 Route::resource('product-slab', ProductSlabController::class);
 Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->name('get.product-slab');
+Route::post('/product-slab/store-multiple', [ProductSlabController::class, 'storeMultiple'])->name('product-slab.store-multiple');
+Route::delete('/product-slab/destroy-multiple/{productId}', [ProductSlabController::class, 'destroyMultiple'])->name('product-slab.destroy-multiple');
+Route::put('/product-slab/update-multiple/{productId}', [ProductSlabController::class, 'updateMultiple'])->name('product-slab.update-multiple');
 
 Route::resource('company-location', CompanyLocationController::class);
 Route::post('/get-company-location', [CompanyLocationController::class, 'getList'])->name('get.company-location');

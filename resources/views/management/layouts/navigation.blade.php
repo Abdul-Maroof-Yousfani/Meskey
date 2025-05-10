@@ -41,8 +41,6 @@
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-truck"></i><span data-i18n="UI Kit">Arrival</span></a>
-
-
                 <ul class="dropdown-menu">
                     @canAccess('arrival-ticket')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -135,26 +133,13 @@
                             </span></a>
                     </li>
                     @endcanAccess
-                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            @routerLink(route('users.index')) data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manccccage
-                                Users</span></a>
-                    </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center" href="{{ route('menu.index') }}"
-                            onclick="loadPageContent('{{ route('menu.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Menu</span>
-                        </a>
-                    </li> --}}
                 </ul>
-
             </li>
             @endcanAccess
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Purchase
                         Contract</span></a>
-
 
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -179,8 +164,14 @@
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Prices
                             </span></a>
                     </li>
-                </ul>
 
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('indicative-prices.reports') }}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Price
+                                Report
+                            </span></a>
+                    </li>
+                </ul>
             </li>
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
@@ -215,16 +206,17 @@
             </li>
 
 
-             <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.reports') }}"
-                            onclick="loadPageContent('{{ route('indicative-prices.reports') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Price Reports</span></a>
+                            onclick="loadPageContent('{{ route('indicative-prices.reports') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Email">Indicative Price Reports</span></a>
                     </li>
-                
+
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>

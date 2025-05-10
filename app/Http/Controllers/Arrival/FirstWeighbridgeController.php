@@ -71,9 +71,8 @@ class FirstWeighbridgeController extends Controller
      */
     public function edit($id)
     {
-        $data['arrival_location'] = FirstWeighbridge::findOrFail($id);
-        $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'pending')->get();
+        $data['firstWeighbridge'] = FirstWeighbridge::findOrFail($id);
+        $data['arrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->get();
 
         return view('management.arrival.first_weighbridge.edit', $data);
     }

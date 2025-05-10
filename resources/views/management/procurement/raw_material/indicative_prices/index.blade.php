@@ -40,7 +40,7 @@
                                             <th>Commodity</th>
                                             <th>Location</th>
                                             <th>Type</th>
-                                            <th>Crop Year</th>
+                                            <th style="width: 7%">Crop Year</th>
                                             <th>Delivery Condition</th>
                                             <th>Cash Rate</th>
                                             <th>Cash Days</th>
@@ -49,7 +49,24 @@
                                             <th>Others</th>
                                             <th>Remarks</th>
                                             <th>Action</th>
+                                            {{-- <th rowspan="2">S.No</th>
+                                            <th rowspan="2">Commodity</th>
+                                            <th rowspan="2">Location</th>
+                                            <th rowspan="2">Type</th>
+                                            <th rowspan="2">Crop Year</th>
+                                            <th rowspan="2">Delivery Condition</th>
+                                            <th colspan="2" class="text-center">Cash</th>
+                                            <th colspan="2" class="text-center">Credit</th>
+                                            <th rowspan="2">Others</th>
+                                            <th rowspan="2">Remarks</th>
+                                            <th rowspan="2">Action</th> --}}
                                         </tr>
+                                        {{-- <tr>
+                                            <th>Rate</th>
+                                            <th>Days</th>
+                                            <th>Rate</th>
+                                            <th>Days</th>
+                                        </tr> --}}
                                     </thead>
                                     <tbody>
                                         <tr class="empty-row">
@@ -358,7 +375,7 @@
                             `<select class="form-control" name="${selectName}">${options}</select>`
                         );
                     } else {
-                        cell.html(`<input type="${index >= 5 && index <= 9 ? 'number' : 'text'}" 
+                        cell.html(`<input type="${index > 5 && index <= 9 ? 'number' : 'text'}" 
                          class="form-control" 
                          name="${getFieldName(index)}" 
                          value="${value}" 
