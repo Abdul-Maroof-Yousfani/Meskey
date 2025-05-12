@@ -6,8 +6,11 @@
         <div class="col-md-12">
             <div class="form-group">
                 <label>Product:</label>
-                <select class="form-control" name="product_id" id="product_id_c">
+                <select class="form-control select2" name="product_id" id="product_id_c">
                     <option value="">Select Product</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}">{{ $product->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -155,6 +158,7 @@
 
 <script>
     $(document).ready(function() {
+        $('.select2').select2();
 
         function toggleSlabRanges($switch) {
             const slabTypeId = $switch.attr('id').replace('enable_', '');
@@ -179,7 +183,5 @@
         $('.slab-enable-switch').change(function() {
             toggleSlabRanges($(this));
         });
-
-        initializeDynamicSelect2('#product_id_c', 'products', 'name', 'id', false, false);
     });
 </script>

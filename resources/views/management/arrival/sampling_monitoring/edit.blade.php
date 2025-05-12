@@ -967,10 +967,11 @@
                             let isTiered = parseInt(slab.is_tiered);
                             let deductionVal = parseFloat(slab.deduction_value);
 
-                            if (val > from) {
+                            if (val >= from) {
+                                // if (val >= from && (isNaN(to) || val <= to)) {
                                 if (isTiered === 1) {
                                     let applicableAmount = 0;
-                                    if (val >= to) {
+                                    if (isNaN(to) || val >= to) {
                                         applicableAmount = to - from;
                                     } else {
                                         applicableAmount = val - from;

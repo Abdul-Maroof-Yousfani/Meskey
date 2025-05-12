@@ -55,17 +55,12 @@ class ProductSlabController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    // public function create()
-    // {
-    //     $slab_types = ProductSlabType::where('status', 'active')->get();
-    //     return view('management.master.product_slab.create', compact('slab_types'));
-    // }
-
-    // Add this to your ProductSlabController
     public function create()
     {
+        $products = Product::doesntHave('slabs')->get();
         $slab_types = ProductSlabType::where('status', 'active')->get();
-        return view('management.master.product_slab.create', compact('slab_types'));
+
+        return view('management.master.product_slab.create', compact('slab_types', 'products'));
     }
 
     public function storeMultiple(Request $request)
