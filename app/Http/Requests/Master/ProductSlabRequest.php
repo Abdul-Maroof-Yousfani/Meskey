@@ -24,6 +24,7 @@ class ProductSlabRequest extends FormRequest
             'to' => ['required', 'numeric', 'gt:from'],
             'deduction_type' => ['required', 'string', 'in:kg,amount'],
             'deduction_value' => ['required', 'numeric', 'min:0'],
+            'is_tiered' => ['nullable'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];
     }
@@ -59,6 +60,7 @@ class ProductSlabRequest extends FormRequest
             'deduction_type.in' => 'Deduction type must be either percentage or fixed.',
             'deduction_value.numeric' => 'Deduction value must be a number.',
             'deduction_value.min' => 'Deduction value must be at least 0.',
+            'is_tiered' => 'The tiered field must be true or false.',
             'status.required' => 'Status is required.',
             'status.in' => 'Invalid status value.',
             'business_id.required' => 'Business ID is required.',

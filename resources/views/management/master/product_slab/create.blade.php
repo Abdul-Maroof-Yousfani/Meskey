@@ -39,13 +39,29 @@
                             value="{{ $slab_type->id }}">
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Deduction Type:</label>
-                            <select class="form-control deduction-type"
-                                name="slabs[{{ $slab_type->id }}][deduction_type]">
-                                <option value="kg">Kg</option>
-                                <option value="amount">Amount</option>
-                            </select>
+                        <div class="row w-100 mx-auto">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Deduction Type:</label>
+                                    <select class="form-control deduction-type"
+                                        name="slabs[{{ $slab_type->id }}][deduction_type]">
+                                        <option value="kg">Kg</option>
+                                        <option value="amount">Amount</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Is Tiered:</label>
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input tiered"
+                                            id="is_tiered_{{ $slab_type->id }}"
+                                            name="slabs[{{ $slab_type->id }}][is_tiered]" checked>
+                                        <label class="custom-control-label"
+                                            for="is_tiered_{{ $slab_type->id }}"></label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -53,7 +69,6 @@
                 <div class="slab-ranges-container" data-slab-type="{{ $slab_type->id }}">
                     <div class="slab-range-template" style="display: none;">
                         <div class="row slab-range-row mb-2">
-
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Range (From - To):</label>
@@ -105,7 +120,8 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <input type="number" step="0.01" class="form-control deduction-value"
-                                    name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]" placeholder="Value">
+                                    name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]"
+                                    placeholder="Value">
                             </div>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">

@@ -27,6 +27,7 @@
                 $slabsForType = $productSlabs->where('product_slab_type_id', $slab_type->id);
                 $isEnabled = $slabsForType->count() > 0;
                 $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'kg';
+                $isTiered = $slabsForType->first() ? $slabsForType->first()->is_tiered : true;
             @endphp
             <div class="slab-type-group mb-4 p-3 border rounded">
                 <div class="row align-items-center">
@@ -46,14 +47,32 @@
                             value="{{ $slab_type->id }}">
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Deduction Type:</label>
-                            <select class="form-control deduction-type"
-                                name="slabs[{{ $slab_type->id }}][deduction_type]">
-                                <option value="kg" {{ $deductionType == 'kg' ? 'selected' : '' }}>Kg</option>
-                                <option value="amount" {{ $deductionType == 'amount' ? 'selected' : '' }}>Amount
-                                </option>
-                            </select>
+                        <div class="row w-100 mx-auto">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Deduction Type:</label>
+                                    <select class="form-control deduction-type"
+                                        name="slabs[{{ $slab_type->id }}][deduction_type]">
+                                        <option value="kg" {{ $deductionType == 'kg' ? 'selected' : '' }}>Kg
+                                        </option>
+                                        <option value="amount" {{ $deductionType == 'amount' ? 'selected' : '' }}>
+                                            Amount
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Is Tiered:</label>
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input tiered"
+                                            id="is_tiered_{{ $slab_type->id }}"
+                                            name="slabs[{{ $slab_type->id }}][is_tiered]" @checked($isTiered)>
+                                        <label class="custom-control-label"
+                                            for="is_tiered_{{ $slab_type->id }}"></label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -13,15 +13,16 @@ class ProductSlab extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'product_slab_type_id',
+        'is_purchase_field',
+        'deduction_value',
+        'deduction_type',
         'company_id',
         'product_id',
-        'product_slab_type_id',
-        'from',
-        'to',
-        'deduction_type',
-        'deduction_value',
-        'is_purchase_field',
+        'is_tiered',
         'status',
+        'from',
+        'to'
     ];
 
     public function company()

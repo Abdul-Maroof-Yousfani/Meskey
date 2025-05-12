@@ -73,6 +73,7 @@ class ProductSlabController extends Controller
             foreach ($request->slabs as $slabTypeId => $slabData) {
                 if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
+                    $isTiered = ($slabData['is_tiered'] ?? 'on') == 'off' ? 0 : 1;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])
@@ -97,6 +98,7 @@ class ProductSlabController extends Controller
                                 'from' => $range['from'],
                                 'to' => $range['to'],
                                 'deduction_type' => $deductionType,
+                                'is_tiered' => $isTiered,
                                 'deduction_value' => $range['deduction_value'],
                                 'is_enabled' => true,
                                 'status' => 'active'
@@ -135,6 +137,7 @@ class ProductSlabController extends Controller
             foreach ($request->slabs as $slabTypeId => $slabData) {
                 if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
+                    $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])
@@ -158,6 +161,7 @@ class ProductSlabController extends Controller
                                 'product_slab_type_id' => $slabTypeId,
                                 'from' => $range['from'],
                                 'to' => $range['to'],
+                                'is_tiered' => $isTiered,
                                 'deduction_type' => $deductionType,
                                 'deduction_value' => $range['deduction_value'],
                                 'is_enabled' => true,
