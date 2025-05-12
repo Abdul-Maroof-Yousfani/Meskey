@@ -7,31 +7,26 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($ProductSlab) > 0)
-            @php
-                $productsWithSlabs = $ProductSlab->unique('product_id')->map(function ($item) use ($ProductSlab) {
-                    $item->slabTypes = $ProductSlab->where('product_id', $item->product_id)->pluck('slabType.name');
-                    return $item;
-                });
-            @endphp
-
-            @foreach ($productsWithSlabs as $item)
+        @if (count($productSlabs) > 0)
+            @foreach ($productSlabs as $productId => $slabs)
                 <tr>
-                    <td>{{ $item->product->name }}</td>
+                    <td>{{ $slabs->first()->product->name ?? 'N/A' }}</td>
                     <td>
-                        @foreach ($item->slabTypes as $slabType)
-                            <span class="badge badge-primary mr-1">{{ $slabType }}</span>
+                        @foreach ($slabs->pluck('slabType')->unique() as $slabType)
+                            <span class="badge badge-primary mr-1">
+                                {{ $slabType->name ?? 'N/A' }}
+                            </span>
                         @endforeach
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('product-slab.edit', $item->product_id) }}','Edit Product Slabs')"
+                            <a onclick="openModal(this,'{{ route('product-slab.edit', $productId) }}','Edit Product Slabs')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit-2 font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('product-slab.destroy-multiple', $item->product_id) }}','{{ route('get.product-slab') }}')"
+                            <a onclick="deletemodal('{{ route('product-slab.destroy-multiple', $productId) }}','{{ route('get.product-slab') }}')"
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
@@ -67,6 +62,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $ProductSlab->links() }}
+        {{ $paginator->links() }}
     </div>
 </div>

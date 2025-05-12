@@ -73,13 +73,13 @@
                                 <div class="form-group">
                                     <label>Range (From - To):</label>
                                     <div class="input-group">
-                                        <input type="number" class="form-control range-from"
+                                        <input type="number" step="0.00001" class="form-control range-from"
                                             name="slabs[{{ $slab_type->id }}][ranges][0][from]" placeholder="From"
                                             disabled>
                                         <div class="input-group-prepend input-group-append">
                                             <span class="input-group-text">-</span>
                                         </div>
-                                        <input type="number" class="form-control range-to"
+                                        <input type="number" step="0.00001" class="form-control range-to"
                                             name="slabs[{{ $slab_type->id }}][ranges][0][to]" placeholder="To"
                                             disabled>
                                     </div>
@@ -88,7 +88,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Deduction Value:</label>
-                                    <input type="number" class="form-control deduction-value"
+                                    <input type="number" step="0.00001" class="form-control deduction-value"
                                         name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]"
                                         placeholder="Value">
                                 </div>
@@ -107,20 +107,21 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <div class="input-group">
-                                    <input type="number" class="form-control range-from"
+                                    <input type="number" step="0.00001" class="form-control range-from"
                                         name="slabs[{{ $slab_type->id }}][ranges][0][from]" placeholder="From">
                                     <div class="input-group-prepend input-group-append">
                                         <span class="input-group-text">-</span>
                                     </div>
-                                    <input type="number" class="form-control range-to"
+                                    <input type="number" step="0.00001" class="form-control range-to"
                                         name="slabs[{{ $slab_type->id }}][ranges][0][to]" placeholder="To">
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <input type="number" class="form-control deduction-value"
-                                    name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]" placeholder="Value">
+                                <input type="number" step="0.00001" class="form-control deduction-value"
+                                    name="slabs[{{ $slab_type->id }}][ranges][0][deduction_value]"
+                                    placeholder="Value">
                             </div>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
