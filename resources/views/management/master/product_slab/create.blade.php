@@ -162,11 +162,11 @@
 
             if ($switch.is(':checked')) {
                 $container.find('input, select, button').prop('disabled', false);
-                $slabTypeGroup.find('select, button').prop('disabled', false);
+                $slabTypeGroup.find('select, button, .tiered').prop('disabled', false);
                 $container.show();
             } else {
                 $container.find('input, select').prop('disabled', true);
-                $slabTypeGroup.find('select, button').prop('disabled', true);
+                $slabTypeGroup.find('select, button, .tiered').prop('disabled', true);
                 $container.hide();
             }
         }

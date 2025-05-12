@@ -10,10 +10,7 @@
         @if (count($ProductSlab) > 0)
             @php
                 $productsWithSlabs = $ProductSlab->unique('product_id')->map(function ($item) use ($ProductSlab) {
-                    $item->slabTypes = $ProductSlab
-                        ->where('product_id', $item->product_id)
-                        ->pluck('slabType.name')
-                        ->unique();
+                    $item->slabTypes = $ProductSlab->where('product_id', $item->product_id)->pluck('slabType.name');
                     return $item;
                 });
             @endphp

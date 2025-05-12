@@ -969,7 +969,6 @@
 
                             if (val > from) {
                                 if (isTiered === 1) {
-                                    // For tiered slabs, multiply difference by deduction value
                                     let applicableAmount = 0;
                                     if (val >= to) {
                                         applicableAmount = to - from;
@@ -978,7 +977,6 @@
                                     }
                                     deductionValue += deductionVal * applicableAmount;
                                 } else {
-                                    // For non-tiered slabs, just add the deduction values
                                     deductionValue += deductionVal;
                                 }
                             }
