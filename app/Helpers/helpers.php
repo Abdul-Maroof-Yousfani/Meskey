@@ -247,12 +247,12 @@ if (!function_exists('getDeductionSuggestion')) {
                         $applicableAmount = $to - $from;
                     } else {
                         // Partial slab range applies (difference between input and from)
-                        $applicableAmount = $inspectionResult - $from;
+                        $applicableAmount = $inspectionResult - $from + 1;
                     }
 
                     $deductionValue += $deductionVal * $applicableAmount;
                 } else {
-                    // Fixed deduction (non-tiered)
+                    // Fixed deduction (non-tiered)Abhijeet.
                     $deductionValue += $deductionVal;
                 }
             }

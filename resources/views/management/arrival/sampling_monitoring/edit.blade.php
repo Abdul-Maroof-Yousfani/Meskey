@@ -974,7 +974,7 @@
                                     if (isNaN(to) || val >= to) {
                                         applicableAmount = to - from;
                                     } else {
-                                        applicableAmount = val - from;
+                                        applicableAmount = (val - from) + 1;
                                     }
                                     deductionValue += deductionVal * applicableAmount;
                                 } else {
