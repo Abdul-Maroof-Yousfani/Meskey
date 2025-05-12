@@ -27,7 +27,7 @@
                 $slabsForType = $productSlabs->where('product_slab_type_id', $slab_type->id);
                 $isEnabled = $slabsForType->count() > 0;
                 $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'amount';
-                $isTiered = $slabsForType->first() ? $slabsForType->first()->is_tiered : true;
+                $isTiered = $slabsForType->first() ? $slabsForType->first()->is_tiered : false;
             @endphp
             <div class="slab-type-group mb-4 p-3 border rounded">
                 <div class="row align-items-center">
