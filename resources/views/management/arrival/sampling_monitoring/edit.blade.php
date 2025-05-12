@@ -964,16 +964,23 @@
                         for (let slab of matchingSlabs) {
                             let from = parseFloat(slab.from);
                             let to = parseFloat(slab.to);
+                            let isTiered = parseInt(slab.is_tiered);
+                            let deductionVal = parseFloat(slab.deduction_value);
 
                             if (val > from) {
-                                let applicableAmount = 0;
-                                if (val >= to) {
-                                    applicableAmount = to - from;
+                                if (isTiered === 1) {
+                                    // For tiered slabs, multiply difference by deduction value
+                                    let applicableAmount = 0;
+                                    if (val >= to) {
+                                        applicableAmount = to - from;
+                                    } else {
+                                        applicableAmount = val - from;
+                                    }
+                                    deductionValue += deductionVal * applicableAmount;
                                 } else {
-                                    applicableAmount = val - from;
+                                    // For non-tiered slabs, just add the deduction values
+                                    deductionValue += deductionVal;
                                 }
-
-                                deductionValue += parseFloat(slab.deduction_value) * applicableAmount;
                             }
                         }
                     }
