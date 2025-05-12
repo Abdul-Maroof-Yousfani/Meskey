@@ -3,6 +3,7 @@
 use App\Models\Acl\{Company, Menu};
 use App\Models\{User};
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Fluent;
 
 const SLAB_TYPE_PERCENTAGE = 1;
 const SLAB_TYPE_KG = 2;
@@ -198,17 +199,69 @@ if (!function_exists('formatEnumValue')) {
     }
 }
 
+// if (!function_exists('getDeductionSuggestion')) {
+//     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
+//     {
+//         //dd($productSlabTypeId, $productId, $inspectionResult);
+//         return \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
+//             ->where('product_id', $productId)
+//             ->where('from', '<=', $inspectionResult ?? 0)
+//             ->where('to', '>=', $inspectionResult ?? 0)
+//             ->where('status', 'active') // Assuming active slabs have status = 1
+//             ->select('deduction_type', 'deduction_value')
+//             ->first();
+//     }
+// }
+
 if (!function_exists('getDeductionSuggestion')) {
     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
     {
-        //dd($productSlabTypeId, $productId, $inspectionResult);
-        return \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
+        // $productSlabTypeId = 2;
+        // $productId = 3;
+        // $inspectionResult = 5;
+
+        // Get ALL slabs for this product/type combination (without range filtering)
+        $slabs = \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
             ->where('product_id', $productId)
-            ->where('from', '<=', $inspectionResult ?? 0)
-            ->where('to', '>=', $inspectionResult ?? 0)
-            ->where('status', 'active') // Assuming active slabs have status = 1
-            ->select('deduction_type', 'deduction_value')
-            ->first();
+            ->where('status', 'active')
+            ->orderBy('from', 'asc')
+            ->get();
+
+        $deductionValue = 0;
+        $inspectionResult = (float) ($inspectionResult ?? 0);
+        // dd($slabs);
+        foreach ($slabs as $slab) {
+            $from = (float) $slab->from;
+            $to = $slab->to !== null ? (float) $slab->to : null;
+            $isTiered = (int) $slab->is_tiered;
+            $deductionVal = (float) $slab->deduction_value;
+
+            // Check if value is >= slab's from value (like in JS)
+            if ($inspectionResult >= $from) {
+                if ($isTiered === 1) {
+                    $applicableAmount = 0;
+
+                    // Calculate applicable amount for tiered slab
+                    if ($to === null || $inspectionResult >= $to) {
+                        // Full slab range applies
+                        $applicableAmount = $to - $from;
+                    } else {
+                        // Partial slab range applies (difference between input and from)
+                        $applicableAmount = $inspectionResult - $from;
+                    }
+
+                    $deductionValue += $deductionVal * $applicableAmount;
+                } else {
+                    // Fixed deduction (non-tiered)
+                    $deductionValue += $deductionVal;
+                }
+            }
+        }
+
+        return $deductionValue > 0 ? new Fluent([
+            'deduction_type' => $slabs->first()->deduction_type ?? null,
+            'deduction_value' => $deductionValue
+        ]) : null;
     }
 }
 
