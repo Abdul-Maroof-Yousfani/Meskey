@@ -223,6 +223,7 @@ if (!function_exists('getDeductionSuggestion')) {
         $slabs = \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
             ->where('product_id', $productId)
             ->where('status', 'active')
+            // ->where('from', '<=', $inspectionResult ?? 0)
             ->orderBy('from', 'asc')
             ->get();
 
@@ -240,7 +241,7 @@ if (!function_exists('getDeductionSuggestion')) {
                     $applicableAmount = 0;
 
                     if ($to === null || $inspectionResult >= $to) {
-                        $applicableAmount = $to - $from = 1;
+                        $applicableAmount = $to - $from + 1;
                     } else {
                         $applicableAmount = $inspectionResult - $from + 1;
                     }
