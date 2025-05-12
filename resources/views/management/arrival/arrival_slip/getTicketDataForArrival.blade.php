@@ -79,12 +79,6 @@
      </div>
      <div class="col-md-6">
          <div class="form-group">
-             <label class="font-weight-bold">U/L Slip #</label>
-             <input type="text" class="form-control bg-light" value="00013:44:42" readonly>
-         </div>
-     </div>
-     <div class="col-md-6">
-         <div class="form-group">
              <label class="font-weight-bold">Deductions</label>
              <input type="text" class="form-control bg-light"
                  value="{{ $arrivalTicket->lumpsum_deduction ?? 'N/A' }}" readonly>
@@ -121,14 +115,14 @@
          <div class="form-group">
              <label>Gross Weight</label>
              <input type="text" class="form-control bg-light"
-                 value="{{ ($arrivalTicket->first_weight ?? 0) - ($arrivalTicket->second_weight ?? 0) }}" readonly>
+                 value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
          </div>
      </div>
      <div class="col-md-3">
          <div class="form-group">
-             <label>Net Weight</label>
-             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->net_weight ?? 'N/A' }}"
-                 readonly>
+             <label>Arrival Weight</label>
+             <input type="text" class="form-control bg-light"
+                 value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
          </div>
      </div>
      <div class="col-md-3">
@@ -141,8 +135,8 @@
      <div class="col-md-3">
          <div class="form-group">
              <label>Avg. Weight</label>
-             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->net_weight ?? 'N/A' }}"
-                 readonly>
+             <input type="text" class="form-control bg-light"
+                 value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}" readonly>
          </div>
      </div>
 

@@ -75,12 +75,10 @@ class TicketController extends Controller
         $previouscheck = ArrivalTicket::where('truck_no', $request['truck_no'])
             ->where('bilty_no', $request['bilty_no']);
 
-
         if ($previouscheck->exists()) {
             $viewLink = ' <a href="' . route('ticket.show', $previouscheck->first()->id) . '" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
 
             throw ValidationException::withMessages([
-
                 'truck_no' => ['Truck with this Bilty No already exists.' . $viewLink],
             ]);
         }

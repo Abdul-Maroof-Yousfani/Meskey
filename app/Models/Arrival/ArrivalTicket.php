@@ -134,6 +134,11 @@ class ArrivalTicket extends Model
         return $this->hasOne(FirstWeighbridge::class, 'arrival_ticket_id');
     }
 
+    public function secondWeighbridge()
+    {
+        return $this->hasOne(SecondWeighbridge::class, 'arrival_ticket_id');
+    }
+
     public function freight()
     {
         return $this->hasOne(Freight::class, 'arrival_ticket_id');
