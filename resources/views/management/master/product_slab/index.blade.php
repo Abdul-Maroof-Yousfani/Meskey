@@ -61,10 +61,7 @@
                                     <thead>
                                         <tr>
                                             <th class="col-sm-2">Product</th>
-                                            <th class="col-sm-2">Slab Type</th>
-                                            <th class="col-sm-2">Range</th>
-                                            <th class="col-sm-2">Deduction</th>
-                                            {{-- <th class="col-sm-2">Status</th> --}}
+                                            <th class="col-sm-5">Slab Types</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>

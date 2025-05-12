@@ -142,12 +142,15 @@
         function toggleSlabRanges($switch) {
             const slabTypeId = $switch.attr('id').replace('enable_', '');
             const $container = $(`.slab-ranges-container[data-slab-type="${slabTypeId}"]`);
+            const $slabTypeGroup = $container.closest('.slab-type-group');
 
             if ($switch.is(':checked')) {
-                $container.find('input, select').prop('disabled', false);
+                $container.find('input, select, button').prop('disabled', false);
+                $slabTypeGroup.find('select, button').prop('disabled', false);
                 $container.show();
             } else {
                 $container.find('input, select').prop('disabled', true);
+                $slabTypeGroup.find('select, button').prop('disabled', true);
                 $container.hide();
             }
         }

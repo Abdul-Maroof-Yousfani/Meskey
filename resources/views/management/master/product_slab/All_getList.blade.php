@@ -1,0 +1,126 @@
+<table class="table m-0">
+    <thead>
+        <tr>
+            <th class="col-sm-2">Product</th>
+            <th class="col-sm-2">Slab Type</th>
+            <th class="col-sm-2">Range</th>
+            <th class="col-sm-2">Deduction</th>
+            {{-- <th class="col-sm-2">Status</th> --}}
+            <th class="col-sm-1">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (count($ProductSlab) != 0)
+            @php
+                // Group slabs by product_id first
+                $groupedByProduct = $ProductSlab->groupBy('product_id');
+            @endphp
+
+            @foreach ($groupedByProduct as $productId => $productSlabs)
+                @php
+                    $product = $productSlabs->first()->product;
+                    $productRowCount = count($productSlabs);
+
+                    // Further group by slab_type_id
+                    $groupedBySlabType = $productSlabs->groupBy('product_slab_type_id');
+                @endphp
+
+                @php $productRowIndex = 0; @endphp
+                @foreach ($groupedBySlabType as $slabTypeId => $slabTypeRows)
+                    @php
+                        $slabType = $slabTypeRows->first()->slabType;
+                        $slabTypeRowCount = count($slabTypeRows);
+                    @endphp
+
+                    @foreach ($slabTypeRows as $index => $row)
+                        <tr>
+                            @if ($productRowIndex === 0)
+                                <td rowspan="{{ $productRowCount }}">
+                                    <p class="m-0">
+                                        {{ $product->name }} <br>
+                                    </p>
+                                </td>
+                            @endif
+
+                            @if ($index === 0)
+                                <td rowspan="{{ $slabTypeRowCount }}">
+                                    <p class="m-0">
+                                        {{ $slabType->name }} <br>
+                                    </p>
+                                </td>
+                            @endif
+
+                            <td>
+                                <p class="m-0">
+                                    {{ $row->from . ' - ' . $row->to }} <br>
+                                </p>
+                            </td>
+                            <td>
+                                <p class="m-0 d-inline-block">
+                                    {{ $row->deduction_value }}
+                                    <span
+                                        class="ml-4 badge badge-{{ $row->deduction_type == 'amount' ? 'success' : 'warning' }}">
+                                        {{ ucwords($row->deduction_type) }}
+                                    </span>
+                                </p>
+                            </td>
+                            {{-- <td>
+                                <p class="m-0">
+                                    <span class="badge badge-{{ $row->is_enabled ? 'success' : 'danger' }}">
+                                        {{ $row->is_enabled ? 'Enabled' : 'Disabled' }}
+                                    </span>
+                                </p>
+                            </td> --}}
+
+                            @if ($productRowIndex === 0)
+                                <td rowspan="{{ $productRowCount }}">
+                                    @can('role-edit')
+                                        <a onclick="openModal(this,'{{ route('product-slab.edit', $productId) }}','Edit Product Slabs')"
+                                            class="info p-1 text-center mr-2 position-relative">
+                                            <i class="ft-edit-2 font-medium-3"></i>
+                                        </a>
+                                    @endcan
+                                    @can('role-delete')
+                                        <a onclick="deletemodal('{{ route('product-slab.destroy-multiple', $productId) }}','{{ route('get.product-slab') }}')"
+                                            class="danger p-1 text-center mr-2 position-relative">
+                                            <i class="ft-x font-medium-3"></i>
+                                        </a>
+                                    @endcan
+                                </td>
+                            @endif
+                        </tr>
+                        @php $productRowIndex++; @endphp
+                    @endforeach
+                @endforeach
+            @endforeach
+        @else
+            <tr class="ant-table-placeholder">
+                <td colspan="6" class="ant-table-cell text-center">
+                    <div class="my-5">
+                        <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
+                            <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
+                                <ellipse fill="#f5f5f5" cx="32" cy="33" rx="32" ry="7">
+                                </ellipse>
+                                <g fill-rule="nonzero" stroke="#d9d9d9">
+                                    <path
+                                        d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z">
+                                    </path>
+                                    <path
+                                        d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z"
+                                        fill="#fafafa"></path>
+                                </g>
+                            </g>
+                        </svg>
+                        <p class="ant-empty-description">No data</p>
+                    </div>
+                </td>
+            </tr>
+        @endif
+    </tbody>
+</table>
+
+<div class="row d-flex" id="paginationLinks">
+    <div class="col-md-12 text-right">
+        {{ $ProductSlab->links() }}
+    </div>
+</div>
