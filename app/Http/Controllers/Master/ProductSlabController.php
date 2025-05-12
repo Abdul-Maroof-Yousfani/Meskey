@@ -82,7 +82,7 @@ class ProductSlabController extends Controller
             foreach ($request->slabs as $slabTypeId => $slabData) {
                 if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
-                    $isTiered = ($slabData['is_tiered'] ?? 'on') == 'off' ? 0 : 1;
+                    $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])

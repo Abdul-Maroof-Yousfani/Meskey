@@ -26,7 +26,7 @@
             @php
                 $slabsForType = $productSlabs->where('product_slab_type_id', $slab_type->id);
                 $isEnabled = $slabsForType->count() > 0;
-                $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'kg';
+                $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'amount';
                 $isTiered = $slabsForType->first() ? $slabsForType->first()->is_tiered : true;
             @endphp
             <div class="slab-type-group mb-4 p-3 border rounded">
@@ -53,10 +53,10 @@
                                     <label>Deduction Type:</label>
                                     <select class="form-control deduction-type"
                                         name="slabs[{{ $slab_type->id }}][deduction_type]">
-                                        <option value="kg" {{ $deductionType == 'kg' ? 'selected' : '' }}>Kg
-                                        </option>
                                         <option value="amount" {{ $deductionType == 'amount' ? 'selected' : '' }}>
                                             Amount
+                                        </option>
+                                        <option value="kg" {{ $deductionType == 'kg' ? 'selected' : '' }}>Kg
                                         </option>
                                     </select>
                                 </div>

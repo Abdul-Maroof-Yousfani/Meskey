@@ -45,8 +45,8 @@
                                     <label>Deduction Type:</label>
                                     <select class="form-control deduction-type"
                                         name="slabs[{{ $slab_type->id }}][deduction_type]">
-                                        <option value="kg">Kg</option>
                                         <option value="amount">Amount</option>
+                                        <option value="kg">Kg</option>
                                     </select>
                                 </div>
                             </div>
@@ -56,7 +56,7 @@
                                     <div class="custom-control custom-switch">
                                         <input type="checkbox" class="custom-control-input tiered"
                                             id="is_tiered_{{ $slab_type->id }}"
-                                            name="slabs[{{ $slab_type->id }}][is_tiered]" checked>
+                                            name="slabs[{{ $slab_type->id }}][is_tiered]">
                                         <label class="custom-control-label"
                                             for="is_tiered_{{ $slab_type->id }}"></label>
                                     </div>
