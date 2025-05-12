@@ -972,7 +972,7 @@
                                 if (isTiered === 1) {
                                     let applicableAmount = 0;
                                     if (isNaN(to) || val >= to) {
-                                        applicableAmount = to - from;
+                                        applicableAmount = to - from + 1;
                                     } else {
                                         applicableAmount = (val - from) + 1;
                                     }
