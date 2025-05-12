@@ -598,7 +598,7 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-md-4 label-control font-weight-bold">Moisture Deduction (KG's)</label>
+                            <label class="col-md-4 label-control font-weight-bold"> Deduction (KG's)</label>
                             <div class="col-md-8">
                                 <div class="input-group mb-0">
                                     <input type="text" class="form-control" readonly
@@ -854,7 +854,7 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Moisture
+                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">
                             Deduction (KG's)</label>
                         <div class="col-md-8">
                             <div class="input-group mb-0">
