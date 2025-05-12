@@ -100,7 +100,7 @@
             <div class="form-group">
                 <label>Total Bags : </label>
                 <input type="number" name="total_bags" placeholder="Total Bags" class="form-control" autocomplete="off"
-                    required />
+                    readonly required />
             </div>
         </div>
     </div>
@@ -150,14 +150,15 @@
     $(document).ready(function() {
         $('input[name="bag_packing_approval"]').change(function() {
             if ($(this).val() == "Half Approved") {
+                $('input[name="total_bags"]').removeAttr('readonly');
                 $(".total-rejection-section").slideDown();
             } else {
+                $('input[name="total_bags"]').attr('readonly', true);
                 $(".total-rejection-section").slideUp();
             }
         }).trigger('change');
 
         $('.select2').select2();
-
 
         $('input[name="total_bags"]').on('change input', function() {
             let selectedTicket = $('select[name="arrival_ticket_id"]').find(':selected');
@@ -169,7 +170,6 @@
             $('#total_rejection').val(totalRejection);
         });
 
-        // Autofill truck_no and check QC status when ticket is selected
         $('select[name="arrival_ticket_id"]').on('change', function() {
             let selectedOption = $(this).find(':selected');
             let truckNo = selectedOption.data('trucknumber') || '';
@@ -177,9 +177,15 @@
 
             $('input[name="truck_no"]').val(truckNo);
 
-            // If QC status is Rejected
             if (qcStatus.toLowerCase() === 'rejected') {
-                // Auto-select Half Approved and disable both radio buttons
+
+                let totalTicketBags = selectedOption.data('bags') || 0;
+                let enteredBags = parseInt($('input[name="total_bags"]').val()) || 0;
+
+                let totalRejection = totalTicketBags - enteredBags;
+
+                $('#total_rejection').val(totalRejection);
+
                 $('#half-approved').prop('checked', true).trigger('change');
                 $('input[name="bag_packing_approval"]').prop('disabled', true);
 
@@ -191,7 +197,6 @@
                     value: 'Half Approved'
                 }).insertAfter($('input[name="bag_packing_approval"]').last());
             } else {
-                // Select Full Approved and enable both radio buttons
                 $('#full-approved').prop('checked', true).trigger('change');
                 $('input[name="bag_packing_approval"]').prop('disabled', true);
 
@@ -201,8 +206,6 @@
                     class: 'tempfield',
                     value: 'Full Approved'
                 }).insertAfter($('input[name="bag_packing_approval"]').last());
-
-
             }
         });
     });

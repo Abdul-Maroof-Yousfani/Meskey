@@ -388,7 +388,5 @@
     </script>
 
     @yield('script')
-    </body>
-    <!-- END : Body-->
 
     </html>

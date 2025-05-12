@@ -12,6 +12,7 @@
     </div>
 </div>
 @include('management/layouts/footer')
+@include('management/layouts/snippets/script')
 
 @yield('scripts')
 @include('management/layouts/modals')
