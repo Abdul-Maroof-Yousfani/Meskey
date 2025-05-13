@@ -1,20 +1,18 @@
 <?php
 
-namespace App\Models\Arrival;
+namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Acl\Company;
-use App\Models\Product;
-use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ArrivalSamplingRequest extends Model
+class PurchaseSamplingRequest extends Model
 {
     use SoftDeletes;
     protected $fillable = [
         'company_id',
         'arrival_product_id',
-        'arrival_ticket_id',
+        'arrival_purchase_order_id',
         'sampling_type',
         'is_re_sampling',
         'remark',
@@ -31,11 +29,7 @@ class ArrivalSamplingRequest extends Model
     ];
 
 
-
-    /**
-     * Get the company that owns the arrival sampling request.
-     */
-    public function company()
+        public function company()
     {
         return $this->belongsTo(Company::class);
     }
@@ -43,12 +37,12 @@ class ArrivalSamplingRequest extends Model
     /**
      * Get the arrival ticket associated with the sampling request.
      */
-    public function arrivalTicket()
+    public function purchaseOrder()
     {
-        return $this->belongsTo(ArrivalTicket::class);
+        return $this->belongsTo(ArrivalPurchaseOrder::class,'arrival_purchase_order_id');
     }
 
-    public function arrivalProduct()
+    public function contractProduct()
     {
         return $this->belongsTo(Product::class, 'arrival_product_id');
     }

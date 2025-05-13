@@ -61,6 +61,10 @@ class ArrivalPurchaseOrder extends Model
         return $this->belongsTo(Broker::class, 'broker_one_id');
     }
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
     public function brokerTwo()
     {
         return $this->belongsTo(Broker::class, 'broker_two_id');
@@ -84,5 +88,11 @@ class ArrivalPurchaseOrder extends Model
     public function location()
     {
         return $this->belongsTo(CompanyLocation::class, 'company_location_id');
+    }
+
+    
+    public function purchaseSamplingRequests()
+    {
+        return $this->hasMany(PurchaseSamplingRequest::class, 'arrival_purchase_order_id');
     }
 }

@@ -120,7 +120,7 @@ class ArrivalSlipController extends Controller
     {
         $data = $request->validated();
         $arrival_location->update($data);
-        return response()->json(['success' => 'Arrival Location updated successfully.', 'data' => $arrival_location], 200);
+        return response()->json(['success' => 'Arrival Slip updated successfully.', 'data' => $arrival_location], 200);
     }
 
     /**
@@ -130,7 +130,7 @@ class ArrivalSlipController extends Controller
     {
         $arrival_location = ArrivalLocation::findOrFail($id);
         $arrival_location->delete();
-        return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
+        return response()->json(['success' => 'Arrival Slip deleted successfully.'], 200);
     }
 
 
