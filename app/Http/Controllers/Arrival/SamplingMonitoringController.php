@@ -196,8 +196,6 @@ class SamplingMonitoringController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        dd($request->suggested_deduction);
-
         try {
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
             // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
