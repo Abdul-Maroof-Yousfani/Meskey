@@ -93,7 +93,6 @@ class InnersamplingController extends Controller
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
                     $createdSamplingData[] = ArrivalSamplingResult::create([
                         'company_id' => $request->company_id,
-                        'new p[arans resutls tm,uys bt the first and ever result in my entire life oky ????'
                         'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                         'product_slab_type_id' => $slabTypeId,
                         'checklist_value' => $request->checklist_value[$key] ?? null,
@@ -193,7 +192,7 @@ class InnersamplingController extends Controller
                                     $slabTypeId,
                                     optional($ArrivalSamplingRequest->arrivalTicket)->qc_product,
                                     $displayValue
-                                ); 
+                                );
 
                                 if ($suggestion) {
                                     $samplingResult->suggested_deduction = $suggestion['deduction_value'] ?? 0;
