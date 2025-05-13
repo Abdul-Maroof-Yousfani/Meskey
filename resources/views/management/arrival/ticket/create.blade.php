@@ -12,7 +12,7 @@
              <fieldset>
                  <div class="input-group">
                      <div class="input-group-prepend">
-                         <button class="btn btn-primary" type="button">Product Code#</button>
+                         <button class="btn btn-primary" type="button">Ticket No#</button>
                      </div>
                      <input type="text" disabled class="form-control" value="{{ $unique_no }}"
                          placeholder="Button on left">
