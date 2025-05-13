@@ -17,7 +17,6 @@ class ArrivalSlip extends Model
         'creator_id'
     ];
 
-
     public function arrivalTicket()
     {
         return $this->belongsTo(ArrivalTicket::class);

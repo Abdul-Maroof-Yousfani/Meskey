@@ -134,21 +134,6 @@
             </div>
 
             <div class=" col-sm-12 col-md-12 col-xs-12">
-                <div class="form-group">
-                    <label>Ticket:</label>
-                    <select class="form-control select2" name="arrival_ticket_id" id="arrival_ticket_id">
-                        <option value="">Select Ticket</option>
-                        @foreach ($ArrivalTickets as $arrivalTicket)
-                            <option @selected($arrivalTicket->id == $arrival_slip->arrival_ticket_id) value="{{ $arrivalTicket->id }}">
-                                Ticket No: {{ $arrivalTicket->unique_no }} --
-                                Truck No: {{ $arrivalTicket->truck_no ?? 'N/A' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div class=" col-sm-12 col-md-12 col-xs-12">
                 <div>
                     <!-- Header with company info -->
                     <div style="display: none; margin-bottom: 15px;">
