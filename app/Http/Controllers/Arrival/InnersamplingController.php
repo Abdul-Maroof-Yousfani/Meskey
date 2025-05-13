@@ -111,11 +111,12 @@ class InnersamplingController extends Controller
                     ]);
                 }
             }
-
             $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $ArrivalSamplingRequest->arrival_ticket_id)
                 ->where('approved_status', 'approved')
                 ->latest()
                 ->first();
+            $deductionValues = [];
+            $suggestedChangedValues = [];
 
             // Matching if initial params and inner submittted params exactly matchs..
             if ($initialRequestForInnerReq) {
@@ -127,9 +128,19 @@ class InnersamplingController extends Controller
 
                 if (count($initialRequestResults) === count($createdSamplingData)) {
                     foreach ($initialRequestResults as $index => $initialResult) {
+
+                        $deductionValues[$initialResult->product_slab_type_id] = [
+                            'suggested_deduction' => $initialResult->suggested_deduction,
+                            'applied_deduction' => $initialResult->applied_deduction
+                        ];
+
                         if (!isset($createdSamplingData[$index])) {
                             $resultsMatch = false;
                             break;
+                        }
+
+                        if ($createdSamplingData[$index]->checklist_value < $initialResult->checklist_value) {
+                            $suggestedChangedValues[$initialResult->product_slab_type_id] = $createdSamplingData[$index]->checklist_value;
                         }
 
                         if (
@@ -168,6 +179,28 @@ class InnersamplingController extends Controller
 
                 if ($resultsMatch && $compulsoryResultsMatch) {
                     $initialStatus = 'approved';
+
+                    foreach ($createdSamplingData as $samplingResult) {
+
+                        $slabTypeId = $samplingResult->product_slab_type_id;
+                        if (isset($deductionValues[$slabTypeId])) {
+
+                            if (isset($suggestedChangedValues[$slabTypeId])) {
+                                $displayValue = $suggestedChangedValues[$slabTypeId] ?? 0;
+
+                                $samplingResult->suggested_deduction = getDeductionSuggestion(
+                                    $slabTypeId,
+                                    optional($ArrivalSamplingRequest->arrivalTicket)->qc_product,
+                                    $displayValue
+                                );
+                            } else {
+                                $samplingResult->suggested_deduction = $deductionValues[$slabTypeId]['suggested_deduction'];
+                            }
+
+                            $samplingResult->applied_deduction = $deductionValues[$slabTypeId]['applied_deduction'];
+                            $samplingResult->save();
+                        }
+                    }
                 }
             }
 
