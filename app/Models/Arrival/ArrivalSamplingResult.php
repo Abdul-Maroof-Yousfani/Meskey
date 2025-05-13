@@ -14,6 +14,7 @@ class ArrivalSamplingResult extends Model
         'company_id',
         'arrival_sampling_request_id',
         'product_slab_type_id',
+        'suggested_deduction',
         'checklist_value',
         'remark',
         'product_slab_type_id',
