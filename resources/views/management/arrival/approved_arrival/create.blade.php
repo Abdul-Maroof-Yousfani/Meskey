@@ -197,6 +197,10 @@
                     value: 'Half Approved'
                 }).insertAfter($('input[name="bag_packing_approval"]').last());
             } else {
+                let totalTicketBags = selectedOption.data('bags') || 0;
+
+                $('input[name="total_bags"]').val(totalTicketBags)
+
                 $('#full-approved').prop('checked', true).trigger('change');
                 $('input[name="bag_packing_approval"]').prop('disabled', true);
 
