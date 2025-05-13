@@ -63,7 +63,7 @@ class FirstWeighbridgeController extends Controller
         ArrivalTicket::where('id', $request->arrival_ticket_id)
             ->update(['first_weighbridge_status' => 'completed']);
 
-        return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
+        return response()->json(['success' => 'First weighbridge created successfully.', 'data' => $arrival_locations], 201);
     }
 
     /**

@@ -246,7 +246,7 @@
          initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', true, false);
+         initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
 
          $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
 

@@ -225,6 +225,8 @@ class SamplingMonitoringController extends Controller
                 $recordQc->delete();
             }
 
+            dd($request->suggested_deduction);
+
             if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
                     ArrivalSamplingResult::create([
