@@ -67,26 +67,33 @@
         </div>
     </div>
 
-    <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
+    <div class="row">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Broker
+            </h6>
+        </div>
+        <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group">
-                <label>Broker Name:</label>
-                <input type="text" name="broker_name" placeholder="Broker Name" class="form-control" />
+                <label>Broker:</label>
+                <select name="broker_id" id="broker_id" class="form-control ">
+                    <option value="">Select Broker</option>
+                </select>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
-                <label>Brokery:</label>
-                <input type="text" name="brokery" placeholder="Brokery" class="form-control" />
+                <label>Commission:</label>
+                <input type="number" name="broker_one_commission" value="" placeholder="Commission"
+                    class="form-control" />
             </div>
         </div>
     </div>
-
     <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-12">
             <div class="form-group">
                 <label>Commodity:</label>
-                <select name="commodity" class="form-control select2">
+                <select name="commodity" id="product_id" class="form-control select2">
                     <option value="">Select Commodity</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}" data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
@@ -96,58 +103,41 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Rate:</label>
-                <div class="input-group">
-                    <input type="number" name="rate" placeholder="Rate" class="form-control" />
-                    <div class="input-group-append">
-                        <select name="rate_unit" class="form-control">
-                            <option value="per mound">per mound</option>
-                            <option value="per kg">per kg</option>
-                            <option value="per 100kg">per 100kg</option>
-                        </select>
-                    </div>
-                </div>
+        <div id="slabsContainer" class="col-xs-12 col-sm-12 col-md-12">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Rate
+            </h6>
+        </div>
+
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group ">
+                <label>Rate Per KG:</label>
+                <input type="number" name="rate_per_kg" placeholder="Rate Per KG" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group ">
+                <label>Rate Per Mound:</label>
+                <input type="number" name="rate_per_mound" placeholder="Rate Per Mound" class="form-control" />
+
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group ">
+                <label>Rate Per 100KG:</label>
+                <input type="number" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
     </div>
-
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Truck No:</label>
                 <input type="text" name="truck_number" placeholder="Truck #" class="form-control" />
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Moisture:</label>
-                <input type="number" name="moisture" placeholder="Moisture" class="form-control" />
-            </div>
-        </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Chalky:</label>
-                <input type="number" name="chalky" placeholder="Chalky" class="form-control" />
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Mixing:</label>
-                <input type="number" name="mixing" placeholder="Mixing" class="form-control" />
-            </div>
-        </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Red Rice:</label>
-                <input type="number" name="red_rice" placeholder="Red Rice" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -225,6 +215,87 @@
             }
         }
 
+        $('#product_id').change(function() {
+            var selectedOption = $(this).find('option:selected');
+
+            var product_id = $(this).val();
+            if (product_id) {
+                $.ajax({
+                    url: '{{ route('raw-material.getGateBuyingMainSlabByProduct') }}',
+                    type: 'GET',
+                    data: {
+                        product_id: product_id
+                    },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: "Processing...",
+                            text: "Please wait while fetching slabs.",
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function(response) {
+                        Swal.close();
+                        if (response.success) {
+                            $('#slabsContainer').html(response.html);
+                        } else {
+                            Swal.fire("No Data", "No slabs found for this product.",
+                                "info");
+                        }
+                    },
+                    error: function() {
+                        Swal.close();
+                        Swal.fire("Error", "Something went wrong. Please try again.",
+                            "error");
+                    }
+                });
+            } else {
+                $('#commodity_name').val('');
+            }
+        });
+
+        const KG_PER_MOUND = 40;
+        const KG_PER_100KG = 100;
+
+        function calculateRates(changedField) {
+            const ratePerKg = parseFloat($('[name="rate_per_kg"]').val()) || 0;
+            const ratePerMound = parseFloat($('[name="rate_per_mound"]').val()) || 0;
+            const ratePer100kg = parseFloat($('[name="rate_per_100kg"]').val()) || 0;
+
+            switch (changedField) {
+                case 'rate_per_kg':
+                    $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(2));
+                    $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(2));
+                    break;
+
+                case 'rate_per_mound':
+                    $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(2));
+                    $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(2));
+                    break;
+
+                case 'rate_per_100kg':
+                    $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(2));
+                    $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(2));
+                    break;
+            }
+        }
+
+        $('[name="rate_per_kg"]').on('input', function() {
+            calculateRates('rate_per_kg');
+        });
+
+        $('[name="rate_per_mound"]').on('input', function() {
+            calculateRates('rate_per_mound');
+        });
+
+        $('[name="rate_per_100kg"]').on('input', function() {
+            calculateRates('rate_per_100kg');
+        });
+
+        initializeDynamicSelect2('#broker_id', 'brokers', 'name', 'id', true, false);
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
     });
 </script>
