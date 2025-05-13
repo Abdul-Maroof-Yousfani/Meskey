@@ -290,13 +290,13 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Weighbridge only From:</label>
-                <input type="text" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
+                <input type="text" name="weighbridge_from" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
-                <label>delivery_address:</label>
-                <input type="text" name="delivery_address" placeholder="delivery_address" class="form-control" />
+                <label>Delivery Address:</label>
+                <input type="text" name="delivery_address" placeholder="delivery address" class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">

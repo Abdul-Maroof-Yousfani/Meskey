@@ -76,19 +76,21 @@ class PurchaseOrderController extends Controller
 
             $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
 
-            foreach ($data['slabs'] as $slabId => $range) {
-                ProductSlabForRmPo::create([
-                    'arrival_purchase_order_id' => $arrivalPurchaseOrder->id,
-                    'slab_id' => $slabId,
-                    'company_id' => $data['company_id'],
-                    'product_id' => $data['product_id'],
-                    'product_slab_type_id' => $range['product_slab_type_id'],
-                    'from' => $range['from'],
-                    'to' => $range['to'],
-                    'deduction_type' => $range['deduction_type'],
-                    'deduction_value' => null,
-                    'status' => 'active',
-                ]);
+            if (isset($data['slabs']) && count($data['slabs']) > 0) {
+                foreach ($data['slabs'] as $slabId => $range) {
+                    ProductSlabForRmPo::create([
+                        'arrival_purchase_order_id' => $arrivalPurchaseOrder->id,
+                        'slab_id' => $slabId,
+                        'company_id' => $data['company_id'],
+                        'product_id' => $data['product_id'],
+                        'product_slab_type_id' => $range['product_slab_type_id'],
+                        'from' => $range['from'],
+                        'to' => $range['to'],
+                        'deduction_type' => $range['deduction_type'],
+                        'deduction_value' => null,
+                        'status' => 'active',
+                    ]);
+                }
             }
         });
 
