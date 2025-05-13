@@ -4,7 +4,8 @@ use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     PurchaseRequestController,
-    PurchaseOrderController
+    PurchaseOrderController,
+    PurchaseSamplingRequestController
 };
 
 
@@ -16,6 +17,11 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::post('get-purchase-order', [PurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('/getMainSlabByProduct', [PurchaseOrderController::class, 'getMainSlabByProduct'])->name('getMainSlabByProduct');
     Route::post('/generate-contract-number', [PurchaseOrderController::class, 'getContractNumber'])->name('generate.contract.number');
+
+
+
+      Route::resource('purchase-sampling-request', PurchaseSamplingRequestController::class);
+    Route::post('get-purchase-sampling-request', [PurchaseSamplingRequestController::class, 'getList'])->name('get.purchase-sampling-request');
 });
 
 Route::prefix('indicative-prices')->group(function () {
