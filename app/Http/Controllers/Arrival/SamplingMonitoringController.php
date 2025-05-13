@@ -195,6 +195,7 @@ class SamplingMonitoringController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+        dd($request->suggested_deduction);
 
         try {
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
@@ -224,8 +225,6 @@ class SamplingMonitoringController extends Controller
             foreach ($recordsQc as $recordQc) {
                 $recordQc->delete();
             }
-
-            dd($request->suggested_deduction);
 
             if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
