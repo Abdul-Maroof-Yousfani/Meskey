@@ -5,6 +5,16 @@
     <div class="row form-mar">
 
 
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <fieldset>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-primary" type="button">Ticket No#</button>
+                    </div>
+                    <input type="text" disabled class="form-control" value="{{ $arrivalTicket->unique_no }}">
+                </div>
+            </fieldset>
+        </div>
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">

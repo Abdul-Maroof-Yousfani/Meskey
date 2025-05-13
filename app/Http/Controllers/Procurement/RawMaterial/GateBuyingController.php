@@ -17,14 +17,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
 
-class PurchaseOrderController extends Controller
+class GateBuyingController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return view('management.procurement.raw_material.purchase_order.index');
+        return view('management.procurement.raw_material.gate_buying.index');
     }
 
     /**
@@ -41,7 +41,7 @@ class PurchaseOrderController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.raw_material.purchase_order.getList', compact('arrivalPurchaseOrder'));
+        return view('management.procurement.raw_material.gate_buying.getList', compact('arrivalPurchaseOrder'));
     }
 
     /**
@@ -53,7 +53,7 @@ class PurchaseOrderController extends Controller
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
-        return view('management.procurement.raw_material.purchase_order.create', $data);
+        return view('management.procurement.raw_material.gate_buying.create', $data);
     }
 
     /**
@@ -136,10 +136,10 @@ class PurchaseOrderController extends Controller
 
             $data['slabsHtml'] = $this->getMainSlabByProduct(request(), $ids, true);
         } else {
-            $data['slabsHtml'] = view('management.procurement.raw_material.purchase_order.slab-form', ['slabs' => $getSlabs, 'success' => '.'])->render();
+            $data['slabsHtml'] = view('management.procurement.raw_material.gate_buying.slab-form', ['slabs' => $getSlabs, 'success' => '.'])->render();
         }
 
-        return view('management.procurement.raw_material.purchase_order.edit', $data);
+        return view('management.procurement.raw_material.gate_buying.edit', $data);
     }
 
     /**
@@ -249,7 +249,7 @@ class PurchaseOrderController extends Controller
                 return $item;
             });
 
-        $html = view('management.procurement.raw_material.purchase_order.slab-form', [
+        $html = view('management.procurement.raw_material.gate_buying.slab-form', [
             'slabs' => $slabs,
             'success' => '.'
         ])->render();

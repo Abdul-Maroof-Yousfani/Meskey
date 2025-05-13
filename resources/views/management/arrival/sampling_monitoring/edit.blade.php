@@ -233,7 +233,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -314,8 +313,8 @@
                                     </div>
                                     <div class="col-md-3 Suggested">
                                         <div class="input-group mb-0">
-                                            <input type="text" id="striped-form-1" readonly class="form-control"
-                                                name="initial_suggested_value[]"
+                                            <input type="text" id="striped-form-1" class="form-control"
+                                                name="suggested_deduction[]"
                                                 value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
                                                 placeholder="Suggested Deduction" disabled>
                                             <div class="input-group-append">
@@ -490,7 +489,7 @@
                                     </div>
                                     <div class="col-md-3 Suggested">
                                         <div class="input-group mb-0">
-                                            <input type="text" readonly class="form-control"
+                                            <input type="text" disabled class="form-control"
                                                 value="{{ $slab->suggested_deduction ?? 0 }}">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">Rs.</span>
@@ -702,7 +701,7 @@
                                 </div>
                                 <div class="col-md-3 Suggested">
                                     <div class="input-group mb-0">
-                                        <input type="text" class="form-control"
+                                        <input type="text" class="form-control" name="suggested_deduction[]"
                                             value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
                                             placeholder="Suggested Deduction" readonly>
                                         <div class="input-group-append">
@@ -972,7 +971,7 @@
                                 if (isTiered === 1) {
                                     let applicableAmount = 0;
                                     if (isNaN(to) || val >= to) {
-                                        applicableAmount = to - from;
+                                        applicableAmount = to - from + 1;
                                     } else {
                                         applicableAmount = (val - from) + 1;
                                     }

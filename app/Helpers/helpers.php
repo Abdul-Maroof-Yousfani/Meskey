@@ -220,39 +220,34 @@ if (!function_exists('getDeductionSuggestion')) {
         // $productId = 3;
         // $inspectionResult = 5;
 
-        // Get ALL slabs for this product/type combination (without range filtering)
         $slabs = \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
             ->where('product_id', $productId)
             ->where('status', 'active')
+            // ->where('from', '<=', $inspectionResult ?? 0)
             ->orderBy('from', 'asc')
             ->get();
 
         $deductionValue = 0;
         $inspectionResult = (float) ($inspectionResult ?? 0);
-        // dd($slabs);
+
         foreach ($slabs as $slab) {
             $from = (float) $slab->from;
             $to = $slab->to !== null ? (float) $slab->to : null;
             $isTiered = (int) $slab->is_tiered;
             $deductionVal = (float) $slab->deduction_value;
 
-            // Check if value is >= slab's from value (like in JS)
             if ($inspectionResult >= $from) {
                 if ($isTiered === 1) {
                     $applicableAmount = 0;
 
-                    // Calculate applicable amount for tiered slab
                     if ($to === null || $inspectionResult >= $to) {
-                        // Full slab range applies
-                        $applicableAmount = $to - $from;
+                        $applicableAmount = $to - $from + 1;
                     } else {
-                        // Partial slab range applies (difference between input and from)
                         $applicableAmount = $inspectionResult - $from + 1;
                     }
 
                     $deductionValue += $deductionVal * $applicableAmount;
                 } else {
-                    // Fixed deduction (non-tiered)Abhijeet.
                     $deductionValue += $deductionVal;
                 }
             }

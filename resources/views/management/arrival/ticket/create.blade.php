@@ -12,7 +12,7 @@
              <fieldset>
                  <div class="input-group">
                      <div class="input-group-prepend">
-                         <button class="btn btn-primary" type="button">Product Code#</button>
+                         <button class="btn btn-primary" type="button">Ticket No#</button>
                      </div>
                      <input type="text" disabled class="form-control" value="{{ $unique_no }}"
                          placeholder="Button on left">
@@ -246,7 +246,7 @@
          initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', true, false);
+         initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
 
          $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
 

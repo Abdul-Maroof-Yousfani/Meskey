@@ -10,6 +10,7 @@ use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Master\ProductSlab;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 class InnersamplingController extends Controller
 {
@@ -80,108 +81,157 @@ class InnersamplingController extends Controller
      */
     public function store(ArrivalSamplingResultRequest $request)
     {
-        $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
-        $createdSamplingData = [];
-        $createdCompulsuryData = [];
-        $initialStatus = 'pending';
+        DB::beginTransaction();
 
-        if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
-            foreach ($request->product_slab_type_id as $key => $slabTypeId) {
-                $createdSamplingData[] = ArrivalSamplingResult::create([
-                    'company_id' => $request->company_id,
-                    'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
-                    'product_slab_type_id' => $slabTypeId,
-                    'checklist_value' => $request->checklist_value[$key] ?? null,
-                ]);
+        try {
+            $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
+            $createdSamplingData = [];
+            $createdCompulsuryData = [];
+            $initialStatus = 'pending';
+
+            if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
+                foreach ($request->product_slab_type_id as $key => $slabTypeId) {
+                    $createdSamplingData[] = ArrivalSamplingResult::create([
+                        'company_id' => $request->company_id,
+                        'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
+                        'product_slab_type_id' => $slabTypeId,
+                        'checklist_value' => $request->checklist_value[$key] ?? null,
+                    ]);
+                }
             }
-        }
 
-        if (!empty($request->arrival_compulsory_qc_param_id) && !empty($request->compulsory_checklist_value)) {
-            foreach ($request->arrival_compulsory_qc_param_id as $key => $paramId) {
-                $createdCompulsuryData[] = ArrivalSamplingResultForCompulsury::create([
-                    'company_id' => $request->company_id,
-                    'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
-                    'arrival_compulsory_qc_param_id' => $paramId,
-                    'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
-                    'remark' => null,
-                ]);
+            if (!empty($request->arrival_compulsory_qc_param_id) && !empty($request->compulsory_checklist_value)) {
+                foreach ($request->arrival_compulsory_qc_param_id as $key => $paramId) {
+                    $createdCompulsuryData[] = ArrivalSamplingResultForCompulsury::create([
+                        'company_id' => $request->company_id,
+                        'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
+                        'arrival_compulsory_qc_param_id' => $paramId,
+                        'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
+                        'remark' => null,
+                    ]);
+                }
             }
-        }
+            $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $ArrivalSamplingRequest->arrival_ticket_id)
+                ->where('approved_status', 'approved')
+                ->latest()
+                ->first();
+            $deductionValues = [];
+            $suggestedChangedValues = [];
 
-        $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
-            ->where('arrival_ticket_id', $ArrivalSamplingRequest->arrival_ticket_id)
-            ->where('approved_status', 'approved')
-            ->latest()
-            ->first();
+            // Matching if initial params and inner submittted params exactly matchs..
+            if ($initialRequestForInnerReq) {
+                $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+                $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
 
-        // Matching if initial params and inner submittted params exactly matchs..
-        if ($initialRequestForInnerReq) {
-            $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
-            $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+                $resultsMatch = true;
+                $compulsoryResultsMatch = true;
 
-            $resultsMatch = true;
-            $compulsoryResultsMatch = true;
+                if (count($initialRequestResults) === count($createdSamplingData)) {
+                    foreach ($initialRequestResults as $index => $initialResult) {
 
-            if (count($initialRequestResults) === count($createdSamplingData)) {
-                foreach ($initialRequestResults as $index => $initialResult) {
-                    if (!isset($createdSamplingData[$index])) {
-                        $resultsMatch = false;
-                        break;
+                        $deductionValues[$initialResult->product_slab_type_id] = [
+                            'suggested_deduction' => $initialResult->suggested_deduction,
+                            'applied_deduction' => $initialResult->applied_deduction
+                        ];
+
+                        if (!isset($createdSamplingData[$index])) {
+                            $resultsMatch = false;
+                            break;
+                        }
+
+                        if ($createdSamplingData[$index]->checklist_value < $initialResult->checklist_value) {
+                            $suggestedChangedValues[$initialResult->product_slab_type_id] = $createdSamplingData[$index]->checklist_value;
+                        }
+
+                        if (
+                            $initialResult->product_slab_type_id != $createdSamplingData[$index]->product_slab_type_id ||
+                            $createdSamplingData[$index]->checklist_value > $initialResult->checklist_value
+                        ) {
+                            $resultsMatch = false;
+                            break;
+                        }
                     }
+                } else {
+                    $resultsMatch = false;
+                }
 
-                    if (
-                        $initialResult->product_slab_type_id != $createdSamplingData[$index]->product_slab_type_id ||
-                        $createdSamplingData[$index]->checklist_value > $initialResult->checklist_value
-                    ) {
-                        $resultsMatch = false;
-                        break;
+                if (count($initialRequestCompulsuryResults) === count($createdCompulsuryData)) {
+                    foreach ($initialRequestCompulsuryResults as $index => $initialCompulsoryResult) {
+                        if ($initialCompulsoryResult->qcParam->properties['is_protected_for_inner_req']) {
+                            continue;
+                        }
+
+                        if (!isset($createdCompulsuryData[$index])) {
+                            $compulsoryResultsMatch = false;
+                            break;
+                        }
+                        if (
+                            $initialCompulsoryResult->arrival_compulsory_qc_param_id != $createdCompulsuryData[$index]->arrival_compulsory_qc_param_id ||
+                            $createdCompulsuryData[$index]->compulsory_checklist_value > $initialCompulsoryResult->compulsory_checklist_value
+                        ) {
+                            $compulsoryResultsMatch = false;
+                            break;
+                        }
+                    }
+                } else {
+                    $compulsoryResultsMatch = false;
+                }
+
+                if ($resultsMatch && $compulsoryResultsMatch) {
+                    $initialStatus = 'approved';
+
+                    foreach ($createdSamplingData as $samplingResult) {
+
+                        $slabTypeId = $samplingResult->product_slab_type_id;
+                        if (isset($deductionValues[$slabTypeId])) {
+
+                            if (isset($suggestedChangedValues[$slabTypeId])) {
+                                $displayValue = $suggestedChangedValues[$slabTypeId] ?? 0;
+
+                                $suggestion = getDeductionSuggestion(
+                                    $slabTypeId,
+                                    optional($ArrivalSamplingRequest->arrivalTicket)->qc_product,
+                                    $displayValue
+                                );
+
+                                if ($suggestion) {
+                                    $samplingResult->suggested_deduction = $suggestion['deduction_value'] ?? 0;
+                                }
+                            } else {
+                                $samplingResult->suggested_deduction = $deductionValues[$slabTypeId]['suggested_deduction'];
+                            }
+
+                            $samplingResult->applied_deduction = $deductionValues[$slabTypeId]['applied_deduction'];
+                            $samplingResult->save();
+                        }
                     }
                 }
-            } else {
-                $resultsMatch = false;
             }
 
-            if (count($initialRequestCompulsuryResults) === count($createdCompulsuryData)) {
-                foreach ($initialRequestCompulsuryResults as $index => $initialCompulsoryResult) {
-                    if ($initialCompulsoryResult->qcParam->properties['is_protected_for_inner_req']) {
-                        continue;
-                    }
+            $ArrivalSamplingRequest->update([
+                'remark' => $request->remarks,
+                'is_done' => 'yes',
+                'arrival_product_id' => $request->arrival_product_id,
+                'party_ref_no' => $request->party_ref_no ?? NULL,
+                'sample_taken_by' => $request->sample_taken_by ?? NULL,
+                'done_by' => auth()->user()->id,
+                'approved_status' => $initialStatus,
+            ]);
 
-                    if (!isset($createdCompulsuryData[$index])) {
-                        $compulsoryResultsMatch = false;
-                        break;
-                    }
-                    if (
-                        $initialCompulsoryResult->arrival_compulsory_qc_param_id != $createdCompulsuryData[$index]->arrival_compulsory_qc_param_id ||
-                        $createdCompulsuryData[$index]->compulsory_checklist_value > $initialCompulsoryResult->compulsory_checklist_value
-                    ) {
-                        $compulsoryResultsMatch = false;
-                        break;
-                    }
-                }
-            } else {
-                $compulsoryResultsMatch = false;
-            }
+            DB::commit();
 
-            if ($resultsMatch && $compulsoryResultsMatch) {
-                $initialStatus = 'approved';
-            }
+            return response()->json([
+                'success' => 'Data stored successfully',
+                'data' => [],
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Failed to store data: ' . $e->getMessage(),
+                'data' => [],
+            ], 500);
         }
-
-        $ArrivalSamplingRequest->update([
-            'remark' => $request->remarks,
-            'is_done' => 'yes',
-            'arrival_product_id' => $request->arrival_product_id,
-            'party_ref_no' => $request->party_ref_no ?? NULL,
-            'sample_taken_by' => $request->sample_taken_by ?? NULL,
-            'done_by' => auth()->user()->id,
-            'approved_status' => $initialStatus,
-        ]);
-
-        return response()->json([
-            'success' => 'Data stored successfully',
-            'data' => [],
-        ], 201);
     }
 
 
