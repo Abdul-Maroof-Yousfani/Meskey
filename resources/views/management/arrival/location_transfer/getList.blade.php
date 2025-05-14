@@ -20,8 +20,8 @@
                     </td> --}}
                     <td>
                         <p class="m-0">
-                            <small>Ticket No: {{ $row->arrivalTicket->unique_no ?? '-' }} -- ITEM:
-                                {{ $row->arrivalTicket->product->name ?? '-' }}</small>
+                            <small>Ticket No: {{ $row->arrivalTicket->unique_no ?? '-' }} -- Truck No:
+                                {{ $row->arrivalTicket->truck_no ?? '-' }}</small>
                         </p>
                     </td>
                     <td>
