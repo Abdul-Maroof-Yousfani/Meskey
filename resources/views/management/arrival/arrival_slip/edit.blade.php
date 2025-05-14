@@ -224,7 +224,7 @@
                             </td>
 
                         </tr>
-                        <tr>
+                        {{-- <tr>
                             <td style="width: 15%; padding: 8px;border: none;">Broker 2 Name</td>
                             <td style="padding: 8px;border: none;" colspan="3">
                                 <input type="text"
@@ -238,7 +238,7 @@
                                     value="" readonly>
                             </td>
 
-                        </tr>
+                        </tr> --}}
                         <tr>
                             <td style="width: 15%; padding: 8px;border: none;">On A/C of</td>
                             <td style="padding: 8px;border: none;"colspan="3">
@@ -261,21 +261,21 @@
                             <td style="padding: 8px; border: none;"colspan="3">
                                 <input type="text"
                                     style="width: 100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->product->name }}" readonly>
+                                    value="{{ $arrivalTicket->qcProduct->name }}" readonly>
                             </td>
                             <td style="width: 15%; padding: 8px;border: none;">Status</td>
                             <td style="padding: 8px;border: none;"colspan="1">
                                 <input type="text"
                                     style="width: 100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->station->name ?? 'N/A' }}" readonly>
+                                    value="{{ isset($arrivalTicket->saudaType->id) ? ($arrivalTicket->saudaType->id == 1 ? 'OK' : ($arrivalTicket->saudaType->id == 2 ? 'TS' : 'N/A')) : 'N/A' }}"
+                                    readonly>
                             </td>
                             <td style="width: 7%; padding: 8px;border: none; ">U/L Slip #</td>
                             <td style="padding: 8px; border: none;" colspan="2">
                                 <input type="text"
                                     style="width: 100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="" readonly>
+                                    value="{{ $arrivalTicket->unique_no ?? 'N/A' }}" readonly>
                             </td>
-
                         </tr>
                         <tr>
 
@@ -407,14 +407,13 @@
                                             value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
                                             readonly>
                                     </td>
-
                                 </tr>
 
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Total Freight Payable (Rs.)</td>
                                     <td style="padding: 8px;">
                                         <input type="text"
-                                            style="width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic; font-size: 11px;"
+                                            style="width: 100%; border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
                                             readonly>
                                     </td>
@@ -553,7 +552,8 @@
                                     <td style="width: 18%; padding: 8px;border: none;">
                                         <input type="text"
                                             style="width: 100%; border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->firstWeighbridge->weight -  $arrivalTicket->secondWeighbridge->weight}}" readonly>
+                                            value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
+                                            readonly>
                                     </td>
                                 </tr>
                                 <tr>
@@ -685,9 +685,9 @@
             setTimeout(function() {
                 printWindow.close();
 
-                 if (param3 !== 1) {
-                     location.reload();
-                 }
+                if (param3 !== 1) {
+                    location.reload();
+                }
             }, 500);
         }, 500);
     }
