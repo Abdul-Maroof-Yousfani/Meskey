@@ -248,8 +248,9 @@
                                  @endphp
                                  <tr>
                                      <td>{{ $slab->slabType->name }}</td>
-                                     <td class="text-center">{{ $slab->checklist_value }} <span
-                                             class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                     <td class="text-center">{{ $slab->checklist_value }}
+                                         {{-- <span
+                                             class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span> --}}
                                      </td>
                                  </tr>
                              @endforeach
@@ -269,8 +270,9 @@
                                      @endphp
                                      <tr>
                                          <td>{{ $slab->qcParam->name }}</td>
-                                         <td class="text-center">{{ $slab->checklist_value }} <span
-                                                 class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
+                                         <td class="text-center">{{ $slab->checklist_value }}
+                                             {{-- <span
+                                                 class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span> --}}
                                          </td>
                                      </tr>
                                  @endforeach

@@ -3,14 +3,14 @@
     $isCompulsury = false;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
-        if (!$slab->applied_deduction) {
+        if (!$slab->checklist_value) {
             continue;
         }
         $isCompulsury = true;
     }
 
     foreach ($samplingRequestResults as $slab) {
-        if (!$slab->applied_deduction) {
+        if (!$slab->checklist_value) {
             continue;
         }
         $isSlabs = true;
@@ -476,7 +476,7 @@
                                         @if (count($samplingRequestResults) != 0)
                                             @foreach ($samplingRequestResults as $slab)
                                                 @php
-                                                    if (!$slab->applied_deduction) {
+                                                    if (!$slab->checklist_value) {
                                                         continue;
                                                     }
                                                 @endphp
@@ -486,8 +486,10 @@
                                                     </td>
                                                     <td
                                                         style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                        {{ $slab->applied_deduction }} <span
-                                                            class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                        {{ $slab->checklist_value }}
+                                                        {{-- <span
+                                                            class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }} --}}
+                                                        </span>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -503,7 +505,7 @@
                                             @if (count($samplingRequestCompulsuryResults) != 0)
                                                 @foreach ($samplingRequestCompulsuryResults as $slab)
                                                     @php
-                                                        if (!$slab->applied_deduction) {
+                                                        if (!$slab->checklist_value) {
                                                             continue;
                                                         }
                                                     @endphp
@@ -512,8 +514,9 @@
                                                             {{ $slab->qcParam->name }}</td>
                                                         <td
                                                             style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                            {{ $slab->applied_deduction }} <span
-                                                                class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
+                                                            {{ $slab->checklist_value }}
+                                                            {{-- <span
+                                                                class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span> --}}
                                                         </td>
                                                     </tr>
                                                 @endforeach
