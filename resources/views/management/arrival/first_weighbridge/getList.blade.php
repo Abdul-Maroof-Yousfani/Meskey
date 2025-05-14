@@ -1,9 +1,9 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">Ticket No.</th>
-            <th class="col-sm-1">Product</th>
-            <th class="col-sm-4">Weight</th>
+            <th class="col-sm-2">Ticket</th>
+            <th class="col-sm-2">Product</th>
+            <th class="col-sm-1">Weight</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -14,10 +14,11 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->arrivalTicket->unique_no ?? '-' }} </small>
+                            <small> Ticket No. {{ $row->arrivalTicket->unique_no ?? '-' }} -- Truck No.
+                                {{ $row->arrivalTicket->truck_no ?? '-' }} </small>
                         </p>
                     </td>
-                    <td>{{ $row->arrivalTicket->product->name ?? '-' }}</td>
+                    <td>{{ $row->arrivalTicket->qcProduct->name ?? '-' }}</td>
                     <td>{{ $row->weight ?? '-' }}</td>
 
                     <td>
