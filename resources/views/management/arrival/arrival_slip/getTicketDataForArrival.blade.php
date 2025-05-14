@@ -3,14 +3,14 @@
      $isCompulsury = false;
 
      foreach ($samplingRequestCompulsuryResults as $slab) {
-         if (!$slab->applied_deduction) {
+         if (!$slab->checklist_value) {
              continue;
          }
          $isCompulsury = true;
      }
 
      foreach ($samplingRequestResults as $slab) {
-         if (!$slab->applied_deduction) {
+         if (!$slab->checklist_value) {
              continue;
          }
          $isSlabs = true;
@@ -122,7 +122,8 @@
          <div class="form-group">
              <label>Arrival Weight</label>
              <input type="text" class="form-control bg-light"
-                 value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight  }}" readonly>
+                 value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
+                 readonly>
          </div>
      </div>
      <div class="col-md-3">
@@ -164,7 +165,7 @@
          <div class="form-group">
              <label>Freight (Rs.)</label>
              <input type="text" class="form-control bg-light mb-1"
-                 value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}" readonly>
+                 value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}" readonly>
          </div>
      </div>
      <div class="col-md-4">
@@ -241,13 +242,13 @@
                          @if (count($samplingRequestResults) != 0)
                              @foreach ($samplingRequestResults as $slab)
                                  @php
-                                     if (!$slab->applied_deduction) {
+                                     if (!$slab->checklist_value) {
                                          continue;
                                      }
                                  @endphp
                                  <tr>
                                      <td>{{ $slab->slabType->name }}</td>
-                                     <td class="text-center">{{ $slab->applied_deduction }} <span
+                                     <td class="text-center">{{ $slab->checklist_value }} <span
                                              class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                      </td>
                                  </tr>
@@ -262,13 +263,13 @@
                              @if (count($samplingRequestCompulsuryResults) != 0)
                                  @foreach ($samplingRequestCompulsuryResults as $slab)
                                      @php
-                                         if (!$slab->applied_deduction) {
+                                         if (!$slab->checklist_value) {
                                              continue;
                                          }
                                      @endphp
                                      <tr>
                                          <td>{{ $slab->qcParam->name }}</td>
-                                         <td class="text-center">{{ $slab->applied_deduction }} <span
+                                         <td class="text-center">{{ $slab->checklist_value }} <span
                                                  class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
                                          </td>
                                      </tr>

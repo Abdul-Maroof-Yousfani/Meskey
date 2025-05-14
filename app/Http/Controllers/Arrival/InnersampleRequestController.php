@@ -33,7 +33,6 @@ class InnersampleRequestController extends Controller
             });
         })
             ->where('company_id', $request->company_id)
-
             ->latest()
             ->paginate(request('per_page', 25));
 
