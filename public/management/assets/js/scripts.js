@@ -647,7 +647,8 @@ function initializeDynamicSelect2(
   columnName,
   idColumn = "id",
   enableTags = false,
-  isMultiple = true
+  isMultiple = true,
+  isSelectOnClose = true
 ) {
   $(selector)
     .select2({
@@ -674,6 +675,7 @@ function initializeDynamicSelect2(
       minimumInputLength: 0, // Load data without typing
       tags: enableTags,
       multiple: isMultiple,
+      selectOnClose: isSelectOnClose,
     })
     .trigger("select2:open"); // Open dropdown immediately to show data
 }
