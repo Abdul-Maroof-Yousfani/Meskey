@@ -146,7 +146,7 @@ class ArrivalSlipController extends Controller
 
         $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->arrival_ticket_id)
             // ->where('sampling_type', 'initial')
-            ->where('approved_status', 'approved')
+            ->whereIn('approved_status', ['approved', 'rejected'])
             ->get()->last();
 
         $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
