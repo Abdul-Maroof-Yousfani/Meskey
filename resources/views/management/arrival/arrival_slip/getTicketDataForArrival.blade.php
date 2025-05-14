@@ -122,7 +122,7 @@
          <div class="form-group">
              <label>Arrival Weight</label>
              <input type="text" class="form-control bg-light"
-                 value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
+                 value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight  }}" readonly>
          </div>
      </div>
      <div class="col-md-3">

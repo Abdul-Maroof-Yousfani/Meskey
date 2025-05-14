@@ -681,9 +681,9 @@
             setTimeout(function() {
                 printWindow.close();
 
-                // if (param3 !== 1) {
-                //     location.reload();
-                // }
+                 if (param3 !== 1) {
+                     location.reload();
+                 }
             }, 500);
         }, 500);
     }
