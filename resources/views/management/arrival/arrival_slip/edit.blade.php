@@ -3,14 +3,14 @@
     $isCompulsury = false;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
-        if (!$slab->checklist_value) {
+        if (!$slab->applied_deduction) {
             continue;
         }
         $isCompulsury = true;
     }
 
     foreach ($samplingRequestResults as $slab) {
-        if (!$slab->checklist_value) {
+        if (!$slab->applied_deduction) {
             continue;
         }
         $isSlabs = true;
@@ -476,7 +476,7 @@
                                         @if (count($samplingRequestResults) != 0)
                                             @foreach ($samplingRequestResults as $slab)
                                                 @php
-                                                    if (!$slab->checklist_value) {
+                                                    if (!$slab->applied_deduction) {
                                                         continue;
                                                     }
                                                 @endphp
@@ -505,7 +505,7 @@
                                             @if (count($samplingRequestCompulsuryResults) != 0)
                                                 @foreach ($samplingRequestCompulsuryResults as $slab)
                                                     @php
-                                                        if (!$slab->checklist_value) {
+                                                        if (!$slab->applied_deduction) {
                                                             continue;
                                                         }
                                                     @endphp
