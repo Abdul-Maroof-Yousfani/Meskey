@@ -229,13 +229,13 @@
                             <td style="padding: 8px;border: none;" colspan="3">
                                 <input type="text"
                                     style="width: 100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->supplier_name }}" readonly>
+                                    value="" readonly>
                             </td>
                             <td style="width: 15%; padding: 8px;border: none;">Broker 3 Name</td>
                             <td style="padding: 8px; border: none;"colspan="4">
                                 <input type="text"
                                     style="width: 100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->broker_name ?? 'N/A' }}" readonly>
+                                    value="" readonly>
                             </td>
 
                         </tr>
