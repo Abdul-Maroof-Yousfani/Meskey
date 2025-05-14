@@ -36,7 +36,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->arrivalTicket)->product)->name }} <br>
+                            {{ optional(optional($row->arrivalTicket)->qcProduct)->name }} <br>
                         </p>
                     </td>
                     <td>
