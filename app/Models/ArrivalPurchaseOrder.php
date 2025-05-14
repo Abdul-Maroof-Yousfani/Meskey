@@ -34,6 +34,7 @@ class ArrivalPurchaseOrder extends Model
         'bag_rate',
         'delivery_date',
         'credit_days',
+        'purchase_type',
         'delivery_address',
         'rate_per_kg',
         'rate_per_mound',
@@ -48,7 +49,15 @@ class ArrivalPurchaseOrder extends Model
         'is_replacement',
         'weighbridge_from',
         'remarks',
-        'status'
+        'status',
+        'ref_no',
+        'supplier_name',
+        'purchaser_name',
+        'contact_person_name',
+        'mobile_no',
+        'payment_term',
+        'truck_no',
+        'created_by',
     ];
 
     protected $casts = [
@@ -65,6 +74,7 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
     public function brokerTwo()
     {
         return $this->belongsTo(Broker::class, 'broker_two_id');
@@ -90,7 +100,6 @@ class ArrivalPurchaseOrder extends Model
         return $this->belongsTo(CompanyLocation::class, 'company_location_id');
     }
 
-    
     public function purchaseSamplingRequests()
     {
         return $this->hasMany(PurchaseSamplingRequest::class, 'arrival_purchase_order_id');

@@ -14,7 +14,6 @@ class ArrivalPurchaseOrderRequest extends FormRequest
     public function rules()
     {
         $data = $this->all();
-
         $arrivalPurchaseOrderId = $data['id'] ?? null;
 
         $rules = [

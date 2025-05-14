@@ -14,15 +14,23 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('company_id');
 
+            // Contract information
             $table->string('contract_no')->unique();
             $table->date('contract_date');
             $table->unsignedBigInteger('company_location_id');
-            $table->unsignedBigInteger('sauda_type_id');
+            $table->unsignedBigInteger('sauda_type_id')->nullable();
+            $table->enum('purchase_type', ['regular', 'gate_buying'])->default('regular');
+            $table->string('ref_no')->nullable();
 
-            $table->unsignedBigInteger('account_of')->nullable();
-            $table->unsignedBigInteger('supplier_id');
+            // Supplier information
+            $table->unsignedBigInteger('supplier_id')->nullable();
+            $table->string('supplier_name')->nullable();
             $table->decimal('supplier_commission', 10, 2)->nullable();
+            $table->string('purchaser_name')->nullable();
+            $table->string('contact_person_name')->nullable();
+            $table->string('mobile_no')->nullable();
 
+            // Broker information
             $table->unsignedBigInteger('broker_one_id')->nullable();
             $table->decimal('broker_one_commission', 10, 2)->nullable();
             $table->unsignedBigInteger('broker_two_id')->nullable();
@@ -30,37 +38,48 @@ return new class extends Migration {
             $table->unsignedBigInteger('broker_three_id')->nullable();
             $table->decimal('broker_three_commission', 10, 2)->nullable();
 
+            // Product information
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('truck_size_range_id')->nullable();
-
             $table->enum('line_type', ['bari', 'choti'])->nullable();
             $table->integer('bag_weight')->nullable();
             $table->decimal('bag_rate', 10, 2)->nullable();
 
-            $table->date('delivery_date');
+            // Delivery information
+            $table->date('delivery_date')->nullable();
             $table->integer('credit_days')->nullable();
-            $table->text('delivery_address');
+            $table->text('delivery_address')->nullable();
+            $table->string('truck_no')->nullable();
+            $table->string('payment_term')->nullable();
 
+            // Rate information
             $table->decimal('rate_per_kg', 10, 2);
             $table->decimal('rate_per_mound', 10, 2);
             $table->decimal('rate_per_100kg', 10, 2);
 
-            $table->enum('calculation_type', ['trucks', 'quantity']);
+            // Quantity calculation
+            $table->enum('calculation_type', ['trucks', 'quantity'])->nullable();
             $table->integer('no_of_trucks')->nullable();
             $table->decimal('total_quantity', 12, 2)->nullable();
-            $table->decimal('min_quantity', 12, 2);
-            $table->decimal('max_quantity', 12, 2);
-            $table->integer('min_bags');
-            $table->integer('max_bags');
+            $table->decimal('min_quantity', 12, 2)->nullable();
+            $table->decimal('max_quantity', 12, 2)->nullable();
+            $table->integer('min_bags')->nullable();
+            $table->integer('max_bags')->nullable();
 
+            // Other fields
             $table->boolean('is_replacement')->default(false);
             $table->decimal('weighbridge_from', 10, 2)->nullable();
             $table->text('remarks')->nullable();
+            $table->unsignedBigInteger('account_of')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
 
+            // Status and timestamps
             $table->enum('status', ['draft', 'confirmed', 'completed', 'cancelled'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
 
+            // Foreign key constraints
+            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('company_location_id')->references('id')->on('company_locations');
             $table->foreign('sauda_type_id')->references('id')->on('sauda_types');
             $table->foreign('account_of')->references('id')->on('users');
@@ -69,11 +88,8 @@ return new class extends Migration {
             $table->foreign('broker_two_id')->references('id')->on('brokers');
             $table->foreign('broker_three_id')->references('id')->on('brokers');
             $table->foreign('product_id')->references('id')->on('products');
-
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->foreign('truck_size_range_id')
-                ->references('id')->on('truck_size_ranges')
-                ->onDelete('set null');
+            $table->foreign('truck_size_range_id')->references('id')->on('truck_size_ranges')->onDelete('set null');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 

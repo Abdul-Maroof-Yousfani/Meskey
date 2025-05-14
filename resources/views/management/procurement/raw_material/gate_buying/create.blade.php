@@ -1,6 +1,7 @@
 <form action="{{ route('raw-material.gate-buying.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-order') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.gate-buying') }}" />
+    <input type="hidden" name="purchase_type" value="gate_buying" />
 
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -56,13 +57,14 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Contact Person Name:</label>
-                <input type="text" name="contact_person" placeholder="Contact Person Name" class="form-control" />
+                <input type="text" name="contact_person_name" placeholder="Contact Person Name"
+                    class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Mobile No:</label>
-                <input type="text" name="mobile_number" placeholder="Mobile #" class="form-control" />
+                <input type="text" name="mobile_no" placeholder="Mobile #" class="form-control" />
             </div>
         </div>
     </div>
@@ -76,7 +78,7 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group">
                 <label>Broker:</label>
-                <select name="broker_id" id="broker_id" class="form-control ">
+                <select name="broker_one_id" id="broker_id" class="form-control ">
                     <option value="">Select Broker</option>
                 </select>
             </div>
@@ -84,8 +86,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Commission:</label>
-                <input type="number" name="broker_one_commission" value="" placeholder="Commission"
-                    class="form-control" />
+                <input type="number" name="broker_one_commission" step="0.01" value=""
+                    placeholder="Commission" class="form-control" />
             </div>
         </div>
     </div>
@@ -93,7 +95,7 @@
         <div class="col-12">
             <div class="form-group">
                 <label>Commodity:</label>
-                <select name="commodity" id="product_id" class="form-control select2">
+                <select name="product_id" id="product_id" class="form-control select2">
                     <option value="">Select Commodity</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}" data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
@@ -137,7 +139,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Truck No:</label>
-                <input type="text" name="truck_number" placeholder="Truck #" class="form-control" />
+                <input type="text" name="truck_no" placeholder="Truck #" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -165,9 +167,9 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Prepared By:</label>
-                <input type="text" name="prepared_by_display" value="{{ auth()->user()->name }}" disabled
+                <input type="text" name="created_by_display" value="{{ auth()->user()->name }}" disabled
                     placeholder="Prepared By" class="form-control" />
-                <input type="hidden" name="prepared_by" value="{{ auth()->user()->id }}" readonly
+                <input type="hidden" name="created_by" value="{{ auth()->user()->id }}" readonly
                     placeholder="Prepared By" class="form-control" />
             </div>
         </div>
