@@ -64,7 +64,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
+            filterationCommon(`{{ route('raw-material.get.gate-buying') }}`)
         });
     </script>
 @endsection
