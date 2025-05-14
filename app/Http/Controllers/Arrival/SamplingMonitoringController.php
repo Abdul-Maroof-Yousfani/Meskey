@@ -189,7 +189,8 @@ class SamplingMonitoringController extends Controller
         $validator = Validator::make($request->all(), [
             // 'supplier' => 'required',
             // 'broker' => 'required',
-            'stage_status' => 'required'
+            'stage_status' => 'required',
+            'sauda_type_id' => 'required'
         ]);
 
         if ($validator->fails()) {

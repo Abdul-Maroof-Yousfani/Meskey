@@ -470,7 +470,7 @@
                                                 Parameter</th>
                                             <th
                                                 style="width: 40%; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;">
-                                                Applied Deduction (%)</th>
+                                                Applied Deduction</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -487,7 +487,9 @@
                                                     </td>
                                                     <td
                                                         style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                        {{ $slab->applied_deduction }}</td>
+                                                        {{ $slab->applied_deduction }} <span
+                                                            class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         @else
@@ -511,7 +513,9 @@
                                                             {{ $slab->qcParam->name }}</td>
                                                         <td
                                                             style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                            {{ $slab->applied_deduction }}</td>
+                                                            {{ $slab->applied_deduction }} <span
+                                                                class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
+                                                        </td>
                                                     </tr>
                                                 @endforeach
                                             @else

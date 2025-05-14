@@ -87,8 +87,7 @@
                     <div class="col-xs-4 col-sm-4 col-md-4 full">
                         <div class="form-group">
                             <label class="d-block">Sauda Type:</label>
-                            <input type="hidden" name="sauda_type_id" id="actual_sauda_type_id"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
+
                             <select disabled name="sauda_type_id_display" id="sauda_type_id"
                                 @disabled(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
                                         (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ?? null)) class="form-control w-100 select2">
@@ -210,7 +209,32 @@
                             placeholder="QC Product">
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="col-xs-6 col-sm-6 col-md-6 full">
+                    <div class="form-group">
+                        <label class="d-block">Sauda Type:</label>
+                        @php
+                            $isDisabled =
+                                optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
+                                (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ??
+                                    null);
+                        @endphp
+
+                        @if ($isDisabled)
+                            <input type="hidden" name="sauda_type_id"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
+                            <select disabled class="form-control w-100 select2">
+                            @else
+                                <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
+                        @endif
+                        <option value="">N/A</option>
+                        @foreach ($saudaTypes as $saudaType)
+                            <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
+                                {{ $saudaType->name }}</option>
+                        @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-6 col-md-6 full">
                     <div class="form-group ">
                         <label>Status:</label>
                         @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))

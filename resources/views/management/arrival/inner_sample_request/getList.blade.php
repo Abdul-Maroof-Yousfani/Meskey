@@ -9,9 +9,6 @@
         </tr>
     </thead>
     <tbody>
-
-
-
         @if (count($ArrivalSamplingRequests) != 0)
             @foreach ($ArrivalSamplingRequests as $key => $row)
                 <tr>
@@ -22,7 +19,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->arrivalTicket)->product)->name }} <br>
+                            {{ optional(optional($row->arrivalTicket)->qcProduct)->name }} <br>
                         </p>
                     </td>
                     <td>

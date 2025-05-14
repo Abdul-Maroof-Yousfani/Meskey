@@ -50,7 +50,7 @@ class ArrivalSlipController extends Controller
     public function create()
     {
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('second_weighbridge_status', 'completed')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('arrival_slip_status', 'pending')->get();
         return view('management.arrival.arrival_slip.create', $data);
     }
 

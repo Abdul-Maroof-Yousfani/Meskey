@@ -234,7 +234,7 @@
                      <thead class="thead-light">
                          <tr>
                              <th width="60%">Parameter</th>
-                             <th width="40%">Applied Deduction (%)</th>
+                             <th width="40%">Applied Deduction</th>
                          </tr>
                      </thead>
                      <tbody>
@@ -247,7 +247,9 @@
                                  @endphp
                                  <tr>
                                      <td>{{ $slab->slabType->name }}</td>
-                                     <td class="text-center">{{ $slab->applied_deduction }}</td>
+                                     <td class="text-center">{{ $slab->applied_deduction }} <span
+                                             class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                     </td>
                                  </tr>
                              @endforeach
                          @else
@@ -266,7 +268,9 @@
                                      @endphp
                                      <tr>
                                          <td>{{ $slab->qcParam->name }}</td>
-                                         <td class="text-center">{{ $slab->applied_deduction }}</td>
+                                         <td class="text-center">{{ $slab->applied_deduction }} <span
+                                                 class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
+                                         </td>
                                      </tr>
                                  @endforeach
                              @else
