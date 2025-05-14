@@ -14,6 +14,7 @@
     <meta name="author" content="Innovative Network">
 
     <title>@yield('title') - {{ config('app.name') }}</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('management') }}/app-assets/img/ico/favicon.ico">
     <link rel="shortcut icon" type="image/png" href="{{ asset('management') }}/app-assets/img/ico/favicon-32.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -46,14 +47,19 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/themes/layout-dark.css') }}">
     <link rel="stylesheet" href="{{ asset('management/app-assets/css/plugins/switchery.css') }}">
     <link rel="stylesheet" href="{{ asset('management/app-assets/vendors/css/select2.min.css') }}">
+
+ 
+
+
     <!-- END APEX CSS-->
     <!-- BEGIN Page Level CSS-->
-    <link rel="stylesheet" type="text/css"
-        href="{{ asset('management/app-assets/css/core/menu/horizontal-menu.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{asset('management/app-assets/css/core/menu/horizontal-menu.css')}}">
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/pages/dashboard1.css') }}">
     <!-- END Page Level CSS-->
     <!-- BEGIN: Custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
+    <script src="{{ asset('assets/js/custom.js') }}"></script>
     <!-- END: Custom CSS-->
 </head>
 <!-- END : Head-->
