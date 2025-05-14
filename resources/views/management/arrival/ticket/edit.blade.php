@@ -168,8 +168,6 @@
     </div>
 </form>
 
-
-
 <script>
     function calculateSampleMoney() {
         let truckTypeSelect = $('[name="arrival_truck_type_id"]');

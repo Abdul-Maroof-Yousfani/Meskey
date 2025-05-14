@@ -197,7 +197,6 @@
          </div>
      </div>
 
-
      <div class="row ">
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group ">
@@ -207,7 +206,6 @@
          </div>
      </div>
 
-
      <div class="row bottom-button-bar">
          <div class="col-12">
              <a type="button"
@@ -216,8 +214,6 @@
          </div>
      </div>
  </form>
-
-
 
  <script>
      function calculateSampleMoney() {
@@ -248,7 +244,7 @@
      $(document).ready(function() {
          initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
          initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
+         initializeDynamicSelect2('#accounts_of', 'brokers', 'name', 'name', false, false);
          initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
 
