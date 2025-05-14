@@ -538,7 +538,7 @@
                                     <td style="width: 18%; padding: 8px;">
                                         <input type="text"
                                             style="width: 100%; border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
+                                            value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}" readonly>
                                     </td>
 
 
@@ -549,7 +549,7 @@
                                     <td style="width: 18%; padding: 8px;border: none;">
                                         <input type="text"
                                             style="width: 100%; border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="" readonly>
+                                            value="{{ $arrivalTicket->firstWeighbridge->weight -  $arrivalTicket->secondWeighbridge->weight}}" readonly>
                                     </td>
                                 </tr>
                                 <tr>
