@@ -341,7 +341,7 @@
                                     <td style="width: 18%; padding: 8px;">
                                         <input type="text"
                                             style="width: 100%; border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
+                                            value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
                                             readonly>
                                     </td>
                                     <td style="width: 15%;  padding: 8px;border: none;">
