@@ -40,7 +40,7 @@ class ArrivalTicketRequest extends FormRequest
             'status' => 'nullable|in:active,inactive',
             'first_weight' => 'required|numeric',
             'second_weight' => 'required|numeric',
-            'net_weight' => 'required|numeric',
+            'net_weight' => 'required|numeric|min:0',
             'accounts_of' => 'required|string|max:255',
             'decision_id' => 'required|exists:users,id',
         ];
@@ -99,7 +99,7 @@ class ArrivalTicketRequest extends FormRequest
 
             'net_weight.required' => 'The net weight is required.',
             'net_weight.numeric' => 'The net weight must be a number.',
-
+            'net_weight.min' => 'Please check your values. Net weight cannot be negative.',
         ];
     }
 }

@@ -181,6 +181,10 @@
             sampleMoney = sampleMoney * 2;
         }
 
+        if (holidayType === 'n/a') {
+            sampleMoney = 0;
+        }
+
         $('input[name="sample_money"]').val(sampleMoney || 0);
     }
 
