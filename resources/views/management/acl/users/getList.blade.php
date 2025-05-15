@@ -11,8 +11,8 @@
         @if (count($users) != 0)
             @foreach ($users as $key => $user)
                 <tr>
-                  <td>
-                    <img src="{{ image_path($user->profile_image) }}" class="avatar lisiavatarlogo"/>
+                    <td>
+                        <img src="{{ image_path($user->profile_image) }}" class="avatar lisiavatarlogo" />
                     </td>
                     <td>
                         <p class="m-0">
@@ -28,31 +28,31 @@
                         @endif
                     </td> --}}
                     <td>
-                   
+
                         @if (!empty(getUserAllCompanies(auth()->user()->id)))
                             @foreach (getUserAllCompanies($user->id) as $v)
                                 <label class="badge gradient-pomegranate">{{ $v->name }}</label>
                             @endforeach
                         @endif
                     </td>
-                     <td>
-                         @canAccess('user-delete')
-                            <a onclick="openModal(this,'{{ route('users.edit', $user->id) }}','Edit User')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
-                            </a>
-                        @endcanAccess
-                        
+                    <td>
                         @canAccess('user-delete')
-                            <a onclick="deletemodal('{{ route('users.destroy', $user->id) }}','{{ route('get.users') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                        <a onclick="openModal(this,'{{ route('users.edit', $user->id) }}','Edit User')"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
+                        @endcanAccess
+
+                        @canAccess('user-delete')
+                        <a onclick="deletemodal('{{ route('users.destroy', $user->id) }}','{{ route('get.users') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
                         @endcanAccess
                     </td>
                 </tr>
             @endforeach
-            @else
+        @else
             <tr class="ant-table-placeholder">
                 <td colspan="11" class="ant-table-cell text-center">
                     <div class="my-5">

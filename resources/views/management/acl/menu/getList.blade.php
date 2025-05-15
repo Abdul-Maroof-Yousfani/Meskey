@@ -9,158 +9,164 @@
     </thead>
     <tbody>
         @if (count($menus) != 0)
-@foreach ($menus as $menu)
-    @if ($menu->parent_id == null) {{-- Check for top-level menu --}}
-        <tr class="parent-row" data-id="{{ $menu->id }}">
-            <td>
-                <p class="m-0">
-                    <i class="{{ $menu->icon }}"></i>
-                    {{ $menu->name }} <br>
-                </p>
-            </td>
-            <td>
-                <p class="m-0">
-                    <small class="text-uppercase">{{ $menu->permission_name ?? '--' }}</small>
-                </p>
-            </td>
-            <td>
-                <label class="badge bg-light-{{ $menu->status == 1 ? 'primary' : 'danger' }}">
-                    {{ $menu->status == 1 ? 'Active' : 'In-active' }}
-                </label>
-            </td>
-            <td>
-                @canAccess('role-edit')
-                    <a onclick="openModal(this,'{{ route('company.edit', $menu->id) }}','Edit Role')"
-                        class="info p-1 text-center mr-2 position-relative ">
-                        <i class="ft-edit-2 font-medium-3"></i>
-                    </a>
-                @endcanAccess
-                @canAccess('role-delete')
-                    <a onclick="deletemodal('{{ route('company.destroy', $menu->id) }}','{{ route('get.roles') }}')"
-                        class="danger p-1 text-center mr-2 position-relative ">
-                        <i class="ft-x font-medium-3"></i>
-                    </a>
-                @endcanAccess
-            </td>
-        </tr>
-
-        {{-- Nested rows for child menus (Level 1) --}}
-        @foreach ($menus as $subMenu)
-            @if ($subMenu->parent_id == $menu->id) {{-- Check for child menus --}}
-                <tr class="child-row level-1" data-parent-id="{{ $menu->id }}" style="display: ;">
-                    <td class="level-1-td" style="padding-left: 30px;"> {{-- Indentation for child rows --}}
-                        <p class="m-0">
-                            <i class="{{ $subMenu->icon }}"></i>
-                            {{ $subMenu->name }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            <small class="text-uppercase">{{ $subMenu->permission_name ?? '--' }}</small>
-                        </p>
-                    </td>
-                    <td>
-                        <label class="badge bg-light-{{ $subMenu->status == 1 ? 'primary' : 'danger' }}">
-                            {{ $subMenu->status == 1 ? 'Active' : 'In-active' }}
-                        </label>
-                    </td>
-                    <td>
-                        @canAccess('role-edit')
-                            <a onclick="openModal(this,'{{ route('company.edit', $subMenu->id) }}','Edit Role')"
+            @foreach ($menus as $menu)
+                @if ($menu->parent_id == null)
+                    {{-- Check for top-level menu --}}
+                    <tr class="parent-row" data-id="{{ $menu->id }}">
+                        <td>
+                            <p class="m-0">
+                                <i class="{{ $menu->icon }}"></i>
+                                {{ $menu->name }} <br>
+                            </p>
+                        </td>
+                        <td>
+                            <p class="m-0">
+                                <small class="text-uppercase">{{ $menu->permission_name ?? '--' }}</small>
+                            </p>
+                        </td>
+                        <td>
+                            <label class="badge bg-light-{{ $menu->status == 1 ? 'primary' : 'danger' }}">
+                                {{ $menu->status == 1 ? 'Active' : 'In-active' }}
+                            </label>
+                        </td>
+                        <td>
+                            @canAccess('role-edit')
+                            <a onclick="openModal(this,'{{ route('company.edit', $menu->id) }}','Edit Role')"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-edit font-medium-3"></i>
                             </a>
-                        @endcanAccess
-                        @canAccess('role-delete')
-                            <a onclick="deletemodal('{{ route('company.destroy', $subMenu->id) }}','{{ route('get.roles') }}')"
+                            @endcanAccess
+                            @canAccess('role-delete')
+                            <a onclick="deletemodal('{{ route('company.destroy', $menu->id) }}','{{ route('get.roles') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
-                        @endcanAccess
-                    </td>
-                </tr>
+                            @endcanAccess
+                        </td>
+                    </tr>
 
-                {{-- Nested rows for Level 2 --}}
-                @foreach ($menus as $subSubMenu)
-                    @if ($subSubMenu->parent_id == $subMenu->id)
-                        <tr class="child-row level-2" data-parent-id="{{ $subMenu->id }}" style="display: ;">
-                            <td class="level-2-td" style="padding-left: 60px;"> {{-- More indentation for sub-levels --}}
-                                <p class="m-0">
-                                    <i class="{{ $subSubMenu->icon }}"></i>
-                                    {{ $subSubMenu->name }} <br>
-                                </p>
-                            </td>
-                            <td>
-                                <p class="m-0">
-                                    <small class="text-uppercase">{{ $subSubMenu->permission_name ?? '--' }}</small>
-                                </p>
-                            </td>
-                            <td>
-                                <label class="badge bg-light-{{ $subSubMenu->status == 1 ? 'primary' : 'danger' }}">
-                                    {{ $subSubMenu->status == 1 ? 'Active' : 'In-active' }}
-                                </label>
-                            </td>
-                            <td>
-                                @canAccess('role-edit')
-                                    <a onclick="openModal(this,'{{ route('company.edit', $subSubMenu->id) }}','Edit Role')"
+                    {{-- Nested rows for child menus (Level 1) --}}
+                    @foreach ($menus as $subMenu)
+                        @if ($subMenu->parent_id == $menu->id)
+                            {{-- Check for child menus --}}
+                            <tr class="child-row level-1" data-parent-id="{{ $menu->id }}" style="display: ;">
+                                <td class="level-1-td" style="padding-left: 30px;"> {{-- Indentation for child rows --}}
+                                    <p class="m-0">
+                                        <i class="{{ $subMenu->icon }}"></i>
+                                        {{ $subMenu->name }} <br>
+                                    </p>
+                                </td>
+                                <td>
+                                    <p class="m-0">
+                                        <small class="text-uppercase">{{ $subMenu->permission_name ?? '--' }}</small>
+                                    </p>
+                                </td>
+                                <td>
+                                    <label class="badge bg-light-{{ $subMenu->status == 1 ? 'primary' : 'danger' }}">
+                                        {{ $subMenu->status == 1 ? 'Active' : 'In-active' }}
+                                    </label>
+                                </td>
+                                <td>
+                                    @canAccess('role-edit')
+                                    <a onclick="openModal(this,'{{ route('company.edit', $subMenu->id) }}','Edit Role')"
                                         class="info p-1 text-center mr-2 position-relative ">
-                                        <i class="ft-edit-2 font-medium-3"></i>
+                                        <i class="ft-edit font-medium-3"></i>
                                     </a>
-                                @endcanAccess
-                                @canAccess('role-delete')
-                                    <a onclick="deletemodal('{{ route('company.destroy', $subSubMenu->id) }}','{{ route('get.roles') }}')"
+                                    @endcanAccess
+                                    @canAccess('role-delete')
+                                    <a onclick="deletemodal('{{ route('company.destroy', $subMenu->id) }}','{{ route('get.roles') }}')"
                                         class="danger p-1 text-center mr-2 position-relative ">
                                         <i class="ft-x font-medium-3"></i>
                                     </a>
-                                @endcanAccess
-                            </td>
-                        </tr>
+                                    @endcanAccess
+                                </td>
+                            </tr>
 
-                        {{-- Nested rows for Level 3 --}}
-                        @foreach ($menus as $subSubSubMenu)
-                            @if ($subSubSubMenu->parent_id == $subSubMenu->id)
-                                <tr class="child-row level-3" data-parent-id="{{ $subSubMenu->id }}" style="display: none;">
-                                    <td style="padding-left: 90px;"> {{-- Further indentation for Level 3 --}}
-                                        <p class="m-0">
-                                            <i class="{{ $subSubSubMenu->icon }}"></i>
-                                            {{ $subSubSubMenu->name }} <br>
-                                        </p>
-                                    </td>
-                                    <td>
-                                        <p class="m-0">
-                                            <small class="text-uppercase">{{ $subSubSubMenu->permission_name ?? '--' }}</small>
-                                        </p>
-                                    </td>
-                                    <td>
-                                        <label class="badge bg-light-{{ $subSubSubMenu->status == 1 ? 'primary' : 'danger' }}">
-                                            {{ $subSubSubMenu->status == 1 ? 'Active' : 'In-active' }}
-                                        </label>
-                                    </td>
-                                    <td>
-                                        @canAccess('role-edit')
-                                            <a onclick="openModal(this,'{{ route('company.edit', $subSubSubMenu->id) }}','Edit Role')"
+                            {{-- Nested rows for Level 2 --}}
+                            @foreach ($menus as $subSubMenu)
+                                @if ($subSubMenu->parent_id == $subMenu->id)
+                                    <tr class="child-row level-2" data-parent-id="{{ $subMenu->id }}"
+                                        style="display: ;">
+                                        <td class="level-2-td" style="padding-left: 60px;"> {{-- More indentation for sub-levels --}}
+                                            <p class="m-0">
+                                                <i class="{{ $subSubMenu->icon }}"></i>
+                                                {{ $subSubMenu->name }} <br>
+                                            </p>
+                                        </td>
+                                        <td>
+                                            <p class="m-0">
+                                                <small
+                                                    class="text-uppercase">{{ $subSubMenu->permission_name ?? '--' }}</small>
+                                            </p>
+                                        </td>
+                                        <td>
+                                            <label
+                                                class="badge bg-light-{{ $subSubMenu->status == 1 ? 'primary' : 'danger' }}">
+                                                {{ $subSubMenu->status == 1 ? 'Active' : 'In-active' }}
+                                            </label>
+                                        </td>
+                                        <td>
+                                            @canAccess('role-edit')
+                                            <a onclick="openModal(this,'{{ route('company.edit', $subSubMenu->id) }}','Edit Role')"
                                                 class="info p-1 text-center mr-2 position-relative ">
-                                                <i class="ft-edit-2 font-medium-3"></i>
+                                                <i class="ft-edit font-medium-3"></i>
                                             </a>
-                                        @endcanAccess
-                                        @canAccess('role-delete')
-                                            <a onclick="deletemodal('{{ route('company.destroy', $subSubSubMenu->id) }}','{{ route('get.roles') }}')"
+                                            @endcanAccess
+                                            @canAccess('role-delete')
+                                            <a onclick="deletemodal('{{ route('company.destroy', $subSubMenu->id) }}','{{ route('get.roles') }}')"
                                                 class="danger p-1 text-center mr-2 position-relative ">
                                                 <i class="ft-x font-medium-3"></i>
                                             </a>
-                                        @endcanAccess
-                                    </td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    @endif
-                @endforeach
-            @endif
-        @endforeach
-    @endif
-@endforeach
+                                            @endcanAccess
+                                        </td>
+                                    </tr>
 
-
+                                    {{-- Nested rows for Level 3 --}}
+                                    @foreach ($menus as $subSubSubMenu)
+                                        @if ($subSubSubMenu->parent_id == $subSubMenu->id)
+                                            <tr class="child-row level-3" data-parent-id="{{ $subSubMenu->id }}"
+                                                style="display: none;">
+                                                <td style="padding-left: 90px;"> {{-- Further indentation for Level 3 --}}
+                                                    <p class="m-0">
+                                                        <i class="{{ $subSubSubMenu->icon }}"></i>
+                                                        {{ $subSubSubMenu->name }} <br>
+                                                    </p>
+                                                </td>
+                                                <td>
+                                                    <p class="m-0">
+                                                        <small
+                                                            class="text-uppercase">{{ $subSubSubMenu->permission_name ?? '--' }}</small>
+                                                    </p>
+                                                </td>
+                                                <td>
+                                                    <label
+                                                        class="badge bg-light-{{ $subSubSubMenu->status == 1 ? 'primary' : 'danger' }}">
+                                                        {{ $subSubSubMenu->status == 1 ? 'Active' : 'In-active' }}
+                                                    </label>
+                                                </td>
+                                                <td>
+                                                    @canAccess('role-edit')
+                                                    <a onclick="openModal(this,'{{ route('company.edit', $subSubSubMenu->id) }}','Edit Role')"
+                                                        class="info p-1 text-center mr-2 position-relative ">
+                                                        <i class="ft-edit font-medium-3"></i>
+                                                    </a>
+                                                    @endcanAccess
+                                                    @canAccess('role-delete')
+                                                    <a onclick="deletemodal('{{ route('company.destroy', $subSubSubMenu->id) }}','{{ route('get.roles') }}')"
+                                                        class="danger p-1 text-center mr-2 position-relative ">
+                                                        <i class="ft-x font-medium-3"></i>
+                                                    </a>
+                                                    @endcanAccess
+                                                </td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            @endforeach
+                        @endif
+                    @endforeach
+                @endif
+            @endforeach
         @else
             <tr class="ant-table-placeholder">
                 <td colspan="11" class="ant-table-cell text-center">

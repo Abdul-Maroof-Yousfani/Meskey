@@ -14,7 +14,7 @@
             @foreach ($companies as $key => $row)
                 <tr>
                     <td>
-                    <img src="{{ image_path($row->logo) }}" class="avatar lisiavatarlogo"/>
+                        <img src="{{ image_path($row->logo) }}" class="avatar lisiavatarlogo" />
                     </td>
                     <td>
                         <p class="m-0">
@@ -27,30 +27,31 @@
                             <small> {{ $row->address ?? '--' }}</small>
                         </p>
                     </td>
-                   
+
                     <td>
-                        <label class="badge bg-light-{{ $row->status == 1 ? 'primary' : 'danger' }} ">{{ $row->status == 1 ? 'Active' : 'In-active' }}</label>
+                        <label
+                            class="badge bg-light-{{ $row->status == 1 ? 'primary' : 'danger' }} ">{{ $row->status == 1 ? 'Active' : 'In-active' }}</label>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @canAccess('role-edit')
-                            <a onclick="openModal(this,'{{ route('company.edit', $row->id) }}','Edit Role')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
-                            </a>
+                        <a onclick="openModal(this,'{{ route('company.edit', $row->id) }}','Edit Role')"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
                         @endcanAccess
                         @canAccess('role-delete')
-                            <a onclick="deletemodal('{{ route('company.destroy', $row->id) }}','{{ route('get.roles') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
+                        <a onclick="deletemodal('{{ route('company.destroy', $row->id) }}','{{ route('get.roles') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
 
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
                         @endcanAccess
                     </td>
                 </tr>

@@ -48,7 +48,7 @@
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('product.edit', $row->id) }}','Edit Product')"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')

@@ -31,6 +31,7 @@ class ArrivalPurchaseOrder extends Model
         'broker_three_commission',
         'cnic_no',
         'product_id',
+        'qc_product',
         'line_type',
         'bag_weight',
         'bag_rate',
@@ -79,6 +80,11 @@ class ArrivalPurchaseOrder extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function qcProduct()
+    {
+        return $this->belongsTo(Product::class, 'qc_product');
     }
 
     public function brokerTwo()

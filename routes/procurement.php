@@ -6,6 +6,7 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     GateBuyingController,
     PurchaseRequestController,
     PurchaseOrderController,
+    PurchaseSamplingController,
     PurchaseSamplingRequestController
 };
 
@@ -22,10 +23,13 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::get('/getMainSlabByProduct', [PurchaseOrderController::class, 'getMainSlabByProduct'])->name('getMainSlabByProduct');
     Route::post('/generate-contract-number', [PurchaseOrderController::class, 'getContractNumber'])->name('generate.contract.number');
 
-
-
-      Route::resource('purchase-sampling-request', PurchaseSamplingRequestController::class);
+    Route::resource('purchase-sampling-request', PurchaseSamplingRequestController::class);
     Route::post('get-purchase-sampling-request', [PurchaseSamplingRequestController::class, 'getList'])->name('get.purchase-sampling-request');
+
+    Route::resource('purchase-sampling', PurchaseSamplingController::class);
+    Route::resource('purchase-resampling', PurchaseSamplingController::class);
+    Route::post('get-purchase-sampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-sampling');
+    Route::post('get-purchase-resampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-resampling');
 });
 
 Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);
