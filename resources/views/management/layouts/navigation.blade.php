@@ -171,8 +171,8 @@
 
                             @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('broker.index') }}"
-                                    onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
+                                    href="{{ route('raw-material.purchase-sampling-request.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i>
                                     <span data-i18n="Task Board">Qc Request</span>
                                 </a>
