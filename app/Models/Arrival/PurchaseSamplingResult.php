@@ -3,6 +3,7 @@
 namespace App\Models\Arrival;
 
 use App\Models\Master\ProductSlabType;
+use App\Models\PurchaseSamplingRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,7 +13,7 @@ class PurchaseSamplingResult extends Model
 
     protected $fillable = [
         'company_id',
-        'arrival_sampling_request_id',
+        'purchase_sampling_request_id',
         'product_slab_type_id',
         'suggested_deduction',
         'checklist_value',
@@ -21,6 +22,11 @@ class PurchaseSamplingResult extends Model
         'applied_deduction',
         'relief_deduction',
     ];
+
+    public function samplingRequest()
+    {
+        return $this->belongsTo(PurchaseSamplingRequest::class, 'purchase_sampling_request_id');
+    }
 
     public function slabType()
     {

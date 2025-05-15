@@ -16,7 +16,7 @@ class PurchaseSamplingResultForCompulsury extends Model
 
     protected $fillable = [
         'company_id',
-        'arrival_sampling_request_id',
+        'purchase_sampling_request_id',
         'arrival_compulsory_qc_param_id',
         'compulsory_checklist_value',
         'applied_deduction',
@@ -31,7 +31,7 @@ class PurchaseSamplingResultForCompulsury extends Model
 
     public function samplingRequest()
     {
-        return $this->belongsTo(PurchaseSamplingRequest::class, 'arrival_sampling_request_id');
+        return $this->belongsTo(PurchaseSamplingRequest::class, 'purchase_sampling_request_id');
     }
 
     public function qcParam()
