@@ -10,7 +10,8 @@
                 <li class="nav-item {{ $menu->children->isNotEmpty() ? 'dropdown' : '' }}" data-menu="dropdown">
                     <a class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                         data-toggle="dropdown">
-                        <i class="{{ $menu->icon }}"></i><span data-i18n="{{ $menu->name }}">{{ $menu->name }}</span>
+                        <i class="{{ $menu->icon }}"></i><span
+                            data-i18n="{{ $menu->name }}">{{ $menu->name }}</span>
                     </a>
                     @if ($menu->children->isNotEmpty())
                         <ul class="dropdown-menu">
@@ -141,6 +142,7 @@
                         Contract</span></a>
 
                 <ul class="dropdown-menu">
+                    {{--
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.purchase-request.index') }}"
                             onclick="loadPageContent('{{ route('raw-material.purchase-request.index') }}')"
@@ -148,16 +150,17 @@
                                 data-i18n="Email">Purchase
                                 Request</span></a>
                     </li>
-                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('initialsampling.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
                             </span></a>
                     </li>
+                    --}}
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.purchase-order.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
                             </span></a>
-                    </li> --}}
+                    </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.gate-buying.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Gate Buying
@@ -172,14 +175,14 @@
                             @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.purchase-sampling-request.index') }}"
-                                    onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i>
+                                    onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                                     <span data-i18n="Task Board">Qc Request</span>
                                 </a>
                             </li>
                             @endcanAccess
-                           
-         
+
+
                         </ul>
                     </li>
 
@@ -202,9 +205,9 @@
                         Control</span></a>
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('roles.index') }}" onclick="loadPageContent('{{ route('roles.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Email">Manage Roles &
+                            href="{{ route('roles.index') }}"
+                            onclick="loadPageContent('{{ route('roles.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Manage Roles &
                                 Permission</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -214,9 +217,9 @@
                                 Company</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('users.index') }}" onclick="loadPageContent('{{ route('users.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Chat">Manage
+                            href="{{ route('users.index') }}"
+                            onclick="loadPageContent('{{ route('users.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manage
                                 Users</span></a>
                     </li>
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -262,8 +265,8 @@
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('product.index') }}"
-                                    onclick="loadPageContent('{{ route('product.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i><span
+                                    onclick="loadPageContent('{{ route('product.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Product</span></a>
                             </li>
                             @endcanAccess
@@ -287,8 +290,8 @@
                             @canAccess('category')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('category.index') }}"
-                                    onclick="loadPageContent('{{ route('category.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i><span
+                                    onclick="loadPageContent('{{ route('category.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Category</span></a>
                             </li>
                             @endcanAccess
@@ -311,8 +314,8 @@
                             @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('broker.index') }}"
-                                    onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i>
+                                    onclick="loadPageContent('{{ route('broker.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                                     <span data-i18n="Task Board">Arrival Location</span>
                                 </a>
                             </li>
@@ -359,15 +362,16 @@
                         </a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('broker.index') }}" onclick="loadPageContent('{{ route('broker.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            href="{{ route('broker.index') }}"
+                            onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Broker</span>
                         </a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('company-location.index') }}"
-                            onclick="loadPageContent('{{ route('company-location.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
+                            onclick="loadPageContent('{{ route('company-location.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Company Location </span>
                         </a>
                     </li>
