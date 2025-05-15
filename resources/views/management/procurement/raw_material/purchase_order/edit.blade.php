@@ -22,8 +22,8 @@
              <div class="form-group">
                  <label>Contract Date:</label>
                  <input type="date" name="contract_date"
-                     value="{{ $arrivalPurchaseOrder->contract_date->format('Y-m-d') }}" class="form-control"
-                     readonly />
+                     value="{{ isset($arrivalPurchaseOrder->contract_date) ? $arrivalPurchaseOrder->contract_date->format('Y-m-d') : null }}"
+                     class="form-control" readonly />
              </div>
          </div>
 
@@ -195,8 +195,8 @@
              <div class="form-group">
                  <label>Delivery Date:</label>
                  <input type="date" name="delivery_date"
-                     value="{{ $arrivalPurchaseOrder->delivery_date->format('Y-m-d') }}" placeholder="Delivery Date"
-                     class="form-control" />
+                     value="{{ isset($arrivalPurchaseOrder->delivery_date) ? $arrivalPurchaseOrder->delivery_date->format('Y-m-d') : null }}"
+                     placeholder="Delivery Date" class="form-control" />
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
