@@ -49,20 +49,20 @@
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
-                 <label>Supplier:</label>
-                 <select name="supplier_name_display" id="supplier_name" class="form-control select2">
-                     <option value="">Supplier Name</option>
+                 <label>Millers:</label>
+                 <select name="miller_name" id="miller_id" class="form-control select2">
+                     <option value="">Select Miller</option>
                  </select>
-                 <input type="hidden" name="supplier_name" id="supplier_name_submit">
+                 {{-- <input type="hidden" name="miller_id" id="miller_id_submit"> --}}
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Broker:</label>
-                 <select name="broker_name_display" id="broker_name" class="form-control select2">
+                 <select name="broker_name" id="broker_name" class="form-control select2">
                      <option value="">Broker Name</option>
                  </select>
-                 <input type="hidden" name="broker_name" id="broker_name_submit">
+                 {{-- <input type="hidden" name="broker_name" id="broker_name_submit"> --}}
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -242,10 +242,11 @@
      });
 
      $(document).ready(function() {
+         initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
          initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
-         initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', false, false);
-         initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', false, false);
+         //  initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
+         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
+         initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
 
          $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
@@ -297,17 +298,17 @@
              }
 
              // Handle broker
-             if (brokerName) {
-                 $('#broker_name').html('<option value="' + brokerName + '" selected>' + brokerName +
-                     '</option>');
-                 $('#broker_name').prop('disabled', true);
-                 $('#broker_name_submit').val(brokerName); // Set hidden field
-             } else {
-                 $('#broker_name').html('<option value="">Broker Name</option>');
-                 $('#broker_name').prop('disabled', false);
-                 $('#broker_name_submit').val(''); // Clear hidden field
-                 initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
-             }
+             //  if (brokerName) {
+             //      $('#broker_name').html('<option value="' + brokerName + '" selected>' + brokerName +
+             //          '</option>');
+             //      $('#broker_name').prop('disabled', true);
+             //      $('#broker_name_submit').val(brokerName); // Set hidden field
+             //  } else {
+             //      $('#broker_name').html('<option value="">Broker Name</option>');
+             //      $('#broker_name').prop('disabled', false);
+             //      $('#broker_name_submit').val(''); // Clear hidden field
+             //      initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
+             //  }
          });
 
          // Sync values on any change (just in case)

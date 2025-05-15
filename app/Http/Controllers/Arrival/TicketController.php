@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Arrival\ArrivalTicketRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Miller;
+use App\Models\Master\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -70,26 +72,46 @@ class TicketController extends Controller
     public function store(ArrivalTicketRequest $request)
     {
         $request->validated();
-        $request = $request->all();
+        $requestData = $request->all();
 
-        $previouscheck = ArrivalTicket::where('truck_no', $request['truck_no'])
-            ->where('bilty_no', $request['bilty_no']);
+        $previouscheck = ArrivalTicket::where('truck_no', $requestData['truck_no'])
+            ->where('bilty_no', $requestData['bilty_no']);
 
         if ($previouscheck->exists()) {
             $viewLink = ' <a href="' . route('ticket.show', $previouscheck->first()->id) . '" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
-
             throw ValidationException::withMessages([
                 'truck_no' => ['Truck with this Bilty No already exists.' . $viewLink],
             ]);
         }
 
-        $request['first_qc_status'] = 'pending';
-        $request['accounts_of_id'] = $request['accounts_of'] ?? NULL;
-        $request['truck_type_id'] = $request['arrival_truck_type_id'] ?? NULL;
+        if (!empty($requestData['accounts_of'])) {
+            $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
+            $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
+            $requestData['accounts_of_name'] = $requestData['accounts_of'];
+        }
 
-        $UnitOfMeasure = ArrivalTicket::create($request);
+        if (!empty($requestData['broker_name'])) {
+            $broker = Supplier::where('name', $requestData['broker_name'])->first();
+            $requestData['broker_id'] = $broker ? $broker->id : null;
+        }
 
-        return response()->json(['success' => 'Arrival Ticket created successfully.', 'data' => $UnitOfMeasure], 201);
+        if (!empty($requestData['miller_name'])) {
+            $miller = Miller::where('name', $requestData['miller_name'])->first();
+            if (!$miller) {
+                $miller = Miller::create(['name' => $requestData['miller_name']]);
+            }
+            $requestData['miller_id'] = $miller->id;
+        }
+
+        $requestData['first_qc_status'] = 'pending';
+        $requestData['truck_type_id'] = $requestData['arrival_truck_type_id'] ?? null;
+
+        $arrivalTicket = ArrivalTicket::create($requestData);
+
+        return response()->json([
+            'success' => 'Arrival Ticket created successfully.',
+            'data' => $arrivalTicket
+        ], 201);
     }
 
     /**

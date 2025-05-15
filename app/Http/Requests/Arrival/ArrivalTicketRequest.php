@@ -25,7 +25,8 @@ class ArrivalTicketRequest extends FormRequest
             'unique_no' => 'nullable|string|max:255|unique:arrival_tickets,unique_no,NULL,id,company_id,' . $this->company_id,
             'company_id' => 'required|exists:companies,id',
             'product_id' => 'required|exists:products,id',
-            'supplier_name' => 'required|string|max:255',
+            // 'supplier_name' => 'required|string|max:255',
+            'miller_name' => 'required|string|max:255',
             //truck detail
             'arrival_truck_type_id' => 'required|max:255',
             'sample_money_type' => 'required|in:n/a,single,double',
@@ -41,6 +42,7 @@ class ArrivalTicketRequest extends FormRequest
             'first_weight' => 'required|numeric',
             'second_weight' => 'required|numeric',
             'net_weight' => 'required|numeric|min:0',
+            'broker_name' => 'required|string|max:255',
             'accounts_of' => 'required|string|max:255',
             'decision_id' => 'required|exists:users,id',
         ];

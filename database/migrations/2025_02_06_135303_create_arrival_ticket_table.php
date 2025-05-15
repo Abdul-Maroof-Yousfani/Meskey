@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('company_id');
             $table->unsignedBigInteger('product_id')->nullable();
             $table->unsignedBigInteger('qc_product')->nullable();
-            $table->string('supplier_name')->nullable();
+            // $table->string('supplier_name')->nullable();
             $table->string('broker_name')->nullable();
 
             $table->unsignedBigInteger('broker_id')->nullable();

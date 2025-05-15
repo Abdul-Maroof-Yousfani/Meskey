@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Models\Acl\Company;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
