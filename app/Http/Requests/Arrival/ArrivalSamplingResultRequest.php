@@ -25,8 +25,8 @@ class ArrivalSamplingResultRequest extends FormRequest
             'arrival_sampling_request_id' => 'required|exists:arrival_sampling_requests,id',
             'product_slab_type_id' => 'required|array',
             'product_slab_type_id.*' => 'required|exists:product_slab_types,id',
-            'checklist_value' => 'nullable|array',
-            'checklist_value.*' => 'string',
+            'checklist_value' => 'required|array',
+            'checklist_value.*' => 'required|numeric',
             'remark' => 'nullable|string',
         ];
     }
@@ -45,7 +45,8 @@ class ArrivalSamplingResultRequest extends FormRequest
             'product_slab_type_id.array' => 'Product Slab Type must be an array.',
             'product_slab_type_id.*.exists' => 'Invalid Product Slab Type ID.',
             'checklist_value.array' => 'Checklist value must be an array.',
-            'checklist_value.*.string' => 'Each checklist value must be a string.',
+            'checklist_value.*.numeric' => 'Each checklist value must be a number.',
+            'checklist_value.*.required' => 'Each checklist value is required.',
             'remark.string' => 'Remark must be a string.',
         ];
     }

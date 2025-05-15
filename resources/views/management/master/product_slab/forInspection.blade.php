@@ -6,7 +6,7 @@
     </div>
 </div>
 
-<div class="striped-rows">
+<div class="striped-rows loop-fields">
     @if (count($slabs) != 0)
         @foreach ($slabs as $slab)
             <div class="form-group row slab-row" data-max-range="{{ $slab->max_range }}">
