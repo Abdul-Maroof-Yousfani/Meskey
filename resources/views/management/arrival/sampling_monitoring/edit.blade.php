@@ -53,7 +53,7 @@
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
-                            <label>Supplier:</label>
+                            <label>Miller:</label>
                             <input type="text" class="form-control" name="supplier"
                                 value="{{ optional($arrivalSamplingRequest->arrivalTicket)->miller->name }}" disabled>
                         </div>

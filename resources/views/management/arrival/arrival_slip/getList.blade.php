@@ -14,23 +14,23 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->unique_no }} <br>
+                            {{ $row->arrivalTicket->unique_no ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->product->name }} <br>
+                            {{ $row->arrivalTicket->product->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name }} <br>
+                            {{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') ?? 'N/A' }} /
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>

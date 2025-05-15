@@ -14,10 +14,10 @@
          @if (count($freights) != 0)
              @foreach ($freights as $freight)
                  <tr>
-                     <td>{{ $freight->arrivalTicket->unique_no }}</td>
+                     <td>{{ $freight->arrivalTicket->unique_no ?? 'N/A' }}</td>
                      <td>{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}</td>
-                     <td>{{ $freight->arrivalTicket->truck_no }}</td>
-                     <td>{{ $freight->arrivalTicket->bilty_no }}</td>
+                     <td>{{ $freight->arrivalTicket->truck_no ?? 'N/A' }}</td>
+                     <td>{{ $freight->arrivalTicket->bilty_no ?? 'N/A' }}</td>
                      <td>{{ number_format($freight->net_freight, 2) }}</td>
                      <td>
                          <span

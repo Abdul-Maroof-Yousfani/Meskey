@@ -136,9 +136,9 @@ div#loader-container-ajax {
 }
 /*top-header*/
 /*header*/
-[readonly] {
+/* [readonly] {
   background-color: white !important;
-}
+} */
 .flex-head {
   display: flex;
   align-items: center;

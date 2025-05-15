@@ -9,7 +9,7 @@
             <div class="form-group">
                 <label>Ticket #</label>
                 <input type="text" name="ticket_number" class="form-control"
-                    value="{{ $freight->arrivalTicket->unique_no }}" readonly />
+                    value="{{ $freight->arrivalTicket->unique_no ?? 'N/A' }}" readonly />
             </div>
         </div>
         <div class="col-md-6">
@@ -31,14 +31,14 @@
             <div class="form-group">
                 <label>Truck #</label>
                 <input type="text" name="truck_number" class="form-control"
-                    value="{{ $freight->arrivalTicket->truck_no }}" readonly />
+                    value="{{ $freight->arrivalTicket->truck_no ?? 'N/A' }}" readonly />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Billy #</label>
                 <input type="text" name="billy_number" class="form-control"
-                    value="{{ $freight->arrivalTicket->bilty_no }}" readonly />
+                    value="{{ $freight->arrivalTicket->bilty_no ?? 'N/A' }}" readonly />
             </div>
         </div>
 
@@ -52,14 +52,14 @@
             <div class="form-group">
                 <label>Loaded Weight</label>
                 <input type="number" name="loaded_weight" class="form-control"
-                    value="{{ $freight->arrivalTicket->net_weight }}" disabled />
+                    value="{{ $freight->arrivalTicket->net_weight ?? 'N/A' }}" disabled />
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Arrived Weight</label>
                 <input type="number" name="arrived_weight" class="form-control"
-                    value="{{ $freight->arrivalTicket->arrived_net_weight }}" disabled />
+                    value="{{ $freight->arrivalTicket->arrived_net_weight ?? 'N/A' }}" disabled />
             </div>
         </div>
         <div class="col-md-4">
