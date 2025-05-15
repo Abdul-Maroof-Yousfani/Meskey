@@ -85,7 +85,7 @@ class ArrivalApproveController extends Controller
 
         $request['creator_id'] = auth()->user()->id;
         $request['remark'] = $request->note ?? '';
-      
+
         $arrivalApprove = ArrivalApprove::create($request->all());
 
         ArrivalTicket::where('id', $request->arrival_ticket_id)
