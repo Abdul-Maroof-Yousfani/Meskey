@@ -43,16 +43,15 @@
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('company-location.edit', $row->id) }}','Edit Company Location')"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            @if($row->is_protected == 0)
+                            @if ($row->is_protected == 0)
                                 <a onclick="deletemodal('{{ route('company-location.destroy', $row->id) }}','{{ route('get.company-location') }}')"
                                     class="danger p-1 text-center mr-2 position-relative ">
                                     <i class="ft-x font-medium-3"></i>
                                 </a>
-                                
                             @endif
                         @endcan
                     </td>

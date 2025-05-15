@@ -41,7 +41,8 @@ return new class extends Migration {
             $table->decimal('broker_three_commission', 10, 2)->nullable();
 
             // Product information
-            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('product_id')->nullable();
+            $table->unsignedBigInteger('qc_product')->nullable();
             $table->unsignedBigInteger('truck_size_range_id')->nullable();
             $table->enum('line_type', ['bari', 'choti'])->nullable();
             $table->integer('bag_weight')->nullable();
@@ -95,6 +96,7 @@ return new class extends Migration {
             $table->foreign('broker_two_id')->references('id')->on('brokers');
             $table->foreign('broker_three_id')->references('id')->on('brokers');
             $table->foreign('product_id')->references('id')->on('products');
+            $table->foreign('qc_product')->references('id')->on('products')->onDelete('set null');
             $table->foreign('truck_size_range_id')->references('id')->on('truck_size_ranges')->onDelete('set null');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
         });

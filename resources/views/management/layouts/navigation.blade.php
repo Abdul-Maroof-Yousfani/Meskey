@@ -171,7 +171,6 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Purchase Sampling</span></a>
                         <ul class="dropdown-menu">
-
                             @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.purchase-sampling-request.index') }}"
@@ -180,9 +179,21 @@
                                     <span data-i18n="Task Board">Qc Request</span>
                                 </a>
                             </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.purchase-sampling.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.purchase-sampling.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Purchase Sampling/QC</span>
+                                </a>
+                            </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.purchase-resampling.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.purchase-resampling.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Purchase Re-Sampling/QC</span>
+                                </a>
+                            </li>
                             @endcanAccess
-
-
                         </ul>
                     </li>
 

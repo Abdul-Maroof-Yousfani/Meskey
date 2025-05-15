@@ -21,18 +21,18 @@
                             <small> {{ $row->description ?? '--' }}</small>
                         </p>
                     </td>
-                     <td>
-                     <p class="m-0">
+                    <td>
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
-                        </td>
+                    </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('unit_of_measure.edit', $row->id) }}','Edit Unit Of Measure')"
                                 class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit-2 font-medium-3"></i>
+                                <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
@@ -78,6 +78,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-            {{ $UnitOfMeasures->links() }}
+        {{ $UnitOfMeasures->links() }}
     </div>
 </div>

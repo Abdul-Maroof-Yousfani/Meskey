@@ -41,7 +41,6 @@ class PurchaseRequestController extends Controller
      */
     public function create()
     {
-
         return view('management.procurement.raw_material.create');
     }
 

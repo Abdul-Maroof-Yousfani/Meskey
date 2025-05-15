@@ -1,62 +1,60 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">S No. </th>
-            <th class="col-sm-2">Supplier </th>
-            <th class="col-sm-2">Company </th>
-            <th class="col-sm-4">Address</th>
+            <th class="col-sm-2">Contract No. </th>
+            <th class="col-sm-3">Product</th>
+            <th class="col-sm-4">Remark</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($Suppliers) != 0)
-            @foreach ($Suppliers as $key => $row)
-                <tr>
+        @if (count($samplingRequests) != 0)
+            @foreach ($samplingRequests as $key => $row)
+                <tr class="bg-{{ $row->is_done == 'yes' ? '' : 'orange' }}">
                     <td>
                         <p class="m-0">
-                            {{ $row->unique_no }}
-
+                            #{{ $row->purchaseOrder->contract_no ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
-                            <small>{{ $row->email ?? '--' }}</small> <br>
+                            {{ $row->purchaseOrder->product->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->company_name }} <br>
-                            <small>{{ $row->company_mobile_no ?? '--' }}</small> <br>
+                            {{ $row->remark ?? '-' }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->address ?? '--' }}</small>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
 
                         </p>
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('supplier.edit', $row->id) }}','Edit Supplier')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                            @if ($row->is_done == 'no')
+                                <a onclick="openModal(this,'{{ route($isResampling ? 'raw-material.purchase-resampling.edit' : 'raw-material.purchase-sampling.edit', $row->id) }}','{{ $isResampling ? 'Create Purchase Re-Sampling' : 'Create Purchase Sampling' }}',false)"
+                                    class="info p-1 text-center mr-2 position-relative">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @else
+                                <a onclick="openModal(this,'{{ route($isResampling ? 'raw-material.purchase-resampling.edit' : 'raw-material.purchase-sampling.edit', $row->id) }}','{{ $isResampling ? 'View Purchase Re-Sampling' : 'View Purchase Sampling' }}',true)"
+                                    class="info p-1 text-center mr-2 position-relative">
+                                    <i class="ft-eye font-medium-3"></i>
+                                </a>
+                            @endif
                         @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('supplier.destroy', $row->id) }}','{{ route('get.supplier') }}')"
+                        {{-- @can('role-delete')
+                            <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
                             </a>
-                        @endcan
+                        @endcan --}}
                     </td>
                 </tr>
             @endforeach
@@ -86,9 +84,8 @@
     </tbody>
 </table>
 
-
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $Suppliers->links() }}
+        {{ $samplingRequests->links() }}
     </div>
 </div>
