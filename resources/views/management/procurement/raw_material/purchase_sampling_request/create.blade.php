@@ -1,4 +1,5 @@
-<form action="{{ route('raw-material.purchase-sampling-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('raw-material.purchase-sampling-request.store') }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-sampling-request') }}" />
     <div class="row form-mar">
@@ -10,14 +11,13 @@
                     @foreach ($purchaseOrders as $purchaseOrder)
                         <option value="{{ $purchaseOrder->id }}">
                             Ticket No: {{ $purchaseOrder->contract_no }}
-                          
+
                         </option>
                     @endforeach
                 </select>
             </div>
         </div>
 
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
@@ -33,8 +33,6 @@
         </div>
     </div>
 </form>
-
-
 <script>
     $(document).ready(function() {
         $('.select2').select2();
