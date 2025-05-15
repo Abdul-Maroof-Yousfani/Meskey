@@ -32,7 +32,7 @@
      <div class="col-md-6">
          <div class="form-group">
              <label class="font-weight-bold">No. of Bags</label>
-             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->bags }}" readonly>
+             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->approvals->total_bags }}" readonly>
          </div>
      </div>
      <div class="col-md-6">

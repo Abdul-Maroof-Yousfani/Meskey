@@ -138,7 +138,7 @@
                             <td style="padding: 8px; border: none;">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->bags }}" readonly>
+                                    value="{{ $arrivalTicket->approvals->total_bags }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Packing</td>
                             <td style="padding: 8px; border: none;">
