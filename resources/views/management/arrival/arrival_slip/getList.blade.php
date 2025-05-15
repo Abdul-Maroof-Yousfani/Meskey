@@ -36,7 +36,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('arrival-slip.edit', $row->id) }}','View Arrival Slip', true, '90%')"
+                            <a onclick="openModal(this,'{{ route('arrival-slip.edit', $row->id) }}','View Arrival Slip', true, '100%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
