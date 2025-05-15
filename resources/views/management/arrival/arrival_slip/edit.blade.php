@@ -212,7 +212,21 @@
                             <td style="padding: 8px;border: none;"colspan="1">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ isset($arrivalTicket->saudaType->id) ? ($arrivalTicket->saudaType->id == 1 ? 'OK' : ($arrivalTicket->saudaType->id == 2 ? 'TS' : 'N/A')) : 'N/A' }}"
+                                    value="{{ isset($arrivalTicket->saudaType->id)
+                                        ? ($arrivalTicket->saudaType->id == 1
+                                            ? ($arrivalTicket->document_approval_status == 'fully_approved'
+                                                ? 'OK'
+                                                : ($arrivalTicket->document_approval_status == 'half_approved'
+                                                    ? 'P-RH'
+                                                    : 'RF'))
+                                            : ($arrivalTicket->saudaType->id == 2
+                                                ? ($arrivalTicket->document_approval_status == 'fully_approved'
+                                                    ? 'TS'
+                                                    : ($arrivalTicket->document_approval_status == 'half_approved'
+                                                        ? 'TS-RH'
+                                                        : 'RF'))
+                                                : 'RF'))
+                                        : 'RF' }}"
                                     readonly>
                             </td>
                             <td style=" padding: 8px;border: none; ">U/L Slip #</td>
