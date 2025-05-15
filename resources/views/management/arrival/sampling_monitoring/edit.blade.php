@@ -55,7 +55,7 @@
                         <div class="form-group">
                             <label>Supplier:</label>
                             <input type="text" class="form-control" name="supplier"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->supplier_name }}" disabled>
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->miller->name }}" disabled>
                         </div>
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
@@ -113,7 +113,7 @@
                         <div class="form-group ">
                             <label class="d-block">Accounts Of:</label>
                             <input type="text" name="accounts_of" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_id ?? '' }}"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_name ?? '' }}"
                                 placeholder="Truck No" class="form-control" autocomplete="off" />
                         </div>
                     </div>

@@ -30,7 +30,7 @@ class ArrivalTicket extends Model
         'company_id',
         'product_id',
         'qc_product',
-        'supplier_name',
+        // 'supplier_name',
         'broker_name',
         'decision_id',
         'accounts_of_id',

@@ -16,7 +16,7 @@
             <div class="form-group">
                 <label>Supplier</label>
                 <input type="text" name="supplier" class="form-control"
-                    value="{{ $freight->arrivalTicket->supplier_name }}" readonly />
+                    value="{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}" readonly />
             </div>
         </div>
 

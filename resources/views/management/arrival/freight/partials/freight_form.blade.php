@@ -13,8 +13,8 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label>Supplier</label>
-                <input type="text" name="supplier" class="form-control" value="{{ $ticket->supplier_name }}"
+                <label>Miller</label>
+                <input type="text" name="supplier" class="form-control" value="{{ $ticket->miller->name }}"
                     readonly />
             </div>
         </div>

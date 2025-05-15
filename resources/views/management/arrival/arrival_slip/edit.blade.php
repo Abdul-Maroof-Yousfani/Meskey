@@ -159,7 +159,7 @@
                             <td style="padding: 8px; border: none;" colspan="3">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->supplier_name }}" readonly>
+                                    value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Broker Name</td>
                             <td style="padding: 8px; border: none;"colspan="4">
@@ -189,7 +189,7 @@
                             <td style="padding: 8px;border: none;"colspan="3">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->accounts_of_id ?? 'N/A' }}" readonly>
+                                    value="{{ $arrivalTicket->accounts_of_name ?? 'N/A' }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Station</td>
                             <td style="padding: 8px; border: none;" colspan="3">

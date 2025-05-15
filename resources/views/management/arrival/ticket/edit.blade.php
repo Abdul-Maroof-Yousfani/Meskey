@@ -26,10 +26,10 @@
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group ">
-                <label>Supplier:</label>
-                <select name="supplier_name" id="supplier_name" class="form-control select2">
-                    <option value="{{ $arrivalTicket->supplier_name }}">{{ $arrivalTicket->supplier_name }}</option>
+            <div class="form-group">
+                <label>Miller:</label>
+                <select name="miller_id" id="miller_id" class="form-control select2">
+                    <option value="{{ $arrivalTicket->miller->name }}">{{ $arrivalTicket->miller->name }}</option>
                 </select>
             </div>
         </div>
@@ -46,7 +46,8 @@
             <div class="form-group ">
                 <label>Accounts Of:</label>
                 <select name="accounts_of" id="accounts_of" class="form-control select2">
-                    <option value="{{ $arrivalTicket->accounts_of_id }}">{{ $arrivalTicket->accounts_of_id }}</option>
+                    <option value="{{ $arrivalTicket->accounts_of_name }}">{{ $arrivalTicket->accounts_of_name }}
+                    </option>
                 </select>
             </div>
         </div>
@@ -198,10 +199,11 @@
 
 
     $(document).ready(function() {
+        initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
-        initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
-        initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', false, false);
-        initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', false, false);
+        initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
 
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 

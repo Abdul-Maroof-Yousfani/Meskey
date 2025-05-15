@@ -149,9 +149,7 @@ class TicketController extends Controller
      */
     public function update(ArrivalTicketRequest $request, $id)
     {
-
         $arrivalTicket = ArrivalTicket::findOrFail($id);
-
 
         $data = $request->validated();
         $request['accounts_of_id'] = $request['accounts_of'] ?? NULL;

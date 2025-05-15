@@ -62,7 +62,7 @@ class ArrivalTicketRequest extends FormRequest
             'product_id.required' => 'The product field is required.',
             'product_id.exists' => 'The selected product does not exist.',
 
-            'supplier_name.required' => 'The supplier name is required.',
+            'miller_id.required' => 'The miller is required.',
 
 
             'accounts_of.required' => 'The accounts of field is required.',

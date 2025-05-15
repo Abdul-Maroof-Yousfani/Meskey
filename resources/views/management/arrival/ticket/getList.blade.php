@@ -3,7 +3,7 @@
         <tr>
             <th class="col-sm-2">Ticket No. </th>
             <th class="col-sm-2">Commodity</th>
-            <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Miller</th>
             <th class="col-sm-1">Truck No</th>
             <th class="col-sm-1">Bilty No</th>
             <th class="col-sm-1">First QC</th>
@@ -27,7 +27,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->supplier_name }} <br>
+                            {{ $row->miller->name ?? 'N/A' }} <br>
                         </p>
                     <td>
                         <p class="m-0">

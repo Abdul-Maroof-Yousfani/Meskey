@@ -47,7 +47,7 @@
      <div class="col-md-6">
          <div class="form-group">
              <label class="font-weight-bold">Party Name</label>
-             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->supplier_name }}" readonly>
+             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->miller->name }}" readonly>
          </div>
      </div>
      <div class="col-md-6">
@@ -60,7 +60,7 @@
      <div class="col-md-6">
          <div class="form-group">
              <label class="font-weight-bold">On A/C of</label>
-             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->accounts_of_id ?? 'N/A' }}"
+             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->accounts_of_name ?? 'N/A' }}"
                  readonly>
          </div>
      </div>

@@ -1,10 +1,10 @@
  <table class="table m-0">
      <thead>
          <tr>
-             <th class="col-sm-2">Ticket #</th>
-             <th class="col-sm-2">Supplier</th>
-             <th class="col-sm-2">Truck #</th>
-             <th class="col-sm-2">Billy #</th>
+             <th class="col-sm-2">Ticket No.</th>
+             <th class="col-sm-2">Miller</th>
+             <th class="col-sm-2">Truck No.</th>
+             <th class="col-sm-2">Billy No.</th>
              <th class="col-sm-2">Net Freight</th>
              <th class="col-sm-2">Status</th>
              <th class="col-sm-2">Action</th>
@@ -15,7 +15,7 @@
              @foreach ($freights as $freight)
                  <tr>
                      <td>{{ $freight->arrivalTicket->unique_no }}</td>
-                     <td>{{ $freight->arrivalTicket->supplier_name }}</td>
+                     <td>{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}</td>
                      <td>{{ $freight->arrivalTicket->truck_no }}</td>
                      <td>{{ $freight->arrivalTicket->bilty_no }}</td>
                      <td>{{ number_format($freight->net_freight, 2) }}</td>
