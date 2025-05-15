@@ -55,7 +55,7 @@
                                     data-max-range="{{ $slab->max_range }}" name="checklist_value[]" placeholder="%"
                                     min="0" step="0.01">
                                 <div class="input-group-append">
-                                    <span class="input-group-text">%</span>
+                                    <span class="input-group-text">{{ $slab->slabType->qc_symbol }}</span>
                                 </div>
                             </div>
                         </div>
