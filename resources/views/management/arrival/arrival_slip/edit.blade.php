@@ -24,6 +24,7 @@
         }
         $isSlabs = true;
     }
+
 @endphp
 
 <link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}">
@@ -433,7 +434,8 @@
                                                             </td>
                                                             <td
                                                                 style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                                {{ $slab->applied_deduction }}
+                                                                {{ $slab->applied_deduction }} <span
+                                                                    class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -449,7 +451,7 @@
                                                     @if (count($samplingRequestCompulsuryResults) != 0)
                                                         @foreach ($samplingRequestCompulsuryResults as $slab)
                                                             @php
-                                                                if (!$slab->checklist_value) {
+                                                                if (!$slab->applied_deduction) {
                                                                     continue;
                                                                 }
                                                             @endphp
@@ -458,7 +460,8 @@
                                                                     {{ $slab->qcParam->name }}</td>
                                                                 <td
                                                                     style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                                    {{ $slab->checklist_value }}
+                                                                    {{ $slab->applied_deduction }} <span
+                                                                        class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                                                 </td>
                                                             </tr>
                                                         @endforeach

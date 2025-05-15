@@ -7,6 +7,7 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     PurchaseRequestController,
     PurchaseOrderController,
     PurchaseSamplingController,
+    PurchaseSamplingMonitoringController,
     PurchaseSamplingRequestController
 };
 
@@ -30,6 +31,9 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-resampling', PurchaseSamplingController::class);
     Route::post('get-purchase-sampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-sampling');
     Route::post('get-purchase-resampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-resampling');
+
+    Route::resource('sampling-monitoring',  PurchaseSamplingMonitoringController::class);
+    Route::post('/get-sampling-monitoring', [PurchaseSamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');
 });
 
 Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

@@ -1,16 +1,25 @@
  @php
      $isSlabs = false;
      $isCompulsury = false;
+     $showLumpSum = false;
+
+     if (
+         isset($samplingRequest->is_lumpsum_deduction) &&
+         $samplingRequest->is_lumpsum_deduction &&
+         $samplingRequest->lumpsum_deduction > 0
+     ) {
+         $showLumpSum = true;
+     }
 
      foreach ($samplingRequestCompulsuryResults as $slab) {
-         if (!$slab->checklist_value) {
+         if (!$slab->applied_deduction) {
              continue;
          }
          $isCompulsury = true;
      }
 
      foreach ($samplingRequestResults as $slab) {
-         if (!$slab->checklist_value) {
+         if (!$slab->applied_deduction) {
              continue;
          }
          $isSlabs = true;
@@ -32,7 +41,8 @@
      <div class="col-md-6">
          <div class="form-group">
              <label class="font-weight-bold">No. of Bags</label>
-             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->approvals->total_bags }}" readonly>
+             <input type="text" class="form-control bg-light" value="{{ $arrivalTicket->approvals->total_bags }}"
+                 readonly>
          </div>
      </div>
      <div class="col-md-6">
@@ -223,7 +233,17 @@
          </div>
      </div>
 
-     @if ($isCompulsury || $isSlabs)
+     @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+         <tr>
+             <td style="padding: 8px; border: 1px solid #ddd;">
+                 Lumpsum Deduction
+             </td>
+             <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                 {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
+                 Lumpsum)
+             </td>
+         </tr>
+     @else
          <div class="col-12" bis_skin_checked="1">
              <h6 class="header-heading-sepration">
                  Sampling Results
@@ -242,15 +262,15 @@
                          @if (count($samplingRequestResults) != 0)
                              @foreach ($samplingRequestResults as $slab)
                                  @php
-                                     if (!$slab->checklist_value) {
+                                     if (!$slab->applied_deduction) {
                                          continue;
                                      }
                                  @endphp
                                  <tr>
                                      <td>{{ $slab->slabType->name }}</td>
-                                     <td class="text-center">{{ $slab->checklist_value }}
-                                         {{-- <span
-                                             class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span> --}}
+                                     <td class="text-center">{{ $slab->applied_deduction }}
+                                         <span
+                                             class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                      </td>
                                  </tr>
                              @endforeach
@@ -264,15 +284,14 @@
                              @if (count($samplingRequestCompulsuryResults) != 0)
                                  @foreach ($samplingRequestCompulsuryResults as $slab)
                                      @php
-                                         if (!$slab->checklist_value) {
+                                         if (!$slab->applied_deduction) {
                                              continue;
                                          }
                                      @endphp
                                      <tr>
                                          <td>{{ $slab->qcParam->name }}</td>
-                                         <td class="text-center">{{ $slab->checklist_value }}
-                                             {{-- <span
-                                                 class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span> --}}
+                                         <td class="text-center">{{ $slab->applied_deduction }}
+                                             <span class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
                                          </td>
                                      </tr>
                                  @endforeach
