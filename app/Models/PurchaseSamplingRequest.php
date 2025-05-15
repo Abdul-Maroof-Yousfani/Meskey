@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Acl\Company;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PurchaseSamplingRequest extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'company_id',
         'arrival_product_id',
@@ -28,18 +30,14 @@ class PurchaseSamplingRequest extends Model
         'is_lumpsum_deduction',
     ];
 
-
-        public function company()
+    public function company()
     {
         return $this->belongsTo(Company::class);
     }
 
-    /**
-     * Get the arrival ticket associated with the sampling request.
-     */
     public function purchaseOrder()
     {
-        return $this->belongsTo(ArrivalPurchaseOrder::class,'arrival_purchase_order_id');
+        return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
     }
 
     public function contractProduct()

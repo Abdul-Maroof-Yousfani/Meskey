@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->string('remark')->nullable();
             $table->timestamps();
 
-            // Foreign Keys with custom constraint names
             $table->foreign('company_id', 'pr_asr_company')
                 ->references('id')->on('companies')->onDelete('cascade');
 
