@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('purchase_sampling_requests', function (Blueprint $table) {
-           $table->id();
+            $table->id();
             $table->unsignedBigInteger('company_id');
             $table->unsignedBigInteger('arrival_purchase_order_id');
             $table->unsignedBigInteger('arrival_product_id')->nullable();

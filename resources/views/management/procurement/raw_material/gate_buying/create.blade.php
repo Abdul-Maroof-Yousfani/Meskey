@@ -36,35 +36,37 @@
     </div>
 
     <div class="row form-mar">
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Supplier Name:</label>
                 <input type="text" name="supplier_name" placeholder="Supplier Name" class="form-control" />
             </div>
         </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Purchaser Name:</label>
                 <input type="text" name="purchaser_name" placeholder="Purchaser Name" class="form-control" />
             </div>
         </div>
     </div>
-
     <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Contact Person Name:</label>
-                <input type="text" name="contact_person_name" placeholder="Contact Person Name"
+                <input type="text" name="contact_person_name"placeholder="Contact Person Name"
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Mobile No:</label>
-                <input type="text" name="mobile_no" placeholder="Mobile #" class="form-control" />
+                <input type="text" name="mobile_no" placeholder="Mobile No" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>CNIC No:</label>
+                <input type="text" name="cnic_no" placeholder="CNIC No" class="form-control" />
             </div>
         </div>
     </div>
@@ -78,7 +80,7 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group">
                 <label>Broker:</label>
-                <select name="broker_one_id" id="broker_id" class="form-control ">
+                <select name="broker_one" id="broker_id" class="form-control">
                     <option value="">Select Broker</option>
                 </select>
             </div>
@@ -91,23 +93,6 @@
             </div>
         </div>
     </div>
-    <div class="row form-mar">
-        <div class="col-12">
-            <div class="form-group">
-                <label>Commodity:</label>
-                <select name="product_id" id="product_id" class="form-control select2">
-                    <option value="">Select Commodity</option>
-                    @foreach ($products as $product)
-                        <option value="{{ $product->id }}" data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
-                            {{ $product->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div id="slabsContainer" class="col-xs-12 col-sm-12 col-md-12">
-        </div>
-    </div>
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -118,23 +103,71 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per KG:</label>
-                <input type="number" name="rate_per_kg" placeholder="Rate Per KG" class="form-control" />
+                <input type="text" name="rate_per_kg" placeholder="Rate Per KG" class="form-control" />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per Mound:</label>
-                <input type="number" name="rate_per_mound" placeholder="Rate Per Mound" class="form-control" />
+                <input type="text" name="rate_per_mound" placeholder="Rate Per Mound" class="form-control" />
 
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per 100KG:</label>
-                <input type="number" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
+                <input type="text" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Product
+            </h6>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Commodity:</label>
+                <select name="product_id" id="product_id" class="form-control select2">
+                    <option value="">Select Commodity</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}"
+                            data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
+                            {{ $product->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Moisture:</label>
+                <input type="number" name="moisture" value="0" placeholder="Moisture" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Chalky:</label>
+                <input type="number" name="chalky" value="0" placeholder="Chalky" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Mixing:</label>
+                <input type="number" name="mixing" value="0" placeholder="Mixing" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Red Rice:</label>
+                <input type="number" name="red_rice" value="0" placeholder="Red Rice" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
@@ -146,6 +179,7 @@
             <div class="form-group">
                 <label>Payment Term:</label>
                 <select name="payment_term" class="form-control select2">
+                    <option value="">Select payment term</option>
                     <option value="Cash Payment">Cash Payment</option>
                     <option value="Cheque">Cheque</option>
                     <option value="Online">Online</option>
@@ -217,48 +251,6 @@
             }
         }
 
-        $('#product_id').change(function() {
-            var selectedOption = $(this).find('option:selected');
-
-            var product_id = $(this).val();
-            if (product_id) {
-                $.ajax({
-                    url: '{{ route('raw-material.getGateBuyingMainSlabByProduct') }}',
-                    type: 'GET',
-                    data: {
-                        product_id: product_id
-                    },
-                    dataType: 'json',
-                    beforeSend: function() {
-                        Swal.fire({
-                            title: "Processing...",
-                            text: "Please wait while fetching slabs.",
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                    },
-                    success: function(response) {
-                        Swal.close();
-                        if (response.success) {
-                            $('#slabsContainer').html(response.html);
-                        } else {
-                            Swal.fire("No Data", "No slabs found for this product.",
-                                "info");
-                        }
-                    },
-                    error: function() {
-                        Swal.close();
-                        Swal.fire("Error", "Something went wrong. Please try again.",
-                            "error");
-                    }
-                });
-            } else {
-                $('#commodity_name').val('');
-            }
-        });
-
         const KG_PER_MOUND = 40;
         const KG_PER_100KG = 100;
 
@@ -297,7 +289,7 @@
             calculateRates('rate_per_100kg');
         });
 
-        initializeDynamicSelect2('#broker_id', 'brokers', 'name', 'id', true, false);
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicSelect2('#broker_id', 'brokers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', false, false);
     });
 </script>

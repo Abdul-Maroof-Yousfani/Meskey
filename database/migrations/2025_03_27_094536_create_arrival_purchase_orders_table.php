@@ -29,8 +29,10 @@ return new class extends Migration {
             $table->string('purchaser_name')->nullable();
             $table->string('contact_person_name')->nullable();
             $table->string('mobile_no')->nullable();
+            $table->string('cnic_no')->nullable();
 
             // Broker information
+            $table->string('broker_one_name')->nullable();
             $table->unsignedBigInteger('broker_one_id')->nullable();
             $table->decimal('broker_one_commission', 10, 2)->nullable();
             $table->unsignedBigInteger('broker_two_id')->nullable();
@@ -65,6 +67,11 @@ return new class extends Migration {
             $table->decimal('max_quantity', 12, 2)->nullable();
             $table->integer('min_bags')->nullable();
             $table->integer('max_bags')->nullable();
+
+            $table->decimal('moisture', 5, 2)->nullable();
+            $table->decimal('chalky', 5, 2)->nullable();
+            $table->decimal('mixing', 5, 2)->nullable();
+            $table->decimal('red_rice', 5, 2)->nullable();
 
             // Other fields
             $table->boolean('is_replacement')->default(false);

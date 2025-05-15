@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GateBuyingRequest;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
 use App\Models\Procurement\PurchaseOrder;
@@ -64,6 +65,12 @@ class GateBuyingController extends Controller
         $data = $request->validated();
         $data = $request->all();
         $arrivalPurchaseOrder = null;
+
+        if (!empty($data['broker_one'])) {
+            $broker = Broker::where('name', $data['broker_one'])->first();
+            $data['broker_one_id'] = $broker ? $broker->id : null;
+            $data['broker_one_name'] = $data['broker_one'] ?? null;
+        }
 
         DB::transaction(function () use ($data) {
             $arrivalPOData = collect($data)->except(['slabs'])->toArray();
