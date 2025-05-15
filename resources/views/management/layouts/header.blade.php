@@ -48,12 +48,10 @@
     <link rel="stylesheet" href="{{ asset('management/app-assets/css/plugins/switchery.css') }}">
     <link rel="stylesheet" href="{{ asset('management/app-assets/vendors/css/select2.min.css') }}">
 
- 
-
-
     <!-- END APEX CSS-->
     <!-- BEGIN Page Level CSS-->
-    <link rel="stylesheet" type="text/css" href="{{asset('management/app-assets/css/core/menu/horizontal-menu.css')}}">
+    <link rel="stylesheet" type="text/css"
+        href="{{ asset('management/app-assets/css/core/menu/horizontal-menu.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/pages/dashboard1.css') }}">
     <!-- END Page Level CSS-->
     <!-- BEGIN: Custom CSS-->
@@ -61,6 +59,11 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
     <script src="{{ asset('assets/js/custom.js') }}"></script>
     <!-- END: Custom CSS-->
+
+    <script>
+        const SUBMISSION_ON_ENTER = @json(env('SUBMISSION_ON_ENTER', false));
+    </script>
+
 </head>
 <!-- END : Head-->
 

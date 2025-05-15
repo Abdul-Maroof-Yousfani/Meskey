@@ -8,6 +8,8 @@
     $valuesOfInitialSlabs = [];
     $suggestedValueForInner = 0;
     $suggestedValue = 0;
+    $suggestedValueForInnerKgs = 0;
+    $suggestedValueKgs = 0;
 
     $previousInnerRequest = $innerRequestsData[0] ?? null;
 @endphp
@@ -91,7 +93,7 @@
                             <select disabled name="sauda_type_id_display" id="sauda_type_id"
                                 @disabled(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
                                         (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ?? null)) class="form-control w-100 select2">
-                                <option value="">N/A</option>
+                                <option value="">Select Sauda Type</option>
                                 @foreach ($saudaTypes as $saudaType)
                                     <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
                                         {{ $saudaType->name }}</option>
@@ -226,7 +228,7 @@
                             @else
                                 <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
                         @endif
-                        <option value="">N/A</option>
+                        <option value="">Select Sauda Type</option>
                         @foreach ($saudaTypes as $saudaType)
                             <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
                                 {{ $saudaType->name }}</option>
@@ -318,7 +320,8 @@
                                 $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
                                 $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
                                 $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
-                                $suggestedValueForInner += $getDeductionSuggestion->deduction_value ?? 0;
+                                
+                                $suggestedDeductionType == 'amount' ? ($suggestedValueForInner += $getDeductionSuggestion->deduction_value ?? 0) : ($suggestedValueForInnerKgs += $getDeductionSuggestion->deduction_value ?? 0);
                                 ?>
                                 <div class="form-group row">
                                     <input type="hidden" name="initial_product_slab_type_id[]"
@@ -426,10 +429,19 @@
                                 </div>
                             </div>
                             <div class="col">
-                                <div class="input-group mb-0">
+                                <div class="input-group mb-1">
                                     <input type="text" id="suggessions-sum-initial" class="form-control"
                                         name="suggessions_sum_initial" disabled
                                         value="{{ $suggestedValueForInner ?? 0 }}" placeholder="Suggested Sum">
+
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">Rs.</span>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-0">
+                                    <input type="text" id="suggessions-sum-initial" class="form-control"
+                                        name="suggessions_sum_initial" disabled
+                                        value="{{ $suggestedValueForInnerKgs ?? 0 }}" placeholder="Suggested Sum">
                                     <div class="input-group-append">
                                         <span class="input-group-text text-sm">Rs.</span>
                                     </div>
@@ -706,7 +718,10 @@
                                         ($slab->applied_deduction ?? ($valuesOfInitialSlabs[$slab->slabType->id] ?? 0));
 
                                 $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
-                                $suggestedValue += $getDeductionSuggestion->deduction_value ?? 0;
+
+                                $suggestedDeductionType == 'amount'
+                                    ? ($suggestedValue += $getDeductionSuggestion->deduction_value ?? 0)
+                                    : ($suggestedValueKgs += $getDeductionSuggestion->deduction_value ?? 0);
                             @endphp
 
                             <div class="form-group row">
@@ -854,12 +869,20 @@
                             </div>
                         </div>
                         <div class="col">
-                            <div class="input-group mb-0">
+                            <div class="input-group mb-2">
                                 <input type="text" id="suggessions-sum" class="form-control"
                                     name="suggessions_sum" disabled value="{{ $suggestedValue }}"
                                     placeholder="Suggested Sum">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
+                                </div>
+                            </div>
+                            <div class="input-group mb-0">
+                                <input type="text" id="suggessions-sum" class="form-control"
+                                    name="suggessions_sum" disabled value="{{ $suggestedValueKgs }}"
+                                    placeholder="Suggested Sum">
+                                <div class="input-group-append">
+                                    <span class="input-group-text text-sm">Kgs.</span>
                                 </div>
                             </div>
                         </div>

@@ -32,7 +32,7 @@
                     name="{{ $isResampling ? 'arrival_product_id_display' : 'arrival_product_id' }}"
                     id="{{ $isResampling ? 'arrival_product_id_display' : 'arrival_product_id' }}"
                     class="form-control select2">
-                    <option value="">Select Ticket</option>
+                    <option value="">Select Product</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}">
                             {{ $product->name ?? '' }}

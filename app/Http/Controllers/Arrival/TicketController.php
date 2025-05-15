@@ -171,13 +171,16 @@ class TicketController extends Controller
     public function confirmBiltyReturn(ArrivalTicket $ticket)
     {
         try {
-            $ticket->update([
-                'bilty_return_confirmation' => 1
-            ]);
+            $updateData = [
+                'bilty_return_confirmation' => 1,
+                'bilty_return_reason' => request('bilty_return_reason')
+            ];
+
+            $ticket->update($updateData);
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

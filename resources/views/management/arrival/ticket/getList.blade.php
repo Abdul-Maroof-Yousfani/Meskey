@@ -106,22 +106,47 @@
 <script>
     function confirmBiltyReturn(ticketId) {
         Swal.fire({
-            title: 'Are you sure?',
-            text: "You want to confirm the bilty return?",
+            title: 'Confirm Bilty Return',
+            html: `
+            <div class="text-left">
+                <div class="mb-3">
+                    <label for="biltyReturnReason" class="form-label">Reason for Return</label>
+                    <textarea id="biltyReturnReason" class="form-control" placeholder="Enter reason..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="biltyReturnAttachment" class="form-label">Attachment (Optional)</label>
+                    <input type="file" id="biltyReturnAttachment" class="form-control">
+                </div>
+            </div>
+        `,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, confirm it!'
+            confirmButtonText: 'Confirm Return',
+            preConfirm: () => {
+                return {
+                    reason: document.getElementById('biltyReturnReason').value,
+                    attachment: document.getElementById('biltyReturnAttachment').files[0]
+                }
+            }
         }).then((result) => {
             if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('_method', 'PUT');
+                formData.append('bilty_return_reason', result.value.reason);
+
+                if (result.value.attachment) {
+                    formData.append('bilty_return_attachment', result.value.attachment);
+                }
+
                 $.ajax({
                     url: '/arrival/ticket/' + ticketId + '/confirm-bilty-return',
-                    type: 'PUT',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        _method: 'PUT'
-                    },
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
                         if (response.success) {
                             Swal.fire(

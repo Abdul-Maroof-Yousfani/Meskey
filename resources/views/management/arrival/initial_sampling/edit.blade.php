@@ -19,7 +19,7 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Product:</label>
+                <label>QC Product:</label>
                 <select name="arrival_product_id" id="arrival_product_id" class="form-control select2">
                     <option value="">Select Product</option>
                     @foreach ($products as $product)

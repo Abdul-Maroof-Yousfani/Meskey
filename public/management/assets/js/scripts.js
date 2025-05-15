@@ -193,12 +193,14 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
   }
 }
 
-$(document).on("keypress", "#ajaxSubmit input", function (e) {
-  if (e.which === 13) {
-    e.preventDefault();
-    return false;
-  }
-});
+if (!SUBMISSION_ON_ENTER) {
+  $(document).on("keypress", "#ajaxSubmit input", function (e) {
+    if (e.which === 13) {
+      e.preventDefault();
+      return false;
+    }
+  });
+}
 
 $(document).on("submit", "#ajaxSubmit", function (e) {
   var formhunyr = $(this);
