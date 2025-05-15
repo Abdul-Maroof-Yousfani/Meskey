@@ -198,9 +198,6 @@
                                     value="{{ $arrivalTicket->station->name ?? 'N/A' }}" readonly>
                             </td>
                         </tr>
-
-
-
                         <tr>
                             <td style=" padding: 8px;border: none;">Commodity</td>
                             <td style="padding: 8px; border: none;"colspan="3">
