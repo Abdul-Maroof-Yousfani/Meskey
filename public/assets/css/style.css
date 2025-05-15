@@ -134,11 +134,6 @@ div#loader-container-ajax {
   position: relative;
   min-height: 70vh;
 }
-/*top-header*/
-/*header*/
-/* [readonly] {
-  background-color: white !important;
-} */
 .flex-head {
   display: flex;
   align-items: center;
