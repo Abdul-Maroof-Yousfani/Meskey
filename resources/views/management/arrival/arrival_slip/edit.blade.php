@@ -206,7 +206,7 @@
                                     value="{{ $arrivalTicket->qcProduct->name }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Status</td>
-                            <td style="padding: 8px;border: none;"colspan="1">
+                            <td style="padding: 8px;border: none;" colspan="1">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="{{ isset($arrivalTicket->saudaType->id)
@@ -233,23 +233,7 @@
                                     value="{{ $arrivalTicket->unique_no ?? 'N/A' }}" readonly>
                             </td>
                         </tr>
-                        <tr>
 
-                        </tr>
-                        <tr>
-                            <td style=" padding: 8px;border: none;">Deductions</td>
-                            <td style="padding: 8px; border: none;" colspan="3">
-                                <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->lumpsum_deduction ?? 'N/A' }}" readonly>
-                            </td>
-                            <td style=" padding: 8px;border: none;">Sauda Term</td>
-                            <td style="padding: 8px; border: none;">
-                                <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}" readonly>
-                            </td>
-                        </tr>
                         <tr>
                             <td style=" padding: 8px;border: none;">Gala No.</td>
                             <td style="padding: 8px; border: none;">
@@ -263,6 +247,13 @@
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="{{ $arrivalTicket->unloadingLocation->arrivalLocation->name ?? 'N/A' }}"
                                     readonly>
+                            </td>
+
+                            <td style=" padding: 8px;border: none;">Sauda Term</td>
+                            <td style="padding: 8px; border: none;">
+                                <input type="text"
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
+                                    value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}" readonly>
                             </td>
                         </tr>
                     </table>
@@ -489,19 +480,17 @@
                             <!-- Weights Section -->
                             <div style="margin-top:15px;font-weight:bold;padding:5px 0;"> Weights</div>
                             <table style="border-collapse: collapse;">
-                                <tr>
+                                {{-- <tr>
                                     <td style=" padding: 8px;border: none;">Gross
                                         Weight</td>
                                     <td style=" padding: 8px;">
                                         <input type="text" style=" border:1px solid #ddd;padding:10px 10px;"
                                             value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}" readonly>
                                     </td>
-
-
-                                </tr>
+                                </tr> --}}
                                 <tr>
                                     <td style=" padding: 8px;border: none;">
-                                        Net Weight</td>
+                                        Arrival Weight</td>
                                     <td style=" padding: 8px;border: none;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
@@ -524,7 +513,7 @@
                                             readonly>
                                     </td>
                                 </tr>
-                                <tr>
+                                {{-- <tr>
                                     <td style=" padding: 8px;border: none;">
                                         Arrival
                                         Weight</td>
@@ -532,7 +521,7 @@
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
                                     </td>
-                                </tr>
+                                </tr> --}}
                             </table>
                         </div>
                     </div>
