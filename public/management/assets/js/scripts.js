@@ -295,72 +295,10 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
     },
 
     error: function (xhr, status, error) {
-      Swal.close(); // Close loader
-      console.log(xhr.responseJSON.errors);
+      Swal.close();
 
       if (xhr.responseJSON && xhr.responseJSON.errors) {
-        var validationErrors = xhr.responseJSON.errors;
-
-        // Clear previous errors
-        $(".is-invalid").removeClass("is-invalid");
-        $(".error-message").remove();
-
-        // Fields where errors should only be displayed on the last occurrence
-        var showErrorOnLastField = ["permission"];
-
-        $.each(validationErrors, function (key, errors) {
-          var fields = $("[name='" + key + "']"); // Select fields by exact name
-
-          if (showErrorOnLastField.includes(key) && fields.length > 1) {
-            var lastField = fields.last(); // Select the last field
-            lastField.addClass("is-invalid");
-
-            if (lastField.hasClass("select2")) {
-              lastField
-                .parent()
-                .find(".select2-container")
-                .after(
-                  '<div class="error-message text-danger">' +
-                    errors[0] +
-                    "</div>"
-                );
-            } else {
-              lastField
-                .parents(".form-group")
-                .append(
-                  '<div class="error-message text-danger">' +
-                    errors[0] +
-                    "</div>"
-                );
-            }
-          } else {
-            // Default behavior for fields not in the array
-            fields.each(function () {
-              var field = $(this);
-              console.log(field);
-              field.addClass("is-invalid");
-
-              if (field.hasClass("select2")) {
-                field
-                  .parent()
-                  .find(".select2-container")
-                  .after(
-                    '<div class="error-message text-danger">' +
-                      errors[0] +
-                      "</div>"
-                  );
-              } else {
-                field
-                  .parents(".form-group")
-                  .append(
-                    '<div class="error-message text-danger">' +
-                      errors[0] +
-                      "</div>"
-                  );
-              }
-            });
-          }
-        });
+        printErrorMsg(xhr.responseJSON.errors);
 
         Swal.fire({
           title: "Validation Errors",
@@ -402,14 +340,79 @@ function validateSlabInput(input) {
   }
 }
 
-function printErrorMsg(msg) {
+function printErrorMsg(errors) {
+  // Clear previous errors
   $(".print-error-msg").find("ul").html("");
   $(".print-error-msg").css("display", "block");
-  $.each(msg, function (key, value) {
-    $(".print-error-msg")
-      .find("ul")
-      .append("<li>" + value + "</li>");
-    window.scrollTo(0, 0);
+  $(".is-invalid").removeClass("is-invalid");
+  $(".error-message").remove();
+
+  // Process each error
+  $.each(errors, function (key, messages) {
+    // Check if this is an array field error (contains a dot and a number)
+    if (key.match(/^(.+)\.(\d+)$/)) {
+      // Extract the base field name and index
+      var matches = key.match(/^(.+)\.(\d+)$/);
+      var fieldName = matches[1];
+      var index = parseInt(matches[2]);
+
+      // Find the corresponding field in the form
+      // For array fields, we need to find the field at the specific index
+      var field = $("[name='" + fieldName + "[]']").eq(index);
+
+      if (field.length) {
+        field.addClass("is-invalid");
+
+        // Add error message after the field
+        if (field.hasClass("select2")) {
+          field
+            .parent()
+            .find(".select2-container")
+            .after(
+              '<div class="error-message text-danger">' + messages[0] + "</div>"
+            );
+        } else {
+          field
+            .parents(".form-group")
+            .append(
+              '<div class="error-message text-danger">' + messages[0] + "</div>"
+            );
+        }
+      }
+
+      // Also add to the error message list
+      $(".print-error-msg")
+        .find("ul")
+        .append("<li>" + messages[0] + "</li>");
+    } else {
+      // Regular field (non-array)
+      var fields = $("[name='" + key + "']");
+
+      fields.each(function () {
+        var field = $(this);
+        field.addClass("is-invalid");
+
+        if (field.hasClass("select2")) {
+          field
+            .parent()
+            .find(".select2-container")
+            .after(
+              '<div class="error-message text-danger">' + messages[0] + "</div>"
+            );
+        } else {
+          field
+            .parents(".form-group")
+            .append(
+              '<div class="error-message text-danger">' + messages[0] + "</div>"
+            );
+        }
+      });
+
+      // Add to the error message list
+      $(".print-error-msg")
+        .find("ul")
+        .append("<li>" + messages[0] + "</li>");
+    }
   });
 }
 

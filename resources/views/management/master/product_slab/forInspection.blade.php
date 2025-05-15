@@ -18,7 +18,7 @@
                     <div class="input-group">
                         <input type="number" id="slab-input-{{ $loop->index }}" class="form-control slab-input"
                             data-max-range="{{ $slab->max_range }}" name="checklist_value[]" placeholder="%"
-                            min="0" step="0.01" value="{{ $isInner ? $slab->checklist_value : 0 }}">
+                            min="0" step="0.01" value="{{ $isInner ? $slab->checklist_value : null }}">
                         <div class="input-group-append">
                             <span class="input-group-text">{{ $slab->slabType->qc_symbol }}</span>
                         </div>
