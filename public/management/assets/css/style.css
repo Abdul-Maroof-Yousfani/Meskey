@@ -155,3 +155,9 @@ to{opacity:1;transform:translateY(0);}
 tr.editing{background:#ffa5004a;}
 #indicativePricesTable:is(input,select){background-color:white;}
 .valid-screen .form-control.is-invalid:disabled,.valid-screen .form-control.is-invalid[readonly]{border-color:#f55252 !important;}
+
+
+
+.layout-dark [readonly] {
+  background-color: #404040d1 !important;
+}

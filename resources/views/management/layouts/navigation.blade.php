@@ -148,7 +148,7 @@
                                 data-i18n="Email">Purchase
                                 Request</span></a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('initialsampling.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
                             </span></a>
@@ -157,7 +157,7 @@
                             href="{{ route('raw-material.purchase-order.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
                             </span></a>
-                    </li>
+                    </li> --}}
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.gate-buying.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Gate Buying
@@ -171,8 +171,8 @@
 
                             @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('broker.index') }}"
-                                    onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
+                                    href="{{ route('raw-material.purchase-sampling-request.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i>
                                     <span data-i18n="Task Board">Qc Request</span>
                                 </a>
