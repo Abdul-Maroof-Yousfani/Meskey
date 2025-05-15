@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('purchase_sampling_results_for_compulsury', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id');
-            $table->unsignedBigInteger('arrival_sampling_request_id');
+            $table->unsignedBigInteger('purchase_sampling_request_id');
             $table->unsignedBigInteger('arrival_compulsory_qc_param_id');
             $table->string('compulsory_checklist_value')->nullable();
             $table->string('applied_deduction')->nullable();
@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->foreign('company_id', 'pr_asr_company')
                 ->references('id')->on('companies')->onDelete('cascade');
 
-            $table->foreign('arrival_sampling_request_id', 'pr_asr_request')
+            $table->foreign('purchase_sampling_request_id', 'pr_asr_request')
                 ->references('id')->on('purchase_sampling_requests')->onDelete('cascade');
 
             $table->foreign('arrival_compulsory_qc_param_id', 'pr_asr_param')
