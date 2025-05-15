@@ -10,7 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ArrivalSamplingRequest extends Model
 {
+
     use SoftDeletes;
+
     protected $fillable = [
         'company_id',
         'arrival_product_id',
@@ -29,8 +31,6 @@ class ArrivalSamplingRequest extends Model
         'lumpsum_deduction_kgs',
         'is_lumpsum_deduction',
     ];
-
-
 
     /**
      * Get the company that owns the arrival sampling request.

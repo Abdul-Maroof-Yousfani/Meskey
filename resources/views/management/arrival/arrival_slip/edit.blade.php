@@ -1,6 +1,15 @@
 @php
     $isSlabs = false;
     $isCompulsury = false;
+    $showLumpSum = false;
+
+    if (
+        isset($samplingRequest->is_lumpsum_deduction) &&
+        $samplingRequest->is_lumpsum_deduction &&
+        $samplingRequest->lumpsum_deduction > 0
+    ) {
+        $showLumpSum = true;
+    }
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
         if (!$slab->applied_deduction) {
@@ -16,6 +25,7 @@
         $isSlabs = true;
     }
 @endphp
+
 <link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}">
 <form action="{{ route('arrival-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -270,19 +280,23 @@
                                 <tr>
                                     <td style="padding:8px;border:none;"> Freight (Rs.)</td>
                                     <td style=" padding: 8px;">
-                                        <input type="text" style="width:100%;border:1px solid #ddd;padding:10px 10px;" value="{{$arrivalTicket->freight->freight_written_on_bilty ?? '0.00'}}" readonly>
+                                        <input type="text"
+                                            style="width:100%;border:1px solid #ddd;padding:10px 10px;"
+                                            value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
+                                            readonly>
                                     </td>
                                     <td style="padding:8px;border:none;"> Freight per Ton</td>
                                     <td style=" padding: 8px;">
-                                        <input type="text" style="width:100%;border:1px solid #ddd;padding:10px 10px;" value="{{$arrivalTicket->freight->freight_per_ton ?? '0.00'}}" readonly>
+                                        <input type="text"
+                                            style="width:100%;border:1px solid #ddd;padding:10px 10px;"
+                                            value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}" readonly>
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td style=" padding:8px;border:none;">Karachi Kanta Charges </td>
                                     <td style="padding: 8px;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
@@ -290,8 +304,7 @@
                                         Charges
                                     </td>
                                     <td style="padding: 8px;" colspan="3">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
@@ -301,8 +314,7 @@
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Other (+)/ Labour Charges</td>
                                     <td style="padding: 8px;" colspan="1">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
@@ -320,8 +332,7 @@
                                     <td style=" padding: 8px;border: none;">Other Deduction
                                     </td>
                                     <td style="padding: 8px;" colspan="1">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}" readonly>
                                     </td>
 
@@ -336,8 +347,7 @@
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Total Freight Payable (Rs.)</td>
                                     <td style="padding: 8px;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
                                             readonly>
                                     </td>
@@ -351,8 +361,7 @@
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Unpaid Labour Charge</td>
                                     <td style="padding: 8px;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
@@ -366,8 +375,7 @@
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Final Figure</td>
                                     <td style="padding: 8px;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}" readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="4">
@@ -379,10 +387,14 @@
                                 </tr>
                             </table>
                             <div class="printHide">
-                                @if ($isCompulsury || $isSlabs)
+                                @if ($isCompulsury || $isSlabs || $showLumpSum)
                                     <!-- Sampling Results Section -->
-                                    <div style="margin-top: 15px; font-weight: bold; border-bottom: 1px solid #000; padding: 5px 0;">Sampling Results</div>
-                                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin-top: 10px;">
+                                    <div
+                                        style="margin-top: 15px; font-weight: bold; border-bottom: 1px solid #000; padding: 5px 0;">
+                                        Sampling Results
+                                    </div>
+                                    <table
+                                        style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin-top: 10px;">
                                         <thead>
                                             <tr>
                                                 <th
@@ -394,50 +406,32 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @if (count($samplingRequestResults) != 0)
-                                                @foreach ($samplingRequestResults as $slab)
-                                                    @php
-                                                        if (!$slab->applied_deduction) {
-                                                            continue;
-                                                        }
-                                                    @endphp
-                                                    <tr>
-                                                        <td style="padding: 8px; border: 1px solid #ddd;">
-                                                            {{ $slab->slabType->name }}
-                                                        </td>
-                                                        <td
-                                                            style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                            {{ $slab->applied_deduction }}
-                                                            {{-- <span
-                                                                class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }} --}}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            @else
+                                            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
                                                 <tr>
-                                                    <td colspan="2"
-                                                        style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
-                                                        No Initial Slabs Found</td>
+                                                    <td style="padding: 8px; border: 1px solid #ddd;">
+                                                        Lumpsum Deduction
+                                                    </td>
+                                                    <td
+                                                        style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                                                        {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
+                                                        Lumpsum)
+                                                    </td>
                                                 </tr>
-                                            @endif
-
-                                            @if ($isCompulsury)
-                                                @if (count($samplingRequestCompulsuryResults) != 0)
-                                                    @foreach ($samplingRequestCompulsuryResults as $slab)
+                                            @else
+                                                @if (count($samplingRequestResults) != 0)
+                                                    @foreach ($samplingRequestResults as $slab)
                                                         @php
-                                                            if (!$slab->checklist_value) {
+                                                            if (!$slab->applied_deduction) {
                                                                 continue;
                                                             }
                                                         @endphp
                                                         <tr>
                                                             <td style="padding: 8px; border: 1px solid #ddd;">
-                                                                {{ $slab->qcParam->name }}</td>
+                                                                {{ $slab->slabType->name }}
+                                                            </td>
                                                             <td
                                                                 style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                                {{ $slab->checklist_value }}
-                                                                {{-- <span
-                                                                    class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span> --}}
+                                                                {{ $slab->applied_deduction }}
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -445,8 +439,34 @@
                                                     <tr>
                                                         <td colspan="2"
                                                             style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
-                                                            No Compulsory Slabs Found</td>
+                                                            No Initial Slabs Found</td>
                                                     </tr>
+                                                @endif
+
+                                                @if ($isCompulsury)
+                                                    @if (count($samplingRequestCompulsuryResults) != 0)
+                                                        @foreach ($samplingRequestCompulsuryResults as $slab)
+                                                            @php
+                                                                if (!$slab->checklist_value) {
+                                                                    continue;
+                                                                }
+                                                            @endphp
+                                                            <tr>
+                                                                <td style="padding: 8px; border: 1px solid #ddd;">
+                                                                    {{ $slab->qcParam->name }}</td>
+                                                                <td
+                                                                    style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                                                                    {{ $slab->checklist_value }}
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @else
+                                                        <tr>
+                                                            <td colspan="2"
+                                                                style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
+                                                                No Compulsory Slabs Found</td>
+                                                        </tr>
+                                                    @endif
                                                 @endif
                                             @endif
                                         </tbody>
@@ -462,7 +482,8 @@
                                     <td style=" padding: 8px;border: none;">Gross
                                         Weight</td>
                                     <td style=" padding: 8px;">
-                                        <input type="text" style=" border:1px solid #ddd;padding:10px 10px;" value="{{$arrivalTicket->firstWeighbridge->weight ?? 'N/A'}}" readonly>
+                                        <input type="text" style=" border:1px solid #ddd;padding:10px 10px;"
+                                            value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}" readonly>
                                     </td>
 
 
@@ -471,8 +492,7 @@
                                     <td style=" padding: 8px;border: none;">
                                         Net Weight</td>
                                     <td style=" padding: 8px;border: none;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
                                             readonly>
                                     </td>
@@ -481,16 +501,14 @@
                                     <td style=" padding: 8px;border: none;">
                                         Loading Weight</td>
                                     <td style=" padding: 8px;border: none;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 8px;border: none;">Avg. Weight</td>
                                     <td style="padding: 8px;border: none;" colspan="5">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
                                             readonly>
                                     </td>
@@ -500,8 +518,7 @@
                                         Arrival
                                         Weight</td>
                                     <td style=" padding: 8px;border: none;">
-                                        <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px;"
+                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
                                     </td>
                                 </tr>
@@ -515,34 +532,35 @@
                     <br>
 
                     <!-- Footer Section -->
-                     <div class="signature">
+                    <div class="signature">
 
-                         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-                             <tr>
-                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                     <div style="font-weight: bold; margin-bottom: 5px;">Confirmed Form</div>
-                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
-                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
-                                     </div>
-                                 </td>
-                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                     <div style="font-weight: bold; margin-bottom: 5px;">Contract Number</div>
-                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
-                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
-                                     </div>
-                                 </td>
-                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                     <div style="font-weight: bold; margin-bottom: 5px;">Prepared By:</div>
-                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
-                                         {{ auth()->user()->name }}
-                                     </div>
-                                 </td>
-                             </tr>
-                         </table>
-                     </div>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+                            <tr>
+                                <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Confirmed Form</div>
+                                    <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
+                                        {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Contract Number</div>
+                                    <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
+                                        {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Prepared By:</div>
+                                    <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
+                                        {{ auth()->user()->name }}
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
 
                     @if ($isNotGeneratable)
-                        <div style="margin-top: 15px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;">
+                        <div
+                            style="margin-top: 15px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;">
                             <strong>Important!</strong> Please apply deductions first before generating the arrival
                             slip.
                         </div>
@@ -568,7 +586,7 @@
         if (input.files && input.files[0]) {
             var reader = new FileReader();
             reader.onload = function(e) {
-                $('#imagePreview').css('background-image', 'url('+e.target.result +')');
+                $('#imagePreview').css('background-image', 'url(' + e.target.result + ')');
                 $('#imagePreview').hide();
                 $('#imagePreview').fadeIn(650);
             }
@@ -579,7 +597,7 @@
         readURL(this);
     });
     $('.submenu').hide();
-    $('li.menu-items').on('click', function(){
+    $('li.menu-items').on('click', function() {
 
         $(this).find('.submenu').slideToggle('slow');
         $(this).find('.menu-items-link').toggleClass('active');
@@ -587,7 +605,7 @@
     })
 
 
-        function printView(param1, param2, param3) {
+    function printView(param1, param2, param3) {
         $(".qrCodeDiv").removeClass("hidden");
 
         if (param2 !== "") {
