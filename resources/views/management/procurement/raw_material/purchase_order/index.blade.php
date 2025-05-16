@@ -24,11 +24,11 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
+                                        <div class="row justify-content-end text">
                                             <div class="col-md-2">
                                                 <div class="form-group ">
                                                     <label>Sauda Type:</label>
-                                                    <select name="sauda_type_id" id="sauda_type_id"
+                                                    <select name="sauda_type_id" id="sauda_type"
                                                         class="form-control select2">
                                                         <option value="">Sauda Type Name</option>
                                                     </select>
@@ -37,7 +37,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group ">
                                                     <label>Location:</label>
-                                                    <select name="company_location_id" id="company_location_id"
+                                                    <select name="company_location_id" id="company_location"
                                                         class="form-control select2">
                                                         <option value="">Location</option>
                                                     </select>
@@ -85,8 +85,8 @@
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
 
 
-              initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
-        initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
+              initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false);
         });
     </script>
 @endsection
