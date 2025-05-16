@@ -2,11 +2,11 @@
     <thead>
         <tr>
             <th class="col-sm-2">Contract No</th>
-            <th class="col-sm-2">Rate Per KG</th>
-            <th class="col-sm-2">No of Trucks</th>
-            <th class="col-sm-2">Quantity Range</th>
-            <th class="col-sm-1">Status</th>
-            <th class="col-sm-2">Created</th>
+            <th class="col-sm-3">Supplier</th>
+            <th class="col-sm-2">Rate</th>
+            <th class="col-sm-1">Contract Type</th>
+            <th class="col-sm-1">Replacement</th>
+            <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -14,17 +14,30 @@
         @if (count($arrivalPurchaseOrder) != 0)
             @foreach ($arrivalPurchaseOrder as $key => $row)
                 <tr>
-                    <td>{{ $row->contract_no }}</td>
-                    <td>{{ $row->rate_per_kg ?? '-' }}</td>
-                    <td>{{ $row->no_of_trucks ?? '-' }}</td>
-                    <td>{{ ($row->min_quantity ?? '-') . ' - ' . ($row->max_quantity ?? '-') }}</td>
+                    <td>#{{ $row->contract_no }} <br> {{ $row->product->name ?? ' N/A' }} </td>
+                    <td>{{ $row->supplier->name ?? 'N/A' }}</td>
                     <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                            {{ ucwords($row->status) }}
-                        </label>
+                        <div class="div-box-b">
+                            <small>
+                                <strong>Rate Per KG:</strong> {{ $row->rate_per_kg ?? 0 }} <br>
+                                <strong>Rate Per Mound:</strong> {{ $row->rate_per_mound ?? 0 }} <br>
+                                <strong>Rate Per 100KG:</strong> {{ $row->rate_per_100kg ?? 0 }}<br>
+                            </small>
+                        </div>
                     </td>
                     <td>
-                        {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
+                        <span
+                            class="badge badge-{{ isset($row->saudaType->id) && $row->saudaType->id == 1 ? 'success' : 'warning' }}">
+                            {{ $row->saudaType->name ?? 'N/A' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ $row->is_replacement == 1 ? 'success' : 'warning' }}">
+                            {{ $row->is_replacement == 1 ? 'Yes' : 'No' }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
                         {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
                     </td>
                     <td>

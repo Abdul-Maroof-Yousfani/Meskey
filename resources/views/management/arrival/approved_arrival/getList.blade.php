@@ -106,11 +106,3 @@
         {{ $ArrivalApproves->links() }}
     </div>
 </div>
-
-<style>
-    .div-box-b {
-        background: #ececec;
-        padding: 7px;
-        border-radius: 5px;
-    }
-</style>

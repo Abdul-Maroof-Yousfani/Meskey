@@ -794,3 +794,9 @@ tr.editing {
 .loop-fields .error-message {
   padding-top: 0;
 }
+
+.div-box-b {
+  background: #ececec;
+  padding: 7px;
+  border-radius: 5px;
+}

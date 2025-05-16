@@ -44,11 +44,11 @@
                                     <thead>
                                         <tr>
                                             <th class="col-sm-2">Contract No</th>
-                                            <th class="col-sm-2">Rate Per KG</th>
-                                            <th class="col-sm-2">No of Trucks</th>
-                                            <th class="col-sm-2">Quantity Range</th>
-                                            <th class="col-sm-1">Status</th>
-                                            <th class="col-sm-2">Created</th>
+                                            <th class="col-sm-3">Supplier</th>
+                                            <th class="col-sm-2">Rate</th>
+                                            <th class="col-sm-1">Contract Type</th>
+                                            <th class="col-sm-1">Replacement</th>
+                                            <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
