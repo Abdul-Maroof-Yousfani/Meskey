@@ -7,7 +7,8 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Acl\{Company};
 use App\Models\{User, Product, Arrival\ArrivalTicket};
 use App\Models\Arrival\Freight;
-use App\Observers\{UserObserver, CompanyObserver, ProductObserver, ArrivalTicketObserver, FreightObserver};
+use App\Models\Procurement\PurchaseFreight;
+use App\Observers\{UserObserver, CompanyObserver, ProductObserver, ArrivalTicketObserver, FreightObserver, PurchaseFreightObserver};
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 
@@ -22,7 +23,8 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
+    /** 
+     * 
      * Bootstrap any application services.
      */
     public function boot(): void
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         User::observe(UserObserver::class);
         Product::observe(ProductObserver::class);
         Freight::observe(FreightObserver::class);
+        PurchaseFreight::observe(PurchaseFreightObserver::class);
         ArrivalTicket::observe(ArrivalTicketObserver::class);
 
 
