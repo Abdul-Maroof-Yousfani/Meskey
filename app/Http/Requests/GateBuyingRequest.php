@@ -24,7 +24,7 @@ class GateBuyingRequest extends FormRequest
             'purchaser_name' => 'required|string|max:255',
             'contact_person_name' => 'required|string|max:255',
             'mobile_no' => 'nullable|string|max:20',
-            'cnic_no' => 'required|numeric|max:14',
+            'cnic_no' => 'required|digits:13',
             'broker_one' => 'nullable',
             'broker_one_commission' => 'nullable|numeric|min:0',
             'product_id' => 'required|integer|exists:products,id',
