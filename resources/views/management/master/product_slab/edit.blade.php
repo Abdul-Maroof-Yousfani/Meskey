@@ -3,7 +3,14 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.product-slab') }}" />
     <input type="hidden" name="product_id" value="{{ $product->id }}" />
-
+    <div class="alert alert-info mb-3">
+        <ul class="mb-0">
+            <li><strong>Is Tiered:</strong> When enabled, calculations will be performed cumulatively across ranges.
+            </li>
+            <li><strong>Is PO Field:</strong> When enabled, these fields will be shown during purchase contract creation
+                for this commodity.</li>
+        </ul>
+    </div>
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="form-group">
@@ -28,6 +35,7 @@
                 $isEnabled = $slabsForType->count() > 0;
                 $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'amount';
                 $isTiered = $slabsForType->first() ? $slabsForType->first()->is_tiered : false;
+                $isPurchaseField = $slabsForType->first() ? $slabsForType->first()->is_purchase_field : false;
             @endphp
             <div class="slab-type-group mb-4 p-3 border rounded">
                 <div class="row align-items-center">
@@ -41,12 +49,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-3">
                         <h5>{{ $slab_type->name }}</h5>
                         <input type="hidden" name="slabs[{{ $slab_type->id }}][product_slab_type_id]"
                             value="{{ $slab_type->id }}">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                         <div class="row w-100 mx-auto">
                             <div class="col-6">
                                 <div class="form-group">
@@ -61,7 +69,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-3">
                                 <div class="form-group">
                                     <label>Is Tiered:</label>
                                     <div class="custom-control custom-switch">
@@ -70,6 +78,19 @@
                                             name="slabs[{{ $slab_type->id }}][is_tiered]" @checked($isTiered)>
                                         <label class="custom-control-label"
                                             for="is_tiered_{{ $slab_type->id }}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="form-group">
+                                    <label>Is PO Field:</label>
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input tiered"
+                                            id="is_purchase_{{ $slab_type->id }}"
+                                            name="slabs[{{ $slab_type->id }}][is_purchase_field]"
+                                            @checked($isPurchaseField)>
+                                        <label class="custom-control-label"
+                                            for="is_purchase_{{ $slab_type->id }}"></label>
                                     </div>
                                 </div>
                             </div>

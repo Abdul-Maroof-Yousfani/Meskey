@@ -78,6 +78,7 @@ class ProductSlabController extends Controller
                 if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
                     $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
+                    $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') == 'on' ? 1 : 0;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])
@@ -103,6 +104,7 @@ class ProductSlabController extends Controller
                                 'to' => $range['to'],
                                 'deduction_type' => $deductionType,
                                 'is_tiered' => $isTiered,
+                                'is_purchase_field' => $isPurchaseField,
                                 'deduction_value' => $range['deduction_value'],
                                 'is_enabled' => true,
                                 'status' => 'active'
@@ -142,6 +144,7 @@ class ProductSlabController extends Controller
                 if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
                     $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
+                    $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') == 'on' ? 1 : 0;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])
@@ -166,6 +169,7 @@ class ProductSlabController extends Controller
                                 'from' => $range['from'],
                                 'to' => $range['to'],
                                 'is_tiered' => $isTiered,
+                                'is_purchase_field' => $isPurchaseField,
                                 'deduction_type' => $deductionType,
                                 'deduction_value' => $range['deduction_value'],
                                 'is_enabled' => true,
