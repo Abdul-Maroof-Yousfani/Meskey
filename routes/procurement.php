@@ -4,6 +4,7 @@ use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     GateBuyingController,
+    PurchaseFreightController,
     PurchaseRequestController,
     PurchaseOrderController,
     PurchaseSamplingController,
@@ -34,10 +35,26 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('sampling-monitoring',  PurchaseSamplingMonitoringController::class);
     Route::post('/get-sampling-monitoring', [PurchaseSamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');
+
+    Route::resource('freight', PurchaseFreightController::class);
+    Route::post('/get-freight', [PurchaseFreightController::class, 'getList'])->name('get.freight');
+    Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('freight.getFreightForm');
 });
 
-Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);
-Route::prefix('indicative-prices')->name('indicative-prices.')->group(function () {
-    Route::get('/reports', [IndicativePriceController::class, 'reportsView'])->name('reports');
-    Route::post('/reports-list', [IndicativePriceController::class, 'reports'])->name('reports.get-list');
+// Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);
+// Route::post('/get-indicative-prices', [IndicativePriceController::class, 'getList'])->name('get.indicative-prices');
+
+// Route::prefix('indicative-prices')->name('indicative-prices.')->group(function () {
+//     Route::get('/reports', [IndicativePriceController::class, 'reportsView'])->name('reports');
+//     Route::post('/reports-list', [IndicativePriceController::class, 'reports'])->name('reports.get-list');
+// });
+
+Route::prefix('indicative-prices')->group(function () {
+    Route::get('/', [IndicativePriceController::class, 'index'])->name('indicative-prices.index');
+    Route::get('/get-list', [IndicativePriceController::class, 'getList'])->name('get.indicative-prices');
+    Route::post('/', [IndicativePriceController::class, 'store'])->name('indicative-prices.store');
+    Route::put('/{id}', [IndicativePriceController::class, 'update'])->name('indicative-prices.update');
+    Route::delete('/{id}', [IndicativePriceController::class, 'destroy'])->name('indicative-prices.destroy');
+    Route::get('/reports', [IndicativePriceController::class, 'reportsView'])->name('indicative-prices.reports');
+    Route::post('/reports-list', [IndicativePriceController::class, 'reports'])->name('indicative-prices.reports.get-list');
 });
