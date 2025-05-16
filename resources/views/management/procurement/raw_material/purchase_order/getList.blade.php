@@ -14,8 +14,12 @@
         @if (count($arrivalPurchaseOrder) != 0)
             @foreach ($arrivalPurchaseOrder as $key => $row)
                 <tr>
-                    <td>#{{ $row->contract_no }} <br> {{ $row->product->name ?? ' N/A' }} </td>
-                    <td>{{ $row->supplier->name ?? 'N/A' }}</td>
+                    <td>#{{ $row->contract_no }} <br> {{ $row->product->name ?? ' N/A' }} <br><span
+                            class="badge badge-primary mt-2">
+                            {{ formatEnumValue($row->purchase_type ?? 'N/A') }}
+                        </span> </td>
+                    <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
+                    </td>
                     <td>
                         <div class="div-box-b">
                             <small>
@@ -42,7 +46,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.purchase-order.edit', $row->id) }}','Edit Purchase Order')"
+                            <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
