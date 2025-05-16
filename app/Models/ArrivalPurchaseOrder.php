@@ -62,6 +62,7 @@ class ArrivalPurchaseOrder extends Model
         'chalky',
         'mixing',
         'red_rice',
+        'other_params',
         'payment_term',
         'truck_no',
         'created_by',

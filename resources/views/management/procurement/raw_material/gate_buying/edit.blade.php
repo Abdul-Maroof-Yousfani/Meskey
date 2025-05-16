@@ -190,6 +190,13 @@ div <form action="{{ route('raw-material.gate-buying.update', $arrivalPurchaseOr
                     placeholder="Red Rice" class="form-control" />
             </div>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Other Params:</label>
+                <input type="text" name="other_params" placeholder="Other Params"
+                    value="{{ $arrivalPurchaseOrder->other_params ?? null }}" class="form-control" />
+            </div>
+        </div>
     </div>
 
 

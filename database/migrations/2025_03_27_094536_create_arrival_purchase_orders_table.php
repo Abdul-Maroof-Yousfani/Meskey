@@ -73,6 +73,7 @@ return new class extends Migration {
             $table->decimal('chalky', 5, 2)->nullable();
             $table->decimal('mixing', 5, 2)->nullable();
             $table->decimal('red_rice', 5, 2)->nullable();
+            $table->text('other_params')->nullable();
 
             // Other fields
             $table->boolean('is_replacement')->default(false);

@@ -800,3 +800,7 @@ tr.editing {
   padding: 7px;
   border-radius: 5px;
 }
+
+.layout-dark .div-box-b {
+  background: #ececec33;
+}

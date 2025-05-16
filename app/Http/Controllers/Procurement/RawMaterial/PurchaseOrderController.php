@@ -38,6 +38,7 @@ class PurchaseOrderController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->where('purchase_type', 'regular')
             ->latest()
             ->paginate(request('per_page', 25));
 

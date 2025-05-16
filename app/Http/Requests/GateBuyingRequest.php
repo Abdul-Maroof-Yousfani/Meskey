@@ -32,6 +32,7 @@ class GateBuyingRequest extends FormRequest
             'chalky' => 'nullable|numeric|min:0',
             'mixing' => 'nullable|numeric|min:0',
             'red_rice' => 'nullable|numeric|min:0',
+            'other_params' => 'nullable|string',
             'rate_per_kg' => 'required|numeric|min:0',
             'rate_per_mound' => 'required|numeric|min:0',
             'rate_per_100kg' => 'required|numeric|min:0',

@@ -165,8 +165,13 @@
                 <input type="number" name="red_rice" value="0" placeholder="Red Rice" class="form-control" />
             </div>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Other Params:</label>
+                <input type="text" name="other_params" placeholder="Other Params" class="form-control" />
+            </div>
+        </div>
     </div>
-
 
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
