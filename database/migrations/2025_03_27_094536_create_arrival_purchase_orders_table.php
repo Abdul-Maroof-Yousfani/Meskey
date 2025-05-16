@@ -76,7 +76,7 @@ return new class extends Migration {
 
             // Other fields
             $table->boolean('is_replacement')->default(false);
-            $table->decimal('weighbridge_from', 10, 2)->nullable();
+            $table->text('weighbridge_from')->nullable();
             $table->text('remarks')->nullable();
             $table->unsignedBigInteger('account_of')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();

@@ -73,7 +73,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission:</label>
-                <input type="number" name="supplier_commission" placeholder="Commission" class="form-control" />
+                <input type="number" name="broker_one_commission" placeholder="Commission" class="form-control" />
             </div>
         </div>
     </div>
@@ -94,7 +94,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission:</label>
-                <input type="number" name="supplier_commission" placeholder="Commission" class="form-control" />
+                <input type="number" name="broker_two_commission" placeholder="Commission" class="form-control" />
 
             </div>
         </div>
@@ -116,7 +116,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission:</label>
-                <input type="number" name="supplier_commission" placeholder="Commission" class="form-control" />
+                <input type="number" name="broker_three_commission" placeholder="Commission" class="form-control" />
 
             </div>
         </div>
