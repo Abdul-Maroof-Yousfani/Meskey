@@ -1,13 +1,11 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">Contract No</th>
+            <th class="col-sm-2">Contract No</th>
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-2">Purchaser</th>
             <th class="col-sm-2">Contact Person</th>
             <th class="col-sm-2">Rate</th>
-            <th class="col-sm-1">Contract Type</th>
-            <th class="col-sm-1">Replacement</th>
             <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -28,17 +26,6 @@
                                 <strong>Rate Per 100KG:</strong> {{ $row->rate_per_100kg ?? 0 }}<br>
                             </small>
                         </div>
-                    </td>
-                    <td>
-                        <span
-                            class="badge badge-{{ isset($row->saudaType->id) && $row->saudaType->id == 1 ? 'success' : 'warning' }}">
-                            {{ $row->saudaType->name ?? 'N/A' }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge badge-{{ $row->is_replacement == 1 ? 'success' : 'warning' }}">
-                            {{ $row->is_replacement == 1 ? 'Yes' : 'No' }}
-                        </span>
                     </td>
                     <td>
                         {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>

@@ -43,13 +43,11 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Contract No</th>
+                                            <th class="col-sm-2">Contract No</th>
                                             <th class="col-sm-2">Supplier</th>
                                             <th class="col-sm-2">Purchaser</th>
                                             <th class="col-sm-2">Contact Person</th>
                                             <th class="col-sm-2">Rate</th>
-                                            <th class="col-sm-1">Contract Type</th>
-                                            <th class="col-sm-1">Replacement</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
