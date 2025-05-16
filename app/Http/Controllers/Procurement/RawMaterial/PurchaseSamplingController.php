@@ -22,7 +22,7 @@ class PurchaseSamplingController extends Controller
      */
     public function index()
     {
-        $isResampling = request()->route()->getName() === 'purchase-resampling.index';
+        $isResampling = request()->route()->getName() === 'raw-material.purchase-resampling.index';
         return view('management.procurement.raw_material.purchase_sampling.index', compact('isResampling'));
     }
 
@@ -31,7 +31,7 @@ class PurchaseSamplingController extends Controller
      */
     public function getList(Request $request)
     {
-        $isResampling = request()->route()->getName() === 'get.purchase-resampling';
+        $isResampling = request()->route()->getName() === 'raw-material.get.purchase-resampling';
 
         $samplingRequests = PurchaseSamplingRequest::where('sampling_type', 'initial');
 
@@ -60,7 +60,7 @@ class PurchaseSamplingController extends Controller
      */
     public function create()
     {
-        $isResampling = request()->route()->getName() === 'purchase-resampling.create';
+        $isResampling = request()->route()->getName() === 'raw-material.purchase-resampling.create';
 
         $query = PurchaseSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no');
 
@@ -148,7 +148,7 @@ class PurchaseSamplingController extends Controller
         $PurchaseSamplingRequest = PurchaseSamplingRequest::findOrFail($id);
 
         if ($PurchaseSamplingRequest->is_done == 'no') {
-            $isResampling = request()->route()->getName() === 'purchase-resampling.create';
+            $isResampling = request()->route()->getName() === 'raw-material.purchase-resampling.create';
 
             $query = PurchaseSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no');
 

@@ -19,7 +19,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchaseOrder->product->name ?? 'N/A' }} <br>
+                            {{ $row->purchaseOrder->product->name ?? 'N/A' }} {{ $row->is_re_sampling }} <br>
                         </p>
                     </td>
                     <td>

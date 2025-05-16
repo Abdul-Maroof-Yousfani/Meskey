@@ -31,7 +31,6 @@ class PurchaseSamplingRequestController extends Controller
             });
         })
             ->where('company_id', $request->company_id)
-
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -42,7 +41,10 @@ class PurchaseSamplingRequestController extends Controller
      */
     public function create()
     {
-        $data['purchaseOrders'] = ArrivalPurchaseOrder::where('sauda_type_id', 2)->get();
+        $data['purchaseOrders'] = ArrivalPurchaseOrder::whereDoesntHave('purchaseSamplingRequests')
+            ->where('sauda_type_id', 2)
+            ->get();
+
         return view('management.procurement.raw_material.purchase_sampling_request.create', $data);
     }
 
