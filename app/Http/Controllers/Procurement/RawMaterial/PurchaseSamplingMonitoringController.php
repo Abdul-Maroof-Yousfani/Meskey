@@ -132,17 +132,17 @@ class PurchaseSamplingMonitoringController extends Controller
 
         // if ($arrivalSamplingRequest->sampling_type == 'inner') {
         $initialRequestForInnerReq = PurchaseSamplingRequest::where('sampling_type', 'initial')
-            ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+            ->where('arrival_purchase_order_id', $arrivalSamplingRequest->arrival_purchase_order_id)
             ->where('approved_status', 'approved')
             ->latest()
             ->first();
 
         if ($initialRequestForInnerReq) {
-            $initialRequestResults = ArrivalSamplingResult::where('purchase_sampling_request_id', $initialRequestForInnerReq->id)->get();
-            $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('purchase_sampling_request_id', $initialRequestForInnerReq->id)->get();
+            $initialRequestResults = PurchaseSamplingResult::where('purchase_sampling_request_id', $initialRequestForInnerReq->id)->get();
+            $initialRequestCompulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $initialRequestForInnerReq->id)->get();
         }
 
-        $allInnerRequests = PurchaseSamplingRequest::where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+        $allInnerRequests = PurchaseSamplingRequest::where('arrival_purchase_order_id', $arrivalSamplingRequest->arrival_purchase_order_id)
             ->where('approved_status', '!=', 'pending')
             ->where('id', '!=', $id)
             ->orderBy('created_at', 'asc')
@@ -197,8 +197,7 @@ class PurchaseSamplingMonitoringController extends Controller
         }
 
         try {
-            $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
-            // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
+            $ArrivalSamplingRequest = PurchaseSamplingRequest::findOrFail($id);
 
             $isLumpsum = ($request->is_lumpsum_deduction ?? 'off') == 'on' ? 1 : 0;
             $isDecisionMaking = ($request->decision_making ?? 'off') == 'on' ? 1 : 0;
@@ -213,13 +212,13 @@ class PurchaseSamplingMonitoringController extends Controller
                 'done_by' => auth()->user()->id,
             ]);
 
-            $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+            $records = PurchaseSamplingResult::where('purchase_sampling_request_id', $id)->get();
 
             foreach ($records as $record) {
                 $record->delete();
             }
 
-            $recordsQc = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
+            $recordsQc = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $id)->get();
 
             foreach ($recordsQc as $recordQc) {
                 $recordQc->delete();
@@ -227,9 +226,9 @@ class PurchaseSamplingMonitoringController extends Controller
 
             if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
-                    ArrivalSamplingResult::create([
+                    PurchaseSamplingResult::create([
                         'company_id' => $request->company_id,
-                        'arrival_sampling_request_id' => $id,
+                        'purchase_sampling_request_id' => $id,
                         'product_slab_type_id' => $slabTypeId,
                         'checklist_value' => $request->checklist_value[$key] ?? null,
                         'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
@@ -240,9 +239,9 @@ class PurchaseSamplingMonitoringController extends Controller
 
             if (!empty($request->compulsory_param_id)) {
                 foreach ($request->compulsory_param_id as $key => $slabTypeId) {
-                    ArrivalSamplingResultForCompulsury::create([
+                    PurchaseSamplingResultForCompulsury::create([
                         'company_id' => $request->company_id,
-                        'arrival_sampling_request_id' => $id,
+                        'purchase_sampling_request_id' => $id,
                         'arrival_compulsory_qc_param_id' => $slabTypeId,
                         'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
                         'applied_deduction' => $request->compulsory_aapplied_deduction[$key] ?? 0,
@@ -252,9 +251,9 @@ class PurchaseSamplingMonitoringController extends Controller
             }
 
             if ($request->stage_status == 'resampling') {
-                ArrivalSamplingRequest::create([
+                PurchaseSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
-                    'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
+                    'arrival_purchase_order_id' => $ArrivalSamplingRequest->arrival_purchase_order_id,
                     'sampling_type' => $ArrivalSamplingRequest->sampling_type,
                     'is_re_sampling' => 'yes',
                     'is_done' => 'no',
@@ -279,7 +278,7 @@ class PurchaseSamplingMonitoringController extends Controller
                 $updateData['first_qc_status'] = $request->stage_status;
             }
 
-            $ArrivalSamplingRequest->arrivalTicket()->first()->update($updateData);
+            $ArrivalSamplingRequest->purchaseOrder()->first()->update($updateData);
 
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();

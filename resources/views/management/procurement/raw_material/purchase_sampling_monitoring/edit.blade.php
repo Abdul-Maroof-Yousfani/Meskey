@@ -14,8 +14,8 @@
     $previousInnerRequest = $innerRequestsData[0] ?? null;
 @endphp
 
-<form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
-    autocomplete="off">
+<form action="{{ route('raw-material.sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST"
+    id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.sampling-monitoring') }}" />
@@ -40,11 +40,10 @@
                     <div class="form-group">
                         <label>QC Product:</label>
                         <input type="text" disabled="" class="form-control"
-                            value="{{ $arrivalSamplingRequest->arrivalProduct->name ?? 'N/A' }}"
+                            value="{{ $arrivalSamplingRequest->purchaseOrder->qcProduct->name ?? 'N/A' }}"
                             placeholder="QC Product">
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -70,7 +69,7 @@
                     <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab"
                         href="#inner-{{ $index }}" role="tab" aria-controls="inner-{{ $index }}"
                         aria-selected="false">
-                        Inner #{{ $loop->iteration }} ({{ $innerData['request']->created_at->format('M d, Y') }})
+                        Initial #{{ $loop->iteration }} ({{ $innerData['request']->created_at->format('M d, Y') }})
                     </a>
                 </li>
             @endforeach
@@ -103,12 +102,12 @@
                         @if (count($initialRequestResults) != 0)
                             @foreach ($initialRequestResults as $slab)
                                 <?php
-                                $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->arrivalTicket)->qc_product, $slab->checklist_value);
-                                $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
-                                $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
-                                $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
+                                // $getDeductionSuggestion = getDeductionSuggestion($slab->slabType->id, optional($arrivalSamplingRequest->purchaseOrder)->qc_product, $slab->checklist_value);
+                                // $deductionValue = $isLumpSumEnabledForInitial ? 0 : $slab->applied_deduction ?? 0;
+                                // $valuesOfInitialSlabs[$slab->slabType->id] = $deductionValue;
+                                // $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
                                 
-                                $suggestedDeductionType == 'amount' ? ($suggestedValueForInner += $getDeductionSuggestion->deduction_value ?? 0) : ($suggestedValueForInnerKgs += $getDeductionSuggestion->deduction_value ?? 0);
+                                // $suggestedDeductionType == 'amount' ? ($suggestedValueForInner += $getDeductionSuggestion->deduction_value ?? 0) : ($suggestedValueForInnerKgs += $getDeductionSuggestion->deduction_value ?? 0);
                                 ?>
                                 <div class="form-group row">
                                     <input type="hidden" name="initial_product_slab_type_id[]"
@@ -485,7 +484,7 @@
 
                                 $getDeductionSuggestion = getDeductionSuggestion(
                                     $slab->slabType->id,
-                                    optional($arrivalSamplingRequest->arrivalTicket)->qc_product,
+                                    optional($arrivalSamplingRequest->purchaseOrder)->qc_product,
                                     $displayValue,
                                 );
 
@@ -547,7 +546,7 @@
                                             data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
                                             data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                             data-slab-id="{{ $slab->slabType->id }}"
-                                            data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
+                                            data-product-id="{{ optional($arrivalSamplingRequest->purchaseOrder)->product->id }}"
                                             data-checklist="{{ $displayValue }}"
                                             {{ $isLumpSumEnabled ? 'readonly' : '' }}>
                                         <div class="input-group-append">
@@ -762,21 +761,20 @@
                     <label class="d-block">Sauda Type:</label>
                     @php
                         $isDisabled =
-                            optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
-                            (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ??
-                                null);
+                            optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id ??
+                            (null && optional($arrivalSamplingRequest->purchaseOrder)->id ?? null);
                     @endphp
 
                     @if ($isDisabled)
                         <input type="hidden" name="sauda_type_id"
-                            value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
+                            value="{{ optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id ?? '' }}">
                         <select disabled class="form-control w-100 select2">
                         @else
                             <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
                     @endif
                     <option value="">Select Sauda Type</option>
                     @foreach ($saudaTypes as $saudaType)
-                        <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
+                        <option @selected(optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
                             {{ $saudaType->name }}</option>
                     @endforeach
                     </select>
