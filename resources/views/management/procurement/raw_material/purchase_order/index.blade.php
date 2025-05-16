@@ -26,6 +26,24 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
+                                                <div class="form-group ">
+                                                    <label>Sauda Type:</label>
+                                                    <select name="sauda_type_id" id="sauda_type_id"
+                                                        class="form-control select2">
+                                                        <option value="">Sauda Type Name</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group ">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id" id="company_location_id"
+                                                        class="form-control select2">
+                                                        <option value="">Location</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -63,8 +81,12 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
+
+
+              initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         });
     </script>
 @endsection
