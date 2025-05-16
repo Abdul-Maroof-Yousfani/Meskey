@@ -129,9 +129,7 @@
                             </td>
                             <td style=" padding: 8px;border: none;">Bill/T No.</td>
                             <td style="padding: 8px; border: none;" colspan="2">
-                                <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->bilty_no }}" readonly>
+                                <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->bilty_no }}" readonly>
                             </td>
                         </tr>
                         <tr>
@@ -229,9 +227,7 @@
                             </td>
                             <td style=" padding: 8px;border: none; ">U/L Slip #</td>
                             <td style="padding: 8px; border: none;" colspan="2">
-                                <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ $arrivalTicket->unique_no ?? 'N/A' }}" readonly>
+                                <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->unique_no ?? 'N/A' }}" readonly>
                             </td>
                         </tr>
 
@@ -627,7 +623,7 @@
       <style>
         @media print{
 
-            @page{margin:5mm !important;}
+            @page{margin:3mm !important;margin-top:1mm !important;}
             .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
             .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
             .logo img{width:67% !important;}
@@ -639,7 +635,8 @@
             .logo p{font-weight:bold !important;}
             #modal-sidebar.open{width:100% !important;}
             table td input{padding:8px 8px !important;}
-            .row{display:flex !important;flex-wrap:nowrap !important;}
+ table tbody tr td{white-space:nowrap !important;}
+           .row{display:flex !important;flex-wrap:nowrap !important;}
             [class*="col-"]{float:left !important;display:block !important;}
         }
 
