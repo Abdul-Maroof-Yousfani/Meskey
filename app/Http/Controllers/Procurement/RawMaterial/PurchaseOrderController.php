@@ -38,12 +38,19 @@ class PurchaseOrderController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->where('company_location_id', $request->company_location_id);
+            })
+            ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
+                return $q->where('sauda_type_id', $request->sauda_type_id);
+            })
             ->where('purchase_type', 'regular')
             ->latest()
-            ->paginate(request('per_page', 25));
+            ->paginate($request->get('per_page', 25));
 
         return view('management.procurement.raw_material.purchase_order.getList', compact('arrivalPurchaseOrder'));
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -112,7 +119,7 @@ class PurchaseOrderController extends Controller
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
         $getSlabs = ProductSlabForRmPo::with('slabType')
-            ->where('product_id',  $data['arrivalPurchaseOrder']->product_id)
+            ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
             ->where('arrival_purchase_order_id', $id)
             ->get()
@@ -243,7 +250,7 @@ class PurchaseOrderController extends Controller
             ->where('is_purchase_field', 1)
             ->get()
             ->groupBy('product_slab_type_id')
-            ->map(fn($group) => $group->sortBy(fn($item) => (float)$item->from)->first())
+            ->map(fn($group) => $group->sortBy(fn($item) => (float) $item->from)->first())
             ->values()
             ->map(function ($item) {
                 $item['slab_type_name'] = $item->slabType->name ?? null;
@@ -274,7 +281,7 @@ class PurchaseOrderController extends Controller
 
         if ($latestContract) {
             $parts = explode('-', $latestContract->contract_no);
-            $lastNumber = (int)end($parts);
+            $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
