@@ -290,7 +290,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Weighbridge only From:</label>
-                <input type="text" name="weighbridge_from" placeholder="Rate Per 100KG" class="form-control" />
+                <input type="text" name="weighbridge_from" placeholder="Weighbridge only From"
+                    class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">

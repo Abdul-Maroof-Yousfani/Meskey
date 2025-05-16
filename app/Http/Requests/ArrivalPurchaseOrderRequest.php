@@ -48,7 +48,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'max_quantity'        => 'required|numeric',
             'min_bags'            => 'required|integer',
             'max_bags'            => 'required|integer',
-            'weighbridge_from'    => 'nullable|numeric',
+            'weighbridge_from'    => 'nullable|string',
             'remarks'             => 'nullable|string',
             'status'              => 'in:draft,confirmed,completed,cancelled',
         ];
