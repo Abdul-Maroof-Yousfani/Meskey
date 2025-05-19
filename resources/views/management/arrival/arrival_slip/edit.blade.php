@@ -263,16 +263,11 @@
                                 <tr>
                                     <td style="padding:8px;border:none;"> Filling</td>
                                     <td style=" padding: 8px;">
-                                        <div style="display: flex; align-items: center;">
-                                            <input type="text"
-                                                style="width: 40px; border: 1px solid #ddd; padding: 10px 10px; text-align: center;"
-                                                value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }}"
-                                                readonly>
-                                            <span style="padding: 0 5px;">× 10 =</span>
-                                            <input type="text"
-                                                style="width: 50px; border: 1px solid #ddd; padding: 10px 10px; text-align: center;"
-                                                value="{{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
-                                                readonly>
+                                        <div style="display: flex; align-items: center; width: 100%;">
+                                            <input type="text" style="width: 79px; border: 1px solid #ddd; padding: 10px 10px; text-align: center;"
+                                                value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }}" readonly> <span style="padding: 0 5px;">× 10 =</span>
+                                                <input type="text" style="width:75px;border:1px solid #ddd;padding:10px 10px;text-align:center;"
+                                                value="{{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"readonly>
                                         </div>
                                     </td>
                                 </tr>
