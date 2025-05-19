@@ -37,8 +37,7 @@
             <div class=" col-lg-12 col-md-12 col-sm-12 col-xs-12 auth-img-bg p-3">
                 <div class="flex-head">
                     <div class="logo">
-                        <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}" alt=""
-                            class="img-fluid">
+                        <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}" alt=""class="img-fluid">
                         <p>Original / Duplicate</p>
                     </div>
                     <div class="logo-cont">
@@ -67,7 +66,7 @@
                                 </li>
                             </ul>
                         </div>
-                        <hr style="border: 1px solid #ddd;">
+                        <hr style="border: 1px solid #ddd;margin-bottom: 10px;    margin-top: 0;">
                         <div class="add-main2">
                             <div class="head-add1">
                                 <p><strong>Tel:</strong> +03012740216,0 <strong>Fax:</strong></p>
@@ -76,7 +75,7 @@
                         </div>
                     </div>
                 </div>
-                <hr style="border: 1px solid #ddd; margin-bottom: 0;">
+                <hr style="border: 1px solid #ddd; margin-bottom: 0;    margin-top: 0;">
             </div>
 
             <div class=" col-lg-12 col-md-12 col-sm-12 col-xs-12">
@@ -254,11 +253,12 @@
                             </td>
                         </tr>
                     </table>
-                    <hr style="border: 1px solid #ddd; margin-bottom: 0;">
+           
                     <div class="row">
                         <div class=" col-lg-8 col-md-8 col-sm-8 col-xs-8">
                             <!-- Freight Section -->
-                            <div style="margin-top: 15px; font-weight: bold; padding: 5px 0;">Freight</div>
+                            <div style="margin-top: 5px; font-weight: bold; padding: 5px 0;">Freight</div>
+                            <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse; ">
                                 <tr>
                                     <td style="padding:8px;border:none;"> Filling</td>
@@ -317,9 +317,9 @@
                                             value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
-                                    <td style="padding: 8px;" colspan="2">
+                                    <td style="padding: 8px;" colspan="8">
                                         <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
+                                            style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
                                             value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
                                             readonly>
                                     </td>
@@ -335,9 +335,9 @@
                                             value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}" readonly>
                                     </td>
 
-                                    <td style="padding: 8px;" colspan="2">
+                                    <td style="padding: 8px;" colspan="8">
                                         <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
+                                            style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
                                             value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
                                             readonly>
                                     </td>
@@ -350,9 +350,9 @@
                                             value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
                                             readonly>
                                     </td>
-                                    <td style="padding: 8px;" colspan="4">
+                                    <td style="padding: 8px;" colspan="8">
                                         <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
+                                            style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
                                             value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
                                             readonly>
                                     </td>
@@ -364,9 +364,9 @@
                                             value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
-                                    <td style="padding: 8px;" colspan="4">
+                                    <td style="padding: 8px;" colspan="8">
                                         <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
+                                            style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
                                             value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
                                             readonly>
                                     </td>
@@ -377,107 +377,20 @@
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}" readonly>
                                     </td>
-                                    <td style="padding: 8px;" colspan="4">
+                                    <td style="padding: 8px;" colspan="8">
                                         <input type="text"
-                                            style=" border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
+                                            style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
                                             value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}"
                                             readonly>
                                     </td>
                                 </tr>
                             </table>
-                            <div class="printHide">
-                                @if ($isCompulsury || $isSlabs || $showLumpSum)
-                                    <!-- Sampling Results Section -->
-                                    <div
-                                        style="margin-top: 15px; font-weight: bold; border-bottom: 1px solid #000; padding: 5px 0;">
-                                        Sampling Results
-                                    </div>
-                                    <table
-                                        style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin-top: 10px;">
-                                        <thead>
-                                            <tr>
-                                                <th
-                                                    style="width: 60%; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;">
-                                                    Parameter</th>
-                                                <th
-                                                    style="width: 40%; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;">
-                                                    Applied Deduction</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
-                                                <tr>
-                                                    <td style="padding: 8px; border: 1px solid #ddd;">
-                                                        Lumpsum Deduction
-                                                    </td>
-                                                    <td
-                                                        style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                        {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
-                                                        Lumpsum)
-                                                    </td>
-                                                </tr>
-                                            @else
-                                                @if (count($samplingRequestResults) != 0)
-                                                    @foreach ($samplingRequestResults as $slab)
-                                                        @php
-                                                            if (!$slab->applied_deduction) {
-                                                                continue;
-                                                            }
-                                                        @endphp
-                                                        <tr>
-                                                            <td style="padding: 8px; border: 1px solid #ddd;">
-                                                                {{ $slab->slabType->name }}
-                                                            </td>
-                                                            <td
-                                                                style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                                {{ $slab->applied_deduction }} <span
-                                                                    class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                @else
-                                                    <tr>
-                                                        <td colspan="2"
-                                                            style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
-                                                            No Initial Slabs Found</td>
-                                                    </tr>
-                                                @endif
-
-                                                @if ($isCompulsury)
-                                                    @if (count($samplingRequestCompulsuryResults) != 0)
-                                                        @foreach ($samplingRequestCompulsuryResults as $slab)
-                                                            @php
-                                                                if (!$slab->applied_deduction) {
-                                                                    continue;
-                                                                }
-                                                            @endphp
-                                                            <tr>
-                                                                <td style="padding: 8px; border: 1px solid #ddd;">
-                                                                    {{ $slab->qcParam->name }}</td>
-                                                                <td
-                                                                    style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                                                                    {{ $slab->applied_deduction }} <span
-                                                                        class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                    @else
-                                                        <tr>
-                                                            <td colspan="2"
-                                                                style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
-                                                                No Compulsory Slabs Found</td>
-                                                        </tr>
-                                                    @endif
-                                                @endif
-                                            @endif
-                                        </tbody>
-                                    </table>
-                                @endif
-                            </div>
+                           
                         </div>
                         <div class=" col-lg-4 col-md-4 col-sm-4 col-xs-4">
                             <!-- Weights Section -->
-                            <div style="margin-top:15px;font-weight:bold;padding:5px 0;"> Weights</div>
+                            <div style="margin-top:5px;font-weight:bold;padding:5px 0;"> Weights</div>
+                             <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse;">
                                 {{-- <tr>
                                     <td style=" padding: 8px;border: none;">Gross
@@ -522,6 +435,96 @@
                                     </td>
                                 </tr> --}}
                             </table>
+
+
+
+                            <div>
+                                @if ($isCompulsury || $isSlabs || $showLumpSum)
+                                    <!-- Sampling Results Section -->
+                                   <div style="margin-top:15px;font-weight:bold;padding:5px 0;"> Sampling Results </div>
+                                   <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
+                                    <table  style=" width: 100%; border-collapse:collapse;margin-top:10px;     border: 1px solid #add;">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding: 8px;border: 1px solid #ddd;">
+                                                    Parameter</th>
+                                                <th style="padding: 8px;border: 1px solid #ddd;">
+                                                    Applied Deduction</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+                                                <tr>
+                                                    <td style="padding: 8px;border: 1px solid #ddd;">
+                                                        Lumpsum Deduction
+                                                    </td>
+                                                    <td style="padding: 8px;border: 1px solid #ddd; text-align: center;">
+                                                        {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
+                                                        Lumpsum)
+                                                    </td>
+                                                </tr>
+                                            @else
+                                                @if (count($samplingRequestResults) != 0)
+                                                    @foreach ($samplingRequestResults as $slab)
+                                                        @php
+                                                            if (!$slab->applied_deduction) {
+                                                                continue;
+                                                            }
+                                                        @endphp
+                                                        <tr>
+                                                            <td style="padding: 8px;border: 1px solid #ddd;">
+                                                                {{ $slab->slabType->name }}
+                                                            </td>
+                                                            <td
+                                                                style="padding: 8px; border: 1px solid #ddd;  text-align: center;">
+                                                                {{ $slab->applied_deduction }} <span
+                                                                    class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr>
+                                                        <td colspan="2"
+                                                            style="padding: 8px; border: 1px solid #ddd;  text-align: center; color: #777;">
+                                                            No Initial Slabs Found</td>
+                                                    </tr>
+                                                @endif
+
+                                                @if ($isCompulsury)
+                                                    @if (count($samplingRequestCompulsuryResults) != 0)
+                                                        @foreach ($samplingRequestCompulsuryResults as $slab)
+                                                            @php
+                                                                if (!$slab->applied_deduction) {
+                                                                    continue;
+                                                                }
+                                                            @endphp
+                                                            <tr>
+                                                                <td style="padding: 8px; border: 1px solid #ddd;">
+                                                                    {{ $slab->qcParam->name }}</td>
+                                                                <td
+                                                                    style="padding: 8px;border: 1px solid #ddd;text-align: center;">
+                                                                    {{ $slab->applied_deduction }} <span
+                                                                        class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @else
+                                                        <tr>
+                                                            <td colspan="2"
+                                                                style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #777;">
+                                                                No Compulsory Slabs Found</td>
+                                                        </tr>
+                                                    @endif
+                                                @endif
+                                            @endif
+                                        </tbody>
+                                    </table>
+                                @endif
+                            </div>
+
+
+
+
                         </div>
                     </div>
 
@@ -623,7 +626,7 @@
       <style>
         @media print{
 
-            @page{margin:3mm !important;margin-top:1mm !important;}
+            @page{margin:2mm !important;margin-top:1mm !important;}
             .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
             .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
             .logo img{width:67% !important;}
@@ -635,9 +638,11 @@
             .logo p{font-weight:bold !important;}
             #modal-sidebar.open{width:100% !important;}
             table td input{padding:8px 8px !important;}
- table tbody tr td{white-space:nowrap !important;}
+             table tbody tr td{white-space:nowrap !important;}
            .row{display:flex !important;flex-wrap:nowrap !important;}
             [class*="col-"]{float:left !important;display:block !important;}
+            table td{padding:5px 5px !important;}
+
         }
 
       </style>
