@@ -13,7 +13,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Contract Date:</label>
-                <input type="date" name="contract_date" placeholder="Contract Date" class="form-control" />
+                <input type="date" name="contract_date" id="contract_date" placeholder="Contract Date"
+                    class="form-control" />
             </div>
         </div>
 
@@ -330,13 +331,13 @@
     $(document).ready(function() {
         $('.select2').select2();
 
-        $('[name="company_location_id"], [name="contract_date"]').change(function() {
+        $('#company_location_id, #contract_date').change(function() {
             generateContractNumber();
         });
 
         function generateContractNumber() {
-            const locationId = $('[name="company_location_id"]').val();
-            const contractDate = $('[name="contract_date"]').val();
+            const locationId = $('#company_location_id').val();
+            const contractDate = $('#contract_date').val();
 
             if (locationId && contractDate) {
                 $.ajax({

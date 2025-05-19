@@ -26,11 +26,11 @@
                          </span>
                      </td>
                      <td>
-                         <a onclick="openModal(this,'{{ route('freight.edit', $freight->id) }}','View Freight', true)"
+                         <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $freight->id) }}','View Freight', true)"
                              class="info p-1 text-center mr-2 position-relative">
                              <i class="ft-eye font-medium-3"></i>
                          </a>
-                         <a onclick="deletemodal('{{ route('freight.destroy', $freight->id) }}','{{ route('get.freight') }}')"
+                         <a onclick="deletemodal('{{ route('raw-material.freight.destroy', $freight->id) }}','{{ route('raw-material.get.freight') }}')"
                              class="danger p-1 text-center mr-2 position-relative">
                              <i class="ft-x font-medium-3"></i>
                          </a>

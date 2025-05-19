@@ -71,8 +71,8 @@ class SecondWeighbridgeController extends Controller
 
         ArrivalTicket::where('id', $request->arrival_ticket_id)
             ->update(
-                ['second_weighbridge_status' => 'completed', 'arrived_net_weight' => $request->weighbridge_net_weight,'freight_status'=>'pending']
-                );
+                ['second_weighbridge_status' => 'completed', 'arrived_net_weight' => $request->weighbridge_net_weight, 'freight_status' => 'pending']
+            );
 
         return response()->json(['success' => 'Second Weighbridge created successfully.', 'data' => $arrival_locations], 201);
     }
@@ -116,18 +116,17 @@ class SecondWeighbridgeController extends Controller
         return response()->json(['success' => 'Arrival Location deleted successfully.'], 200);
     }
 
-     public function getSecondWeighbridgeRelatedData(Request $request)
+    public function getSecondWeighbridgeRelatedData(Request $request)
     {
 
-       // dd($request);
+        // dd($request);
 
         $ArrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
-   $first = FirstWeighbridge::where('arrival_ticket_id',$request->arrival_ticket_id)->first();
+        $first = FirstWeighbridge::where('arrival_ticket_id', $request->arrival_ticket_id)->first();
 
         // Render view with the slabs wrapped inside a div
         $html = view('management.arrival.second_weighbridge.getSecondWeighbridgeRelatedData', compact('ArrivalTicket'))->render();
 
         return response()->json(['success' => true, 'html' => $html]);
-
     }
 }

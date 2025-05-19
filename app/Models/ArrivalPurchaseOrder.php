@@ -19,6 +19,7 @@ class ArrivalPurchaseOrder extends Model
         'company_location_id',
         'sauda_type_id',
         'truck_size_range_id',
+        'freight_status',
         'account_of',
         'supplier_id',
         'supplier_commission',

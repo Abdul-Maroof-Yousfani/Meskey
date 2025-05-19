@@ -1,8 +1,8 @@
-<form action="{{ route('freight.update', $freight->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
+<form action="{{ route('raw-material.freight.update', $freight->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
     enctype="multipart/form-data">
     @csrf
     @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('get.freight') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight') }}" />
 
     <div class="row form-mar">
         <div class="col-md-6">

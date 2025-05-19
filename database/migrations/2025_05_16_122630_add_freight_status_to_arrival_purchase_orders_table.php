@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('purchase_orders', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('arrival_purchase_orders', function (Blueprint $table) {
+            $table->string('freight_status')->nullable()->after('weighbridge_from');
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('purchase_orders');
+        Schema::table('arrival_purchase_orders', function (Blueprint $table) {
+            $table->dropColumn('freight_status');
+        });
     }
 };

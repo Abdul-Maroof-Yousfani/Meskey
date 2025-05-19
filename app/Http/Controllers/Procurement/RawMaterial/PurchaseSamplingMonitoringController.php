@@ -9,6 +9,7 @@ use App\Models\Arrival\{ArrivalSamplingResult, ArrivalSamplingResultForCompulsur
 use App\Models\SaudaType;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ProductSlab;
+use App\Models\Procurement\PurchaseOrder;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -282,6 +283,10 @@ class PurchaseSamplingMonitoringController extends Controller
 
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
+
+            if ($request->stage_status == 'approved') {
+                ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
+            }
 
             return response()->json([
                 'success' => 'Data stored successfully',

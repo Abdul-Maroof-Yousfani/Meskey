@@ -9,7 +9,7 @@
                         Ticket No: {{ $ticket->unique_no }} --
                         Truck No: {{ $ticket->truck_no ?? '-' }}
                     </option>
-                @endforeach
+                @endforeac=`1
             </select>
         </div>
     </div>
@@ -26,7 +26,7 @@
 
             if (ticketId) {
                 $.ajax({
-                    url: '{{ route('freight.getFreightForm') }}',
+                    url: '{{ route('raw-material.freight.getFreightForm') }}',
                     type: 'GET',
                     data: {
                         arrival_ticket_id: ticketId
