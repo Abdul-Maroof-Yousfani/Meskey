@@ -46,7 +46,7 @@ class InnersampleRequestController extends Controller
     {
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
         $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
-            // ->whereNotNull('document_approval_status')
+            ->whereNotIn('document_approval_status', ['fully_approved', 'half_approved'])
             ->get();
 
         return view('management.arrival.inner_sample_request.create', $data);
