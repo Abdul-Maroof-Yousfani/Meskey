@@ -1,8 +1,8 @@
 <?php
 
 namespace App\Http\Controllers\Acl;
-use App\Http\Controllers\Controller;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Acl\{Menu};
 use Spatie\Permission\Models\Permission;
@@ -20,16 +20,16 @@ class MenuController extends Controller
 
     public function getList(Request $request)
     {
-        $menus = Menu::leftJoin('permissions','permissions.id','menus.permission_id')->when($request->filled('search'), function ($q) use ($request) {
+        $menus = Menu::leftJoin('permissions', 'permissions.id', 'menus.permission_id')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('menus.name', 'like', $searchTerm);
             });
         })
             ->latest()
-            ->select('permissions.name as permission_name','menus.*')
+            ->select('permissions.name as permission_name', 'menus.*')
             ->paginate(request('per_page', 25));
-         
+
         return view('management.acl.menu.getList', compact('menus'));
     }
     /**
@@ -40,7 +40,6 @@ class MenuController extends Controller
         $menus = Menu::whereStatus(1)->get();
         $permissions = Permission::get();
         return view('management.acl.menu.create', compact('menus', 'permissions'));
-
     }
 
     /**
@@ -48,12 +47,11 @@ class MenuController extends Controller
      */
     public function store(Request $request)
     {
-
-          $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|unique:menus,name',
             'permission_id' => 'required',
         ]);
-         if ($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
         $data = $request->all();

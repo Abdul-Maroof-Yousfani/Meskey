@@ -6,7 +6,7 @@
                 $menus = getMenu();
             @endphp
             @foreach ($menus as $menu)
-                @canAccess($menu->permission_name) {{-- Assuming permission relationship exists --}}
+                @canAccess($menu->permission_name)
                 <li class="nav-item {{ $menu->children->isNotEmpty() ? 'dropdown' : '' }}" data-menu="dropdown">
                     <a class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                         data-toggle="dropdown">
@@ -140,22 +140,7 @@
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Purchase
                         Contract</span></a>
-
                 <ul class="dropdown-menu">
-                    {{--
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('raw-material.purchase-request.index') }}"
-                            onclick="loadPageContent('{{ route('raw-material.purchase-request.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Email">Purchase
-                                Request</span></a>
-                    </li>
-                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('initialsampling.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
-                            </span></a>
-                    </li>
-                    --}}
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.purchase-order.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
@@ -215,17 +200,11 @@
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Contract Selection
                             </span></a>
                     </li>
-
-
-
-
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Prices
                             </span></a>
                     </li>
-
-
                 </ul>
             </li>
             <li class="dropdown nav-item" data-menu="dropdown"><a
@@ -259,8 +238,6 @@
                     </li> --}}
                 </ul>
             </li>
-
-
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
@@ -271,13 +248,6 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Email">Indicative Price Reports</span></a>
                     </li>
-
-                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Menu</span>
-                        </a>
-                    </li> --}}
                 </ul>
             </li>
             <li class="dropdown nav-item" data-menu="dropdown"><a
@@ -290,7 +260,6 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Manage Product</span></a>
                         <ul class="dropdown-menu">
-
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('product.index') }}"
@@ -315,7 +284,6 @@
                                         data-i18n="Basic">Product Slab type</span></a>
                             </li>
                             @endcanAccess
-
                             @canAccess('category')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('category.index') }}"
@@ -339,7 +307,6 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Manage Arrival</span></a>
                         <ul class="dropdown-menu">
-
                             @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('broker.index') }}"
@@ -375,7 +342,6 @@
                             @endcanAccess
                         </ul>
                     </li>
-
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('account.index') }}"
                             onclick="loadPageContent('{{ route('account.index') }}')" data-toggle="dropdown"><i
@@ -404,10 +370,8 @@
                             <span data-i18n="Task Board">Company Location </span>
                         </a>
                     </li>
-
                 </ul>
             </li>
-
         </ul>
     </div>
 </div>
