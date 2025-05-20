@@ -88,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
                     'IndicativePriceController' => \App\Http\Requests\Master\IndicativePriceRequest::class,
                     'PurchaseOrderController' => \App\Http\Requests\ArrivalPurchaseOrderRequest::class,
                     'PurchaseFreightController' => \App\Http\Requests\Procurement\PurchaseFreightRequest::class,
+                    'TicketContractController' => \App\Http\Requests\Procurement\TicketContractRequest::class,
                 ];
 
                 $routeAction = request()->route()?->getAction();

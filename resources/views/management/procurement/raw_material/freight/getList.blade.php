@@ -3,6 +3,7 @@
          <tr>
              <th class="col-sm-2">Contract No. </th>
              <th class="col-sm-3">Product</th>
+             <th class="col-sm-2">Status</th>
              <th class="col-sm-2">Action</th>
          </tr>
      </thead>
@@ -12,6 +13,12 @@
                  <tr class="bg-{{ $purchaseOrder->purchaseFreight ? '' : 'orange' }}">
                      <td>{{ $purchaseOrder->contract_no ?? 'N/A' }}</td>
                      <td> {{ $purchaseOrder->product->name ?? 'N/A' }}</td>
+                     <td>
+                         <span
+                             class="badge badge-{{ $purchaseOrder->freight_status == 'pending' ? 'warning' : ($purchaseOrder->completed == 'approved' ? 'success' : 'danger') }}">
+                             {{ ucfirst($purchaseOrder->freight_status ?? 'Pending') }}
+                         </span>
+                     </td>
                      <td>
                          @if ($purchaseOrder->purchaseFreight)
                              <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $purchaseOrder->purchaseFreight->id) }}','Edit Freight', true)"

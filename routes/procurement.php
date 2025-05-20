@@ -9,7 +9,8 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     PurchaseOrderController,
     PurchaseSamplingController,
     PurchaseSamplingMonitoringController,
-    PurchaseSamplingRequestController
+    PurchaseSamplingRequestController,
+    TicketContractController
 };
 
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
@@ -38,6 +39,10 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('freight', PurchaseFreightController::class);
     Route::post('/get-freight', [PurchaseFreightController::class, 'getList'])->name('get.freight');
+
+    Route::resource('ticket-contracts', TicketContractController::class);
+    Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');
+
     Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('freight.getFreightForm');
 });
 

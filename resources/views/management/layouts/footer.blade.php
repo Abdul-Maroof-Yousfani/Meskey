@@ -348,12 +348,11 @@
             const requiredFields = @json($requiredFields ?? []);
 
             requiredFields.forEach(fieldName => {
-                document.querySelectorAll(`[name="${fieldName}"]`).forEach(input => {
+                document.querySelectorAll(`[name="${fieldName}"]:not(.no-required-mark)`).forEach(input => {
                     let label = document.querySelector(`label[for="${fieldName}"]`);
 
                     if (!label) {
                         label = input.previousElementSibling;
-
                         if (label && label.tagName !== 'LABEL') {
                             label = null;
                         }
@@ -364,8 +363,6 @@
                         asterisk.className = 'text-danger required-asterisk';
                         asterisk.textContent = '*';
                         label.insertBefore(asterisk, label.firstChild);
-
-                        // label.appendChild(asterisk);
                     }
                 });
             });

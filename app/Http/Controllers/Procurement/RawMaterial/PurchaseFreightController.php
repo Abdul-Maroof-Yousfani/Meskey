@@ -22,8 +22,7 @@ class PurchaseFreightController extends Controller
 
     public function getList(Request $request)
     {
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'pending')
-            ->where('company_id', $request->company_id)
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'pending')->where('company_id', $request->company_id)
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -54,10 +53,14 @@ class PurchaseFreightController extends Controller
     public function store(PurchaseFreightRequest $request)
     {
         $data = $request->validated();
-
         $data['company_id'] = $request->company_id;
 
         $freight = PurchaseFreight::create($data);
+
+        if ($request->arrival_purchase_order_id) {
+            ArrivalPurchaseOrder::where('id', $request->arrival_purchase_order_id)
+                ->update(['freight_status' => 'completed']);
+        }
 
         return response()->json([
             'success' => 'Purchase freight created successfully.',
