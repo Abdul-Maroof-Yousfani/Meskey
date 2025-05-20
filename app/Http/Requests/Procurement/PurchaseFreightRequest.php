@@ -30,7 +30,7 @@ class PurchaseFreightRequest extends FormRequest
             'bilty_no' => 'required|string|max:255',
             'station_id' => 'required|exists:stations,id',
             'no_of_bags' => 'required|integer|min:1',
-            'bag_type_id' => 'required|exists:bag_types,id',
+            'bag_condition_id' => 'required|exists:bag_conditions,id',
             'commodity' => 'required|string|max:255',
             'loading_weight' => 'required|numeric|min:0',
             'kanta_charges' => 'nullable|numeric|min:0',
@@ -69,8 +69,8 @@ class PurchaseFreightRequest extends FormRequest
             'no_of_bags.integer' => 'The number of bags must be a whole number.',
             'no_of_bags.min' => 'The number of bags must be at least 1.',
 
-            'bag_type_id.required' => 'The bag type is required.',
-            'bag_type_id.exists' => 'The selected bag type does not exist.',
+            'bag_condition_id.required' => 'The bag condition is required.',
+            'bag_condition_id.exists' => 'The selected bag condition does not exist.',
 
             'commodity.required' => 'The commodity is required.',
 

@@ -87,6 +87,7 @@ class AppServiceProvider extends ServiceProvider
                     'PurchaseOrderController' => \App\Http\Requests\ArrivalPurchaseOrderRequest::class,
                     'IndicativePriceController' => \App\Http\Requests\Master\IndicativePriceRequest::class,
                     'PurchaseOrderController' => \App\Http\Requests\ArrivalPurchaseOrderRequest::class,
+                    'PurchaseFreightController' => \App\Http\Requests\Procurement\PurchaseFreightRequest::class,
                 ];
 
                 $routeAction = request()->route()?->getAction();

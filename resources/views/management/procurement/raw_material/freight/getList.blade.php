@@ -1,39 +1,36 @@
  <table class="table m-0">
      <thead>
          <tr>
-             <th class="col-sm-2">Ticket No.</th>
-             <th class="col-sm-2">Miller</th>
-             <th class="col-sm-2">Truck No.</th>
-             <th class="col-sm-2">Billy No.</th>
-             <th class="col-sm-2">Net Freight</th>
-             <th class="col-sm-2">Status</th>
+             <th class="col-sm-2">Contract No. </th>
+             <th class="col-sm-3">Product</th>
              <th class="col-sm-2">Action</th>
          </tr>
      </thead>
      <tbody>
-         @if (count($freights) != 0)
-             @foreach ($freights as $freight)
-                 <tr>
-                     <td>{{ $freight->arrivalTicket->unique_no ?? 'N/A' }}</td>
-                     <td>{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}</td>
-                     <td>{{ $freight->arrivalTicket->truck_no ?? 'N/A' }}</td>
-                     <td>{{ $freight->arrivalTicket->bilty_no ?? 'N/A' }}</td>
-                     <td>{{ number_format($freight->net_freight, 2) }}</td>
+         @if (count($arrivalPurchaseOrders) != 0)
+             @foreach ($arrivalPurchaseOrders as $purchaseOrder)
+                 <tr class="bg-{{ $purchaseOrder->purchaseFreight ? '' : 'orange' }}">
+                     <td>{{ $purchaseOrder->contract_no ?? 'N/A' }}</td>
+                     <td> {{ $purchaseOrder->product->name ?? 'N/A' }}</td>
                      <td>
-                         <span
-                             class="badge badge-{{ $freight->status == 'pending' ? 'warning' : ($freight->status == 'approved' ? 'success' : 'danger') }}">
-                             {{ ucfirst($freight->status) }}
-                         </span>
-                     </td>
-                     <td>
-                         <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $freight->id) }}','View Freight', true)"
-                             class="info p-1 text-center mr-2 position-relative">
-                             <i class="ft-eye font-medium-3"></i>
-                         </a>
-                         <a onclick="deletemodal('{{ route('raw-material.freight.destroy', $freight->id) }}','{{ route('raw-material.get.freight') }}')"
-                             class="danger p-1 text-center mr-2 position-relative">
-                             <i class="ft-x font-medium-3"></i>
-                         </a>
+                         @if ($purchaseOrder->purchaseFreight)
+                             <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $purchaseOrder->purchaseFreight->id) }}','Edit Freight', true)"
+                                 class="info p-1 text-center mr-2 position-relative">
+                                 <i class="ft-edit font-medium-3"></i>
+                             </a>
+                         @else
+                             <a onclick="openModal(this,'{{ route('raw-material.freight.create', ['arrival_purchase_order_id' => $purchaseOrder->id]) }}','Create Freight', false)"
+                                 class="success p-1 text-center mr-2 position-relative">
+                                 <i class="ft-plus font-medium-3"></i>
+                             </a>
+                         @endif
+
+                         @if ($purchaseOrder->purchaseFreight)
+                             <a onclick="deletemodal('{{ route('raw-material.freight.destroy', $purchaseOrder->purchaseFreight->id) }}','{{ route('raw-material.get.freight') }}')"
+                                 class="danger p-1 text-center mr-2 position-relative">
+                                 <i class="ft-x font-medium-3"></i>
+                             </a>
+                         @endif
                      </td>
                  </tr>
              @endforeach
@@ -65,6 +62,6 @@
 
  <div class="row d-flex" id="paginationLinks">
      <div class="col-md-12 text-right">
-         {{ $freights->links() }}
+         {{ $arrivalPurchaseOrders->links() }}
      </div>
  </div>

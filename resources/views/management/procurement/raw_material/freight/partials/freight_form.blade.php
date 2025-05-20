@@ -1,8 +1,8 @@
-<form action="{{ route('raw-material.purchase-freight.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+<form action="{{ route('raw-material.freight.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
     enctype="multipart/form-data">
     @csrf
     <input type="hidden" name="arrival_purchase_order_id" value="{{ $purchaseOrder->id }}" />
-    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-freight') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight') }}" />
 
     <div class="row form-mar">
         <div class="col-md-6">
@@ -14,7 +14,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Loading Date</label>
-                <input type="date" name="loading_date" class="form-control" required />
+                <input type="date" name="loading_date" class="form-control" />
             </div>
         </div>
 
@@ -22,34 +22,34 @@
             <div class="form-group">
                 <label>Supplier Name</label>
                 <input type="text" name="supplier_name" class="form-control"
-                    value="{{ $purchaseOrder->supplier->name ?? '' }}" required />
+                    value="{{ $purchaseOrder->supplier->name ?? '' }}" readonly />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Broker</label>
                 <input type="text" name="broker" class="form-control"
-                    value="{{ $purchaseOrder->broker->name ?? '' }}" required />
+                    value="{{ $purchaseOrder->broker->name ?? '' }}" />
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="form-group">
                 <label>Truck No</label>
-                <input type="text" name="truck_no" class="form-control" required />
+                <input type="text" name="truck_no" class="form-control" />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Bilty No</label>
-                <input type="text" name="bilty_no" class="form-control" required />
+                <input type="text" name="bilty_no" class="form-control" />
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="form-group">
                 <label>Station</label>
-                <select name="station_id" id="station_id" class="form-control select2" required>
+                <select name="station_id" id="station_id" class="form-control select2">
                     <option value="" hidden>Select Station</option>
                     @foreach ($stations as $station)
                         <option value="{{ $station->id }}">{{ $station->name }}</option>
@@ -61,15 +61,15 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>No of Bags</label>
-                <input type="number" name="no_of_bags" class="form-control" required />
+                <input type="number" name="no_of_bags" class="form-control" />
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="form-group">
-                <label>Bag Type</label>
-                <select class="form-control" name="bag_type_id" required>
-                    <option value="">Select Bag type</option>
+                <label>Bag Condition</label>
+                <select class="form-control" name="bag_condition_id">
+                    <option value="">Select Bag Condition</option>
                     @foreach ($bagTypes as $bagType)
                         <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
                     @endforeach
@@ -88,7 +88,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Loading Weight (kg)</label>
-                <input type="number" step="0.01" name="loading_weight" class="form-control" required />
+                <input type="number" step="0.01" name="loading_weight" class="form-control" />
             </div>
         </div>
 
@@ -102,8 +102,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Freight on Bilty</label>
-                <input type="number" step="0.01" name="freight_on_bilty" class="form-control" value="0"
-                    required />
+                <input type="number" step="0.01" name="freight_on_bilty" class="form-control" value="0" />
             </div>
         </div>
 
@@ -131,14 +130,14 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Bilty Slip</label>
-                <input type="file" name="bilty_slip" class="form-control-file" required />
+                <input type="file" name="bilty_slip" class="form-control-file" />
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label>Weighbridge Slip</label>
-                <input type="file" name="weighbridge_slip" class="form-control-file" required />
+                <input type="file" name="weighbridge_slip" class="form-control-file" />
             </div>
         </div>
 

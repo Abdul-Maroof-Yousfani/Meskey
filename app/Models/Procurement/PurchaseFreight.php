@@ -3,6 +3,7 @@
 namespace App\Models\Procurement;
 
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\BagCondition;
 use App\Models\BagType;
 use App\Models\Master\Station;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ class PurchaseFreight extends Model
 
     protected $fillable = [
         'arrival_purchase_order_id',
+        'company_id',
         'loading_date',
         'supplier_name',
         'broker',
@@ -24,7 +26,7 @@ class PurchaseFreight extends Model
         'bilty_no',
         'station_id',
         'no_of_bags',
-        'bag_type_id',
+        'bag_condition_id',
         'commodity',
         'loading_weight',
         'kanta_charges',
@@ -37,6 +39,10 @@ class PurchaseFreight extends Model
 
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'loading_date'];
 
+    protected $casts = [
+        'loading_date' => 'date',
+    ];
+
     public function purchaseOrder()
     {
         return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
@@ -47,8 +53,8 @@ class PurchaseFreight extends Model
         return $this->belongsTo(Station::class, 'station_id');
     }
 
-    public function bagType()
+    public function bagCondition()
     {
-        return $this->belongsTo(BagType::class, 'bag_type_id');
+        return $this->belongsTo(BagCondition::class, 'bag_condition_id');
     }
 }
