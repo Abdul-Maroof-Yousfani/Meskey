@@ -26,7 +26,7 @@ class InnersampleRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $ArrivalSamplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->when($request->filled('search'), function ($q) use ($request) {
+        $ArrivalSamplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_re_sampling', 'no')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
