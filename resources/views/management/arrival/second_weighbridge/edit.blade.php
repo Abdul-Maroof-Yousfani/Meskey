@@ -121,7 +121,7 @@
                     </div>
                     <input type="text" id="weight_difference" name="weight_difference"
                         placeholder="Weight Difference" readonly class="form-control" autocomplete="off"
-                        value="{{ $ArrivalTicket->net_weight - $ArrivalTicket->arrival_net_weight }}" />
+                        value="{{ $ArrivalTicket->net_weight - ($ArrivalTicket->firstWeighbridge->weight - $SecondWeighbridge->weight) }}" />
                 </div>
             </fieldset>
         </div>
