@@ -11,7 +11,7 @@ use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController,
 use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
 use App\Http\Controllers\FrontHomeController;
 use App\Http\Controllers\HomeController;
-
+use App\Http\Controllers\Procurement\RawMaterial\PaymentRequestController;
 use Harimayco\Menu\Facades\Menu;
 
 
@@ -38,6 +38,7 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
 
 
     Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
+    Route::get('getSlabsByPaymentRequestParams', [PaymentRequestController::class, 'getSlabsByPaymentRequestParams'])->name('getSlabsByPaymentRequestParams');
     Route::get('getInitialSamplingResultByTicketId', [ArrivalLocationController::class, 'getInitialSamplingResultByTicketId'])->name('getInitialSamplingResultByTicketId');
     Route::get('getTicketDataForArrival', [ArrivalSlipController::class, 'getTicketDataForArrival'])->name('getTicketDataForArrival');
 });

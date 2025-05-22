@@ -18,8 +18,6 @@ class ProductSlabType extends Model
         'status',
     ];
 
-
-
     public function slabs()
     {
         return $this->hasMany(ProductSlab::class);

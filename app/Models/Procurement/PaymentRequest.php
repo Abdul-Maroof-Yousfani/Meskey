@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Models\Procurement;
+
+use App\Models\ArrivalPurchaseOrder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class PaymentRequest extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'purchase_order_id',
+        'request_type',
+        'supplier_name',
+        'contract_rate',
+        'min_contract_range',
+        'max_contract_range',
+        'is_loading',
+        'truck_no',
+        'loading_date',
+        'bilty_no',
+        'station',
+        'no_of_bags',
+        'loading_weight',
+        'avg_rate',
+        'bag_weight',
+        'bag_weight_total',
+        'bag_weight_amount',
+        'bag_rate',
+        'bag_rate_amount',
+        'loading_weighbridge_amount',
+        'total_amount',
+        'paid_amount',
+        'remaining_amount',
+        'payment_request_amount',
+        'advance_freight',
+        'freight_pay_request_amount',
+        'notes'
+    ];
+
+    protected $casts = [
+        'loading_date' => 'date',
+        'is_loading' => 'boolean'
+    ];
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(ArrivalPurchaseOrder::class);
+    }
+
+    public function samplingResults()
+    {
+        return $this->hasMany(PaymentRequestSamplingResult::class);
+    }
+}

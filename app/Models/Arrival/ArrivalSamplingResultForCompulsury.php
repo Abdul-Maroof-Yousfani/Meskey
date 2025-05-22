@@ -9,9 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ArrivalSamplingResultForCompulsury extends Model
 {
-
     use HasFactory;
-
 
     protected $table = "arrival_sampling_results_for_compulsury";
 

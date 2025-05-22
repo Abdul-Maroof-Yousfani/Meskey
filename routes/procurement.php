@@ -4,6 +4,7 @@ use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     GateBuyingController,
+    PaymentRequestController,
     PurchaseFreightController,
     PurchaseRequestController,
     PurchaseOrderController,
@@ -42,6 +43,9 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('ticket-contracts', TicketContractController::class);
     Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');
+
+    Route::resource('payment-request', PaymentRequestController::class);
+    Route::post('/get-payment-request', [PaymentRequestController::class, 'getList'])->name('get.payment-request');
 
     Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('freight.getFreightForm');
 });
