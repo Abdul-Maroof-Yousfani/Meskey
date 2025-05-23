@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Acl\{LoginHistory, Company};
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\CompanyLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -42,6 +43,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Company::class, 'company_user_role')
             ->withPivot('role_id')
             ->withTimestamps();
+    }
+
+    public function companyLocation()
+    {
+        return $this->belongsTo(CompanyLocation::class, 'company_location_id');
     }
 
     public function currentCompany()
