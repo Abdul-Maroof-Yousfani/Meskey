@@ -78,7 +78,7 @@ class TicketController extends Controller
 
         $truckNo = strtoupper($requestData['truck_no'] ?? null);
         $requestData['truck_no'] = $truckNo;
-        $truckFormat = auth()->user()->companyLocation->truck_no_format ?? null;
+        $truckFormat = auth()->user()->companyLocation->truck_no_format ?? 0;
 
         TruckNumberValidator::validate($truckNo, $truckFormat);
 

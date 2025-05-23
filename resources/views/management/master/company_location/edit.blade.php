@@ -18,23 +18,7 @@
                     class="form-control" />
             </div>
         </div>
-        <div class="col-6 truck-format-section">
-            <div class="form-group">
-                <label>Truck Number Format:</label>
-                <select class="form-control select2" name="truck_no_format" id="truckFormat">
-                    <option value="">N/A</option>
-                    <option value="ABC-1234" {{ $company_location->truck_no_format == 'ABC-1234' ? 'selected' : '' }}>
-                        ABC-1234</option>
-                    <option value="1234-ABC" {{ $company_location->truck_no_format == '1234-ABC' ? 'selected' : '' }}>
-                        1234-ABC</option>
-                    <option value="AB-1234" {{ $company_location->truck_no_format == 'AB-1234' ? 'selected' : '' }}>
-                        AB-1234</option>
-                    <option value="1234-AB" {{ $company_location->truck_no_format == '1234-AB' ? 'selected' : '' }}>
-                        1234-AB</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-6">
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>
                 <select name="status" class="form-control">
@@ -48,6 +32,20 @@
             <div class="form-group">
                 <label>Description:</label>
                 <textarea name="description" placeholder="Description" class="form-control">{{ $company_location->description }}</textarea>
+            </div>
+        </div>
+        <div class="col-12" bis_skin_checked="1">
+            <h6 class="header-heading-sepration">
+                Settings
+            </h6>
+        </div>
+        <div class="col-6">
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" @checked($company_location->truck_no_format)
+                        id="truckFormatCheck" name="truck_no_format">
+                    <label class="custom-control-label" for="truckFormatCheck">Enable Truck Number Format</label>
+                </div>
             </div>
         </div>
     </div>

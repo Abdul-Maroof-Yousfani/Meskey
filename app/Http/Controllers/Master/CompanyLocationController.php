@@ -51,7 +51,10 @@ class CompanyLocationController extends Controller
     public function store(CompanyLocationRequest $request)
     {
         $data = $request->validated();
-        $arrival_locations = CompanyLocation::create($request->all());
+        $data = $request->all();
+
+        $data['truck_no_format'] = ($request->truck_no_format ?? 'off') == 'on' ? 1 : 0;
+        $arrival_locations = CompanyLocation::create($data);
 
         return response()->json(['success' => 'Company Location created successfully.', 'data' => $arrival_locations], 201);
     }
@@ -71,6 +74,10 @@ class CompanyLocationController extends Controller
     public function update(CompanyLocationRequest $request, CompanyLocation $company_location)
     {
         $data = $request->validated();
+        $data = $request->all();
+
+        $data['truck_no_format'] = ($request->truck_no_format ?? 'off') == 'on' ? 1 : 0;
+
         $company_location->update($data);
         return response()->json(['success' => 'Company Location updated successfully.', 'data' => $company_location], 200);
     }

@@ -45,7 +45,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('qc_product')->nullable();
             $table->unsignedBigInteger('truck_size_range_id')->nullable();
             $table->enum('line_type', ['bari', 'choti'])->nullable();
-            $table->integer('bag_weight')->nullable();
+            $table->decimal('bag_weight', 10, 2)->nullable();
             $table->decimal('bag_rate', 10, 2)->nullable();
 
             // Delivery information
@@ -78,6 +78,8 @@ return new class extends Migration {
             // Other fields
             $table->boolean('is_replacement')->default(false);
             $table->text('weighbridge_from')->nullable();
+            $table->string('freight_status')->nullable();
+
             $table->text('remarks')->nullable();
             $table->unsignedBigInteger('account_of')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();

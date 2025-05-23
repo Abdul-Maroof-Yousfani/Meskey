@@ -9,7 +9,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('company_locations', function (Blueprint $table) {
-            $table->string('truck_no_format')->nullable()->after('code');
+            $table->tinyInteger('truck_no_format')->default(0)->nullable()->after('code');
         });
     }
 
