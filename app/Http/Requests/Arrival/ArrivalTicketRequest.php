@@ -37,7 +37,7 @@ class ArrivalTicketRequest extends FormRequest
             'bags' => 'required|string|max:255',
             'loading_date' => 'nullable|date',
             'remarks' => 'nullable|string|max:500',
-            'station_id' => 'required|exists:stations,id',
+            'station' => 'required|string|max:255',
             'status' => 'nullable|in:active,inactive',
             'first_weight' => 'required|numeric',
             'second_weight' => 'required|numeric',

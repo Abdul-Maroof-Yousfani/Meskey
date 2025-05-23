@@ -54,8 +54,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Station:</label>
-                <input type="text" name="station_id" placeholder="Station" class="form-control" autocomplete="off"
-                    value="{{ $arrivalTicket->station->name ?? 'N/A' }}" />
+                <input type="text" name="station" placeholder="Station" class="form-control" autocomplete="off"
+                    value="{{ $arrivalTicket->station_name ?? 'N/A' }}" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -203,7 +203,7 @@
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
-        initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
         //  function initializeDynamicSelect2(selector, tableName, columnName, idColumn = 'id', enableTags = false, isMultiple = true) {
 

@@ -87,7 +87,7 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Station:</label>
-                 <select name="station_id" id="station_id" class="form-control select2">
+                 <select name="station" id="station_id" class="form-control select2">
                      <option value="" hidden>Station</option>
                  </select>
              </div>
@@ -247,7 +247,7 @@
          //  initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#station_id', 'stations', 'name', 'id', false, false);
+         initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
          $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
 

@@ -46,6 +46,7 @@ class ArrivalTicket extends Model
         'bilty_no',
         'bags',
         'station_id',
+        'station_name',
         'loading_date',
         'loading_weight',
         'remarks',

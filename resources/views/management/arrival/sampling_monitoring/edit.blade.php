@@ -125,7 +125,7 @@
                             <label>Station:</label>
                             <input type="text" name="station_id" placeholder="Station" class="form-control" disabled
                                 autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->station->name ?? 'N/A' }}" />
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->station_name ?? 'N/A' }}" />
                         </div>
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">

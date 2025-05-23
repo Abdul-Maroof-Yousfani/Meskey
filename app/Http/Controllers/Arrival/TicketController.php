@@ -7,6 +7,7 @@ use App\Http\Requests\Arrival\ArrivalTicketRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Miller;
+use App\Models\Master\Station;
 use App\Models\Master\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -88,6 +89,12 @@ class TicketController extends Controller
             $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
             $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
             $requestData['accounts_of_name'] = $requestData['accounts_of'];
+        }
+
+        if (!empty($requestData['station'])) {
+            $station = Station::where('name', $requestData['station'])->first();
+            $requestData['station_id'] = $station ? $station->id : null;
+            $requestData['station_name'] = $requestData['station'];
         }
 
         if (!empty($requestData['broker_name'])) {
