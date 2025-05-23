@@ -12,6 +12,7 @@
     $suggestedValueKgs = 0;
 
     $previousInnerRequest = $innerRequestsData[0] ?? null;
+    $lastInnerRequest = !empty($innerRequestsData) ? $innerRequestsData[count($innerRequestsData) - 1] : null;
 @endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
@@ -559,18 +560,6 @@
                     <div class="striped-rows">
                         @if (count($innerData['compulsuryResults']) != 0)
                             @foreach ($innerData['compulsuryResults'] as $slab)
-                                {{-- <div class="form-group row">
-                                    <label
-                                        class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
-                                    <div class="col-md-6 QcResult">
-                                        <input type="text" readonly class="form-control"
-                                            value="{{ $slab->compulsory_checklist_value }}">
-                                    </div>
-                                    <div class="col-md-2 QcResult">
-                                        <input type="text" readonly class="form-control"
-                                            value="{{ $slab->applied_deduction ?? 0 }}">
-                                    </div>
-                                </div> --}}
                                 <div class="form-group row">
                                     <input type="hidden" readonly value="{{ $slab->qcParam->id }}">
                                     <label
@@ -724,10 +713,12 @@
                             @php
                                 $previousChecklistValue = null;
 
-                                if ($previousInnerRequest) {
-                                    foreach ($previousInnerRequest['results'] as $prevSlab) {
-                                        if ($prevSlab->slabType->id == $slab->slabType->id) {
-                                            $previousChecklistValue = $prevSlab->checklist_value;
+                                if (!empty($innerRequestsData)) {
+                                    $lastInnerRequestData = $innerRequestsData[count($innerRequestsData) - 1];
+
+                                    foreach ($lastInnerRequestData['results'] as $lastSlab) {
+                                        if ($lastSlab->slabType->id == $slab->slabType->id) {
+                                            $previousChecklistValue = $lastSlab->checklist_value;
                                             break;
                                         }
                                     }
