@@ -8,18 +8,13 @@ class TruckNumberValidator
 {
     public static function validate($truckNo, $format)
     {
-        if (!$format || !$truckNo) return;
+        if ($format === 0 || empty($truckNo)) {
+            return;
+        }
 
-        $formatPatterns = [
-            'ABC-1234' => '/^[A-Z]{3}-\d{4}$/',
-            '1234-ABC' => '/^\d{4}-[A-Z]{3}$/',
-            'AB-1234' => '/^[A-Z]{2}-\d{4}$/',
-            '1234-AB' => '/^\d{4}-[A-Z]{2}$/',
-        ];
-
-        if (isset($formatPatterns[$format]) && !preg_match($formatPatterns[$format], $truckNo)) {
+        if ($format === 1 && !preg_match('/^[A-Za-z]+-\d+$/', $truckNo)) {
             throw ValidationException::withMessages([
-                'truck_no' => ["Truck number must be in the format: $format"],
+                'truck_no' => ["Truck number must contain alphabets followed by a dash and then numbers (e.g., ABC-123)"],
             ]);
         }
     }
