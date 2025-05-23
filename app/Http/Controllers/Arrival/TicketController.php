@@ -80,7 +80,7 @@ class TicketController extends Controller
         $requestData['truck_no'] = $truckNo;
         $truckFormat = auth()->user()->companyLocation->truck_no_format ?? 0;
 
-        TruckNumberValidator::validate($truckNo, $truckFormat);
+        // TruckNumberValidator::validate($truckNo, $truckFormat);
 
         $previouscheck = ArrivalTicket::where('truck_no', $requestData['truck_no'])
             ->where('bilty_no', $requestData['bilty_no']);
