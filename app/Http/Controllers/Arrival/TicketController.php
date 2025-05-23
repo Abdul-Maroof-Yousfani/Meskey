@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Arrival;
 
+use App\Helpers\TruckNumberValidator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Arrival\ArrivalTicketRequest;
 use App\Models\Arrival\ArrivalTicket;
@@ -74,6 +75,12 @@ class TicketController extends Controller
     {
         $request->validated();
         $requestData = $request->all();
+
+        $truckNo = strtoupper($requestData['truck_no'] ?? null);
+        $requestData['truck_no'] = $truckNo;
+        $truckFormat = auth()->user()->companyLocation->truck_no_format ?? null;
+
+        TruckNumberValidator::validate($truckNo, $truckFormat);
 
         $previouscheck = ArrivalTicket::where('truck_no', $requestData['truck_no'])
             ->where('bilty_no', $requestData['bilty_no']);

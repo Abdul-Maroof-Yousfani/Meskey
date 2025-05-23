@@ -95,7 +95,8 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Truck No:</label>
-                 <input type="text" name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off" />
+                 <input type="text" name="truck_no" placeholder="Truck No" class="form-control text-uppercase"
+                     autocomplete="off" />
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
