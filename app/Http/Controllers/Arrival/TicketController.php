@@ -73,24 +73,7 @@ class TicketController extends Controller
      */
     public function store(ArrivalTicketRequest $request)
     {
-        $request->validated();
-        $requestData = $request->all();
-
-        $truckNo = strtoupper($requestData['truck_no'] ?? null);
-        $requestData['truck_no'] = $truckNo;
-        $truckFormat = auth()->user()->companyLocation->truck_no_format ?? 0;
-
-        TruckNumberValidator::validate($truckNo, $truckFormat);
-
-        $previouscheck = ArrivalTicket::where('truck_no', $requestData['truck_no'])
-            ->where('bilty_no', $requestData['bilty_no']);
-
-        if ($previouscheck->exists()) {
-            $viewLink = ' <a href="' . route('ticket.show', $previouscheck->first()->id) . '" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
-            throw ValidationException::withMessages([
-                'truck_no' => ['Truck with this Bilty No already exists.' . $viewLink],
-            ]);
-        }
+        $requestData = $request->validated();
 
         if (!empty($requestData['accounts_of'])) {
             $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
