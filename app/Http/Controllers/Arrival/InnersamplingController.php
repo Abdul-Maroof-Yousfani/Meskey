@@ -253,6 +253,7 @@ class InnersamplingController extends Controller
             });
 
         $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+        $compulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
 
         $results->map(function ($item) use ($slabs) {
             $slab = $slabs->get($item->product_slab_type_id);
@@ -260,7 +261,7 @@ class InnersamplingController extends Controller
             return $item;
         });
 
-        return view('management.arrival.inner_sampling.edit', compact('samplingRequests', 'products', 'results', 'arrivalSamplingRequest'));
+        return view('management.arrival.inner_sampling.edit', compact('samplingRequests', 'products', 'results', 'compulsuryResults', 'arrivalSamplingRequest'));
     }
 
     /**

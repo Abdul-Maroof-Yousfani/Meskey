@@ -804,3 +804,38 @@ tr.editing {
 .layout-dark .div-box-b {
   background: #ececec33;
 }
+
+#current-inner .checklist-increase {
+  background-color: #ffcccca1 !important;
+  border: 1px solid #ff99999e !important;
+}
+
+#current-inner .checklist-decrease {
+  background-color: #87cf874a !important;
+  border: 1px solid #87cf87 !important;
+}
+
+#current-inner .checklist-increase ~ div > span {
+  background-color: #ffcccca1 !important;
+  border: 1px solid #ff99999e !important;
+}
+
+#current-inner .checklist-decrease ~ div > span {
+  background-color: #87cf874a !important;
+  border: 1px solid #87cf87 !important;
+}
+
+.checklist-same {
+  /* background-color: #ffffcc!important;
+  border: 1px solid #ffff99; */
+}
+
+#current-inner .checklist-value-comparison {
+  font-size: 0.8rem !important;
+  color: #666 !important;
+  display: block;
+}
+
+.checklist-value-comparison {
+  display: none !important;
+}

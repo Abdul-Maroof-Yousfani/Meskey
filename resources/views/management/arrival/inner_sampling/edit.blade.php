@@ -67,6 +67,31 @@
                 </div>
             @endif
         </div>
+        <div class="striped-rows">
+            @if (count($compulsuryResults) != 0)
+                @foreach ($compulsuryResults as $slab)
+                    <div class="form-group row">
+                        <input type="hidden" name="initial_compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
+                        <label class="col-md-3 label-control font-weight-bold"
+                            for="striped-form-1">{{ $slab->qcParam->name }}</label>
+                        <div class="col-md-9">
+                            @if ($slab->qcParam->type == 'dropdown')
+                                <input type="text" id="striped-form-1" readonly class="form-control"
+                                    name="initial_compulsory_checklist_value[]"
+                                    value="{{ $slab->compulsory_checklist_value }}" placeholder="%">
+                            @else
+                                <textarea type="text" id="striped-form-1" readonly class="form-control" name="initial_compulsory_checklist_value[]"
+                                    placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="alert alert-warning">
+                    No Compulsory Slabs Found
+                </div>
+            @endif
+        </div>
     </div>
 
     <div class="row ">

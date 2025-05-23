@@ -13,7 +13,6 @@
 
     $previousInnerRequest = $innerRequestsData[0] ?? null;
 @endphp
-
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
@@ -466,18 +465,61 @@
                     <div class="striped-rows">
                         @if (count($innerData['results']) != 0)
                             @foreach ($innerData['results'] as $slab)
+                                @php
+                                    $previousChecklistValue = null;
+
+                                    if ($index > 0) {
+                                        foreach ($innerRequestsData[$index - 1]['results'] as $prevSlab) {
+                                            if ($prevSlab->slabType->id == $slab->slabType->id) {
+                                                $previousChecklistValue = $prevSlab->checklist_value;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (
+                                        $previousChecklistValue === null &&
+                                        $initialRequestForInnerReq &&
+                                        $initialRequestResults
+                                    ) {
+                                        foreach ($initialRequestResults as $initialSlab) {
+                                            if ($initialSlab->slabType->id == $slab->slabType->id) {
+                                                $previousChecklistValue = $initialSlab->checklist_value;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    $comparisonClass = '';
+                                    if ($previousChecklistValue !== null) {
+                                        if ($slab->checklist_value > $previousChecklistValue) {
+                                            $comparisonClass = 'checklist-increase';
+                                        } elseif ($slab->checklist_value < $previousChecklistValue) {
+                                            $comparisonClass = 'checklist-decrease';
+                                        } else {
+                                            $comparisonClass = 'checklist-same';
+                                        }
+                                    }
+                                @endphp
+
                                 <div class="form-group row">
                                     <label
                                         class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                     <div class="col-md-3 QcResult">
                                         <div class="input-group mb-0">
-                                            <input type="text" readonly class="form-control"
+                                            <input type="text" readonly
+                                                class="form-control {{ $comparisonClass }}"
                                                 value="{{ $slab->checklist_value }}">
                                             <div class="input-group-append">
                                                 <span
                                                     class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                             </div>
                                         </div>
+                                        @if ($previousChecklistValue !== null)
+                                            <span class="checklist-value-comparison">
+                                                Previous: {{ $previousChecklistValue }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <div class="col-md-3 Suggested">
                                         <div class="input-group mb-0">
@@ -679,7 +721,45 @@
                                     ? ($suggestedValue += $getDeductionSuggestion->deduction_value ?? 0)
                                     : ($suggestedValueKgs += $getDeductionSuggestion->deduction_value ?? 0);
                             @endphp
+                            @php
+                                $previousChecklistValue = null;
 
+                                if ($previousInnerRequest) {
+                                    foreach ($previousInnerRequest['results'] as $prevSlab) {
+                                        if ($prevSlab->slabType->id == $slab->slabType->id) {
+                                            $previousChecklistValue = $prevSlab->checklist_value;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (
+                                    $previousChecklistValue === null &&
+                                    $initialRequestForInnerReq &&
+                                    $initialRequestResults
+                                ) {
+                                    foreach ($initialRequestResults as $initialSlab) {
+                                        if ($initialSlab->slabType->id == $slab->slabType->id) {
+                                            $previousChecklistValue = $initialSlab->checklist_value;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                $displayValue =
+                                    ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
+
+                                $comparisonClass = '';
+                                if ($previousChecklistValue !== null) {
+                                    if ($displayValue > $previousChecklistValue) {
+                                        $comparisonClass = 'checklist-increase';
+                                    } elseif ($displayValue < $previousChecklistValue) {
+                                        $comparisonClass = 'checklist-decrease';
+                                    } else {
+                                        $comparisonClass = 'checklist-same';
+                                    }
+                                }
+                            @endphp
                             <div class="form-group row">
                                 <input type="hidden" name="product_slab_type_id[]"
                                     value="{{ $slab->slabType->id }}">
@@ -687,13 +767,19 @@
                                     class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
                                     <div class="input-group mb-0">
-                                        <input type="text" class="form-control" name="checklist_value[]"
-                                            value="{{ $displayValue }}" placeholder="%" readonly>
+                                        <input type="text" class="form-control {{ $comparisonClass }}"
+                                            name="checklist_value[]" value="{{ $displayValue }}" placeholder="%"
+                                            readonly>
                                         <div class="input-group-append">
                                             <span
                                                 class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                         </div>
                                     </div>
+                                    @if ($previousChecklistValue !== null)
+                                        <span class="checklist-value-comparison">
+                                            Previous: {{ $previousChecklistValue }}
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="col-md-3 Suggested">
                                     <div class="input-group mb-0">
