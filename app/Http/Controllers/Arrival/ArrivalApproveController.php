@@ -55,7 +55,6 @@ $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'comp
     ->leftJoin('arrival_sampling_requests', function($join) {
         $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
              ->where('sampling_type', 'inner')
-             ->where('is_done', 'no')
              ->where('approved_status', 'pending');
     })
     ->whereNull('arrival_sampling_requests.id') // This excludes tickets that matched the join conditions
