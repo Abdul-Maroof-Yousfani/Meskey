@@ -6,14 +6,16 @@ use App\Models\Acl\Company;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
-use Auth;
+use Illuminate\Support\Facades\Auth;
+
 class CompanyLocation extends Model
 {
     use SoftDeletes;
 
-     protected $fillable = [
+    protected $fillable = [
         'company_id',
         'name',
+        'truck_no_format',
         'code',
         'description',
         'is_protected',
@@ -23,7 +25,6 @@ class CompanyLocation extends Model
         'deleted_by',
     ];
 
-    // Auto-fill created_by, updated_by, deleted_by
     protected static function boot()
     {
         parent::boot();

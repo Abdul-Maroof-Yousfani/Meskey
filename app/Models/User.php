@@ -12,10 +12,10 @@ use App\Models\Master\Account\Transaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use Auth;
-use Hash;
 
 class User extends Authenticatable
 {
@@ -27,7 +27,7 @@ class User extends Authenticatable
      * @var array
 
      */
-    protected $fillable = ['name', 'email', 'password', 'user_type', 'status', 'current_company_id'];
+    protected $fillable = ['name', 'email', 'password', 'user_type', 'status', 'current_company_id', 'company_location_id'];
 
     /**
      * The attributes that should be hidden for serialization.

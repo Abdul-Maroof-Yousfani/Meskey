@@ -43,6 +43,7 @@ class CompanyLocationRequest extends FormRequest
                     ->ignore($this->company_location)
             ],
             'description' => 'nullable|string|max:500',
+            'truck_no_format' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ];
     }
@@ -59,6 +60,7 @@ class CompanyLocationRequest extends FormRequest
             'code.required' => 'The Company Location code is required.',
             'code.unique' => 'The code has already been taken for the selected company.',
             'description.max' => 'The description must not exceed 500 characters.',
+            'truck_no_format.max' => 'The truck number format must not exceed 500 characters.',
             'status.required' => 'The status is required.',
             'status.in' => 'The status must be either active or inactive.',
         ];

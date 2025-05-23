@@ -26,7 +26,7 @@ class CompanyLocationController extends Controller
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm)
-                ->orWhere('code', 'like', $searchTerm);
+                    ->orWhere('code', 'like', $searchTerm);
             });
         })
             ->where('company_id', $request->company_id)
@@ -84,6 +84,4 @@ class CompanyLocationController extends Controller
         $company_location->delete();
         return response()->json(['success' => 'Company Location deleted successfully.'], 200);
     }
-
-
 }

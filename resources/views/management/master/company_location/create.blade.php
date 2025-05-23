@@ -5,28 +5,40 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Name" class="form-control"  />
+                <input type="text" name="name" placeholder="Name" class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Code:</label>
-                <input type="text" name="code" placeholder="Name" class="form-control"  />
+                <input type="text" name="code" placeholder="Name" class="form-control" />
+            </div>
+        </div>
+        <div class="col-6 truck-format-section">
+            <div class="form-group">
+                <label>Truck Number Format:</label>
+                <select class="form-control select2" name="truck_no_format" id="truckFormat">
+                    <option value="">N/A</option>
+                    <option value="ABC-1234">ABC-1234</option>
+                    <option value="1234-ABC">1234-ABC</option>
+                    <option value="AB-1234">AB-1234</option>
+                    <option value="1234-AB">1234-AB</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="form-group">
+                <label>Status:</label>
+                <select class="form-control select2" name="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Status:</label>
-                <select class="form-control" name="status" >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
             </div>
         </div>
     </div>
@@ -37,3 +49,8 @@
         </div>
     </div>
 </form>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
