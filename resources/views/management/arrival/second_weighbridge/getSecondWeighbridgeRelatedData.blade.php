@@ -159,7 +159,7 @@ $(document).ready(function() {
             // Calculate difference with loaded weight if exists
             if ($('#loaded_net_weight').length) {
                 const loadedNet = parseFloat($('#loaded_net_weight').val()) || 0;
-                const difference = loadedNet - weighbridgeNet;
+                const difference = weighbridgeNet - loadedNet;
                 $('#weight_difference').val(difference.toFixed(2));
             }
         });

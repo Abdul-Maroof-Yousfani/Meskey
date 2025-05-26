@@ -4,7 +4,6 @@ namespace App\Models\Procurement;
 
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\BagCondition;
-use App\Models\BagType;
 use App\Models\Master\Station;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
