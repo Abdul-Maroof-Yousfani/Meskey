@@ -37,7 +37,8 @@
             <div class=" col-lg-12 col-md-12 col-sm-12 col-xs-12 auth-img-bg p-3">
                 <div class="flex-head">
                     <div class="logo">
-                        <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}" alt=""class="img-fluid">
+                        <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}"
+                            alt=""class="img-fluid">
                         <p>Original / Duplicate</p>
                     </div>
                     <div class="logo-cont">
@@ -128,7 +129,9 @@
                             </td>
                             <td style=" padding: 8px;border: none;">Bill/T No.</td>
                             <td style="padding: 8px; border: none;" colspan="2">
-                                <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->bilty_no }}" readonly>
+                                <input type="text"
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->bilty_no }}"
+                                    readonly>
                             </td>
                         </tr>
                         <tr>
@@ -226,7 +229,9 @@
                             </td>
                             <td style=" padding: 8px;border: none; ">U/L Slip #</td>
                             <td style="padding: 8px; border: none;" colspan="2">
-                                <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->unique_no ?? 'N/A' }}" readonly>
+                                <input type="text"
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->unique_no ?? 'N/A' }}"
+                                    readonly>
                             </td>
                         </tr>
 
@@ -253,7 +258,7 @@
                             </td>
                         </tr>
                     </table>
-           
+
                     <div class="row">
                         <div class=" col-lg-8 col-md-8 col-sm-8 col-xs-8">
                             <!-- Freight Section -->
@@ -264,9 +269,12 @@
                                     <td style="padding:8px;border:none;"> Filling</td>
                                     <td style=" padding: 8px;">
                                         <div style="display: flex; align-items: center; width: 100%;">
-                                            <input type="text" style="width: 79px; border: 1px solid #ddd; padding: 10px 10px; text-align: center;"
-                                                value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }}" readonly> <span style="padding: 0 5px;">× 10 =</span>
-                                                <input type="text" style="width:75px;border:1px solid #ddd;padding:10px 10px;text-align:center;"
+                                            <input type="text"
+                                                style="width: 79px; border: 1px solid #ddd; padding: 10px 10px; text-align: center;"
+                                                value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }}"
+                                                readonly> <span style="padding: 0 5px;">× 10 =</span>
+                                            <input type="text"
+                                                style="width:75px;border:1px solid #ddd;padding:10px 10px;text-align:center;"
                                                 value="{{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"readonly>
                                         </div>
                                     </td>
@@ -380,12 +388,12 @@
                                     </td>
                                 </tr>
                             </table>
-                           
+
                         </div>
                         <div class=" col-lg-4 col-md-4 col-sm-4 col-xs-4">
                             <!-- Weights Section -->
                             <div style="margin-top:5px;font-weight:bold;padding:5px 0;"> Weights</div>
-                             <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
+                            <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse;">
                                 {{-- <tr>
                                     <td style=" padding: 8px;border: none;">Gross
@@ -416,29 +424,20 @@
                                     <td style="padding: 8px;border: none;">Avg. Weight</td>
                                     <td style="padding: 8px;border: none;" colspan="5">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
+                                            value="{{ number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->bags, 2) ?? 'N/A' }}"
                                             readonly>
                                     </td>
                                 </tr>
-                                {{-- <tr>
-                                    <td style=" padding: 8px;border: none;">
-                                        Arrival
-                                        Weight</td>
-                                    <td style=" padding: 8px;border: none;">
-                                        <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}" readonly>
-                                    </td>
-                                </tr> --}}
                             </table>
-
-
 
                             <div>
                                 @if ($isCompulsury || $isSlabs || $showLumpSum)
                                     <!-- Sampling Results Section -->
-                                   <div style="margin-top:15px;font-weight:bold;padding:5px 0;"> Sampling Results </div>
-                                   <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
-                                    <table  style=" width: 100%; border-collapse:collapse;margin-top:10px;     border: 1px solid #add;">
+                                    <div style="margin-top:15px;font-weight:bold;padding:5px 0;"> Sampling Results
+                                    </div>
+                                    <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
+                                    <table
+                                        style=" width: 100%; border-collapse:collapse;margin-top:10px;     border: 1px solid #add;">
                                         <thead>
                                             <tr>
                                                 <th style="padding: 8px;border: 1px solid #ddd;">
@@ -448,12 +447,13 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+                                            @if ($showLumpSum)
                                                 <tr>
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
                                                         Lumpsum Deduction
                                                     </td>
-                                                    <td style="padding: 8px;border: 1px solid #ddd; text-align: center;">
+                                                    <td
+                                                        style="padding: 8px;border: 1px solid #ddd; text-align: center;">
                                                         {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
                                                         Lumpsum)
                                                     </td>
@@ -516,10 +516,6 @@
                                     </table>
                                 @endif
                             </div>
-
-
-
-
                         </div>
                     </div>
 
@@ -528,7 +524,6 @@
                     <br>
                     <br>
 
-                    <!-- Footer Section -->
                     <div class="signature">
 
                         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
@@ -577,7 +572,6 @@
     </div>
 </form>
 
-<!-- print  -->
 <script>
     function readURL(input) {
         if (input.files && input.files[0]) {

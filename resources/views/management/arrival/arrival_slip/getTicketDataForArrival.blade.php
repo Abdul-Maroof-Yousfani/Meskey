@@ -147,7 +147,8 @@
          <div class="form-group">
              <label>Avg. Weight</label>
              <input type="text" class="form-control bg-light"
-                 value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}" readonly>
+                 value="{{ number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->bags, 2) ?? 'N/A' }}"
+                 readonly>
          </div>
      </div>
 
@@ -233,7 +234,7 @@
          </div>
      </div>
 
-     @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+     @if ($showLumpSum)
          <tr>
              <td style="padding: 8px; border: 1px solid #ddd;">
                  Lumpsum Deduction
