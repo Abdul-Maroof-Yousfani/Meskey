@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('bilty_no');
             $table->foreignId('station_id')->nullable()->constrained();
             $table->integer('no_of_bags');
-            $table->foreignId('bag_type_id')->nullable()->constrained();
+            $table->foreignId('bag_condition_id')->nullable()->constrained('bag_conditions');
             $table->string('commodity');
             $table->decimal('loading_weight', 10, 2);
             $table->decimal('kanta_charges', 10, 2)->default(0);
