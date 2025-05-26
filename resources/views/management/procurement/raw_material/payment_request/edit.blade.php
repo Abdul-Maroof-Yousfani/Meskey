@@ -1,32 +1,21 @@
 @php
-    $paymentRequest = $paymentRequest ?? null;
-    $purchaseOrder = $paymentRequest->purchaseOrder ?? null;
-    $samplingResults = $paymentRequest->samplingResults ?? collect();
+    $paymentRequestData = $paymentRequestData ?? null;
+    $purchaseOrder = $paymentRequestData->purchaseOrder ?? null;
 
-    $hasLoadingWeight = $paymentRequest->is_loading ?? false;
-    $isSlabs = $samplingResults->whereNotNull('slab_type_id')->isNotEmpty();
-    $isCompulsury = $samplingResults->whereNull('slab_type_id')->isNotEmpty();
+    $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
+    $freightRequest = $paymentRequestData->paymentRequests->where('request_type', 'freight_payment')->first();
+
+    $hasLoadingWeight = $paymentRequestData->is_loading ?? false;
+    $isSlabs = $paymentRequestData->samplingResults->whereNotNull('slab_type_id')->isNotEmpty();
+    $isCompulsury = $paymentRequestData->samplingResults->whereNull('slab_type_id')->isNotEmpty();
     $showLumpSum = false;
-
-    $totalDeductions =
-        $samplingResults->sum('deduction_amount') +
-        ($paymentRequest->bag_weight_amount ?? 0) +
-        ($paymentRequest->bag_rate_amount ?? 0) +
-        ($paymentRequest->loading_weighbridge_amount ?? 0);
-
-    $amount = $paymentRequest->total_amount ?? 0;
-    $paidAmount = $paymentRequest->paid_amount ?? 0;
-    $remaining = $paymentRequest->remaining_amount ?? 0;
-    $advanceFreight = $paymentRequest->advance_freight ?? 0;
 @endphp
-
-
-<form action="{{ route('raw-material.payment-request.update', $paymentRequest->id) }}" method="POST" id="ajaxSubmit">
+<form action="{{ route('raw-material.payment-request.update', $paymentRequestData->id) }}" method="POST" id="ajaxSubmit">
     @csrf
     @method('PUT')
-
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request') }}" />
     <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id ?? '' }}">
+
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -37,7 +26,7 @@
             <div class="form-group">
                 <label>Supplier Name</label>
                 <input type="text" class="form-control" name="supplier_name"
-                    value="{{ $paymentRequest->supplier_name ?? ($purchaseOrder->supplier_name ?? ($purchaseOrder->supplier->name ?? 'N/A')) }}"
+                    value="{{ $paymentRequestData->supplier_name ?? ($purchaseOrder->supplier_name ?? ($purchaseOrder->supplier->name ?? 'N/A')) }}"
                     readonly>
             </div>
         </div>
@@ -46,7 +35,7 @@
             <div class="form-group">
                 <label>Contract #</label>
                 <input type="text" class="form-control" name="contract_no"
-                    value="{{ $paymentRequest->contract_no ?? ($purchaseOrder->contract_no ?? 'N/A') }}" readonly>
+                    value="{{ $paymentRequestData->contract_no ?? ($purchaseOrder->contract_no ?? 'N/A') }}" readonly>
             </div>
         </div>
 
@@ -54,7 +43,7 @@
             <div class="form-group">
                 <label>Contract Rate</label>
                 <input type="text" class="form-control" name="contract_rate"
-                    value="{{ $paymentRequest->contract_rate ?? ($purchaseOrder->rate_per_kg ?? 0) }}" readonly>
+                    value="{{ $paymentRequestData->contract_rate ?? ($purchaseOrder->rate_per_kg ?? 0) }}" readonly>
             </div>
         </div>
 
@@ -62,12 +51,12 @@
             <div class="form-group">
                 <label>Contract Range</label>
                 <input type="text" class="form-control" name="contract_range"
-                    value="{{ $paymentRequest->min_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->min_quantity }} - {{ $paymentRequest->max_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->max_quantity }}"
+                    value="{{ $paymentRequestData->min_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->min_quantity }} - {{ $paymentRequestData->max_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->max_quantity }}"
                     readonly>
                 <input type="hidden" name="min_contract_range"
-                    value="{{ $paymentRequest->min_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->min_quantity }}">
+                    value="{{ $paymentRequestData->min_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->min_quantity }}">
                 <input type="hidden" name="max_contract_range"
-                    value="{{ $paymentRequest->max_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->max_quantity }}">
+                    value="{{ $paymentRequestData->max_contract_range ?? $purchaseOrder->rate_per_kg * $purchaseOrder->max_quantity }}">
             </div>
         </div>
     </div>
@@ -90,7 +79,9 @@
                     {{ $hasLoadingWeight ? '' : 'disabled' }}>
                 <label class="form-check-label" for="without_loading">Without Loading</label>
             </div>
+            <input type="hidden" name="loading_type" value="{{ $hasLoadingWeight ? 'loading' : 'without_loading' }}">
         </div>
+
 
         @if ($hasLoadingWeight)
             <div id="loading-section" class="row w-100 mx-auto px-0">
@@ -317,7 +308,7 @@
                     <div class="form-group">
                         <label>Amount</label>
                         <input type="text" class="form-control" name="total_amount"
-                            value="{{ $paymentRequest->total_amount ?? $amount }}" readonly>
+                            value="{{ $paymentRequestData->total_amount }}" readonly>
                     </div>
                 </div>
 
@@ -325,27 +316,27 @@
                     <div class="form-group">
                         <label>Paid Amount</label>
                         <input type="number" step="0.01" class="form-control" name="paid_amount"
-                            value="{{ $paymentRequest->paid_amount ?? $paidAmount }}"
-                            placeholder="Enter paid amount">
+                            value="{{ $paymentRequestData->paid_amount }}" placeholder="Enter paid amount">
                     </div>
                 </div>
+
                 <div class="col-12">
                     <hr class="border">
                 </div>
+
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Remaining</label>
                         <input type="text" class="form-control" name="remaining_amount"
-                            value="{{ $paymentRequest->remaining_amount ?? $remaining }}" readonly>
+                            value="{{ $paymentRequestData->remaining_amount }}" readonly>
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Payment Request</label>
-                        <input type="text" step="0.01" class="form-control" name="payment_request_amount"
-                            value="{{ $paymentRequest->payment_request_amount ?? 0 }}"
-                            placeholder="Enter payment request">
+                        <input type="number" step="0.01" class="form-control" name="payment_request_amount"
+                            value="{{ $paymentRequest->amount ?? 0 }}" placeholder="Enter payment request">
                     </div>
                 </div>
 
@@ -353,7 +344,7 @@
                     <div class="form-group">
                         <label>Advance Freight</label>
                         <input type="text" class="form-control" name="advance_freight"
-                            value="{{ $paymentRequest->advance_freight ?? $advanceFreight }}" readonly>
+                            value="{{ $paymentRequestData->advance_freight }}" readonly>
                     </div>
                 </div>
 
@@ -361,9 +352,60 @@
                     <div class="form-group">
                         <label>Freight Pay Request</label>
                         <input type="number" step="0.01" class="form-control" name="freight_pay_request_amount"
-                            value="{{ $paymentRequest->freight_pay_request_amount ?? 0 }}"
-                            placeholder="Enter freight pay request">
+                            value="{{ $freightRequest->amount ?? 0 }}" placeholder="Enter freight pay request">
                     </div>
+                </div>
+            </div>
+        @else
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="text" class="form-control" name="total_amount"
+                        value="{{ $paymentRequestData->total_amount }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Paid Amount</label>
+                    <input type="number" step="0.01" class="form-control" name="paid_amount"
+                        value="{{ $paymentRequestData->paid_amount }}" placeholder="Enter paid amount">
+                </div>
+            </div>
+
+            <div class="col-12">
+                <hr class="border">
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Remaining</label>
+                    <input type="text" class="form-control" name="remaining_amount"
+                        value="{{ $paymentRequestData->remaining_amount }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Payment Request</label>
+                    <input type="number" step="0.01" class="form-control" name="payment_request_amount"
+                        value="{{ $paymentRequest->amount ?? 0 }}" placeholder="Enter payment request">
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Advance Freight</label>
+                    <input type="text" class="form-control" name="advance_freight"
+                        value="{{ $paymentRequestData->advance_freight }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Freight Pay Request</label>
+                    <input type="number" step="0.01" class="form-control" name="freight_pay_request_amount"
+                        value="{{ $freightRequest->amount ?? 0 }}" placeholder="Enter freight pay request">
                 </div>
             </div>
         @endif
@@ -377,6 +419,18 @@
 </form>
 <script>
     $(document).ready(function() {
+        $('input[name="payment_request_amount"], input[name="paid_amount"], input[name="freight_pay_request_amount"]')
+            .on('input', function() {
+                const amount = parseFloat($('input[name="total_amount"]').val());
+                const paidAmount = parseFloat($('input[name="paid_amount"]').val()) || 0;
+                const paymentRequest = parseFloat($('input[name="payment_request_amount"]').val()) || 0;
+                const freightRequest = parseFloat($('input[name="freight_pay_request_amount"]').val()) || 0;
+
+                const remaining = amount - paidAmount - paymentRequest - freightRequest;
+                $('input[name="remaining_amount"]').val(remaining.toFixed(2));
+            });
+
+        // Toggle loading section visibility
         const $loadingRadio = $('#loading');
         const $withoutLoadingRadio = $('#without_loading');
         const $loadingSection = $('#loading-section');
@@ -393,26 +447,7 @@
         }
 
         toggleSections();
-
         $loadingRadio.on('change', toggleSections);
         $withoutLoadingRadio.on('change', toggleSections);
-
-        $('input[name="payment_request_amount"]').on('input', function() {
-            const amount = parseFloat({{ $paymentRequest->total_amount ?? $amount }});
-            const paidAmount = parseFloat($('input[name="paid_amount"]').val()) || 0;
-            const paymentRequest = parseFloat($(this).val()) || 0;
-            const remaining = (amount - paymentRequest - paidAmount);
-
-            $('input[name="remaining_amount"]').val(remaining.toFixed(2));
-        });
-
-        $('input[name="payment_request_amount"]').on('input', function() {
-            const amount = parseFloat({{ $amount }});
-            const paidAmount = parseFloat({{ $pRsSum }});
-            const paymentRequest = parseFloat($(this).val()) || 0;
-            const remaining = (amount - paymentRequest - paidAmount);
-
-            $('input[name="remaining_amount"]').val(remaining.toFixed(2));
-        });
     });
 </script>

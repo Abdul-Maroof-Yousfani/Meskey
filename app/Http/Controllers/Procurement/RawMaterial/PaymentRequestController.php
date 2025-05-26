@@ -14,6 +14,7 @@ use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\ProductSlabType;
 use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PaymentRequestSamplingResult;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -36,10 +37,13 @@ class PaymentRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $pRs = PaymentRequest::orderBy('created_at', 'asc')
+        $paymentRequestsData = PaymentRequestData::with(['purchaseOrder', 'paymentRequests'])
+            ->orderBy('created_at', 'asc')
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.raw_material.payment_request.getList', compact('pRs'));
+        return view('management.procurement.raw_material.payment_request.getList', [
+            'paymentRequestsData' => $paymentRequestsData
+        ]);
     }
 
     /**
@@ -60,31 +64,30 @@ class PaymentRequestController extends Controller
     public function store(PaymentRequestRequest $request)
     {
         return DB::transaction(function () use ($request) {
+            // Prepare base data
             $requestData = $request->validated();
             $requestData['is_loading'] = $request->loading_type === 'loading';
 
-            if ($request->freight_pay_request_amount && $request->freight_pay_request_amount > 0) {
-                $paymentRequest = PaymentRequest::create(array_merge($requestData, [
-                    'request_type' => 'payment'
-                ]));
+            // Calculate remaining amount
+            $requestData['remaining_amount'] = $requestData['total_amount'] -
+                ($requestData['paid_amount'] ?? 0) -
+                ($requestData['payment_request_amount'] ?? 0) -
+                ($requestData['freight_pay_request_amount'] ?? 0);
 
-                $freightRequest = PaymentRequest::create(array_merge($requestData, [
-                    'request_type' => 'freight_payment',
-                    'payment_request_amount' => $request->freight_pay_request_amount
-                ]));
+            // Create main payment request data
+            $paymentRequestData = PaymentRequestData::create($requestData);
 
-                $this->saveSamplingResults($paymentRequest, $request);
-                $this->saveSamplingResults($freightRequest, $request);
+            // Create payment request records
+            $this->createPaymentRequests($paymentRequestData, $request);
 
-                $message = 'Payment and freight payment requests created successfully';
-            } else {
-                $paymentRequest = PaymentRequest::create(array_merge($requestData, [
-                    'request_type' => 'payment'
-                ]));
-
-                $this->saveSamplingResults($paymentRequest, $request);
-                $message = 'Payment request created successfully';
+            // Save sampling results if exists
+            if (isset($request->sampling_results) || isset($request->compulsory_results)) {
+                $this->saveSamplingResults($paymentRequestData, $request);
             }
+
+            $message = $request->freight_pay_request_amount ?
+                'Payment and freight payment requests created successfully' :
+                'Payment request created successfully';
 
             return response()->json(['success' => $message]);
         });
@@ -95,7 +98,7 @@ class PaymentRequestController extends Controller
         if ($request->sampling_results) {
             foreach ($request->sampling_results as $result) {
                 PaymentRequestSamplingResult::create([
-                    'payment_request_id' => $paymentRequest->id,
+                    'payment_request_data_id' => $paymentRequest->id,
                     'slab_type_id' => $result['slab_type_id'],
                     'name' => $result['slab_name'],
                     'checklist_value' => $result['checklist_value'],
@@ -111,7 +114,7 @@ class PaymentRequestController extends Controller
         if ($request->compulsory_results) {
             foreach ($request->compulsory_results as $result) {
                 PaymentRequestSamplingResult::create([
-                    'payment_request_id' => $paymentRequest->id,
+                    'payment_request_data_id' => $paymentRequest->id,
                     'slab_type_id' => $result['qc_param_id'],
                     'name' => $result['qc_name'],
                     'checklist_value' => 0,
@@ -124,51 +127,120 @@ class PaymentRequestController extends Controller
         }
     }
 
+    public function update(PaymentRequestRequest $request, $id)
+    {
+        return DB::transaction(function () use ($request, $id) {
+            $paymentRequestData = PaymentRequestData::findOrFail($id);
+
+            // Prepare update data
+            $requestData = $request->validated();
+            $requestData['is_loading'] = $request->loading_type === 'loading';
+
+            // Calculate remaining amount
+            $requestData['remaining_amount'] = $requestData['total_amount'] -
+                ($requestData['paid_amount'] ?? 0) -
+                ($requestData['payment_request_amount'] ?? 0) -
+                ($requestData['freight_pay_request_amount'] ?? 0);
+
+            // Update main data
+            $paymentRequestData->update($requestData);
+
+            // Delete existing payment requests and create new ones
+            $paymentRequestData->paymentRequests()->delete();
+            $this->createPaymentRequests($paymentRequestData, $request);
+
+            // Update sampling results if exists
+            if (isset($request->sampling_results)) {
+                $this->updateSamplingResults($paymentRequestData, $request);
+            }
+
+            return response()->json(['success' => 'Payment request updated successfully']);
+        });
+    }
+
+    protected function createPaymentRequests($paymentRequestData, $request)
+    {
+        // Always create payment request
+        PaymentRequest::create([
+            'payment_request_data_id' => $paymentRequestData->id,
+            'request_type' => 'payment',
+            'amount' => $request->payment_request_amount ?? 0
+        ]);
+
+        // Create freight payment request if amount exists
+        if ($request->freight_pay_request_amount && $request->freight_pay_request_amount > 0) {
+            PaymentRequest::create([
+                'payment_request_data_id' => $paymentRequestData->id,
+                'request_type' => 'freight_payment',
+                'amount' => $request->freight_pay_request_amount
+            ]);
+        }
+    }
+
+    protected function updateSamplingResults($paymentRequestData, $request)
+    {
+        // Delete existing results
+        $paymentRequestData->samplingResults()->delete();
+
+        // Save sampling results
+        if (isset($request->sampling_results)) {
+            foreach ($request->sampling_results as $result) {
+                PaymentRequestSamplingResult::create([
+                    'payment_request_data_id' => $paymentRequestData->id,
+                    'slab_type_id' => $result['slab_type_id'] ?? null,
+                    'name' => $result['slab_name'] ?? '',
+                    'checklist_value' => $result['checklist_value'] ?? 0,
+                    'suggested_deduction' => $result['suggested_deduction'] ?? 0,
+                    'applied_deduction' => $result['applied_deduction'] ?? 0,
+                    'deduction_type' => $result['deduction_type'] ?? 'amount',
+                    'deduction_amount' => $result['deduction_amount'] ?? 0,
+                ]);
+            }
+        }
+
+        // Save compulsory results
+        if (isset($request->compulsory_results)) {
+            foreach ($request->compulsory_results as $result) {
+                PaymentRequestSamplingResult::create([
+                    'payment_request_data_id' => $paymentRequestData->id,
+                    'qc_param_id' => $result['qc_param_id'] ?? null,
+                    'name' => $result['qc_name'] ?? '',
+                    'applied_deduction' => $result['applied_deduction'] ?? 0,
+                    'deduction_amount' => $result['deduction_amount'] ?? 0,
+                ]);
+            }
+        }
+    }
+
     /**
      * Show the form for editing the specified resource.
      */
     public function edit($id)
     {
-        $paymentRequest = PaymentRequest::with(['purchaseOrder', 'samplingResults'])->findOrFail($id);
-        $pRsSum = PaymentRequest::where('purchase_order_id', $paymentRequest->purchase_order_id)
-            ->where('request_type', $paymentRequest->request_type)
-            ->sum('payment_request_amount');
+        $paymentRequestData = PaymentRequestData::with([
+            'purchaseOrder',
+            'samplingResults.slabType', // Eager load slabType relationship
+            'paymentRequests'
+        ])->findOrFail($id);
 
-        return view('management.procurement.raw_material.payment_request.edit', compact('paymentRequest', 'pRsSum'));
+        $pRsSum = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($paymentRequestData) {
+            $query->where('purchase_order_id', $paymentRequestData->purchase_order_id);
+        })
+            ->where('request_type', 'payment')
+            ->sum('amount');
+
+        $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
+        $freightRequest = $paymentRequestData->paymentRequests->where('request_type', 'freight_payment')->first();
+
+        return view('management.procurement.raw_material.payment_request.edit', [
+            'paymentRequestData' => $paymentRequestData,
+            'paymentRequest' => $paymentRequest,
+            'freightRequest' => $freightRequest,
+            'pRsSum' => $pRsSum,
+            'samplingResults' => $paymentRequestData->samplingResults // Pass samplingResults to view
+        ]);
     }
 
-    public function update(PaymentRequestRequest $request, $id)
-    {
-        return DB::transaction(function () use ($request, $id) {
-            $paymentRequest = PaymentRequest::findOrFail($id);
-            $requestData = $request->validated();
-            $requestData['is_loading'] = $request->loading_type === 'loading';
-
-            $paymentRequest->update($requestData);
-
-            // if ($request->sampling_results) {
-            //     foreach ($request->sampling_results as $id => $result) {
-            //         $updateData = $result;
-            //         $updateData['name'] = $result['slab_name'];
-            //         unset($updateData['slab_name']);
-
-            //         PaymentRequestSamplingResult::where('id', $id)
-            //             ->where('payment_request_id', $paymentRequest->id)
-            //             ->update($updateData);
-            //     }
-            // }
-
-            // if ($request->compulsory_results) {
-            //     foreach ($request->compulsory_results as $id => $result) {
-            //         PaymentRequestSamplingResult::where('id', $id)
-            //             ->where('payment_request_id', $paymentRequest->id)
-            //             ->update($result);
-            //     }
-            // }
-
-            return response()->json(['success' => 'Payment request updated successfully']);
-        });
-    }
 
     public function updateStatus(Request $request)
     {
@@ -224,9 +296,12 @@ class PaymentRequestController extends Controller
     {
         $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->purchase_order_id);
 
-        $pRsSum = PaymentRequest::where('purchase_order_id', $purchaseOrder->id)
+        // Calculate sum of payment requests for this purchase order
+        $pRsSum = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
+            $query->where('purchase_order_id', $purchaseOrder->id);
+        })
             ->where('request_type', 'payment')
-            ->sum('payment_request_amount');
+            ->sum('amount');
 
         $purchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'completed')->get();
 

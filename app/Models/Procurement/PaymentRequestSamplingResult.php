@@ -11,7 +11,7 @@ class PaymentRequestSamplingResult extends Model
     use HasFactory;
 
     protected $fillable = [
-        'payment_request_id',
+        'payment_request_data_id',
         'slab_type_id',
         'name',
         'checklist_value',

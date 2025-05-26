@@ -10,41 +10,54 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($pRs) != 0)
-            @foreach ($pRs as $key => $row)
+        @if (count($paymentRequestsData) != 0)
+            @foreach ($paymentRequestsData as $paymentRequestData)
+                @php
+                    $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
+                    $freightRequest = $paymentRequestData->paymentRequests
+                        ->where('request_type', 'freight_payment')
+                        ->first();
+                @endphp
+
                 <tr>
-                    <td>#{{ $row->purchaseOrder->contract_no }} <br>
-                        {{ $row->purchaseOrder->qcProduct->name ?? ($row->purchaseOrder->product->name ?? ' N/A') }}
+                    <td>#{{ $paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }} <br>
+                        {{ $paymentRequestData->purchaseOrder->qcProduct->name ?? ($paymentRequestData->purchaseOrder->product->name ?? 'N/A') }}
                     </td>
-                    <td>{{ $row->supplier_name ?? 'N/A' }}</td>
+                    <td>{{ $paymentRequestData->supplier_name ?? 'N/A' }}</td>
                     <td>
                         <div class="div-box-b">
                             <small>
-                                <strong>Total Amount:</strong> {{ $row->total_amount ?? 0 }} <br>
-                                <strong>Paid Amount:</strong> {{ $row->paid_amount ?? 0 }} <br>
-                                <strong>Payment Request:</strong> {{ $row->payment_request_amount ?? 0 }}<br>
-                                <strong>Remaining Amount:</strong> {{ $row->remaining_amount ?? 0 }}<br>
+                                <strong>Total Amount:</strong> {{ $paymentRequestData->total_amount ?? 0 }} <br>
+                                <strong>Paid Amount:</strong> {{ $paymentRequestData->paid_amount ?? 0 }} <br>
+                                <strong>Payment Request:</strong> {{ $paymentRequest->amount ?? 0 }}<br>
+                                @if ($freightRequest)
+                                    <strong>Freight Request:</strong> {{ $freightRequest->amount ?? 0 }}<br>
+                                @endif
+                                <strong>Remaining Amount:</strong> {{ $paymentRequestData->remaining_amount ?? 0 }}<br>
                             </small>
                         </div>
                     </td>
                     <td>
-                        <span class="badge badge-{{ $row->request_type == 'payment' ? 'success' : 'warning' }}">
-                            {{ formatEnumValue($row->request_type) }}
-                        </span>
+                        @foreach ($paymentRequestData->paymentRequests as $request)
+                            <span
+                                class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }} mb-1">
+                                {{ formatEnumValue($request->request_type) }}: {{ $request->amount }}
+                            </span><br>
+                        @endforeach
                     </td>
                     <td>
-                        {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                        {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
+                        {{ \Carbon\Carbon::parse($paymentRequestData->created_at)->format('Y-m-d') }} <br>
+                        {{ \Carbon\Carbon::parse($paymentRequestData->created_at)->format('H:i A') }}
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $row->id) }}','Edit Purchase Order')"
+                            <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $paymentRequestData->id) }}','Edit Payment Request')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('raw-material.payment-request.destroy', $row->id) }}','{{ route('raw-material.get.purchase-order') }}')"
+                            <a onclick="deletemodal('{{ route('raw-material.payment-request.destroy', $paymentRequestData->id) }}','{{ route('raw-material.get.payment-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
@@ -80,6 +93,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $pRs->links() }}
+        {{ $paymentRequestsData->links() }}
     </div>
 </div>

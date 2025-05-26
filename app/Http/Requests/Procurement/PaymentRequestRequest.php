@@ -13,7 +13,7 @@ class PaymentRequestRequest extends FormRequest
 
     public function rules()
     {
-        return [
+        $rules = [
             'purchase_order_id' => 'required|exists:arrival_purchase_orders,id',
             'loading_type' => 'required|in:loading,without_loading',
 
@@ -27,16 +27,6 @@ class PaymentRequestRequest extends FormRequest
             'loading_date' => 'nullable|date',
             'bilty_no' => 'nullable|string|max:255',
             'station' => 'nullable|string|max:255',
-            'no_of_bags' => 'required|integer|min:0',
-            'loading_weight' => 'required|numeric|min:0',
-            'avg_rate' => 'required|numeric|min:0',
-
-            'bag_weight' => 'required|numeric|min:0',
-            'bag_weight_total' => 'required|numeric|min:0',
-            'bag_weight_amount' => 'required|numeric|min:0',
-            'bag_rate' => 'required|numeric|min:0',
-            'bag_rate_amount' => 'required|numeric|min:0',
-            'loading_weighbridge_amount' => 'required|numeric|min:0',
 
             'total_amount' => 'required|numeric',
             'paid_amount' => 'required|numeric',
@@ -57,6 +47,35 @@ class PaymentRequestRequest extends FormRequest
             'compulsory_results.*.applied_deduction' => 'required|numeric',
             'compulsory_results.*.deduction_amount' => 'required|numeric',
         ];
+
+        // Add conditional rules based on loading_type
+        if ($this->input('loading_type') === 'loading') {
+            $rules = array_merge($rules, [
+                'no_of_bags' => 'required|integer|min:0',
+                'loading_weight' => 'required|numeric|min:0',
+                'avg_rate' => 'required|numeric|min:0',
+                'bag_weight' => 'required|numeric|min:0',
+                'bag_weight_total' => 'required|numeric|min:0',
+                'bag_weight_amount' => 'required|numeric|min:0',
+                'bag_rate' => 'required|numeric|min:0',
+                'bag_rate_amount' => 'required|numeric|min:0',
+                'loading_weighbridge_amount' => 'required|numeric|min:0',
+            ]);
+        } else {
+            $rules = array_merge($rules, [
+                'no_of_bags' => 'nullable|integer|min:0',
+                'loading_weight' => 'nullable|numeric|min:0',
+                'avg_rate' => 'nullable|numeric|min:0',
+                'bag_weight' => 'nullable|numeric|min:0',
+                'bag_weight_total' => 'nullable|numeric|min:0',
+                'bag_weight_amount' => 'nullable|numeric|min:0',
+                'bag_rate' => 'nullable|numeric|min:0',
+                'bag_rate_amount' => 'nullable|numeric|min:0',
+                'loading_weighbridge_amount' => 'nullable|numeric|min:0',
+            ]);
+        }
+
+        return $rules;
     }
 
     public function messages()

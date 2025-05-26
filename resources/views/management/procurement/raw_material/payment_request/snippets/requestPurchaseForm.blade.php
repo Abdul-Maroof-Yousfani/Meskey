@@ -138,6 +138,9 @@
                 {{ $hasLoadingWeight ? '' : 'disabled' }}>
             <label class="form-check-label" for="without_loading">Without Loading</label>
         </div>
+
+        <input type="hidden" name="{{ $hasLoadingWeight ? '' : 'loading_type' }}"
+            value="{{ $hasLoadingWeight ? 'loading' : 'without_loading' }}">
     </div>
 
     @if ($hasLoadingWeight)
@@ -194,8 +197,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Avg Rate</label>
-                    <input type="text" class="form-control" name="avg_rate" value="{{ number_format($avgRate, 2) }}"
-                        readonly>
+                    <input type="text" class="form-control" name="avg_rate"
+                        value="{{ number_format($avgRate, 2) }}" readonly>
                 </div>
             </div>
 
@@ -419,6 +422,56 @@
                     <input type="number" step="0.01" class="form-control" name="freight_pay_request_amount"
                         value="{{ 0 }}" placeholder="Enter freight pay request">
                 </div>
+            </div>
+        </div>
+    @else
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="text" class="form-control" name="total_amount" value="{{ $amount }}"
+                    readonly>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Paid Amount</label>
+                <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
+                    value="{{ $paidAmount }}" placeholder="Enter paid amount">
+            </div>
+        </div>
+        <div class="col-12">
+            <hr class="border">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Remaining</label>
+                <input type="text" class="form-control" name="remaining_amount" value="{{ $remaining }}"
+                    readonly>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Payment Request</label>
+                <input type="number" step="0.01" class="form-control" name="payment_request_amount"
+                    value="{{ 0 }}" placeholder="Enter payment request">
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Advance Freight</label>
+                <input type="text" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
+                    readonly>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Freight Pay Request</label>
+                <input type="number" step="0.01" class="form-control" name="freight_pay_request_amount"
+                    value="{{ 0 }}" placeholder="Enter freight pay request">
             </div>
         </div>
     @endif
