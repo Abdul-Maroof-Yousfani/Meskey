@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Procurement;
 
+use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseFreightRequest extends FormRequest
 {
@@ -26,7 +29,17 @@ class PurchaseFreightRequest extends FormRequest
             'loading_date' => 'required|date',
             'supplier_name' => 'required|string|max:255',
             'broker' => 'required|string|max:255',
-            'truck_no' => 'required|string|max:255',
+            'truck_no' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $this->validateTruckNumberFormat($attribute, $value, $fail);
+                },
+                function ($attribute, $value, $fail) {
+                    $this->validateUniqueTruckBiltyCombination($attribute, $value, $fail);
+                }
+            ],
             'bilty_no' => 'required|string|max:255',
             'station_id' => 'required|exists:stations,id',
             'no_of_bags' => 'required|integer|min:1',
@@ -40,6 +53,36 @@ class PurchaseFreightRequest extends FormRequest
             'weighbridge_slip' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'supplier_bill' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ];
+    }
+
+    /**
+     * Validate truck number format based on company location setting
+     */
+    protected function validateTruckNumberFormat($attribute, $value, $fail)
+    {
+        $truckNo = strtoupper($value);
+        $truckFormat = Auth::user()->companyLocation->truck_no_format ?? 0;
+
+        if ($truckFormat === 1 && !preg_match('/^[A-Z]+-\d+$/', $truckNo)) {
+            $fail('Truck number must contain alphabets followed by a dash and then numbers (e.g., ABC-123)');
+        }
+    }
+
+    /**
+     * Validate unique truck_no and bilty_no combination
+     */
+    protected function validateUniqueTruckBiltyCombination($attribute, $value, $fail)
+    {
+        $existingTicket = PurchaseFreight::where('truck_no', strtoupper($value))
+            ->where('bilty_no', $this->bilty_no)
+            ->first();
+
+        if ($existingTicket) {
+            $viewLink = ' <a href="#" target="_blank" class="text-blue-600 hover:underline">View Details</a>';
+            throw ValidationException::withMessages([
+                'truck_no' => ['Truck with this Bilty No already exists.' . $viewLink],
+            ]);
+        }
     }
 
     /**
