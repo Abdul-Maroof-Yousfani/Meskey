@@ -51,7 +51,7 @@ class PaymentRequestController extends Controller
      */
     public function create()
     {
-        $data['purchaseOrders'] = ArrivalPurchaseOrder::get();
+        $data['purchaseOrders'] = ArrivalPurchaseOrder::where('sauda_type_id', 2)->get();
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
