@@ -51,7 +51,7 @@ class InnersampleRequestController extends Controller
 
 $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
  ->where('second_qc_status', '!=', 'rejected')
-    ->where(function ($q) {
+    ->orWhere(function ($q) {
         $q->where('document_approval_status', '!=', 'fully_approved')
             ->where('document_approval_status', '!=', 'half_approved')
             ->orWhereNull('document_approval_status');
