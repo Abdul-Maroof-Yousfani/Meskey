@@ -8,10 +8,12 @@
                 <select class="form-control select2" name="ticket_id">
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}">
-                            Ticket No: {{ $arrivalTicket->unique_no }} --
-                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
-                        </option>
+                        @if($arrivalTicket->second_qc_status != 'rejected')
+                            <option value="{{ $arrivalTicket->id }}">
+                                Ticket No: {{ $arrivalTicket->unique_no }} --
+                                Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
+                            </option>
+                        @endif
                     @endforeach
                 </select>
             </div>
@@ -36,7 +38,7 @@
 
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 </script>
