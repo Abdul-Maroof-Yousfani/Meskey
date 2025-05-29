@@ -275,12 +275,56 @@
                                                     </div>
                                                 </div>
                                             </td>
+                                            @php
+                                                $dValCalculatedOn = $slab->slabType->calculation_base_type;
+                                                $appliedDeduction = $slab->applied_deduction ?? 0;
+                                                $matchingSlabs = $slab->matching_slabs ?? [];
+                                                $val = $slab->applied_deduction;
+
+                                                $deductionValue = 0;
+
+                                                if ($dValCalculatedOn == SLAB_TYPE_PERCENTAGE && $matchingSlabs) {
+                                                    usort($matchingSlabs, function ($a, $b) {
+                                                        return floatval($a['from']) <=> floatval($b['from']);
+                                                    });
+
+                                                    foreach ($matchingSlabs as $slab) {
+                                                        $from = floatval($slab['from']);
+                                                        $to = floatval($slab['to']);
+                                                        $isTiered = intval($slab['is_tiered']);
+                                                        $deductionVal = floatval($slab['deduction_value']);
+
+                                                        if ($val >= $from) {
+                                                            if ($isTiered === 1) {
+                                                                $applicableAmount = 0;
+                                                                if (is_nan($to) || $val >= $to) {
+                                                                    $applicableAmount = $to - $from + 1;
+                                                                } else {
+                                                                    $applicableAmount = $val - $from + 1;
+                                                                }
+                                                                $deductionValue += $deductionVal * $applicableAmount;
+                                                            } else {
+                                                                $deductionValue += $deductionVal;
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    $deductionValue = $appliedDeduction;
+                                                }
+
+                                                $netWeight =
+                                                    ($purchaseOrder->purchaseFreight->loading_weight ?? 0) -
+                                                    ($purchaseOrder->bag_weight ?? 0) *
+                                                        ($purchaseOrder->purchaseFreight->no_of_bags ?? 0);
+                                                $calculatedValue = $deductionValue * $netWeight;
+                                            @endphp
+
                                             <td>
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control"
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount]"
-                                                        value="{{ ($slab->applied_deduction ?? 0) * (($purchaseOrder->purchaseFreight->loading_weight ?? 0) - ($purchaseOrder->bag_weight ?? 0) * ($purchaseOrder->purchaseFreight->no_of_bags ?? 0)) }}"
-                                                        placeholder="deduction_amount" readonly>
+                                                        value="{{ $calculatedValue }}" placeholder="deduction_amount"
+                                                        readonly>
                                                 </div>
                                             </td>
                                         </tr>

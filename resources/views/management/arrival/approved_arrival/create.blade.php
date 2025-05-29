@@ -153,7 +153,7 @@
                 $('input[name="total_bags"]').removeAttr('readonly');
                 $(".total-rejection-section").slideDown();
             } else {
-                $('input[name="total_bags"]').attr('readonly', true);
+                // $('input[name="total_bags"]').attr('readonly', true);
                 $(".total-rejection-section").slideUp();
             }
         }).trigger('change');

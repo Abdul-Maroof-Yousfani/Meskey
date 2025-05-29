@@ -24,6 +24,7 @@ class PurchaseFreight extends Model
         'truck_no',
         'bilty_no',
         'station_id',
+        'station_name',
         'no_of_bags',
         'bag_condition_id',
         'commodity',

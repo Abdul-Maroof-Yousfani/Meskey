@@ -49,11 +49,8 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Station</label>
-                <select name="station_id" id="station_id" class="form-control select2">
+                <select name="station" id="station_id" class="form-control">
                     <option value="" hidden>Select Station</option>
-                    @foreach ($stations as $station)
-                        <option value="{{ $station->id }}">{{ $station->name }}</option>
-                    @endforeach
                 </select>
             </div>
         </div>
@@ -158,8 +155,9 @@
 </form>
 
 <script>
-    // Initialize select2 for station
     $(document).ready(function() {
         $('.select2').select2();
+
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
     });
 </script>

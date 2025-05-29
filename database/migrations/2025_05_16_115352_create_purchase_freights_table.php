@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('broker');
             $table->string('truck_no');
             $table->string('bilty_no');
-            $table->foreignId('station_id')->nullable()->constrained();
+            $table->foreignId('station_id')->nullable()->constrained('stations');
+            $table->string('station_name')->nullable();
             $table->integer('no_of_bags');
             $table->foreignId('bag_condition_id')->nullable()->constrained('bag_conditions');
             $table->string('commodity');

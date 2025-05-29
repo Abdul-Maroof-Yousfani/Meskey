@@ -234,16 +234,33 @@
          </div>
      </div>
 
-     @if ($showLumpSum)
-         <tr>
-             <td style="padding: 8px; border: 1px solid #ddd;">
-                 Lumpsum Deduction
-             </td>
-             <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                 {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
-                 Lumpsum)
-             </td>
-         </tr>
+     @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+         <div class="col-12" bis_skin_checked="1">
+             <h6 class="header-heading-sepration">
+                 Sampling Results
+             </h6>
+         </div>
+         <div class="col-12">
+             <div class="table-responsive">
+                 <table class="table table-sm table-bordered table-hover">
+                     <thead class="thead-light">
+                         <tr>
+                             <th width="60%">Parameter</th>
+                             <th width="40%">Applied Deduction</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         <tr>
+                             <td>Lumpsum Deduction</td>
+                             <td class="text-center">
+                                 {{ $samplingRequest->lumpsum_deduction ?? 0 }}
+                                 <span class="text-sm">(Applied as Lumpsum)</span>
+                             </td>
+                         </tr>
+                     </tbody>
+                 </table>
+             </div>
+         </div>
      @else
          <div class="col-12" bis_skin_checked="1">
              <h6 class="header-heading-sepration">

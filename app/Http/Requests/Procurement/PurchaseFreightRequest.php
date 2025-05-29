@@ -41,7 +41,8 @@ class PurchaseFreightRequest extends FormRequest
                 }
             ],
             'bilty_no' => 'required|string|max:255',
-            'station_id' => 'required|exists:stations,id',
+            // 'station_id' => 'required|exists:stations,id',
+            'station' => 'required|string|max:255',
             'no_of_bags' => 'required|integer|min:1',
             'bag_condition_id' => 'required|exists:bag_conditions,id',
             'commodity' => 'required|string|max:255',

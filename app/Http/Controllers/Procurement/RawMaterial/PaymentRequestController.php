@@ -12,6 +12,7 @@ use App\Models\Arrival\PurchaseSamplingResult;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ArrivalCompulsoryQcParam;
+use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabType;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
@@ -318,6 +319,21 @@ class PaymentRequestController extends Controller
             if ($samplingRequest) {
                 $samplingRequestCompulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $samplingRequest->id)->get();
                 $samplingRequestResults = PurchaseSamplingResult::where('purchase_sampling_request_id', $samplingRequest->id)->get();
+
+                $productSlabCalculations = null;
+                if ($samplingRequest->arrival_product_id) {
+                    $productSlabCalculations = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)->get();
+                }
+
+                foreach ($samplingRequestResults as $result) {
+                    $matchingSlabs = [];
+                    if ($productSlabCalculations) {
+                        $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
+                            ->values()
+                            ->all();
+                    }
+                    $result->matching_slabs = $matchingSlabs;
+                }
             }
         }
 

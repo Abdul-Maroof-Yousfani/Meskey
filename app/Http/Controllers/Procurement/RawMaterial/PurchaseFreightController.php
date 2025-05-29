@@ -41,19 +41,25 @@ class PurchaseFreightController extends Controller
             return response()->json(['success' => false, 'message' => 'Purchase order not found'], 404);
         }
 
-        $html = view('management.procurement.raw_material.freight.partials.freight_form', [
-            'purchaseOrder' => $purchaseOrder,
-            'stations' => $stations,
-            'bagTypes' => $bagTypes
-        ])->render();
+        // $html = view('management.procurement.raw_material.freight.partials.freight_form', [
+        //     'purchaseOrder' => $purchaseOrder,
+        //     'stations' => $stations,
+        //     'bagTypes' => $bagTypes
+        // ])->render();
 
-        return view('management.procurement.raw_material.freight.create', compact('stations', 'bagTypes', 'html'));
+        return view('management.procurement.raw_material.freight.create', compact('stations', 'bagTypes', 'purchaseOrder', 'bagTypes'));
     }
 
     public function store(PurchaseFreightRequest $request)
     {
         $data = $request->validated();
         $data['company_id'] = $request->company_id;
+
+        if (!empty($data['station'])) {
+            $station = Station::where('name', $data['station'])->first();
+            $data['station_id'] = $station ? $station->id : null;
+            $data['station_name'] = $data['station'];
+        }
 
         $freight = PurchaseFreight::create($data);
 

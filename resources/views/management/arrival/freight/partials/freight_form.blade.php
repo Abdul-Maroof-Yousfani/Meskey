@@ -2,6 +2,9 @@
     @csrf
     <input type="hidden" name="arrival_ticket_id" value="{{ $ticket->id }}" />
     <input type="hidden" id="listRefresh" value="{{ route('get.freight') }}" />
+    <a onclick="openModal(this,'{{ route('arrival-slip.edit', 0) }}','View Arrival Slip', true, '100%')"
+        data-variable="slip" id="afterAjax" class="d-none">
+    </a>
 
     <div class="row form-mar">
         <div class="col-md-6">
@@ -109,8 +112,8 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Other (+)/Labour Charges</label>
-                <input type="number" step="0.01" name="other_labour_charges" class="form-control calculate-final"
-                    value="0" />
+                <input type="number" step="0.01" name="other_labour_charges"
+                    class="form-control calculate-final" value="0" />
             </div>
         </div>
 

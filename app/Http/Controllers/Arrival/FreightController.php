@@ -35,8 +35,7 @@ class FreightController extends Controller
 
     public function create()
     {
-        $tickets = ArrivalTicket::where('freight_status', 'pending')
-            ->whereNotNull('qc_product')->get();
+        $tickets = ArrivalTicket::where('freight_status', 'pending')->whereNotNull('qc_product')->get();
 
         return view('management.arrival.freight.create', ['tickets' => $tickets]);
     }
@@ -55,7 +54,14 @@ class FreightController extends Controller
 
         $freight = Freight::create($request->all());
 
-        return response()->json(['success' => 'Freight created successfully.', 'data' => $freight], 201);
+        $datePrefix = date('m-d-Y') . '-';
+        $request['unique_no'] = generateUniqueNumberByDate('arrival_slips', $datePrefix, null, 'unique_no');
+        $request['creator_id'] = auth()->user()->id;
+        $request['remark'] = $request->note ?? '';
+
+        $arrivalApprove = ArrivalSlip::create($request->all());
+
+        return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
     }
 
     public function edit($id)

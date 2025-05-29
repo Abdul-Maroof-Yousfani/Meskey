@@ -447,7 +447,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @if ($showLumpSum)
+                                            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
                                                 <tr>
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
                                                         Lumpsum Deduction
@@ -595,7 +595,6 @@
 
     })
 
-
     function printView(param1, param2, param3) {
         $(".qrCodeDiv").removeClass("hidden");
 
@@ -614,7 +613,6 @@
         var printStyles = `
       <style>
         @media print{
-
             @page{margin:2mm !important;margin-top:1mm !important;}
             .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
             .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
@@ -627,34 +625,28 @@
             .logo p{font-weight:bold !important;}
             #modal-sidebar.open{width:100% !important;}
             table td input{padding:8px 8px !important;}
-             table tbody tr td{white-space:nowrap !important;}
-           .row{display:flex !important;flex-wrap:nowrap !important;}
+            table tbody tr td{white-space:nowrap !important;}
+            .row{display:flex !important;flex-wrap:nowrap !important;}
             [class*="col-"]{float:left !important;display:block !important;}
             table td{padding:5px 5px !important;}
-
         }
-
       </style>
     `;
 
-        // Write content + styles into print window
         printWindow.document.write('<html><head><title>Print</title>');
-        printWindow.document.write(printStyles); // inject styles
+        printWindow.document.write(printStyles);
         printWindow.document.write('</head><body>');
         printWindow.document.write(printContents);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.focus();
 
-        // Delay print & close logic
         setTimeout(function() {
             printWindow.print();
-
             setTimeout(function() {
                 printWindow.close();
-
                 if (param3 !== 1) {
-                    location.reload();
+                    // location.reload();
                 }
             }, 500);
         }, 500);
@@ -664,4 +656,11 @@
     document.getElementById("printButton").addEventListener("click", function() {
         printView('printSection', 'print-section', 0);
     });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+            printView('printSection', 'print-section', 0);
+        }
+    })
 </script>

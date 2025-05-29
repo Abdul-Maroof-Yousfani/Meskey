@@ -51,15 +51,7 @@
          <div class="col-md-6">
              <div class="form-group">
                  <label>Station</label>
-                 <select name="station_id" id="station_id" class="form-control select2">
-                     <option value="" hidden>Select Station</option>
-                     @foreach ($stations as $station)
-                         <option value="{{ $station->id }}"
-                             {{ $freight->station_id == $station->id ? 'selected' : '' }}>
-                             {{ $station->name }}
-                         </option>
-                     @endforeach
-                 </select>
+                 <input type="text" name="bilty_no" class="form-control" value="{{ $freight->station_name }}" />
              </div>
          </div>
 

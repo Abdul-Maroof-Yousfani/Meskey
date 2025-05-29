@@ -207,8 +207,7 @@ class InnersamplingController extends Controller
                     }
                 }
             }
-
-            $ArrivalSamplingRequest->update([
+            $updateData = [
                 'remark' => $request->remarks,
                 'is_done' => 'yes',
                 'arrival_product_id' => $request->arrival_product_id,
@@ -216,7 +215,14 @@ class InnersamplingController extends Controller
                 'sample_taken_by' => $request->sample_taken_by ?? NULL,
                 'done_by' => auth()->user()->id,
                 'approved_status' => $initialStatus,
-            ]);
+            ];
+
+            if ($initialStatus === 'approved') {
+                $updateData['is_lumpsum_deduction'] = $initialRequestForInnerReq->is_lumpsum_deduction ?? 0;
+                $updateData['lumpsum_deduction'] = $initialRequestForInnerReq->lumpsum_deduction ?? 0;
+            }
+
+            $ArrivalSamplingRequest->update($updateData);
 
             DB::commit();
 
