@@ -8,6 +8,7 @@
                 <select class="form-control select2" name="arrival_ticket_id" required>
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
+                    @if($arrivalTicket->document_approval_status != 'fully_approved' || $arrivalTicket->document_approval_status != 'half_approved')
                         <option data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
                             data-trucknumber="{{ $arrivalTicket->truck_no }}" data-bags="{{ $arrivalTicket->bags }}"
                             value="{{ $arrivalTicket->id }}">
