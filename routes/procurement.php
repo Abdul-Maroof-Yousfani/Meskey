@@ -41,6 +41,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('freight', PurchaseFreightController::class);
     Route::post('/get-freight', [PurchaseFreightController::class, 'getList'])->name('get.freight');
 
+    Route::get('/ticket-contracts/search-contracts', [TicketContractController::class, 'searchContracts'])->name('ticket-contracts.search-contracts');
     Route::resource('ticket-contracts', TicketContractController::class);
     Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');
 

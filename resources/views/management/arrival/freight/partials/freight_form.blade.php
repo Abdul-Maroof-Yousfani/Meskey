@@ -66,7 +66,7 @@
             <div class="form-group">
                 <label>Difference</label>
                 <input type="number" name="difference" class="form-control"
-                    value="{{ ($ticket->net_weight ?? 0) - ($ticket->arrived_net_weight ?? 0) }}" disabled />
+                    value="{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}" disabled />
             </div>
         </div>
 

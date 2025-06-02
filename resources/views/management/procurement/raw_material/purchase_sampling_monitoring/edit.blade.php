@@ -510,6 +510,44 @@
                                 $suggestedDeductionType == 'amount'
                                     ? ($suggestedValue += $getDeductionSuggestion->deduction_value ?? 0)
                                     : ($suggestedValueKgs += $getDeductionSuggestion->deduction_value ?? 0);
+
+                                $previousChecklistValue = null;
+
+                                if ($previousInnerRequest) {
+                                    foreach ($previousInnerRequest['results'] as $prevSlab) {
+                                        if ($prevSlab->slabType->id == $slab->slabType->id) {
+                                            $previousChecklistValue = $prevSlab->checklist_value;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (
+                                    $previousChecklistValue === null &&
+                                    $initialRequestForInnerReq &&
+                                    $initialRequestResults
+                                ) {
+                                    foreach ($initialRequestResults as $initialSlab) {
+                                        if ($initialSlab->slabType->id == $slab->slabType->id) {
+                                            $previousChecklistValue = $initialSlab->checklist_value;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                $displayValue =
+                                    ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
+
+                                $comparisonClass = '';
+                                if ($previousChecklistValue !== null) {
+                                    if ($displayValue > $previousChecklistValue) {
+                                        $comparisonClass = 'checklist-increase';
+                                    } elseif ($displayValue < $previousChecklistValue) {
+                                        $comparisonClass = 'checklist-decrease';
+                                    } else {
+                                        $comparisonClass = 'checklist-same';
+                                    }
+                                }
                             @endphp
 
                             <div class="form-group row">
@@ -519,13 +557,19 @@
                                     class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
                                     <div class="input-group mb-0">
-                                        <input type="text" class="form-control" name="checklist_value[]"
-                                            value="{{ $displayValue }}" placeholder="%" readonly>
+                                        <input type="text" class="form-control {{ $comparisonClass }}"
+                                            name="checklist_value[]" value="{{ $displayValue }}" placeholder="%"
+                                            readonly>
                                         <div class="input-group-append">
                                             <span
                                                 class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                         </div>
                                     </div>
+                                    @if ($previousChecklistValue !== null)
+                                        <span class="checklist-value-comparison">
+                                            Previous: {{ $previousChecklistValue }}
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="col-md-3 Suggested">
                                     <div class="input-group mb-0">
