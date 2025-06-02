@@ -219,7 +219,7 @@
     $('.calculate-net-shortage').on('input', function() {
         const exemptedWeight = parseFloat($(this).val()) || 0;
         const netShortage = parseFloat(
-            "{{ ($ticket->net_weight ?? 0) - ($ticket->arrived_net_weight ?? 0) }}") - exemptedWeight;
+            "{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}") - exemptedWeight;
         $('input[name="net_shortage"]').val(netShortage);
         calculateFinalAmounts();
     });
