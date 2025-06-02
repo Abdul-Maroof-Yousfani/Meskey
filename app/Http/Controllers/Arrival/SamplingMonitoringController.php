@@ -269,7 +269,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
                 'decision_making' => $isDecisionMaking,
-                'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
+                //'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
                 'sauda_type_id' => $request->sauda_type_id,
                 'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
             ];
@@ -278,6 +278,7 @@ class SamplingMonitoringController extends Controller
                 $updateData['second_qc_status'] = $request->stage_status;
             } else {
                 $updateData['first_qc_status'] = $request->stage_status;
+                $updateData['location_transfer_status'] = $request->stage_status == 'approved' ? 'pending' : null;
             }
 
             $ArrivalSamplingRequest->arrivalTicket()->first()->update($updateData);
