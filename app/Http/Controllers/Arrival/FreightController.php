@@ -51,6 +51,7 @@ class FreightController extends Controller
         $data['arrived_weight'] = $request->company_id;
         $data['loaded_weight'] = $request->company_id;
         $data['company_id'] = $request->company_id;
+        $data['exempted_weight'] = $request->exempted_weight ?? 0;
 
         $freight = Freight::create($request->all());
 
