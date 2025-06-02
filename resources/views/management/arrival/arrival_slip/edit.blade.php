@@ -425,7 +425,7 @@
                                     <td style="padding: 8px;border: none;" colspan="5">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->bags, 2) ?? 'N/A' }}"
-                                            readonly>
+                                            readonly {{ ($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->bags ?? 'N/A' }}>
                                     </td>
                                 </tr>
                             </table>
