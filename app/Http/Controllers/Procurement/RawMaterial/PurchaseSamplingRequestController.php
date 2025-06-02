@@ -41,8 +41,9 @@ class PurchaseSamplingRequestController extends Controller
      */
     public function create()
     {
-        $data['purchaseOrders'] = ArrivalPurchaseOrder::whereDoesntHave('purchaseSamplingRequests')
-            ->where('sauda_type_id', 2)
+        $data['purchaseOrders'] = ArrivalPurchaseOrder::
+            // whereDoesntHave('purchaseSamplingRequests')->
+            where('sauda_type_id', 2)
             ->get();
 
         return view('management.procurement.raw_material.purchase_sampling_request.create', $data);

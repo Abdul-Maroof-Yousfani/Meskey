@@ -48,9 +48,10 @@ class FreightController extends Controller
         ArrivalTicket::where('id', $request->arrival_ticket_id)
             ->update(['freight_status' => 'completed', 'arrival_slip_status' => 'pending']);
 
-        $data['arrived_weight'] = $request->company_id;
-        $data['loaded_weight'] = $request->company_id;
+        $data['arrived_weight'] = $request->arrived_weight ?? 0;
+        $data['loaded_weight'] = $request->loaded_weight ?? 0;
         $data['company_id'] = $request->company_id;
+        $data['exempted_weight'] = $request->exempted_weight ?? 0;
 
         $freight = Freight::create($request->all());
 

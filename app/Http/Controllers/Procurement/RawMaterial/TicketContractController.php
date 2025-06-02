@@ -128,4 +128,57 @@ class TicketContractController extends Controller
 
         return response()->json(['message' => 'Request status updated successfully!']);
     }
+
+    public function searchContracts(Request $request)
+    {
+        $searchTerm = $request->input('search');
+        $initialLoad = $request->input('initial');
+        $ticketId = $request->input('ticket_id');
+
+        $query = ArrivalPurchaseOrder::with(['product', 'supplier', 'qcProduct'])
+            ->where('freight_status', 'completed')
+            ->orderBy('contract_date', 'desc');
+
+        if ($initialLoad) {
+            $query->limit(10);
+        } elseif ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('contract_no', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('product', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('qcProduct', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('supplier', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%");
+                    });
+            });
+        }
+
+        if ($ticketId) {
+            $ticket = ArrivalTicket::find($ticketId);
+            if ($ticket && $ticket->arrival_purchase_order_id) {
+                $query->orWhere('id', $ticket->arrival_purchase_order_id);
+            }
+        }
+
+        $contracts = $query->get()
+            ->map(function ($contract) {
+                return [
+                    'id' => $contract->id,
+                    'contract_no' => $contract->contract_no,
+                    'contract_date_formatted' => $contract->contract_date->format('d-M-Y'),
+                    'product' => $contract->product,
+                    'qc_product_name' => $contract->qcProduct->name ?? 'N/A',
+                    'supplier' => $contract->supplier,
+                    'total_quantity' => number_format($contract->total_quantity),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $contracts
+        ]);
+    }
 }
