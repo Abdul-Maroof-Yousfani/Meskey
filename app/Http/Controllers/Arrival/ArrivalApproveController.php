@@ -44,22 +44,17 @@ class ArrivalApproveController extends Controller
      */
     public function create()
     {
-      //  $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')->where('document_approval_status', null)
-    //    ->leftJoin('arrival_sampling_requests','arrival_ticket_id','arrival_tickets.id')
-  //      ->where('arrival_sampling_requests.sampling_type','inner')->where('is_done','no')
-//        ->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
+            ->whereNull('document_approval_status')
+            ->leftJoin('arrival_sampling_requests', function ($join) {
+                $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
+                    ->where('sampling_type', 'inner')
+                    ->where('approved_status', 'pending');
+            })
+            ->whereNull('arrival_sampling_requests.id')
+            ->select('arrival_tickets.*')
+            ->get();
 
-
-$data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
-    ->whereNull('document_approval_status')
-    ->leftJoin('arrival_sampling_requests', function($join) {
-        $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
-             ->where('sampling_type', 'inner')
-             ->where('approved_status', 'pending');
-    })
-    ->whereNull('arrival_sampling_requests.id') // This excludes tickets that matched the join conditions
-    ->select('arrival_tickets.*')
-    ->get();
         $data['bagTypes'] = BagType::all();
         $data['bagConditions'] = BagCondition::all();
         $data['bagPackings'] = BagPacking::all();

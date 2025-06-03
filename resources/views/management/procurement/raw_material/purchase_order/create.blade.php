@@ -14,7 +14,7 @@
             <div class="form-group">
                 <label>Contract Date:</label>
                 <input type="date" name="contract_date" id="contract_date" placeholder="Contract Date"
-                    class="form-control" />
+                    class="form-control" max="{{ date('Y-m-d') }}" />
             </div>
         </div>
 

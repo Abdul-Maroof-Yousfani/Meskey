@@ -46,24 +46,21 @@ class InnersampleRequestController extends Controller
     {
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
 
-
-
-
-$data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
-    ->where(function ($q) {
-        $q->where('document_approval_status', '!=', 'fully_approved')
-            ->where('document_approval_status', '!=', 'half_approved')
-            ->orWhereNull('document_approval_status');
-    })
-    ->leftJoin('arrival_sampling_requests', function($join) {
-        $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
-             ->where('sampling_type', 'inner')
-             ->where('approved_status', 'pending');
-    })
-    ->whereNull('arrival_sampling_requests.id') // Yahan NULL check karenge
-    ->select('arrival_tickets.*') // Distinct columns ke liye
-    ->distinct() // Duplicate entries na aaye
-    ->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
+            ->where(function ($q) {
+                $q->where('document_approval_status', '!=', 'fully_approved')
+                    ->where('document_approval_status', '!=', 'half_approved')
+                    ->orWhereNull('document_approval_status');
+            })
+            ->leftJoin('arrival_sampling_requests', function ($join) {
+                $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
+                    ->where('sampling_type', 'inner')
+                    ->where('approved_status', 'pending');
+            })
+            ->whereNull('arrival_sampling_requests.id')
+            ->select('arrival_tickets.*')
+            ->distinct()
+            ->get();
 
         return view('management.arrival.inner_sample_request.create', $data);
     }
