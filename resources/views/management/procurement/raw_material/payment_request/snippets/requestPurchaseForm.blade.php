@@ -255,7 +255,7 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control"
                                                         name="sampling_results[{{ $slab->id }}][suggested_deduction]"
-                                                        value="{{ $getDeductionSuggestion->deduction_value }}"
+                                                        value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
                                                         placeholder="Suggested Deduction" readonly>
                                                     <div class="input-group-append">
                                                         <span
@@ -292,7 +292,7 @@
                                                         $from = floatval($slab['from']);
                                                         $to = floatval($slab['to']);
                                                         $isTiered = intval($slab['is_tiered']);
-                                                        $deductionVal = floatval($slab['deduction_value']);
+                                                        $deductionVal = floatval($slab['deduction_value'] ?? 0);
 
                                                         if ($val >= $from) {
                                                             if ($isTiered === 1) {
