@@ -115,6 +115,7 @@ class InnersamplingController extends Controller
                 ->where('approved_status', 'approved')
                 ->latest()
                 ->first();
+
             $deductionValues = [];
             $suggestedChangedValues = [];
 

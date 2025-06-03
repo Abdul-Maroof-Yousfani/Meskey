@@ -200,6 +200,7 @@ class SamplingMonitoringController extends Controller
         try {
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
             // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
+            $reqStatus = $ArrivalSamplingRequest->approved_status == 'approved';
 
             $isLumpsum = ($request->is_lumpsum_deduction ?? 'off') == 'on' ? 1 : 0;
             $isDecisionMaking = ($request->decision_making ?? 'off') == 'on' ? 1 : 0;
@@ -277,8 +278,10 @@ class SamplingMonitoringController extends Controller
             if ($ArrivalSamplingRequest->sampling_type == 'inner') {
                 $updateData['second_qc_status'] = $request->stage_status;
             } else {
-                $updateData['first_qc_status'] = $request->stage_status;
-                $updateData['location_transfer_status'] = $request->stage_status == 'approved' ? 'pending' : null;
+                if (!$reqStatus) {
+                    $updateData['first_qc_status'] = $request->stage_status;
+                    $updateData['location_transfer_status'] = $request->stage_status == 'approved' ? 'pending' : null;
+                }
             }
 
             $ArrivalSamplingRequest->arrivalTicket()->first()->update($updateData);
