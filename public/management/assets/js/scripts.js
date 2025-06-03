@@ -263,65 +263,65 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
           text: data.success,
           confirmButtonColor: "#3085d6",
         }).then((result) => {
-          if (result.isConfirmed) {
-            if (form.data("reset") === true) {
-              form[0].reset();
-            }
+          // if (result.isConfirmed) {
+          if (form.data("reset") === true) {
+            form[0].reset();
+          }
 
-            var url = form.find("#url").val();
-            var listRefresh = form.find("#listRefresh").val();
-            var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
-            $(formhunyr).parents(".modal-sidebar").removeClass("open");
-            $(".main-content").css("cursor", "auto");
+          var url = form.find("#url").val();
+          var listRefresh = form.find("#listRefresh").val();
+          var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
+          $(formhunyr).parents(".modal-sidebar").removeClass("open");
+          $(".main-content").css("cursor", "auto");
 
-            var afterAjaxElement = form.find("#afterAjax");
-            if (afterAjaxElement.length > 0) {
-              var variableName = afterAjaxElement.data("variable");
+          var afterAjaxElement = form.find("#afterAjax");
+          if (afterAjaxElement.length > 0) {
+            var variableName = afterAjaxElement.data("variable");
 
-              if (
-                data.data &&
-                data.data[variableName] &&
-                data.data[variableName].id
-              ) {
-                var originalOnClick = afterAjaxElement.attr("onclick");
-                var routeMatch = originalOnClick.match(/'([^']+)'/);
+            if (
+              data.data &&
+              data.data[variableName] &&
+              data.data[variableName].id
+            ) {
+              var originalOnClick = afterAjaxElement.attr("onclick");
+              var routeMatch = originalOnClick.match(/'([^']+)'/);
 
-                if (routeMatch && routeMatch[1]) {
-                  var originalRoute = routeMatch[1];
-                  var newId = data.data[variableName].id;
+              if (routeMatch && routeMatch[1]) {
+                var originalRoute = routeMatch[1];
+                var newId = data.data[variableName].id;
 
-                  var newRoute = originalRoute.replace(
-                    /\/(\d+)(\/edit)?$/,
-                    "/" + newId + "$2"
+                var newRoute = originalRoute.replace(
+                  /\/(\d+)(\/edit)?$/,
+                  "/" + newId + "$2"
+                );
+
+                if (newRoute !== originalRoute) {
+                  var newOnClick = originalOnClick.replace(
+                    originalRoute,
+                    newRoute
                   );
-
-                  if (newRoute !== originalRoute) {
-                    var newOnClick = originalOnClick.replace(
-                      originalRoute,
-                      newRoute
-                    );
-                    afterAjaxElement.attr("onclick", newOnClick);
-                    afterAjaxElement.trigger("click");
-                  } else {
-                    console.error(
-                      "Route replacement failed - routes are identical"
-                    );
-                  }
+                  afterAjaxElement.attr("onclick", newOnClick);
+                  afterAjaxElement.trigger("click");
+                } else {
+                  console.error(
+                    "Route replacement failed - routes are identical"
+                  );
                 }
               }
             }
-
-            if (url) {
-              window.location.href = url;
-            }
-            if (listRefresh) {
-              filterationCommon(listRefresh);
-              $(formhunyr).parents(".model").slideUp();
-            }
-            if (ajaxLoadFlag == 1) {
-              getAjaxDataOnEditColumns();
-            }
           }
+
+          if (url) {
+            window.location.href = url;
+          }
+          if (listRefresh) {
+            filterationCommon(listRefresh);
+            $(formhunyr).parents(".model").slideUp();
+          }
+          if (ajaxLoadFlag == 1) {
+            getAjaxDataOnEditColumns();
+          }
+          // }
         });
       } else {
         printErrorMsg(data.error);

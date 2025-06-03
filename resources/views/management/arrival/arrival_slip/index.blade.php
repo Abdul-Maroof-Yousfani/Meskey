@@ -37,7 +37,6 @@
                                     </div>
                                 </div>
                             </form>
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
@@ -46,14 +45,12 @@
                                         <tr>
                                             <th class="col-sm-1">Ticket No </th>
                                             <th class="col-sm-3">Name </th>
-
                                             <th class="col-sm-4">Description</th>
                                             <th class="col-sm-1">Name </th>
                                             <th class="col-sm-2">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
-
                                 </table>
                             </div>
                         </div>
