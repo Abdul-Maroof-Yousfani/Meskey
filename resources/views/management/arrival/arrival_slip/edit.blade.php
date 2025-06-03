@@ -67,7 +67,7 @@
                                 </li>
                             </ul>
                         </div>
-                        <hr style="border: 1px solid #ddd;margin-bottom: 10px;    margin-top: 0;">
+                        <hr style="border: 1px solid #ddd;margin-bottom: 10px; margin-top: 0;">
                         <div class="add-main2">
                             <div class="head-add1">
                                 <p><strong>Tel:</strong> +923012740216 <strong>Fax:</strong> </p>
