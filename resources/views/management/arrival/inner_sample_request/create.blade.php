@@ -8,14 +8,11 @@
                 <select class="form-control select2" name="ticket_id">
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-
-                        @if($arrivalTicket->document_approval_status != null)
-                            @if($arrivalTicket->second_qc_status != 'rejected')
-                                <option value="{{ $arrivalTicket->id }}">
-                                    Ticket No: {{ $arrivalTicket->unique_no }} --
-                                    Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
-                                </option>
-                            @endif
+                        @if($arrivalTicket->second_qc_status != 'rejected')
+                            <option value="{{ $arrivalTicket->id }}">
+                                Ticket No: {{ $arrivalTicket->unique_no }} --
+                                Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
+                            </option>
                         @endif
                     @endforeach
                 </select>
