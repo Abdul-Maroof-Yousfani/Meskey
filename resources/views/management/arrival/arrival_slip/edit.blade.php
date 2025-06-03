@@ -70,8 +70,8 @@
                         <hr style="border: 1px solid #ddd;margin-bottom: 10px;    margin-top: 0;">
                         <div class="add-main2">
                             <div class="head-add1">
-                                <p><strong>Tel:</strong> +03012740216,0 <strong>Fax:</strong></p>
-                                <p><strong>email:</strong> Info@mft.com.pk, web:www.mft.com.pk</p>
+                                <p><strong>Tel:</strong> +923012740216 <strong>Fax:</strong> </p>
+                                <p><strong>Email:</strong> Info@mft.com.pk, web:www.mft.com.pk</p>
                             </div>
                         </div>
                     </div>
@@ -424,7 +424,7 @@
                                     <td style="padding: 8px;border: none;">Avg. Weight</td>
                                     <td style="padding: 8px;border: none;" colspan="5">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) /  $arrivalTicket->approvals->total_bags, 2) ?? 'N/A' }}"
+                                            value="{{ number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->approvals->total_bags, 2) ?? 'N/A' }}"
                                             readonly>
                                     </td>
                                 </tr>
