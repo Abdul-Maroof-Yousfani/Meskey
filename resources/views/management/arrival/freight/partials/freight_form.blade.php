@@ -38,7 +38,7 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label>Billy #</label>
+                <label>Bilty #</label>
                 <input type="text" name="billy_number" class="form-control" value="{{ $ticket->bilty_no }}"
                     readonly />
             </div>
@@ -135,7 +135,7 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label>Freight Written on Billy</label>
+                <label>Freight Written on Bilty</label>
                 <input type="number" step="0.01" name="freight_written_on_bilty"
                     class="form-control calculate-final" value="0" />
             </div>

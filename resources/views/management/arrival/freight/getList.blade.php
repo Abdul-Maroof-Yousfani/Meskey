@@ -4,7 +4,7 @@
              <th class="col-sm-2">Ticket No.</th>
              <th class="col-sm-2">Miller</th>
              <th class="col-sm-2">Truck No.</th>
-             <th class="col-sm-2">Billy No.</th>
+             <th class="col-sm-2">Bilty No.</th>
              <th class="col-sm-2">Net Freight</th>
              <th class="col-sm-2">Status</th>
              <th class="col-sm-2">Action</th>

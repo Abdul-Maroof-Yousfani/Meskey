@@ -105,7 +105,6 @@ class TicketContractController extends Controller
         $sampling = PurchaseSamplingRequest::find($request->request_id);
 
         if ($request->status == 'resampling') {
-
             PurchaseSamplingRequest::create([
                 'company_id' => $sampling->company_id,
                 'purchase_contract' => $sampling->purchase_contract,
@@ -117,14 +116,8 @@ class TicketContractController extends Controller
             $sampling->is_resampling_made = 'yes';
         }
 
-
-
         $sampling->approved_status = $request->status;
         $sampling->save();
-
-
-        //$sampling = PurchaseSamplingRequest::find($request->request_id);
-
 
         return response()->json(['message' => 'Request status updated successfully!']);
     }

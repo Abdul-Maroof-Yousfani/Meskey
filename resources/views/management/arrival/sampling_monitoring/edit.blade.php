@@ -228,25 +228,63 @@
             @if ($initialRequestForInnerReq)
                 <li class="nav-item">
                     <a class="nav-link" id="initial-tab" data-toggle="tab" href="#initial" role="tab"
-                        aria-controls="initial" aria-selected="false">Initial Checklist</a>
+                        aria-controls="initial" aria-selected="false">
+                        Initial Checklist
+                    </a>
                 </li>
             @endif
 
             @foreach ($innerRequestsData as $index => $innerData)
+                @php
+                    $statusLabel = '';
+                    switch ($innerData['request']->approved_status) {
+                        case 'resampling':
+                            $statusLabel = 'Resampling';
+                            break;
+                        case 'rejected':
+                            $statusLabel = 'Rejected';
+                            break;
+                        case 'approved':
+                            $statusLabel = 'Approved';
+                            break;
+                        default:
+                            $statusLabel = 'Inner';
+                    }
+                @endphp
                 <li class="nav-item">
                     <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab"
                         href="#inner-{{ $index }}" role="tab" aria-controls="inner-{{ $index }}"
                         aria-selected="false">
-                        Inner #{{ $loop->iteration }} ({{ $innerData['request']->created_at->format('M d, Y') }})
+                        {{ $statusLabel }} #{{ $loop->iteration }}
+                        ({{ $innerData['request']->created_at->format('M d, Y') }})
                     </a>
                 </li>
             @endforeach
 
+            @php
+                $currentTabLabel = '';
+                switch ($arrivalSamplingRequest->approved_status) {
+                    case 'resampling':
+                        $currentTabLabel = 'Current Resampling';
+                        break;
+                    case 'rejected':
+                        $currentTabLabel = 'Current Rejected';
+                        break;
+                    case 'approved':
+                        $currentTabLabel = 'Current Approved';
+                        break;
+                    default:
+                        $currentTabLabel = ucwords(
+                            ($arrivalSamplingRequest->sampling_type == 'inner' ? 'Current ' : '') .
+                                $arrivalSamplingRequest->sampling_type,
+                        );
+                }
+            @endphp
+
             <li class="nav-item">
                 <a class="nav-link active" id="current-inner-tab" data-toggle="tab" href="#current-inner"
                     role="tab" aria-controls="current-inner" aria-selected="true">
-                    {{ ucwords(($arrivalSamplingRequest->sampling_type == 'inner' ? 'Current ' : '') . $arrivalSamplingRequest->sampling_type) }}
-                    Checklist
+                    {{ $currentTabLabel }} Checklist
                 </a>
             </li>
         </ul>

@@ -361,6 +361,7 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
 
 function validateSlabInput(input) {
   const maxRange = parseFloat(input.dataset.maxRange) || 100;
+  const isPercentage = input.dataset.isPercentage;
   const value = parseFloat(input.value) || 0;
 
   input.classList.remove("warning", "danger");
@@ -368,7 +369,9 @@ function validateSlabInput(input) {
   if (value > maxRange && value <= 100) {
     input.classList.add("warning");
   } else if (value > 100) {
-    input.value = 100;
+    if (isPercentage) {
+      input.value = 100;
+    }
     input.classList.add("warning");
     // input.classList.add("danger");
   }
