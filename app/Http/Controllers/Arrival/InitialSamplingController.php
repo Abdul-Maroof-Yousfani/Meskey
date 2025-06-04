@@ -80,6 +80,11 @@ class InitialSamplingController extends Controller
     public function store(ArrivalSamplingResultRequest $request)
     {
         $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
+
+        if ($ArrivalSamplingRequest->is_done === 'yes') {
+            return response('This sampling request has already been processed.', 422);
+        }
+
         $arrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
 
         $arrivalTicket->update([

@@ -56,12 +56,19 @@ class FirstWeighbridgeController extends Controller
      */
     public function store(FirstWeighbridgeRequest $request)
     {
+        $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+
+        if ($arrivalTicket->first_weighbridge_status !== 'pending') {
+            return response('First weighbridge has already been completed and cannot be performed again.', 422);
+        }
+
         $request['created_by'] = auth()->user()->id;
         $request['weight'] = $request->first_weight ?? 0;
         $arrival_locations = FirstWeighbridge::create($request->all());
 
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['first_weighbridge_status' => 'completed']);
+        $arrivalTicket->update([
+            'first_weighbridge_status' => 'completed'
+        ]);
 
         return response()->json(['success' => 'First weighbridge created successfully.', 'data' => $arrival_locations], 201);
     }

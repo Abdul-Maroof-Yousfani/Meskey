@@ -62,6 +62,7 @@
 
     <script>
         const SUBMISSION_ON_ENTER = @json(env('SUBMISSION_ON_ENTER', false));
+        const IS_LOCAL = @json(env('IS_LOCAL', false));
     </script>
 
 </head>

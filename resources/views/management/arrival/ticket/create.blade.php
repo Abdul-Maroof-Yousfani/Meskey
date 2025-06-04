@@ -41,7 +41,7 @@
                              data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
                              data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
                              value="{{ $arrivalPurchaseOrder->id }}">
-                             {{ $arrivalPurchaseOrder->unique_no }}
+                             {{ $arrivalPurchaseOrder->contract_no }}
                          </option>
                      @endforeach
                  </select>
@@ -235,14 +235,106 @@
      }
 
      $(document).ready(function() {
+
+         if (IS_LOCAL) {
+             function populateRandomValues() {
+                 if ($('#product_id option').length > 1) {
+                     const productOptions = $('#product_id option:not(:first)');
+                     const randomProduct = productOptions.eq(Math.floor(Math.random() * productOptions.length))
+                         .val();
+                     $('#product_id').val(randomProduct).trigger('change');
+                 }
+
+                 if ($('#arrival_purchase_order_id option').length > 1) {
+                     const contractOptions = $('#arrival_purchase_order_id option:not(:first)');
+                     const randomContract = contractOptions.eq(Math.floor(Math.random() * contractOptions
+                         .length)).val();
+                     $('#arrival_purchase_order_id').val(randomContract).trigger('change');
+                 }
+
+                 if ($('#miller_id option').length > 1) {
+                     const millerOptions = $('#miller_id option:not(:first)');
+                     const randomMiller = millerOptions.eq(Math.floor(Math.random() * millerOptions.length))
+                         .val();
+                     $('#miller_id').val(randomMiller).trigger('change');
+                 }
+
+                 if ($('#broker_name option').length > 1) {
+                     const brokerOptions = $('#broker_name option:not(:first)');
+                     const randomBroker = brokerOptions.eq(Math.floor(Math.random() * brokerOptions.length))
+                         .val();
+                     $('#broker_name').val(randomBroker).trigger('change');
+                 }
+
+                 if ($('#decision_id option').length > 1) {
+                     const decisionOptions = $('#decision_id option:not(:first)');
+                     const randomDecision = decisionOptions.eq(Math.floor(Math.random() * decisionOptions
+                         .length)).val();
+                     $('#decision_id').val(randomDecision).trigger('change');
+                 }
+
+                 if ($('#accounts_of option').length > 1) {
+                     const accountsOptions = $('#accounts_of option:not(:first)');
+                     const randomAccount = accountsOptions.eq(Math.floor(Math.random() * accountsOptions.length))
+                         .val();
+                     $('#accounts_of').val(randomAccount).trigger('change');
+                 }
+
+                 if ($('#station_id option').length > 1) {
+                     const stationOptions = $('#station_id option:not(:first)');
+                     const randomStation = stationOptions.eq(Math.floor(Math.random() * stationOptions.length))
+                         .val();
+                     $('#station_id').val(randomStation).trigger('change');
+                 }
+
+                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                 const randomLetters = letters.charAt(Math.floor(Math.random() * letters.length)) +
+                     letters.charAt(Math.floor(Math.random() * letters.length));
+                 const randomNumbers = Math.floor(1000 + Math.random() * 9000);
+                 $('input[name="truck_no"]').val(randomLetters + '-' + randomNumbers);
+
+                 $('input[name="bilty_no"]').val('BL-' + Math.floor(10000 + Math.random() * 90000));
+
+                 if ($('[name="arrival_truck_type_id"] option').length > 1) {
+                     const truckTypeOptions = $('[name="arrival_truck_type_id"] option:not(:first)');
+                     const randomTruckType = truckTypeOptions.eq(Math.floor(Math.random() * truckTypeOptions
+                         .length)).val();
+                     $('[name="arrival_truck_type_id"]').val(randomTruckType).trigger('change');
+                 }
+
+                 const sampleMoneyTypes = ['n/a', 'single', 'double'];
+                 $('[name="sample_money_type"]').val(sampleMoneyTypes[Math.floor(Math.random() * sampleMoneyTypes
+                     .length)]).trigger('change');
+
+                 $('input[name="bags"]').val(Math.floor(10 + Math.random() * 100));
+
+                 const randomDate = new Date();
+                 randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 30));
+                 $('input[name="loading_date"]').val(randomDate.toISOString().split('T')[0]);
+
+                 const firstWeight = Math.floor(5000 + Math.random() * 10000);
+                 const secondWeight = firstWeight + Math.floor(1000 + Math.random() * 5000);
+                 $('#first_weight').val(firstWeight);
+                 $('#second_weight').val(secondWeight);
+                 calculateNetWeight();
+
+                 const remarks = ['Good condition', 'Normal delivery', 'Urgent delivery', 'Standard shipment'];
+                 $('textarea[name="remarks"]').val(remarks[Math.floor(Math.random() * remarks.length)]);
+             }
+
+             populateRandomValues();
+
+             $(document).on('select2:open', function() {
+                 setTimeout(populateRandomValues, 500);
+             });
+         }
+
          calculateSampleMoney();
 
          $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
 
          $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
-     });
 
-     $(document).ready(function() {
          initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
          initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
          //  initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);

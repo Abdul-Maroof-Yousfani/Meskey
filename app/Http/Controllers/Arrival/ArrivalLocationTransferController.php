@@ -58,15 +58,23 @@ class ArrivalLocationTransferController extends Controller
      */
     public function store(ArrivalLocationTransferRequest $request)
     {
+        $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+
+        if ($arrivalTicket->location_transfer_status !== 'pending') {
+            return response('Location has already been transferred. Transfer cannot be performed again.', 422);
+        }
+
         $request['creator_id'] = auth()->user()->id;
 
         $arrival_location = ArrivalLocationTransfer::create($request->all());
 
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['location_transfer_status' => 'transfered', 'first_weighbridge_status' => 'pending']);
+        $arrivalTicket->update([
+            'location_transfer_status' => 'transfered',
+            'first_weighbridge_status' => 'pending'
+        ]);
 
         return response()->json([
-            'success' => 'Arrival Location Transfer created successfully.',
+            'success' => 'Location Transferred Successfully.',
             'data' => $arrival_location
         ], 201);
     }
