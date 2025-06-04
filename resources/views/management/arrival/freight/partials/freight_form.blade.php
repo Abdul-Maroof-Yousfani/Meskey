@@ -207,10 +207,20 @@
         </div>
     </div>
 
+    @if ($isNotGeneratable)
+        <div style="margin-top: 15px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;"
+            class="mb-3">
+            <strong>Important!</strong> Please apply deductions first before generating the arrival
+            slip.
+        </div>
+    @endif
+
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            @if (!$isNotGeneratable)
+                <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            @endif
         </div>
     </div>
 </form>

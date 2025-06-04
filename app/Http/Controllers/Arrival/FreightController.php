@@ -97,8 +97,15 @@ class FreightController extends Controller
             return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
         }
 
+        $isNotGeneratable = false;
+
+        if ($ticket->decision_making == 1) {
+            $isNotGeneratable = ($ticket->lumpsum_deduction == 0.00 && $ticket->lumpsum_deduction_kgs == 0.00);
+        }
+
         $html = view('management.arrival.freight.partials.freight_form', [
-            'ticket' => $ticket
+            'ticket' => $ticket,
+            'isNotGeneratable' => $isNotGeneratable,
         ])->render();
 
         return response()->json([

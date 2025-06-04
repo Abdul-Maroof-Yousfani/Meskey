@@ -78,7 +78,20 @@ class InnersampleRequestController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // $arrival_locations = ArrivalLocation::create($request->all());
+        $ticket = ArrivalTicket::findOrFail($request->ticket_id);
+
+        if ($ticket->document_approval_status === 'fully_approved' || $ticket->document_approval_status === 'half_approved') {
+            return response('This truck has already been approved.', 422);
+        }
+
+        $existingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->ticket_id)
+            ->where('sampling_type', 'inner')
+            ->where('approved_status', 'pending')
+            ->first();
+
+        if ($existingRequest) {
+            return response('A pending inner sampling request already exists for this ticket.', 422);
+        }
 
         $arrivalSampleReq = ArrivalSamplingRequest::create([
             'company_id'       => $request->company_id,

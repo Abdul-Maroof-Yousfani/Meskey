@@ -71,7 +71,7 @@
                         <div class="add-main2">
                             <div class="head-add1">
                                 <p><strong>Tel:</strong> +923012740216 <strong>Fax:</strong> </p>
-                                <p><strong>Email:</strong> Info@mft.com.pk, web:www.mft.com.pk</p>
+                                <p><strong>Email:</strong> info@mft.com.pk <strong>Web:</strong> www.mft.com.pk</p>
                             </div>
                         </div>
                     </div>
