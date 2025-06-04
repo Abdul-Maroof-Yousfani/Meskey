@@ -67,6 +67,24 @@ class ArrivalApproveController extends Controller
      */
     public function store(Request $request)
     {
+        $ticket = ArrivalTicket::where('id', $request->arrival_ticket_id)
+            ->where('first_weighbridge_status', 'completed')
+            ->whereNull('document_approval_status')
+            ->whereNotExists(function ($query) {
+                $query->select('id')
+                    ->from('arrival_sampling_requests')
+                    ->whereColumn('arrival_ticket_id', 'arrival_tickets.id')
+                    ->where('sampling_type', 'inner')
+                    ->where('approved_status', 'pending');
+            })
+            ->first();
+
+        if (!$ticket) {
+            return response()->json([
+                'errors' => ['arrival_ticket_id' => ['This ticket is not eligible for approval. Please check if it has completed first weighbridge and has no pending inner sampling requests.']]
+            ], 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'gala_name' => 'required|string',
