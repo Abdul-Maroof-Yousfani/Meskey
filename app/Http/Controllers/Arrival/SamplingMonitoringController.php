@@ -200,10 +200,27 @@ class SamplingMonitoringController extends Controller
         try {
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
             // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
-            $reqStatus = $ArrivalSamplingRequest->approved_status == 'approved';
+            $reqStatus = $ArrivalSamplingRequest->approved_status;
 
-            $isLumpsum = ($request->is_lumpsum_deduction ?? 'off') == 'on' ? 1 : 0;
-            $isDecisionMaking = ($request->decision_making ?? 'off') == 'on' ? 1 : 0;
+            if ($reqStatus === 'approved' && $request->stage_status !== 'approved') {
+                return response()->json([
+                    'errors' => [
+                        'stage_status' => ['This request is already approved, stage status must be "approved"']
+                    ]
+                ], 422);
+            }
+
+            $decisionMakingValue = 'off';
+            if ($reqStatus === 'approved') {
+                $decisionMakingValue = $request->decision_making ?? 'off';
+            } elseif ($reqStatus === 'pending') {
+                $decisionMakingValue = ($request->stage_status === 'approved')
+                    ? ($request->decision_making ?? 'off')
+                    : 'off';
+            }
+
+            $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+            $isDecisionMaking = convertToBoolean($decisionMakingValue);
 
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
@@ -253,16 +270,18 @@ class SamplingMonitoringController extends Controller
                 }
             }
 
-            if ($request->stage_status == 'resampling') {
-                ArrivalSamplingRequest::create([
-                    'company_id' => $ArrivalSamplingRequest->company_id,
-                    'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
-                    'sampling_type' => $ArrivalSamplingRequest->sampling_type,
-                    'is_re_sampling' => 'yes',
-                    'is_done' => 'no',
-                    'remark' => null,
-                ]);
-                $ArrivalSamplingRequest->is_resampling_made = 'yes';
+            if ($reqStatus == 'pending') {
+                if ($request->stage_status == 'resampling') {
+                    ArrivalSamplingRequest::create([
+                        'company_id' => $ArrivalSamplingRequest->company_id,
+                        'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
+                        'sampling_type' => $ArrivalSamplingRequest->sampling_type,
+                        'is_re_sampling' => 'yes',
+                        'is_done' => 'no',
+                        'remark' => null,
+                    ]);
+                    $ArrivalSamplingRequest->is_resampling_made = 'yes';
+                }
             }
 
             $updateData = [
@@ -278,7 +297,7 @@ class SamplingMonitoringController extends Controller
             if ($ArrivalSamplingRequest->sampling_type == 'inner') {
                 $updateData['second_qc_status'] = $request->stage_status;
             } else {
-                if (!$reqStatus) {
+                if ($reqStatus !== 'approved') {
                     $updateData['first_qc_status'] = $request->stage_status;
                     $updateData['location_transfer_status'] = $request->stage_status == 'approved' ? 'pending' : null;
                 }
@@ -286,7 +305,10 @@ class SamplingMonitoringController extends Controller
 
             $ArrivalSamplingRequest->arrivalTicket()->first()->update($updateData);
 
-            $ArrivalSamplingRequest->approved_status = $request->stage_status;
+            if ($reqStatus == 'pending') {
+                $ArrivalSamplingRequest->approved_status = $request->stage_status;
+            }
+
             $ArrivalSamplingRequest->save();
 
             return response()->json([

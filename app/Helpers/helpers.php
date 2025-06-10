@@ -199,6 +199,11 @@ if (!function_exists('formatEnumValue')) {
     }
 }
 
+function convertToBoolean($value)
+{
+    return ($value == 'on') ? 1 : 0;
+}
+
 // if (!function_exists('getDeductionSuggestion')) {
 //     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
 //     {
