@@ -1,8 +1,9 @@
-<form action="{{ route('supplier.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('supplier.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.supplier') }}" />
 
-    <div class="row form-mar">
+    {{-- <div class="row form-mar">
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Basic Detail
@@ -11,36 +12,24 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Supplier Name" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="name" placeholder="Supplier Name" class="form-control" autocomplete="off" />
             </div>
         </div>
 
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Email: <small>(Optional)</small></label>
-                <input type="email" name="email" placeholder="Supplier Email" class="form-control"
-                    autocomplete="off" />
+                <input type="email" name="email" placeholder="Supplier Email" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Phone: <small>(Optional)</small></label>
-                <input type="text" name="phone" placeholder="Phone Number" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="phone" placeholder="Phone Number" class="form-control" autocomplete="off" />
             </div>
         </div>
-        {{-- <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Account Type:</label>
-                <select name="account_type" id="account_type">
-                    <option value="">Select Account Type</option>
-                    <option value="debit">Debit</option>
-                    <option value="credit">Credit</option>
-                </select>
-            </div>
-        </div> --}}
-    </div>
+    </div> --}}
+
     <div class="row ">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -67,11 +56,54 @@
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
+            <div id="card-container" class="mb-4">
+                <div class="clonecard border-1">
+                    <hr>
+                    <div class="row ">
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Bank Name:</label>
+                                <input type="text" name="company_bank_name[]" placeholder="Name Name" class="form-control"
+                                    autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Account Title :</label>
+                                <input type="text" name="company_account_title[]" placeholder="Account Title"
+                                    class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                                <label>Account Number :</label>
+                                <input type="text" name="company_account_number[]" placeholder="Account number"
+                                    class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                            <div>
+                                <button type="button" class="btn btn-warning btn-icon add-more   mr-1 "><i
+                                        class="fa fa-plus"></i></button>
+                                <button type="button" class="btn btn-danger btn-icon remove-card  mr-1 "><i
+                                        class="fa fa-trash"></i></button>
+                            </div>
+                            {{-- <button id="add-more" type="button" class="btn btn-primary mt-3 ">Add More</button>
+                            --}}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            {{-- <div class="form-group">
                 <label>Bank Detail:</label>
                 <textarea name="company_bank_detail" rows="2" class="form-control" placeholder="Bank Detail"></textarea>
-            </div>
+            </div> --}}
         </div>
+
     </div>
     <div class="row ">
         <div class="col-12">
@@ -82,8 +114,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Owner Name:</label>
-                <input type="text" name="owner_name" placeholder="Owner Name" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="owner_name" placeholder="Owner Name" class="form-control" autocomplete="off" />
             </div>
         </div>
 
@@ -103,12 +134,56 @@
         </div>
 
         <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
+
+            <div id="card-container2" class="mb-4">
+                <div class="clonecard2 border-1">
+                    <hr>
+                    <div class="row ">
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Bank Name:</label>
+                                <input type="text" name="owner_bank_name[]" placeholder="Name Name" class="form-control"
+                                    autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Account Title :</label>
+                                <input type="text" name="owner_account_title[]" placeholder="Account Title"
+                                    class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                                <label>Account Number :</label>
+                                <input type="text" name="owner_account_number[]" placeholder="Account number"
+                                    class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                            <div>
+                                <button type="button" class="btn btn-warning btn-icon add-more2   mr-1 "><i
+                                        class="fa fa-plus"></i></button>
+                                <button type="button" class="btn btn-danger btn-icon remove-card2  mr-1 "><i
+                                        class="fa fa-trash"></i></button>
+                            </div>
+                            {{-- <button id="add-more" type="button" class="btn btn-primary mt-3 ">Add More</button>
+                            --}}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            {{-- <div class="form-group">
                 <label>Bank Detail:</label>
                 <textarea name="company_bank_detail" rows="2" class="form-control" placeholder="Bank Detail"></textarea>
-            </div>
+            </div> --}}
         </div>
     </div>
+
     <div class="row ">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -121,7 +196,6 @@
                 <input type="text" name="next_to_kin" placeholder="Name" class="form-control" autocomplete="off" />
             </div>
         </div>
-
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Mobile No:</label>
@@ -130,18 +204,28 @@
             </div>
         </div>
     </div>
-
+    <div class="row form-mar">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Locations
+            </h6>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            @foreach ($companyLocation as $companyLoc)
+                <div class="checkbox">
+                    <input name="company_location_ids[]" type="checkbox" id="checkbox{{$companyLoc->id}}" value="{{$companyLoc->id}}" checked="">
+                    <label for="checkbox{{$companyLoc->id}}"><span>{{$companyLoc->name}}</span></label>
+                </div>
+            @endforeach
+        </div>
+    </div>
 
     <div class="row ">
-
-
-
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Other
             </h6>
         </div>
-
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>
@@ -167,3 +251,63 @@
         </div>
     </div>
 </form>
+
+
+<script>
+    // Function to add more cards
+    // Function to toggle visibility of the Remove button
+    function toggleRemoveButton() {
+        if ($('#card-container .clonecard').length === 1) {
+            $('#card-container .clonecard .remove-card').hide(); // Hide Remove button
+        } else {
+            $('#card-container .clonecard .remove-card').show(); // Show Remove button
+        }
+    }
+
+    // Initialize Remove button visibility
+    toggleRemoveButton();
+
+    // Add More button click event
+    $('body').on('click', '.add-more', function () {
+        var newCard = $('#card-container .clonecard:first').clone(); // Clone the first card
+        newCard.find('select').val(''); // Clear select values
+        $('#card-container').append(newCard); // Append the new card
+        toggleRemoveButton(); // Toggle Remove button visibility
+    });
+
+    // Remove button click event
+    $(document).on('click', '.remove-card', function () {
+        if ($('#card-container .clonecard').length > 1) {
+            $(this).closest('.clonecard').remove(); // Remove the specific card
+            toggleRemoveButton(); // Toggle Remove button visibility
+        }
+    });
+    // Function to add more cards
+    // Function to toggle visibility of the Remove button
+    function toggleRemoveButton() {
+        if ($('#card-container2 .clonecard2').length === 1) {
+            $('#card-container2 .clonecard2 .remove-card2').hide(); // Hide Remove button
+        } else {
+            $('#card-container2 .clonecard2 .remove-card2').show(); // Show Remove button
+        }
+    }
+
+    // Initialize Remove button visibility
+    toggleRemoveButton();
+
+    // Add More button click event
+    $('body').on('click', '.add-more2', function () {
+        var newCard = $('#card-container2 .clonecard2:first').clone(); // Clone the first card
+        newCard.find('select').val(''); // Clear select values
+        $('#card-container2').append(newCard); // Append the new card
+        toggleRemoveButton(); // Toggle Remove button visibility
+    });
+
+    // Remove button click event
+    $(document).on('click', '.remove-card2', function () {
+        if ($('#card-container2 .clonecard2').length > 1) {
+            $(this).closest('.clonecard2').remove(); // Remove the specific card
+            toggleRemoveButton(); // Toggle Remove button visibility
+        }
+    });
+</script>

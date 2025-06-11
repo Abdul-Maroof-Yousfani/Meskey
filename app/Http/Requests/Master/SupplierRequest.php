@@ -17,15 +17,15 @@ class SupplierRequest extends FormRequest
         return [
             'company_id' => 'required|exists:companies,id',
             'unique_no' => 'nullable|string|max:255|unique:suppliers,unique_no',
-            'name' => [
+            'company_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('suppliers', 'name')
+                Rule::unique('suppliers', 'company_name')
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->supplier)
             ],
-            'company_name' => 'required|string|max:255',
+           // 'company_name' => 'required|string|max:255',
             // 'account_type' => 'required|in:credit,debit',
             'owner_name' => 'required|string|max:255',
             'owner_mobile_no' => 'required|string|max:20',

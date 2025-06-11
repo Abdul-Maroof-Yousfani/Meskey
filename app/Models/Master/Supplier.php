@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Models\SupplierCompanyBankDetail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,7 +11,7 @@ class Supplier extends Model
     use HasFactory;
 
     // Define fillable attributes
- protected $fillable = [
+    protected $fillable = [
         'company_id',
         'unique_no',
         'name',
@@ -29,7 +30,9 @@ class Supplier extends Model
         'ntn',
         'stn',
         'attachment',
-        'status'
+        'status',
+        'company_location_ids'
+
     ];
 
     // Define the relationship with Company (assuming the 'Company' model exists)
@@ -37,4 +40,19 @@ class Supplier extends Model
     {
         return $this->belongsTo(Company::class); // Adjust the model name if needed
     }
+
+    public function companyBankDetails()
+    {
+        return $this->hasMany(SupplierCompanyBankDetail::class);
+    }
+
+    public function ownerBankDetails()
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    // Add casts for company_locations
+    protected $casts = [
+        'company_location_ids' => 'array',
+    ];
 }
