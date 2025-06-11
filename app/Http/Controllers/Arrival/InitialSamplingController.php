@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Arrival\{ArrivalCustomSampling, ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury};
 use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
-use App\Http\Requests\Arrival\ArrivalSamplingResultRequest;
+use App\Http\Requests\Arrival\ArrivalInitialSamplingResultRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\QcReliefParameter;
 use App\Models\Product;
@@ -77,7 +77,7 @@ class InitialSamplingController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalSamplingResultRequest $request)
+    public function store(ArrivalInitialSamplingResultRequest $request)
     {
         $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
 

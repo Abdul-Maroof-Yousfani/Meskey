@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Arrival\ArrivalInitialSamplingResultRequest;
 use Illuminate\Http\Request;
 use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalTicket};
 use App\Models\SaudaType;
@@ -26,11 +27,15 @@ class SamplingMonitoringController extends Controller
      */
     public function getList(Request $request)
     {
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
             ->where('is_done', 'yes')
+            ->groupBy('arrival_ticket_id')
+            ->pluck('id');
+
+        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+            ->whereIn('id', $latestRequestIds)
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
-
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
                         $aq->where('unique_no', 'like', $searchTerm)
@@ -43,15 +48,17 @@ class SamplingMonitoringController extends Controller
             })
             ->where(function ($q) {
                 $q->where('approved_status', 'pending')
-                    ->orWhere('decision_making', 1);
+                    ->orWhere(function ($q) {
+                        $q->where('decision_making', 1)
+                            ->where('lumpsum_deduction', 0)
+                            ->where('lumpsum_deduction_kgs', 0);
+                    });
             })
             ->latest()
-            // ->orderBy('created_at', 'asc')
             ->paginate(request('per_page', 25));
 
         return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -65,7 +72,7 @@ class SamplingMonitoringController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalSamplingResultRequest $request)
+    public function store(ArrivalInitialSamplingResultRequest $request)
     {
         $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
         // Create main entry

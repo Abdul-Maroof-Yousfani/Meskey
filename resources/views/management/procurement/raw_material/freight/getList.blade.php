@@ -21,14 +21,14 @@
                      </td>
                      <td>
                          @if ($purchaseOrder->purchaseFreight)
-                             <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $purchaseOrder->purchaseFreight->id) }}','Edit Freight', true)"
+                             <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $purchaseOrder->purchaseFreight->id) }}','Edit Loading', true)"
                                  class="info p-1 text-center mr-2 position-relative">
                                  <i class="ft-edit font-medium-3"></i>
                              </a>
                          @else
-                             <a onclick="openModal(this,'{{ route('raw-material.freight.create', ['arrival_purchase_order_id' => $purchaseOrder->id]) }}','Create Freight', false)"
+                             <a onclick="openModal(this,'{{ route('raw-material.freight.create', ['arrival_purchase_order_id' => $purchaseOrder->id]) }}','Create Loading', false)"
                                  class="success p-1 text-center mr-2 position-relative">
-                                 <i class="ft-plus font-medium-3"></i>
+                                 <i class="ft-edit font-medium-3"></i>
                              </a>
                          @endif
 

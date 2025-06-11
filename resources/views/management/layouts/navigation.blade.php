@@ -189,7 +189,7 @@
                                     href="{{ route('raw-material.freight.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.freight.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Freight</span>
+                                    <span data-i18n="Task Board">Loading Management</span>
                                 </a>
                             </li>
                             @endcanAccess

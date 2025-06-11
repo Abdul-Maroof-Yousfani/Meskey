@@ -76,7 +76,7 @@ class AppServiceProvider extends ServiceProvider
                     'RoleController' => \App\Http\Requests\Role\StoreRoleRequest::class,
                     'RegionController' => \App\Http\Requests\Region\StoreRegionRequest::class,
                     'TicketController' => \App\Http\Requests\Arrival\ArrivalTicketRequest::class,
-                    'ArrivalSamplingController' => \App\Http\Requests\Arrival\ArrivalSamplingResultRequest::class,
+                    'InitialSamplingController' => \App\Http\Requests\Arrival\ArrivalInitialSamplingResultRequest::class,
                     'FreightController' => \App\Http\Requests\Arrival\FreightRequest::class,
                     'AddCustomerController' => \App\Http\Requests\Customer\AddCustomerRequest::class,
                     'DeleteCustomerController' => \App\Http\Requests\Customer\DeleteCustomerRequest::class,

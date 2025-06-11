@@ -17,7 +17,8 @@
              <div class="form-group">
                  <label>Loading Date</label>
                  <input type="date" name="loading_date" class="form-control"
-                     value="{{ $freight->loading_date ? $freight->loading_date->format('Y-m-d') : '' }}" />
+                     value="{{ $freight->loading_date ? $freight->loading_date->format('Y-m-d') : '' }}"
+                     max="{{ date('Y-m-d') }}" />
              </div>
          </div>
 
