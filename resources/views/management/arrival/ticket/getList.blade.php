@@ -48,7 +48,7 @@
                     <td>
                         <p class="m-0 white-nowrap">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }}
                         </p>
                     </td>
                     <td>

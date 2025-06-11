@@ -67,7 +67,7 @@
                     <td>
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
 
                         </p>
                     </td>
@@ -95,7 +95,7 @@
 
 
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests',true)"
+                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>

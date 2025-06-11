@@ -44,7 +44,7 @@
                     </td>
                     <td>
                         {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                        {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
+                        {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }}
                     </td>
                     <td>
                         @can('role-edit')

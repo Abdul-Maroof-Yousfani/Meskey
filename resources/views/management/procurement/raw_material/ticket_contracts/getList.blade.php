@@ -66,7 +66,7 @@
                                 <strong>Arrival Date:</strong>
                                 {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
                                 <strong>Arrival Time:</strong>
-                                {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
+                                {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
                                 <strong>Status:</strong>
                                 {{ formatEnumValue($row->document_approval_status) ?? 'N/A' }} <br>
                             </small>
@@ -75,7 +75,7 @@
                     <td>
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
                         </p>
                     </td>
                     <td>
