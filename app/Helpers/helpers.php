@@ -2,6 +2,8 @@
 
 use App\Models\Acl\{Company, Menu};
 use App\Models\{User};
+use App\Models\Master\ProductSlab;
+use App\Models\Master\ProductSlabForRmPo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Fluent;
 
@@ -218,19 +220,75 @@ function convertToBoolean($value)
 //     }
 // }
 
-if (!function_exists('getDeductionSuggestion')) {
-    function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult)
-    {
-        // $productSlabTypeId = 2;
-        // $productId = 3;
-        // $inspectionResult = 5;
 
-        $slabs = \App\Models\Master\ProductSlab::where('product_slab_type_id', $productSlabTypeId)
+if (!function_exists('getDeductionSuggestion')) {
+    function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult, $purchaseOrderID = null)
+    {
+        $slabs = ProductSlab::where('product_slab_type_id', $productSlabTypeId)
             ->where('product_id', $productId)
             ->where('status', 'active')
-            // ->where('from', '<=', $inspectionResult ?? 0)
             ->orderBy('from', 'asc')
             ->get();
+
+        if ($purchaseOrderID !== null) {
+            $rmPoSlabs =  ProductSlabForRmPo::where('arrival_purchase_order_id', $purchaseOrderID)
+                ->where('product_id', $productId)
+                ->where('product_slab_type_id', $productSlabTypeId)
+                ->where('status', 'active')
+                ->orderBy('from', 'asc')
+                ->get();
+
+            foreach ($rmPoSlabs as $rmPoSlab) {
+                $newSlabs = collect();
+
+                foreach ($slabs as $slab) {
+                    if ($slab->to < $rmPoSlab->from || $slab->from > $rmPoSlab->to) {
+                        $newSlabs->push($slab);
+                        continue;
+                    }
+
+                    if ($rmPoSlab->from <= $slab->from && ($rmPoSlab->to === null || $rmPoSlab->to >= $slab->to)) {
+                        $newSlabs->push((object)[
+                            'from' => $slab->from,
+                            'to' => $slab->to,
+                            'is_tiered' => $slab->is_tiered,
+                            'deduction_value' => 0,
+                            'deduction_type' => $slab->deduction_type,
+                        ]);
+                    } else {
+                        if ($slab->from < $rmPoSlab->from) {
+                            $newSlabs->push((object)[
+                                'from' => $slab->from,
+                                'to' => $rmPoSlab->from - 1,
+                                'is_tiered' => $slab->is_tiered,
+                                'deduction_value' => $slab->deduction_value,
+                                'deduction_type' => $slab->deduction_type,
+                            ]);
+                        }
+
+                        $newSlabs->push((object)[
+                            'from' => max($slab->from, $rmPoSlab->from),
+                            'to' => min($slab->to ?? PHP_FLOAT_MAX, $rmPoSlab->to ?? PHP_FLOAT_MAX),
+                            'is_tiered' => $slab->is_tiered,
+                            'deduction_value' => 0,
+                            'deduction_type' => $slab->deduction_type,
+                        ]);
+
+                        if (($slab->to === null || $slab->to > $rmPoSlab->to) && ($rmPoSlab->to !== null)) {
+                            $newSlabs->push((object)[
+                                'from' => $rmPoSlab->to + 1,
+                                'to' => $slab->to,
+                                'is_tiered' => $slab->is_tiered,
+                                'deduction_value' => $slab->deduction_value,
+                                'deduction_type' => $slab->deduction_type,
+                            ]);
+                        }
+                    }
+                }
+
+                $slabs = $newSlabs;
+            }
+        }
 
         $deductionValue = 0;
         $inspectionResult = (float) ($inspectionResult ?? 0);
@@ -238,7 +296,7 @@ if (!function_exists('getDeductionSuggestion')) {
         foreach ($slabs as $slab) {
             $from = (float) $slab->from;
             $to = $slab->to !== null ? (float) $slab->to : null;
-            $isTiered = (int) $slab->is_tiered;
+            $isTiered = (int) ($slab->is_tiered ?? 0);
             $deductionVal = (float) $slab->deduction_value;
 
             if ($inspectionResult >= $from) {

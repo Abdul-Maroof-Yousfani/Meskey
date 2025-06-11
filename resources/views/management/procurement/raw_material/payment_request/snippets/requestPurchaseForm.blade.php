@@ -73,6 +73,30 @@
     $advanceFreight = $purchaseOrder->purchaseFreight->advance_freight ?? 0;
 @endphp
 
+<style>
+    .tooltip-container {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .tooltip-content {
+        display: none;
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border: 1px solid #ddd;
+        padding: 10px;
+        min-width: 200px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 100;
+    }
+
+    .tooltip-container:hover .tooltip-content {
+        display: block;
+    }
+</style>
 <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
 
 <div class="row">
@@ -236,6 +260,8 @@
                                             );
                                             $suggestedDeductionType =
                                                 $getDeductionSuggestion->deduction_type ?? 'amount';
+
+                                            $deductyion = $slab->applied_deduction ?? 0;
                                         @endphp
                                         <tr>
                                             <td>{{ $slab->slabType->name }}
@@ -261,18 +287,7 @@
                                                         <span
                                                             class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="input-group mb-0">
-                                                    <input type="text" class="form-control"
-                                                        name="sampling_results[{{ $slab->id }}][applied_deduction]"
-                                                        value="{{ $slab->applied_deduction ?? 0 }}"
-                                                        placeholder="Suggested Deduction" readonly>
-                                                    <div class="input-group-append">
-                                                        <span
-                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
-                                                    </div>
+
                                                 </div>
                                             </td>
                                             @php
@@ -282,6 +297,7 @@
                                                 $val = $slab->applied_deduction;
 
                                                 $deductionValue = 0;
+                                                $sumOfMatchingValues = '';
 
                                                 if ($dValCalculatedOn == SLAB_TYPE_PERCENTAGE && $matchingSlabs) {
                                                     usort($matchingSlabs, function ($a, $b) {
@@ -302,6 +318,12 @@
                                                                 } else {
                                                                     $applicableAmount = $val - $from + 1;
                                                                 }
+
+                                                                $sumOfMatchingValues .=
+                                                                    "$deductionVal x $applicableAmount = " .
+                                                                    $deductionVal * $applicableAmount .
+                                                                    '<br>';
+
                                                                 $deductionValue += $deductionVal * $applicableAmount;
                                                             } else {
                                                                 $deductionValue += $deductionVal;
@@ -317,7 +339,41 @@
                                                     ($purchaseOrder->bag_weight ?? 0) *
                                                         ($purchaseOrder->purchaseFreight->no_of_bags ?? 0);
                                                 $calculatedValue = $deductionValue * $netWeight;
+
+                                                $sumOfMatchingValues .=
+                                                    "<br>$netWeight = LW(" .
+                                                    ($purchaseOrder->purchaseFreight->loading_weight ?? 0) .
+                                                    ') - BW(' .
+                                                    ($purchaseOrder->bag_weight ?? 0) .
+                                                    ') * NoB(' .
+                                                    ($purchaseOrder->purchaseFreight->no_of_bags ?? 0) .
+                                                    ')';
+
+                                                $sumOfMatchingValues .=
+                                                    "<br>$deductionValue x $netWeight = " .
+                                                    $deductionValue * $netWeight;
                                             @endphp
+
+                                            <td>
+                                                <div class="input-group mb-0">
+                                                    <input type="text" class="form-control"
+                                                        name="sampling_results[{{ $slab->id }}][applied_deduction]"
+                                                        value="{{ $deductyion }}" placeholder="Suggested Deduction"
+                                                        readonly>
+                                                    <div class="input-group-append">
+                                                        <span
+                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                        <span
+                                                            class="input-group-text text-sm tooltip-container d-none">
+                                                            <i class="fas fa-info-circle"></i>
+                                                            <div class="tooltip-content">
+                                                                {!! $sumOfMatchingValues !!}
+                                                            </div>
+                                                        </span>
+                                                    </div>
+
+                                                </div>
+                                            </td>
 
                                             <td>
                                                 <div class="input-group mb-0">
@@ -325,6 +381,7 @@
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount]"
                                                         value="{{ $calculatedValue }}" placeholder="deduction_amount"
                                                         readonly>
+
                                                 </div>
                                             </td>
                                         </tr>
@@ -538,6 +595,8 @@
 @if ($hasLoadingWeight)
     <script>
         $(document).ready(function() {
+            $('[data-toggle="tooltip"]').tooltip();
+
             const $loadingRadio = $('#loading');
             const $withoutLoadingRadio = $('#without_loading');
             const $loadingSection = $('#loading-section');

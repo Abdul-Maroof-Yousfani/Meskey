@@ -50,8 +50,9 @@
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission:</label>
-                <input type="number" name="supplier_commission" placeholder="Commission" class="form-control" />
+                <label>Commission (per KG):</label>
+                <input type="number" name="supplier_commission" placeholder="Commission (per KG)"
+                    class="form-control" />
             </div>
         </div>
     </div>
@@ -73,8 +74,9 @@
 
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission:</label>
-                <input type="number" name="broker_one_commission" placeholder="Commission" class="form-control" />
+                <label>Commission (per KG):</label>
+                <input type="number" name="broker_one_commission" placeholder="Commission (per KG)"
+                    class="form-control" />
             </div>
         </div>
     </div>
@@ -94,8 +96,9 @@
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission:</label>
-                <input type="number" name="broker_two_commission" placeholder="Commission" class="form-control" />
+                <label>Commission (per KG):</label>
+                <input type="number" name="broker_two_commission" placeholder="Commission (per KG)"
+                    class="form-control" />
 
             </div>
         </div>
@@ -116,8 +119,9 @@
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission:</label>
-                <input type="number" name="broker_three_commission" placeholder="Commission" class="form-control" />
+                <label>Commission (per KG):</label>
+                <input type="number" name="broker_three_commission" placeholder="Commission (per KG)"
+                    class="form-control" />
 
             </div>
         </div>
@@ -152,7 +156,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Bags Weight (kg):</label>
-                <input type="number" name="bag_weight" placeholder="Bags Weight (kg)" class="form-control" />
+                <input type="number" step="0.01" name="bag_weight" placeholder="Bags Weight (kg)"
+                    class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -185,7 +190,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per KG:</label>
-                <input type="number" name="rate_per_kg" placeholder="Rate Per KG" class="form-control" />
+                <input type="number" step="0.01" name="rate_per_kg" placeholder="Rate Per KG"
+                    class="form-control" />
 
             </div>
         </div>

@@ -9,6 +9,7 @@ use App\Models\PurchaseSamplingRequest;
 use Illuminate\Http\Request;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\PurchaseTicket;
 use Illuminate\Support\Facades\Validator;
 
 class PurchaseSamplingRequestController extends Controller
@@ -54,19 +55,33 @@ class PurchaseSamplingRequestController extends Controller
      */
     public function store(Request $request)
     {
+        $isCustomQc = convertToBoolean($request->is_custom_qc ?? 'off');
+
         $validator = Validator::make($request->all(), [
-            'purchase_contract_id' => 'required',
+            'purchase_contract_id' => $isCustomQc ? 'nullable' : 'required',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // $arrival_locations = ArrivalLocation::create($request->all());
+        $datePrefix = date('m-d-Y') . '-';
+        $unique_no = generateUniqueNumberByDate('purchase_tickets', $datePrefix, null, 'unique_no');
+
+        $purchaseTicket = PurchaseTicket::create([
+            'unique_no' => $unique_no,
+            'company_id' => $request->company_id,
+            'purchase_order_id' => $request->purchase_contract_id ?? null,
+            'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
+            'qc_status' => 'pending',
+            'freight_status' => 'pending',
+        ]);
 
         $arrivalSampleReq = PurchaseSamplingRequest::create([
             'company_id'       => $request->company_id,
-            'arrival_purchase_order_id' => $request->purchase_contract_id,
+            'purchase_ticket_id'       => $purchaseTicket->id,
+            'arrival_purchase_order_id' => $request->purchase_contract_id ?? null,
+            'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
             'sampling_type'    => 'initial',
             'is_re_sampling'   => 'no',
             'is_done'          => 'no',

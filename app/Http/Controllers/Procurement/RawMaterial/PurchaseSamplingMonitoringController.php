@@ -9,6 +9,7 @@ use App\Models\Arrival\{ArrivalSamplingResult, ArrivalSamplingResultForCompulsur
 use App\Models\SaudaType;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ProductSlab;
+use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\User;
@@ -107,7 +108,16 @@ class PurchaseSamplingMonitoringController extends Controller
             $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
         }
 
+        $rmPoSlabs = collect();
+        if ($arrivalSamplingRequest->purchaseOrder) {
+            $rmPoSlabs = ProductSlabForRmPo::where('arrival_purchase_order_id', $arrivalSamplingRequest->purchaseOrder->id)
+                ->where('product_id', $arrivalSamplingRequest->arrival_product_id)
+                ->get()
+                ->groupBy('product_slab_type_id');
+        }
+
         $results = PurchaseSamplingResult::where('purchase_sampling_request_id', $id)->get();
+
         foreach ($results as $result) {
             $matchingSlabs = [];
             if ($productSlabCalculations) {
@@ -116,6 +126,8 @@ class PurchaseSamplingMonitoringController extends Controller
                     ->all();
             }
             $result->matching_slabs = $matchingSlabs;
+
+            $result->rm_po_slabs = $rmPoSlabs->get($result->product_slab_type_id, []);
         }
 
         $Compulsuryresults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $id)->get();
@@ -133,7 +145,7 @@ class PurchaseSamplingMonitoringController extends Controller
 
         // if ($arrivalSamplingRequest->sampling_type == 'inner') {
         $initialRequestForInnerReq = PurchaseSamplingRequest::where('sampling_type', 'initial')
-            ->where('arrival_purchase_order_id', $arrivalSamplingRequest->arrival_purchase_order_id)
+            ->where('purchase_ticket_id', $arrivalSamplingRequest->purchase_ticket_id)
             ->where('approved_status', 'approved')
             ->latest()
             ->first();
@@ -143,7 +155,7 @@ class PurchaseSamplingMonitoringController extends Controller
             $initialRequestCompulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $initialRequestForInnerReq->id)->get();
         }
 
-        $allInnerRequests = PurchaseSamplingRequest::where('arrival_purchase_order_id', $arrivalSamplingRequest->arrival_purchase_order_id)
+        $allInnerRequests = PurchaseSamplingRequest::where('purchase_ticket_id', $arrivalSamplingRequest->purchase_ticket_id)
             ->where('approved_status', '!=', 'pending')
             ->where('id', '!=', $id)
             ->orderBy('created_at', 'asc')
@@ -254,6 +266,7 @@ class PurchaseSamplingMonitoringController extends Controller
             if ($request->stage_status == 'resampling') {
                 PurchaseSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
+                    'purchase_ticket_id'       => $ArrivalSamplingRequest->purchase_ticket_id,
                     'arrival_purchase_order_id' => $ArrivalSamplingRequest->arrival_purchase_order_id,
                     'sampling_type' => $ArrivalSamplingRequest->sampling_type,
                     'is_re_sampling' => 'yes',

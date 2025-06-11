@@ -15,7 +15,9 @@ class PurchaseSamplingRequest extends Model
         'company_id',
         'arrival_product_id',
         'arrival_purchase_order_id',
+        'purchase_ticket_id',
         'sampling_type',
+        'is_custom_qc',
         'is_re_sampling',
         'remark',
         'decision_making',
@@ -33,6 +35,11 @@ class PurchaseSamplingRequest extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function purchaseTicket()
+    {
+        return $this->belongsTo(PurchaseTicket::class, 'purchase_ticket_id');
     }
 
     public function purchaseOrder()

@@ -1,57 +1,76 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No. </th>
-            <th class="col-sm-3">Product</th>
-            <th class="col-sm-4">Remark</th>
-            <th class="col-sm-2">Created</th>
-            {{-- <th class="col-sm-1">Action</th> --}}
+            <th class="col-sm-2">Contract/Ticket Number</th>
+            <th class="col-sm-2">Commodity</th>
+            <th class="col-sm-2">Supplier Name</th>
+            <th class="col-sm-1">Order Quantity</th>
+            <th class="col-sm-1">Remaining Quantity</th>
+            <th class="col-sm-1">Loaded Quantity</th>
+            <th class="col-sm-1">Delivery Date</th>
+            <th class="col-sm-1">Created Date</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-
-
-
         @if (count($ArrivalSamplingRequests) != 0)
             @foreach ($ArrivalSamplingRequests as $key => $row)
-            {{-- @dd($row->purchaseOrder); --}}
                 <tr>
                     <td>
                         <p class="m-0">
-                            #{{ optional($row->purchaseOrder)->contract_no }} <br>
+                            {{ optional($row->purchaseOrder)->contract_no }}{!! $row->is_custom_qc == 'yes' ? '' : '<br>' !!}
+                            {{ $row->purchaseTicket->unique_no ?? 'N/A' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->purchaseOrder)->product)->name }} <br>
+                            {{ optional(optional($row->purchaseOrder)->product)->name ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->remark ?? '---' }} <br>
+                            {{ optional(optional($row->purchaseOrder)->supplier)->name ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }} <br>
-
+                            {{ optional($row->purchaseOrder)->total_quantity ?? '--' }}
                         </p>
                     </td>
-                    {{-- <td>
+                    <td>
+                        <p class="m-0">
+                            {{ optional($row->purchaseOrder)->total_quantity ?? '--' }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ optional($row->purchaseOrder)->total_quantity ?? '--' }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ optional($row->purchaseOrder)->delivery_date ? \Carbon\Carbon::parse($row->purchaseOrder->delivery_date)->format('Y-m-d') : '--' }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('H:i A') }}
+                        </p>
+                    </td>
+                    <td>
                         @can('role-edit')
-                          <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
-                                class="info p-1 text-center mr-2 position-relative ">
+                            <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
+                                class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-eye font-medium-3"></i>
-                            </a> 
+                            </a>
                         @endcan
-                     
-                    </td> --}}
+                    </td>
                 </tr>
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="13" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -74,11 +93,6 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">

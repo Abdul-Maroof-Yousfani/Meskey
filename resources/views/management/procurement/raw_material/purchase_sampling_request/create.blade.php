@@ -5,13 +5,21 @@
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="customQC" name="is_custom_qc">
+                    <label class="custom-control-label" for="customQC">Custom QC Request (Without Contract)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
                 <label>Contract:</label>
-                <select class="form-control select2" name="purchase_contract_id">
+                <select class="form-control select2" name="purchase_contract_id" id="contractSelect">
                     <option value="">Select Contract</option>
                     @foreach ($purchaseOrders as $purchaseOrder)
                         <option value="{{ $purchaseOrder->id }}">
-                            Ticket No: {{ $purchaseOrder->contract_no }}
-
+                            {{ $purchaseOrder->contract_no }}
                         </option>
                     @endforeach
                 </select>
@@ -36,5 +44,14 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        $('#customQC').change(function() {
+            if ($(this).is(':checked')) {
+                $('#contractSelect').prop('disabled', true);
+                $('#contractSelect').val('').trigger('change');
+            } else {
+                $('#contractSelect').prop('disabled', false);
+            }
+        });
     });
 </script>

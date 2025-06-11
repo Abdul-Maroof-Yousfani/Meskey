@@ -73,7 +73,9 @@ class PurchaseOrderController extends Controller
         $data = $request->all();
         $arrivalPurchaseOrder = null;
 
-        DB::transaction(function () use ($data) {
+        $data['contract_no'] = self::getContractNumber($request, $request->company_location_id, $request->contract_date);
+
+        DB::transaction(function () use ($data, $request) {
             $arrivalPOData = collect($data)->except(['slabs', 'quantity_range', 'truck_size_range'])->toArray();
 
             $arrivalPOData['is_replacement'] = ($request->is_replacement ?? 'off') == 'on' ? true : false;
@@ -265,12 +267,12 @@ class PurchaseOrderController extends Controller
         return $isView ? $html : response()->json(['html' => $html, 'success' => '.'], 200);
     }
 
-    public function getContractNumber(Request $request)
+    public function getContractNumber(Request $request, $locationId = null, $contractDate = null)
     {
-        $location = CompanyLocation::find($request->location_id);
-        $date = Carbon::parse($request->contract_date)->format('Y-m-d');
+        $location = CompanyLocation::find($locationId ?? $request->location_id);
+        $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = $location->code . '-' . Carbon::parse($request->contract_date)->format('Y-m-d');
+        $prefix = $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = ArrivalPurchaseOrder::where('contract_no', 'like', "$prefix-%")
             ->latest()
@@ -289,9 +291,13 @@ class PurchaseOrderController extends Controller
 
         $contractNo = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        return response()->json([
-            'success' => true,
-            'contract_no' => $contractNo
-        ]);
+        if (!$locationId && !$contractDate) {
+            return response()->json([
+                'success' => true,
+                'contract_no' => $contractNo
+            ]);
+        }
+
+        return $contractNo;
     }
 }

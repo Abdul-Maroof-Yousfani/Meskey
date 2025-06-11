@@ -45,12 +45,14 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Image </th>
-                                            <th class="col-sm-3">Name </th>
-
-                                            <th class="col-sm-4">Description</th>
-                                            <th class="col-sm-1">Name </th>
-                                            <th class="col-sm-2">Created</th>
+                                            <th class="col-sm-2">Contract Number</th>
+                                            <th class="col-sm-2">Commodity</th>
+                                            <th class="col-sm-2">Supplier Name</th>
+                                            <th class="col-sm-1">Order Quantity</th>
+                                            <th class="col-sm-1">Remaining Quantity</th>
+                                            <th class="col-sm-1">Loaded Quantity</th>
+                                            <th class="col-sm-1">Delivery Date</th>
+                                            <th class="col-sm-1">Created Date</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>

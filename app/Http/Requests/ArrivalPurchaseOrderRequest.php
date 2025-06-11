@@ -33,7 +33,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'broker_three_commission' => 'nullable|numeric',
             'product_id'             => 'required|integer|exists:products,id',
             'line_type'              => 'nullable|in:bari,choti',
-            'bag_weight'             => 'nullable|integer',
+            'bag_weight'             => 'nullable|numeric',
             'bag_rate'               => 'nullable|numeric',
             'delivery_date'          => 'required|date',
             'credit_days'           => 'nullable|integer',
@@ -55,9 +55,10 @@ class ArrivalPurchaseOrderRequest extends FormRequest
 
         if ($arrivalPurchaseOrderId) {
             $rules['contract_no'] = 'required|string|unique:arrival_purchase_orders,contract_no,' . $arrivalPurchaseOrderId;
-        } else {
-            $rules['contract_no'] = 'required|string|unique:arrival_purchase_orders,contract_no';
         }
+        // else {
+        //     $rules['contract_no'] = 'required|string|unique:arrival_purchase_orders,contract_no';
+        // }
 
         return $rules;
     }
