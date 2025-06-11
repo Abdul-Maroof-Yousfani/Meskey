@@ -146,7 +146,7 @@
              <div class="form-group ">
                  <label>Loading Date: (Optional)</label>
                  <input type="date" name="loading_date" placeholder="Bilty No" class="form-control"
-                     autocomplete="off" />
+                     autocomplete="off" max="{{ date('Y-m-d') }}" />
              </div>
          </div>
          {{-- <div class="col-xs-6 col-sm-6 col-md-6">

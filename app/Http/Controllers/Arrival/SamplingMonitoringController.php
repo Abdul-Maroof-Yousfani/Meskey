@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Arrival;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Arrival\ArrivalInitialSamplingResultRequest;
 use Illuminate\Http\Request;
 use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalTicket};
 use App\Models\SaudaType;
@@ -71,7 +72,7 @@ class SamplingMonitoringController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalSamplingResultRequest $request)
+    public function store(ArrivalInitialSamplingResultRequest $request)
     {
         $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->arrival_sampling_request_id);
         // Create main entry
