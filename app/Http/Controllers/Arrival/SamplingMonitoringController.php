@@ -26,8 +26,13 @@ class SamplingMonitoringController extends Controller
      */
     public function getList(Request $request)
     {
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
             ->where('is_done', 'yes')
+            ->groupBy('arrival_ticket_id')
+            ->pluck('id');
+
+        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+            ->whereIn('id', $latestRequestIds)
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
 
@@ -46,7 +51,6 @@ class SamplingMonitoringController extends Controller
                     ->orWhere('decision_making', 1);
             })
             ->latest()
-            // ->orderBy('created_at', 'asc')
             ->paginate(request('per_page', 25));
 
         return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
