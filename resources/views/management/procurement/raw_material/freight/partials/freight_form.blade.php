@@ -14,7 +14,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Loading Date</label>
-                <input type="date" name="loading_date" class="form-control" />
+                <input type="date" name="loading_date" class="form-control" max="{{ date('Y-m-d') }}" />
             </div>
         </div>
 
