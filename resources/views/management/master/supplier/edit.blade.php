@@ -1,163 +1,267 @@
-<form action="{{ route('supplier.update', $supplier->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
-    enctype="multipart/form-data">
-    @csrf
-    @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('get.supplier') }}" />
-    <div class="row form-mar">
-     <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Basic Detail
-            </h6>
-        </div>
-        <!-- Name Field -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Name:</label>
-                <input type="text" name="name" placeholder="Supplier Name" value="{{$supplier->name}}" class="form-control" autocomplete="off"
-                     />
-            </div>
-        </div>
+@extends('layouts.app')
 
-        <!-- Email Field -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Email: <small>(Optional)</small></label>
-                <input type="email" name="email" placeholder="Supplier Email"  value="{{$supplier->email}}" class="form-control" autocomplete="off" />
-            </div>
-        </div>
+@section('content')
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Edit Supplier</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('supplier.update', $supplier->id) }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" id="listRefresh" value="{{ route('get.supplier') }}" />
 
-        <!-- Phone Field -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Phone: <small>(Optional)</small></label>
-                <input type="text" name="phone" placeholder="Phone Number"  value="{{$supplier->phone}}" class="form-control" autocomplete="off" />
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Company Detail
+                                </h6>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label>Company Name:</label>
+                                    <input type="text" name="company_name" value="{{ old('company_name', $supplier->company_name) }}" placeholder="Company Name" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>NTN#: <small>(Optional)</small></label>
+                                    <input type="text" name="ntn" value="{{ old('ntn', $supplier->ntn) }}" placeholder="NTN No" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>STN#: <small>(Optional)</small></label>
+                                    <input type="text" name="stn" value="{{ old('stn', $supplier->stn) }}" placeholder="STN No" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div id="card-container" class="mb-4">
+                                    @foreach($supplier->companyBankDetails as $index => $bank)
+                                    <div class="clonecard border-1">
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>Bank Name:</label>
+                                                    <input type="text" name="company_bank_name[]" value="{{ old('company_bank_name.'.$index, $bank->bank_name) }}" placeholder="Bank Name" class="form-control" autocomplete="off" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>Account Title:</label>
+                                                    <input type="text" name="company_account_title[]" value="{{ old('company_account_title.'.$index, $bank->account_title) }}" placeholder="Account Title" class="form-control" autocomplete="off" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <div class="form-group">
+                                                    <label>Account Number:</label>
+                                                    <input type="text" name="company_account_number[]" value="{{ old('company_account_number.'.$index, $bank->account_number) }}" placeholder="Account number" class="form-control" autocomplete="off" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                                                <div>
+                                                    @if($index === 0)
+                                                        <button type="button" class="btn btn-warning btn-icon add-more mr-1"><i class="fa fa-plus"></i></button>
+                                                    @endif
+                                                    <button type="button" class="btn btn-danger btn-icon remove-card mr-1"><i class="fa fa-trash"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Owner Detail
+                                </h6>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label>Owner Name:</label>
+                                    <input type="text" name="owner_name" value="{{ old('owner_name', $supplier->owner_name) }}" placeholder="Owner Name" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Owner Mobile No:</label>
+                                    <input type="text" name="owner_mobile_no" value="{{ old('owner_mobile_no', $supplier->owner_mobile_no) }}" placeholder="Owner Mobile No" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Owner CNIC:</label>
+                                    <input type="text" name="owner_cnic_no" value="{{ old('owner_cnic_no', $supplier->owner_cnic_no) }}" placeholder="Owner CNIC" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div id="card-container2" class="mb-4">
+                                    @foreach($supplier->ownerBankDetails as $index => $bank)
+                                    <div class="clonecard2 border-1">
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>Bank Name:</label>
+                                                    <input type="text" name="owner_bank_name[]" value="{{ old('owner_bank_name.'.$index, $bank->bank_name) }}" placeholder="Bank Name" class="form-control" autocomplete="off" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>Account Title:</label>
+                                                    <input type="text" name="owner_account_title[]" value="{{ old('owner_account_title.'.$index, $bank->account_title) }}" placeholder="Account Title" class="form-control" autocomplete="off" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <div class="form-group">
+                                                    <label>Account Number:</label>
+                                                    <input type="text" name="owner_account_number[]" value="{{ old('owner_account_number.'.$index, $bank->account_number) }}" placeholder="Account number" class="form-control" autocomplete="off" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                                                <div>
+                                                    @if($index === 0)
+                                                        <button type="button" class="btn btn-warning btn-icon add-more2 mr-1"><i class="fa fa-plus"></i></button>
+                                                    @endif
+                                                    <button type="button" class="btn btn-danger btn-icon remove-card2 mr-1"><i class="fa fa-trash"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Next Of Kin
+                                </h6>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Name:</label>
+                                    <input type="text" name="next_to_kin" value="{{ old('next_to_kin', $supplier->next_to_kin) }}" placeholder="Name" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Mobile No:</label>
+                                    <input type="text" name="next_to_kin_mobile_no" value="{{ old('next_to_kin_mobile_no', $supplier->next_to_kin_mobile_no) }}" placeholder="Mobile No" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row form-mar">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Locations
+                                </h6>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                @foreach($companyLocations as $location)
+                                    <div class="checkbox">
+                                        <input name="company_location_ids[]" type="checkbox" id="location_{{ $location->id }}" 
+                                            value="{{ $location->id }}" 
+                                            {{ in_array($location->id, $selectedLocations) ? 'checked' : '' }}>
+                                        <label for="location_{{ $location->id }}"><span>{{ $location->name }}</span></label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Other
+                                </h6>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label>Status:</label>
+                                    <select name="status" class="form-control">
+                                        <option value="active" {{ old('status', $supplier->status) == 'active' ? 'selected' : '' }}>Active</option>
+                                        <option value="inactive" {{ old('status', $supplier->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label>Address:</label>
+                                    <textarea name="address" rows="2" class="form-control" placeholder="Supplier Address">{{ old('address', $supplier->address) }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row bottom-button-bar">
+                            <div class="col-12">
+                                <a href="{{ route('supplier.index') }}" class="btn btn-danger position-relative top-1 closebutton">Close</a>
+                                <button type="submit" class="btn btn-primary submitbutton">Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row ">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Company Detail
-            </h6>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Company Name:</label>
-                <input type="text" name="company_name" placeholder="Company Name"  value="{{$supplier->company_name}}" class="form-control" autocomplete="off" />
-            </div>
-        </div>
-        <!-- NTN Field -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>NTN#: <small>(Optional)</small></label>
-                <input type="text" name="ntn" placeholder="NTN No" class="form-control"  value="{{$supplier->ntn}}" autocomplete="off" />
-            </div>
-        </div>
-        <!-- STN Field -->
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>STN#: <small>(Optional)</small></label>
-                <input type="text" name="stn" placeholder="STN No"  value="{{$supplier->stn}}" class="form-control" />
-            </div>
-        </div>
-        <!-- Address Field -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Bank Detail:</label>
-                <textarea name="company_bank_detail" rows="2" class="form-control"  placeholder="Bank Detail">{{$supplier->company_bank_detail}}</textarea>
-            </div>
-        </div>
-    </div>
-    <div class="row ">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Owner Detail
-            </h6>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Owner Name:</label>
-                <input type="text" name="owner_name" placeholder="Owner Name" value="{{$supplier->owner_name}}" class="form-control" autocomplete="off" />
-            </div>
-        </div>
-        
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Owner Mobile No:</label>
-                <input type="text" name="owner_mobile_no" placeholder="Owner Mobile No" value="{{$supplier->owner_mobile_no}}" class="form-control" autocomplete="off" />
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Owner CNIC:</label>
-                <input type="text" name="owner_cnic_no" placeholder="Owner CNIC" value="{{$supplier->owner_cnic_no}}" class="form-control" autocomplete="off" />
-            </div>
-        </div>
-      
-        <!-- Address Field -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Bank Detail:</label>
-                <textarea name="owner_bank_detail" rows="2" class="form-control" placeholder="Bank Detail">{{$supplier->owner_bank_detail}}</textarea>
-            </div>
-        </div>
-    </div>
-    <div class="row ">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Next Of Kin
-            </h6>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Name:</label>
-                <input type="text" name="next_to_kin" placeholder="Name" value="{{$supplier->next_to_kin}}"  class="form-control" autocomplete="off" />
-            </div>
-        </div>
-        
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Mobile No:</label>
-                <input type="text" name="next_to_kin_mobile_no" placeholder="Mobile No" value="{{$supplier->next_to_kin_mobile_no}}"  class="form-control" autocomplete="off" />
-            </div>
-        </div>
-    </div>
+<script>
+// JavaScript for dynamic form fields (same as create form)
+$(document).ready(function() {
+    // Company Bank Details
+    $(document).on('click', '.add-more', function() {
+        var newCard = $('#card-container .clonecard:first').clone();
+        newCard.find('input').val('');
+        $('#card-container').append(newCard);
+        toggleRemoveButton();
+    });
 
+    $(document).on('click', '.remove-card', function() {
+        if ($('#card-container .clonecard').length > 1) {
+            $(this).closest('.clonecard').remove();
+            toggleRemoveButton();
+        }
+    });
 
-    <div class="row ">
+    // Owner Bank Details
+    $(document).on('click', '.add-more2', function() {
+        var newCard = $('#card-container2 .clonecard2:first').clone();
+        newCard.find('input').val('');
+        $('#card-container2').append(newCard);
+        toggleRemoveButton2();
+    });
 
+    $(document).on('click', '.remove-card2', function() {
+        if ($('#card-container2 .clonecard2').length > 1) {
+            $(this).closest('.clonecard2').remove();
+            toggleRemoveButton2();
+        }
+    });
 
+    function toggleRemoveButton() {
+        $('.clonecard').each(function(index) {
+            $(this).find('.remove-card').toggle($('#card-container .clonecard').length > 1);
+        });
+    }
 
- <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Other
-            </h6>
-        </div>
+    function toggleRemoveButton2() {
+        $('.clonecard2').each(function(index) {
+            $(this).find('.remove-card2').toggle($('#card-container2 .clonecard2').length > 1);
+        });
+    }
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group ">
-                <label>Status:</label>
-                <select name="status" class="form-control">
-                    <option {{$supplier->status == 'active' ? 'selected' : ''}} value="active">Active</option>
-                    <option {{$supplier->status == 'inactive' ? 'selected' : ''}}  value="inactive">Inactive</option>
-                </select>
-            </div>
-        </div>
-        <!-- Address Field -->
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Address:</label>
-                <textarea name="address" rows="2" class="form-control" placeholder="Supplier Address"
-                >{{$supplier->address}}</textarea>
-            </div>
-        </div>
-
-    </div>
-    <div class="row bottom-button-bar">
-        <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
-        </div>
-    </div>
-</form>
+    // Initialize
+    toggleRemoveButton();
+    toggleRemoveButton2();
+});
+</script>
+@endsection
