@@ -108,6 +108,13 @@ class SamplingMonitoringController extends Controller
     {
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
 
+        $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
         $productSlabCalculations = null;
         if ($arrivalSamplingRequest->arrival_product_id) {
             $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
@@ -124,6 +131,12 @@ class SamplingMonitoringController extends Controller
             $result->matching_slabs = $matchingSlabs;
         }
 
+        $results->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            return $item;
+        });
+
         $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
 
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
@@ -131,36 +144,47 @@ class SamplingMonitoringController extends Controller
         $authUserCompany = $request->company_id;
         $saudaTypes = SaudaType::all();
 
-        $initialRequestForInnerReq = null;
-        $initialRequestResults = null;
-        $initialRequestCompulsuryResults = null;
+        $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
+            ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+            ->where('approved_status', '!=', 'pending')
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-        $allInnerRequests = [];
+        $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
+            ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
+            ->where('approved_status', '!=', 'pending')
+            ->where('id', '!=', $id)
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-        if ($arrivalSamplingRequest->sampling_type == 'inner') {
-            $initialRequestForInnerReq = ArrivalSamplingRequest::where('sampling_type', 'initial')
-                ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
-                ->where('approved_status', 'approved')
-                ->latest()
-                ->first();
+        $initialRequestsData = [];
+        foreach ($allInitialRequests as $initialReq) {
+            $initialResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialReq->id)->get();
+            $initialCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialReq->id)->get();
 
-            if ($initialRequestForInnerReq) {
-                $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
-                $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
-            }
+            $initialResults->map(function ($item) use ($slabs) {
+                $slab = $slabs->get($item->product_slab_type_id);
+                $item->max_range = $slab ? $slab->to : null;
+                return $item;
+            });
 
-            $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
-                ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
-                ->where('approved_status', '!=', 'pending')
-                ->where('id', '!=', $id) // Exclude current request
-                ->orderBy('created_at', 'asc')
-                ->get();
+            $initialRequestsData[] = [
+                'request' => $initialReq,
+                'results' => $initialResults,
+                'compulsuryResults' => $initialCompulsuryResults
+            ];
         }
 
         $innerRequestsData = [];
         foreach ($allInnerRequests as $innerReq) {
             $innerResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $innerReq->id)->get();
             $innerCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $innerReq->id)->get();
+
+            $innerResults->map(function ($item) use ($slabs) {
+                $slab = $slabs->get($item->product_slab_type_id);
+                $item->max_range = $slab ? $slab->to : null;
+                return $item;
+            });
 
             $innerRequestsData[] = [
                 'request' => $innerReq,
@@ -170,9 +194,7 @@ class SamplingMonitoringController extends Controller
         }
 
         return view('management.arrival.sampling_monitoring.edit', [
-            'initialRequestForInnerReq' => $initialRequestForInnerReq,
-            'initialRequestResults' => $initialRequestResults,
-            'initialRequestCompulsuryResults' => $initialRequestCompulsuryResults,
+            'initialRequestsData' => $initialRequestsData,
             'innerRequestsData' => $innerRequestsData,
             'samplingRequests' => ArrivalSamplingRequest::where('sampling_type', 'initial')->get(),
             'saudaTypes' => $saudaTypes,

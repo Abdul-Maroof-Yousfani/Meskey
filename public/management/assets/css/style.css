@@ -839,3 +839,7 @@ tr.editing {
 .checklist-value-comparison {
   display: none !important;
 }
+
+.bg-warning-c {
+  background: #ffe5b5;
+}

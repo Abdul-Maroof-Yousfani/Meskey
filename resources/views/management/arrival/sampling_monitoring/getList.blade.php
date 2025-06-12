@@ -11,9 +11,6 @@
         </tr>
     </thead>
     <tbody>
-
-
-
         @if (count($samplingRequests) != 0)
             @foreach ($samplingRequests as $key => $row)
                 <?php
@@ -42,7 +39,7 @@
                     <td>
                         <label for=""
                             class="badge text-uppercase {{ $row->sampling_type == 'initial' ? 'badge-secondary' : 'badge-success' }}">
-                            {{ $row->sampling_type }} </label>
+                            {{ $row->sampling_type }} {!! $row->is_re_sampling == 'yes' ? ' ⸺ Resampling' : '' !!} </label>
                     </td>
                     <td>
                         <p class="m-0">
