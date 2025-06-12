@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Request (Raw Material)')"
+                        onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
                         type="button" class="btn btn-primary position-relative ">
                         Create Purchase Contract/Order
                     </button>
@@ -81,12 +81,12 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
 
 
-              initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false);
-        initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false);
+            initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false);
+            initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false);
         });
     </script>
 @endsection
