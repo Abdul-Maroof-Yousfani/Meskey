@@ -1012,7 +1012,7 @@
                             <div class="input-group mb-2">
                                 <input type="text" id="lumpsum-value" class="form-control"
                                     name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}"
+                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}" --}} value="{{ $rupeeLumpSum ?? 0 }}"
                                     placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
@@ -1021,7 +1021,7 @@
                             <div class="input-group mb-0">
                                 <input type="text" id="lumpsum-kgs-value" class="form-control"
                                     name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}"
+                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}" --}} value="{{ $kgLumpSum ?? 0 }}"
                                     placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">KG's</span>
