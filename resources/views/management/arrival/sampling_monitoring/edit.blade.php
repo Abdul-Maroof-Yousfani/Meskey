@@ -345,6 +345,7 @@
                             @if (count($initialData['results']) != 0)
                                 @foreach ($initialData['results'] as $slab)
                                     @php
+                                        $previousChecklistValue = null;
 
                                         $getDeductionSuggestion = getDeductionSuggestion(
                                             $slab->slabType->id,
@@ -360,19 +361,46 @@
                                         $suggestedDeductionType == 'amount'
                                             ? ($suggestedInitialValue += $getDeductionSuggestion->deduction_value ?? 0)
                                             : ($suggestedInitialKgs += $getDeductionSuggestion->deduction_value ?? 0);
+
+                                        if ($index > 0) {
+                                            foreach ($initialRequestsData[$index - 1]['results'] as $prevSlab) {
+                                                if ($prevSlab->slabType->id == $slab->slabType->id) {
+                                                    $previousChecklistValue = $prevSlab->checklist_value;
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        $comparisonClass = '';
+                                        if ($previousChecklistValue !== null) {
+                                            if ($slab->checklist_value > $previousChecklistValue) {
+                                                $comparisonClass = 'checklist-increase';
+                                            } elseif ($slab->checklist_value < $previousChecklistValue) {
+                                                $comparisonClass = 'checklist-decrease';
+                                            } else {
+                                                $comparisonClass = 'checklist-same';
+                                            }
+                                        }
+
                                     @endphp
                                     <div class="form-group row checklist-box">
                                         <label
                                             class="col-md-4 label-control font-weight-bold {{ ((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
                                         <div class="col-md-3 QcResult">
                                             <div class="input-group mb-0">
-                                                <input type="text" readonly class="form-control"
+                                                <input type="text" readonly
+                                                    class="form-control {{ $comparisonClass }}"
                                                     value="{{ $slab->checklist_value }}" placeholder="%" disabled>
                                                 <div class="input-group-append">
                                                     <span
                                                         class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                                 </div>
                                             </div>
+                                            @if ($previousChecklistValue !== null)
+                                                <span class="checklist-value-comparison">
+                                                    Previous: {{ $previousChecklistValue }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="col-md-3 Suggested">
                                             <div class="input-group mb-0">
