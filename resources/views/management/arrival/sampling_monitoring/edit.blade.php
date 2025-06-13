@@ -1,6 +1,12 @@
 @php
     $isLumpSumEnabled = $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? true : false;
-    $isDecisionMaking = isset($arrivalSamplingRequest) && $arrivalSamplingRequest->decision_making == 1 ? true : false;
+    $isLumpSumEnabledInTicket = $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 1 ? true : false;
+    $isDecisionMaking =
+        isset($arrivalSamplingRequest) &&
+        $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
+        $arrivalSamplingRequest->arrivalTicket->decision_making_time
+            ? true
+            : false;
     $valuesOfInitialSlabs = [];
     $suggestedValueForInner = 0;
     $suggestedValue = 0;
@@ -357,7 +363,7 @@
                                     @endphp
                                     <div class="form-group row checklist-box">
                                         <label
-                                            class="col-md-4 label-control font-weight-bold {{ ((int) $slab->checklist_value ?? 0) > ((int) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
+                                            class="col-md-4 label-control font-weight-bold {{ ((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
                                         <div class="col-md-3 QcResult">
                                             <div class="input-group mb-0">
                                                 <input type="text" readonly class="form-control"
@@ -571,7 +577,7 @@
                                 @endphp
                                 <div class="form-group row checklist-box">
                                     <label
-                                        class="col-md-4 label-control font-weight-bold {{ ((int) $slab->checklist_value ?? 0) > ((int) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
+                                        class="col-md-4 label-control font-weight-bold {{ ((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
                                     <div class="col-md-3 QcResult">
                                         <div class="input-group mb-0">
                                             <input type="text" readonly
@@ -758,7 +764,7 @@
                                         }
                                     }
                                 }
-                                $innerDeductionValue = $isLumpSumEnabled
+                                $innerDeductionValue = $isLumpSumEnabledInTicket
                                     ? 0
                                     : $previousDeduction ??
                                         ($slab->applied_deduction ?? ($valuesOfInitialSlabs[$slab->slabType->id] ?? 0));
@@ -810,7 +816,7 @@
                                 <input type="hidden" name="product_slab_type_id[]"
                                     value="{{ $slab->slabType->id }}">
                                 <label
-                                    class="col-md-4 label-control font-weight-bold {{ ((int) $slab->checklist_value ?? 0) > ((int) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
+                                    class="col-md-4 label-control font-weight-bold {{ ((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
                                     <div class="input-group mb-0">
                                         <input type="text" class="form-control {{ $comparisonClass }}"
@@ -848,7 +854,7 @@
                                             data-slab-id="{{ $slab->slabType->id }}"
                                             data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
                                             data-checklist="{{ $displayValue }}"
-                                            {{ $isLumpSumEnabled ? 'readonly' : '' }}>
+                                            {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                         <div class="input-group-append">
                                             <span
                                                 class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
@@ -922,7 +928,8 @@
                                                 value="{{ $compDeductionValue }}" placeholder="Deduction"
                                                 data-slab-id="{{ $slab->qcParam->id }}"
                                                 data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
-                                                data-checklist="{{ $displayCompValue }}">
+                                                data-checklist="{{ $displayCompValue }}"
+                                                {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                             <div class="input-group-append">
                                                 <span
                                                     class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
@@ -945,8 +952,12 @@
                             Deduction</label>
                         <div class="col-md-3">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" name="is_lumpsum_deduction" class="custom-control-input"
-                                    id="lumpsum-toggle" @checked($isLumpSumEnabled)>
+                                <input type="checkbox" class="custom-control-input" id="lumpsum-toggle"
+                                    name="{{ !$isLumpSumEnabledInTicket ? 'is_lumpsum_deduction' : 'is_lumpsum_deduction_display' }}"
+                                    @checked($isLumpSumEnabledInTicket) @disabled($isLumpSumEnabledInTicket)>
+                                @if ($isLumpSumEnabledInTicket)
+                                    <input type="hidden" name="is_lumpsum_deduction" value="1">
+                                @endif
                                 <label class="custom-control-label" for="lumpsum-toggle"></label>
                             </div>
                         </div>
@@ -971,7 +982,7 @@
                         <div class="col">
                             <div class="input-group mb-2">
                                 <input type="text" id="lumpsum-value" class="form-control"
-                                    name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
+                                    name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
                                     value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
                                     placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
@@ -980,7 +991,7 @@
                             </div>
                             <div class="input-group mb-0">
                                 <input type="text" id="lumpsum-kgs-value" class="form-control"
-                                    name="lumpsum_deduction_kgs" readonly
+                                    name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
                                     value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}"
                                     placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">

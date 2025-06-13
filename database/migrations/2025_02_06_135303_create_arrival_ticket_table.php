@@ -25,6 +25,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('arrival_purchase_order_id')->nullable();
             $table->unsignedBigInteger('sauda_type_id')->nullable();
             $table->tinyInteger('decision_making')->default(0);
+            $table->dateTime('decision_making_time')->nullable();
 
             $table->unsignedBigInteger('truck_type_id')->nullable();
             $table->string('sample_money')->nullable();

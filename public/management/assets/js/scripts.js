@@ -365,7 +365,6 @@ function validateSlabInput(input) {
   const value = parseFloat(input.value) || 0;
 
   input.classList.remove("warning", "danger");
-  console.log({ maxRange, isPercentage, value });
 
   if (value > maxRange && value <= 100) {
     input.classList.add("warning");
