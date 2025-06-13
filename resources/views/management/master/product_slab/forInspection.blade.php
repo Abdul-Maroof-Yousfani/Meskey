@@ -44,7 +44,8 @@
                 <div class="col-md-9">
                     @if ($param->type == 'dropdown')
                         <select name="compulsory_checklist_value[]" id="qc-param-{{ $loop->index }}"
-                            class="form-control">
+                            class="form-control qc-dropdown"
+                            data-default-value="{{ json_decode($param->options, true)[0] ?? '' }}">
                             <option value="">Select Option</option>
                             @foreach (json_decode($param->options, true) ?? [] as $key => $option)
                                 <option value="{{ $option }}" @selected($param->checklist_value == $option || $key == 0)>
@@ -52,7 +53,7 @@
                             @endforeach
                         </select>
                     @else
-                        <input type="text" id="qc-param-{{ $loop->index }}" class="form-control"
+                        <input type="text" id="qc-param-{{ $loop->index }}" class="form-control qc-input"
                             value="{{ $param->checklist_value }}" name="compulsory_checklist_value[]"
                             placeholder="Enter value">
                     @endif
@@ -68,16 +69,29 @@
 
 <script>
     var slabInputs = document.querySelectorAll('.slab-input');
+    var dropdownInputs = document.querySelectorAll('.qc-dropdown');
+    var textInputs = document.querySelectorAll('.qc-input');
 
     slabInputs.forEach(input => {
         validateSlabInput(input);
-
         input.addEventListener('input', function() {
             validateSlabInput(this);
         });
-
         input.addEventListener('blur', function() {
             validateSlabInput(this);
         });
+    });
+
+    dropdownInputs.forEach(dropdown => {
+        validateDropdown(dropdown);
+        dropdown.addEventListener('change', function() {
+            validateDropdown(this);
+        });
+    });
+
+    textInputs.forEach(input => {
+        validateInput(input);
+        input.addEventListener('input', validateInput.bind(null, input));
+        input.addEventListener('blur', validateInput.bind(null, input));
     });
 </script>

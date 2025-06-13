@@ -95,7 +95,7 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label>Kanta - Golarchi Charges</label>
+                <label>Kanta Loading Charges</label>
                 <input type="number" step="0.01" name="kanta_golarchi_charges" class="form-control calculate-final"
                     value="0" />
             </div>
@@ -103,7 +103,7 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label>Karachi Kanta Charges</label>
+                <label>Arrived Kanta Charges</label>
                 <input type="number" step="0.01" name="karachi_kanta_charges" readonly
                     class="form-control calculate-final" value="{{ $ticket->truckType->weighbridge_amount ?? 0 }}" />
             </div>

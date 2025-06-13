@@ -285,7 +285,7 @@
 
                                                 <div class="col-md-3">
                                                     <div class="form-group">
-                                                        <label>Karachi Kanta Charges</label>
+                                                        <label>Arrived Kanta Charges</label>
                                                         <input type="text" class="form-control"
                                                             value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
                                                             readonly>
@@ -294,7 +294,7 @@
 
                                                 <div class="col-md-3">
                                                     <div class="form-group">
-                                                        <label>Kanta Golarchi Charges</label>
+                                                        <label>Kanta Loading Charges</label>
                                                         <input type="text" class="form-control"
                                                             value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
                                                             readonly>

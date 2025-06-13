@@ -14,10 +14,12 @@ class ArrivalTicketObserver
      */
     public function creating(ArrivalTicket $arrivalTicket)
     {
-        $datePrefix = date('m-d-Y') . '-';
-        $arrivalTicket->unique_no = generateUniqueNumberByDate('arrival_tickets', $datePrefix, null, 'unique_no');
-    }
+        $authUser = auth()->user();
+        $companyLocation = $authUser->companyLocation ?? null;
+        $code = $companyLocation->code ?? 'KHI';
 
+        $arrivalTicket->unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
+    }
     /**
      * Handle the ArrivalTicket "created" event.
      */

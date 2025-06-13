@@ -194,6 +194,31 @@ function generateUniqueNumberByDate($tableName, $prefix = null, $company_id = nu
         : str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT);
 }
 
+function generateTicketNoWithDateFormat($tableName, $locationCode = 'LOC', $company_id = null, $uniqueColumn = 'unique_no')
+{
+    if (is_null($company_id)) {
+        $company_id = auth()->user()->current_company_id;
+    }
+
+    $datePart = date('m-d-Y');
+
+    $latestRecord = DB::table($tableName)
+        ->when($company_id, function ($query) use ($company_id) {
+            return $query->where('company_id', $company_id);
+        })
+        ->where($uniqueColumn, 'like', $locationCode . '-%-' . $datePart)
+        ->orderBy($uniqueColumn, 'desc')
+        ->first();
+
+    $lastNumber = $latestRecord
+        ? intval(substr($latestRecord->{$uniqueColumn}, strlen($locationCode) + 1, 3))
+        : 0;
+
+    $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+
+    return $locationCode . '-' . $newNumber . '-' . $datePart;
+}
+
 if (!function_exists('formatEnumValue')) {
     function formatEnumValue($value)
     {

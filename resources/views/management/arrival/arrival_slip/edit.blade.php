@@ -296,14 +296,13 @@
                                 </tr>
 
                                 <tr>
-                                    <td style=" padding:8px;border:none;">Karachi Kanta Charges </td>
+                                    <td style=" padding:8px;border:none;">Arrived Kanta Charges </td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
                                             value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
                                             readonly>
                                     </td>
-                                    <td style=" padding: 8px;border: none;">Kanta - Golarchi
-                                        Charges
+                                    <td style=" padding: 8px;border: none;">Kanta Loading Charges
                                     </td>
                                     <td style="padding: 8px;" colspan="3">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
@@ -345,19 +344,23 @@
                                             readonly>
                                     </td>
                                 </tr>
-
+                                @php
+                                    $payableCharges =
+                                        ((int) $arrivalTicket->freight->freight_written_on_bilty ?? 0) +
+                                        ((int) $arrivalTicket->freight->karachi_kanta_charges ?? 0) +
+                                        ((int) $arrivalTicket->freight->other_labour_charges ?? 0) -
+                                        ((int) $arrivalTicket->freight->other_deduction ?? 0);
+                                @endphp
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Total Freight Payable (Rs.)</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
-                                            readonly>
+                                            value="{{ $payableCharges }}" readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
-                                            readonly>
+                                            value="{{ numberToWords($payableCharges ?? 0) }}" readonly>
                                     </td>
                                 </tr>
                                 <tr>

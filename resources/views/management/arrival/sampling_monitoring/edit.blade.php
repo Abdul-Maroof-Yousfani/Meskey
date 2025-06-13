@@ -241,8 +241,9 @@
                         <a class="nav-link" id="initial-{{ $index }}-tab" data-toggle="tab"
                             href="#initial-{{ $index }}" role="tab"
                             aria-controls="initial-{{ $index }}" aria-selected="false">
-                            {{ $statusLabel }}
-                            {{-- #{{ $loop->iteration }} ({{ $initialData['request']->created_at->format('M d, Y') }}) --}}
+                            <div>{{ $statusLabel }}</div>
+                            <small
+                                class="text-muted">{{ $initialData['request']->created_at->format('M d, Y h:i A') }}</small>
                         </a>
                     </li>
                 @endforeach
@@ -253,7 +254,11 @@
                     $statusLabel = '';
                     switch ($innerData['request']->approved_status) {
                         case 'resampling':
-                            $statusLabel = 'Inner Resampling QC';
+                            if ($innerData['request']->is_re_sampling == 'yes') {
+                                $statusLabel = 'Inner Resampling QC';
+                            } else {
+                                $statusLabel = 'Inner QC';
+                            }
                             break;
                         case 'rejected':
                             $statusLabel = 'Inner Rejected QC';
@@ -269,8 +274,9 @@
                     <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab"
                         href="#inner-{{ $index }}" role="tab" aria-controls="inner-{{ $index }}"
                         aria-selected="false">
-                        {{ $statusLabel }}
-                        {{-- #{{ $loop->iteration }} ({{ $innerData['request']->created_at->format('M d, Y') }}) --}}
+                        <div>{{ $statusLabel }}</div>
+                        <small
+                            class="text-muted">{{ $innerData['request']->created_at->format('M d, Y h:i A') }}</small>
                     </a>
                 </li>
             @endforeach
@@ -298,7 +304,11 @@
             <li class="nav-item">
                 <a class="nav-link active" id="current-inner-tab" data-toggle="tab" href="#current-inner"
                     role="tab" aria-controls="current-inner" aria-selected="true">
-                    {{ $arrivalSamplingRequest->is_re_sampling == 'yes' && $arrivalSamplingRequest->sampling_type == 'initial' ? 'Initial Resampling' : $currentTabLabel . ' Checklist' }}
+                    <div>
+                        {{ $arrivalSamplingRequest->is_re_sampling == 'yes' ? 'Current ' . ucwords($arrivalSamplingRequest->sampling_type) . ' Resampling' : 'Current ' . $arrivalSamplingRequest->sampling_type . ' Checklist' }}
+                    </div>
+                    <small
+                        class="text-muted">{{ $arrivalSamplingRequest->created_at->format('M d, Y h:i A') }}</small>
                 </a>
             </li>
         </ul>
@@ -395,13 +405,22 @@
                                 <h6>Deduction</h6>
                             </div>
                         </div>
-
                         <div class="striped-rows">
                             @if (count($initialData['compulsuryResults']) != 0)
                                 @foreach ($initialData['compulsuryResults'] as $slab)
-                                    <div class="form-group row">
+                                    @php
+                                        $defaultValue = '';
+                                        $displayCompValue = $slab->compulsory_checklist_value;
+
+                                        if ($slab->qcParam->type == 'dropdown') {
+                                            $options = json_decode($slab->qcParam->options, true);
+                                            $defaultValue = $options[0] ?? '';
+                                        }
+                                    @endphp
+                                    <div class="form-group row ">
                                         <label
-                                            class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
+                                            class="label-control font-weight-bold col-md-4 {{ $displayCompValue != $defaultValue ? 'bg-warning-c' : '' }}"
+                                            data-default-value="{{ $defaultValue }}">{{ $slab->qcParam->name }}</label>
                                         <div
                                             class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                             @if ($slab->qcParam->type == 'dropdown')
@@ -614,9 +633,19 @@
                     <div class="striped-rows">
                         @if (count($innerData['compulsuryResults']) != 0)
                             @foreach ($innerData['compulsuryResults'] as $slab)
+                                @php
+                                    $defaultValue = '';
+                                    $displayCompValue = $slab->compulsory_checklist_value;
+
+                                    if ($slab->qcParam->type == 'dropdown') {
+                                        $options = json_decode($slab->qcParam->options, true);
+                                        $defaultValue = $options[0] ?? '';
+                                    }
+                                @endphp
                                 <div class="form-group row">
                                     <label
-                                        class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
+                                        class="label-control font-weight-bold col-md-4 {{ $displayCompValue != $defaultValue ? 'bg-warning-c' : '' }}"
+                                        data-default-value="{{ $defaultValue }}">{{ $slab->qcParam->name }}</label>
                                     <div
                                         class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                         @if ($slab->qcParam->type == 'dropdown')
@@ -854,7 +883,6 @@
                         <h6>Deduction</h6>
                     </div>
                 </div>
-
                 <div class="striped-rows">
                     @if (count($Compulsuryresults) != 0)
                         @foreach ($Compulsuryresults as $slab)
@@ -874,19 +902,25 @@
                                     }
                                 }
                                 $compDeductionValue = $previousCompDeduction ?? ($slab->applied_deduction ?? 0);
+
+                                $defaultValue = '';
+                                if ($slab->qcParam->type == 'dropdown') {
+                                    $options = json_decode($slab->qcParam->options, true);
+                                    $defaultValue = $options[0] ?? '';
+                                }
                             @endphp
 
                             <div class="form-group row">
                                 <input type="hidden" name="compulsory_param_id[]"
                                     value="{{ $slab->qcParam->id }}">
                                 <label
-                                    class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
+                                    class="label-control font-weight-bold col-md-4 {{ $displayCompValue != $defaultValue ? 'bg-warning-c' : '' }}">{{ $slab->qcParam->name }}</label>
                                 <div
                                     class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
                                         <input type="text" class="form-control"
                                             name="compulsory_checklist_value[]" value="{{ $displayCompValue }}"
-                                            readonly>
+                                            data-default-value="{{ $defaultValue }}" readonly>
                                     @else
                                         <textarea class="form-control" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
                                     @endif

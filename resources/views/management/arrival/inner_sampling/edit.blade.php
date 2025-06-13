@@ -76,12 +76,13 @@
                             for="striped-form-1">{{ $slab->qcParam->name }}</label>
                         <div class="col-md-9">
                             @if ($slab->qcParam->type == 'dropdown')
-                                <input type="text" id="striped-form-1" readonly class="form-control"
+                                <input type="text" id="striped-form-1" readonly class="form-control qc-dropdown"
                                     name="initial_compulsory_checklist_value[]"
-                                    value="{{ $slab->compulsory_checklist_value }}" placeholder="%">
+                                    value="{{ $slab->compulsory_checklist_value }}" placeholder="%"
+                                    data-default-value="{{ json_decode($slab->qcParam->options, true)[0] ?? '' }}">
                             @else
-                                <textarea type="text" id="striped-form-1" readonly class="form-control" name="initial_compulsory_checklist_value[]"
-                                    placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
+                                <textarea type="text" id="striped-form-1" readonly class="form-control qc-input"
+                                    name="initial_compulsory_checklist_value[]" placeholder="%"> {{ $slab->compulsory_checklist_value }}</textarea>
                             @endif
                         </div>
                     </div>
@@ -114,9 +115,19 @@
 
 <script>
     var slabInputs = document.querySelectorAll('.slab-input');
+    var dropdownInputs = document.querySelectorAll('.qc-dropdown');
+    var textInputs = document.querySelectorAll('.qc-input');
 
     slabInputs.forEach(input => {
         validateSlabInput(input);
+    });
+
+    dropdownInputs.forEach(dropdown => {
+        validateDropdown(dropdown);
+    });
+
+    textInputs.forEach(input => {
+        validateInput(input);
     });
 
     $(document).ready(function() {

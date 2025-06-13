@@ -4,7 +4,6 @@
 @endsection
 @section('content')
     <div class="content-wrapper">
-
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
@@ -33,7 +32,6 @@
                                                 </h6>
                                             </div>
                                             <div class="col-xs-6 col-sm-6 col-md-6">
-
                                                 <fieldset>
                                                     <div class="input-group">
                                                         <div class="input-group-prepend">
@@ -219,8 +217,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-
                             </div>
                         </div>
                     </div>

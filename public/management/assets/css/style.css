@@ -251,6 +251,25 @@ select[readonly].select2-hidden-accessible + .select2-container {
   border-color: #ffc107;
   background-color: #fff8e1;
 }
+.qc-input.warning {
+  border-color: #ffc107;
+  background-color: #fff8e1;
+}
+.qc-input.warning:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+.qc-input.warning + .input-group-append > .input-group-text {
+  border-color: #ffc107;
+  background-color: #fff8e1;
+}
+
+.qc-dropdown.warning {
+  border-color: #ffc107;
+  background-color: #fff8e1;
+}
+.qc-dropdown.warning:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
 .slab-input.danger {
   border-color: #dc3545;
   background-color: #fff5f5;
@@ -842,4 +861,8 @@ tr.editing {
 
 .bg-warning-c {
   background: #ffe5b5;
+}
+
+#qcChecklistTabs .nav-link.active > :is(div, small) {
+  font-weight: 600;
 }

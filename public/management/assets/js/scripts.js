@@ -377,6 +377,26 @@ function validateSlabInput(input) {
   }
 }
 
+function validateDropdown(dropdown) {
+  const defaultValue = dropdown.dataset.defaultValue;
+  const currentValue = dropdown.value;
+
+  dropdown.classList.remove("warning", "danger");
+
+  if (currentValue !== defaultValue) {
+    dropdown.classList.add("warning");
+  }
+}
+
+function validateInput(input) {
+  const defaultValue = input.dataset.defaultValue || "";
+  const currentValue = input.value.trim();
+  input.classList.remove("warning", "danger");
+  if (currentValue !== defaultValue) {
+    input.classList.add("warning");
+  }
+}
+
 function printErrorMsg(errors) {
   // Clear previous errors
   $(".print-error-msg").find("ul").html("");
