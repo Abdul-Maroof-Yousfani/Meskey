@@ -454,22 +454,20 @@
                                             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
                                                 <tr>
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
-                                                        Lumpsum Deduction Rupees
+                                                        Lumpsum Deduction (₨)
                                                     </td>
                                                     <td
                                                         style="padding: 8px;border: 1px solid #ddd; text-align: center;">
-                                                        {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
-                                                        Lumpsum)
+                                                        {{ $samplingRequest->lumpsum_deduction ?? 0 }} ₨
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
-                                                        Lumpsum Deduction KG's
+                                                        Lumpsum Deduction (KG)
                                                     </td>
                                                     <td
                                                         style="padding: 8px;border: 1px solid #ddd; text-align: center;">
-                                                        {{ $samplingRequest->lumpsum_deduction_kgs ?? 0 }} (Applied as
-                                                        Lumpsum)
+                                                        {{ $samplingRequest->lumpsum_deduction_kgs ?? 0 }} kg
                                                     </td>
                                                 </tr>
                                             @else
