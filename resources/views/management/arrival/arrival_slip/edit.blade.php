@@ -472,13 +472,6 @@
                                                         Lumpsum)
                                                     </td>
                                                 </tr>
-                                                <tr>
-                                                    <td>Lumpsum Deduction KG's</td>
-                                                    <td class="text-center">
-                                                        {{ $samplingRequest->lumpsum_deduction_kgs ?? '0.00' }}
-                                                        <span class="text-sm">(Applied as Lumpsum)</span>
-                                                    </td>
-                                                </tr>
                                             @else
                                                 @if (count($samplingRequestResults) != 0)
                                                     @foreach ($samplingRequestResults as $slab)
