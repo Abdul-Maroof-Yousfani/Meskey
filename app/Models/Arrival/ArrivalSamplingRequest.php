@@ -14,22 +14,22 @@ class ArrivalSamplingRequest extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'remark',
+        'is_done',
         'company_id',
-        'arrival_product_id',
-        'arrival_ticket_id',
+        'party_ref_no',
         'sampling_type',
         'is_re_sampling',
-        'remark',
-        'decision_making',
-        'is_done',
-        'is_resampling_made',
-        'approved_remarks',
         'approved_status',
-        'party_ref_no',
+        'decision_making',
         'sample_taken_by',
+        'approved_remarks',
         'lumpsum_deduction',
-        'lumpsum_deduction_kgs',
+        'arrival_ticket_id',
+        'is_resampling_made',
+        'arrival_product_id',
         'is_lumpsum_deduction',
+        'lumpsum_deduction_kgs',
     ];
 
     /**

@@ -39,6 +39,7 @@ class ArrivalTicket extends Model
         'arrival_purchase_order_id',
         'sauda_type_id',
         'decision_making',
+        'decision_making_time',
         'truck_type_id',
         'sample_money',
         'sample_money_type',

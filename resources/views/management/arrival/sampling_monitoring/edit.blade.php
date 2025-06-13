@@ -1,6 +1,8 @@
 @php
     $isLumpSumEnabled = $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? true : false;
     $isLumpSumEnabledInTicket = $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 1 ? true : false;
+    $rupeeLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction ?? 0;
+    $kgLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction_kgs ?? 0;
     $isDecisionMaking =
         isset($arrivalSamplingRequest) &&
         $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
@@ -802,8 +804,7 @@
                                 $suggestedDeductionType == 'amount'
                                     ? ($suggestedValue += $getDeductionSuggestion->deduction_value ?? 0)
                                     : ($suggestedValueKgs += $getDeductionSuggestion->deduction_value ?? 0);
-                            @endphp
-                            @php
+
                                 $previousChecklistValue = null;
 
                                 if (!empty($innerRequestsData)) {
@@ -1011,7 +1012,7 @@
                             <div class="input-group mb-2">
                                 <input type="text" id="lumpsum-value" class="form-control"
                                     name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}"
                                     placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
@@ -1020,7 +1021,7 @@
                             <div class="input-group mb-0">
                                 <input type="text" id="lumpsum-kgs-value" class="form-control"
                                     name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}"
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}"
                                     placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">KG's</span>

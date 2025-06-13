@@ -228,7 +228,6 @@ class SamplingMonitoringController extends Controller
 
         try {
             $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
-            // $ArrivalTicket = ArrivalTicket::findOrFail($ArrivalSamplingRequest->arrival_ticket_id);
             $reqStatus = $ArrivalSamplingRequest->approved_status;
 
             if ($reqStatus === 'approved' && $request->stage_status !== 'approved') {
@@ -240,16 +239,30 @@ class SamplingMonitoringController extends Controller
             }
 
             $decisionMakingValue = 'off';
-            if ($reqStatus === 'approved') {
-                $decisionMakingValue = $request->decision_making ?? 'off';
-            } elseif ($reqStatus === 'pending') {
-                $decisionMakingValue = ($request->stage_status === 'approved')
-                    ? ($request->decision_making ?? 'off')
-                    : 'off';
+            $isLumpsum = false;
+
+            if ($ArrivalSamplingRequest->sampling_type === 'initial' && $reqStatus === 'pending' && $request->stage_status === 'resampling') {
+                $decisionMakingValue = 'off';
+                $isLumpsum = false;
+            } else {
+                if ($reqStatus === 'approved') {
+                    $decisionMakingValue = $request->decision_making ?? 'off';
+                    $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+                } elseif ($reqStatus === 'pending') {
+                    $decisionMakingValue = ($request->stage_status === 'approved')
+                        ? ($request->decision_making ?? 'off')
+                        : 'off';
+                    $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+                }
             }
 
-            $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+            $decisionMadeOn = null;
             $isDecisionMaking = convertToBoolean($decisionMakingValue);
+            $isDecisionMakingReq = convertToBoolean($request->decision_making ?? 'off');
+
+            if (!$isDecisionMakingReq && $ArrivalSamplingRequest->arrivalTicket->decision_making === 1) {
+                $decisionMadeOn = now();
+            }
 
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
@@ -318,6 +331,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
                 'decision_making' => $isDecisionMaking,
+                'decision_making_time' => $decisionMadeOn,
                 //'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
                 'sauda_type_id' => $request->sauda_type_id,
                 'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
