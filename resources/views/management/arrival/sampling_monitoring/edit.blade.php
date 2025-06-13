@@ -3,6 +3,7 @@
     $isLumpSumEnabledInTicket = $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 1 ? true : false;
     $rupeeLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction ?? 0;
     $kgLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction_kgs ?? 0;
+
     $isDecisionMaking =
         isset($arrivalSamplingRequest) &&
         $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
@@ -1201,9 +1202,12 @@
             $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
         }
 
-        calculateTotal();
+        if ({{ $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 0 ? 'true' : 'false' }}) {
+            calculateTotal();
+        }
 
         if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
+
             $('#lumpsum-value').val({{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}.toFixed(2));
             $('#lumpsum-kgs-value').val({{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}.toFixed(2));
         }
