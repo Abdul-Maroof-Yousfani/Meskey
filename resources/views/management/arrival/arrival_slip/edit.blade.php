@@ -463,6 +463,16 @@
                                                     </td>
                                                 </tr>
                                                 <tr>
+                                                    <td style="padding: 8px;border: 1px solid #ddd;">
+                                                        Lumpsum Deduction KG's
+                                                    </td>
+                                                    <td
+                                                        style="padding: 8px;border: 1px solid #ddd; text-align: center;">
+                                                        {{ $samplingRequest->lumpsum_deduction_kgs ?? 0 }} (Applied as
+                                                        Lumpsum)
+                                                    </td>
+                                                </tr>
+                                                <tr>
                                                     <td>Lumpsum Deduction KG's</td>
                                                     <td class="text-center">
                                                         {{ $samplingRequest->lumpsum_deduction_kgs ?? '0.00' }}
