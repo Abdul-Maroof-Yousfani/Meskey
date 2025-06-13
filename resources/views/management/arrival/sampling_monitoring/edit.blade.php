@@ -5,6 +5,9 @@
     $kgLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction_kgs ?? 0;
 
     $isDecisionMaking =
+        isset($arrivalSamplingRequest) && $arrivalSamplingRequest->arrivalTicket->decision_making == 1 ? true : false;
+
+    $isDecisionMakingDisabled =
         isset($arrivalSamplingRequest) &&
         $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
         $arrivalSamplingRequest->arrivalTicket->decision_making_time
@@ -1037,7 +1040,7 @@
                         <div class="col-md-3">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" name="decision_making" class="custom-control-input"
-                                    id="decision_making" @checked($isDecisionMaking)>
+                                    id="decision_making" @checked($isDecisionMaking) @disabled($isDecisionMakingDisabled)>
                                 <label class="custom-control-label" for="decision_making"></label>
                             </div>
                         </div>
