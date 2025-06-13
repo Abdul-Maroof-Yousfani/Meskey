@@ -685,45 +685,48 @@
             let totalKgs = 0;
 
             $('.deduction-field').each(function() {
-                let matchingSlabs = $(this).data('matching-slabs');
+                let matchingSlabs = $(this).data('matching-slabs') || [];
+                let rmPoSlabs = $(this).data('rm-po-slabs') || [];
                 let calculatedOn = $(this).data('calculated-on');
-                let slabId = $(this).data('slab-id');
                 let val = parseFloat($(this).val()) || 0;
 
                 if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
                     let deductionValue = 0;
 
-                    if (matchingSlabs && matchingSlabs.length > 0) {
-                        matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
+                    let highestRmPoEnd = 0;
+                    rmPoSlabs.forEach(rmPoSlab => {
+                        let rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
+                        if (rmPoTo > highestRmPoEnd) {
+                            highestRmPoEnd = rmPoTo;
+                        }
+                    });
 
-                        for (let slab of matchingSlabs) {
-                            let from = parseFloat(slab.from);
-                            let to = parseFloat(slab.to);
-                            let isTiered = parseInt(slab.is_tiered);
-                            let deductionVal = parseFloat(slab.deduction_value);
+                    matchingSlabs.forEach(slab => {
+                        let from = parseFloat(slab.from);
+                        let to = slab.to ? parseFloat(slab.to) : Infinity;
+                        let isTiered = parseInt(slab.is_tiered);
+                        let deductionVal = parseFloat(slab.deduction_value);
 
-                            if (val >= from) {
-                                // if (val >= from && (isNaN(to) || val <= to)) {
-                                if (isTiered === 1) {
-                                    let applicableAmount = 0;
-                                    if (isNaN(to) || val >= to) {
-                                        applicableAmount = to - from + 1;
-                                    } else {
-                                        applicableAmount = (val - from) + 1;
-                                    }
-                                    deductionValue += deductionVal * applicableAmount;
-                                } else {
-                                    deductionValue += deductionVal;
-                                }
+                        if (val < from) return;
+
+                        let effectiveFrom = Math.max(from, highestRmPoEnd + 1);
+                        let effectiveTo = Math.min(to, val);
+
+                        if (effectiveFrom <= effectiveTo) {
+                            if (isTiered === 1) {
+                                let applicableAmount = effectiveTo - effectiveFrom + 1;
+                                deductionValue += deductionVal * applicableAmount;
+                            } else {
+                                deductionValue += deductionVal;
                             }
                         }
-                    }
+                    });
 
                     total += deductionValue;
                 } else if (calculatedOn == {{ SLAB_TYPE_KG }}) {
-                    totalKgs += (val) || 0;
+                    totalKgs += val || 0;
                 } else {
-                    total += (val) || 0;
+                    total += val || 0;
                 }
             });
 

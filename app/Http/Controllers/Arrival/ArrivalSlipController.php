@@ -106,9 +106,7 @@ class ArrivalSlipController extends Controller
 
         $isNotGeneratable = false;
 
-        if ($arrivalTicket->decision_making == 1) {
-            $isNotGeneratable = ($arrivalTicket->lumpsum_deduction == 0.00 && $arrivalTicket->lumpsum_deduction_kgs == 0.00);
-        }
+        $isNotGeneratable = $arrivalTicket->decision_making == 1;
 
         return view('management.arrival.arrival_slip.edit', compact('ArrivalTickets', 'arrival_slip', 'arrivalTicket', 'isNotGeneratable', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'));
     }
@@ -154,9 +152,7 @@ class ArrivalSlipController extends Controller
 
         $isNotGeneratable = false;
 
-        if ($arrivalTicket->decision_making == 1) {
-            $isNotGeneratable = ($arrivalTicket->lumpsum_deduction == 0.00 && $arrivalTicket->lumpsum_deduction_kgs == 0.00);
-        }
+        $isNotGeneratable = $arrivalTicket->decision_making == 1;
 
         $html = view('management.arrival.arrival_slip.getTicketDataForArrival', compact('arrivalTicket', 'isNotGeneratable', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'))->render();
 

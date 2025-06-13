@@ -501,11 +501,19 @@
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col">
+                <div class="form-group">
+                    <label>Percentage</label>
+                    <input type="number" min="0" max="100" step="0.01"
+                        class="form-control percentage-input" value="0" placeholder="Enter percentage">
+                </div>
+            </div>
+
+            <div class="col">
                 <div class="form-group">
                     <label>Payment Request</label>
-                    <input type="number" step="0.01" class="form-control" name="payment_request_amount"
-                        value="{{ 0 }}" placeholder="Enter payment request">
+                    <input type="number" step="0.01" class="form-control payment-request-input"
+                        name="payment_request_amount" value="0" placeholder="Enter payment request">
                 </div>
             </div>
 
@@ -631,6 +639,34 @@
                 const remaining = (amount - paymentRequest - paidAmount);
 
                 $('input[name="remaining_amount"]').val(remaining.toFixed(2));
+            });
+
+            const remainingAmount = parseFloat($('input[name="remaining_amount"]').val()) || 0;
+            const percentageInput = $('.percentage-input');
+            const paymentRequestInput = $('.payment-request-input');
+
+            percentageInput.on('input', function() {
+                let percentage = parseFloat($(this).val()) || 0;
+
+                if (percentage > 100) {
+                    percentage = 100;
+                    $(this).val(100);
+                }
+
+                const amount = (remainingAmount * percentage) / 100;
+                paymentRequestInput.val(amount.toFixed(2));
+            });
+
+            paymentRequestInput.on('input', function() {
+                let amount = parseFloat($(this).val()) || 0;
+
+                if (amount > remainingAmount) {
+                    amount = remainingAmount;
+                    $(this).val(remainingAmount.toFixed(2));
+                }
+
+                const percentage = (amount / remainingAmount) * 100;
+                percentageInput.val(percentage.toFixed(2));
             });
         });
     </script>

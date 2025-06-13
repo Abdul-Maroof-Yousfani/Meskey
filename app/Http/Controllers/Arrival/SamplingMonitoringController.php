@@ -49,9 +49,9 @@ class SamplingMonitoringController extends Controller
             ->where(function ($q) {
                 $q->where('approved_status', 'pending')
                     ->orWhere(function ($q) {
-                        $q->where('decision_making', 1)
-                            ->where('lumpsum_deduction', 0)
-                            ->where('lumpsum_deduction_kgs', 0);
+                        $q->where('decision_making', 1);
+                        // ->where('lumpsum_deduction', 0)
+                        // ->where('lumpsum_deduction_kgs', 0);
                     });
             })
             ->latest()

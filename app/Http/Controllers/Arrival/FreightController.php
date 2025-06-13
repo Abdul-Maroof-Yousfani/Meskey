@@ -99,9 +99,7 @@ class FreightController extends Controller
 
         $isNotGeneratable = false;
 
-        if ($ticket->decision_making == 1) {
-            $isNotGeneratable = ($ticket->lumpsum_deduction == 0.00 && $ticket->lumpsum_deduction_kgs == 0.00);
-        }
+        $isNotGeneratable = $ticket->decision_making == 1;
 
         $html = view('management.arrival.freight.partials.freight_form', [
             'ticket' => $ticket,
