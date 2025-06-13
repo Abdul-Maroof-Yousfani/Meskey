@@ -347,6 +347,7 @@
                                 @php
                                     $payableCharges =
                                         ((int) $arrivalTicket->freight->freight_written_on_bilty ?? 0) +
+                                        ((int) $arrivalTicket->freight->kanta_golarchi_charges ?? 0) +
                                         ((int) $arrivalTicket->freight->karachi_kanta_charges ?? 0) +
                                         ((int) $arrivalTicket->freight->other_labour_charges ?? 0) -
                                         ((int) $arrivalTicket->freight->other_deduction ?? 0);
@@ -453,12 +454,19 @@
                                             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
                                                 <tr>
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
-                                                        Lumpsum Deduction
+                                                        Lumpsum Deduction Rupees
                                                     </td>
                                                     <td
                                                         style="padding: 8px;border: 1px solid #ddd; text-align: center;">
                                                         {{ $samplingRequest->lumpsum_deduction ?? 0 }} (Applied as
                                                         Lumpsum)
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Lumpsum Deduction KG's</td>
+                                                    <td class="text-center">
+                                                        {{ $samplingRequest->lumpsum_deduction_kgs ?? '0.00' }}
+                                                        <span class="text-sm">(Applied as Lumpsum)</span>
                                                     </td>
                                                 </tr>
                                             @else

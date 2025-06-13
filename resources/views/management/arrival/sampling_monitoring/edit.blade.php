@@ -477,7 +477,7 @@
                                     </div>
                                 </div>
                                 <div class="col">
-                                    <div class="input-group mb-0">
+                                    <div class="input-group mb-1">
                                         <input type="text" id="lumpsum-value-initial-{{ $index }}"
                                             class="form-control" name="lumpsum_deduction_initial" disabled
                                             value="{{ $initialData['request']->lumpsum_deduction ?? 0 }}"
@@ -486,13 +486,6 @@
                                             <span class="input-group-text text-sm">Rs.</span>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label class="col-md-4 label-control font-weight-bold"
-                                    for="lumpsum-kgs-value-initial-{{ $index }}">Lumpsum
-                                    Deduction</label>
-                                <div class="col-md-8">
                                     <div class="input-group mb-0">
                                         <input type="text" id="lumpsum-kgs-value-initial-{{ $index }}"
                                             class="form-control" name="lumpsum_deduction_kgs_initial" readonly
@@ -679,7 +672,7 @@
                                 </div>
                             </div>
                             <div class="col">
-                                <div class="input-group mb-0">
+                                <div class="input-group mb-1">
                                     <input type="text" class="form-control" readonly
                                         value="{{ $innerData['request']->lumpsum_deduction ?? 0 }}">
                                     <div class="input-group-append">
@@ -687,11 +680,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label class="col-md-4 label-control font-weight-bold">Deduction (KG's)</label>
-                            <div class="col-md-8">
+                            <div class="col">
                                 <div class="input-group mb-0">
                                     <input type="text" class="form-control" readonly
                                         value="{{ $innerData['request']->lumpsum_deduction_kgs ?? 0 }}">
@@ -701,7 +690,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="form-group row">
                             <label class="col-md-4 label-control font-weight-bold">Decision Making on Avg.</label>
                             <div class="col-md-3">
@@ -981,7 +969,7 @@
                             </div>
                         </div>
                         <div class="col">
-                            <div class="input-group mb-0">
+                            <div class="input-group mb-2">
                                 <input type="text" id="lumpsum-value" class="form-control"
                                     name="lumpsum_deduction" {{ $isLumpSumEnabled ? '' : 'readonly' }}
                                     value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}"
@@ -990,13 +978,6 @@
                                     <span class="input-group-text text-sm">Rs.</span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <label class="col-md-4 label-control font-weight-bold" for="lumpsum-kgs-value">Deduction
-                            (KG's)</label>
-                        <div class="col-md-8">
                             <div class="input-group mb-0">
                                 <input type="text" id="lumpsum-kgs-value" class="form-control"
                                     name="lumpsum_deduction_kgs" readonly
@@ -1184,6 +1165,7 @@
 
         if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
             $('#lumpsum-value').val({{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}.toFixed(2));
+            $('#lumpsum-kgs-value').val({{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}.toFixed(2));
         }
 
         $('.deduction-field').on('input', calculateTotal);
@@ -1202,6 +1184,7 @@
                     if (result.isConfirmed) {
                         $('.deduction-field').val('0').prop('readonly', true);
                         $('#lumpsum-value').prop('readonly', false);
+                        $('#lumpsum-kgs-value').prop('readonly', false);
                         calculateTotal();
                     } else {
                         $(this).prop('checked', false);
@@ -1210,6 +1193,7 @@
             } else {
                 $('.deduction-field').prop('readonly', false);
                 $('#lumpsum-value').prop('readonly', true).val('0');
+                $('#lumpsum-kgs-value').prop('readonly', true).val('0');
                 calculateTotal();
             }
         });

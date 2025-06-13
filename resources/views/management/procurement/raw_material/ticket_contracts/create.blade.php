@@ -411,9 +411,17 @@
                                                                 <tbody>
                                                                     @if ($showLumpSum && !$isSlabs && !$isCompulsury)
                                                                         <tr>
-                                                                            <td>Lumpsum Deduction</td>
+                                                                            <td>Lumpsum Deduction Rupees</td>
                                                                             <td class="text-center">
                                                                                 {{ $samplingRequest->lumpsum_deduction ?? 0 }}
+                                                                                (Applied as
+                                                                                Lumpsum)
+                                                                            </td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>Lumpsum Deduction KG's</td>
+                                                                            <td class="text-center">
+                                                                                {{ $samplingRequest->lumpsum_deduction_kgs ?? 0 }}
                                                                                 (Applied as
                                                                                 Lumpsum)
                                                                             </td>

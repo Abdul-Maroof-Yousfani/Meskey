@@ -251,9 +251,16 @@
                      </thead>
                      <tbody>
                          <tr>
-                             <td>Lumpsum Deduction</td>
+                             <td>Lumpsum Deduction Rupees</td>
                              <td class="text-center">
-                                 {{ $samplingRequest->lumpsum_deduction ?? 0 }}
+                                 {{ $samplingRequest->lumpsum_deduction ?? '0.00' }}
+                                 <span class="text-sm">(Applied as Lumpsum)</span>
+                             </td>
+                         </tr>
+                         <tr>
+                             <td>Lumpsum Deduction KG's</td>
+                             <td class="text-center">
+                                 {{ $samplingRequest->lumpsum_deduction_kgs ?? '0.00' }}
                                  <span class="text-sm">(Applied as Lumpsum)</span>
                              </td>
                          </tr>
