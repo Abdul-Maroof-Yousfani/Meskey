@@ -986,7 +986,7 @@
                                     name="{{ !$isLumpSumEnabledInTicket ? 'is_lumpsum_deduction' : 'is_lumpsum_deduction_display' }}"
                                     @checked($isLumpSumEnabledInTicket) @disabled($isLumpSumEnabledInTicket)>
                                 @if ($isLumpSumEnabledInTicket)
-                                    <input type="hidden" name="is_lumpsum_deduction" value="1">
+                                    <input type="hidden" name="is_lumpsum_deduction" value="on">
                                 @endif
                                 <label class="custom-control-label" for="lumpsum-toggle"></label>
                             </div>

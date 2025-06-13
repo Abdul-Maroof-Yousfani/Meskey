@@ -239,11 +239,11 @@ class SamplingMonitoringController extends Controller
             }
 
             $decisionMakingValue = 'off';
-            $isLumpsum = false;
+            $isLumpsum = 0;
 
             if ($ArrivalSamplingRequest->sampling_type === 'initial' && $reqStatus === 'pending' && $request->stage_status === 'resampling') {
                 $decisionMakingValue = 'off';
-                $isLumpsum = false;
+                $isLumpsum = 0;
             } else {
                 if ($reqStatus === 'approved') {
                     $decisionMakingValue = $request->decision_making ?? 'off';
