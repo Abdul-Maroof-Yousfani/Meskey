@@ -1202,8 +1202,10 @@
             $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
         }
 
-        if ({{ $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 0 ? 'true' : 'false' }}) {
-            calculateTotal();
+        if (
+            {{ $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 0 ? 'true' : 'false' }}
+        ) {
+            // calculateTotal();
         }
 
         if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
