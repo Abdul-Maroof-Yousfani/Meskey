@@ -13,10 +13,10 @@
         @if (count($tickets) != 0)
             @foreach ($tickets as $key => $row)
                 <tr
-                    class="{{ $row->purchaseOrder ? '' : ' bg-orange ' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
+                    class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '  ' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
                     <td>
                         <p class="m-0">
-                            #{{ $row->unique_no ?? 'N/A' }} <br>
+                            #{{ $row->unique_no ?? 'N/A' }} {{ $row->purchaseOrder->status ?? '' }}<br>
                         </p>
                     </td>
                     <td>
@@ -80,7 +80,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            @if (!$row->purchaseOrder)
+                            @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
                                 <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
                                     class="info p-1 text-center mr-2 position-relative">
                                     <i class="ft-edit font-medium-3"></i>

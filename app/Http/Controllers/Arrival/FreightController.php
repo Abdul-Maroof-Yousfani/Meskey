@@ -53,14 +53,14 @@ class FreightController extends Controller
         $data['company_id'] = $request->company_id;
         $data['exempted_weight'] = $request->exempted_weight ?? 0;
 
-        $freight = Freight::create($request->all());
+        $freight = Freight::create($data);
 
         $datePrefix = date('m-d-Y') . '-';
-        $request['unique_no'] = generateUniqueNumberByDate('arrival_slips', $datePrefix, null, 'unique_no');
-        $request['creator_id'] = auth()->user()->id;
-        $request['remark'] = $request->note ?? '';
+        $data['unique_no'] = generateUniqueNumberByDate('arrival_slips', $datePrefix, null, 'unique_no');
+        $data['creator_id'] = auth()->user()->id;
+        $data['remark'] = $request->note ?? '';
 
-        $arrivalApprove = ArrivalSlip::create($request->all());
+        $arrivalApprove = ArrivalSlip::create($data);
 
         return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
     }

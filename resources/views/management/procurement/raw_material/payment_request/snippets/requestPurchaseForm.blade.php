@@ -71,6 +71,7 @@
     $remaining = $amount - $paidAmount;
 
     $advanceFreight = $purchaseOrder->purchaseFreight->advance_freight ?? 0;
+    $remainingFreight = $advanceFreight - $pRsSumForFreight;
 @endphp
 
 <style>
@@ -258,6 +259,7 @@
                                                 $purchaseOrder->qc_product ?? $purchaseOrder->product_id,
                                                 $slab->checklist_value,
                                             );
+
                                             $suggestedDeductionType =
                                                 $getDeductionSuggestion->deduction_type ?? 'amount';
 
@@ -304,11 +306,11 @@
                                                         return floatval($a['from']) <=> floatval($b['from']);
                                                     });
 
-                                                    foreach ($matchingSlabs as $slab) {
-                                                        $from = floatval($slab['from']);
-                                                        $to = floatval($slab['to']);
-                                                        $isTiered = intval($slab['is_tiered']);
-                                                        $deductionVal = floatval($slab['deduction_value'] ?? 0);
+                                                    foreach ($matchingSlabs as $mSlab) {
+                                                        $from = floatval($mSlab['from']);
+                                                        $to = floatval($mSlab['to']);
+                                                        $isTiered = intval($mSlab['is_tiered']);
+                                                        $deductionVal = floatval($mSlab['deduction_value'] ?? 0);
 
                                                         if ($val >= $from) {
                                                             if ($isTiered === 1) {
@@ -475,65 +477,10 @@
                     </tbody>
                 </table>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Amount</label>
-                    <input type="text" class="form-control" name="total_amount" value="{{ $amount }}"
-                        readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Paid Amount</label>
-                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
-                        value="{{ $paidAmount }}" placeholder="Enter paid amount">
-                </div>
-            </div>
-            <div class="col-12">
-                <hr class="border">
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Remaining</label>
-                    <input type="text" class="form-control" name="remaining_amount" value="{{ $remaining }}"
-                        readonly>
-                </div>
-            </div>
-
-            <div class="col">
-                <div class="form-group">
-                    <label>Percentage</label>
-                    <input type="number" min="0" max="100" step="0.01"
-                        class="form-control percentage-input" value="0" placeholder="Enter percentage">
-                </div>
-            </div>
-
-            <div class="col">
-                <div class="form-group">
-                    <label>Payment Request</label>
-                    <input type="number" step="0.01" class="form-control payment-request-input"
-                        name="payment_request_amount" value="0" placeholder="Enter payment request">
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Advance Freight</label>
-                    <input type="text" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
-                        readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Freight Pay Request</label>
-                    <input type="number" step="0.01" class="form-control" name="freight_pay_request_amount"
-                        value="{{ 0 }}" placeholder="Enter freight pay request">
-                </div>
-            </div>
         </div>
-    @else
+    @endif
+
+    <div class="row mx-auto">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount</label>
@@ -549,9 +496,7 @@
                     value="{{ $paidAmount }}" placeholder="Enter paid amount">
             </div>
         </div>
-        <div class="col-12">
-            <hr class="border">
-        </div>
+
         <div class="col-md-6">
             <div class="form-group">
                 <label>Remaining</label>
@@ -560,30 +505,63 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col">
+            <div class="form-group">
+                <label>Percentage</label>
+                <input type="number" min="0" max="100" step="0.01"
+                    class="form-control percentage-input" value="0" placeholder="Enter percentage">
+            </div>
+        </div>
+
+        <div class="col">
             <div class="form-group">
                 <label>Payment Request</label>
-                <input type="number" step="0.01" class="form-control" name="payment_request_amount"
-                    value="{{ 0 }}" placeholder="Enter payment request">
+                <input type="number" step="0.01" class="form-control payment-request-input"
+                    name="payment_request_amount" value="0" placeholder="Enter payment request">
             </div>
+        </div>
+
+        <div class="col-12">
+            <hr class="border">
         </div>
 
         <div class="col-md-6">
             <div class="form-group">
-                <label>Advance Freight</label>
+                <label>Total Advance Freight</label>
                 <input type="text" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
                     readonly>
             </div>
         </div>
-
         <div class="col-md-6">
             <div class="form-group">
-                <label>Freight Pay Request</label>
-                <input type="number" step="0.01" class="form-control" name="freight_pay_request_amount"
-                    value="{{ 0 }}" placeholder="Enter freight pay request">
+                <label>Paid Freight</label>
+                <input type="text" class="form-control" name="advance_freight" value="{{ $pRsSumForFreight }}"
+                    readonly>
             </div>
         </div>
-    @endif
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Remaining Freight</label>
+                <input type="text" class="form-control" name="remaining_freight" value="{{ $remainingFreight }}"
+                    readonly>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="form-group">
+                <label>Percentage</label>
+                <input type="number" min="0" max="100" step="0.01"
+                    class="form-control percentage-input-freight" value="0" placeholder="Enter percentage">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Freight Pay Request</label>
+                <input type="number" class="form-control payment-request-freifht" name="freight_pay_request_amount"
+                    value="0" placeholder="Enter freight pay request" max="{{ (int) $remainingFreight }}">
+            </div>
+        </div>
+    </div>
 </div>
 {{-- </form> --}}
 
@@ -667,6 +645,43 @@
 
                 const percentage = (amount / remainingAmount) * 100;
                 percentageInput.val(percentage.toFixed(2));
+            });
+
+            $('input[name="freight_pay_request_amount"]').on('input', function() {
+                const amount = parseFloat({{ $advanceFreight }});
+                const paidAmount = parseFloat({{ $pRsSumForFreight }});
+                const paymentRequest = parseFloat($(this).val()) || 0;
+                const remaining = (amount - paymentRequest - paidAmount);
+
+                $('input[name="remaining_freight"]').val(remaining.toFixed(2));
+            });
+
+            const remainingAmountF = parseFloat($('input[name="remaining_freight"]').val()) || 0;
+            const percentageInputF = $('.percentage-input-freight');
+            const paymentRequestInputF = $('.payment-request-freifht');
+
+            percentageInputF.on('input', function() {
+                let percentage = parseFloat($(this).val()) || 0;
+
+                if (percentage > 100) {
+                    percentage = 100;
+                    $(this).val(100);
+                }
+
+                const amount = (remainingAmountF * percentage) / 100;
+                paymentRequestInputF.val(amount.toFixed(2));
+            });
+
+            paymentRequestInputF.on('input', function() {
+                let amount = parseFloat($(this).val()) || 0;
+
+                if (amount > remainingAmountF) {
+                    amount = remainingAmountF;
+                    $(this).val(remainingAmountF.toFixed(2));
+                }
+
+                const percentage = (amount / remainingAmountF) * 100;
+                percentageInputF.val(percentage.toFixed(2));
             });
         });
     </script>

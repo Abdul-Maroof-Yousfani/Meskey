@@ -41,17 +41,90 @@
                     <div class="card-body">
                         <form action="{{ route('raw-material.ticket-contracts.store') }}" method="POST" id="ajaxSubmit">
                             @csrf
+                            <input type="hidden" id="url"
+                                value="{{ route('raw-material.ticket-contracts.index') }}" />
                             <input type="hidden" name="arrival_ticket_id" value="{{ $arrivalTicket->id }}">
+
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-12">
+                                    <div class="card shadow">
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                <label for="contract_search">Search Contract</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="contract_search"
+                                                        placeholder="Search by contract no, product etc.">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-info" type="button"
+                                                            id="search_contract_btn">
+                                                            <i class="fa fa-search"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="contract-results mt-3"
+                                                style="display: none; max-height: 400px; overflow-y: auto;">
+                                                <table class="table table-sm table-bordered table-hover">
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th width="5%">Select</th>
+                                                            <th width="15%">Contract No</th>
+                                                            <th width="15%">Product</th>
+                                                            <th width="15%">Supplier</th>
+                                                            <th width="10%">Ordered Qty</th>
+                                                            <th width="10%">Remaining Qty</th>
+                                                            <th width="10%">Arrived Qty</th>
+                                                            <th width="10%">Truck No</th>
+                                                            <th width="10%">Trucks Arrived</th>
+                                                            <th width="10%">Status</th>
+                                                            {{-- <th width="5%">Action</th> --}}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="contract_results_body"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- <div class="row mt-3"> --}}
+                                <div class="col-md-12 text-right">
+                                    @if (
+                                        ($arrivalTicket->arrival_purchase_order_id ?? false) &&
+                                            ($arrivalTicket->purchaseOrder->status === 'completed' ?? false))
+                                        <a href="{{ route('raw-material.ticket-contracts.index') }}" class="btn btn-danger">
+                                            Close
+                                        </a>
+                                    @else
+                                        <button type="button" class="btn btn-primary" id="confirm_submit_btn"
+                                            {{ !$arrivalTicket->arrival_purchase_order_id || ($arrivalTicket->purchaseOrder->status ?? '') === 'completed' ? 'disabled' : '' }}>
+                                            <i class="fa fa-check"></i> Submit
+                                        </button>
+                                        <button type="submit" class="btn btn-primary d-none" id="real_submit_btn">
+                                            <i class="fa fa-check"></i> Submit
+                                        </button>
+                                    @endif
+                                    {{-- </div> --}}
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-12">
                                     <div class="card shadow">
                                         <div class="card-header">
                                             <h3 class="card-title">Ticket Details</h3>
                                         </div>
                                         <div class="card-body">
                                             <div class="row">
+                                                {{-- <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label>Closing Trucks Quantity</label>
+                                                        <input type="number" class="form-control" name="closing_trucks_qty"
+                                                            value="{{ old('closing_trucks_qty', 1) }}" min="1">
+                                                    </div>
+                                                </div> --}}
 
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Ticket Number</label>
                                                         <input type="text" class="form-control"
@@ -59,7 +132,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Date</label>
                                                         <input type="text" class="form-control"
@@ -67,7 +140,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Status</label>
                                                         <input type="text" class="form-control"
@@ -76,7 +149,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Product</label>
                                                         <input type="text" class="form-control"
@@ -84,7 +157,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>QC Product</label>
                                                         <input type="text" class="form-control"
@@ -92,11 +165,12 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Sauda Type</label>
                                                         <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}" readonly>
+                                                            value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}"
+                                                            readonly>
                                                     </div>
                                                 </div>
                                             </div>
@@ -488,56 +562,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="card shadow">
-                                        <div class="card-body">
-                                            <div class="form-group">
-                                                <label for="contract_search">Search Contract</label>
-                                                <div class="input-group">
-                                                    <input type="text" class="form-control" id="contract_search"
-                                                        placeholder="Search by contract no, product etc.">
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-info" type="button"
-                                                            id="search_contract_btn">
-                                                            <i class="fa fa-search"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="contract-results mt-3"
-                                                style="display: none; max-height: 400px; overflow-y: auto;">
-                                                <table class="table table-sm table-bordered table-hover">
-                                                    <thead class="thead-light">
-                                                        <tr>
-                                                            <th width="10%">Select</th>
-                                                            <th width="25%">Contract No</th>
-                                                            <th width="20%">Product</th>
-                                                            <th width="20%">Supplier</th>
-                                                            <th width="15%">Quantity</th>
-                                                            <th width="10%">Date</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="contract_results_body"></tbody>
-                                                </table>
-                                            </div>
-
-                                            <div class="mt-3 text-right">
-                                                @if ($arrivalTicket->arrival_purchase_order_id ?? false)
-                                                    <a href="{{ route('raw-material.ticket-contracts.index') }}"
-                                                        class="btn btn-danger">
-                                                        Close
-                                                    </a>
-                                                @else
-                                                    <button type="submit" class="btn btn-primary" id="submit_btn"
-                                                        disabled>
-                                                        <i class="fa fa-check"></i> Submit
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </form>
                     </div>
@@ -566,10 +590,135 @@
             $(document).on('change', 'input[name="selected_contract"]', function() {
                 const contractId = $(this).val();
                 $('#selected_contract_id').val(contractId);
-                $('#submit_btn').prop('disabled', false);
+                $('#confirm_submit_btn').prop('disabled', false);
 
                 $('.contract-row').removeClass('table-active');
                 $(this).closest('.contract-row').addClass('table-active');
+            });
+
+            $('#confirm_submit_btn').on('click', function() {
+                const contractId = $('input[name="selected_contract"]:checked').val();
+                if (!contractId) {
+                    Swal.fire('Error', 'Please select a contract first', 'error');
+                    return;
+                }
+
+                const contractRow = $(`input[name="selected_contract"][value="${contractId}"]`).closest(
+                    '.contract-row');
+                const remainingQty = parseFloat(contractRow.find('td:eq(5)').text().replace(' kg', ''));
+                const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
+
+                Swal.fire({
+                    title: 'Confirm Submission',
+                    html: `
+                <div class="form-group text-left">
+                    <label>Closing Trucks Quantity</label>
+                    <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" required>
+                </div>
+                ${remainingQty - ticketWeight <= 0 ? 
+                    '<div class="alert alert-warning mt-3">This will complete the contract as remaining quantity will be zero</div>' : 
+                    '<div class="form-check text-left mt-3">' +
+                    '<input type="checkbox" class="form-check-input" id="swal-mark-completed">' +
+                    '<label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>' +
+                    '</div>'
+                }
+            `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit',
+                    cancelButtonText: 'Cancel',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const trucksQty = $('#swal-closing-trucks').val();
+
+                        if (!trucksQty || trucksQty < 1) {
+                            Swal.showValidationMessage(
+                                'Closing trucks quantity is required and must be at least 1'
+                            );
+                            return false;
+                        }
+
+                        const markCompleted = remainingQty - ticketWeight <= 0 || $(
+                            '#swal-mark-completed').is(':checked');
+                        return {
+                            trucksQty,
+                            markCompleted
+                        };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const {
+                            trucksQty,
+                            markCompleted
+                        } = result.value;
+
+                        // Add hidden fields to form
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'closing_trucks_qty',
+                            value: trucksQty
+                        }).appendTo('#ajaxSubmit');
+
+                        if (markCompleted) {
+                            $('<input>').attr({
+                                type: 'hidden',
+                                name: 'mark_completed',
+                                value: '1'
+                            }).appendTo('#ajaxSubmit');
+                        }
+
+                        // Trigger the actual form submission
+                        $('#real_submit_btn').click();
+                    }
+                });
+            });
+
+            $(document).on('click', '.mark-completed', function(e) {
+                e.preventDefault();
+                const contractId = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You want to mark this contract as completed?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, mark as completed!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '{{ route('raw-material.purchase-order.mark-completed') }}',
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                id: contractId
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire(
+                                        'Completed!',
+                                        'Contract has been marked as completed.',
+                                        'success'
+                                    );
+                                    loadInitialContracts();
+                                } else {
+                                    Swal.fire(
+                                        'Error!',
+                                        response.message || 'Something went wrong.',
+                                        'error'
+                                    );
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire(
+                                    'Error!',
+                                    'Something went wrong.',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
             });
 
             @if ($arrivalTicket->arrival_purchase_order_id ?? false)
@@ -618,6 +767,17 @@
 
                 if (response.success && response.data.length > 0) {
                     response.data.forEach(contract => {
+                        const statusBadge = contract.status === 'completed' ?
+                            '<span class="badge badge-success">Completed</span>' :
+                            '<span class="badge badge-warning">Pending</span>';
+
+                        const markCompletedBtn = contract.status === 'completed' ?
+                            '' :
+                            `<button class="btn btn-sm btn-info mark-completed" data-id="${contract.id}">
+                                <i class="fa fa-check"></i> Mark Completed
+                            </button>`;
+
+                        // <td>${contract.arrived_quantity ? contract.arrived_quantity + ' kg' : '-'}</td>
                         const row = `
                             <tr class="contract-row" data-id="${contract.id}">
                                 <td class="text-center">
@@ -625,11 +785,15 @@
                                            value="${contract.id}" 
                                            ${contract.id == '{{ $arrivalTicket->arrival_purchase_order_id ?? '' }}' ? 'checked' : ''}>
                                 </td>
-                                <td>${contract.contract_no}</td>
-                                <td>${contract.qc_product_name}</td>
-                                <td>${contract.supplier.name}</td>
-                                <td>${contract.total_quantity} kg</td>
-                                <td>${contract.contract_date_formatted}</td>
+                                <td>${contract.contract_no || '-'}</td>
+                                <td>${contract.qc_product_name || '-'}</td>
+                                <td>${contract.supplier?.name || '-'}</td>
+                                <td>${contract.total_quantity ? contract.total_quantity + ' kg' : '-'}</td>
+                                <td>${contract.remaining_quantity ? contract.remaining_quantity + ' kg' : '-'}</td>
+                                <td>{{ $arrivalTicket->arrivalSlip->arrived_weight ?? '-' }}</td>
+                                <td>${contract.truck_no || '-'}</td>
+                                <td>{{ $arrivalTicket->closing_trucks_qty ?? '-' }}</td>
+                                <td>${statusBadge}</td> 
                             </tr>
                         `;
                         resultsBody.append(row);
@@ -639,7 +803,7 @@
                 } else {
                     resultsBody.html(`
                         <tr>
-                            <td colspan="6" class="text-center text-muted">
+                            <td colspan="11" class="text-center text-muted">
                                 No contracts found
                             </td>
                         </tr>
@@ -666,6 +830,10 @@
 
         .contract-results table {
             margin-bottom: 0;
+        }
+
+        .table-active {
+            background-color: #e7f5ff !important;
         }
     </style>
 @endsection

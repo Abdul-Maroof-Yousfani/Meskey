@@ -44,6 +44,7 @@ class ArrivalTicket extends Model
         'sample_money',
         'sample_money_type',
         'truck_no',
+        'closing_trucks_qty',
         'bilty_no',
         'bags',
         'station_id',

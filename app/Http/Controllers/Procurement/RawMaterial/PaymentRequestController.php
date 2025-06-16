@@ -230,6 +230,12 @@ class PaymentRequestController extends Controller
             ->where('request_type', 'payment')
             ->sum('amount');
 
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($paymentRequestData) {
+            $query->where('purchase_order_id', $paymentRequestData->purchase_order_id);
+        })
+            ->where('request_type', 'freight_payment')
+            ->sum('amount');
+
         $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
         $freightRequest = $paymentRequestData->paymentRequests->where('request_type', 'freight_payment')->first();
 
@@ -238,6 +244,7 @@ class PaymentRequestController extends Controller
             'paymentRequest' => $paymentRequest,
             'freightRequest' => $freightRequest,
             'pRsSum' => $pRsSum,
+            'pRsSumForFreight' => $pRsSumForFreight,
             'samplingResults' => $paymentRequestData->samplingResults // Pass samplingResults to view
         ]);
     }
@@ -304,6 +311,12 @@ class PaymentRequestController extends Controller
             ->where('request_type', 'payment')
             ->sum('amount');
 
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
+            $query->where('purchase_order_id', $purchaseOrder->id);
+        })
+            ->where('request_type', 'freight_payment')
+            ->sum('amount');
+
         $purchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'completed')->get();
 
         $samplingRequest = null;
@@ -343,7 +356,8 @@ class PaymentRequestController extends Controller
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
             'samplingRequestResults' => $samplingRequestResults,
-            'pRsSum' => $pRsSum
+            'pRsSum' => $pRsSum,
+            'pRsSumForFreight' => $pRsSumForFreight,
         ])->render();
 
         return response()->json(['success' => true, 'html' => $html]);

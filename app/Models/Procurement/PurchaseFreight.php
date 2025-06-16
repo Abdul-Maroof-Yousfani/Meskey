@@ -20,7 +20,7 @@ class PurchaseFreight extends Model
         'company_id',
         'loading_date',
         'supplier_name',
-        'broker',
+        // 'broker',
         'truck_no',
         'bilty_no',
         'station_id',

@@ -52,21 +52,21 @@
             <div class="form-group">
                 <label>Loaded Weight</label>
                 <input type="number" name="loaded_weight" class="form-control" value="{{ $ticket->net_weight }}"
-                    disabled />
+                    readonly />
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Arrived Weight</label>
                 <input type="number" name="arrived_weight" class="form-control"
-                    value="{{ $ticket->arrived_net_weight }}" disabled />
+                    value="{{ $ticket->arrived_net_weight }}" readonly />
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Difference</label>
                 <input type="number" name="difference" class="form-control"
-                    value="{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}" disabled />
+                    value="{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}" readonly />
             </div>
         </div>
 

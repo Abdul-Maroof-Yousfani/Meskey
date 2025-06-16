@@ -13,6 +13,7 @@ class ArrivalSlip extends Model
         'unique_no',
         'company_id',
         'arrival_ticket_id',
+        'arrived_weight',
         'remark',
         'creator_id'
     ];

@@ -35,8 +35,10 @@ return new class extends Migration {
             $table->string('broker_one_name')->nullable();
             $table->unsignedBigInteger('broker_one_id')->nullable();
             $table->decimal('broker_one_commission', 10, 2)->nullable();
+            $table->string('broker_two_name')->nullable();
             $table->unsignedBigInteger('broker_two_id')->nullable();
             $table->decimal('broker_two_commission', 10, 2)->nullable();
+            $table->string('broker_three_name')->nullable();
             $table->unsignedBigInteger('broker_three_id')->nullable();
             $table->decimal('broker_three_commission', 10, 2)->nullable();
 
@@ -79,6 +81,12 @@ return new class extends Migration {
             $table->boolean('is_replacement')->default(false);
             $table->text('weighbridge_from')->nullable();
             $table->string('freight_status')->nullable();
+
+            $table->tinyInteger('decision_making')->default(0);
+            $table->dateTime('decision_making_time')->nullable();
+            $table->decimal('lumpsum_deduction', 10, 2)->default(0);
+            $table->decimal('lumpsum_deduction_kgs', 10, 2)->default(0);
+            $table->tinyInteger('is_lumpsum_deduction')->default(0)->comment('Switch state for lumpsum deduction');
 
             $table->text('remarks')->nullable();
             $table->unsignedBigInteger('account_of')->nullable();

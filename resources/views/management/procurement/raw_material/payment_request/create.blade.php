@@ -13,6 +13,8 @@
                         <option value="{{ $purchaseOrder->id }}">
                             {{ $purchaseOrder->contract_no }}
                             {{ isset($purchaseOrder->qcProduct->name) ? "({$purchaseOrder->qcProduct->name})" : '' }}
+                            {{ isset($purchaseOrder->truck_no) ? " - Truck: {$purchaseOrder->truck_no}" : '' }}
+                            {{ isset($purchaseOrder->supplier->name) ? " - Supplier: {$purchaseOrder->supplier->name}" : '' }}
                         </option>
                     @endforeach
                 </select>

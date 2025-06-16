@@ -26,13 +26,35 @@
                         value="{{ $purchaseOrder->supplier->name ?? '' }}" readonly />
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Broker</label>
-                    <input type="text" name="broker" class="form-control"
-                        value="{{ $purchaseOrder->broker->name ?? '' }}" />
+            @if ($purchaseOrder->broker_one_id)
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Broker One</label>
+                        <input type="text" name="broker_one" class="form-control"
+                            value="{{ $purchaseOrder->broker_one_name ?? '' }}" readonly />
+                    </div>
                 </div>
-            </div>
+            @endif
+
+            @if ($purchaseOrder->broker_two_id)
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Broker Two</label>
+                        <input type="text" name="broker_two" class="form-control"
+                            value="{{ $purchaseOrder->broker_two_name ?? '' }}" readonly />
+                    </div>
+                </div>
+            @endif
+
+            @if ($purchaseOrder->broker_three_id)
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Broker Three</label>
+                        <input type="text" name="broker_three" class="form-control"
+                            value="{{ $purchaseOrder->broker_three_name ?? '' }}" readonly />
+                    </div>
+                </div>
+            @endif
 
             <div class="col-md-6">
                 <div class="form-group">
@@ -107,7 +129,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Advance Freight</label>
-                    <input type="number" step="0.01" name="advance_freight" class="form-control" value="0" />
+                    <input type="number" step="0.01" name="advance_freight" class="form-control"
+                        value="0" />
                 </div>
             </div>
 

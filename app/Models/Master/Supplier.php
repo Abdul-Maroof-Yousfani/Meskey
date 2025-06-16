@@ -3,6 +3,7 @@
 namespace App\Models\Master;
 
 use App\Models\SupplierCompanyBankDetail;
+use App\Models\SupplierOwnerBankDetail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -43,12 +44,12 @@ class Supplier extends Model
 
     public function companyBankDetails()
     {
-        return $this->hasMany(SupplierCompanyBankDetail::class);
+        return $this->hasMany(SupplierCompanyBankDetail::class,);
     }
 
     public function ownerBankDetails()
     {
-        return $this->hasMany(Supplier::class);
+        return $this->hasMany(SupplierOwnerBankDetail::class,);
     }
 
     // Add casts for company_locations

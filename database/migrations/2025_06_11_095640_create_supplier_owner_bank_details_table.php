@@ -14,6 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('supplier_id');
             $table->string('bank_name');
+            $table->string('branch_name');
+            $table->string('branch_code');
             $table->string('account_title');
             $table->string('account_number');
             $table->timestamps();

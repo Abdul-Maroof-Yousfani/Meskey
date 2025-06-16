@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('arrival_purchase_order_id')->constrained();
             $table->date('loading_date');
             $table->string('supplier_name');
-            $table->string('broker');
+            // $table->string('broker');
             $table->string('truck_no');
             $table->string('bilty_no');
             $table->foreignId('station_id')->nullable()->constrained('stations');

@@ -327,11 +327,16 @@
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group">
-                 <label class="label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement</label>
-                 <div class="custom-control custom-switch">
-                     <input type="checkbox" name="is_replacement" class="custom-control-input"
-                         id="lumpsum-toggle-initial" {{ $arrivalPurchaseOrder->is_replacement ? 'checked' : '' }}>
-                     <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
+                 <label class="label-control font-weight-bold">Replacement</label>
+                 <div class="custom-control custom-radio">
+                     <input type="radio" name="is_replacement" value="1" class="custom-control-input"
+                         id="replacement-yes" {{ $arrivalPurchaseOrder->is_replacement == 1 ? 'checked' : '' }}>
+                     <label class="custom-control-label" for="replacement-yes">Yes</label>
+                 </div>
+                 <div class="custom-control custom-radio">
+                     <input type="radio" name="is_replacement" value="0" class="custom-control-input"
+                         id="replacement-no" {{ $arrivalPurchaseOrder->is_replacement == 0 ? 'checked' : '' }}>
+                     <label class="custom-control-label" for="replacement-no">No</label>
                  </div>
              </div>
          </div>
@@ -382,21 +387,47 @@
      $(document).ready(function() {
          $('.select2').select2();
 
-         let TRUCK_MIN =
-             {{ $arrivalPurchaseOrder->truckSizeRange ? $arrivalPurchaseOrder->truckSizeRange->min_number : $truckSizeRanges->first()->min_number }};
-         let TRUCK_MAX =
-             {{ $arrivalPurchaseOrder->truckSizeRange ? $arrivalPurchaseOrder->truckSizeRange->max_number : $truckSizeRanges->first()->max_number }};
+         $('#company_location_id, #contract_date').change(function() {
+             generateContractNumber();
+         });
+
+         function generateContractNumber() {
+             const locationId = $('#company_location_id').val();
+             const contractDate = $('#contract_date').val();
+
+             if (locationId && contractDate) {
+                 $.ajax({
+                     url: '{{ route('raw-material.generate.contract.number') }}',
+                     type: 'POST',
+                     data: {
+                         _token: '{{ csrf_token() }}',
+                         location_id: locationId,
+                         contract_date: contractDate
+                     },
+                     beforeSend: function() {},
+                     success: function(response) {
+                         if (response.success) {
+                             $('[name="contract_no"]').val(response.contract_no);
+                         }
+                     },
+                     error: function(xhr) {
+                         console.error(xhr.responseText);
+                     }
+                 });
+             }
+         }
 
          $('#product_id').change(function() {
+             var selectedOption = $(this).find('option:selected');
              var product_id = $(this).val();
              if (product_id) {
                  $.ajax({
                      url: '{{ route('raw-material.getMainSlabByProduct') }}',
                      type: 'GET',
                      data: {
-                         product_id: product_id,
-                         company_id: '{{ $arrivalPurchaseOrder->company_id }}'
+                         product_id: product_id
                      },
+                     dataType: 'json',
                      beforeSend: function() {
                          Swal.fire({
                              title: "Processing...",
@@ -414,7 +445,6 @@
                          } else {
                              Swal.fire("No Data", "No slabs found for this product.",
                                  "info");
-                             $('#slabsContainer').html('');
                          }
                      },
                      error: function() {
@@ -424,10 +454,78 @@
                      }
                  });
              } else {
-                 $('#slabsContainer').html('');
+                 $('#commodity_name').val('');
              }
          });
 
+         // Initialize with current values
+         let TRUCK_MIN = {{ $truckSizeRanges->first()->min_number ?? 0 }};
+         let TRUCK_MAX = {{ $truckSizeRanges->first()->max_number ?? 0 }};
+
+         $('#truck_size_range').on('change', function() {
+             const selectedOption = $(this).find('option:selected');
+             const min = selectedOption.data('min');
+             const max = selectedOption.data('max');
+
+             if (min && max) {
+                 TRUCK_MIN = min;
+                 TRUCK_MAX = max;
+                 $('#minMax').text(min.toLocaleString() + '-' + max.toLocaleString());
+             } else {
+                 TRUCK_MIN = 0;
+                 TRUCK_MAX = 0;
+                 $('#minMax').text(
+                     '{{ $truckSizeRanges->first()->min_number ?? 0 }}-{{ $truckSizeRanges->first()->max_number ?? 0 }}'
+                 );
+             }
+             calculateQuantityAndBags();
+         });
+
+         // Initialize calculation type based on current value
+         updateCalculationFields();
+
+         $('#calculation_type').change(function() {
+             updateCalculationFields();
+             calculateQuantityAndBags();
+         });
+
+         function updateCalculationFields() {
+             if ($('#calculation_type').val() === 'trucks') {
+                 $('.fields-hidable').show();
+                 $('#quantity-field').hide();
+                 $('#quantity-field').removeClass('col-xs-8 col-sm-8 col-md-8');
+                 $('#quantity-field').addClass('col-xs-4 col-sm-4 col-md-4');
+                 $('#quantity-field').html(`
+                <div class="form-group">
+                    <label>Total Quantity (kg):</label>
+                    <input type="number" name="total_quantity" id="total_quantity" placeholder="Total Quantity" class="form-control" min="25000" value="{{ old('total_quantity', $arrivalPurchaseOrder->total_quantity ?? '') }}" />
+                </div>
+            `);
+             } else {
+                 $('.fields-hidable').hide();
+                 $('#quantity-field').show();
+                 $('#quantity-field').removeClass('col-xs-4 col-sm-4 col-md-4');
+                 $('#quantity-field').addClass('col-xs-8 col-sm-8 col-md-8');
+                 $('#quantity-field').html(`
+                <div class="row mx-0 px-0">
+                    <div class="pl-0 col-md-6"> 
+                        <div class="form-group">
+                            <label>Min Quantity (kg):</label>
+                            <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" min="25000" value="{{ $arrivalPurchaseOrder->min_quantity ?? '' }}" />
+                        </div>
+                    </div>
+                    <div class="pr-0 col-md-6">
+                        <div class="form-group">
+                            <label>Max Quantity (kg):</label>
+                            <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control" min="25000" value="{{ $arrivalPurchaseOrder->max_quantity ?? '' }}" />
+                        </div>
+                    </div>
+                </div>
+            `);
+             }
+         }
+
+         // Rate calculation logic
          const KG_PER_MOUND = 40;
          const KG_PER_100KG = 100;
 
@@ -441,12 +539,10 @@
                      $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(2));
                      $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(2));
                      break;
-
                  case 'rate_per_mound':
                      $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(2));
                      $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(2));
                      break;
-
                  case 'rate_per_100kg':
                      $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(2));
                      $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(2));
@@ -466,39 +562,9 @@
              calculateRates('rate_per_100kg');
          });
 
-         $('#truck_size_range').on('change', function() {
-             const selectedOption = $(this).find('option:selected');
-             const min = selectedOption.data('min');
-             const max = selectedOption.data('max');
-
-             if (min && max) {
-                 TRUCK_MIN = min;
-                 TRUCK_MAX = max;
-                 $('#minMax').text(min.toLocaleString() + '-' + max.toLocaleString());
-             } else {
-                 TRUCK_MIN = 0;
-                 TRUCK_MAX = 0;
-                 $('#minMax').text('0-0');
-             }
-             calculateQuantityAndBags();
-         });
-
-         $('#calculation_type').change(function() {
-             if ($(this).val() === 'trucks') {
-                 $('.fields-hidable').show();
-                 $('#quantity-field').hide();
-             } else {
-                 $('.fields-hidable').hide();
-                 $('#quantity-field').show();
-             }
-             calculateQuantityAndBags();
-         });
-
-         $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change', function() {
-             calculateQuantityAndBags();
-         });
-
+         // Quantity and bags calculation
          function calculateQuantityAndBags() {
+             const MIN_QTY = 25000;
              const bagWeight = $('#product_id option:selected').data('bag-weight') || 0;
              let minQuantity, maxQuantity;
 
@@ -506,23 +572,32 @@
                  const trucks = parseInt($('#no_of_trucks').val()) || 0;
                  minQuantity = trucks * TRUCK_MIN;
                  maxQuantity = trucks * TRUCK_MAX;
+
+                 if (minQuantity < MIN_QTY) {
+                     minQuantity = MIN_QTY;
+                     maxQuantity = Math.max(MIN_QTY, maxQuantity);
+                     $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
+                 }
              } else {
-                 const quantity = parseInt($('#total_quantity').val()) || 0;
-                 minQuantity = quantity;
-                 maxQuantity = quantity;
+                 minQuantity = parseInt($('#min_quantity_input').val()) || MIN_QTY;
+                 maxQuantity = parseInt($('#max_quantity_input').val()) || minQuantity;
+
+                 if (minQuantity < MIN_QTY) {
+                     minQuantity = MIN_QTY;
+                     $('#min_quantity_input').val(MIN_QTY);
+                 }
              }
 
              const minBags = Math.ceil(minQuantity / bagWeight);
              const maxBags = Math.ceil(maxQuantity / bagWeight);
 
-             if ($('#calculation_type').val() === 'trucks') {
-                 $('#quantity_range').val(minQuantity.toLocaleString() + ' - ' + maxQuantity.toLocaleString() +
-                     ' kg');
-                 $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() + ' bags');
-             } else {
-                 $('#quantity_range').val(minQuantity.toLocaleString() + ' kg');
-                 $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() + ' bags');
-             }
+             $('#quantity_range').val(minQuantity === maxQuantity ?
+                 minQuantity.toLocaleString() + ' kg' :
+                 minQuantity.toLocaleString() + ' - ' + maxQuantity.toLocaleString() + ' kg');
+
+             $('#bags_range').val(minBags === maxBags ?
+                 minBags.toLocaleString() + ' bags' :
+                 minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() + ' bags');
 
              $('#minQty').val(minQuantity);
              $('#maxQty').val(maxQuantity);
@@ -530,6 +605,43 @@
              $('#maxBags').val(maxBags);
          }
 
+         // Form validation
+         $('#ajaxSubmit').on('submit', function(e) {
+             if ($('#calculation_type').val() === 'quantity') {
+                 const minValue = parseInt($('#min_quantity_input').val()) || 0;
+                 const maxValue = parseInt($('#max_quantity_input').val()) || 0;
+
+                 if (maxValue < minValue) {
+                     $('#max_quantity_input').addClass('is-invalid');
+                     $('#max_quantity_input').after(
+                         '<div class="invalid-feedback">Max quantity cannot be less than min quantity</div>'
+                     );
+                     e.preventDefault();
+                     return false;
+                 }
+             }
+             return true;
+         });
+
+         $(document).on('input', '#max_quantity_input', function() {
+             $(this).removeClass('is-invalid');
+             $(this).next('.invalid-feedback').remove();
+         });
+
+         // Initialize with current values
+         @if (isset($arrivalPurchaseOrder))
+             @if ($arrivalPurchaseOrder->calculation_type == 'trucks')
+                 $('#calculation_type').val('trucks').trigger('change');
+                 $('#no_of_trucks').val('{{ $arrivalPurchaseOrder->no_of_trucks }}');
+             @else
+                 $('#calculation_type').val('quantity').trigger('change');
+                 $('#min_quantity_input').val('{{ $arrivalPurchaseOrder->min_quantity }}');
+                 $('#max_quantity_input').val('{{ $arrivalPurchaseOrder->max_quantity }}');
+             @endif
+             calculateQuantityAndBags();
+         @endif
+
+         // Initialize dynamic select2 fields
          initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
          initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
          initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);

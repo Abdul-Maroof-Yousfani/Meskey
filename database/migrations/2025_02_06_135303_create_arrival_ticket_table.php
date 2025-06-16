@@ -32,9 +32,11 @@ return new class extends Migration {
             $table->string('sample_money_type')->nullable();
             $table->string('truck_no')->nullable();
             $table->string('bilty_no')->nullable();
+            $table->integer('closing_trucks_qty')->default(0)->nullable();
             $table->string('bags')->nullable();
 
             $table->foreignId('station_id')->nullable()->constrained('stations');
+            $table->string('station_name')->nullable();
 
             $table->date('loading_date')->nullable();
             $table->string('loading_weight')->nullable();

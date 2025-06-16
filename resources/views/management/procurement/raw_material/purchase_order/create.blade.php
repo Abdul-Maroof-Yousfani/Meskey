@@ -51,8 +51,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission (per KG):</label>
-                <input type="number" name="supplier_commission" placeholder="Commission (per KG)"
-                    class="form-control" />
+                <input type="number" name="supplier_commission" placeholder="Commission (per KG)" class="form-control"
+                    step="any" min="-999999" max="999999" />
             </div>
         </div>
     </div>
@@ -169,7 +169,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Delivery Date:</label>
-                <input type="date" name="delivery_date" placeholder="Delivery Date" class="form-control" />
+                <input type="date" name="delivery_date" placeholder="Delivery Date" class="form-control"
+                    min="{{ date('Y-m-d') }}" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -285,12 +286,16 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label class=" label-control font-weight-bold" for="lumpsum-toggle-initial">Replacement
-                </label>
-                <div class="custom-control custom-switch">
-                    <input type="checkbox" checked name="is_replacement" class="custom-control-input"
-                        id="lumpsum-toggle-initial">
-                    <label class="custom-control-label" for="lumpsum-toggle-initial"></label>
+                <label class="label-control font-weight-bold">Replacement</label>
+                <div class="custom-control custom-radio">
+                    <input type="radio" name="is_replacement" value="1" class="custom-control-input"
+                        id="replacement-yes" checked>
+                    <label class="custom-control-label" for="replacement-yes">Yes</label>
+                </div>
+                <div class="custom-control custom-radio">
+                    <input type="radio" name="is_replacement" value="0" class="custom-control-input"
+                        id="replacement-no">
+                    <label class="custom-control-label" for="replacement-no">No</label>
                 </div>
             </div>
         </div>
@@ -409,6 +414,11 @@
             }
         });
 
+        $(document).on('input change', '#no_of_trucks, #min_quantity_input, #max_quantity_input', function() {
+
+            calculateQuantityAndBags();
+        });
+
         const KG_PER_MOUND = 40;
         const KG_PER_100KG = 100;
 
@@ -474,15 +484,53 @@
                 calculateQuantityAndBags();
             });
 
+            // Initialize calculation type
+            updateCalculationFields();
+
             $('#calculation_type').change(function() {
-                if ($(this).val() === 'trucks') {
+                updateCalculationFields();
+                calculateQuantityAndBags();
+            });
+
+            function updateCalculationFields() {
+                if ($('#calculation_type').val() === 'trucks') {
                     $('.fields-hidable').show();
                     $('#quantity-field').hide();
+                    $('#quantity-field').removeClass('col-xs-8 col-sm-8 col-md-8');
+                    $('#quantity-field').addClass('col-xs-4 col-sm-4 col-md-4');
+                    $('#quantity-field').html(`
+                    <div class="form-group">
+                        <label>Total Quantity (kg):</label>
+                        <input type="number" name="total_quantity" id="total_quantity" placeholder="Total Quantity" class="form-control" min="25000" />
+                        </div>
+                        `);
                 } else {
                     $('.fields-hidable').hide();
                     $('#quantity-field').show();
+                    $('#quantity-field').removeClass('col-xs-4 col-sm-4 col-md-4');
+                    $('#quantity-field').addClass('col-xs-8 col-sm-8 col-md-8');
+                    $('#quantity-field').html(`
+                    <div class="row mx-0 px-0">
+                        <div class="pl-0 col-md-6"> 
+                            <div class="form-group">
+                                <label>Min Quantity (kg):</label>
+                                <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" min="25000" />
+                            </div>
+                        </div>
+                        <div class="pr-0 col-md-6">
+                            <div class="form-group">
+                                <label>Max Quantity (kg):</label>
+                                <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control" min="25000" />
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                    $('#min_quantity_input, #max_quantity_input').on('input change', function() {
+                        calculateQuantityAndBags();
+                    });
                 }
-            });
+            }
 
             $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change',
                 function() {
@@ -490,6 +538,7 @@
                 });
 
             function calculateQuantityAndBags() {
+                const MIN_QTY = 25000; // Minimum allowed quantity
                 const bagWeight = $('#product_id option:selected').data('bag-weight') || 0;
                 let minQuantity, maxQuantity;
 
@@ -497,41 +546,48 @@
                     const trucks = parseInt($('#no_of_trucks').val()) || 0;
                     minQuantity = trucks * TRUCK_MIN;
                     maxQuantity = trucks * TRUCK_MAX;
+
+                    // Ensure minimum quantity requirement for trucks
+                    if (minQuantity < MIN_QTY) {
+                        minQuantity = MIN_QTY;
+                        maxQuantity = Math.max(MIN_QTY, maxQuantity);
+                        $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
+                    }
                 } else {
-                    const quantity = parseInt($('#total_quantity').val()) || 0;
-                    minQuantity = quantity;
-                    maxQuantity = quantity;
+                    minQuantity = parseInt($('#min_quantity_input').val()) || MIN_QTY;
+                    maxQuantity = parseInt($('#max_quantity_input').val()) || minQuantity;
+
+                    // Enforce minimum quantity of 25,000 kg for min field only
+                    if (minQuantity < MIN_QTY) {
+                        minQuantity = MIN_QTY;
+                        $('#min_quantity_input').val(MIN_QTY);
+                    }
+
+                    // Remove any existing validation classes
+                    $('#max_quantity_input').removeClass('is-invalid');
+                    $('#max_quantity_input').next('.invalid-feedback').remove();
                 }
 
                 const minBags = Math.ceil(minQuantity / bagWeight);
                 const maxBags = Math.ceil(maxQuantity / bagWeight);
 
-                if ($('#calculation_type').val() === 'trucks') {
+                if (minQuantity === maxQuantity) {
+                    $('#quantity_range').val(minQuantity.toLocaleString() + ' kg');
+                } else {
                     $('#quantity_range').val(minQuantity.toLocaleString() + ' - ' + maxQuantity
                         .toLocaleString() + ' kg');
+                }
 
-                    $('#minQty').val(minQuantity);
-                    $('#maxQty').val(maxQuantity);
+                $('#minQty').val(minQuantity);
+                $('#maxQty').val(maxQuantity);
 
-                    $('#minBags').val(minBags);
-                    $('#maxBags').val(maxBags);
-
-                    $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
-                        ' bags');
+                if (minBags === maxBags) {
+                    $('#bags_range').val(minBags.toLocaleString() + ' bags');
                 } else {
-                    $('#quantity_range').val(minQuantity.toLocaleString() + ' kg');
-
-                    $('#minQty').val(minQuantity);
-                    $('#maxQty').val(minQuantity);
-
-                    $('#minBags').val(minBags);
-                    $('#maxBags').val(maxBags);
-
                     $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
                         ' bags');
                 }
             }
-
             calculateQuantityAndBags();
         });
 

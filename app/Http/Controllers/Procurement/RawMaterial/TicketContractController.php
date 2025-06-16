@@ -18,6 +18,7 @@ use App\Models\Master\QcReliefParameter;
 use App\Models\Product;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class TicketContractController extends Controller
 {
@@ -47,7 +48,7 @@ class TicketContractController extends Controller
     {
         $arrivalTicket = ArrivalTicket::findOrFail($request->ticket_id);
 
-        $purchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'completed')->get();
+        $purchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'completed')->where('status', 'pending')->get();
 
         $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->ticket_id)
             ->whereIn('approved_status', ['approved', 'rejected'])
@@ -62,17 +63,54 @@ class TicketContractController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(TicketContractRequest $request)
+    public function store(Request $request)
     {
-        $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
-        $arrivalTicket->update([
-            'arrival_purchase_order_id' => $request->contract_id
+        $request->validate([
+            'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'selected_contract' => 'required|exists:arrival_purchase_orders,id',
+            'closing_trucks_qty' => 'required|integer|min:1'
         ]);
 
-        return response()->json([
-            'success' => 'Data stored successfully',
-            'data' => $arrivalTicket,
-        ], 201);
+        try {
+            DB::beginTransaction();
+
+            $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+            $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->selected_contract);
+
+            $arrivalTicket->update([
+                'arrival_purchase_order_id' => $request->selected_contract,
+                // 'closing_trucks_qty' => $request->closing_trucks_qty
+            ]);
+
+            $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
+            // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
+            // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
+
+            if ($request->mark_completed || $purchaseOrder->remaining_quantity <= 0) {
+                $purchaseOrder->update([
+                    'completed_at' => now()
+                ]);
+            }
+
+            if ($request->mark_completed == 1) {
+                $purchaseOrder->update([
+                    'status' => 'completed',
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' =>  'Ticket successfully linked to contract',
+                'redirect' => route('raw-material.ticket-contracts.index')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to link ticket to contract: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -124,50 +162,48 @@ class TicketContractController extends Controller
 
     public function searchContracts(Request $request)
     {
-        $searchTerm = $request->input('search');
-        $initialLoad = $request->input('initial');
-        $ticketId = $request->input('ticket_id');
+        $query = ArrivalPurchaseOrder::with(['supplier', 'product'])
+            ->where('status', 'draft')
+            ->orderBy('created_at', 'desc');
 
-        $query = ArrivalPurchaseOrder::with(['product', 'supplier', 'qcProduct'])
-            ->where('freight_status', 'completed')
-            ->orderBy('contract_date', 'desc');
-
-        if ($initialLoad) {
+        if ($request->initial) {
             $query->limit(10);
-        } elseif ($searchTerm) {
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('contract_no', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('product', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
+        } else if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('contract_no', 'like', "%{$search}%")
+                    ->orWhereHas('product', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
                     })
-                    ->orWhereHas('qcProduct', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
-                    })
-                    ->orWhereHas('supplier', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
+                    ->orWhereHas('supplier', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
                     });
             });
         }
 
-        if ($ticketId) {
-            $ticket = ArrivalTicket::find($ticketId);
-            if ($ticket && $ticket->arrival_purchase_order_id) {
-                $query->orWhere('id', $ticket->arrival_purchase_order_id);
+        if ($request->ticket_id) {
+            $linkedContractId = ArrivalTicket::find($request->ticket_id)->arrival_purchase_order_id ?? null;
+            // dd($linkedContractId);
+            if ($linkedContractId) {
+                $query->where('id', $linkedContractId);
             }
         }
 
-        $contracts = $query->get()
-            ->map(function ($contract) {
-                return [
-                    'id' => $contract->id,
-                    'contract_no' => $contract->contract_no,
-                    'contract_date_formatted' => $contract->contract_date->format('d-M-Y'),
-                    'product' => $contract->product,
-                    'qc_product_name' => $contract->qcProduct->name ?? 'N/A',
-                    'supplier' => $contract->supplier,
-                    'total_quantity' => number_format($contract->total_quantity),
-                ];
-            });
+        $contracts = $query->get()->map(function ($contract) {
+            return [
+                'id' => $contract->id,
+                'contract_no' => $contract->contract_no,
+                'qc_product_name' => $contract->product->name,
+                'supplier' => $contract->supplier,
+                'total_quantity' => $contract->total_quantity,
+                'remaining_quantity' => $contract->remaining_quantity,
+                'arrived_quantity' => $contract->arrived_quantity,
+                'truck_no' => $contract->truck_no,
+                'trucks_arrived' => $contract->trucks_arrived,
+                'status' => $contract->status,
+                'contract_date_formatted' => $contract->created_at->format('d-M-Y')
+            ];
+        });
 
         return response()->json([
             'success' => true,

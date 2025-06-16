@@ -28,7 +28,7 @@ class PurchaseFreightRequest extends FormRequest
             'arrival_purchase_order_id' => 'required|exists:arrival_purchase_orders,id',
             'loading_date' => 'required|date',
             'supplier_name' => 'required|string|max:255',
-            'broker' => 'required|string|max:255',
+            // 'broker' => 'required|string|max:255',
             'truck_no' => [
                 'required',
                 'string',

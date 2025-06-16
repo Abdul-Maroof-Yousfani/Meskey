@@ -211,9 +211,42 @@ class PurchaseSamplingMonitoringController extends Controller
 
         try {
             $ArrivalSamplingRequest = PurchaseSamplingRequest::findOrFail($id);
+            $reqStatus = $ArrivalSamplingRequest->approved_status;
 
-            $isLumpsum = ($request->is_lumpsum_deduction ?? 'off') == 'on' ? 1 : 0;
-            $isDecisionMaking = ($request->decision_making ?? 'off') == 'on' ? 1 : 0;
+
+            if ($reqStatus === 'approved' && $request->stage_status !== 'approved') {
+                return response()->json([
+                    'errors' => [
+                        'stage_status' => ['This request is already approved, stage status must be "approved"']
+                    ]
+                ], 422);
+            }
+
+            $decisionMakingValue = 'off';
+            $isLumpsum = 0;
+
+            if ($ArrivalSamplingRequest->sampling_type === 'initial' && $reqStatus === 'pending' && $request->stage_status === 'resampling') {
+                $decisionMakingValue = 'off';
+                $isLumpsum = 0;
+            } else {
+                if ($reqStatus === 'approved') {
+                    $decisionMakingValue = $request->decision_making ?? 'off';
+                    $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+                } elseif ($reqStatus === 'pending') {
+                    $decisionMakingValue = ($request->stage_status === 'approved')
+                        ? ($request->decision_making ?? 'off')
+                        : 'off';
+                    $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+                }
+            }
+
+            $decisionMadeOn = null;
+            $isDecisionMaking = convertToBoolean($decisionMakingValue);
+            $isDecisionMakingReq = convertToBoolean($request->decision_making ?? 'off');
+
+            if (!$isDecisionMakingReq && $ArrivalSamplingRequest->purchaseOrder->decision_making === 1) {
+                $decisionMadeOn = now();
+            }
 
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
@@ -280,6 +313,7 @@ class PurchaseSamplingMonitoringController extends Controller
                 'lumpsum_deduction' => (float)($request->lumpsum_deduction ?? 0.00),
                 'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
+                'decision_making_time' => $decisionMadeOn,
                 'decision_making' => $isDecisionMaking,
                 'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
                 'sauda_type_id' => $request->sauda_type_id,

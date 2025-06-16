@@ -26,6 +26,7 @@ class PurchaseSamplingResultRequest extends FormRequest
             'product_slab_type_id' => 'required|array',
             'product_slab_type_id.*' => 'required|exists:product_slab_types,id',
             'checklist_value' => 'nullable|array',
+            'sample_taken_by' => 'required',
             'checklist_value.*' => 'string',
             'remark' => 'nullable|string',
         ];

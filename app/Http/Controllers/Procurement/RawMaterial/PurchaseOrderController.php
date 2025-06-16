@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ArrivalPurchaseOrderRequest;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
 use App\Models\Procurement\PurchaseOrder;
@@ -51,6 +52,39 @@ class PurchaseOrderController extends Controller
         return view('management.procurement.raw_material.purchase_order.getList', compact('arrivalPurchaseOrder'));
     }
 
+    public function markAsCompleted(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:arrival_purchase_orders,id'
+        ]);
+
+        try {
+            $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->id);
+
+            if ($purchaseOrder->remaining_quantity > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot mark as completed. There is still remaining quantity to be delivered.'
+                ]);
+            }
+
+            $purchaseOrder->update([
+                'status' => 'completed',
+                'completed_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contract marked as completed successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark contract as completed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -78,10 +112,25 @@ class PurchaseOrderController extends Controller
         DB::transaction(function () use ($data, $request) {
             $arrivalPOData = collect($data)->except(['slabs', 'quantity_range', 'truck_size_range'])->toArray();
 
-            $arrivalPOData['is_replacement'] = ($request->is_replacement ?? 'off') == 'on' ? true : false;
+            $arrivalPOData['is_replacement'] = $request->is_replacement == '1';
 
             if (isset($data['truck_size_range'])) {
                 $arrivalPOData['truck_size_range_id'] = $data['truck_size_range'];
+            }
+
+            if ($request->broker_one_id ?? false) {
+                $b1 = Broker::findOrFail($request->broker_one_id);
+                $arrivalPOData['broker_one_name'] = $b1->name ?? NULL;
+            }
+
+            if ($request->broker_two_id ?? false) {
+                $b2 = Broker::findOrFail($request->broker_two_id);
+                $arrivalPOData['broker_two_name'] = $b2->name ?? NULL;
+            }
+
+            if ($request->broker_three_id ?? false) {
+                $b3 = Broker::findOrFail($request->broker_three_id);
+                $arrivalPOData['broker_three_name'] = $b3->name ?? NULL;
             }
 
             $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
@@ -182,7 +231,7 @@ class PurchaseOrderController extends Controller
                 'rate_per_mound' => $data['rate_per_mound'] ?? null,
                 'rate_per_100kg' => $data['rate_per_100kg'] ?? null,
                 'calculation_type' => $data['calculation_type'] ?? null,
-                'is_replacement' => isset($data['is_replacement']) ? true : false,
+                'is_replacement' => ($data['is_replacement'] ?? '') == '1',
                 'weighbridge_from' => $data['weighbridge_from'] ?? null,
                 'delivery_address' => $data['delivery_address'] ?? null,
                 'remarks' => $data['remarks'] ?? null,
