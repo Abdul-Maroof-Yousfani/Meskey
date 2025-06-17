@@ -327,16 +327,16 @@
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group">
-                 <label class="label-control font-weight-bold">Replacement</label>
+                 <label class="label-control font-weight-bold">Contract Condition:</label>
                  <div class="custom-control custom-radio">
                      <input type="radio" name="is_replacement" value="1" class="custom-control-input"
                          id="replacement-yes" {{ $arrivalPurchaseOrder->is_replacement == 1 ? 'checked' : '' }}>
-                     <label class="custom-control-label" for="replacement-yes">Yes</label>
+                     <label class="custom-control-label" for="replacement-yes">Replacement</label>
                  </div>
                  <div class="custom-control custom-radio">
                      <input type="radio" name="is_replacement" value="0" class="custom-control-input"
                          id="replacement-no" {{ $arrivalPurchaseOrder->is_replacement == 0 ? 'checked' : '' }}>
-                     <label class="custom-control-label" for="replacement-no">No</label>
+                     <label class="custom-control-label" for="replacement-no">No Replacement</label>
                  </div>
              </div>
          </div>
