@@ -113,6 +113,13 @@ class PurchaseOrderController extends Controller
         $data = $request->all();
         $arrivalPurchaseOrder = null;
 
+        if ($data['max_quantity'] < $data['min_quantity']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Max quantity cannot be less than min quantity'
+            ], 422);
+        }
+
         $data['contract_no'] = self::getContractNumber($request, $request->company_location_id, $request->contract_date);
 
         DB::transaction(function () use ($data, $request) {

@@ -517,13 +517,13 @@
                         <div class="pl-0 col-md-6"> 
                             <div class="form-group">
                                 <label>Min Quantity (kg):</label>
-                                <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" min="25000" />
+                                <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" " />
                             </div>
                         </div>
                         <div class="pr-0 col-md-6">
                             <div class="form-group">
                                 <label>Max Quantity (kg):</label>
-                                <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control" min="25000" />
+                                <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control" " />
                             </div>
                         </div>
                     </div>
@@ -561,10 +561,12 @@
                     maxQuantity = parseInt($('#max_quantity_input').val()) || minQuantity;
 
                     // Enforce minimum quantity of 25,000 kg for min field only
-                    if (minQuantity < MIN_QTY) {
-                        minQuantity = MIN_QTY;
-                        $('#min_quantity_input').val(MIN_QTY);
-                    }
+                    // if (minQuantity < MIN_QTY) {
+                    //     minQuantity = MIN_QTY;
+                    //     $('#min_quantity_input').val(MIN_QTY);
+                    // }
+
+                    // $('#max_quantity_input').attr('max', minQuantity);
 
                     // Remove any existing validation classes
                     $('#max_quantity_input').removeClass('is-invalid');
