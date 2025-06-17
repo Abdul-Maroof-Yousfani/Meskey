@@ -366,7 +366,10 @@ class PaymentRequestController extends Controller
                 }
             }
         }
-        dd($samplingRequestResults);
+        $samplingRequestResults = $samplingRequestResults->filter(function ($result) {
+            return $result->applied_deduction > 0;
+        });
+        dd($samplingRequestResults, $rmPoSlabs);
         $html = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
             'purchaseOrders' => $purchaseOrders,
             'purchaseOrder' => $purchaseOrder,
