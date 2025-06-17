@@ -297,10 +297,8 @@
                                                         return floatval($a['from']) <=> floatval($b['from']);
                                                     });
 
-                                                    // Get RM PO slabs for this slab type
                                                     $rmPoSlabs = $slab->rm_po_slabs ?? [];
 
-                                                    // Find the highest end point in RM PO slabs
                                                     $highestRmPoEnd = 0;
                                                     foreach ($rmPoSlabs as $rmPoSlab) {
                                                         $rmPoTo = $rmPoSlab->to ? floatval($rmPoSlab->to) : 0;
@@ -316,7 +314,6 @@
                                                         $deductionVal = floatval($mSlab['deduction_value'] ?? 0);
 
                                                         if ($val >= $from) {
-                                                            // Apply RM PO slabs logic - only calculate for values above highestRmPoEnd
                                                             $effectiveFrom = max($from, $highestRmPoEnd + 1);
                                                             $effectiveTo = min($to, $val);
 
@@ -337,6 +334,15 @@
                                                             }
                                                         }
                                                     }
+
+                                                    if (!empty($rmPoSlabs)) {
+                                                        $sumOfMatchingValues .=
+                                                            '<br><br>RM PO Slabs (Free Ranges):<br>';
+                                                        foreach ($rmPoSlabs as $rmPoSlab) {
+                                                            $sumOfMatchingValues .= "{$rmPoSlab->from} - {$rmPoSlab->to}<br>";
+                                                        }
+                                                        $sumOfMatchingValues .= "<br>Only values above $highestRmPoEnd are calculated";
+                                                    }
                                                 } else {
                                                     $deductionValue = $appliedDeduction;
                                                 }
@@ -346,15 +352,6 @@
                                                     ($purchaseOrder->bag_weight ?? 0) *
                                                         ($purchaseOrder->purchaseFreight->no_of_bags ?? 0);
                                                 $calculatedValue = $deductionValue * $netWeight;
-
-                                                // Add RM PO slabs info to tooltip
-                                                if (!empty($rmPoSlabs)) {
-                                                    $sumOfMatchingValues .= '<br><br>RM PO Slabs (Free Ranges):<br>';
-                                                    foreach ($rmPoSlabs as $rmPoSlab) {
-                                                        $sumOfMatchingValues .= "{$rmPoSlab->from} - {$rmPoSlab->to}<br>";
-                                                    }
-                                                    $sumOfMatchingValues .= "<br>Only values above $highestRmPoEnd are calculated";
-                                                }
 
                                                 $sumOfMatchingValues .=
                                                     "<br><br>$netWeight = LW(" .
