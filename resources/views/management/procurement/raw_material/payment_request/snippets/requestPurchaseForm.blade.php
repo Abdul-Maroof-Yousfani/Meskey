@@ -353,18 +353,17 @@
                                                         name="sampling_results[{{ $slab->id }}][applied_deduction]"
                                                         value="{{ $deductyion }}" placeholder="Suggested Deduction"
                                                         readonly>
+                                                    {!! $sumOfMatchingValues !!}
                                                     <div class="input-group-append">
                                                         <span
                                                             class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
-                                                        <span
-                                                            class="input-group-text text-sm tooltip-container d-none">
+                                                        <span class="input-group-text text-sm tooltip-container  ">
                                                             <i class="fas fa-info-circle"></i>
                                                             <div class="tooltip-content">
                                                                 {!! $sumOfMatchingValues !!}
                                                             </div>
                                                         </span>
                                                     </div>
-
                                                 </div>
                                             </td>
 
