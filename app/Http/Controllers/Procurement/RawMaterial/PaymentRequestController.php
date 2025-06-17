@@ -13,6 +13,7 @@ use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\ProductSlab;
+use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\ProductSlabType;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
@@ -311,6 +312,7 @@ class PaymentRequestController extends Controller
             ->where('request_type', 'payment')
             ->sum('amount');
 
+
         $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
             $query->where('purchase_order_id', $purchaseOrder->id);
         })
@@ -330,6 +332,14 @@ class PaymentRequestController extends Controller
                 ->first();
 
             if ($samplingRequest) {
+                $rmPoSlabs = collect();
+                if ($purchaseOrder && $samplingRequest->arrival_product_id) {
+                    $rmPoSlabs = ProductSlabForRmPo::where('arrival_purchase_order_id', $purchaseOrder->id)
+                        ->where('product_id', $samplingRequest->arrival_product_id)
+                        ->get()
+                        ->groupBy('product_slab_type_id');
+                }
+
                 $samplingRequestCompulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $samplingRequest->id)->get();
                 $samplingRequestResults = PurchaseSamplingResult::where('purchase_sampling_request_id', $samplingRequest->id)->get();
 
@@ -340,6 +350,9 @@ class PaymentRequestController extends Controller
 
                 foreach ($samplingRequestResults as &$result) {
                     $matchingSlabs = [];
+
+                    $result->rm_po_slabs = $rmPoSlabs->get($result->product_slab_type_id, []);
+
                     if ($productSlabCalculations) {
                         $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
                             ->values()
