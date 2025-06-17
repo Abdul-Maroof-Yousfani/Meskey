@@ -366,7 +366,7 @@ class PaymentRequestController extends Controller
                 }
             }
         }
-
+        dd($samplingRequestResults);
         $html = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
             'purchaseOrders' => $purchaseOrders,
             'purchaseOrder' => $purchaseOrder,
