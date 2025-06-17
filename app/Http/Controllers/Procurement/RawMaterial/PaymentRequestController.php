@@ -338,12 +338,16 @@ class PaymentRequestController extends Controller
                     $productSlabCalculations = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)->get();
                 }
 
-                foreach ($samplingRequestResults as $result) {
+                foreach ($samplingRequestResults as &$result) {
                     $matchingSlabs = [];
                     if ($productSlabCalculations) {
                         $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
                             ->values()
                             ->all();
+
+                        if (!empty($matchingSlabs)) {
+                            $result->deduction_type = $matchingSlabs[0]->deduction_type;
+                        }
                     }
                     $result->matching_slabs = $matchingSlabs;
                 }

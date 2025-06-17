@@ -254,15 +254,6 @@
                                                 continue;
                                             }
 
-                                            $getDeductionSuggestion = getDeductionSuggestion(
-                                                $slab->slabType->id,
-                                                $purchaseOrder->qc_product ?? $purchaseOrder->product_id,
-                                                $slab->checklist_value,
-                                            );
-
-                                            $suggestedDeductionType =
-                                                $getDeductionSuggestion->deduction_type ?? 'amount';
-
                                             $deductyion = $slab->applied_deduction ?? 0;
                                         @endphp
                                         <tr>
@@ -283,11 +274,11 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control"
                                                         name="sampling_results[{{ $slab->id }}][suggested_deduction]"
-                                                        value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                                        value="{{ $slab->suggested_deduction ?? 0 }}"
                                                         placeholder="Suggested Deduction" readonly>
                                                     <div class="input-group-append">
                                                         <span
-                                                            class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : "KG's" }}</span>
+                                                            class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
 
                                                 </div>
