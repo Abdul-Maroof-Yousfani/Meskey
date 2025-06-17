@@ -10,7 +10,8 @@
                     class="form-control select2">
                     <option value="">Select Contract</option>
                     @foreach ($purchaseOrders as $purchaseOrder)
-                        <option value="{{ $purchaseOrder->id }}">
+                        <option value="{{ $purchaseOrder->id }}"
+                            data-is-decision-pending="{{ $purchaseOrder->decision_making }}">
                             {{ $purchaseOrder->contract_no }}
                             {{ isset($purchaseOrder->qcProduct->name) ? "({$purchaseOrder->qcProduct->name})" : '' }}
                             {{ isset($purchaseOrder->truck_no) ? " - Truck: {$purchaseOrder->truck_no}" : '' }}
@@ -25,10 +26,14 @@
     <div id="slabsContainer">
     </div>
 
+    <div id="decisionWarning" class="alert alert-warning" style="display: none;">
+        <strong>Warning!</strong> You cannot create a payment request for this contract. Please apply deductions first.
+    </div>
+
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
         </div>
     </div>
 </form>
@@ -37,6 +42,16 @@
     $(document).ready(function() {
         $('#arrival_payment_request_id').change(function() {
             var paymentRequestId = $(this).val();
+            var selectedOption = $(this).find('option:selected');
+            var isDecisionPending = selectedOption.data('is-decision-pending');
+
+            if (isDecisionPending == 1) {
+                $('#decisionWarning').show();
+                $('#saveButton').hide();
+            } else {
+                $('#decisionWarning').hide();
+                $('#saveButton').show();
+            }
 
             if (paymentRequestId) {
                 $.ajax({
