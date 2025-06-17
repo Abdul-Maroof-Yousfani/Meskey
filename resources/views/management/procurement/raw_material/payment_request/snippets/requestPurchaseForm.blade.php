@@ -350,6 +350,11 @@
                                                         ($purchaseOrder->purchaseFreight->no_of_bags ?? 0);
                                                 $calculatedValue = $deductionValue * $netWeight;
 
+                                                if (($slab->deduction_type ?? 'amount') !== 'amount') {
+                                                    $calculatedValue =
+                                                        ($calculatedValue / 100) * ($purchaseOrder->rate_per_kg ?? 0);
+                                                }
+
                                                 $sumOfMatchingValues .=
                                                     "<br><br>$netWeight = LW(" .
                                                     ($purchaseOrder->purchaseFreight->loading_weight ?? 0) .
