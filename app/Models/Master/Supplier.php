@@ -52,6 +52,16 @@ class Supplier extends Model
         return $this->hasMany(SupplierOwnerBankDetail::class,);
     }
 
+    public function scopeForUserLocation($query, $user)
+    {
+        $companyLocation = $user->companyLocation;
+        $locationId = $companyLocation ? $companyLocation->id : 1;
+
+        return $query->whereJsonContains('company_location_ids', $locationId);
+
+        return $query;
+    }
+
     // Add casts for company_locations
     protected $casts = [
         'company_location_ids' => 'array',

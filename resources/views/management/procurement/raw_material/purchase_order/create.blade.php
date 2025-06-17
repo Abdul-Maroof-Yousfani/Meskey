@@ -45,6 +45,9 @@
                 <label>Supplier:</label>
                 <select name="supplier_id" id="supplier_id" class="form-control select2">
                     <option value="">Supplier</option>
+                    @foreach ($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -593,7 +596,7 @@
 
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
-        initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
         initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
         initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
         initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);

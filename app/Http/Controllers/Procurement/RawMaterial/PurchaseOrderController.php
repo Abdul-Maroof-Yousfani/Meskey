@@ -12,6 +12,7 @@ use App\Models\Master\ProductSlab;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Product;
 use App\Models\Master\ProductSlabForRmPo;
+use App\Models\Master\Supplier;
 use App\Models\TruckSizeRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -94,6 +95,11 @@ class PurchaseOrderController extends Controller
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $authUser = auth()->user();
+        $locationId = $authUser->companyLocation?->id ?? '1';
+        $locationId = (string)$locationId;
+
+        $data['suppliers'] = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
 
         return view('management.procurement.raw_material.purchase_order.create', $data);
     }
