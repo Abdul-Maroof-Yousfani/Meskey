@@ -134,13 +134,10 @@
         <div class="form-group">
             <label>Contract Range</label>
             <input type="text" class="form-control" name="contract_range"
-                value="{{ ($purchaseOrder->rate_per_kg ?? 0) * $purchaseOrder->min_quantity }} - {{ ($purchaseOrder->rate_per_kg ?? 0) * $purchaseOrder->max_quantity }}"
-                readonly>
+                value="{{ $purchaseOrder->min_quantity }} - {{ $purchaseOrder->max_quantity }}" readonly>
 
-            <input type="hidden" name="min_contract_range"
-                value="{{ ($purchaseOrder->rate_per_kg ?? 0) * $purchaseOrder->min_quantity }}">
-            <input type="hidden" name="max_contract_range"
-                value="{{ ($purchaseOrder->rate_per_kg ?? 0) * $purchaseOrder->max_quantity }}">
+            <input type="hidden" name="min_contract_range" value="{{ $purchaseOrder->min_quantity }}">
+            <input type="hidden" name="max_contract_range" value="{{ $purchaseOrder->max_quantity }}">
         </div>
     </div>
 </div>
