@@ -16,7 +16,6 @@ return new class extends Migration
             $table->unsignedBigInteger('company_id');
             $table->unsignedBigInteger('arrival_ticket_id');
             $table->unsignedBigInteger('creator_id');
-            $table->integer('arrived_weight')->default(0);
             $table->string('remark');
             $table->softDeletes();
             $table->timestamps();
