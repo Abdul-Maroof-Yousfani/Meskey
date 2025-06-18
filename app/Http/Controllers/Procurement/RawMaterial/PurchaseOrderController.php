@@ -362,4 +362,19 @@ class PurchaseOrderController extends Controller
 
         return $contractNo;
     }
+
+    public function getSuppliersByLocation(Request $request)
+    {
+        $request->validate([
+            'location_id' => 'required|exists:company_locations,id'
+        ]);
+
+        $locationId = (string)$request->location_id;
+        $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
+
+        return response()->json([
+            'success' => true,
+            'suppliers' => $suppliers
+        ]);
+    }
 }

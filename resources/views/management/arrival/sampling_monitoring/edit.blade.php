@@ -188,7 +188,7 @@
                         <div class="form-group ">
                             <label>Sample Money: </label>
                             <input type="text" readonly name="sample_money"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truckType->sample_money ?? 0 }}"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money ?? 0 }}"
                                 placeholder="No of bags" class="form-control" autocomplete="off" />
                         </div>
                     </div>

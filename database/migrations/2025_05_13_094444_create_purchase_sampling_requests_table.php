@@ -18,6 +18,8 @@ return new class extends Migration
 
             $table->unsignedBigInteger('arrival_purchase_order_id')->nullable();
             $table->unsignedBigInteger('arrival_product_id')->nullable();
+            $table->string('supplier_name')->nullable();
+            $table->string('address')->nullable();
 
             $table->enum('sampling_type', ['initial', 'inner'])->default('initial');
             $table->enum('is_re_sampling', ['yes', 'no'])->default('no');

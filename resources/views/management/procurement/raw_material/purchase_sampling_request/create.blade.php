@@ -2,29 +2,53 @@
     autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-sampling-request') }}" />
+    <input type="hidden" name="is_ind" value="{{ isset($ind) ? 1 : 0 }}" />
+    @if (isset($purchaseOrder))
+        <input type="hidden" name="purchase_contract_id" value="{{ $purchaseOrder->id }}" />
+    @endif
     <div class="row form-mar">
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <div class="custom-control custom-checkbox">
-                    <input type="checkbox" class="custom-control-input" id="customQC" name="is_custom_qc">
-                    <label class="custom-control-label" for="customQC">Custom QC Request (Without Contract)</label>
+        @if (!isset($ind))
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" checked disabled id="customQC"
+                            name="is_custom_qc">
+                        <input type="hidden" name="is_custom_qc" value="on" />
+                        <label class="custom-control-label" for="customQC">Custom QC Request (Without Contract)</label>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Contract:</label>
-                <select class="form-control select2" name="purchase_contract_id" id="contractSelect">
-                    <option value="">Select Contract</option>
-                    @foreach ($purchaseOrders as $purchaseOrder)
-                        <option value="{{ $purchaseOrder->id }}">
-                            {{ $purchaseOrder->contract_no }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group ">
+                    <label>Product:</label>
+                    <select name="product_id" id="product_id" class="form-control select2">
+                        <option value="">Product Name</option>
+                    </select>
+                </div>
             </div>
-        </div>
+        @endif
+
+        @if (isset($ind, $purchaseOrder))
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <label>Contract:</label>
+                    <input name="contract_id" disabled value="{{ $purchaseOrder->contract_no }}" class="form-control">
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <label>Supplier Name:</label>
+                    <input name="supplier_name" placeholder="Supplier Name" class="form-control">
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <label>Address:</label>
+                    <input name="address" placeholder="Address" class="form-control">
+                </div>
+            </div>
+        @endif
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -44,6 +68,9 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
+        initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
 
         $('#customQC').change(function() {
             if ($(this).is(':checked')) {

@@ -13,43 +13,43 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($ArrivalSamplingRequests) != 0)
-            @foreach ($ArrivalSamplingRequests as $key => $row)
+        @if (count($purchaseOrders) != 0)
+            @foreach ($purchaseOrders as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchaseOrder)->contract_no }}{!! $row->is_custom_qc == 'yes' ? '' : '<br>' !!}
+                            {{ $row->contract_no }}{!! $row->is_custom_qc == 'yes' ? '' : '<br>' !!}
                             {{ $row->purchaseTicket->unique_no ?? 'N/A' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->purchaseOrder)->product)->name ?? '--' }}
+                            {{ $row->qcProduct->name ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->purchaseOrder)->supplier)->name ?? '--' }}
+                            {{ $row->supplier->name ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchaseOrder)->total_quantity ?? '--' }}
+                            {{ $row->total_quantity ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchaseOrder)->total_quantity ?? '--' }}
+                            {{ $row->total_quantity ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchaseOrder)->total_quantity ?? '--' }}
+                            {{ $row->total_quantity ?? '--' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchaseOrder)->delivery_date ? \Carbon\Carbon::parse($row->purchaseOrder->delivery_date)->format('Y-m-d') : '--' }}
+                            {{ $row->delivery_date ? \Carbon\Carbon::parse($row->delivery_date)->format('Y-m-d') : '--' }}
                         </p>
                     </td>
                     <td>
@@ -59,12 +59,12 @@
                         </p>
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('initialsampling.edit', $row->id) }}','View Initial Sampling',true)"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @endcan
+                        {{-- @can('role-edit') --}}
+                        <a onclick="openModal(this,'{{ route('raw-material.purchase-sampling-request.createReq', ['id' => $row->id]) }}','Create Sampling Request',false)"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        {{-- @endcan --}}
                     </td>
                 </tr>
             @endforeach
@@ -96,6 +96,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $ArrivalSamplingRequests->links() }}
+        {{ $purchaseOrders->links() }}
     </div>
 </div>

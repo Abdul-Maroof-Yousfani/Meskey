@@ -25,17 +25,23 @@ class PurchaseSamplingRequestController extends Controller
 
     public function getList(Request $request)
     {
-        $ArrivalSamplingRequests = PurchaseSamplingRequest::where('sampling_type', 'initial')->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
-            ->where('company_id', $request->company_id)
+        // $ArrivalSamplingRequests = PurchaseSamplingRequest::where('sampling_type', 'initial')->when($request->filled('search'), function ($q) use ($request) {
+        //     $searchTerm = '%' . $request->search . '%';
+        //     return $q->where(function ($sq) use ($searchTerm) {
+        //         $sq->where('name', 'like', $searchTerm);
+        //     });
+        // })
+        //     ->where('company_id', $request->company_id)
+        //     ->latest()
+        //     ->paginate(request('per_page', 25));
+
+        $purchaseOrders = ArrivalPurchaseOrder::
+            // whereDoesntHave('purchaseSamplingRequests')->
+            where('sauda_type_id', 2)
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.raw_material.purchase_sampling_request.getList', compact('ArrivalSamplingRequests'));
+        return view('management.procurement.raw_material.purchase_sampling_request.getList', compact('purchaseOrders'));
     }
     /**
      * Show the form for creating a new resource.
@@ -50,15 +56,35 @@ class PurchaseSamplingRequestController extends Controller
         return view('management.procurement.raw_material.purchase_sampling_request.create', $data);
     }
 
+    public function createRequest(Request $request)
+    {
+        if (!$request->has('id')) {
+            return response()->json(['error' => 'ID is required'], 422);
+        }
+
+        $purchaseOrder = ArrivalPurchaseOrder::find($request->id);
+
+        if (!$purchaseOrder) {
+            return response()->json(['error' => 'Purchase Order not found'], 404);
+        }
+
+        $data['purchaseOrder'] = $purchaseOrder;
+        $data['ind'] = 1;
+
+        return view('management.procurement.raw_material.purchase_sampling_request.create', $data);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
+        $isIndividual = isset($request->is_ind) && $request->is_ind == 1 ? true : false;
         $isCustomQc = convertToBoolean($request->is_custom_qc ?? 'off');
 
         $validator = Validator::make($request->all(), [
             'purchase_contract_id' => $isCustomQc ? 'nullable' : 'required',
+            'product_id' => $isCustomQc ? 'required' : 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -72,21 +98,28 @@ class PurchaseSamplingRequestController extends Controller
             'unique_no' => $unique_no,
             'company_id' => $request->company_id,
             'purchase_order_id' => $request->purchase_contract_id ?? null,
+            'product_id' => $request->product_id ?? null,
             'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
             'qc_status' => 'pending',
             'freight_status' => 'pending',
         ]);
 
+        $arrivalSampleReq = null;
+
+        // if ($isIndividual) {
         $arrivalSampleReq = PurchaseSamplingRequest::create([
             'company_id'       => $request->company_id,
             'purchase_ticket_id'       => $purchaseTicket->id,
             'arrival_purchase_order_id' => $request->purchase_contract_id ?? null,
+            'supplier_name' => $request->supplier_name ?? null,
+            'address' => $request->address ?? null,
             'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
             'sampling_type'    => 'initial',
             'is_re_sampling'   => 'no',
             'is_done'          => 'no',
             'remark'           => null,
         ]);
+        // }
 
         return response()->json(['success' => 'Inner Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
     }

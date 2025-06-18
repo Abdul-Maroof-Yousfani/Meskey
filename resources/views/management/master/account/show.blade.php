@@ -165,7 +165,7 @@
                                                 <div class="form-group ">
                                                     <label>Sample Money: </label>
                                                     <input type="text" readonly name="sample_money" disabled
-                                                        value="{{ $arrivalTicket->truckType->sample_money ?? 0 }}"
+                                                        value="{{ $arrivalTicket->sample_money ?? 0 }}"
                                                         placeholder="No of bags" class="form-control"
                                                         autocomplete="off" />
                                                 </div>

@@ -45,9 +45,9 @@
                 <label>Supplier:</label>
                 <select name="supplier_id" id="supplier_id" class="form-control select2">
                     <option value="">Supplier</option>
-                    @foreach ($suppliers as $supplier)
+                    {{-- @foreach ($suppliers as $supplier)
                         <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                    @endforeach
+                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -344,6 +344,42 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        $('#company_location_id').change(function() {
+            var locationId = $(this).val();
+
+            if (locationId) {
+                $.ajax({
+                    url: '{{ route('raw-material.get.suppliers.by.location') }}',
+                    type: 'GET',
+                    data: {
+                        location_id: locationId
+                    },
+                    beforeSend: function() {
+                        $('#supplier_id').html('<option value="">Loading...</option>');
+                    },
+                    success: function(response) {
+                        if (response.success && response.suppliers.length > 0) {
+                            var options = '<option value="">Select Supplier</option>';
+                            $.each(response.suppliers, function(key, supplier) {
+                                options += '<option value="' + supplier.id + '">' +
+                                    supplier.name + '</option>';
+                            });
+                            $('#supplier_id').html(options);
+                        } else {
+                            $('#supplier_id').html(
+                                '<option value="">No suppliers found</option>');
+                        }
+                    },
+                    error: function() {
+                        $('#supplier_id').html(
+                            '<option value="">Error loading suppliers</option>');
+                    }
+                });
+            } else {
+                $('#supplier_id').html('<option value="">Select Supplier</option>');
+            }
+        });
 
         $('#company_location_id, #contract_date').change(function() {
             generateContractNumber();

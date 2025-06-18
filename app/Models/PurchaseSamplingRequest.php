@@ -22,6 +22,8 @@ class PurchaseSamplingRequest extends Model
         'remark',
         'decision_making',
         'is_done',
+        'supplier_name',
+        'address',
         'is_resampling_made',
         'approved_remarks',
         'approved_status',

@@ -42,8 +42,7 @@ class FreightController extends Controller
 
     public function store(FreightRequest $request)
     {
-        $data = $request->validated();
-        // $ticket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+        $data = $request->all();
 
         ArrivalTicket::where('id', $request->arrival_ticket_id)
             ->update(['freight_status' => 'completed', 'arrival_slip_status' => 'pending']);

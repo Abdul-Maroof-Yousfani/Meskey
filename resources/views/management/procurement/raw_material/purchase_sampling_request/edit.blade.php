@@ -1,4 +1,4 @@
-<form action="{{ route('truck-type.update',$ArrivalTruckType->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('truck-type.update', $ArrivalTruckType->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.truck-type') }}" />
@@ -6,19 +6,22 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" value="{{$ArrivalTruckType->name}}" placeholder="Name" class="form-control"  />
+                <input type="text" name="name" value="{{ $ArrivalTruckType->name }}" placeholder="Name"
+                    class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Sample Money:</label>
-                <input type="text" name="sample_money"  value="{{$ArrivalTruckType->sample_money}}" placeholder="Sample Money" class="form-control"  />
+                <input type="text" name="sample_money" value="{{ $ArrivalTruckType->sample_money }}"
+                    placeholder="Sample Money" class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Weighbridge Amount:</label>
-                <input type="text" name="weighbridge_amount"  value="{{$ArrivalTruckType->weighbridge_money}}"  placeholder="Weighbridge Amount" class="form-control"  />
+                <input type="text" name="weighbridge_amount" value="{{ $ArrivalTruckType->weighbridge_money }}"
+                    placeholder="Weighbridge Amount" class="form-control" />
             </div>
         </div>
 
@@ -26,7 +29,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea name="description" placeholder="Description" class="form-control">{{$ArrivalTruckType->description}}</textarea>
+                <textarea name="description" placeholder="Description" class="form-control">{{ $ArrivalTruckType->description }}</textarea>
             </div>
         </div>
         <!-- Status -->

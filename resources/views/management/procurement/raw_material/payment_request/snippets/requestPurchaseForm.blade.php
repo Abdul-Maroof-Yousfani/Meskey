@@ -7,6 +7,8 @@
     $isSlabs = false;
     $isCompulsury = false;
     $showLumpSum = false;
+    $amount = 0;
+    $remaining = 0;
 
     if (
         isset($samplingRequest->is_lumpsum_deduction) &&
@@ -65,10 +67,12 @@
 
     $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum;
 
-    $amount = ($purchaseOrder->purchaseFreight->loading_weight ?? 0) * $purchaseOrder->rate_per_kg - $totalDeductions;
+    // $amount = ($purchaseOrder->purchaseFreight->loading_weight ?? 0) * $purchaseOrder->rate_per_kg - $totalDeductions;
 
     $paidAmount = $pRsSum;
-    $remaining = $amount - $paidAmount;
+    // $remaining = $amount - $paidAmount;
+
+    $amount += $bagWeightInKgSum + $loadingWeighbridgeSum;
 
     $advanceFreight = $purchaseOrder->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - $pRsSumForFreight;
@@ -367,6 +371,8 @@
                                                 $sumOfMatchingValues .=
                                                     "<br>$deductionValue x $netWeight = " .
                                                     $deductionValue * $netWeight;
+
+                                                $amount += $calculatedValue;
                                             @endphp
 
                                             <td>
@@ -393,8 +399,8 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control"
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount]"
-                                                        value="{{ $calculatedValue }}" placeholder="deduction_amount"
-                                                        readonly>
+                                                        value="{{ number_format($calculatedValue, 2) }}"
+                                                        placeholder="deduction_amount" readonly>
 
                                                 </div>
                                             </td>
@@ -462,19 +468,19 @@
                             </td>
                             <td>
                                 <input type="text" class="form-control" name="bag_weight_amount"
-                                    value="{{ $bagWeightInKgSum }}" readonly>
+                                    value="{{ number_format($bagWeightInKgSum, 2) }}" readonly>
                             </td>
                         </tr>
                         <tr>
                             <td><strong>Bags Rate</strong></td>
                             <td>
                                 <input type="text" class="form-control" name="bag_rate"
-                                    value="{{ $purchaseOrder->bag_rate ?? 0 }}" readonly>
+                                    value="{{ number_format($purchaseOrder->bag_rate ?? 0, 2) }}" readonly>
                             </td>
                             <td>N/A</td>
                             <td>
                                 <input type="text" class="form-control" name="bag_rate_amount"
-                                    value="{{ $bagsRateSum }}" readonly>
+                                    value="{{ number_format($bagsRateSum, 2) }}" readonly>
                             </td>
                         </tr>
                         <tr>
@@ -483,7 +489,7 @@
                             <td>N/A</td>
                             <td>
                                 <input type="text" class="form-control" name="loading_weighbridge_amount"
-                                    value="{{ $loadingWeighbridgeSum }}" readonly>
+                                    value="{{ number_format($loadingWeighbridgeSum, 2) }}" readonly>
                             </td>
                         </tr>
                     </tbody>
@@ -496,7 +502,8 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount</label>
-                <input type="text" class="form-control" name="total_amount" value="{{ $amount }}"
+                <input type="text" class="form-control" name="total_amount"
+                    value="{{ number_format(($purchaseOrder->rate_per_kg ?? 0) * ($purchaseOrder->purchaseFreight->loading_weight ?? 0) - ($amount ?? 0) + ($bagsRateSum ?? 0), 2) }}"
                     readonly>
             </div>
         </div>
@@ -540,22 +547,22 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Total Advance Freight</label>
-                <input type="text" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
-                    readonly>
+                <input type="text" class="form-control" name="advance_freight"
+                    value="{{ number_format($advanceFreight, 2) }}" readonly>
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Paid Freight</label>
-                <input type="text" class="form-control" name="advance_freight" value="{{ $pRsSumForFreight }}"
-                    readonly>
+                <input type="text" class="form-control" name="advance_freight"
+                    value="{{ number_format($pRsSumForFreight, 2) }}" readonly>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Remaining Freight</label>
-                <input type="text" class="form-control" name="remaining_freight" value="{{ $remainingFreight }}"
-                    readonly>
+                <input type="text" class="form-control" name="remaining_freight"
+                    value="{{ number_format($remainingFreight, 2) }}" readonly>
             </div>
         </div>
 
@@ -570,7 +577,8 @@
             <div class="form-group">
                 <label>Freight Pay Request</label>
                 <input type="number" class="form-control payment-request-freifht" name="freight_pay_request_amount"
-                    value="0" placeholder="Enter freight pay request" max="{{ (int) $remainingFreight }}">
+                    value="0" placeholder="Enter freight pay request"
+                    max="{{ number_format(((int) $remainingFreight), 2) }}">
             </div>
         </div>
     </div>

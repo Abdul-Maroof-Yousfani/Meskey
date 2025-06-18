@@ -4,8 +4,11 @@
      <div class="row form-mar">
 
          <?php
-         $datePrefix = date('m-d-Y') . '-';
-         $unique_no = generateUniqueNumber('arrival_tickets', $datePrefix, null, 'unique_no');
+         $authUser = auth()->user();
+         $companyLocation = $authUser->companyLocation ?? null;
+         $code = $companyLocation->code ?? 'KHI';
+         
+         $unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
          ?>
 
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -19,8 +22,6 @@
                  </div>
              </fieldset>
          </div>
-
-
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group ">
                  <label>Product:</label>

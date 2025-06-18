@@ -27,7 +27,9 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::post('purchase-order/mark-completed', [PurchaseOrderController::class, 'markAsCompleted'])->name('purchase-order.mark-completed');
     Route::get('/getMainSlabByProduct', [PurchaseOrderController::class, 'getMainSlabByProduct'])->name('getMainSlabByProduct');
     Route::post('/generate-contract-number', [PurchaseOrderController::class, 'getContractNumber'])->name('generate.contract.number');
+    Route::get('/get-suppliers-by-location', [PurchaseOrderController::class, 'getSuppliersByLocation'])->name('get.suppliers.by.location');
 
+    Route::get('create-purchase-sampling-request-ind', [PurchaseSamplingRequestController::class, 'createRequest'])->name('purchase-sampling-request.createReq');
     Route::resource('purchase-sampling-request', PurchaseSamplingRequestController::class);
     Route::post('get-purchase-sampling-request', [PurchaseSamplingRequestController::class, 'getList'])->name('get.purchase-sampling-request');
 
