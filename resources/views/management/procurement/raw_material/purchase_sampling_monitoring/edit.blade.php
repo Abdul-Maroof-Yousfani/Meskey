@@ -144,10 +144,14 @@
                                             $comparisonClass = 'checklist-same';
                                         }
                                     }
+
+                                    if (((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0)) {
+                                        $comparisonClass = 'slabs-checklist-rise';
+                                    }
                                 @endphp
                                 <div class="form-group row checklist-box">
                                     <label
-                                        class="col-md-4 label-control font-weight-bold {{ ((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
+                                        class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                     <div class="col-md-3 QcResult">
                                         <div class="input-group mb-0">
                                             <input type="text" readonly class="form-control {{ $comparisonClass }}"
@@ -209,18 +213,23 @@
                                         $options = json_decode($slab->qcParam->options, true);
                                         $defaultValue = $options[0] ?? '';
                                     }
+
+                                    $compulsaryClass = '';
+
+                                    if ($displayCompValue != $defaultValue) {
+                                        $compulsaryClass = 'slabs-checklist-changed-compulsury';
+                                    }
                                 @endphp
                                 <div class="form-group row">
-                                    <label
-                                        class="label-control font-weight-bold col-md-4 {{ $displayCompValue != $defaultValue ? 'bg-warning-c' : '' }}"
+                                    <label class="label-control font-weight-bold col-md-4"
                                         data-default-value="{{ $defaultValue }}">{{ $slab->qcParam->name }}</label>
                                     <div
                                         class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                         @if ($slab->qcParam->type == 'dropdown')
-                                            <input type="text" class="form-control"
+                                            <input type="text" class="form-control {{ $compulsaryClass }}"
                                                 value="{{ $slab->compulsory_checklist_value }}" readonly>
                                         @else
-                                            <textarea class="form-control" readonly>{{ $slab->compulsory_checklist_value }}</textarea>
+                                            <textarea class="form-control {{ $compulsaryClass }}" readonly>{{ $slab->compulsory_checklist_value }}</textarea>
                                         @endif
                                     </div>
                                     @if (!checkIfNameExists($slab->qcParam->name))
@@ -380,12 +389,16 @@
                                         $comparisonClass = 'checklist-same';
                                     }
                                 }
+
+                                if (((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0)) {
+                                    $comparisonClass = 'slabs-checklist-rise';
+                                }
                             @endphp
                             <div class="form-group row checklist-box">
                                 <input type="hidden" name="product_slab_type_id[]"
                                     value="{{ $slab->slabType->id }}">
                                 <label
-                                    class="col-md-4 label-control font-weight-bold {{ ((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0) ? 'bg-warning-c' : '' }}">{{ $slab->slabType->name }}</label>
+                                    class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
                                     <div class="input-group mb-0">
                                         <input type="text" class="form-control {{ $comparisonClass }}"
@@ -472,20 +485,26 @@
                                     $options = json_decode($slab->qcParam->options, true);
                                     $defaultValue = $options[0] ?? '';
                                 }
+
+                                $compulsaryClass = '';
+
+                                if ($displayCompValue != $defaultValue) {
+                                    $compulsaryClass = 'slabs-checklist-changed-compulsury';
+                                }
                             @endphp
 
                             <div class="form-group row">
                                 <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
                                 <label
-                                    class="label-control font-weight-bold col-md-4 {{ $displayCompValue != $defaultValue ? 'bg-warning-c' : '' }}">{{ $slab->qcParam->name }}</label>
+                                    class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
                                 <div
                                     class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
-                                        <input type="text" class="form-control"
+                                        <input type="text" class="form-control {{ $compulsaryClass }}"
                                             name="compulsory_checklist_value[]" value="{{ $displayCompValue }}"
                                             data-default-value="{{ $defaultValue }}" readonly>
                                     @else
-                                        <textarea class="form-control" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
+                                        <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
                                     @endif
                                 </div>
                                 @if (!checkIfNameExists($slab->qcParam->name))

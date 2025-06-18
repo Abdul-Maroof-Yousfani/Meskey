@@ -71,10 +71,10 @@ class PaymentRequestController extends Controller
             $requestData['is_loading'] = $request->loading_type === 'loading';
 
             // Calculate remaining amount
-            $requestData['remaining_amount'] = $requestData['total_amount'] -
-                ($requestData['paid_amount'] ?? 0) -
-                ($requestData['payment_request_amount'] ?? 0) -
-                ($requestData['freight_pay_request_amount'] ?? 0);
+            // $requestData['remaining_amount'] = $requestData['total_amount'] -
+            //     ($requestData['paid_amount'] ?? 0) -
+            //     ($requestData['payment_request_amount'] ?? 0) -
+            //     ($requestData['freight_pay_request_amount'] ?? 0);
 
             // Create main payment request data
             $paymentRequestData = PaymentRequestData::create($requestData);

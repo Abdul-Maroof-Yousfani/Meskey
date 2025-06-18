@@ -131,4 +131,16 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseSamplingRequest::class, 'arrival_purchase_order_id');
     }
+
+    public function purchaseFreights()
+    {
+        return $this->hasMany(PurchaseFreight::class, 'arrival_purchase_order_id');
+    }
+
+    public function totalLoadingWeight()
+    {
+        return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, SUM(loading_weight) as total_loading_weight')
+            ->groupBy('arrival_purchase_order_id');
+    }
 }

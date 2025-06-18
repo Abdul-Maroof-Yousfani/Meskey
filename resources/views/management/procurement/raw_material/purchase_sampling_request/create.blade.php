@@ -27,15 +27,6 @@
                     </select>
                 </div>
             </div>
-        @endif
-
-        @if (isset($ind, $purchaseOrder))
-            <div class="col-xs-12 col-sm-12 col-md-12">
-                <div class="form-group">
-                    <label>Contract:</label>
-                    <input name="contract_id" disabled value="{{ $purchaseOrder->contract_no }}" class="form-control">
-                </div>
-            </div>
             <div class="col-xs-12 col-sm-12 col-md-12">
                 <div class="form-group">
                     <label>Supplier Name:</label>
@@ -46,6 +37,15 @@
                 <div class="form-group">
                     <label>Address:</label>
                     <input name="address" placeholder="Address" class="form-control">
+                </div>
+            </div>
+        @endif
+
+        @if (isset($ind, $purchaseOrder))
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <label>Contract:</label>
+                    <input name="contract_id" disabled value="{{ $purchaseOrder->contract_no }}" class="form-control">
                 </div>
             </div>
         @endif

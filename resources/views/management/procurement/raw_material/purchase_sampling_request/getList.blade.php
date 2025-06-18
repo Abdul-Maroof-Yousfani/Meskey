@@ -34,17 +34,18 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->total_quantity ?? '--' }}
+                            {{ $row->min_quantity ?? '-' }} - {{ $row->max_quantity ?? '-' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->total_quantity ?? '--' }}
+                            {{ $row->min_quantity - $row->totalLoadingWeight->total_loading_weight ?? '-' }} -
+                            {{ $row->max_quantity - $row->totalLoadingWeight->total_loading_weight ?? '-' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->total_quantity ?? '--' }}
+                            {{ $row->totalLoadingWeight->total_loading_weight }}
                         </p>
                     </td>
                     <td>

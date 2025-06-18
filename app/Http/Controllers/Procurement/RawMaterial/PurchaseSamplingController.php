@@ -41,6 +41,8 @@ class PurchaseSamplingController extends Controller
             $samplingRequests->where('is_re_sampling', 'no');
         }
 
+        $samplingRequests->where('is_done', 'no');
+
         $samplingRequests = $samplingRequests->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             $q->whereHas('arrivalTicket', function ($sq) use ($searchTerm) {
@@ -48,6 +50,7 @@ class PurchaseSamplingController extends Controller
                     ->orWhere('supplier_name', 'like', $searchTerm);
             });
         })
+            // ->where("is_done", "")
             ->orderByRaw("CASE WHEN is_done = 'no' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'asc')
             ->paginate(request('per_page', 25));

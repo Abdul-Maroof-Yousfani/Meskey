@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Arrival;
 use App\Helpers\TruckNumberValidator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Arrival\ArrivalTicketRequest;
+use App\Models\Arrival\ArrivalSamplingRequest;
+use App\Models\Arrival\ArrivalSamplingResult;
+use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Miller;
+use App\Models\Master\ProductSlab;
 use App\Models\Master\Station;
 use App\Models\Master\Supplier;
+use App\Models\SaudaType;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -138,7 +143,123 @@ class TicketController extends Controller
             ->get();
 
         $arrivalTicket = ArrivalTicket::findOrFail($id);
-        return view('management.arrival.ticket.show', compact('arrivalTicket', 'accountsOf'));
+
+        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
+            ->where('is_done', 'yes')
+            ->groupBy('arrival_ticket_id')
+            ->pluck('id');
+
+        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
+            ->whereIn('id', $latestRequestIds)
+            ->where(function ($q) {
+                $q->where('approved_status', 'pending')
+                    ->orWhere(function ($q) {
+                        $q->where('decision_making', 1);
+                    });
+            })
+            ->latest()
+            ->firstOrFail();
+
+        $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
+        $productSlabCalculations = null;
+        if ($arrivalSamplingRequest->arrival_product_id) {
+            $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
+        }
+
+        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+        foreach ($results as $result) {
+            $matchingSlabs = [];
+            if ($productSlabCalculations) {
+                $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
+                    ->values()
+                    ->all();
+            }
+            $result->matching_slabs = $matchingSlabs;
+        }
+
+        $results->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            return $item;
+        });
+
+        $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
+        $sampleTakenByUsers = User::all();
+        $authUserCompany = $request->company_id;
+        $saudaTypes = SaudaType::all();
+
+        $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
+            ->where('arrival_ticket_id', $arrivalTicket->id)
+            ->where('approved_status', '!=', 'pending')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
+            ->where('arrival_ticket_id', $arrivalTicket->id)
+            ->where('approved_status', '!=', 'pending')
+            ->where('id', '!=', $arrivalSamplingRequest->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+        $initialRequestsData = [];
+        foreach ($allInitialRequests as $initialReq) {
+            $initialResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialReq->id)->get();
+            $initialCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialReq->id)->get();
+
+            $initialResults->map(function ($item) use ($slabs) {
+                $slab = $slabs->get($item->product_slab_type_id);
+                $item->max_range = $slab ? $slab->to : null;
+                return $item;
+            });
+
+            $initialRequestsData[] = [
+                'request' => $initialReq,
+                'results' => $initialResults,
+                'compulsuryResults' => $initialCompulsuryResults
+            ];
+        }
+
+        $innerRequestsData = [];
+        foreach ($allInnerRequests as $innerReq) {
+            $innerResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $innerReq->id)->get();
+            $innerCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $innerReq->id)->get();
+
+            $innerResults->map(function ($item) use ($slabs) {
+                $slab = $slabs->get($item->product_slab_type_id);
+                $item->max_range = $slab ? $slab->to : null;
+                return $item;
+            });
+
+            $innerRequestsData[] = [
+                'request' => $innerReq,
+                'results' => $innerResults,
+                'innerRequestsData' => $innerRequestsData,
+                'compulsuryResults' => $innerCompulsuryResults
+            ];
+        }
+
+
+        // dd($allInitialRequests);
+
+
+        return view('management.arrival.ticket.show', compact(
+            'arrivalTicket',
+            'accountsOf',
+            'innerRequestsData',
+            'arrivalSamplingRequest',
+            'initialRequestsData',
+            'results',
+            'Compulsuryresults',
+            'accountsOf',
+            'accountsOf',
+        ));
     }
 
     /**

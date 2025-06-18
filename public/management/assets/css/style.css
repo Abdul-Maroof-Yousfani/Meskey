@@ -829,19 +829,34 @@ tr.editing {
   border: 1px solid #ff99999e !important;
 }
 
-.checklist-decrease {
-  background-color: #87cf874a !important;
-  border: 1px solid #87cf87 !important;
-}
-
 .checklist-increase ~ div > span {
   background-color: #ffcccca1 !important;
   border: 1px solid #ff99999e !important;
 }
 
+/* .checklist-decrease {
+  background-color: #87cf874a !important;
+  border: 1px solid #87cf87 !important;
+}
+
 .checklist-decrease ~ div > span {
   background-color: #87cf874a !important;
   border: 1px solid #87cf87 !important;
+} */
+
+.slabs-checklist-rise {
+  background-color: #ffdea24a !important;
+  border: 1px solid #ffcd72 !important;
+}
+
+.slabs-checklist-rise ~ div > span {
+  background-color: #ffdea24a !important;
+  border: 1px solid #ffcd72 !important;
+}
+
+.slabs-checklist-changed-compulsury {
+  background-color: #ffdea24a !important;
+  border: 1px solid #ffcd72 !important;
 }
 
 .checklist-same {
