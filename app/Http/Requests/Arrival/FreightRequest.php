@@ -28,6 +28,7 @@ class FreightRequest extends FormRequest
             'commodity' => 'required|string|max:255',
             'truck_number' => 'required|string|max:255',
             'billy_number' => 'required|string|max:255',
+            'other_deduction' => 'required|numeric|min:0',
             'freight_per_ton' => 'required|numeric',
             'bilty_document' => 'required|file|mimes:jpg,jpeg,png',
             'loading_weight_document' => 'required|file|mimes:jpg,jpeg,png',
