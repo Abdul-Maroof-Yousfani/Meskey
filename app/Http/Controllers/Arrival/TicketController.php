@@ -158,9 +158,8 @@ class TicketController extends Controller
                     });
             })
             ->latest()
-            ->first(); // Changed from firstOrFail() to first()
+            ->first();
 
-        // Initialize all variables with default values
         $slabs = collect();
         $productSlabCalculations = null;
         $results = collect();
@@ -173,7 +172,6 @@ class TicketController extends Controller
         $initialRequestsData = [];
         $innerRequestsData = [];
 
-        // Only proceed if we found a request
         if ($arrivalSamplingRequest) {
             $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
                 ->get()

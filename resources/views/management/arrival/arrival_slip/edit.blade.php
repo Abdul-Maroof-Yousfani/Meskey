@@ -325,8 +325,6 @@
                                             value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
                                             readonly>
                                     </td>
-
-
                                 </tr>
                                 <tr>
 
@@ -350,7 +348,7 @@
                                         ((int) $arrivalTicket->freight->kanta_golarchi_charges ?? 0) +
                                         ((int) $arrivalTicket->freight->karachi_kanta_charges ?? 0) +
                                         ((int) $arrivalTicket->freight->other_labour_charges ?? 0) -
-                                        ((int) $arrivalTicket->freight->other_deduction ?? 0);
+                                        abs((int) $arrivalTicket->freight->other_deduction ?? 0);
                                 @endphp
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Total Freight Payable (Rs.)</td>
