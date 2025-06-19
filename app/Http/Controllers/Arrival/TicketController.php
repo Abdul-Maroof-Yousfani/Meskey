@@ -158,7 +158,7 @@ class TicketController extends Controller
                     });
             })
             ->latest()
-            ->firstOrFail();
+            ->first();
 
         $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
             ->get()
