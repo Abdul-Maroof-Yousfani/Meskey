@@ -4,31 +4,56 @@
 @endsection
 @section('content')
     @php
-        // dd($results);
-        $isLumpSumEnabled = $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? true : false;
-        $isLumpSumEnabledInTicket = $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 1 ? true : false;
-        $rupeeLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction ?? 0;
-        $kgLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction_kgs ?? 0;
-
-        $isDecisionMaking =
-            isset($arrivalSamplingRequest) && $arrivalSamplingRequest->arrivalTicket->decision_making == 1
-                ? true
-                : false;
-
-        $isDecisionMakingDisabled =
-            isset($arrivalSamplingRequest) &&
-            $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
-            $arrivalSamplingRequest->arrivalTicket->decision_making_time
-                ? true
-                : false;
+        // Initialize all variables with default values
+        $isLumpSumEnabled = false;
+        $isLumpSumEnabledInTicket = false;
+        $rupeeLumpSum = 0;
+        $kgLumpSum = 0;
+        $isDecisionMaking = false;
+        $isDecisionMakingDisabled = false;
         $valuesOfInitialSlabs = [];
         $suggestedValueForInner = 0;
         $suggestedValue = 0;
         $suggestedValueForInnerKgs = 0;
         $suggestedValueKgs = 0;
+        $previousInnerRequest = null;
+        $lastInnerRequest = null;
+        $currentTabLabel = 'Current QC';
 
-        $previousInnerRequest = $innerRequestsData[0] ?? null;
-        $lastInnerRequest = !empty($innerRequestsData) ? $innerRequestsData[count($innerRequestsData) - 1] : null;
+        if ($arrivalSamplingRequest) {
+            $isLumpSumEnabled = $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? true : false;
+            $isLumpSumEnabledInTicket =
+                $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 1 ? true : false;
+            $rupeeLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction ?? 0;
+            $kgLumpSum = $arrivalSamplingRequest->arrivalTicket->lumpsum_deduction_kgs ?? 0;
+
+            $isDecisionMaking = $arrivalSamplingRequest->arrivalTicket->decision_making == 1 ? true : false;
+            $isDecisionMakingDisabled =
+                $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
+                $arrivalSamplingRequest->arrivalTicket->decision_making_time
+                    ? true
+                    : false;
+
+            $previousInnerRequest = $innerRequestsData[0] ?? null;
+            $lastInnerRequest = !empty($innerRequestsData) ? $innerRequestsData[count($innerRequestsData) - 1] : null;
+
+            switch ($arrivalSamplingRequest->approved_status) {
+                case 'resampling':
+                    $currentTabLabel = 'Current Resampling QC';
+                    break;
+                case 'rejected':
+                    $currentTabLabel = 'Current Rejected QC';
+                    break;
+                case 'approved':
+                    $currentTabLabel = 'Current Approved QC';
+                    break;
+                default:
+                    $currentTabLabel = ucwords(
+                        ($arrivalSamplingRequest->sampling_type == 'inner' ? 'Current ' : '') .
+                            $arrivalSamplingRequest->sampling_type,
+                    );
+            }
+        }
     @endphp
     <div class="content-wrapper">
         <section id="extended">
@@ -286,11 +311,10 @@
                                                     $statusLabel = '';
                                                     switch ($innerData['request']->approved_status) {
                                                         case 'resampling':
-                                                            if ($innerData['request']->is_re_sampling == 'yes') {
-                                                                $statusLabel = 'Inner Resampling QC';
-                                                            } else {
-                                                                $statusLabel = 'Inner QC';
-                                                            }
+                                                            $statusLabel =
+                                                                $innerData['request']->is_re_sampling == 'yes'
+                                                                    ? 'Inner Resampling QC'
+                                                                    : 'Inner QC';
                                                             break;
                                                         case 'rejected':
                                                             $statusLabel = 'Inner Rejected QC';
@@ -314,38 +338,19 @@
                                                 </li>
                                             @endforeach
 
-                                            @php
-                                                $currentTabLabel = '';
-                                                switch ($arrivalSamplingRequest->approved_status) {
-                                                    case 'resampling':
-                                                        $currentTabLabel = 'Current Resampling QC';
-                                                        break;
-                                                    case 'rejected':
-                                                        $currentTabLabel = 'Current Rejected QC';
-                                                        break;
-                                                    case 'approved':
-                                                        $currentTabLabel = 'Current Approved QC';
-                                                        break;
-                                                    default:
-                                                        $currentTabLabel = ucwords(
-                                                            ($arrivalSamplingRequest->sampling_type == 'inner'
-                                                                ? 'Current '
-                                                                : '') . $arrivalSamplingRequest->sampling_type,
-                                                        );
-                                                }
-                                            @endphp
-
-                                            <li class="nav-item">
-                                                <a class="nav-link active" id="current-inner-tab" data-toggle="tab"
-                                                    href="#current-inner" role="tab" aria-controls="current-inner"
-                                                    aria-selected="true">
-                                                    <div>
-                                                        {{ $arrivalSamplingRequest->is_re_sampling == 'yes' ? 'Current ' . ucwords($arrivalSamplingRequest->sampling_type) . ' Resampling' : 'Current ' . $arrivalSamplingRequest->sampling_type . ' Checklist' }}
-                                                    </div>
-                                                    <small
-                                                        class="text-muted">{{ $arrivalSamplingRequest->created_at->format('M d, Y h:i A') }}</small>
-                                                </a>
-                                            </li>
+                                            @if ($arrivalSamplingRequest)
+                                                <li class="nav-item">
+                                                    <a class="nav-link active" id="current-inner-tab" data-toggle="tab"
+                                                        href="#current-inner" role="tab"
+                                                        aria-controls="current-inner" aria-selected="true">
+                                                        <div>
+                                                            {{ $arrivalSamplingRequest->is_re_sampling == 'yes' ? 'Current ' . ucwords($arrivalSamplingRequest->sampling_type) . ' Resampling' : 'Current ' . $arrivalSamplingRequest->sampling_type . ' Checklist' }}
+                                                        </div>
+                                                        <small
+                                                            class="text-muted">{{ $arrivalSamplingRequest->created_at->format('M d, Y h:i A') }}</small>
+                                                    </a>
+                                                </li>
+                                            @endif
                                         </ul>
 
                                         <div class="tab-content" id="qcChecklistTabsContent">
@@ -887,412 +892,431 @@
                                                 </div>
                                             @endforeach
 
-                                            <div class="tab-pane fade show active" id="current-inner" role="tabpanel"
-                                                aria-labelledby="current-inner-tab">
-                                                <div class="row w-100 mx-auto">
-                                                    <div class="col-md-4"></div>
-                                                    <div class="col-md-3 py-2 QcResult">
-                                                        <h6>Result</h6>
+                                            @if ($arrivalSamplingRequest)
+                                                <div class="tab-pane fade show active" id="current-inner" role="tabpanel"
+                                                    aria-labelledby="current-inner-tab">
+                                                    <div class="row w-100 mx-auto">
+                                                        <div class="col-md-4"></div>
+                                                        <div class="col-md-3 py-2 QcResult">
+                                                            <h6>Result</h6>
+                                                        </div>
+                                                        <div class="col-md-3 py-2 Suggested">
+                                                            <h6>Suggested Deduction</h6>
+                                                        </div>
+                                                        <div class="col-md-2 py-2 QcResult">
+                                                            <h6>Deduction</h6>
+                                                        </div>
                                                     </div>
-                                                    <div class="col-md-3 py-2 Suggested">
-                                                        <h6>Suggested Deduction</h6>
-                                                    </div>
-                                                    <div class="col-md-2 py-2 QcResult">
-                                                        <h6>Deduction</h6>
-                                                    </div>
-                                                </div>
 
-
-                                                <div class="striped-rows">
-                                                    @if (count($results) != 0)
-                                                        @foreach ($results as $slab)
-                                                            @php
-                                                                $previousValue = null;
-                                                                if (
-                                                                    ($slab->checklist_value === null ||
-                                                                        $slab->checklist_value == 0) &&
-                                                                    $previousInnerRequest
-                                                                ) {
-                                                                    foreach (
-                                                                        $previousInnerRequest['results']
-                                                                        as $prevSlab
+                                                    <div class="striped-rows">
+                                                        @if (count($results) != 0)
+                                                            @foreach ($results as $slab)
+                                                                @php
+                                                                    $previousValue = null;
+                                                                    if (
+                                                                        ($slab->checklist_value === null ||
+                                                                            $slab->checklist_value == 0) &&
+                                                                        $previousInnerRequest
                                                                     ) {
-                                                                        if (
-                                                                            $prevSlab->slabType->id ==
-                                                                            $slab->slabType->id
+                                                                        foreach (
+                                                                            $previousInnerRequest['results']
+                                                                            as $prevSlab
                                                                         ) {
-                                                                            $previousValue = $prevSlab->checklist_value;
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                }
-
-                                                                $displayValue =
-                                                                    ($previousValue ?? ($slab->checklist_value ?? 0)) -
-                                                                    ($slab->relief_deduction ?? 0);
-
-                                                                $getDeductionSuggestion = getDeductionSuggestion(
-                                                                    $slab->slabType->id,
-                                                                    optional($arrivalSamplingRequest->arrivalTicket)
-                                                                        ->qc_product,
-                                                                    $displayValue,
-                                                                );
-
-                                                                $previousDeduction = null;
-                                                                if (
-                                                                    ($slab->applied_deduction === null ||
-                                                                        $slab->applied_deduction == 0) &&
-                                                                    $previousInnerRequest
-                                                                ) {
-                                                                    foreach (
-                                                                        $previousInnerRequest['results']
-                                                                        as $prevSlab
-                                                                    ) {
-                                                                        if (
-                                                                            $prevSlab->slabType->id ==
-                                                                            $slab->slabType->id
-                                                                        ) {
-                                                                            $previousDeduction =
-                                                                                $prevSlab->applied_deduction;
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                }
-                                                                $innerDeductionValue = $isLumpSumEnabledInTicket
-                                                                    ? 0
-                                                                    : $previousDeduction ??
-                                                                        ($slab->applied_deduction ??
-                                                                            ($valuesOfInitialSlabs[
+                                                                            if (
+                                                                                $prevSlab->slabType->id ==
                                                                                 $slab->slabType->id
-                                                                            ] ??
-                                                                                0));
-
-                                                                $suggestedDeductionType =
-                                                                    $getDeductionSuggestion->deduction_type ?? 'amount';
-
-                                                                $suggestedDeductionType == 'amount'
-                                                                    ? ($suggestedValue +=
-                                                                        $getDeductionSuggestion->deduction_value ?? 0)
-                                                                    : ($suggestedValueKgs +=
-                                                                        $getDeductionSuggestion->deduction_value ?? 0);
-
-                                                                $previousChecklistValue = null;
-
-                                                                if (!empty($innerRequestsData)) {
-                                                                    $lastInnerRequestData =
-                                                                        $innerRequestsData[
-                                                                            count($innerRequestsData) - 1
-                                                                        ];
-                                                                    foreach (
-                                                                        $lastInnerRequestData['results']
-                                                                        as $lastSlab
-                                                                    ) {
-                                                                        if (
-                                                                            $lastSlab->slabType->id ==
-                                                                            $slab->slabType->id
-                                                                        ) {
-                                                                            $previousChecklistValue =
-                                                                                $lastSlab->checklist_value;
-                                                                            break;
+                                                                            ) {
+                                                                                $previousValue =
+                                                                                    $prevSlab->checklist_value;
+                                                                                break;
+                                                                            }
                                                                         }
                                                                     }
-                                                                }
 
-                                                                if (
-                                                                    $previousChecklistValue === null &&
-                                                                    !empty($initialRequestsData)
-                                                                ) {
-                                                                    $lastInitialData =
-                                                                        $initialRequestsData[
-                                                                            count($initialRequestsData) - 1
+                                                                    $displayValue =
+                                                                        ($previousValue ??
+                                                                            ($slab->checklist_value ?? 0)) -
+                                                                        ($slab->relief_deduction ?? 0);
+
+                                                                    $getDeductionSuggestion = $arrivalSamplingRequest->arrivalTicket
+                                                                        ? getDeductionSuggestion(
+                                                                            $slab->slabType->id,
+                                                                            $arrivalSamplingRequest->arrivalTicket
+                                                                                ->qc_product,
+                                                                            $displayValue,
+                                                                        )
+                                                                        : (object) [
+                                                                            'deduction_type' => 'amount',
+                                                                            'deduction_value' => 0,
                                                                         ];
-                                                                    foreach (
-                                                                        $lastInitialData['results']
-                                                                        as $initialSlab
+
+                                                                    $previousDeduction = null;
+                                                                    if (
+                                                                        ($slab->applied_deduction === null ||
+                                                                            $slab->applied_deduction == 0) &&
+                                                                        $previousInnerRequest
                                                                     ) {
-                                                                        if (
-                                                                            $initialSlab->slabType->id ==
-                                                                            $slab->slabType->id
+                                                                        foreach (
+                                                                            $previousInnerRequest['results']
+                                                                            as $prevSlab
                                                                         ) {
-                                                                            $previousChecklistValue =
-                                                                                $initialSlab->checklist_value;
-                                                                            break;
+                                                                            if (
+                                                                                $prevSlab->slabType->id ==
+                                                                                $slab->slabType->id
+                                                                            ) {
+                                                                                $previousDeduction =
+                                                                                    $prevSlab->applied_deduction;
+                                                                                break;
+                                                                            }
                                                                         }
                                                                     }
-                                                                }
 
-                                                                $displayValue =
-                                                                    ($previousValue ?? ($slab->checklist_value ?? 0)) -
-                                                                    ($slab->relief_deduction ?? 0);
+                                                                    $innerDeductionValue = $isLumpSumEnabledInTicket
+                                                                        ? 0
+                                                                        : $previousDeduction ??
+                                                                            ($slab->applied_deduction ??
+                                                                                ($valuesOfInitialSlabs[
+                                                                                    $slab->slabType->id
+                                                                                ] ??
+                                                                                    0));
 
-                                                                $comparisonClass = '';
-                                                                if ($previousChecklistValue !== null) {
-                                                                    if ($displayValue > $previousChecklistValue) {
-                                                                        $comparisonClass = 'checklist-increase';
-                                                                    } elseif ($displayValue < $previousChecklistValue) {
-                                                                        $comparisonClass = 'checklist-decrease';
+                                                                    $suggestedDeductionType =
+                                                                        $getDeductionSuggestion->deduction_type ??
+                                                                        'amount';
+
+                                                                    if ($suggestedDeductionType == 'amount') {
+                                                                        $suggestedValue +=
+                                                                            $getDeductionSuggestion->deduction_value ??
+                                                                            0;
                                                                     } else {
-                                                                        $comparisonClass = 'checklist-same';
+                                                                        $suggestedValueKgs +=
+                                                                            $getDeductionSuggestion->deduction_value ??
+                                                                            0;
                                                                     }
-                                                                }
 
-                                                                if (
-                                                                    ((float) $slab->checklist_value ?? 0) >
-                                                                    ((float) $slab->max_range ?? 0)
-                                                                ) {
-                                                                    $comparisonClass = 'slabs-checklist-rise';
-                                                                }
-                                                            @endphp
-                                                            <div class="form-group row checklist-box">
-                                                                <input type="hidden" name="product_slab_type_id[]"
-                                                                    value="{{ $slab->slabType->id }}">
-                                                                <label
-                                                                    class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                                <div class="col-md-3 QcResult">
-                                                                    <div class="input-group mb-0">
-                                                                        <input type="text"
-                                                                            class="form-control {{ $comparisonClass }}"
-                                                                            name="checklist_value[]"
-                                                                            value="{{ $displayValue }}" placeholder="%"
-                                                                            readonly>
-                                                                        <div class="input-group-append">
-                                                                            <span
-                                                                                class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    @if ($previousChecklistValue !== null)
-                                                                        <span class="checklist-value-comparison">
-                                                                            Previous: {{ $previousChecklistValue }}
-                                                                        </span>
-                                                                    @endif
-                                                                </div>
-                                                                <div class="col-md-3 Suggested">
-                                                                    <div class="input-group mb-0">
-                                                                        <input type="text" class="form-control"
-                                                                            name="suggested_deduction[]"
-                                                                            value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
-                                                                            placeholder="Suggested Deduction" readonly>
-                                                                        <div class="input-group-append">
-                                                                            <span
-                                                                                class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-2 QcResult">
-                                                                    <div class="input-group mb-0">
-                                                                        <input type="text"
-                                                                            id="deduction-{{ $slab->slabType->id }}"
-                                                                            class="form-control bg-white deduction-field"
-                                                                            name="applied_deduction[]"
-                                                                            value="{{ $innerDeductionValue }}"
-                                                                            placeholder="Deduction"
-                                                                            data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
-                                                                            data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
-                                                                            data-slab-id="{{ $slab->slabType->id }}"
-                                                                            data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
-                                                                            data-checklist="{{ $displayValue }}"
-                                                                            {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
-                                                                        <div class="input-group-append">
-                                                                            <span
-                                                                                class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endforeach
-                                                    @else
-                                                        <div class="alert alert-warning">No Slabs Found</div>
-                                                    @endif
-                                                </div>
-
-                                                <div class="row w-100 mx-auto mt-3">
-                                                    <div class="col-md-4"></div>
-                                                    <div class="col-md-6 py-2 QcResult">
-                                                        <h6>Result</h6>
-                                                    </div>
-                                                    <div class="col-md-2 py-2 QcResult">
-                                                        <h6>Deduction</h6>
-                                                    </div>
-                                                </div>
-                                                <div class="striped-rows">
-                                                    @if (count($Compulsuryresults) != 0)
-                                                        @foreach ($Compulsuryresults as $slab)
-                                                            @php
-                                                                $previousCompValue = null;
-                                                                $displayCompValue =
-                                                                    $previousCompValue ??
-                                                                    $slab->compulsory_checklist_value;
-                                                                $previousCompDeduction = null;
-                                                                if (
-                                                                    ($slab->applied_deduction === null ||
-                                                                        $slab->applied_deduction == 0) &&
-                                                                    $previousInnerRequest
-                                                                ) {
-                                                                    foreach (
-                                                                        $previousInnerRequest['compulsuryResults']
-                                                                        as $prevComp
-                                                                    ) {
-                                                                        if (
-                                                                            $prevComp->qcParam->id == $slab->qcParam->id
+                                                                    $previousChecklistValue = null;
+                                                                    if (!empty($innerRequestsData)) {
+                                                                        $lastInnerRequestData =
+                                                                            $innerRequestsData[
+                                                                                count($innerRequestsData) - 1
+                                                                            ];
+                                                                        foreach (
+                                                                            $lastInnerRequestData['results']
+                                                                            as $lastSlab
                                                                         ) {
-                                                                            $previousCompDeduction =
-                                                                                $prevComp->applied_deduction;
-                                                                            break;
+                                                                            if (
+                                                                                $lastSlab->slabType->id ==
+                                                                                $slab->slabType->id
+                                                                            ) {
+                                                                                $previousChecklistValue =
+                                                                                    $lastSlab->checklist_value;
+                                                                                break;
+                                                                            }
                                                                         }
                                                                     }
-                                                                }
-                                                                $compDeductionValue =
-                                                                    $previousCompDeduction ??
-                                                                    ($slab->applied_deduction ?? 0);
 
-                                                                $defaultValue = '';
-                                                                if ($slab->qcParam->type == 'dropdown') {
-                                                                    $options = json_decode(
-                                                                        $slab->qcParam->options,
-                                                                        true,
-                                                                    );
-                                                                    $defaultValue = $options[0] ?? '';
-                                                                }
+                                                                    if (
+                                                                        $previousChecklistValue === null &&
+                                                                        !empty($initialRequestsData)
+                                                                    ) {
+                                                                        $lastInitialData =
+                                                                            $initialRequestsData[
+                                                                                count($initialRequestsData) - 1
+                                                                            ];
+                                                                        foreach (
+                                                                            $lastInitialData['results']
+                                                                            as $initialSlab
+                                                                        ) {
+                                                                            if (
+                                                                                $initialSlab->slabType->id ==
+                                                                                $slab->slabType->id
+                                                                            ) {
+                                                                                $previousChecklistValue =
+                                                                                    $initialSlab->checklist_value;
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                    }
 
-                                                                $compulsaryClass = '';
+                                                                    $displayValue =
+                                                                        ($previousValue ??
+                                                                            ($slab->checklist_value ?? 0)) -
+                                                                        ($slab->relief_deduction ?? 0);
 
-                                                                if ($displayCompValue != $defaultValue) {
-                                                                    $compulsaryClass =
-                                                                        'slabs-checklist-changed-compulsury';
-                                                                }
-                                                            @endphp
+                                                                    $comparisonClass = '';
+                                                                    if ($previousChecklistValue !== null) {
+                                                                        if ($displayValue > $previousChecklistValue) {
+                                                                            $comparisonClass = 'checklist-increase';
+                                                                        } elseif (
+                                                                            $displayValue < $previousChecklistValue
+                                                                        ) {
+                                                                            $comparisonClass = 'checklist-decrease';
+                                                                        } else {
+                                                                            $comparisonClass = 'checklist-same';
+                                                                        }
+                                                                    }
 
-                                                            <div class="form-group row">
-                                                                <input type="hidden" name="compulsory_param_id[]"
-                                                                    value="{{ $slab->qcParam->id }}">
-                                                                <label
-                                                                    class="label-control font-weight-bold col-md-4  ">{{ $slab->qcParam->name }}</label>
-                                                                <div
-                                                                    class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
-                                                                    @if ($slab->qcParam->type == 'dropdown')
-                                                                        <input type="text"
-                                                                            class="form-control {{ $compulsaryClass }}"
-                                                                            name="compulsory_checklist_value[]"
-                                                                            value="{{ $displayCompValue }}"
-                                                                            data-default-value="{{ $defaultValue }}"
-                                                                            readonly>
-                                                                    @else
-                                                                        <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
-                                                                    @endif
-                                                                </div>
-                                                                @if (!checkIfNameExists($slab->qcParam->name))
-                                                                    <div class="col-md-2 QcResult">
+                                                                    if (
+                                                                        ((float) $slab->checklist_value ?? 0) >
+                                                                        ((float) $slab->max_range ?? 0)
+                                                                    ) {
+                                                                        $comparisonClass = 'slabs-checklist-rise';
+                                                                    }
+                                                                @endphp
+                                                                <div class="form-group row checklist-box">
+                                                                    <input type="hidden" name="product_slab_type_id[]"
+                                                                        value="{{ $slab->slabType->id }}">
+                                                                    <label
+                                                                        class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
+                                                                    <div class="col-md-3 QcResult">
                                                                         <div class="input-group mb-0">
                                                                             <input type="text"
-                                                                                id="inp-{{ $slab->qcParam->id }}"
-                                                                                class="form-control bg-white deduction-field"
-                                                                                name="compulsory_aapplied_deduction[]"
-                                                                                value="{{ $compDeductionValue }}"
-                                                                                placeholder="Deduction"
-                                                                                data-slab-id="{{ $slab->qcParam->id }}"
-                                                                                data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
-                                                                                data-checklist="{{ $displayCompValue }}"
-                                                                                {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                                                class="form-control {{ $comparisonClass }}"
+                                                                                name="checklist_value[]"
+                                                                                value="{{ $displayValue }}"
+                                                                                placeholder="%" readonly>
                                                                             <div class="input-group-append">
                                                                                 <span
-                                                                                    class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
+                                                                                    class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        @if ($previousChecklistValue !== null)
+                                                                            <span class="checklist-value-comparison">
+                                                                                Previous: {{ $previousChecklistValue }}
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="col-md-3 Suggested">
+                                                                        <div class="input-group mb-0">
+                                                                            <input type="text" class="form-control"
+                                                                                name="suggested_deduction[]"
+                                                                                value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                                                                placeholder="Suggested Deduction" readonly>
+                                                                            <div class="input-group-append">
+                                                                                <span
+                                                                                    class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                @else
-                                                                    <input type="hidden"
-                                                                        name="compulsory_aapplied_deduction[]"
-                                                                        value="0">
-                                                                @endif
-                                                            </div>
-                                                        @endforeach
-                                                    @else
-                                                        <div class="alert alert-warning">No Compulsory Slabs Found</div>
-                                                    @endif
-                                                </div>
+                                                                    <div class="col-md-2 QcResult">
+                                                                        <div class="input-group mb-0">
+                                                                            <input type="text"
+                                                                                id="deduction-{{ $slab->slabType->id }}"
+                                                                                class="form-control bg-white deduction-field"
+                                                                                name="applied_deduction[]"
+                                                                                value="{{ $innerDeductionValue }}"
+                                                                                placeholder="Deduction"
+                                                                                data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
+                                                                                data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
+                                                                                data-slab-id="{{ $slab->slabType->id }}"
+                                                                                data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
+                                                                                data-checklist="{{ $displayValue }}"
+                                                                                {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                                            <div class="input-group-append">
+                                                                                <span
+                                                                                    class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        @else
+                                                            <div class="alert alert-warning">No Slabs Found</div>
+                                                        @endif
+                                                    </div>
 
-                                                <div class="striped-rows mt-3">
-                                                    <div class="form-group row">
-                                                        <label class="col-md-4 label-control font-weight-bold"
-                                                            for="lumpsum-toggle">Apply Lumpsum
-                                                            Deduction</label>
-                                                        <div class="col-md-3">
-                                                            <div class="custom-control custom-switch">
-                                                                <input type="checkbox" class="custom-control-input"
-                                                                    id="lumpsum-toggle"
-                                                                    name="{{ !$isLumpSumEnabledInTicket ? 'is_lumpsum_deduction' : 'is_lumpsum_deduction_display' }}"
-                                                                    @checked($isLumpSumEnabledInTicket)
-                                                                    @disabled($isLumpSumEnabledInTicket)>
-                                                                @if ($isLumpSumEnabledInTicket)
-                                                                    <input type="hidden" name="is_lumpsum_deduction"
-                                                                        value="on">
-                                                                @endif
-                                                                <label class="custom-control-label"
-                                                                    for="lumpsum-toggle"></label>
+                                                    <div class="row w-100 mx-auto mt-3">
+                                                        <div class="col-md-4"></div>
+                                                        <div class="col-md-6 py-2 QcResult">
+                                                            <h6>Result</h6>
+                                                        </div>
+                                                        <div class="col-md-2 py-2 QcResult">
+                                                            <h6>Deduction</h6>
+                                                        </div>
+                                                    </div>
+                                                    <div class="striped-rows">
+                                                        @if (count($Compulsuryresults) != 0)
+                                                            @foreach ($Compulsuryresults as $slab)
+                                                                @php
+                                                                    $previousCompValue = null;
+                                                                    $displayCompValue =
+                                                                        $previousCompValue ??
+                                                                        $slab->compulsory_checklist_value;
+                                                                    $previousCompDeduction = null;
+                                                                    if (
+                                                                        ($slab->applied_deduction === null ||
+                                                                            $slab->applied_deduction == 0) &&
+                                                                        $previousInnerRequest
+                                                                    ) {
+                                                                        foreach (
+                                                                            $previousInnerRequest['compulsuryResults']
+                                                                            as $prevComp
+                                                                        ) {
+                                                                            if (
+                                                                                $prevComp->qcParam->id ==
+                                                                                $slab->qcParam->id
+                                                                            ) {
+                                                                                $previousCompDeduction =
+                                                                                    $prevComp->applied_deduction;
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    $compDeductionValue =
+                                                                        $previousCompDeduction ??
+                                                                        ($slab->applied_deduction ?? 0);
+
+                                                                    $defaultValue = '';
+                                                                    if ($slab->qcParam->type == 'dropdown') {
+                                                                        $options = json_decode(
+                                                                            $slab->qcParam->options,
+                                                                            true,
+                                                                        );
+                                                                        $defaultValue = $options[0] ?? '';
+                                                                    }
+
+                                                                    $compulsaryClass = '';
+
+                                                                    if ($displayCompValue != $defaultValue) {
+                                                                        $compulsaryClass =
+                                                                            'slabs-checklist-changed-compulsury';
+                                                                    }
+                                                                @endphp
+
+                                                                <div class="form-group row">
+                                                                    <input type="hidden" name="compulsory_param_id[]"
+                                                                        value="{{ $slab->qcParam->id }}">
+                                                                    <label
+                                                                        class="label-control font-weight-bold col-md-4  ">{{ $slab->qcParam->name }}</label>
+                                                                    <div
+                                                                        class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                                                        @if ($slab->qcParam->type == 'dropdown')
+                                                                            <input type="text"
+                                                                                class="form-control {{ $compulsaryClass }}"
+                                                                                name="compulsory_checklist_value[]"
+                                                                                value="{{ $displayCompValue }}"
+                                                                                data-default-value="{{ $defaultValue }}"
+                                                                                readonly>
+                                                                        @else
+                                                                            <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
+                                                                        @endif
+                                                                    </div>
+                                                                    @if (!checkIfNameExists($slab->qcParam->name))
+                                                                        <div class="col-md-2 QcResult">
+                                                                            <div class="input-group mb-0">
+                                                                                <input type="text"
+                                                                                    id="inp-{{ $slab->qcParam->id }}"
+                                                                                    class="form-control bg-white deduction-field"
+                                                                                    name="compulsory_aapplied_deduction[]"
+                                                                                    value="{{ $compDeductionValue }}"
+                                                                                    placeholder="Deduction"
+                                                                                    data-slab-id="{{ $slab->qcParam->id }}"
+                                                                                    data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
+                                                                                    data-checklist="{{ $displayCompValue }}"
+                                                                                    {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                                                <div class="input-group-append">
+                                                                                    <span
+                                                                                        class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @else
+                                                                        <input type="hidden"
+                                                                            name="compulsory_aapplied_deduction[]"
+                                                                            value="0">
+                                                                    @endif
+                                                                </div>
+                                                            @endforeach
+                                                        @else
+                                                            <div class="alert alert-warning">No Compulsory Slabs Found
+                                                            </div>
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="striped-rows mt-3">
+                                                        <div class="form-group row">
+                                                            <label class="col-md-4 label-control font-weight-bold"
+                                                                for="lumpsum-toggle">Apply Lumpsum
+                                                                Deduction</label>
+                                                            <div class="col-md-3">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input"
+                                                                        id="lumpsum-toggle"
+                                                                        name="{{ !$isLumpSumEnabledInTicket ? 'is_lumpsum_deduction' : 'is_lumpsum_deduction_display' }}"
+                                                                        @checked($isLumpSumEnabledInTicket)
+                                                                        @disabled($isLumpSumEnabledInTicket)>
+                                                                    @if ($isLumpSumEnabledInTicket)
+                                                                        <input type="hidden" name="is_lumpsum_deduction"
+                                                                            value="on">
+                                                                    @endif
+                                                                    <label class="custom-control-label"
+                                                                        for="lumpsum-toggle"></label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col">
+                                                                <div class="input-group mb-2">
+                                                                    <input type="text" id="suggessions-sum"
+                                                                        class="form-control" name="suggessions_sum"
+                                                                        disabled value="{{ $suggestedValue }}"
+                                                                        placeholder="Suggested Sum">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text text-sm">Rs.</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="input-group mb-0">
+                                                                    <input type="text" id="suggessions-sum"
+                                                                        class="form-control" name="suggessions_sum"
+                                                                        disabled value="{{ $suggestedValueKgs }}"
+                                                                        placeholder="Suggested Sum">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text text-sm">Kgs.</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col">
+                                                                <div class="input-group mb-2">
+                                                                    <input type="text" id="lumpsum-value"
+                                                                        class="form-control" name="lumpsum_deduction"
+                                                                        {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
+                                                                        {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}" --}}
+                                                                        value="{{ $rupeeLumpSum ?? 0 }}"
+                                                                        placeholder="Lumpsum Deduction">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text text-sm">Rs.</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="input-group mb-0">
+                                                                    <input type="text" id="lumpsum-kgs-value"
+                                                                        class="form-control" name="lumpsum_deduction_kgs"
+                                                                        {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
+                                                                        {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}" --}}
+                                                                        value="{{ $kgLumpSum ?? 0 }}"
+                                                                        placeholder="Lumpsum Deduction">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text text-sm">KG's</span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="col">
-                                                            <div class="input-group mb-2">
-                                                                <input type="text" id="suggessions-sum"
-                                                                    class="form-control" name="suggessions_sum" disabled
-                                                                    value="{{ $suggestedValue }}"
-                                                                    placeholder="Suggested Sum">
-                                                                <div class="input-group-append">
-                                                                    <span class="input-group-text text-sm">Rs.</span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="input-group mb-0">
-                                                                <input type="text" id="suggessions-sum"
-                                                                    class="form-control" name="suggessions_sum" disabled
-                                                                    value="{{ $suggestedValueKgs }}"
-                                                                    placeholder="Suggested Sum">
-                                                                <div class="input-group-append">
-                                                                    <span class="input-group-text text-sm">Kgs.</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col">
-                                                            <div class="input-group mb-2">
-                                                                <input type="text" id="lumpsum-value"
-                                                                    class="form-control" name="lumpsum_deduction"
-                                                                    {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}" --}}
-                                                                    value="{{ $rupeeLumpSum ?? 0 }}"
-                                                                    placeholder="Lumpsum Deduction">
-                                                                <div class="input-group-append">
-                                                                    <span class="input-group-text text-sm">Rs.</span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="input-group mb-0">
-                                                                <input type="text" id="lumpsum-kgs-value"
-                                                                    class="form-control" name="lumpsum_deduction_kgs"
-                                                                    {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}" --}} value="{{ $kgLumpSum ?? 0 }}"
-                                                                    placeholder="Lumpsum Deduction">
-                                                                <div class="input-group-append">
-                                                                    <span class="input-group-text text-sm">KG's</span>
+
+                                                        <div class="form-group row">
+                                                            <label class="col-md-4 label-control font-weight-bold"
+                                                                for="decision_making">Decision Making
+                                                                on Avg.</label>
+                                                            <div class="col-md-3">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" name="decision_making"
+                                                                        class="custom-control-input" id="decision_making"
+                                                                        @checked($isDecisionMaking)
+                                                                        @disabled($isDecisionMakingDisabled)>
+                                                                    <label class="custom-control-label"
+                                                                        for="decision_making"></label>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-
-                                                    <div class="form-group row">
-                                                        <label class="col-md-4 label-control font-weight-bold"
-                                                            for="decision_making">Decision Making
-                                                            on Avg.</label>
-                                                        <div class="col-md-3">
-                                                            <div class="custom-control custom-switch">
-                                                                <input type="checkbox" name="decision_making"
-                                                                    class="custom-control-input" id="decision_making"
-                                                                    @checked($isDecisionMaking)
-                                                                    @disabled($isDecisionMakingDisabled)>
-                                                                <label class="custom-control-label"
-                                                                    for="decision_making"></label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 </div>
-                                            </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
