@@ -1111,6 +1111,7 @@
                                                                                 data-slab-id="{{ $slab->slabType->id }}"
                                                                                 data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
                                                                                 data-checklist="{{ $displayValue }}"
+                                                                                readonly
                                                                                 {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                                                             <div class="input-group-append">
                                                                                 <span
@@ -1213,6 +1214,7 @@
                                                                                     data-slab-id="{{ $slab->qcParam->id }}"
                                                                                     data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
                                                                                     data-checklist="{{ $displayCompValue }}"
+                                                                                    readonly
                                                                                     {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                                                                 <div class="input-group-append">
                                                                                     <span
@@ -1241,7 +1243,7 @@
                                                             <div class="col-md-3">
                                                                 <div class="custom-control custom-switch">
                                                                     <input type="checkbox" class="custom-control-input"
-                                                                        id="lumpsum-toggle"
+                                                                        id="lumpsum-toggle" disabled
                                                                         name="{{ !$isLumpSumEnabledInTicket ? 'is_lumpsum_deduction' : 'is_lumpsum_deduction_display' }}"
                                                                         @checked($isLumpSumEnabledInTicket)
                                                                         @disabled($isLumpSumEnabledInTicket)>
@@ -1279,7 +1281,7 @@
                                                                         class="form-control" name="lumpsum_deduction"
                                                                         {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
                                                                         {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}" --}}
-                                                                        value="{{ $rupeeLumpSum ?? 0 }}"
+                                                                        value="{{ $rupeeLumpSum ?? 0 }}" readonly
                                                                         placeholder="Lumpsum Deduction">
                                                                     <div class="input-group-append">
                                                                         <span class="input-group-text text-sm">Rs.</span>
@@ -1290,7 +1292,7 @@
                                                                         class="form-control" name="lumpsum_deduction_kgs"
                                                                         {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
                                                                         {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}" --}}
-                                                                        value="{{ $kgLumpSum ?? 0 }}"
+                                                                        value="{{ $kgLumpSum ?? 0 }}"readonly
                                                                         placeholder="Lumpsum Deduction">
                                                                     <div class="input-group-append">
                                                                         <span class="input-group-text text-sm">KG's</span>
@@ -1307,7 +1309,7 @@
                                                                 <div class="custom-control custom-switch">
                                                                     <input type="checkbox" name="decision_making"
                                                                         class="custom-control-input" id="decision_making"
-                                                                        @checked($isDecisionMaking)
+                                                                        @checked($isDecisionMaking) disabled
                                                                         @disabled($isDecisionMakingDisabled)>
                                                                     <label class="custom-control-label"
                                                                         for="decision_making"></label>
