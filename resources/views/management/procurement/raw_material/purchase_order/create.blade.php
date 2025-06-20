@@ -578,7 +578,7 @@
 
             function calculateQuantityAndBags() {
                 const MIN_QTY = 25000; // Minimum allowed quantity
-                const bagWeight = $('#product_id option:selected').data('bag-weight') || 0;
+                const bagWeight = $('#product_id option:selected').data('bag-weight') || 1;
                 let minQuantity, maxQuantity;
 
                 if ($('#calculation_type').val() === 'trucks') {
