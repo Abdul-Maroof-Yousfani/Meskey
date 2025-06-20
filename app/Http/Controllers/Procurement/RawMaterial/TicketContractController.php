@@ -162,7 +162,7 @@ class TicketContractController extends Controller
 
     public function searchContracts(Request $request)
     {
-        $query = ArrivalPurchaseOrder::with(['supplier', 'product'])
+        $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight'])
             ->where('status', 'draft')
             ->orderBy('created_at', 'desc');
 
@@ -183,7 +183,6 @@ class TicketContractController extends Controller
 
         if ($request->ticket_id) {
             $linkedContractId = ArrivalTicket::find($request->ticket_id)->arrival_purchase_order_id ?? null;
-            // dd($linkedContractId);
             if ($linkedContractId) {
                 $query->where('id', $linkedContractId);
             }
@@ -196,12 +195,16 @@ class TicketContractController extends Controller
                 'qc_product_name' => $contract->product->name,
                 'supplier' => $contract->supplier,
                 'total_quantity' => $contract->total_quantity,
+                'min_quantity' => $contract->min_quantity,
+                'max_quantity' => $contract->max_quantity,
                 'remaining_quantity' => $contract->remaining_quantity,
                 'arrived_quantity' => $contract->arrived_quantity,
                 'truck_no' => $contract->truck_no,
                 'trucks_arrived' => $contract->trucks_arrived,
-                'status' => $contract->status,
-                'contract_date_formatted' => $contract->created_at->format('d-M-Y')
+                'no_of_trucks' => $contract->no_of_trucks,
+                'status' => $contract->status ? $contract->status : 'N/A',
+                'contract_date_formatted' => $contract->created_at->format('d-M-Y'),
+                'total_loading_weight' => $contract->totalLoadingWeight->total_loading_weight ?? null,
             ];
         });
 

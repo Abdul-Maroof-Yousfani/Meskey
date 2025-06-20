@@ -788,11 +788,18 @@
                                 <td>${contract.contract_no || '-'}</td>
                                 <td>${contract.qc_product_name || '-'}</td>
                                 <td>${contract.supplier?.name || '-'}</td>
-                                <td>${contract.total_quantity ? contract.total_quantity + ' kg' : '-'}</td>
-                                <td>${contract.remaining_quantity ? contract.remaining_quantity + ' kg' : '-'}</td>
-                                <td>{{ $arrivalTicket->arrivalSlip->arrived_weight ?? '-' }}</td>
-                                <td>${contract.truck_no || '-'}</td>
-                                <td>{{ $arrivalTicket->closing_trucks_qty ?? '-' }}</td>
+                                <td>${(contract?.min_quantity || '-') + " - " + (contract?.max_quantity || '-')}</td>
+                                <td>
+                                    ${
+                                        (contract.total_loading_weight !== undefined && contract.total_loading_weight !== null)
+                                            ? ((contract.min_quantity !== undefined && contract.min_quantity !== null ? (contract.min_quantity - contract.total_loading_weight) : '-') + ' - ' +
+                                               (contract.max_quantity !== undefined && contract.max_quantity !== null ? (contract.max_quantity - contract.total_loading_weight) : '-'))
+                                            : '-'
+                                    }
+                                </td>
+                                <td>${contract?.total_loading_weight || '-'}</td>
+                                <td>${contract.no_of_trucks || '-'}</td>
+                                <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td>
                                 <td>${statusBadge}</td> 
                             </tr>
                         `;
