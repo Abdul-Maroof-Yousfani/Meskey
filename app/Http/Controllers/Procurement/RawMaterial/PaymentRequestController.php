@@ -39,12 +39,63 @@ class PaymentRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $paymentRequestsData = PaymentRequestData::with(['purchaseOrder', 'paymentRequests'])
-            ->orderBy('created_at', 'asc')
-            ->paginate(request('per_page', 25));
+        $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
+            ->with([
+                'paymentRequestData.paymentRequests',
+                'supplier',
+                'product',
+                'qcProduct',
+                'paymentRequestData' => function ($query) {
+                    $query->with(['paymentRequests' => function ($q) {
+                        $q->selectRaw('payment_request_data_id, request_type, SUM(amount) as total_amount')
+                            ->groupBy('payment_request_data_id', 'request_type');
+                    }]);
+                }
+            ])
+            ->paginate(10);
+
+        $purchaseOrders->getCollection()->transform(function ($po) {
+            $paymentSum = 0;
+            $freightSum = 0;
+            $totalAmount = 0;
+            $paidAmount = 0;
+            $remainingAmount = 0;
+
+            $allRequests = collect();
+
+            foreach ($po->paymentRequestData as $data) {
+                $totalAmount += $data->total_amount ?? 0;
+                $paidAmount += $data->paid_amount ?? 0;
+                $remainingAmount += $data->remaining_amount ?? 0;
+
+                foreach ($data->paymentRequests as $request) {
+                    if ($request->request_type == 'payment') {
+                        $paymentSum += $request->total_amount;
+                    } elseif ($request->request_type == 'freight_payment') {
+                        $freightSum += $request->total_amount;
+                    }
+
+                    $clonedRequest = clone $request;
+                    $clonedRequest->amount = $request->total_amount;
+                    $allRequests->push($clonedRequest);
+                }
+            }
+
+            $po->calculated_values = [
+                'payment_sum' => $paymentSum,
+                'freight_sum' => $freightSum,
+                'total_amount' => $totalAmount,
+                'paid_amount' => $paidAmount,
+                'remaining_amount' => $remainingAmount,
+                'all_requests' => $allRequests,
+                'created_at' => $po->paymentRequestData->first()->created_at ?? $po->created_at
+            ];
+
+            return $po;
+        });
 
         return view('management.procurement.raw_material.payment_request.getList', [
-            'paymentRequestsData' => $paymentRequestsData
+            'purchaseOrders' => $purchaseOrders
         ]);
     }
 
@@ -218,6 +269,99 @@ class PaymentRequestController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit($id)
+    {
+        $data['purchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);
+
+        $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
+        $data['products'] = Product::where('product_type', 'raw_material')->get();
+
+        $purchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
+
+        $pRsSum = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
+            $query->where('purchase_order_id', $purchaseOrder->id);
+        })
+            ->where('request_type', 'payment')
+            ->sum('amount');
+
+
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
+            $query->where('purchase_order_id', $purchaseOrder->id);
+        })
+            ->where('request_type', 'freight_payment')
+            ->sum('amount');
+
+        $purchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'completed')->get();
+
+        $samplingRequest = null;
+        $samplingRequestCompulsuryResults = collect();
+        $samplingRequestResults = collect();
+
+        if ($purchaseOrder) {
+            $samplingRequest = PurchaseSamplingRequest::where('arrival_purchase_order_id', $id)
+                ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+
+            if ($samplingRequest) {
+                $rmPoSlabs = collect();
+                if ($purchaseOrder && $samplingRequest->arrival_product_id) {
+                    $rmPoSlabs = ProductSlabForRmPo::where('arrival_purchase_order_id', $purchaseOrder->id)
+                        ->where('product_id', $samplingRequest->arrival_product_id)
+                        ->get()
+                        ->groupBy('product_slab_type_id');
+                }
+
+                $samplingRequestCompulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $samplingRequest->id)->get();
+                $samplingRequestResults = PurchaseSamplingResult::where('purchase_sampling_request_id', $samplingRequest->id)->get();
+
+                $productSlabCalculations = null;
+                if ($samplingRequest->arrival_product_id) {
+                    $productSlabCalculations = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)->get();
+                }
+
+                foreach ($samplingRequestResults as &$result) {
+                    $matchingSlabs = [];
+
+                    $result->rm_po_slabs = $rmPoSlabs->get($result->product_slab_type_id, []);
+
+                    if ($productSlabCalculations) {
+                        $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
+                            ->values()
+                            ->all();
+
+                        if (!empty($matchingSlabs)) {
+                            $result->deduction_type = $matchingSlabs[0]->deduction_type;
+                        }
+                    }
+                    $result->matching_slabs = $matchingSlabs;
+                }
+            }
+        }
+
+        if (isset($request->is_debug)) {
+            $orignalsamplingRequestResults =   $samplingRequestResults;
+
+            $samplingRequestResults = $samplingRequestResults->filter(function ($result) {
+                return $result->applied_deduction;
+            });
+
+            dd($samplingRequestResults, $orignalsamplingRequestResults, $rmPoSlabs);
+        }
+
+        $data['html'] = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
+            'purchaseOrders' => $purchaseOrders,
+            'purchaseOrder' => $purchaseOrder,
+            'samplingRequest' => $samplingRequest,
+            'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
+            'samplingRequestResults' => $samplingRequestResults,
+            'pRsSum' => $pRsSum,
+            'pRsSumForFreight' => $pRsSumForFreight,
+        ])->render();
+
+        return view('management.procurement.raw_material.payment_request.create', $data);
+    }
+
+    public function editOld($id)
     {
         $paymentRequestData = PaymentRequestData::with([
             'purchaseOrder',

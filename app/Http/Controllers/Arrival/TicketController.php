@@ -152,7 +152,7 @@ class TicketController extends Controller
         $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
             ->whereIn('id', $latestRequestIds)
             ->where(function ($q) {
-                $q->where('approved_status', 'pending')
+                $q->where('approved_status', '!=', 'pending')
                     ->orWhere(function ($q) {
                         $q->where('decision_making', 1);
                     });

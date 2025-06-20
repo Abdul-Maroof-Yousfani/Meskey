@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
+use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -85,6 +86,11 @@ class ArrivalPurchaseOrder extends Model
     public function purchaseFreight()
     {
         return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id');
+    }
+
+    public function paymentRequestData()
+    {
+        return $this->hasMany(PaymentRequestData::class, 'purchase_order_id');
     }
 
     public function broker()

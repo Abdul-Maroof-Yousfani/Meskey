@@ -4,6 +4,7 @@ use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     GateBuyingController,
+    PaymentRequestApprovalController,
     PaymentRequestController,
     PurchaseFreightController,
     PurchaseRequestController,
@@ -50,6 +51,10 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('payment-request', PaymentRequestController::class);
     Route::post('/get-payment-request', [PaymentRequestController::class, 'getList'])->name('get.payment-request');
+
+    Route::resource('payment-request-approval', PaymentRequestApprovalController::class);
+    Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('get.payment-request-approval');
+    Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('payment-request-approval.approve');
 
     Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('freight.getFreightForm');
 });

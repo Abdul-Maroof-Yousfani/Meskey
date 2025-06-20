@@ -10,53 +10,54 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($purchaseOrders) != 0)
-            @foreach ($purchaseOrders as $po)
+        @if (count($paymentRequestsData) != 0)
+            @foreach ($paymentRequestsData as $paymentRequestData)
+                @php
+                    $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
+                    $freightRequest = $paymentRequestData->paymentRequests
+                        ->where('request_type', 'freight_payment')
+                        ->first();
+                @endphp
+
                 <tr>
-                    <td>#{{ $po->contract_no ?? 'N/A' }} <br>
-                        {{ $po->qcProduct->name ?? ($po->product->name ?? 'N/A') }}
+                    <td>#{{ $paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }} <br>
+                        {{ $paymentRequestData->purchaseOrder->qcProduct->name ?? ($paymentRequestData->purchaseOrder->product->name ?? 'N/A') }}
                     </td>
-                    <td>{{ $po->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $paymentRequestData->supplier_name ?? 'N/A' }}</td>
                     <td>
                         <div class="div-box-b">
                             <small>
-                                <strong>Total Amount:</strong> {{ $po->calculated_values['total_amount'] ?? 0 }} <br>
-                                <strong>Paid Amount:</strong> {{ $po->calculated_values['paid_amount'] ?? 0 }} <br>
-                                <strong>Payment Request:</strong> {{ $po->calculated_values['payment_sum'] ?? 0 }}<br>
-                                @if ($po->calculated_values['freight_sum'] > 0)
-                                    <strong>Freight Request:</strong>
-                                    {{ $po->calculated_values['freight_sum'] ?? 0 }}<br>
+                                <strong>Total Amount:</strong> {{ $paymentRequestData->total_amount ?? 0 }} <br>
+                                <strong>Paid Amount:</strong> {{ $paymentRequestData->paid_amount ?? 0 }} <br>
+                                <strong>Payment Request:</strong> {{ $paymentRequest->amount ?? 0 }}<br>
+                                @if ($freightRequest)
+                                    <strong>Freight Request:</strong> {{ $freightRequest->amount ?? 0 }}<br>
                                 @endif
-                                <strong>Remaining Amount:</strong>
-                                {{ $po->calculated_values['remaining_amount'] ?? 0 }}<br>
+                                <strong>Remaining Amount:</strong> {{ $paymentRequestData->remaining_amount ?? 0 }}<br>
                             </small>
                         </div>
                     </td>
                     <td>
-                        @if (!count($po->calculated_values['all_requests'] ?? []))
-                            N/A
-                        @else
-                            @foreach ($po->calculated_values['all_requests'] as $request)
-                                <span
-                                    class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }} mb-1">
-                                    {{ formatEnumValue($request->request_type) }}: {{ $request->amount }}
-                                </span><br>
-                            @endforeach
-                        @endif
+                        @foreach ($paymentRequestData->paymentRequests as $request)
+                            <span
+                                class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }} mb-1">
+                                {{ formatEnumValue($request->request_type) }}: {{ $request->amount }}
+                            </span><br>
+                        @endforeach
                     </td>
                     <td>
-                        {{ \Carbon\Carbon::parse($po->calculated_values['created_at'])->format('Y-m-d') }} <br>
-                        {{ \Carbon\Carbon::parse($po->calculated_values['created_at'])->format('H:i A') }}
+                        {{ \Carbon\Carbon::parse($paymentRequestData->created_at)->format('Y-m-d') }} <br>
+                        {{ \Carbon\Carbon::parse($paymentRequestData->created_at)->format('H:i A') }}
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $po->id) }}','Manage Payment Request')"
+                            <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $paymentRequestData->id) }}','Edit Payment Request')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('raw-material.payment-request.destroy', $po->id) }}','{{ route('raw-material.get.payment-request') }}')"
+                            <a onclick="deletemodal('{{ route('raw-material.payment-request.destroy', $paymentRequestData->id) }}','{{ route('raw-material.get.payment-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
@@ -92,6 +93,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $purchaseOrders->links() }}
+        {{ $paymentRequestsData->links() }}
     </div>
 </div>

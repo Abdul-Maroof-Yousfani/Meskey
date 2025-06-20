@@ -20,4 +20,22 @@ class PaymentRequest extends Model
     {
         return $this->belongsTo(PaymentRequestData::class);
     }
+
+    public function approvals()
+    {
+        return $this->hasMany(PaymentRequestApproval::class);
+    }
+
+    public function getApprovalStatusAttribute()
+    {
+        if ($this->approvals->isEmpty()) {
+            return 'pending';
+        }
+        return $this->approvals->first()->status;
+    }
+
+    public function canBeApproved()
+    {
+        return $this->approval_status === 'pending';
+    }
 }
