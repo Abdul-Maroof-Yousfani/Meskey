@@ -39,8 +39,12 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->min_quantity - $row->totalLoadingWeight->total_loading_weight ?? '-' }} -
-                            {{ $row->max_quantity - $row->totalLoadingWeight->total_loading_weight ?? '-' }}
+                            @php
+                                $loaded = $row->totalLoadingWeight->total_loading_weight ?? null;
+                                $minRem = $loaded !== null ? $row->min_quantity - $loaded : '-';
+                                $maxRem = $loaded !== null ? $row->max_quantity - $loaded : '-';
+                            @endphp
+                            {{ $minRem }} - {{ $maxRem }}
                         </p>
                     </td>
                     <td>
