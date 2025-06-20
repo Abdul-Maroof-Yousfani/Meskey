@@ -45,7 +45,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->totalLoadingWeight->total_loading_weight }}
+                            {{ $row->totalLoadingWeight->total_loading_weight ?? '-' }}
                         </p>
                     </td>
                     <td>
