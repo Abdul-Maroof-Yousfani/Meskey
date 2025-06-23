@@ -426,7 +426,7 @@
                                     <td style="padding: 8px;border: none;">Avg. Weight</td>
                                     <td style="padding: 8px;border: none;" colspan="5">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->approvals->total_bags, 2) ?? 'N/A' }}"
+                                            value="{{ ($arrivalTicket->approvals->total_bags ?? 0) > 0 ? number_format(($arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight) / $arrivalTicket->approvals->total_bags, 2) : '0.00' }}"
                                             readonly>
                                     </td>
                                 </tr>
