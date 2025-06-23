@@ -49,7 +49,7 @@ class AccountsObserver
             }
         } else {
             $latestRootAccount = Account::whereNull('parent_id')->orderByDesc('id')->first();
-            $account->hierarchy_path = $latestRootAccount ? (string)($latestRootAccount->id + 1) : '1';
+            $account->hierarchy_path = $latestRootAccount ? (string)($latestRootAccount->hierarchy_path + 1) : '1';
         }
     }
 
