@@ -70,7 +70,6 @@
                     disabled />
             </div>
         </div>
-
         <div class="col-md-4">
             <div class="form-group">
                 <label>Exempted Weight</label>
@@ -78,30 +77,12 @@
                     value="{{ $freight->exempted_weight }}" />
             </div>
         </div>
-        {{-- 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>PO Rate</label>
-                <input type="number" step="0.01" name="po_rate" class="form-control"
-                    value="{{ $freight->po_rate }}" />
-            </div>
-        </div> --}}
-
         <div class="col-md-4">
             <div class="form-group">
                 <label>Net Shortage</label>
                 <input type="number" name="net_shortage" class="form-control" value="{{ $freight->net_shortage }}" />
             </div>
         </div>
-
-        {{-- <div class="col-md-4">
-            <div class="form-group">
-                <label>Shortage Weight Freight Deduction</label>
-                <input type="number" step="0.01" name="shortage_weight_freight_deduction" class="form-control"
-                    value="{{ $freight->shortage_weight_freight_deduction }}" />
-            </div>
-        </div> --}}
-
         <div class="col-md-4">
             <div class="form-group">
                 <label>Freight per Ton</label>
@@ -210,7 +191,6 @@
                 @endif
             </div>
         </div>
-
     </div>
 
     <div class="row bottom-button-bar">
