@@ -23,8 +23,7 @@
             continue;
         }
         $isSlabs = true;
-    }
-
+    } 
 @endphp
 
 <link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}">
