@@ -51,18 +51,8 @@ class AccountController extends Controller
     public function store(AccountRequest $request)
     {
         $validatedData = $request->validated();
-
-        $validatedData['unique_no'] = generateUniqueNumber('accounts', 'ACC-', null, 'unique_no');
-
-        if (!empty($validatedData['parent_id'])) {
-            $parentAccount = Account::find($validatedData['parent_id']);
-
-            if ($parentAccount) {
-                $validatedData['parent_unique_no'] = $parentAccount->unique_no;
-            }
-        }
-
         $validatedData['company_id'] = $request->company_id;
+
         $account = Account::create($validatedData);
 
         return response()->json([

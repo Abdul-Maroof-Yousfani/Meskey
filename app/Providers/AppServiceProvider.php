@@ -7,8 +7,9 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Acl\{Company};
 use App\Models\{User, Product, Arrival\ArrivalTicket};
 use App\Models\Arrival\Freight;
+use App\Models\Master\Account\Account;
 use App\Models\Procurement\PurchaseFreight;
-use App\Observers\{UserObserver, CompanyObserver, ProductObserver, ArrivalTicketObserver, FreightObserver, PurchaseFreightObserver};
+use App\Observers\{AccountsObserver, UserObserver, CompanyObserver, ProductObserver, ArrivalTicketObserver, FreightObserver, PurchaseFreightObserver};
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 
@@ -36,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
         Freight::observe(FreightObserver::class);
         PurchaseFreight::observe(PurchaseFreightObserver::class);
         ArrivalTicket::observe(ArrivalTicketObserver::class);
-
+        Account::observe(AccountsObserver::class);
 
         // Register custom Blade directive
         Blade::directive('canAccess', function ($expression) {

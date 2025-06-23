@@ -19,6 +19,7 @@ class Account extends Model
         'account_type',
         'parent_id',
         'parent_unique_no',
+        'hierarchy_path',
         'is_operational',
         'status',
         'created_by',

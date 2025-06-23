@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\SupplierRequest;
+use App\Models\Master\Account\Account;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
@@ -72,17 +73,14 @@ class SupplierController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
-            // Generate unique number
             $requestData['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
             $requestData['name'] = $request->company_name;
 
-            // Convert company locations to JSON
             $requestData['company_location_ids'] = $request->company_location_ids;
 
-            // Create the supplier
+            $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
             $supplier = Supplier::create($requestData);
 
-            // Save company bank details
             if (!empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
                     if (empty($bankName)) continue;
@@ -115,6 +113,8 @@ class SupplierController extends Controller
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
+                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Broker'));
+
                 $brokerData = [
                     'company_id' => $supplier->company_id ?? null,
                     'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),

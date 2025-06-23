@@ -2,6 +2,7 @@
 
 use App\Models\Acl\{Company, Menu};
 use App\Models\{User};
+use App\Models\Master\Account\Account;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use Illuminate\Support\Facades\Auth;
@@ -245,6 +246,12 @@ function convertToBoolean($value)
 //     }
 // }
 
+function getParamsForAccountCreation($companyId, $accName, $pAccName)
+{
+    $account = Account::where('name', $pAccName)->first();
+
+    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'is_operational' => $account->is_operational ?? 'yes', 'parent_id' => $account->id ?? NULL];
+}
 
 if (!function_exists('getDeductionSuggestion')) {
     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult, $purchaseOrderID = null)
