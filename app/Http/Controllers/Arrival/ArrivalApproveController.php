@@ -94,7 +94,7 @@ class ArrivalApproveController extends Controller
             'bag_condition_id' => 'required|exists:bag_conditions,id',
             'bag_packing_id' => 'required|exists:bag_packings,id',
             'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
-            'total_bags' => 'required|integer',
+            'total_bags' => 'required|integer|min:1',
             'total_rejection' => 'nullable|integer',
             'amanat' => 'required|in:Yes,No',
             'note' => 'nullable|string'
@@ -158,7 +158,7 @@ class ArrivalApproveController extends Controller
             'bag_condition_id' => 'required|exists:bag_conditions,id',
             'bag_packing_id' => 'required|exists:bag_packings,id',
             'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
-            'total_bags' => 'required|integer',
+            'total_bags' => 'required|integer|min:1',
             'total_rejection' => 'nullable|integer',
             'amanat' => 'required|in:Yes,No',
             'note' => 'nullable|string'
