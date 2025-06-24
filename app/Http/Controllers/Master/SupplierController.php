@@ -79,6 +79,8 @@ class SupplierController extends Controller
             $requestData['company_location_ids'] = $request->company_location_ids;
 
             $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
+            $requestData['account_id'] = $account->id;
+
             $supplier = Supplier::create($requestData);
 
             if (!empty($request->company_bank_name)) {
@@ -119,6 +121,7 @@ class SupplierController extends Controller
                     'company_id' => $supplier->company_id ?? null,
                     'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
                     'name' => $supplier->company_name,
+                    'account_id' => $account->id,
                     'email' => $supplier->email ?? null,
                     'phone' => $supplier->phone ?? null,
                     'address' => $supplier->address ?? null,

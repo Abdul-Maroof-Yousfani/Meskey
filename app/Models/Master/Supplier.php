@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Models\Acl\Company;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,7 @@ class Supplier extends Model
         'company_id',
         'unique_no',
         'name',
+        'account_id',
         'company_name',
         'owner_name',
         'owner_mobile_no',
@@ -36,10 +38,13 @@ class Supplier extends Model
 
     ];
 
-    // Define the relationship with Company (assuming the 'Company' model exists)
+    protected $casts = [
+        'company_location_ids' => 'array',
+    ];
+
     public function company()
     {
-        return $this->belongsTo(Company::class); // Adjust the model name if needed
+        return $this->belongsTo(Company::class);
     }
 
     public function companyBankDetails()
@@ -61,9 +66,4 @@ class Supplier extends Model
 
         return $query;
     }
-
-    // Add casts for company_locations
-    protected $casts = [
-        'company_location_ids' => 'array',
-    ];
 }

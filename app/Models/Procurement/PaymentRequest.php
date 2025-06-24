@@ -2,7 +2,7 @@
 
 namespace App\Models\Procurement;
 
-use App\Models\ArrivalPurchaseOrder;
+use App\Models\PaymentVoucherData;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,6 +24,11 @@ class PaymentRequest extends Model
     public function approvals()
     {
         return $this->hasMany(PaymentRequestApproval::class);
+    }
+
+    public function paymentVoucherData()
+    {
+        return $this->hasOne(PaymentVoucherData::class, 'payment_request_id');
     }
 
     public function getApprovalStatusAttribute()
