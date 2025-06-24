@@ -1,6 +1,6 @@
 <form action="{{ route('arrival-approve.update', $arrivalApprove->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    @method('PUT') <!-- Add this for Laravel's update route -->
+    @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-approve') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -32,7 +32,7 @@
                     value="{{ $arrivalApprove->truck_no }}" required />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6 filling-bags-field">
             <div class="form-group">
                 <label>Filling Bags: </label>
                 <input type="number" name="filling_bags_no" placeholder="Filling Bags" class="form-control"
@@ -42,18 +42,17 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Bag type:</label>
-                <select class="form-control" name="bag_type_id" required>
+                <select class="form-control" name="bag_type_id" id="bag_type_id" required>
                     <option value="">Select Bag type</option>
                     @foreach ($bagTypes as $bagType)
                         <option value="{{ $bagType->id }}"
-                            {{ $bagType->id == $arrivalApprove->bag_type_id ? 'selected' : '' }}>
-                            {{ $bagType->name }}
+                            {{ $bagType->id == $arrivalApprove->bag_type_id ? 'selected' : '' }}>{{ $bagType->name }}
                         </option>
                     @endforeach
                 </select>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6 bag-condition-field">
             <div class="form-group">
                 <label>Bag Condition:</label>
                 <select class="form-control" name="bag_condition_id" required>
@@ -67,7 +66,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6 bag-packing-field">
             <div class="form-group">
                 <label>Bag Packing:</label>
                 <select class="form-control" name="bag_packing_id" required>
@@ -159,7 +158,26 @@
 
 <script>
     $(document).ready(function() {
-        // Handle visibility of rejection section based on radio button selection
+        function toggleBagFields() {
+            let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();
+
+            if (selectedBagType.includes('bulk')) {
+                $('.filling-bags-field, .bag-condition-field, .bag-packing-field').hide();
+                $('.filling-bags-field input, .bag-condition-field select, .bag-packing-field select')
+                    .removeAttr('required');
+            } else {
+                $('.filling-bags-field, .bag-condition-field, .bag-packing-field').show();
+                $('.filling-bags-field input, .bag-condition-field select, .bag-packing-field select').attr(
+                    'required', 'required');
+            }
+        }
+
+        toggleBagFields();
+
+        $('#bag_type_id').change(function() {
+            toggleBagFields();
+        });
+
         $('input[name="bag_packing_approval"]').change(function() {
             if ($('input[name="bag_packing_approval"]:checked').val() == "Half Approved") {
                 $(".total-rejection-section").slideDown();
@@ -168,7 +186,6 @@
             }
         }).trigger('change');
 
-        // Initialize Select2
         $('.select2').select2();
     });
 </script>

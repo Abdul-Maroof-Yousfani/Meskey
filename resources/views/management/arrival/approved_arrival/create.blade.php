@@ -34,15 +34,8 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
-                <label>Filling Bags: </label>
-                <input type="number" name="filling_bags_no" placeholder="Filling Bags" class="form-control"
-                    autocomplete="off" required />
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
                 <label>Bag type:</label>
-                <select class="form-control" name="bag_type_id" required>
+                <select class="form-control" name="bag_type_id" id="bag_type_id">
                     <option value="">Select Bag type</option>
                     @foreach ($bagTypes as $bagType)
                         <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
@@ -51,9 +44,16 @@
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
+            <div class="form-group filling-bags-field">
+                <label>Filling Bags: </label>
+                <input type="number" name="filling_bags_no" placeholder="Filling Bags" class="form-control"
+                    autocomplete="off" />
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group bag-condition-field">
                 <label>Bag Condition:</label>
-                <select class="form-control" name="bag_condition_id" required>
+                <select class="form-control" name="bag_condition_id">
                     <option value="">Select Condition</option>
                     @foreach ($bagConditions as $condition)
                         <option value="{{ $condition->id }}">{{ $condition->name }}</option>
@@ -62,9 +62,9 @@
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
+            <div class="form-group bag-packing-field">
                 <label>Bag Packing:</label>
-                <select class="form-control" name="bag_packing_id" required>
+                <select class="form-control" name="bag_packing_id">
                     <option value="">Select Bag Packing</option>
                     @foreach ($bagPackings as $packing)
                         <option value="{{ $packing->id }}">{{ $packing->name }}</option>
@@ -148,12 +148,26 @@
 
 <script>
     $(document).ready(function() {
+        function toggleBagFields() {
+            let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();
+            if (selectedBagType.includes('bulk')) {
+                $('.filling-bags-field, .bag-condition-field, .bag-packing-field').hide();
+            } else {
+                $('.filling-bags-field, .bag-condition-field, .bag-packing-field').show();
+            }
+        }
+
+        toggleBagFields();
+
+        $('#bag_type_id').change(function() {
+            toggleBagFields();
+        });
+
         $('input[name="bag_packing_approval"]').change(function() {
             if ($(this).val() == "Half Approved") {
                 $('input[name="total_bags"]').removeAttr('readonly');
                 $(".total-rejection-section").slideDown();
             } else {
-                // $('input[name="total_bags"]').attr('readonly', true);
                 $(".total-rejection-section").slideUp();
             }
         }).trigger('change');
@@ -178,7 +192,6 @@
             $('input[name="truck_no"]').val(truckNo);
 
             if (qcStatus.toLowerCase() === 'rejected') {
-
                 let totalTicketBags = selectedOption.data('bags') || 0;
                 let enteredBags = parseInt($('input[name="total_bags"]').val()) || 0;
 
@@ -188,7 +201,6 @@
 
                 $('#half-approved').prop('checked', true).trigger('change');
                 $('input[name="bag_packing_approval"]').prop('disabled', true);
-
 
                 $('<input>').attr({
                     type: 'hidden',
