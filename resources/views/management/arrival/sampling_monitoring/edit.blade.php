@@ -19,7 +19,7 @@
     $suggestedValueForInnerKgs = 0;
     $suggestedValueKgs = 0;
 
-    $previousInnerRequest = $innerRequestsData[0] ?? null;
+    $previousInnerRequest = $innerRequestsData[0] ?? ($initialRequestsData[0] ?? null);
     $lastInnerRequest = !empty($innerRequestsData) ? $innerRequestsData[count($innerRequestsData) - 1] : null;
 @endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
@@ -805,6 +805,7 @@
                                 );
 
                                 $previousDeduction = null;
+
                                 if (
                                     ($slab->applied_deduction === null || $slab->applied_deduction == 0) &&
                                     $previousInnerRequest
