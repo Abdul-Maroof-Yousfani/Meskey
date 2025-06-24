@@ -82,6 +82,45 @@ class PaymentVoucherController extends Controller
      */
     public function getPaymentRequests($purchaseOrderId)
     {
+        $purchaseOrder = ArrivalPurchaseOrder::with('supplier')->findOrFail($purchaseOrderId);
+
+        $supplier = $purchaseOrder->supplier;
+
+        $companyBankAccounts = $supplier ? $supplier->companyBankDetails : collect();
+        $ownerBankAccounts = $supplier ? $supplier->ownerBankDetails : collect();
+
+        $bankAccounts = collect();
+
+        if ($companyBankAccounts) {
+            foreach ($companyBankAccounts as $bank) {
+                $bankAccounts->push([
+                    'id' => $bank->id,
+                    'type' => 'company',
+                    'title' => $bank->supplier->name ?? '',
+                    'account_title' => $bank->account_title ?? '',
+                    'account_number' => $bank->account_number ?? '',
+                    'bank_name' => $bank->bank_name ?? '',
+                    'branch_name' => $bank->branch_name ?? '',
+                    'branch_code' => $bank->branch_code ?? '',
+                ]);
+            }
+        }
+
+        if ($ownerBankAccounts) {
+            foreach ($ownerBankAccounts as $bank) {
+                $bankAccounts->push([
+                    'id' => $bank->id,
+                    'type' => 'owner',
+                    'title' => $bank->supplier->name ?? '',
+                    'account_title' => $bank->account_title ?? '',
+                    'account_number' => $bank->account_number ?? '',
+                    'bank_name' => $bank->bank_name ?? '',
+                    'branch_name' => $bank->branch_name ?? '',
+                    'branch_code' => $bank->branch_code ?? '',
+                ]);
+            }
+        }
+
         $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
             ->whereHas('paymentRequestData', function ($q) use ($purchaseOrderId) {
                 $q->where('purchase_order_id', $purchaseOrderId);
@@ -91,6 +130,8 @@ class PaymentVoucherController extends Controller
             ->map(function ($request) {
                 return [
                     'id' => $request->id,
+                    'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? null,
+                    'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
                     'request_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
                     'amount' => $request->amount,
                     'purpose' => $request->paymentRequestData->notes ?? 'No description',
@@ -101,7 +142,8 @@ class PaymentVoucherController extends Controller
 
         return response()->json([
             'success' => true,
-            'payment_requests' => $paymentRequests
+            'payment_requests' => $paymentRequests,
+            'bank_accounts' => $bankAccounts->values()
         ]);
     }
 
@@ -114,12 +156,14 @@ class PaymentVoucherController extends Controller
             'unique_no' => 'required|unique:payment_vouchers',
             'pv_date' => 'required|date',
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
-            'account_id' => 'required|exists:accounts,account_id',
+            'account_id' => 'required|exists:accounts,id',
             'module_id' => 'required|exists:arrival_purchase_orders,id',
             'payment_requests' => 'required|array',
             'payment_requests.*' => 'exists:payment_requests,id',
             'ref_bill_no' => 'nullable|string',
             'bill_date' => 'nullable|date',
+            'supplier_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
             'remarks' => 'nullable|string'
@@ -135,16 +179,17 @@ class PaymentVoucherController extends Controller
                 'cheque_no' => $request->cheque_no,
                 'cheque_date' => $request->cheque_date,
                 'account_id' => $request->account_id,
+                'bank_account_id' => $request->bank_account_id,
+                'supplier_id' => $request->supplier_id,
                 'module_id' => $request->module_id,
                 'module_type' => 'raw_material_purchase',
                 'voucher_type' => $request->voucher_type,
                 'remarks' => $request->remarks,
-                'total_amount' => 0 // Will be updated below
+                'total_amount' => 0
             ]);
 
             $totalAmount = 0;
 
-            // Create voucher data entries
             foreach ($request->payment_requests as $requestId) {
                 $paymentRequest = PaymentRequest::findOrFail($requestId);
 
@@ -177,8 +222,8 @@ class PaymentVoucherController extends Controller
 
         $data = [
             'paymentVoucher' => $paymentVoucher,
-            'accounts' => Account::where('is_active', true)->get(),
-            'purchaseOrders' => ArrivalPurchaseOrder::with(['product', 'company'])->latest()->get(),
+            'accounts' => Account::all(),
+            'purchaseOrders' => ArrivalPurchaseOrder::with(['product'])->latest()->get(),
             'selectedRequests' => $paymentVoucher->paymentVoucherData->pluck('payment_request_id')->toArray()
         ];
 

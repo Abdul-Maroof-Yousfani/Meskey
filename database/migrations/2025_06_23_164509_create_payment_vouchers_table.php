@@ -21,6 +21,10 @@ return new class extends Migration
             $table->date('cheque_date')->nullable();
             $table->foreignId('account_id')->nullable()->constrained('accounts');
 
+            $table->integer('supplier_id')->nullable();
+            $table->integer('bank_account_id')->nullable();
+            $table->enum('bank_account_type', ['company', 'owner'])->nullable();
+
             $table->unsignedBigInteger('module_id')->nullable();
             $table->enum('module_type', ['raw_material_purchase', 'store_purchase'])->nullable();
             $table->enum('voucher_type', ['bank_payment_voucher', 'cash_payment_voucher']);
