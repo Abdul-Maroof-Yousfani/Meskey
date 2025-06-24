@@ -234,7 +234,7 @@
             
               <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
-                    data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Finance</span></a>
+                    data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Finance</span></a>
                 <ul class="dropdown-menu">
                  <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('account.index') }}"
