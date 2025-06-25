@@ -42,6 +42,7 @@ return new class extends Migration
             $table->foreignId('payment_request_data_id')->constrained()->onDelete('cascade');
             $table->enum('request_type', ['payment', 'freight_payment']);
             $table->decimal('amount', 15, 2);
+            $table->enum('status', ['approved', 'pending', 'rejected'])->default('pending');
             $table->timestamps();
         });
 

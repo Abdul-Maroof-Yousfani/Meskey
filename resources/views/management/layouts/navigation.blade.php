@@ -33,9 +33,8 @@
             @endforeach
 
             <li class="nav-item" data-menu="dropdown">
-                <a class="dropdown-toggle nav-link d-flex align-items-center"
-                    onclick="loadPageContent('{{ url('dashboard') }}')" data-toggle="dropdown"><i
-                        class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
+                <a class="dropdown-toggle nav-link d-flex align-items-center" href="{{ url('dashboard') }}"
+                    data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
             </li>
             @canAccess('arrival')
             <li class="dropdown nav-item" data-menu="dropdown"><a
@@ -215,7 +214,7 @@
                                     <span data-i18n="Task Board">Payment Request Approval's</span>
                                 </a>
                             </li>
-                           
+
                             @endcanAccess
                         </ul>
                     </li>
@@ -231,26 +230,26 @@
                     </li>
                 </ul>
             </li>
-            
-              <li class="dropdown nav-item" data-menu="dropdown"><a
+
+            <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Finance</span></a>
                 <ul class="dropdown-menu">
-                 <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('account.index') }}"
                             onclick="loadPageContent('{{ route('account.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Chart of Account</span>
                         </a>
                     </li>
-                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('payment-voucher.index') }}"
-                                    onclick="loadPageContent('{{ route('payment-voucher.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Payment Vouchers</span>
-                                </a>
-                            </li>
-                   
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('payment-voucher.index') }}"
+                            onclick="loadPageContent('{{ route('payment-voucher.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Payment Vouchers</span>
+                        </a>
+                    </li>
+
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
@@ -394,7 +393,7 @@
                             @endcanAccess
                         </ul>
                     </li>
-                   
+
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i

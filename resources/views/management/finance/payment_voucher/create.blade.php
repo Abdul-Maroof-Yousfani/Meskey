@@ -16,6 +16,8 @@
                             @csrf
 
                             <input type="hidden" name="supplier_id" id="supplier_id">
+                            <input type="hidden" name="bank_account_number" id="bank_account_number">
+                            <input type="hidden" name="bank_account_type" id="bank_account_type">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -118,7 +120,7 @@
                                                             <th>Date</th>
                                                             <th>Amount</th>
                                                             <th>Purpose</th>
-                                                            <th>Status</th>
+                                                            <th>Type</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -197,6 +199,20 @@
                             }
                         }
                     });
+                }
+            });
+
+            $('#bank_account_id').change(function() {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const accountNo = selectedOption.data('account-no') || '';
+                    const accountType = selectedOption.data('type') || '';
+
+                    $('#bank_account_number').val(accountNo);
+                    $('#bank_account_type').val(accountType);
+                } else {
+                    $('#bank_account_number').val('');
+                    $('#bank_account_type').val('');
                 }
             });
 
@@ -285,6 +301,7 @@
                                             status,
                                             request_no,
                                             supplier_id,
+                                            type,
                                             purchaseOrder
                                         } = request;
 
@@ -302,8 +319,8 @@
                                                 <td>${amount}</td>
                                                 <td>${purpose}</td>
                                                 <td>
-                                                    <span class="badge badge-${status === 'approved' ? 'success' : 'warning'}">
-                                                        ${status}
+                                                    <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
+                                                        ${type}
                                                     </span>
                                                 </td>
                                             </tr>

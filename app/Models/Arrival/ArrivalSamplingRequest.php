@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ArrivalSamplingRequest extends Model
 {
-
     use SoftDeletes;
 
     protected $fillable = [

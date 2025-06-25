@@ -126,6 +126,7 @@ class PaymentVoucherController extends Controller
                 $q->where('purchase_order_id', $purchaseOrderId);
             })
             ->whereDoesntHave('paymentVoucherData')
+            ->where('status', 'approved')
             ->get()
             ->map(function ($request) {
                 return [
@@ -136,10 +137,11 @@ class PaymentVoucherController extends Controller
                     'amount' => $request->amount,
                     'purpose' => $request->paymentRequestData->notes ?? 'No description',
                     'status' => $request->approval_status,
+                    'type' => formatEnumValue($request->request_type),
                     'request_date' => $request->created_at->format('Y-m-d')
                 ];
             });
-
+        // dd($paymentRequests);
         return response()->json([
             'success' => true,
             'payment_requests' => $paymentRequests,
@@ -164,13 +166,13 @@ class PaymentVoucherController extends Controller
             'bill_date' => 'nullable|date',
             'supplier_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
             'remarks' => 'nullable|string'
         ]);
-
+        // dd($request->all());
         DB::transaction(function () use ($request) {
-            // Create the payment voucher
             $paymentVoucher = PaymentVoucher::create([
                 'unique_no' => $request->unique_no,
                 'pv_date' => $request->pv_date,
@@ -180,6 +182,7 @@ class PaymentVoucherController extends Controller
                 'cheque_date' => $request->cheque_date,
                 'account_id' => $request->account_id,
                 'bank_account_id' => $request->bank_account_id,
+                'bank_account_type' => $request->bank_account_type,
                 'supplier_id' => $request->supplier_id,
                 'module_id' => $request->module_id,
                 'module_type' => 'raw_material_purchase',
@@ -203,7 +206,6 @@ class PaymentVoucherController extends Controller
                 $totalAmount += $paymentRequest->amount;
             }
 
-            // Update the total amount in the voucher
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
 
@@ -251,7 +253,6 @@ class PaymentVoucherController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $paymentVoucher) {
-            // Update the payment voucher
             $paymentVoucher->update([
                 'pv_date' => $request->pv_date,
                 'ref_bill_no' => $request->ref_bill_no,
@@ -263,12 +264,10 @@ class PaymentVoucherController extends Controller
                 'remarks' => $request->remarks
             ]);
 
-            // Remove existing voucher data
             PaymentVoucherData::where('payment_voucher_id', $paymentVoucher->id)->delete();
 
             $totalAmount = 0;
 
-            // Create new voucher data entries
             foreach ($request->payment_requests as $requestId) {
                 $paymentRequest = PaymentRequest::findOrFail($requestId);
 
@@ -282,7 +281,6 @@ class PaymentVoucherController extends Controller
                 $totalAmount += $paymentRequest->amount;
             }
 
-            // Update the total amount in the voucher
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
 

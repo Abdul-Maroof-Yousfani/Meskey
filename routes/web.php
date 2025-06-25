@@ -28,6 +28,8 @@ Route::fallback(function () {
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+    Route::get('/dashboard/list-data', [App\Http\Controllers\HomeController::class, 'getListData'])->name('dashboard.list-data');
+
     Route::get('/dynamic-fetch-data', [App\Http\Controllers\HomeController::class, 'dynamicFetchData'])->name('dynamic-fetch-data');
     Route::post('/set-layout-cookie', function (Illuminate\Http\Request $request) {
         $layout = $request->input('layout', 'light');

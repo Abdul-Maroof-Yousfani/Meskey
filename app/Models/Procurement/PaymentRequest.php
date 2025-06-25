@@ -13,6 +13,7 @@ class PaymentRequest extends Model
     protected $fillable = [
         'payment_request_data_id',
         'request_type',
+        'status',
         'amount'
     ];
 
