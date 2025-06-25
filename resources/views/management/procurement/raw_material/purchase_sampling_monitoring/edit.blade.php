@@ -20,8 +20,14 @@
     $suggestedValueForInnerKgs = 0;
     $suggestedValueKgs = 0;
 
-    // $previousInnerRequest = $innerRequestsData[0] ?? null;
-    $previousInnerRequest = $innerRequestsData[0] ?? ($initialRequestsData[0] ?? null);
+    $previousInnerRequest = null;
+
+    if (isset($innerRequestsData) && count($innerRequestsData)) {
+        $previousInnerRequest = $innerRequestsData[count($innerRequestsData) - 1];
+    } elseif (isset($initialRequestsData) && count($initialRequestsData)) {
+        $previousInnerRequest = $initialRequestsData[count($initialRequestsData) - 1];
+    }
+
 @endphp
 
 <form action="{{ route('raw-material.sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST"

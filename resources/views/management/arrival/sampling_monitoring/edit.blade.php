@@ -19,7 +19,14 @@
     $suggestedValueForInnerKgs = 0;
     $suggestedValueKgs = 0;
 
-    $previousInnerRequest = $innerRequestsData[0] ?? ($initialRequestsData[0] ?? null);
+    $previousInnerRequest = null;
+
+    if (isset($innerRequestsData) && count($innerRequestsData)) {
+        $previousInnerRequest = $innerRequestsData[count($innerRequestsData) - 1];
+    } elseif (isset($initialRequestsData) && count($initialRequestsData)) {
+        $previousInnerRequest = $initialRequestsData[count($initialRequestsData) - 1];
+    }
+
     $lastInnerRequest = !empty($innerRequestsData) ? $innerRequestsData[count($innerRequestsData) - 1] : null;
 @endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
