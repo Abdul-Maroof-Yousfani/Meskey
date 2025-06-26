@@ -33,15 +33,19 @@
                         </div>
                     </td>
                     <td>
-                        @if (!count($po->calculated_values['all_requests'] ?? []))
+                        @if ($po->calculated_values['payment_sum'] == 0 && $po->calculated_values['freight_sum'] == 0)
                             N/A
                         @else
-                            @foreach ($po->calculated_values['all_requests'] as $request)
-                                <span
-                                    class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }} mb-1">
-                                    {{ formatEnumValue($request->request_type) }}: {{ $request->amount }}
+                            @if ($po->calculated_values['payment_sum'] > 0)
+                                <span class="badge badge-success mb-1">
+                                    Payment: {{ number_format($po->calculated_values['payment_sum'], 2) }}
                                 </span><br>
-                            @endforeach
+                            @endif
+                            @if ($po->calculated_values['freight_sum'] > 0)
+                                <span class="badge badge-warning">
+                                    Freight: {{ number_format($po->calculated_values['freight_sum'], 2) }}
+                                </span>
+                            @endif
                         @endif
                     </td>
                     <td>

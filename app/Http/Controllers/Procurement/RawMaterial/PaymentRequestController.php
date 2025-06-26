@@ -75,9 +75,9 @@ class PaymentRequestController extends Controller
                         $freightSum += $request->total_amount;
                     }
 
-                    $clonedRequest = clone $request;
-                    $clonedRequest->amount = $request->total_amount;
-                    $allRequests->push($clonedRequest);
+                    // $clonedRequest = clone $request;
+                    // $clonedRequest->amount = $request->total_amount;
+                    // $allRequests->push($clonedRequest);
                 }
             }
 
