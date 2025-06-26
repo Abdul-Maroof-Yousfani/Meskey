@@ -75,7 +75,7 @@
                     </div>
                 </div>
 
-                <div class="mb-3 col-xl-3 col-md-3 col-sm-4 col-6">
+                <div class="mb-3 col-xl-3 col-md-3 col-sm-4 col-6 d-none">
                     <div class="dashboard-card">
                         <div class="card-icon">
                             <i class="ft-refresh-cw"></i>
