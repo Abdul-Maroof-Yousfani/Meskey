@@ -40,7 +40,7 @@
                             <i class="ft-file-plus"></i>
                         </div>
                         <div class="card-number">{{ $data['new_tickets'] ?? 0 }}</div>
-                        <div class="card-title">New Tickets</div>
+                        <div class="card-title">Initial Sampling</div>
                         <div class="card-subtitle">Pending Initial Sampling</div>
                         @if (($data['new_tickets'] ?? 0) > 0)
                             <div class="status-badge status-pending">+{{ $data['new_tickets'] ?? 0 }} Pending</div>
@@ -60,7 +60,7 @@
                             <i class="ft-clipboard"></i>
                         </div>
                         <div class="card-number">{{ $data['initial_sampling_done'] ?? 0 }}</div>
-                        <div class="card-title">Initial Sampling Done</div>
+                        <div class="card-title">Purchaser Approval (Initial Sampling)</div>
                         <div class="card-subtitle">Pending Approval</div>
                         @if (($data['initial_sampling_done'] ?? 0) > 0)
                             <div class="status-badge status-warning">+{{ $data['initial_sampling_done'] ?? 0 }} Awaiting
@@ -188,7 +188,7 @@
                             <i class="ft-check-circle"></i>
                         </div>
                         <div class="card-number">{{ $data['inner_sampling_pending_approval'] ?? 0 }}</div>
-                        <div class="card-title">Inner Sampling</div>
+                        <div class="card-title">Purchaser Approval (Inner Sampling)</div>
                         <div class="card-subtitle">Pending Approval</div>
                         @if (($data['inner_sampling_pending_approval'] ?? 0) > 0)
                             <div class="status-badge status-warning">+{{ $data['inner_sampling_pending_approval'] ?? 0 }}
