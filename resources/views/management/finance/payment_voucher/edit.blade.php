@@ -550,34 +550,6 @@
                 }
             }
 
-            $('#ajaxSubmit').submit(function(e) {
-                e.preventDefault();
-
-                if ($('#voucher_type').val() === 'bank_payment_voucher' && !$('#bank_account_id').val()) {
-                    toastr.error('Please select a bank account');
-                    return;
-                }
-
-                const formData = $(this).serialize();
-
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'PUT',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            toastr.success(response.success);
-                            window.location.href = response.redirect;
-                        }
-                    },
-                    error: function(xhr) {
-                        const errors = xhr.responseJSON.errors;
-                        $.each(errors, function(key, value) {
-                            toastr.error(value[0]);
-                        });
-                    }
-                });
-            });
         });
     </script>
     <style>
