@@ -2,7 +2,7 @@
     <table class="table table-striped table-hover">
         <thead class="thead-dark">
             <tr>
-                @if (in_array($type, ['new_tickets', 'location_transfer_pending', 'rejected_tickets', 'freight_ready']))
+                @if (in_array($type, ['new_tickets', 'total_tickets', 'location_transfer_pending', 'rejected_tickets', 'freight_ready']))
                     <th>Ticket #</th>
                     <th>Product</th>
                     <th>Truck No</th>
@@ -10,6 +10,11 @@
                     <th>Station</th>
                     <th>Accounts Of</th>
                     <th>Bags</th>
+                    @if ($type == 'freight_ready')
+                        <th>Is Decision Making</th>
+                    @else
+                        <th>Type</th>
+                    @endif
                     <th>Created</th>
                 @elseif(in_array($type, [
                         'initial_sampling_done',
@@ -53,7 +58,7 @@
         <tbody>
             @forelse($data as $item)
                 <tr>
-                    @if (in_array($type, ['new_tickets', 'location_transfer_pending', 'rejected_tickets', 'freight_ready']))
+                    @if (in_array($type, ['new_tickets', 'total_tickets', 'location_transfer_pending', 'rejected_tickets', 'freight_ready']))
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
                         <td>{{ $item->truck_no ?? 'N/A' }}</td>
@@ -61,6 +66,32 @@
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
                         <td>{{ $item->accountsOf->name ?? 'N/A' }}</td>
                         <td>{{ $item->bags ?? 'N/A' }}</td>
+                        @if ($type == 'freight_ready')
+                            <td>
+                                <span class="badge badge-{{ $item->decision_making ? 'warning' : 'success' }}">
+                                    {{ $item->decision_making ? 'Yes' : 'No' }}
+                                </span>
+                            </td>
+                        @else
+                            <td>
+                                @if ($item->first_qc_status == 'rejected')
+                                    <span
+                                        class="badge badge-{{ $item->first_qc_status === 'pending' ? 'warning' : 'danger' }}">
+                                        {{ ucwords($item->first_qc_status) }}
+                                    </span>
+                                @else
+                                    @if ($item->arrival_slip_status == 'generated')
+                                        <span class="badge badge-success">
+                                            Arrival Slip Generated
+                                        </span>
+                                    @else
+                                        <span class="badge badge-warning">
+                                            In-Process
+                                        </span>
+                                    @endif
+                                @endif
+                            </td>
+                        @endif
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>
                     @elseif(in_array($type, [
                             'initial_sampling_done',

@@ -37,6 +37,48 @@
                 <div class="mb-3 col-xl-3 col-md-3 col-sm-4 col-6">
                     <div class="dashboard-card">
                         <div class="card-icon">
+                            <i class="ft-x-circle"></i>
+                        </div>
+                        <div class="card-number">{{ $data['total_tickets'] ?? 0 }}</div>
+                        <div class="card-title">Total Tickets</div>
+                        <div class="card-subtitle">Total Tickets</div>
+                        @if (($data['rejected_tickets'] ?? 0) > 0)
+                            <div class="status-badge status-danger"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
+                                -{{ $data['rejected_tickets'] ?? 0 }} Rejected</div>
+                        @else
+                            <div class="status-badge status-neutral">No Rejections</div>
+                        @endif
+                        <button class="view-btn"
+                            onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Total Tickets - Bilty Return Pending', true, '70%')">
+                            View
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3 col-xl-3 col-md-3 col-sm-4 col-6 d-none">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="ft-x-circle"></i>
+                        </div>
+                        <div class="card-number">{{ $data['rejected_tickets'] ?? 0 }}</div>
+                        <div class="card-title">Rejected Tickets</div>
+                        <div class="card-subtitle">Bilty Return Pending</div>
+                        @if (($data['rejected_tickets'] ?? 0) > 0)
+                            <div class="status-badge status-danger">-{{ $data['rejected_tickets'] ?? 0 }} Rejected</div>
+                        @else
+                            <div class="status-badge status-neutral">No Rejections</div>
+                        @endif
+                        <button class="view-btn"
+                            onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
+                            View
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3 col-xl-3 col-md-3 col-sm-4 col-6">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
                             <i class="ft-file-plus"></i>
                         </div>
                         <div class="card-number">{{ $data['new_tickets'] ?? 0 }}</div>
@@ -114,26 +156,6 @@
                         @endif
                         <button class="view-btn"
                             onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=location_transfer_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}','Location Transfer Pending', true, '70%')">
-                            View
-                        </button>
-                    </div>
-                </div>
-
-                <div class="mb-3 col-xl-3 col-md-3 col-sm-4 col-6">
-                    <div class="dashboard-card">
-                        <div class="card-icon">
-                            <i class="ft-x-circle"></i>
-                        </div>
-                        <div class="card-number">{{ $data['rejected_tickets'] ?? 0 }}</div>
-                        <div class="card-title">Rejected Tickets</div>
-                        <div class="card-subtitle">Bilty Return Pending</div>
-                        @if (($data['rejected_tickets'] ?? 0) > 0)
-                            <div class="status-badge status-danger">-{{ $data['rejected_tickets'] ?? 0 }} Rejected</div>
-                        @else
-                            <div class="status-badge status-neutral">No Rejections</div>
-                        @endif
-                        <button class="view-btn"
-                            onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
                             View
                         </button>
                     </div>

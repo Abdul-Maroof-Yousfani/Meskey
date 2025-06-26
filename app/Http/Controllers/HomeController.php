@@ -21,8 +21,13 @@ class HomeController extends Controller
     {
         $dateRange = [Carbon::parse($fromDate)->startOfDay(), Carbon::parse($toDate)->endOfDay()];
 
+        $totalTickets = ArrivalTicket::where('company_id', $companyId)
+            // ->whereIn('first_qc_status', ['pending', 'resampling'])
+            ->whereBetween('created_at', $dateRange)
+            ->count();
+
         $newTickets = ArrivalTicket::where('company_id', $companyId)
-            ->where('first_qc_status', 'pending')
+            ->whereIn('first_qc_status', ['pending', 'resampling'])
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -108,11 +113,12 @@ class HomeController extends Controller
 
         $freightReady = ArrivalTicket::where('company_id', $companyId)
             ->where('second_weighbridge_status', 'completed')
-            ->whereNull('freight_status')
+            ->where('freight_status', 'pending')
             ->whereBetween('created_at', $dateRange)
             ->count();
 
         return [
+            'total_tickets' => $totalTickets,
             'new_tickets' => $newTickets,
             'initial_sampling_done' => $initialSamplingDone,
             'resampling_required' => $resamplingRequired,
@@ -140,14 +146,24 @@ class HomeController extends Controller
         $title = '';
 
         switch ($type) {
-            case 'new_tickets':
-                $title = 'New Tickets (Pending Initial Sampling)';
+            case 'total_tickets':
+                $title = 'Total Tickets';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
-                    ->where('first_qc_status', 'pending')
+                    // ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
+                break;
+
+            case 'new_tickets':
+                $title = 'New Tickets (Pending Initial Sampling)';
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+                    ->whereIn('first_qc_status', ['pending', 'resampling'])
+                    ->whereBetween('created_at', $dateRange)
+                    ->with(['product', 'station', 'accountsOf'])
+                    ->latest()
+                    ->paginate(1000);
                 break;
 
             case 'initial_sampling_done':
@@ -161,7 +177,7 @@ class HomeController extends Controller
                     ->where('approved_status', 'pending')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'resampling_required':
@@ -175,7 +191,7 @@ class HomeController extends Controller
                     ->where('is_done', 'no')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'location_transfer_pending':
@@ -185,7 +201,7 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'rejected_tickets':
@@ -196,7 +212,7 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'first_weighbridge_pending':
@@ -207,7 +223,7 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'unloadingLocation'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'inner_sampling_requested':
@@ -220,7 +236,7 @@ class HomeController extends Controller
                     ->where('is_done', 'no')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'inner_sampling_pending_approval':
@@ -234,7 +250,7 @@ class HomeController extends Controller
                     ->where('approved_status', 'pending')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'decision_on_average_enabled':
@@ -244,7 +260,7 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'half_full_approve_pending':
@@ -259,7 +275,7 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'second_weighbridge_pending':
@@ -270,29 +286,29 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'approvals'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'freight_ready':
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('second_weighbridge_status', 'completed')
-                    ->whereNull('freight_status')
+                    ->where('freight_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
 
             case 'freight_pending':
                 $title = 'Freight Pending';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('second_weighbridge_status', 'completed')
-                    ->whereNull('freight_status')
+                    ->where('freight_status', 'pending')
                     ->where('decision_making', 0)
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
                     ->latest()
-                    ->paginate(25);
+                    ->paginate(1000);
                 break;
         }
 
