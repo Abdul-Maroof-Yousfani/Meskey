@@ -339,7 +339,7 @@
         $(document).ready(function() {
             if ($('#voucher_type').val() === 'bank_payment_voucher') {
                 $('.bank-fields, .bank-account-section').show();
-                $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
+                // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
             }
 
             const bankAccountSelect = $('#bank_account_id');

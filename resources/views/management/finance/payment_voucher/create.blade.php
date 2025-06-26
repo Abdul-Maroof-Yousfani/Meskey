@@ -219,10 +219,10 @@
             $('#voucher_type').change(function() {
                 if ($(this).val() === 'bank_payment_voucher') {
                     $('.bank-fields, .bank-account-section').show();
-                    $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
+                    // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
                 } else {
                     $('.bank-fields, .bank-account-section').hide();
-                    $('#cheque_no, #cheque_date, #bank_account_id').prop('required', false);
+                    // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', false);
                 }
             });
 
