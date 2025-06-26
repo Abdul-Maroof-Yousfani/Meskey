@@ -157,7 +157,7 @@ class PaymentVoucherController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'unique_no' => 'required|unique:payment_vouchers',
+            'unique_no' => 'required',
             'pv_date' => 'required|date',
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
             'account_id' => 'required|exists:accounts,id',
