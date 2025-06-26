@@ -70,13 +70,8 @@ class PaymentVoucherController extends Controller
         ]);
 
         $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
-        $date = Carbon::parse($request->pv_date);
 
-        $count = PaymentVoucher::whereYear('pv_date', $date->year)
-            ->whereMonth('pv_date', $date->month)
-            ->count() + 1;
-
-        $uniqueNo = $prefix . '-' . $date->format('Ymd') . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+        $uniqueNo = generateUniqueNumber('payment_vouchers', $prefix, null, 'unique_no');
 
         return response()->json([
             'success' => true,
@@ -180,8 +175,11 @@ class PaymentVoucherController extends Controller
         ]);
         // dd($request->all());
         DB::transaction(function () use ($request) {
+            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+            $uniqueNo = generateUniqueNumber('payment_vouchers', $prefix, null, 'unique_no');
+
             $paymentVoucher = PaymentVoucher::create([
-                'unique_no' => $request->unique_no,
+                'unique_no' => $uniqueNo,
                 'pv_date' => $request->pv_date,
                 'ref_bill_no' => $request->ref_bill_no,
                 'bill_date' => $request->bill_date,
