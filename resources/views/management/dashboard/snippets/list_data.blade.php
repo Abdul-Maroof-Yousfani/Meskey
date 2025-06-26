@@ -2,7 +2,14 @@
     <table class="table table-striped table-hover">
         <thead class="thead-dark">
             <tr>
-                @if (in_array($type, ['new_tickets', 'total_tickets', 'location_transfer_pending', 'rejected_tickets', 'freight_ready']))
+                @if (in_array($type, [
+                        'new_tickets',
+                        'total_tickets',
+                        'completed_tickets',
+                        'location_transfer_pending',
+                        'rejected_tickets',
+                        'freight_ready',
+                    ]))
                     <th>Ticket #</th>
                     <th>Product</th>
                     <th>Truck No</th>
@@ -58,7 +65,14 @@
         <tbody>
             @forelse($data as $item)
                 <tr>
-                    @if (in_array($type, ['new_tickets', 'total_tickets', 'location_transfer_pending', 'rejected_tickets', 'freight_ready']))
+                    @if (in_array($type, [
+                            'new_tickets',
+                            'total_tickets',
+                            'location_transfer_pending',
+                            'completed_tickets',
+                            'rejected_tickets',
+                            'freight_ready',
+                        ]))
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
                         <td>{{ $item->truck_no ?? 'N/A' }}</td>

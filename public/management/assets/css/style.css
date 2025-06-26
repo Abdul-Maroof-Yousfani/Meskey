@@ -881,3 +881,7 @@ tr.editing {
 #qcChecklistTabs .nav-link.active > :is(div, small) {
   font-weight: 600;
 }
+
+.cursor-pointer {
+  cursor: pointer;
+}

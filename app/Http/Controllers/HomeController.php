@@ -60,6 +60,11 @@ class HomeController extends Controller
             ->whereBetween('created_at', $dateRange)
             ->count();
 
+        $completedTickets = ArrivalTicket::where('company_id', $companyId)
+            ->where('arrival_slip_status', 'generated')
+            ->whereBetween('created_at', $dateRange)
+            ->count();
+
         $firstWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'transfered')
             ->where('first_weighbridge_status', 'pending')
@@ -124,6 +129,7 @@ class HomeController extends Controller
             'resampling_required' => $resamplingRequired,
             'location_transfer_pending' => $locationTransferPending,
             'rejected_tickets' => $rejectedTickets,
+            'completed_tickets' => $completedTickets,
             'first_weighbridge_pending' => $firstWeighbridgePending,
             'inner_sampling_requested' => $innerSamplingRequested,
             'inner_sampling_pending_approval' => $innerSamplingPendingApproval,
@@ -161,6 +167,15 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
+                    ->with(['product', 'station', 'accountsOf'])
+                    ->latest()
+                    ->paginate(1000);
+                break;
+
+            case 'completed_tickets':
+                $title = 'Completed Tickets (Arrival Slip Generated)';
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+                    ->where('arrival_slip_status', 'generated')
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
                     ->paginate(1000);
