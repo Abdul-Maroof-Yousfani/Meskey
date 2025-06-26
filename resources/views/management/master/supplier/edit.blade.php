@@ -92,8 +92,8 @@
                          </div>
                      @endforeach
                  @else
-                     <div class="clonecard border-1">
-                         <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                     {{-- <div class="clonecard border-1">
+                           <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
                              <div>
                                  <button type="button" class="btn btn-warning btn-icon add-more mr-1">
                                      <i class="fa fa-plus"></i>
@@ -103,8 +103,8 @@
                                      <i class="fa fa-trash"></i>
                                  </button>
                              </div>
-                         </div>
-                     </div>
+                         </div> 
+                     </div> --}}
                  @endif
              </div>
          </div>
@@ -200,7 +200,7 @@
                          </div>
                      @endforeach
                  @else
-                     <div class="clonecard2 border-1">
+                     {{-- <div class="clonecard2 border-1">
                          <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
                              <div>
                                  <button type="button" class="btn btn-warning btn-icon add-more2 mr-1">
@@ -211,8 +211,8 @@
                                      <i class="fa fa-trash"></i>
                                  </button>
                              </div>
-                         </div>
-                     </div>
+                         </div> 
+                     </div> --}}
                  @endif
              </div>
          </div>
@@ -309,6 +309,10 @@
 
  <script>
      $(document).ready(function() {
+         console.log({
+             asd: $('#card-container .clonecard')
+         });
+
          if ($('#card-container .clonecard').length === 0) {
              var newCard = $(`
             <div class="clonecard border-1">
