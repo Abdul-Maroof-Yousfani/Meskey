@@ -90,7 +90,7 @@
                             <div class="card-title">Initial Sampling</div>
                             <div class="card-subtitle">Pending Initial Sampling</div>
                             @if (($data['new_tickets'] ?? 0) > 0)
-                                <div class="status-badge status-pending">+{{ $data['new_tickets'] ?? 0 }} Pending</div>
+                                <div class="status-badge status-pending">+{{ $data['initial_sampling_requested'] ?? 0 }} Pending</div>
                             @else
                                 <div class="status-badge status-neutral">All Completed</div>
                             @endif
