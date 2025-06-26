@@ -33,63 +33,79 @@
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div id="card-container" class="mb-4">
-                 @foreach ($supplier->companyBankDetails as $index => $bank)
-                     <div class="clonecard border-1">
-                         <hr>
-                         <div class="row">
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Bank Name:</label>
-                                     <input type="text" name="company_bank_name[]"
-                                         value="{{ old('company_bank_name.' . $index, $bank->bank_name) }}"
-                                         placeholder="Bank Name" class="form-control" autocomplete="off" />
+                 @if (count($supplier->companyBankDetails) > 0)
+                     @foreach ($supplier->companyBankDetails as $index => $bank)
+                         <div class="clonecard border-1">
+                             <hr>
+                             <div class="row">
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Bank Name:</label>
+                                         <input type="text" name="company_bank_name[]"
+                                             value="{{ old('company_bank_name.' . $index, $bank->bank_name) }}"
+                                             placeholder="Bank Name" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Branch Name:</label>
-                                     <input type="text" name="company_branch_name[]"
-                                         value="{{ old('company_branch_name.' . $index, $bank->branch_name) }}"
-                                         placeholder="Branch Name" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Branch Name:</label>
+                                         <input type="text" name="company_branch_name[]"
+                                             value="{{ old('company_branch_name.' . $index, $bank->branch_name) }}"
+                                             placeholder="Branch Name" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Branch Code:</label>
-                                     <input type="text" name="company_branch_code[]"
-                                         value="{{ old('company_branch_code.' . $index, $bank->branch_code) }}"
-                                         placeholder="Branch Code" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Branch Code:</label>
+                                         <input type="text" name="company_branch_code[]"
+                                             value="{{ old('company_branch_code.' . $index, $bank->branch_code) }}"
+                                             placeholder="Branch Code" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Account Title:</label>
-                                     <input type="text" name="company_account_title[]"
-                                         value="{{ old('company_account_title.' . $index, $bank->account_title) }}"
-                                         placeholder="Account Title" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Account Title:</label>
+                                         <input type="text" name="company_account_title[]"
+                                             value="{{ old('company_account_title.' . $index, $bank->account_title) }}"
+                                             placeholder="Account Title" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-12 col-sm-12 col-md-12">
-                                 <div class="form-group">
-                                     <label>Account Number:</label>
-                                     <input type="text" name="company_account_number[]"
-                                         value="{{ old('company_account_number.' . $index, $bank->account_number) }}"
-                                         placeholder="Account number" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-12 col-sm-12 col-md-12">
+                                     <div class="form-group">
+                                         <label>Account Number:</label>
+                                         <input type="text" name="company_account_number[]"
+                                             value="{{ old('company_account_number.' . $index, $bank->account_number) }}"
+                                             placeholder="Account number" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
-                                 <div>
-                                     @if ($index === 0)
-                                         <button type="button" class="btn btn-warning btn-icon add-more mr-1"><i
-                                                 class="fa fa-plus"></i></button>
-                                     @endif
-                                     <button type="button" class="btn btn-danger btn-icon remove-card mr-1"><i
-                                             class="fa fa-trash"></i></button>
+                                 <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                                     <div>
+                                         @if ($index === 0)
+                                             <button type="button" class="btn btn-warning btn-icon add-more mr-1"><i
+                                                     class="fa fa-plus"></i></button>
+                                         @endif
+                                         <button type="button" class="btn btn-danger btn-icon remove-card mr-1"><i
+                                                 class="fa fa-trash"></i></button>
+                                     </div>
                                  </div>
                              </div>
                          </div>
+                     @endforeach
+                 @else
+                     <div class="clonecard border-1">
+                         <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                             <div>
+                                 <button type="button" class="btn btn-warning btn-icon add-more mr-1">
+                                     <i class="fa fa-plus"></i>
+                                 </button>
+                                 <button type="button" class="btn btn-danger btn-icon remove-card mr-1"
+                                     style="display:none;">
+                                     <i class="fa fa-trash"></i>
+                                 </button>
+                             </div>
+                         </div>
                      </div>
-                 @endforeach
+                 @endif
              </div>
          </div>
      </div>
@@ -125,63 +141,79 @@
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div id="card-container2" class="mb-4">
-                 @foreach ($supplier->ownerBankDetails as $index => $bank)
-                     <div class="clonecard2 border-1">
-                         <hr>
-                         <div class="row">
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Bank Name:</label>
-                                     <input type="text" name="owner_bank_name[]"
-                                         value="{{ old('owner_bank_name.' . $index, $bank->bank_name) }}"
-                                         placeholder="Bank Name" class="form-control" autocomplete="off" />
+                 @if (count($supplier->ownerBankDetails) > 0)
+                     @foreach ($supplier->ownerBankDetails as $index => $bank)
+                         <div class="clonecard2 border-1">
+                             <hr>
+                             <div class="row">
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Bank Name:</label>
+                                         <input type="text" name="owner_bank_name[]"
+                                             value="{{ old('owner_bank_name.' . $index, $bank->bank_name) }}"
+                                             placeholder="Bank Name" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Branch Name:</label>
-                                     <input type="text" name="owner_branch_name[]"
-                                         value="{{ old('owner_branch_name.' . $index, $bank->branch_name) }}"
-                                         placeholder="Branch Name" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Branch Name:</label>
+                                         <input type="text" name="owner_branch_name[]"
+                                             value="{{ old('owner_branch_name.' . $index, $bank->branch_name) }}"
+                                             placeholder="Branch Name" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Branch Code:</label>
-                                     <input type="text" name="owner_branch_code[]"
-                                         value="{{ old('owner_branch_code.' . $index, $bank->branch_code) }}"
-                                         placeholder="Branch Code" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Branch Code:</label>
+                                         <input type="text" name="owner_branch_code[]"
+                                             value="{{ old('owner_branch_code.' . $index, $bank->branch_code) }}"
+                                             placeholder="Branch Code" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-6 col-sm-6 col-md-6">
-                                 <div class="form-group">
-                                     <label>Account Title:</label>
-                                     <input type="text" name="owner_account_title[]"
-                                         value="{{ old('owner_account_title.' . $index, $bank->account_title) }}"
-                                         placeholder="Account Title" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-6 col-sm-6 col-md-6">
+                                     <div class="form-group">
+                                         <label>Account Title:</label>
+                                         <input type="text" name="owner_account_title[]"
+                                             value="{{ old('owner_account_title.' . $index, $bank->account_title) }}"
+                                             placeholder="Account Title" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-12 col-sm-12 col-md-12">
-                                 <div class="form-group">
-                                     <label>Account Number:</label>
-                                     <input type="text" name="owner_account_number[]"
-                                         value="{{ old('owner_account_number.' . $index, $bank->account_number) }}"
-                                         placeholder="Account number" class="form-control" autocomplete="off" />
+                                 <div class="col-xs-12 col-sm-12 col-md-12">
+                                     <div class="form-group">
+                                         <label>Account Number:</label>
+                                         <input type="text" name="owner_account_number[]"
+                                             value="{{ old('owner_account_number.' . $index, $bank->account_number) }}"
+                                             placeholder="Account number" class="form-control" autocomplete="off" />
+                                     </div>
                                  </div>
-                             </div>
-                             <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
-                                 <div>
-                                     @if ($index === 0)
-                                         <button type="button" class="btn btn-warning btn-icon add-more2 mr-1"><i
-                                                 class="fa fa-plus"></i></button>
-                                     @endif
-                                     <button type="button" class="btn btn-danger btn-icon remove-card2 mr-1"><i
-                                             class="fa fa-trash"></i></button>
+                                 <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                                     <div>
+                                         @if ($index === 0)
+                                             <button type="button" class="btn btn-warning btn-icon add-more2 mr-1"><i
+                                                     class="fa fa-plus"></i></button>
+                                         @endif
+                                         <button type="button" class="btn btn-danger btn-icon remove-card2 mr-1"><i
+                                                 class="fa fa-trash"></i></button>
+                                     </div>
                                  </div>
                              </div>
                          </div>
+                     @endforeach
+                 @else
+                     <div class="clonecard2 border-1">
+                         <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                             <div>
+                                 <button type="button" class="btn btn-warning btn-icon add-more2 mr-1">
+                                     <i class="fa fa-plus"></i>
+                                 </button>
+                                 <button type="button" class="btn btn-danger btn-icon remove-card2 mr-1"
+                                     style="display:none;">
+                                     <i class="fa fa-trash"></i>
+                                 </button>
+                             </div>
+                         </div>
                      </div>
-                 @endforeach
+                 @endif
              </div>
          </div>
      </div>
@@ -276,9 +308,101 @@
  </form>
 
  <script>
-     // JavaScript for dynamic form fields (same as create form)
      $(document).ready(function() {
-         // Company Bank Details
+         if ($('#card-container .clonecard').length === 0) {
+             var newCard = $(`
+            <div class="clonecard border-1">
+                <hr>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Bank Name:</label>
+                            <input type="text" name="company_bank_name[]" placeholder="Bank Name" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Branch Name:</label>
+                            <input type="text" name="company_branch_name[]" placeholder="Branch Name" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Branch Code:</label>
+                            <input type="text" name="company_branch_code[]" placeholder="Branch Code" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Account Title:</label>
+                            <input type="text" name="company_account_title[]" placeholder="Account Title" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="form-group">
+                            <label>Account Number:</label>
+                            <input type="text" name="company_account_number[]" placeholder="Account number" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                        <div>
+                            <button type="button" class="btn btn-warning btn-icon add-more mr-1"><i class="fa fa-plus"></i></button>
+                            <button type="button" class="btn btn-danger btn-icon remove-card mr-1" style="display:none;"><i class="fa fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+             $('#card-container').append(newCard);
+         }
+
+         if ($('#card-container2 .clonecard2').length === 0) {
+             var newCard2 = $(`
+            <div class="clonecard2 border-1">
+                <hr>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Bank Name:</label>
+                            <input type="text" name="owner_bank_name[]" placeholder="Bank Name" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Branch Name:</label>
+                            <input type="text" name="owner_branch_name[]" placeholder="Branch Name" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Branch Code:</label>
+                            <input type="text" name="owner_branch_code[]" placeholder="Branch Code" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Account Title:</label>
+                            <input type="text" name="owner_account_title[]" placeholder="Account Title" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="form-group">
+                            <label>Account Number:</label>
+                            <input type="text" name="owner_account_number[]" placeholder="Account number" class="form-control" autocomplete="off"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                        <div>
+                            <button type="button" class="btn btn-warning btn-icon add-more2 mr-1"><i class="fa fa-plus"></i></button>
+                            <button type="button" class="btn btn-danger btn-icon remove-card2 mr-1" style="display:none;"><i class="fa fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+             $('#card-container2').append(newCard2);
+         }
+
          $(document).on('click', '.add-more', function() {
              var newCard = $('#card-container .clonecard:first').clone();
              newCard.find('input').val('');
@@ -293,7 +417,6 @@
              }
          });
 
-         // Owner Bank Details
          $(document).on('click', '.add-more2', function() {
              var newCard = $('#card-container2 .clonecard2:first').clone();
              newCard.find('input').val('');
@@ -320,7 +443,6 @@
              });
          }
 
-         // Initialize
          toggleRemoveButton();
          toggleRemoveButton2();
      });
