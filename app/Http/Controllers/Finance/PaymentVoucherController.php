@@ -71,7 +71,8 @@ class PaymentVoucherController extends Controller
 
         $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
-        $uniqueNo = generateUniqueNumber('payment_vouchers', $prefix, null, 'unique_no', false);
+        $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
+        $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
         return response()->json([
             'success' => true,
@@ -176,7 +177,9 @@ class PaymentVoucherController extends Controller
         // dd($request->all());
         DB::transaction(function () use ($request) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
-            $uniqueNo = generateUniqueNumber('payment_vouchers', $prefix, null, 'unique_no', false);
+
+            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
+            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
             $paymentVoucher = PaymentVoucher::create([
                 'unique_no' => $uniqueNo,

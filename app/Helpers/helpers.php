@@ -171,9 +171,9 @@ if (!function_exists('generateUniqueNumber')) {
     }
 }
 
-function generateUniqueNumberByDate($tableName, $prefix = null, $company_id = null, $uniqueColumn = 'unique_no')
+function generateUniqueNumberByDate($tableName, $prefix = null, $company_id = null, $uniqueColumn = 'unique_no', $useCompanyId = true)
 {
-    if (is_null($company_id)) {
+    if (is_null($company_id) && $useCompanyId) {
         $company_id = auth()->user()->current_company_id;
     }
 
