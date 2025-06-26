@@ -64,9 +64,9 @@ class PaymentRequestController extends Controller
             $allRequests = collect();
 
             foreach ($po->paymentRequestData as $data) {
-                $totalAmount += $data->total_amount ?? 0;
-                $paidAmount += $data->paid_amount ?? 0;
-                $remainingAmount += $data->remaining_amount ?? 0;
+                $totalAmount = $data->total_amount ?? 0;
+                $paidAmount = $data->paid_amount ?? 0;
+                $remainingAmount = $data->remaining_amount ?? 0;
 
                 foreach ($data->paymentRequests as $request) {
                     if ($request->request_type == 'payment') {
