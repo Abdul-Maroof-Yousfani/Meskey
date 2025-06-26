@@ -31,6 +31,17 @@ class HomeController extends Controller
             ->whereBetween('created_at', $dateRange)
             ->count();
 
+
+ $initialSamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
+            $q->where('company_id', $companyId)
+                ->whereBetween('created_at', $dateRange);
+        })
+            ->where('sampling_type', 'initial')
+            ->where('is_done', 'no')
+            ->count();
+
+
+
         $initialSamplingDone = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
@@ -125,6 +136,7 @@ class HomeController extends Controller
         return [
             'total_tickets' => $totalTickets,
             'new_tickets' => $newTickets,
+            'initial_sampling_requested' => $initialSamplingRequested,
             'initial_sampling_done' => $initialSamplingDone,
             'resampling_required' => $resamplingRequired,
             'location_transfer_pending' => $locationTransferPending,

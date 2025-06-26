@@ -86,7 +86,7 @@
                             <div class="card-icon">
                                 <i class="ft-file-plus"></i>
                             </div>
-                            <div class="card-number">{{ $data['new_tickets'] ?? 0 }}</div>
+                            <div class="card-number">{{ $data['initial_sampling_requested'] ?? 0 }}</div>
                             <div class="card-title">Initial Sampling</div>
                             <div class="card-subtitle">Pending Initial Sampling</div>
                             @if (($data['new_tickets'] ?? 0) > 0)
