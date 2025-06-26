@@ -15,6 +15,7 @@
                         <form id="ajaxSubmit" action="{{ route('payment-voucher.store') }}">
                             @csrf
 
+                            <input type="hidden" id="url" value="{{ route('payment-voucher.index') }}">
                             <input type="hidden" name="supplier_id" id="supplier_id">
                             <input type="hidden" name="bank_account_number" id="bank_account_number">
                             <input type="hidden" name="bank_account_type" id="bank_account_type">
