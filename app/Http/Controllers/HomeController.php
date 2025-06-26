@@ -156,7 +156,7 @@ class HomeController extends Controller
     {
         $type = $request->get('type');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
-        $fromDate = $request->get('from_date', Carbon::now()->subYear()->format('Y-m-d'));
+        // $fromDate = $request->get('from_date', Carbon::now()->subYear()->format('Y-m-d'));
         $toDate = $request->get('to_date', Carbon::today()->format('Y-m-d'));
         $dateRange = [Carbon::parse($fromDate)->startOfDay(), Carbon::parse($toDate)->endOfDay()];
 
@@ -364,7 +364,7 @@ class HomeController extends Controller
     {
         $module = $request->get('module', 'arrival');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
-        $fromDate = $request->get('from_date', Carbon::now()->subYear()->format('Y-m-d'));
+        // $fromDate = $request->get('from_date', Carbon::now()->subYear()->format('Y-m-d'));
         $toDate = $request->get('to_date', Carbon::today()->format('Y-m-d'));
 
         $data = [];
