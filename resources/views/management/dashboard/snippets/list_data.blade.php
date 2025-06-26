@@ -26,6 +26,7 @@
                 @elseif(in_array($type, [
                         'initial_sampling_done',
                         'resampling_required',
+                        'initial_sampling_requested',
                         'inner_sampling_requested',
                         'inner_sampling_pending_approval',
                     ]))
@@ -111,6 +112,7 @@
                             'initial_sampling_done',
                             'resampling_required',
                             'inner_sampling_requested',
+                            'initial_sampling_requested',
                             'inner_sampling_pending_approval',
                         ]))
                         <td>{{ $item->arrivalTicket->unique_no ?? 'N/A' }}</td>

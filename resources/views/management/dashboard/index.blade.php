@@ -95,7 +95,7 @@
                                 <div class="status-badge status-neutral">All Completed</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=new_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','New Tickets - Pending Initial Sampling', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}','Inner Sampling Requested - Pending Initial Sampling', true, '70%')">
                                 View
                             </button>
                         </div>

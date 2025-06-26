@@ -32,7 +32,7 @@ class HomeController extends Controller
             ->count();
 
 
- $initialSamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
+        $initialSamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
@@ -180,6 +180,18 @@ class HomeController extends Controller
                     ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
+                    ->latest()
+                    ->paginate(1000);
+                break;
+            case 'initial_sampling_requested':
+                $title = 'Initial Sampling Requested (Not Done)';
+                $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
+                    $q->where('company_id', $request->company_id)
+                        ->whereBetween('created_at', $dateRange);
+                })
+                    ->where('sampling_type', 'initial')
+                    ->where('is_done', 'no')
+                    ->with(['arrivalTicket.product', 'arrivalTicket.station'])
                     ->latest()
                     ->paginate(1000);
                 break;
