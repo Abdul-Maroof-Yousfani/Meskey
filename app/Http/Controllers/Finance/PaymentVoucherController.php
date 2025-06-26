@@ -48,7 +48,14 @@ class PaymentVoucherController extends Controller
     public function create()
     {
         $data['accounts'] = Account::where('is_operational', 'yes')->get();
-        $data['purchaseOrders'] = ArrivalPurchaseOrder::with(['product'])->latest()->get();
+        $data['purchaseOrders'] = ArrivalPurchaseOrder::with(['product'])
+            ->whereHas('paymentRequestData.paymentRequests', function ($query) {
+                $query->where('status', 'approved')
+                    ->whereDoesntHave('paymentVoucherData');
+            })
+            ->latest()
+            ->get();
+
         return view('management.finance.payment_voucher.create', $data);
     }
 
