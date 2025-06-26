@@ -135,10 +135,10 @@ if (!function_exists('getMenu')) {
 }
 
 if (!function_exists('generateUniqueNumber')) {
-    function generateUniqueNumber($tableName, $prefix = null, $company_id = null, $uniqueColumn = 'unique_no')
+    function generateUniqueNumber($tableName, $prefix = null, $company_id = null, $uniqueColumn = 'unique_no', $useCompanyId = true)
     {
         // If company_id is null, use the authenticated user's current company ID
-        if (is_null($company_id)) {
+        if (is_null($company_id) && $useCompanyId) {
             $company_id = auth()->user()->current_company_id;
         }
 
