@@ -53,9 +53,9 @@
                             @if (($data['completed_tickets'] ?? 0) > 0)
                                 <div class="status-badge status-success cursor-pointer"
                                     onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=completed_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
-                                    {{ $data['completed_tickets'] ?? 0 }} Tickets Completed</div>
+                                    {{ $data['completed_tickets'] ?? 0 }} Completed</div>
                             @else
-                                <div class="status-badge status-neutral">No Tickets Completed Yet!</div>
+                                <div class="status-badge status-neutral">No Completed Yet!</div>
                             @endif
                             <button class="view-btn"
                                 onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Total Tickets - Bilty Return Pending', true, '70%')">
