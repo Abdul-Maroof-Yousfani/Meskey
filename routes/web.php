@@ -8,14 +8,16 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController, RoleController};
+use App\Http\Controllers\ApprovalsModule\ApprovalController;
 use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
 use App\Http\Controllers\FrontHomeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Procurement\RawMaterial\PaymentRequestController;
 use Harimayco\Menu\Facades\Menu;
-
+use Illuminate\Support\Facades\Auth;
 
 Auth::routes();
+
 Route::get('adminpanel', function () {
     return redirect('/dashboard');
 });
@@ -27,6 +29,16 @@ Route::fallback(function () {
 });
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
+    Route::prefix('approval')->group(function () {
+        Route::post('/approve/{model}/{id}', [ApprovalController::class, 'approve'])
+            ->middleware(['auth', 'approval.permission:PaymentVoucher'])
+            ->name('approval.approve');
+
+        Route::post('/reject/{model}/{id}', [ApprovalController::class, 'reject'])
+            ->middleware(['auth', 'approval.permission:PaymentVoucher'])
+            ->name('approval.reject');
+    });
+
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/dashboard/list-data', [App\Http\Controllers\HomeController::class, 'getListData'])->name('dashboard.list-data');
 
@@ -44,7 +56,6 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::get('getInitialSamplingResultByTicketId', [ArrivalLocationController::class, 'getInitialSamplingResultByTicketId'])->name('getInitialSamplingResultByTicketId');
     Route::get('getTicketDataForArrival', [ArrivalSlipController::class, 'getTicketDataForArrival'])->name('getTicketDataForArrival');
 });
-
 
 Route::group(['middleware' => ['auth']], function () {
     Route::resource('arrival-custom-sampling', ArrivalCustomSamplingController::class);

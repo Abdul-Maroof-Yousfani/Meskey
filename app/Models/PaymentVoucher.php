@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Models\Master\Account\Account;
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentVoucher extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasApproval;
 
     protected $fillable = [
         'unique_no',
@@ -43,5 +44,15 @@ class PaymentVoucher extends Model
     public function paymentVoucherData()
     {
         return $this->hasMany(PaymentVoucherData::class, 'payment_voucher_id');
+    }
+
+    protected function onApprovalComplete()
+    {
+        $this->update(['approval_status' => 'approved']);
+    }
+
+    protected function onApprovalRejected()
+    {
+        $this->update(['approval_status' => 'rejected']);
     }
 }

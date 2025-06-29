@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\{
     AccountController,
@@ -29,6 +30,8 @@ Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
 
+Route::resource('approval-modules', ApprovalModuleController::class);
+Route::post('/get-approval-modules', [ApprovalModuleController::class, 'getList'])->name('get.approval-modules');
 
 Route::resource('product', ProductController::class);
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
