@@ -25,23 +25,31 @@ class PurchaseSamplingRequestController extends Controller
 
     public function getList(Request $request)
     {
-        // $ArrivalSamplingRequests = PurchaseSamplingRequest::where('sampling_type', 'initial')->when($request->filled('search'), function ($q) use ($request) {
-        //     $searchTerm = '%' . $request->search . '%';
-        //     return $q->where(function ($sq) use ($searchTerm) {
-        //         $sq->where('name', 'like', $searchTerm);
-        //     });
-        // })
-        //     ->where('company_id', $request->company_id)
-        //     ->latest()
-        //     ->paginate(request('per_page', 25));
-
-        $purchaseOrders = ArrivalPurchaseOrder::
-            // whereDoesntHave('purchaseSamplingRequests')->
-            where('sauda_type_id', 2)
+        $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
+            ->when($request->filled('supplier_id'), function ($query) use ($request) {
+                $query->where('supplier_id', $request->supplier_id);
+            })
+            ->when($request->filled('product_id'), function ($query) use ($request) {
+                $query->where('product_id', $request->product_id);
+            })
+            ->when($request->filled('company_location_id'), function ($query) use ($request) {
+                $query->where('company_location_id', $request->company_location_id);
+            })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('contract_no', 'like', '%' . $request->search . '%')
+                        ->orWhereHas('supplier', function ($q) use ($request) {
+                            $q->where('name', 'like', '%' . $request->search . '%');
+                        });
+                });
+            })
+            ->with(['supplier', 'product', 'location'])
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.raw_material.purchase_sampling_request.getList', compact('purchaseOrders'));
+        return view('management.procurement.raw_material.purchase_sampling_request.getList', compact(
+            'purchaseOrders'
+        ));
     }
     /**
      * Show the form for creating a new resource.

@@ -19,12 +19,12 @@
                     <td>
                         <p class="m-0">
                             {{ $row->contract_no }}{!! $row->is_custom_qc == 'yes' ? '' : '<br>' !!}
-                            {{ $row->purchaseTicket->unique_no ?? 'N/A' }}
+                            {{ $row->purchaseTicket->unique_no ?? '' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->qcProduct->name ?? '--' }}
+                            {{ $row->product->name ?? '--' }}
                         </p>
                     </td>
                     <td>
@@ -67,7 +67,7 @@
                         {{-- @can('role-edit') --}}
                         <a onclick="openModal(this,'{{ route('raw-material.purchase-sampling-request.createReq', ['id' => $row->id]) }}','Create Sampling Request',false)"
                             class="info p-1 text-center mr-2 position-relative">
-                            <i class="ft-eye font-medium-3"></i>
+                            <i class="ft-edit font-medium-3"></i>
                         </a>
                         {{-- @endcan --}}
                     </td>

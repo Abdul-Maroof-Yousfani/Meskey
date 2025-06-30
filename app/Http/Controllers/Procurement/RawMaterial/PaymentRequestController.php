@@ -42,52 +42,57 @@ class PaymentRequestController extends Controller
         $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
             ->with([
                 'paymentRequestData.paymentRequests',
+                'paymentRequestData.paymentRequests.approvals',
                 'supplier',
                 'product',
                 'qcProduct',
                 'paymentRequestData' => function ($query) {
                     $query->with(['paymentRequests' => function ($q) {
-                        $q->selectRaw('payment_request_data_id, request_type, SUM(amount) as total_amount')
-                            ->groupBy('payment_request_data_id', 'request_type');
+                        $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                            ->groupBy('payment_request_data_id', 'request_type', 'status');
                     }]);
                 }
             ])
             ->paginate(10);
 
         $purchaseOrders->getCollection()->transform(function ($po) {
-            $paymentSum = 0;
-            $freightSum = 0;
+            $approvedPaymentSum = 0;
+            $approvedFreightSum = 0;
+            $totalPaymentSum = 0;
+            $totalFreightSum = 0;
             $totalAmount = 0;
             $paidAmount = 0;
             $remainingAmount = 0;
 
-            $allRequests = collect();
-
             foreach ($po->paymentRequestData as $data) {
                 $totalAmount = $data->total_amount ?? 0;
                 $paidAmount = $data->paid_amount ?? 0;
-                $remainingAmount = $data->remaining_amount ?? 0;
 
-                foreach ($data->paymentRequests as $request) {
-                    if ($request->request_type == 'payment') {
-                        $paymentSum += $request->total_amount;
-                    } elseif ($request->request_type == 'freight_payment') {
-                        $freightSum += $request->total_amount;
+                foreach ($data->paymentRequests as $pRequest) {
+                    if ($pRequest->request_type == 'payment') {
+                        $totalPaymentSum += $pRequest->total_amount;
+                        if ($pRequest->status == 'approved') {
+                            $approvedPaymentSum += $pRequest->total_amount;
+                        }
+                    } else {
+                        $totalFreightSum += $pRequest->total_amount;
+                        if ($pRequest->status == 'approved') {
+                            $approvedFreightSum += $pRequest->total_amount;
+                        }
                     }
-
-                    // $clonedRequest = clone $request;
-                    // $clonedRequest->amount = $request->total_amount;
-                    // $allRequests->push($clonedRequest);
                 }
             }
 
+            $remainingAmount = ($totalAmount - $totalPaymentSum);
+
             $po->calculated_values = [
-                'payment_sum' => $paymentSum,
-                'freight_sum' => $freightSum,
+                'total_payment_sum' => $totalPaymentSum,
+                'total_freight_sum' => $totalFreightSum,
+                'approved_payment_sum' => $approvedPaymentSum,
+                'approved_freight_sum' => $approvedFreightSum,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
-                'all_requests' => $allRequests,
                 'created_at' => $po->paymentRequestData->first()->created_at ?? $po->created_at
             ];
 
@@ -98,7 +103,6 @@ class PaymentRequestController extends Controller
             'purchaseOrders' => $purchaseOrders
         ]);
     }
-
     /**
      * Show the form for creating a new resource.
      */

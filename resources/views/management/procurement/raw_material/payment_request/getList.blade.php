@@ -19,43 +19,35 @@
                     <td>{{ $po->supplier->name ?? 'N/A' }}</td>
                     <td>
                         <div class="div-box-b">
-                            <small>
-                                <strong>Total Amount:</strong> {{ $po->calculated_values['total_amount'] ?? 0 }} <br>
-                                <strong>Paid Amount:</strong> {{ $po->calculated_values['paid_amount'] ?? 0 }} <br>
-                                <strong>Payment Request:</strong> {{ $po->calculated_values['payment_sum'] ?? 0 }}<br>
-                                @if ($po->calculated_values['freight_sum'] > 0)
-                                    <strong>Freight Request:</strong>
-                                    {{ $po->calculated_values['freight_sum'] ?? 0 }}<br>
-                                @endif
-                                <strong>Remaining Amount:</strong>
-                                {{ $po->calculated_values['remaining_amount'] ?? 0 }}<br>
-                            </small>
+                            @if ($po->calculated_values['total_payment_sum'] == 0 && $po->calculated_values['total_freight_sum'] == 0)
+                                <span class="text-muted"> No requests yet</span>
+                            @else
+                                <small>
+                                    <strong>Total Amount:</strong> {{ $po->calculated_values['total_amount'] ?? 0 }}
+                                    <br>
+                                    {{-- <strong>Paid Amount:</strong> {{ $po->calculated_values['paid_amount'] ?? 0 }} <br> --}}
+                                    <strong>Approved Payment:</strong>
+                                    {{ $po->calculated_values['approved_payment_sum'] ?? 0 }}<br>
+                                    <strong>Approved Freight:</strong>
+                                    {{ $po->calculated_values['approved_freight_sum'] ?? 0 }}<br>
+                                    <strong>Remaining Amount:</strong>
+                                    {{ $po->calculated_values['remaining_amount'] ?? 0 }}<br>
+                                </small>
+                            @endif
                         </div>
                     </td>
-                    {{-- <td>
-                        @if (!count($po->calculated_values['all_requests'] ?? []))
-                            N/A
-                        @else
-                            @foreach ($po->calculated_values['all_requests'] as $request)
-                                <span
-                                    class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }} mb-1">
-                                    {{ formatEnumValue($request->request_type) }}: {{ $request->amount }}
-                                </span><br>
-                            @endforeach
-                        @endif
-                    </td> --}}
                     <td>
-                        @if ($po->calculated_values['payment_sum'] == 0 && $po->calculated_values['freight_sum'] == 0)
-                            N/A
+                        @if ($po->calculated_values['total_payment_sum'] == 0 && $po->calculated_values['total_freight_sum'] == 0)
+                            <span class="text-muted"> N/A </span>
                         @else
-                            @if ($po->calculated_values['payment_sum'] > 0)
+                            @if ($po->calculated_values['total_payment_sum'] > 0)
                                 <span class="badge badge-success mb-1">
-                                    Payment: {{ number_format($po->calculated_values['payment_sum'], 2) }}
+                                    Payment: {{ number_format($po->calculated_values['total_payment_sum'], 2) }}
                                 </span><br>
                             @endif
-                            @if ($po->calculated_values['freight_sum'] > 0)
+                            @if ($po->calculated_values['total_freight_sum'] > 0)
                                 <span class="badge badge-warning">
-                                    Freight: {{ number_format($po->calculated_values['freight_sum'], 2) }}
+                                    Freight: {{ number_format($po->calculated_values['total_freight_sum'], 2) }}
                                 </span>
                             @endif
                         @endif
@@ -105,9 +97,3 @@
         @endif
     </tbody>
 </table>
-
-<div class="row d-flex" id="paginationLinks">
-    <div class="col-md-12 text-right">
-        {{ $purchaseOrders->links() }}
-    </div>
-</div>
