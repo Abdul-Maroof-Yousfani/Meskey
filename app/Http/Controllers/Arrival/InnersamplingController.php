@@ -111,25 +111,26 @@ class InnersamplingController extends Controller
                     ]);
                 }
             }
+
             $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $ArrivalSamplingRequest->arrival_ticket_id)
                 ->where('approved_status', 'approved')
                 ->latest()
                 ->first();
 
             $deductionValues = [];
+            $compulsoryDeductionValues = [];
             $suggestedChangedValues = [];
 
-            // Matching if initial params and inner submittted params exactly matchs..
+            // Matching if initial params and inner submitted params exactly match..
             if ($initialRequestForInnerReq) {
                 $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
-                $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+                $initialRequestCompulsoryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
 
                 $resultsMatch = true;
                 $compulsoryResultsMatch = true;
 
                 if (count($initialRequestResults) === count($createdSamplingData)) {
                     foreach ($initialRequestResults as $index => $initialResult) {
-
                         $deductionValues[$initialResult->product_slab_type_id] = [
                             'suggested_deduction' => $initialResult->suggested_deduction,
                             'applied_deduction' => $initialResult->applied_deduction
@@ -156,8 +157,14 @@ class InnersamplingController extends Controller
                     $resultsMatch = false;
                 }
 
-                if (count($initialRequestCompulsuryResults) === count($createdCompulsuryData)) {
-                    foreach ($initialRequestCompulsuryResults as $index => $initialCompulsoryResult) {
+                if (count($initialRequestCompulsoryResults) === count($createdCompulsuryData)) {
+                    foreach ($initialRequestCompulsoryResults as $index => $initialCompulsoryResult) {
+
+                        $compulsoryDeductionValues[$initialCompulsoryResult->arrival_compulsory_qc_param_id] = [
+                            'suggested_deduction' => $initialCompulsoryResult->suggested_deduction,
+                            'applied_deduction' => $initialCompulsoryResult->applied_deduction
+                        ];
+
                         if ($initialCompulsoryResult->qcParam->properties['is_protected_for_inner_req']) {
                             continue;
                         }
@@ -182,10 +189,8 @@ class InnersamplingController extends Controller
                     $initialStatus = 'approved';
 
                     foreach ($createdSamplingData as $samplingResult) {
-
                         $slabTypeId = $samplingResult->product_slab_type_id;
                         if (isset($deductionValues[$slabTypeId])) {
-
                             if (isset($suggestedChangedValues[$slabTypeId])) {
                                 $displayValue = $suggestedChangedValues[$slabTypeId] ?? 0;
 
@@ -206,8 +211,18 @@ class InnersamplingController extends Controller
                             $samplingResult->save();
                         }
                     }
+
+                    foreach ($createdCompulsuryData as $compulsoryResult) {
+                        $paramId = $compulsoryResult->arrival_compulsory_qc_param_id;
+                        if (isset($compulsoryDeductionValues[$paramId])) {
+                            $compulsoryResult->suggested_deduction = $compulsoryDeductionValues[$paramId]['suggested_deduction'];
+                            $compulsoryResult->applied_deduction = $compulsoryDeductionValues[$paramId]['applied_deduction'];
+                            $compulsoryResult->save();
+                        }
+                    }
                 }
             }
+
             $updateData = [
                 'remark' => $request->remarks,
                 'is_done' => 'yes',
