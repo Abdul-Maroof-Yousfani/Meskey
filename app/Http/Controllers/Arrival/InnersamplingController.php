@@ -161,7 +161,7 @@ class InnersamplingController extends Controller
                     foreach ($initialRequestCompulsoryResults as $index => $initialCompulsoryResult) {
 
                         $compulsoryDeductionValues[$initialCompulsoryResult->arrival_compulsory_qc_param_id] = [
-                            'suggested_deduction' => $initialCompulsoryResult->suggested_deduction,
+                            // 'suggested_deduction' => $initialCompulsoryResult->suggested_deduction,
                             'applied_deduction' => $initialCompulsoryResult->applied_deduction
                         ];
 
@@ -215,7 +215,7 @@ class InnersamplingController extends Controller
                     foreach ($createdCompulsuryData as $compulsoryResult) {
                         $paramId = $compulsoryResult->arrival_compulsory_qc_param_id;
                         if (isset($compulsoryDeductionValues[$paramId])) {
-                            $compulsoryResult->suggested_deduction = $compulsoryDeductionValues[$paramId]['suggested_deduction'];
+                            // $compulsoryResult->suggested_deduction = $compulsoryDeductionValues[$paramId]['suggested_deduction'];
                             $compulsoryResult->applied_deduction = $compulsoryDeductionValues[$paramId]['applied_deduction'];
                             $compulsoryResult->save();
                         }
