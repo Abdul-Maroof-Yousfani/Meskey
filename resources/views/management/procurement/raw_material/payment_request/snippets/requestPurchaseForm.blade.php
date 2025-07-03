@@ -3,6 +3,7 @@
     if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
         $hasLoadingWeight = true;
     }
+
     $isSlabs = false;
     $isCompulsury = false;
     $showLumpSum = false;
@@ -60,9 +61,20 @@
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
 
-    // Get existing other deduction values
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
     $existingOtherDeductionAmount = $otherDeduction->other_deduction_value ?? 0;
+
+    $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
+    $currentPaymentAmount = 0;
+    $currentFreightAmount = 0;
+
+    if ($isApprovalPage && isset($paymentRequest)) {
+        if ($paymentRequest->request_type === 'payment') {
+            $currentPaymentAmount = $paymentRequest->amount;
+        } else {
+            $currentFreightAmount = $paymentRequest->amount;
+        }
+    }
 @endphp
 
 <style>
@@ -108,6 +120,11 @@
     .other-deduction-row {
         background-color: #f8f9fa;
         border-left: 4px solid #007bff;
+    }
+
+    .approval-editable {
+        background-color: #fff3cd !important;
+        border-color: #ffc107 !important;
     }
 </style>
 
@@ -276,6 +293,7 @@
                         Sampling Results
                     </h6>
                 </div>
+
                 <div class="col-12">
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered table-hover">
@@ -301,10 +319,12 @@
                                             $val = $slab->applied_deduction;
                                             $deductionValue = 0;
                                             $sumOfMatchingValues = '';
+
                                             if ($dValCalculatedOn == SLAB_TYPE_PERCENTAGE && $matchingSlabs) {
                                                 usort($matchingSlabs, function ($a, $b) {
                                                     return floatval($a['from']) <=> floatval($b['from']);
                                                 });
+
                                                 $rmPoSlabs = $slab->rm_po_slabs ?? [];
                                                 $highestRmPoEnd = 0;
                                                 foreach ($rmPoSlabs as $rmPoSlab) {
@@ -313,14 +333,17 @@
                                                         $highestRmPoEnd = $rmPoTo;
                                                     }
                                                 }
+
                                                 foreach ($matchingSlabs as $mSlab) {
                                                     $from = floatval($mSlab['from']);
                                                     $to = floatval($mSlab['to']);
                                                     $isTiered = intval($mSlab['is_tiered']);
                                                     $deductionVal = floatval($mSlab['deduction_value'] ?? 0);
+
                                                     if ($val >= $from) {
                                                         $effectiveFrom = max($from, $highestRmPoEnd + 1);
                                                         $effectiveTo = min($to, $val);
+
                                                         if ($effectiveFrom <= $effectiveTo) {
                                                             if ($isTiered === 1) {
                                                                 $applicableAmount = $effectiveTo - $effectiveFrom + 1;
@@ -336,6 +359,7 @@
                                                         }
                                                     }
                                                 }
+
                                                 if (!empty($rmPoSlabs)) {
                                                     $sumOfMatchingValues .= '<br><br>RM PO Slabs (Free Ranges):<br>';
                                                     foreach ($rmPoSlabs as $rmPoSlab) {
@@ -346,13 +370,16 @@
                                             } else {
                                                 $deductionValue = $appliedDeduction;
                                             }
+
                                             // Calculate deduction amount based on net weight
                                             $calculatedValue = $deductionValue * $netWeight;
                                             if (($slab->deduction_type ?? 'amount') !== 'amount') {
                                                 $calculatedValue = ($calculatedValue / 100) * $ratePerKg;
                                             }
+
                                             $totalAmount += $calculatedValue;
                                         @endphp
+
                                         <tr data-slab-id="{{ $slab->id }}">
                                             <td>{{ $slab->slabType->name }}
                                                 <input type="hidden"
@@ -384,8 +411,8 @@
                                                     <input type="text" class="form-control applied-deduction-input"
                                                         name="sampling_results[{{ $slab->id }}][applied_deduction]"
                                                         value="{{ $deductionValue }}"
-                                                        placeholder="Suggested Deduction" readonly
-                                                        data-slab-id="{{ $slab->id }}"
+                                                        placeholder="Suggested Deduction" {{-- {{ $isApprovalPage ? '' : 'readonly' }} --}}
+                                                        readonly data-slab-id="{{ $slab->id }}"
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
@@ -417,9 +444,11 @@
                                         @if (!$slab->applied_deduction)
                                             @continue
                                         @endif
+
                                         @php
                                             $compulsoryCalculatedValue = ($slab->applied_deduction ?? 0) * $netWeight;
                                         @endphp
+
                                         <tr data-compulsory-id="{{ $slab->id }}">
                                             <td>{{ $slab->qcParam->name ?? 'Compulsory' }}
                                                 <input type="hidden"
@@ -437,8 +466,8 @@
                                                         class="form-control compulsory-applied-deduction"
                                                         name="compulsory_results[{{ $slab->id }}][applied_deduction]"
                                                         value="{{ $slab->applied_deduction }}"
-                                                        placeholder="Suggested Deduction" readonly
-                                                        data-compulsory-id="{{ $slab->id }}"
+                                                        placeholder="Suggested Deduction" {{-- {{ $isApprovalPage ? '' : 'readonly' }} --}}
+                                                        readonly data-compulsory-id="{{ $slab->id }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
                                                         <span
@@ -588,7 +617,8 @@
             <div class="form-group">
                 <label>Payment Request</label>
                 <input type="number" step="0.01" class="form-control payment-request-input"
-                    name="payment_request_amount" value="0" placeholder="Enter payment request">
+                    name="payment_request_amount" value="{{ $currentPaymentAmount }}"
+                    placeholder="Enter payment request">
             </div>
         </div>
         <div class="col-12">
@@ -628,7 +658,8 @@
             <div class="form-group">
                 <label>Freight Pay Request</label>
                 <input type="number" class="form-control payment-request-freifht" name="freight_pay_request_amount"
-                    value="0" placeholder="Enter freight pay request" max="{{ (int) $remainingFreight }}">
+                    value="{{ $currentFreightAmount }}" placeholder="Enter freight pay request"
+                    max="{{ (int) $remainingFreight }}">
             </div>
         </div>
     </div>
@@ -644,7 +675,6 @@
             const $loadingSection = $('#loading-section');
             const $contractRangeField = $('.contract-range-field');
 
-            // Get original values
             const originalBagWeight = parseFloat($('#original_bag_weight').val()) || 0;
             const loadingWeight = parseFloat($('#loading_weight').val()) || 0;
             const noOfBags = parseFloat($('#no_of_bags').val()) || 0;
@@ -668,7 +698,6 @@
                 return loadingWeight - (currentBagWeight * noOfBags);
             }
 
-            // Replicate PHP slab calculation logic
             function calculateSlabDeduction(slabData, netWeight) {
                 const dValCalculatedOn = slabData.calculation_base_type;
                 const appliedDeduction = slabData.applied_deduction;
@@ -678,10 +707,9 @@
                 let deductionValue = 0;
 
                 if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
-                    // Sort matching slabs by 'from' value
+
                     matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
 
-                    // Find highest RM PO end
                     let highestRmPoEnd = 0;
                     rmPoSlabs.forEach(rmPoSlab => {
                         const rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
@@ -690,7 +718,6 @@
                         }
                     });
 
-                    // Calculate deduction value using matching slabs
                     matchingSlabs.forEach(mSlab => {
                         const from = parseFloat(mSlab.from);
                         const to = parseFloat(mSlab.to);
@@ -715,7 +742,6 @@
                     deductionValue = appliedDeduction;
                 }
 
-                // Calculate final value based on net weight
                 let calculatedValue = deductionValue * netWeight;
                 if (slabData.deduction_type !== 'amount') {
                     calculatedValue = (calculatedValue / 100) * ratePerKg;
@@ -726,7 +752,6 @@
 
             function updateOtherDeduction() {
                 const otherDeductionKg = parseFloat($('#other_deduction_kg').val()) || 0;
-                // const otherDeductionAmount = otherDeductionKg * ratePerKg;
                 const otherDeductionAmount = otherDeductionKg * loadingWeight;
 
                 $('#other_deduction_amount').val(otherDeductionAmount);
@@ -739,7 +764,6 @@
                 const netWeight = calculateNetWeight();
                 let totalSamplingAmount = 0;
 
-                // Update sampling results deduction amounts using PHP logic
                 window.samplingData.samplingResults.forEach(slabData => {
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
                     totalSamplingAmount += calculatedValue;
@@ -749,7 +773,6 @@
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
                 });
 
-                // Update compulsory results deduction amounts
                 window.samplingData.compulsoryResults.forEach(slabData => {
                     const calculatedValue = slabData.applied_deduction * netWeight;
                     totalSamplingAmount += calculatedValue;
@@ -758,7 +781,6 @@
                         calculatedValue.toFixed(2));
                 });
 
-                // Update other deduction
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
 
@@ -769,12 +791,11 @@
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
 
-                // Update bag weight total
                 const bagWeightTotal = currentBagWeight * noOfBags;
                 $('#bag_weight_total').val(bagWeightTotal.toFixed(2));
 
-                // If bag weight amount is manually changed, calculate new bag weight
                 const calculatedBagWeightAmount = ratePerKg * bagWeightTotal;
+
                 if (Math.abs(bagWeightAmount - calculatedBagWeightAmount) > 0.01) {
                     // Amount was manually changed, calculate weight
                     const newBagWeight = bagWeightAmount / (ratePerKg * noOfBags);
@@ -791,22 +812,16 @@
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
 
-                // Calculate bag rate amount
                 const bagRateAmount = bagRate * noOfBags;
                 $('#bag_rate_amount').val(bagRateAmount);
                 $('#bag_rate_amount_display').val(bagRateAmount.toFixed(2));
 
-                // Calculate loading weighbridge amount
                 const loadingWeighbridgeAmount = kantaCharges / 2;
                 $('#loading_weighbridge_amount').val(loadingWeighbridgeAmount);
                 $('#loading_weighbridge_amount_display').val(loadingWeighbridgeAmount.toFixed(2));
 
-                // Calculate total sampling deductions using PHP logic (includes other deduction)
                 const totalSamplingDeductions = updateSamplingResultsDeductions();
 
-                // Calculate total amount using exact PHP formula
-                // PHP: $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
-                // where $totalAmount includes sampling deductions + bagWeightAmount + loadingWeighbridgeAmount
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
@@ -815,15 +830,13 @@
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
 
-                // Calculate remaining amount
                 const remainingAmount = totalAmount - paidAmount;
                 $('#remaining_amount').val(remainingAmount.toFixed(2));
 
-                // Update bag weight amount display
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
             }
 
-            // Event handlers
+
             $('#bag_weight_input').on('input', function() {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
                 const bagWeightAmount = ratePerKg * currentBagWeight * noOfBags;
@@ -835,13 +848,13 @@
                 updateAllCalculations();
             });
 
-            // Other deduction event handler
             $('#other_deduction_kg').on('input', function() {
                 updateAllCalculations();
             });
 
-            // Payment request calculations
             $('input[name="payment_request_amount"]').on('input', function() {
+                // const totalAmount = parseFloat($('#total_amount').val()) || 0;
+                // const
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paymentRequest = parseFloat($(this).val()) || 0;
                 const remaining = totalAmount - paymentRequest - paidAmount;
@@ -857,6 +870,7 @@
                     percentage = 100;
                     $(this).val(100);
                 }
+
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const remainingAmount = totalAmount - paidAmount;
                 const amount = (remainingAmount * percentage) / 100;
@@ -867,20 +881,22 @@
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const remainingAmount = totalAmount - paidAmount;
                 let amount = parseFloat($(this).val()) || 0;
+
                 if (amount > remainingAmount) {
                     amount = remainingAmount;
                     $(this).val(remainingAmount.toFixed(2));
                 }
+
                 const percentage = remainingAmount > 0 ? (amount / remainingAmount) * 100 : 0;
                 percentageInput.val(percentage.toFixed(2));
             });
 
-            // Freight calculations
             $('input[name="freight_pay_request_amount"]').on('input', function() {
                 const amount = parseFloat({{ $advanceFreight }});
                 const paidAmount = parseFloat({{ $pRsSumForFreight }});
                 const paymentRequest = parseFloat($(this).val()) || 0;
                 const remaining = (amount - paymentRequest - paidAmount);
+
                 $('input[name="remaining_freight"]').val(remaining.toFixed(2));
             });
 
@@ -894,21 +910,23 @@
                     percentage = 100;
                     $(this).val(100);
                 }
+
                 const amount = (remainingAmountF * percentage) / 100;
                 paymentRequestInputF.val(amount.toFixed(2));
             });
 
             paymentRequestInputF.on('input', function() {
                 let amount = parseFloat($(this).val()) || 0;
+
                 if (amount > remainingAmountF) {
                     amount = remainingAmountF;
                     $(this).val(remainingAmountF.toFixed(2));
                 }
+
                 const percentage = remainingAmountF > 0 ? (amount / remainingAmountF) * 100 : 0;
                 percentageInputF.val(percentage.toFixed(2));
             });
 
-            // Initialize calculations
             toggleSections();
             updateAllCalculations();
 

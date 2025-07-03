@@ -24,7 +24,21 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
+                                        <div class="row justify-content-end text-right1">
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Supplier</label>
+                                                <select name="supplier_id" id="supplier_id" class="form-control">
+                                                    <option value="">
+                                                        Select Supplier</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Commodity</label>
+                                                <select name="product_id" id="product_id" class="form-control">
+                                                    <option value="">
+                                                        Select Commodity</option>
+                                                </select>
+                                            </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -45,9 +59,10 @@
                                         <tr>
                                             <th class="col-sm-2">Contract No</th>
                                             <th class="col-sm-2">Supplier</th>
-                                            <th class="col-sm-2">Purchaser</th>
-                                            <th class="col-sm-2">Contact Person</th>
-                                            <th class="col-sm-2">Rate</th>
+                                            <th class="col-sm-1">Commodity</th>
+                                            <th class="col-sm-1">Loading date</th>
+                                            <th class="col-sm-2">Amounts</th>
+                                            <th class="col-sm-2">Type</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
@@ -64,7 +79,9 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('raw-material.get.payment-request') }}`)
+            initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#product_id', 'products', 'name', 'id', true, false, true, true);
+            filterationCommon(`{{ route('raw-material.get.payment-request') }}`);
         });
     </script>
 @endsection

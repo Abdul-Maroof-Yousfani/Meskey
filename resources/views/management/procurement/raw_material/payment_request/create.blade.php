@@ -6,8 +6,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Contract:</label>
-                <input type="hidden" name="arrival_payment_request_id" value="{{ $purchaseOrder->id }}">
-                <select name="arrival_payment_request_id_display" id="{{ 'arrival_payment_request_id' }}"
+                <input type="hidden" name="arrival_purchase_order_id" value="{{ $purchaseOrder->id }}">
+                <select name="arrival_purchase_order_id_display" id="{{ 'arrival_purchase_order_id' }}"
                     class="form-control select2" disabled>
                     <option value="{{ $purchaseOrder->id }}"
                         data-is-decision-pending="{{ $purchaseOrder->decision_making }}">

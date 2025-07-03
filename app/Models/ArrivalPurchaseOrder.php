@@ -140,7 +140,7 @@ class ArrivalPurchaseOrder extends Model
 
     public function purchaseFreights()
     {
-        return $this->hasMany(PurchaseFreight::class, 'arrival_purchase_order_id');
+        return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id');
     }
 
     public function totalLoadingWeight()

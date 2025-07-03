@@ -25,20 +25,26 @@
                     </td>
                     <td>{{ number_format($request->amount, 2) }}</td>
                     <td>
-                        @if ($request->approvals->count() > 0)
+                        @if ($request->status == 'approved')
+                            <span class="badge badge-success">Approved</span>
+                        @else
+                            <span class="badge badge-info">Pending</span>
+                        @endif
+                        {{-- @if ($request->approvals->count() > 0)
                             <span
                                 class="badge badge-{{ $request->approvals->first()->status == 'approved' ? 'success' : 'danger' }}">
                                 {{ ucfirst($request->approvals->first()->status) }}
                             </span>
                         @else
                             <span class="badge badge-info">Pending</span>
-                        @endif
+                        @endif --}}
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
-
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->approvals->count() > 0 ? ', true' : '' }})"
+                            {{-- <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->approvals->count() > 0 ? ', true' : '' }})"
+                                class="info p-1 text-center mr-2 position-relative"> --}}
+                            <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>

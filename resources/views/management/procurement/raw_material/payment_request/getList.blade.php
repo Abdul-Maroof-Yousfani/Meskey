@@ -3,6 +3,8 @@
         <tr>
             <th class="col-sm-2">Contract No</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-1">Commodity</th>
+            <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
             <th class="col-sm-2">Type</th>
             <th class="col-sm-1">Created</th>
@@ -16,11 +18,16 @@
                     <td>#{{ $po->contract_no ?? 'N/A' }} <br>
                         {{ $po->qcProduct->name ?? ($po->product->name ?? 'N/A') }}
                     </td>
+                    {{-- @dd($po->purchaseFreights) --}}
                     <td>{{ $po->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $po->qcProduct->name ?? 'N/A' }}</td>
+                    <td>
+                        {{ $po->purchaseFreights ? \Carbon\Carbon::parse($po->purchaseFreights->loading_date)->format('Y-m-d') : 'N/A' }}
+                    </td>
                     <td>
                         <div class="div-box-b">
                             @if ($po->calculated_values['total_payment_sum'] == 0 && $po->calculated_values['total_freight_sum'] == 0)
-                                <span class="text-muted"> No requests yet</span>
+                                <span class="text-muted"> No requests generated yet</span>
                             @else
                                 <small>
                                     <strong>Total Amount:</strong> {{ $po->calculated_values['total_amount'] ?? 0 }}
@@ -57,18 +64,10 @@
                         {{ \Carbon\Carbon::parse($po->calculated_values['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $po->id) }}','Manage Payment Request')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('raw-material.payment-request.destroy', $po->id) }}','{{ route('raw-material.get.payment-request') }}')"
-                                class="danger p-1 text-center mr-2 position-relative">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
+                        <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $po->id) }}','Manage Payment Request')"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach
