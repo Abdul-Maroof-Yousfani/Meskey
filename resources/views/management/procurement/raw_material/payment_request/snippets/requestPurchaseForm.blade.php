@@ -53,7 +53,8 @@
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
     $loadingWeighbridgeSum = $kantaCharges / 2;
     $bagsRateSum = $bagRate * $noOfBags;
-    $paidAmount = $pRsSum;
+    $requestedAmount = $requestedAmount;
+    $paidAmount = $approvedAmount;
     $advanceFreight = $purchaseOrder->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - $pRsSumForFreight;
 
@@ -580,9 +581,10 @@
 
     @php
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
+        $isPaymentType = $paymentRequest->request_type === 'payment';
     @endphp
 
-    <div class="row mx-auto">
+    <div class="row mx-auto {{ !$isPaymentType ? 'd-none' : '' }}">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount</label>
@@ -590,6 +592,13 @@
                     value="{{ number_format($totalAmount, 2) }}" readonly>
                 <input type="hidden" class="form-control" name="total_amount" id="total_amount"
                     value="{{ $totalAmount }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Requested Amount</label>
+                <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
+                    value="{{ $requestedAmount }}" placeholder="Enter paid amount">
             </div>
         </div>
         <div class="col-md-6">
@@ -603,7 +612,7 @@
             <div class="form-group">
                 <label>Remaining</label>
                 <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
-                    value="{{ number_format($totalAmount - $paidAmount, 2) }}" readonly>
+                    value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
             </div>
         </div>
         <div class="col">
@@ -621,9 +630,13 @@
                     placeholder="Enter payment request">
             </div>
         </div>
+    </div>
+    <div class="row mx-auto">
         <div class="col-12">
             <hr class="border">
         </div>
+    </div>
+    <div class="row mx-auto {{ $isPaymentType ? 'd-none' : '' }}">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Total Advance Freight</label>
@@ -681,7 +694,7 @@
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
             const bagRate = parseFloat($('#bag_rate').val()) || 0;
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
-            const paidAmount = parseFloat({{ $pRsSum }});
+            const paidAmount = parseFloat({{ $requestedAmount }});
 
             function toggleSections() {
                 if ($loadingRadio.is(':checked')) {

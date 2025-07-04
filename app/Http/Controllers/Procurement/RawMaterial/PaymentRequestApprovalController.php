@@ -233,12 +233,11 @@ class PaymentRequestApprovalController extends Controller
 
         $purchaseOrder = $paymentRequest->paymentRequestData->purchaseOrder;
 
-        $pRsSum = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
-            $query->where('purchase_order_id', $purchaseOrder->id);
-        })
-            ->where('request_type', 'payment')
-            // ->where('status', 'approved')
-            ->sum('amount');
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
+            ->where('request_type', 'payment')->sum('amount');
+
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
+            ->where('request_type', 'payment')->where('status', 'approved')->sum('amount');
 
         $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
             $query->where('purchase_order_id', $purchaseOrder->id);
@@ -305,7 +304,8 @@ class PaymentRequestApprovalController extends Controller
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
             'samplingRequestResults' => $samplingRequestResults,
-            'pRsSum' => $pRsSum,
+            'requestedAmount' => $requestedAmount,
+            'approvedAmount' => $approvedAmount,
             'pRsSumForFreight' => $pRsSumForFreight,
             'otherDeduction' => $otherDeduction,
             'isRequestApprovalPage' => true,
