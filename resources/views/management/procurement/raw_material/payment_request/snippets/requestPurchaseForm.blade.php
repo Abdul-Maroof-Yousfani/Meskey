@@ -586,7 +586,7 @@
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
     @endphp
 
-    <div class="row mx-auto {{ $isPaymentType == 2 ? 'd-none' : '' }}">
+    <div class="row mx-auto {{ $isApprovalPage ? 'd-none' : '' }}">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount</label>
@@ -628,7 +628,7 @@
             <div class="form-group">
                 <label>Payment Request</label>
                 <input type="number" step="0.01" class="form-control payment-request-input"
-                    name="payment_request_amount" value="{{ $currentPaymentAmount }}"
+                    name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}" value="{{ $currentPaymentAmount }}"
                     placeholder="Enter payment request">
             </div>
         </div>
@@ -638,7 +638,7 @@
             <hr class="border">
         </div>
     </div>
-    <div class="row mx-auto {{ $isPaymentType == 1 ? 'd-none' : '' }}">
+    <div class="row mx-auto {{ $isApprovalPage ? 'd-none' : '' }}">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Total Advance Freight</label>
@@ -672,7 +672,8 @@
         <div class="col">
             <div class="form-group">
                 <label>Freight Pay Request</label>
-                <input type="number" class="form-control payment-request-freifht" name="freight_pay_request_amount"
+                <input type="number" class="form-control payment-request-freifht"
+                    name="{{ $isApprovalPage ? '' : 'freight_pay_request_amount' }}"
                     value="{{ $currentFreightAmount }}" placeholder="Enter freight pay request"
                     max="{{ (int) $remainingFreight }}">
             </div>

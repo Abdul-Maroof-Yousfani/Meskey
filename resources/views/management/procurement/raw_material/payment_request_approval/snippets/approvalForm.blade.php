@@ -38,8 +38,9 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Original Amount</label>
-                <input type="text" class="form-control" value="{{ number_format($paymentRequest->amount, 2) }}"
-                    readonly>
+                <input type="text" class="form-control"
+                    name="{{ $paymentRequest->request_type == 'payment' ? 'payment_request_amount' : 'freight_pay_request_amount' }}"
+                    value="{{ number_format($paymentRequest->amount, 2) }}">
             </div>
         </div>
         <div class="col-md-6">
