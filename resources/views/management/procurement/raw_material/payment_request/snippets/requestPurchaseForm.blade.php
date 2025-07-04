@@ -596,14 +596,14 @@
                     value="{{ $totalAmount }}" readonly>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Requested Amount</label>
                 <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
                     value="{{ $requestedAmount }}" placeholder="Enter paid amount">
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Paid Amount</label>
                 <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
