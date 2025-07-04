@@ -114,12 +114,12 @@
 
     .editable-field {
         background-color: #fff !important;
-        border-color: #007bff;
+        border-color: #27489a;
     }
 
     .other-deduction-row {
         background-color: #f8f9fa;
-        border-left: 4px solid #007bff;
+        border-left: 4px solid #27489a;
     }
 
     .approval-editable {
