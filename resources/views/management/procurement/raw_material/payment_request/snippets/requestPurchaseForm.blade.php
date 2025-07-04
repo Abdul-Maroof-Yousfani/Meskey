@@ -68,14 +68,15 @@
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
-    $isPaymentType = false;
+    $isPaymentType = 0;
 
     if ($isApprovalPage && isset($paymentRequest)) {
         if ($paymentRequest->request_type === 'payment') {
             $currentPaymentAmount = $paymentRequest->amount;
-            $isPaymentType = true;
+            $isPaymentType = 1;
         } else {
             $currentFreightAmount = $paymentRequest->amount;
+            $isPaymentType = 2;
         }
     }
 @endphp
@@ -585,7 +586,7 @@
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
     @endphp
 
-    <div class="row mx-auto {{ !$isPaymentType ? 'd-none' : '' }}">
+    <div class="row mx-auto {{ $isPaymentType == 2 ? 'd-none' : '' }}">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount</label>
@@ -637,7 +638,7 @@
             <hr class="border">
         </div>
     </div>
-    <div class="row mx-auto {{ $isPaymentType ? 'd-none' : '' }}">
+    <div class="row mx-auto {{ $isPaymentType == 1 ? 'd-none' : '' }}">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Total Advance Freight</label>
