@@ -581,7 +581,7 @@
 
     @php
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
-        $isPaymentType = $paymentRequest->request_type === 'payment';
+        $isPaymentType = $paymentRequest->request_type === 'payment' && $isApprovalPage;
     @endphp
 
     <div class="row mx-auto {{ !$isPaymentType ? 'd-none' : '' }}">
