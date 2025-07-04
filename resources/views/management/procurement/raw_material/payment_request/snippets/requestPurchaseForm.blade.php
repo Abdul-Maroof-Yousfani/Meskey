@@ -68,10 +68,12 @@
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
+    $isPaymentType = false;
 
     if ($isApprovalPage && isset($paymentRequest)) {
         if ($paymentRequest->request_type === 'payment') {
             $currentPaymentAmount = $paymentRequest->amount;
+            $isPaymentType = true;
         } else {
             $currentFreightAmount = $paymentRequest->amount;
         }
@@ -581,7 +583,6 @@
 
     @php
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
-        $isPaymentType = $paymentRequest->request_type === 'payment' && $isApprovalPage;
     @endphp
 
     <div class="row mx-auto {{ !$isPaymentType ? 'd-none' : '' }}">
