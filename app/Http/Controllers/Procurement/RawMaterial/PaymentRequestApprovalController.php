@@ -237,14 +237,14 @@ class PaymentRequestApprovalController extends Controller
             $query->where('purchase_order_id', $purchaseOrder->id);
         })
             ->where('request_type', 'payment')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->sum('amount');
 
         $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
             $query->where('purchase_order_id', $purchaseOrder->id);
         })
             ->where('request_type', 'freight_payment')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->sum('amount');
 
         $samplingRequest = null;

@@ -32,7 +32,9 @@ class PaymentRequestController extends Controller
      */
     public function index()
     {
-        return view('management.procurement.raw_material.payment_request.index');
+        $isTicket = str()->contains(request()->route()->getName(), '.ticket.');
+
+        return view('management.procurement.raw_material.payment_request.index', ['isTicket' => $isTicket]);
     }
 
     /**
@@ -40,96 +42,196 @@ class PaymentRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $query = ArrivalPurchaseOrder::where('sauda_type_id', 2)
-            ->with([
+        $isTicket = str()->contains(request()->route()->getName(), 'ticket.');
+
+        if ($isTicket) {
+            // Handle ticket route case
+            $query = ArrivalTicket::with([
+                'purchaseOrder',
                 'paymentRequestData.paymentRequests',
                 'paymentRequestData.paymentRequests.approvals',
                 'supplier',
                 'product',
                 'qcProduct',
-                'purchaseFreights',
+                'freight',
                 'paymentRequestData' => function ($query) {
                     $query->with(['paymentRequests' => function ($q) {
                         $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
                             ->groupBy('payment_request_data_id', 'request_type', 'status');
                     }]);
                 }
-            ]);
+            ])->whereHas('purchaseOrder'); // Only tickets with contracts attached
 
-        if ($request->has('supplier_id') && $request->supplier_id != '') {
-            $query->where('supplier_id', $request->supplier_id);
-        }
+            if ($request->has('supplier_id') && $request->supplier_id != '') {
+                $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                    $q->where('supplier_id', $request->supplier_id);
+                });
+            }
 
-        if ($request->has('product_id') && $request->product_id != '') {
-            $query->where('qc_product', $request->product_id);
-        }
+            if ($request->has('product_id') && $request->product_id != '') {
+                $query->where('qc_product', $request->product_id);
+            }
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('contract_no', 'like', "%{$search}%")
-                    ->orWhere('ref_no', 'like', "%{$search}%")
-                    ->orWhereHas('supplier', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('product', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
+            if ($request->has('search') && $request->search != '') {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('unique_no', 'like', "%{$search}%")
+                        ->orWhere('truck_no', 'like', "%{$search}%")
+                        ->orWhereHas('purchaseOrder', function ($q) use ($search) {
+                            $q->where('contract_no', 'like', "%{$search}%")
+                                ->orWhere('ref_no', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('purchaseOrder.supplier', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('product', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                });
+            }
 
-        $purchaseOrders = $query->paginate($request->per_page ?? 10);
+            $tickets = $query->paginate($request->per_page ?? 10);
 
-        $purchaseOrders->getCollection()->transform(function ($po) {
-            $approvedPaymentSum = 0;
-            $approvedFreightSum = 0;
-            $totalPaymentSum = 0;
-            $totalFreightSum = 0;
-            $totalAmount = 0;
-            $paidAmount = 0;
-            $remainingAmount = 0;
+            $tickets->getCollection()->transform(function ($ticket) {
+                $approvedPaymentSum = 0;
+                $approvedFreightSum = 0;
+                $totalPaymentSum = 0;
+                $totalFreightSum = 0;
+                $totalAmount = 0;
+                $paidAmount = 0;
+                $remainingAmount = 0;
 
-            foreach ($po->paymentRequestData as $data) {
-                $totalAmount = $data->total_amount ?? 0;
-                $paidAmount = $data->paid_amount ?? 0;
+                foreach ($ticket->paymentRequestData as $data) {
+                    $totalAmount = $data->total_amount ?? 0;
+                    $paidAmount = $data->paid_amount ?? 0;
 
-                foreach ($data->paymentRequests as $pRequest) {
-                    if ($pRequest->request_type == 'payment') {
-                        $totalPaymentSum += $pRequest->total_amount;
-                        if ($pRequest->status == 'approved') {
-                            $approvedPaymentSum += $pRequest->total_amount;
-                        }
-                    } else {
-                        $totalFreightSum += $pRequest->total_amount;
-                        if ($pRequest->status == 'approved') {
-                            $approvedFreightSum += $pRequest->total_amount;
+                    foreach ($data->paymentRequests as $pRequest) {
+                        if ($pRequest->request_type == 'payment') {
+                            $totalPaymentSum += $pRequest->total_amount;
+                            if ($pRequest->status == 'approved') {
+                                $approvedPaymentSum += $pRequest->total_amount;
+                            }
+                        } else {
+                            $totalFreightSum += $pRequest->total_amount;
+                            if ($pRequest->status == 'approved') {
+                                $approvedFreightSum += $pRequest->total_amount;
+                            }
                         }
                     }
                 }
+
+                $remainingAmount = ($totalAmount - $approvedPaymentSum);
+
+                $ticket->calculated_values = [
+                    'total_payment_sum' => $totalPaymentSum,
+                    'total_freight_sum' => $totalFreightSum,
+                    'approved_payment_sum' => $approvedPaymentSum,
+                    'approved_freight_sum' => $approvedFreightSum,
+                    'total_amount' => $totalAmount,
+                    'paid_amount' => $paidAmount,
+                    'remaining_amount' => $remainingAmount,
+                    'created_at' => $ticket->paymentRequestData->first()->created_at ?? $ticket->created_at
+                ];
+
+                return $ticket;
+            });
+
+            return view('management.procurement.raw_material.payment_request.getList', [
+                'purchaseOrders' => $tickets,
+                'isTicket' => true
+            ]);
+        } else {
+            // Original purchase order code
+            $query = ArrivalPurchaseOrder::where('sauda_type_id', 2)
+                ->with([
+                    'paymentRequestData.paymentRequests',
+                    'paymentRequestData.paymentRequests.approvals',
+                    'supplier',
+                    'product',
+                    'qcProduct',
+                    'purchaseFreights',
+                    'paymentRequestData' => function ($query) {
+                        $query->with(['paymentRequests' => function ($q) {
+                            $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                                ->groupBy('payment_request_data_id', 'request_type', 'status');
+                        }]);
+                    }
+                ]);
+
+            if ($request->has('supplier_id') && $request->supplier_id != '') {
+                $query->where('supplier_id', $request->supplier_id);
             }
 
-            $remainingAmount = ($totalAmount - $approvedPaymentSum);
+            if ($request->has('product_id') && $request->product_id != '') {
+                $query->where('qc_product', $request->product_id);
+            }
 
-            $po->calculated_values = [
-                'total_payment_sum' => $totalPaymentSum,
-                'total_freight_sum' => $totalFreightSum,
-                'approved_payment_sum' => $approvedPaymentSum,
-                'approved_freight_sum' => $approvedFreightSum,
-                'total_amount' => $totalAmount,
-                'paid_amount' => $paidAmount,
-                'remaining_amount' => $remainingAmount,
-                'created_at' => $po->paymentRequestData->first()->created_at ?? $po->created_at
-            ];
+            if ($request->has('search') && $request->search != '') {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('contract_no', 'like', "%{$search}%")
+                        ->orWhere('ref_no', 'like', "%{$search}%")
+                        ->orWhereHas('supplier', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('product', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                });
+            }
 
-            return $po;
-        });
+            $purchaseOrders = $query->paginate($request->per_page ?? 10);
 
+            $purchaseOrders->getCollection()->transform(function ($po) {
+                $approvedPaymentSum = 0;
+                $approvedFreightSum = 0;
+                $totalPaymentSum = 0;
+                $totalFreightSum = 0;
+                $totalAmount = 0;
+                $paidAmount = 0;
+                $remainingAmount = 0;
 
-        return view('management.procurement.raw_material.payment_request.getList', [
-            'purchaseOrders' => $purchaseOrders
-        ]);
+                foreach ($po->paymentRequestData as $data) {
+                    $totalAmount = $data->total_amount ?? 0;
+                    $paidAmount = $data->paid_amount ?? 0;
+
+                    foreach ($data->paymentRequests as $pRequest) {
+                        if ($pRequest->request_type == 'payment') {
+                            $totalPaymentSum += $pRequest->total_amount;
+                            if ($pRequest->status == 'approved') {
+                                $approvedPaymentSum += $pRequest->total_amount;
+                            }
+                        } else {
+                            $totalFreightSum += $pRequest->total_amount;
+                            if ($pRequest->status == 'approved') {
+                                $approvedFreightSum += $pRequest->total_amount;
+                            }
+                        }
+                    }
+                }
+
+                $remainingAmount = ($totalAmount - $approvedPaymentSum);
+
+                $po->calculated_values = [
+                    'total_payment_sum' => $totalPaymentSum,
+                    'total_freight_sum' => $totalFreightSum,
+                    'approved_payment_sum' => $approvedPaymentSum,
+                    'approved_freight_sum' => $approvedFreightSum,
+                    'total_amount' => $totalAmount,
+                    'paid_amount' => $paidAmount,
+                    'remaining_amount' => $remainingAmount,
+                    'created_at' => $po->paymentRequestData->first()->created_at ?? $po->created_at
+                ];
+
+                return $po;
+            });
+
+            return view('management.procurement.raw_material.payment_request.getList', [
+                'purchaseOrders' => $purchaseOrders,
+                'isTicket' => false
+            ]);
+        }
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -138,6 +240,7 @@ class PaymentRequestController extends Controller
         $data['purchaseOrders'] = ArrivalPurchaseOrder::where('sauda_type_id', 2)->get();
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['isTicket'] = str()->contains(request()->route()->getName(), '.ticket.');
 
         return view('management.procurement.raw_material.payment_request.create', $data);
     }
@@ -341,19 +444,20 @@ class PaymentRequestController extends Controller
         $data['purchaseOrder'] = $purchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['isTicket'] = str()->contains(request()->route()->getName(), '.ticket.');
 
         $pRsSum = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
             $query->where('purchase_order_id', $purchaseOrder->id);
         })
             ->where('request_type', 'payment')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->sum('amount');
 
         $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
             $query->where('purchase_order_id', $purchaseOrder->id);
         })
             ->where('request_type', 'freight_payment')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->sum('amount');
 
         $samplingRequest = null;
@@ -424,6 +528,7 @@ class PaymentRequestController extends Controller
             'pRsSum' => $pRsSum,
             'pRsSumForFreight' => $pRsSumForFreight,
             'otherDeduction' => $otherDeduction,
+            'isTicket' => $data['isTicket'],
             'isRequestApprovalPage' => false
         ])->render();
 
@@ -498,6 +603,7 @@ class PaymentRequestController extends Controller
     public function getSlabsByPaymentRequestParams(Request $request)
     {
         $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->purchase_order_id);
+        $isTicket = str()->contains(request()->route()->getName(), '.ticket.');
 
         // Calculate sum of payment requests for this purchase order
         $pRsSum = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
@@ -582,9 +688,10 @@ class PaymentRequestController extends Controller
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
             'samplingRequestResults' => $samplingRequestResults,
-            'pRsSum' => $pRsSum,
             'pRsSumForFreight' => $pRsSumForFreight,
             'otherDeduction' => $otherDeduction,
+            'pRsSum' => $pRsSum,
+            'isTicket' => $isTicket,
         ])->render();
 
         return response()->json(['success' => true, 'html' => $html]);
