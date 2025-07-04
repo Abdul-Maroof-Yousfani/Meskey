@@ -752,7 +752,8 @@
 
             function updateOtherDeduction() {
                 const otherDeductionKg = parseFloat($('#other_deduction_kg').val()) || 0;
-                const otherDeductionAmount = otherDeductionKg * loadingWeight;
+                const bagWeightTotal = parseFloat($('#bag_weight_total').val()) || 0;
+                const otherDeductionAmount = otherDeductionKg * (loadingWeight - bagWeightTotal);
 
                 $('#other_deduction_amount').val(otherDeductionAmount);
                 $('#other_deduction_amount_display').val(otherDeductionAmount.toFixed(2));
