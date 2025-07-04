@@ -82,11 +82,11 @@
                     .val()) || 0;
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
 
-                if (paymentRequestAmount > totalAmount) {
-                    e.preventDefault();
-                    alert('Payment request amount cannot exceed total amount');
-                    return false;
-                }
+                // if (paymentRequestAmount > totalAmount) {
+                //     e.preventDefault();
+                //     alert('Payment request amount cannot exceed total amount');
+                //     return false;
+                // }
             }
         });
     });
