@@ -7,7 +7,7 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Payment Request</h2>
+                    <h2 class="page-title">Payment Request {{ $isTicket ? '(Ticket)' : '' }}</h2>
                 </div>
                 {{-- <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
@@ -62,7 +62,7 @@
                                             <th class="col-sm-1">Commodity</th>
                                             <th class="col-sm-1">Loading date</th>
                                             <th class="col-sm-2">Amounts</th>
-                                            <th class="col-sm-2">Type</th>
+                                            <th class="col-sm-2">Total Requested Amount</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
@@ -81,7 +81,9 @@
         $(document).ready(function() {
             initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#product_id', 'products', 'name', 'id', true, false, true, true);
-            filterationCommon(`{{ route('raw-material.get.payment-request') }}`);
+            filterationCommon(
+                `{{ route($isTicket ? 'raw-material.ticket.get.payment-request' : 'raw-material.get.payment-request') }}`
+            );
         });
     </script>
 @endsection

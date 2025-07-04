@@ -6,7 +6,7 @@
             <th class="col-sm-1">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-2">Type</th>
+            <th class="col-sm-2">Total Requested Amount</th>
             <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -64,7 +64,7 @@
                         {{ \Carbon\Carbon::parse($po->calculated_values['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $po->id) }}','Manage Payment Request')"
+                        <a onclick="openModal(this,'{{ route($isTicket ? 'raw-material.ticket.payment-request.edit' : 'raw-material.payment-request.edit', $po->id) }}','Manage Payment Request')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
