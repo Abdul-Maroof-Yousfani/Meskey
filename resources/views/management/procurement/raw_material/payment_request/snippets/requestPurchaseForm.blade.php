@@ -586,99 +586,102 @@
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
     @endphp
 
-    <div class="row mx-auto {{ $isApprovalPage ? 'd-none' : '' }}">
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Amount</label>
-                <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                    value="{{ number_format($totalAmount, 2) }}" readonly>
-                <input type="hidden" class="form-control" name="total_amount" id="total_amount"
-                    value="{{ $totalAmount }}" readonly>
+    @if (!$isApprovalPage)
+        <div class="row mx-auto {{ $isApprovalPage ? 'd-none' : '' }}">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
+                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                    <input type="hidden" class="form-control" name="total_amount" id="total_amount"
+                        value="{{ $totalAmount }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Requested Amount</label>
+                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
+                        value="{{ $requestedAmount }}" placeholder="Enter paid amount">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Paid Amount</label>
+                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
+                        value="{{ $paidAmount }}" placeholder="Enter paid amount">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Remaining</label>
+                    <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
+                        value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Percentage</label>
+                    <input type="number" min="0" max="100" step="0.01"
+                        class="form-control percentage-input" value="0" placeholder="Enter percentage">
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Payment Request</label>
+                    <input type="number" step="0.01" class="form-control payment-request-input"
+                        name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}"
+                        value="{{ $currentPaymentAmount }}" placeholder="Enter payment request">
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label>Requested Amount</label>
-                <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
-                    value="{{ $requestedAmount }}" placeholder="Enter paid amount">
+        <div class="row mx-auto">
+            <div class="col-12">
+                <hr class="border">
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label>Paid Amount</label>
-                <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
-                    value="{{ $paidAmount }}" placeholder="Enter paid amount">
+        <div class="row mx-auto ">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Total Advance Freight</label>
+                    <input type="text" class="form-control" name="advance_freight_display"
+                        value="{{ number_format($advanceFreight, 2) }}" readonly>
+                    <input type="hidden" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
+                        readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Paid Freight</label>
+                    <input type="text" class="form-control" name="paid_freight"
+                        value="{{ number_format($pRsSumForFreight, 2) }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Remaining Freight</label>
+                    <input type="text" class="form-control" name="remaining_freight"
+                        value="{{ $remainingFreight }}" readonly>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Percentage</label>
+                    <input type="number" min="0" max="100" step="0.01"
+                        class="form-control percentage-input-freight" value="0" placeholder="Enter percentage">
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Freight Pay Request</label>
+                    <input type="number" class="form-control payment-request-freifht"
+                        name="{{ $isApprovalPage ? '' : 'freight_pay_request_amount' }}"
+                        value="{{ $currentFreightAmount }}" placeholder="Enter freight pay request"
+                        max="{{ (int) $remainingFreight }}">
+                </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Remaining</label>
-                <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
-                    value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col">
-            <div class="form-group">
-                <label>Percentage</label>
-                <input type="number" min="0" max="100" step="0.01"
-                    class="form-control percentage-input" value="0" placeholder="Enter percentage">
-            </div>
-        </div>
-        <div class="col">
-            <div class="form-group">
-                <label>Payment Request</label>
-                <input type="number" step="0.01" class="form-control payment-request-input"
-                    name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}" value="{{ $currentPaymentAmount }}"
-                    placeholder="Enter payment request">
-            </div>
-        </div>
-    </div>
-    <div class="row mx-auto">
-        <div class="col-12">
-            <hr class="border">
-        </div>
-    </div>
-    <div class="row mx-auto {{ $isApprovalPage ? 'd-none' : '' }}">
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Total Advance Freight</label>
-                <input type="text" class="form-control" name="advance_freight_display"
-                    value="{{ number_format($advanceFreight, 2) }}" readonly>
-                <input type="hidden" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
-                    readonly>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Paid Freight</label>
-                <input type="text" class="form-control" name="paid_freight"
-                    value="{{ number_format($pRsSumForFreight, 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Remaining Freight</label>
-                <input type="text" class="form-control" name="remaining_freight" value="{{ $remainingFreight }}"
-                    readonly>
-            </div>
-        </div>
-        <div class="col">
-            <div class="form-group">
-                <label>Percentage</label>
-                <input type="number" min="0" max="100" step="0.01"
-                    class="form-control percentage-input-freight" value="0" placeholder="Enter percentage">
-            </div>
-        </div>
-        <div class="col">
-            <div class="form-group">
-                <label>Freight Pay Request</label>
-                <input type="number" class="form-control payment-request-freifht"
-                    name="{{ $isApprovalPage ? '' : 'freight_pay_request_amount' }}"
-                    value="{{ $currentFreightAmount }}" placeholder="Enter freight pay request"
-                    max="{{ (int) $remainingFreight }}">
-            </div>
-        </div>
-    </div>
+    @endif
+
 </div>
 
 @if ($hasLoadingWeight)
