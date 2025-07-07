@@ -1,10 +1,9 @@
 @php
     $hasLoadingWeight = false;
-    if ($ticket && $ticket->purchaseFreight && $ticket->purchaseFreight->loading_weight) {
+    if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
         $hasLoadingWeight = true;
     }
 
-    $purchaseOrder = $ticket->purchaseOrder ?? null;
     $isSlabs = false;
     $isCompulsury = false;
     $showLumpSum = false;
@@ -20,12 +19,12 @@
     }
 
     $totalDeductions = 0;
-    $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
+    $loadingWeight = $purchaseOrder->purchaseFreight->loading_weight ?? 0;
     $bagWeight = $purchaseOrder->bag_weight ?? 0;
-    $noOfBags = $ticket->purchaseFreight->no_of_bags ?? 0;
+    $noOfBags = $purchaseOrder->purchaseFreight->no_of_bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $bagRate = $purchaseOrder->bag_rate ?? 0;
-    $kantaCharges = $ticket->purchaseFreight->kanta_charges ?? 0;
+    $kantaCharges = $purchaseOrder->purchaseFreight->kanta_charges ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
@@ -54,10 +53,10 @@
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
     $loadingWeighbridgeSum = $kantaCharges / 2;
     $bagsRateSum = $bagRate * $noOfBags;
-    $requestedAmount = $requestedAmount ?? 0;
-    $paidAmount = $approvedAmount ?? 0;
-    $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
-    $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
+    $requestedAmount = $requestedAmount;
+    $paidAmount = $approvedAmount;
+    $advanceFreight = $purchaseOrder->purchaseFreight->advance_freight ?? 0;
+    $remainingFreight = $advanceFreight - $pRsSumForFreight;
 
     $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
@@ -133,7 +132,7 @@
     }
 </style>
 
-<input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
+<input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
 
 <!-- Hidden fields for calculations -->
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
@@ -186,13 +185,6 @@
     </div>
     <div class="col-md-6">
         <div class="form-group">
-            <label>Ticket Number</label>
-            <input type="text" class="form-control" name="ticket_no" value="{{ $ticket->unique_no ?? 'N/A' }}"
-                readonly>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="form-group">
             <label>Supplier Name</label>
             <input type="text" class="form-control" name="supplier_name"
                 value="{{ $purchaseOrder->supplier_name ?? ($purchaseOrder->supplier->name ?? 'N/A') }}" readonly>
@@ -216,9 +208,9 @@
         <div class="form-group">
             <label>Contract Range</label>
             <input type="text" class="form-control" name="contract_range"
-                value="{{ $purchaseOrder->min_quantity ?? 0 }} - {{ $purchaseOrder->max_quantity ?? 0 }}" readonly>
-            <input type="hidden" name="min_contract_range" value="{{ $purchaseOrder->min_quantity ?? 0 }}">
-            <input type="hidden" name="max_contract_range" value="{{ $purchaseOrder->max_quantity ?? 0 }}">
+                value="{{ $purchaseOrder->min_quantity }} - {{ $purchaseOrder->max_quantity }}" readonly>
+            <input type="hidden" name="min_contract_range" value="{{ $purchaseOrder->min_quantity }}">
+            <input type="hidden" name="max_contract_range" value="{{ $purchaseOrder->max_quantity }}">
         </div>
     </div>
 </div>
@@ -251,14 +243,14 @@
                 <div class="form-group">
                     <label>Truck #</label>
                     <input type="text" class="form-control" name="truck_no"
-                        value="{{ $ticket->purchaseFreight->truck_no ?? 'N/A' }}" readonly>
+                        value="{{ $purchaseOrder->purchaseFreight->truck_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Loading Date</label>
                     <input type="text" class="form-control" name="loading_date"
-                        value="{{ $ticket && $ticket->purchaseFreight && $ticket->purchaseFreight->loading_date ? $ticket->purchaseFreight->loading_date->format('d-M-Y') : 'N/A' }}"
+                        value="{{ $purchaseOrder && $purchaseOrder->purchaseFreight->loading_date ? $purchaseOrder->purchaseFreight->loading_date->format('d-M-Y') : 'N/A' }}"
                         readonly>
                 </div>
             </div>
@@ -266,7 +258,7 @@
                 <div class="form-group">
                     <label>Bilty #</label>
                     <input type="text" class="form-control" name="bilty_no"
-                        value="{{ $ticket->purchaseFreight->bilty_no ?? 'N/A' }}" readonly>
+                        value="{{ $purchaseOrder->purchaseFreight->bilty_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -305,6 +297,7 @@
                         Sampling Results
                     </h6>
                 </div>
+
                 <div class="col-12">
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered table-hover">
@@ -387,8 +380,10 @@
                                             if (($slab->deduction_type ?? 'amount') !== 'amount') {
                                                 $calculatedValue = ($calculatedValue / 100) * $ratePerKg;
                                             }
+
                                             $totalAmount += $calculatedValue;
                                         @endphp
+
                                         <tr data-slab-id="{{ $slab->id }}">
                                             <td>{{ $slab->slabType->name }}
                                                 <input type="hidden"
@@ -420,8 +415,8 @@
                                                     <input type="text" class="form-control applied-deduction-input"
                                                         name="sampling_results[{{ $slab->id }}][applied_deduction]"
                                                         value="{{ $deductionValue }}"
-                                                        placeholder="Suggested Deduction" readonly
-                                                        data-slab-id="{{ $slab->id }}"
+                                                        placeholder="Suggested Deduction" {{-- {{ $isApprovalPage ? '' : 'readonly' }} --}}
+                                                        readonly data-slab-id="{{ $slab->id }}"
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
@@ -453,9 +448,11 @@
                                         @if (!$slab->applied_deduction)
                                             @continue
                                         @endif
+
                                         @php
                                             $compulsoryCalculatedValue = ($slab->applied_deduction ?? 0) * $netWeight;
                                         @endphp
+
                                         <tr data-compulsory-id="{{ $slab->id }}">
                                             <td>{{ $slab->qcParam->name ?? 'Compulsory' }}
                                                 <input type="hidden"
@@ -473,8 +470,8 @@
                                                         class="form-control compulsory-applied-deduction"
                                                         name="compulsory_results[{{ $slab->id }}][applied_deduction]"
                                                         value="{{ $slab->applied_deduction }}"
-                                                        placeholder="Suggested Deduction" readonly
-                                                        data-compulsory-id="{{ $slab->id }}"
+                                                        placeholder="Suggested Deduction" {{-- {{ $isApprovalPage ? '' : 'readonly' }} --}}
+                                                        readonly data-compulsory-id="{{ $slab->id }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
                                                         <span
@@ -603,8 +600,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Requested Amount</label>
-                    <input type="number" step="0.01" readonly class="form-control" name="requested_amount"
-                        value="{{ $requestedAmount }}" placeholder="Enter requested amount">
+                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
+                        value="{{ $requestedAmount }}" placeholder="Enter paid amount">
                 </div>
             </div>
             <div class="col-md-3">
@@ -637,13 +634,11 @@
                 </div>
             </div>
         </div>
-
         <div class="row mx-auto">
             <div class="col-12">
                 <hr class="border">
             </div>
         </div>
-
         <div class="row mx-auto ">
             <div class="col-md-6">
                 <div class="form-group">
@@ -658,7 +653,7 @@
                 <div class="form-group">
                     <label>Paid Freight</label>
                     <input type="text" class="form-control" name="paid_freight"
-                        value="{{ number_format($pRsSumForFreight ?? 0, 2) }}" readonly>
+                        value="{{ number_format($pRsSumForFreight, 2) }}" readonly>
                 </div>
             </div>
             <div class="col-md-6">
@@ -686,6 +681,7 @@
             </div>
         </div>
     @endif
+
 </div>
 
 @if ($hasLoadingWeight)
@@ -730,6 +726,7 @@
                 let deductionValue = 0;
 
                 if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
+
                     matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
 
                     let highestRmPoEnd = 0;
@@ -813,11 +810,12 @@
             function updateBagWeightCalculations() {
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
-                const bagWeightTotal = currentBagWeight * noOfBags;
 
+                const bagWeightTotal = currentBagWeight * noOfBags;
                 $('#bag_weight_total').val(bagWeightTotal.toFixed(2));
 
                 const calculatedBagWeightAmount = ratePerKg * bagWeightTotal;
+
                 if (Math.abs(bagWeightAmount - calculatedBagWeightAmount) > 0.01) {
                     // Amount was manually changed, calculate weight
                     const newBagWeight = bagWeightAmount / (ratePerKg * noOfBags);
@@ -833,8 +831,8 @@
 
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
-                const bagRateAmount = bagRate * noOfBags;
 
+                const bagRateAmount = bagRate * noOfBags;
                 $('#bag_rate_amount').val(bagRateAmount);
                 $('#bag_rate_amount_display').val(bagRateAmount.toFixed(2));
 
@@ -843,6 +841,7 @@
                 $('#loading_weighbridge_amount_display').val(loadingWeighbridgeAmount.toFixed(2));
 
                 const totalSamplingDeductions = updateSamplingResultsDeductions();
+
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
@@ -856,6 +855,7 @@
 
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
             }
+
 
             $('#bag_weight_input').on('input', function() {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
@@ -873,6 +873,8 @@
             });
 
             $('input[name="payment_request_amount"]').on('input', function() {
+                // const totalAmount = parseFloat($('#total_amount').val()) || 0;
+                // const
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paymentRequest = parseFloat($(this).val()) || 0;
                 const remaining = totalAmount - paymentRequest - paidAmount;
@@ -888,6 +890,7 @@
                     percentage = 100;
                     $(this).val(100);
                 }
+
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const remainingAmount = totalAmount - paidAmount;
                 const amount = (remainingAmount * percentage) / 100;
@@ -898,19 +901,22 @@
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const remainingAmount = totalAmount - paidAmount;
                 let amount = parseFloat($(this).val()) || 0;
+
                 if (amount > remainingAmount) {
                     amount = remainingAmount;
                     $(this).val(remainingAmount.toFixed(2));
                 }
+
                 const percentage = remainingAmount > 0 ? (amount / remainingAmount) * 100 : 0;
                 percentageInput.val(percentage.toFixed(2));
             });
 
             $('input[name="freight_pay_request_amount"]').on('input', function() {
                 const amount = parseFloat({{ $advanceFreight }});
-                const paidAmount = parseFloat({{ $pRsSumForFreight ?? 0 }});
+                const paidAmount = parseFloat({{ $pRsSumForFreight }});
                 const paymentRequest = parseFloat($(this).val()) || 0;
                 const remaining = (amount - paymentRequest - paidAmount);
+
                 $('input[name="remaining_freight"]').val(remaining.toFixed(2));
             });
 
@@ -924,16 +930,19 @@
                     percentage = 100;
                     $(this).val(100);
                 }
+
                 const amount = (remainingAmountF * percentage) / 100;
                 paymentRequestInputF.val(amount.toFixed(2));
             });
 
             paymentRequestInputF.on('input', function() {
                 let amount = parseFloat($(this).val()) || 0;
+
                 if (amount > remainingAmountF) {
                     amount = remainingAmountF;
                     $(this).val(remainingAmountF.toFixed(2));
                 }
+
                 const percentage = remainingAmountF > 0 ? (amount / remainingAmountF) * 100 : 0;
                 percentageInputF.val(percentage.toFixed(2));
             });

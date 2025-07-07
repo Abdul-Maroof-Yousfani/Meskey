@@ -9,6 +9,7 @@ use App\Models\ArrivalPurchaseOrder;
 use App\Models\BagCondition;
 use App\Models\BagType;
 use App\Models\Master\Station;
+use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
 
 class PurchaseFreightController extends Controller
@@ -22,11 +23,19 @@ class PurchaseFreightController extends Controller
 
     public function getList(Request $request)
     {
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'pending')->where('company_id', $request->company_id)
-            ->latest()
-            ->paginate(request('per_page', 25));
+        // $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'pending')->where('company_id', $request->company_id)
+        //     ->latest()
+        //     ->paginate(request('per_page', 25));
 
-        return view('management.procurement.raw_material.freight.getList', compact('arrivalPurchaseOrders'));
+        // return view('management.procurement.raw_material.freight.getList', compact('arrivalPurchaseOrders'));
+
+        $purchaseTickets = PurchaseTicket::where('freight_status', 'pending')
+            ->where('company_id', $request->company_id)
+            ->whereNotNull('purchase_order_id')
+            ->latest()
+            ->paginate($request->get('per_page', 25));
+
+        return view('management.procurement.raw_material.freight.getList', compact('purchaseTickets'));
     }
 
     public function create(Request $request)
@@ -34,20 +43,20 @@ class PurchaseFreightController extends Controller
         $stations = Station::all();
         $bagTypes = BagCondition::all();
 
-        $purchaseOrder = ArrivalPurchaseOrder::with(['supplier', 'broker', 'product'])
-            ->find($request->arrival_purchase_order_id);
+        $ticket = PurchaseTicket::with(['purchaseOrder', 'purchaseOrder.supplier', 'purchaseOrder.broker', 'purchaseOrder.product'])
+            ->find($request->purchase_ticket_id);
 
-        if (!$purchaseOrder) {
+        if (!$ticket) {
             return response()->json(['success' => false, 'message' => 'Purchase order not found'], 404);
         }
 
         // $html = view('management.procurement.raw_material.freight.partials.freight_form', [
-        //     'purchaseOrder' => $purchaseOrder,
+        //     'purchaseOrder' => $ticket,
         //     'stations' => $stations,
         //     'bagTypes' => $bagTypes
         // ])->render();
 
-        return view('management.procurement.raw_material.freight.create', compact('stations', 'bagTypes', 'purchaseOrder', 'bagTypes'));
+        return view('management.procurement.raw_material.freight.create', compact('stations', 'bagTypes', 'ticket', 'bagTypes'));
     }
 
     public function store(PurchaseFreightRequest $request)
@@ -63,10 +72,8 @@ class PurchaseFreightController extends Controller
 
         $freight = PurchaseFreight::create($data);
 
-        if ($request->arrival_purchase_order_id) {
-            ArrivalPurchaseOrder::where('id', $request->arrival_purchase_order_id)
-                ->update(['freight_status' => 'completed']);
-        }
+        PurchaseTicket::where('id', $request->purchase_ticket_id)
+            ->update(['freight_status' => 'completed']);
 
         return response()->json([
             'success' => 'Purchase freight created successfully.',
@@ -76,19 +83,16 @@ class PurchaseFreightController extends Controller
 
     public function edit($id)
     {
-        $freight = PurchaseFreight::with(['purchaseOrder', 'station', 'bagCondition'])->findOrFail($id);
+        $ticket = PurchaseTicket::with(['purchaseOrder'])->findOrFail($id);
+        $freight = PurchaseFreight::with(['purchaseOrder', 'station', 'bagType'])
+            ->where('purchase_ticket_id', $ticket->id)
+            ->where('arrival_purchase_order_id', $ticket->purchase_order_id)
+            ->firstOrFail();
 
         $stations = Station::all();
         $bagTypes = BagCondition::all();
 
-        $purchaseOrder = ArrivalPurchaseOrder::with(['supplier', 'broker', 'product'])
-            ->find($id);
-
-        if (!$purchaseOrder) {
-            return response()->json(['success' => false, 'message' => 'Purchase order not found'], 404);
-        }
-
-        return view('management.procurement.raw_material.freight.edit', compact('freight', 'stations', 'bagTypes'));
+        return view('management.procurement.raw_material.freight.edit', compact('ticket', 'freight', 'stations', 'bagTypes'));
     }
 
     public function update(PurchaseFreightRequest $request, PurchaseFreight $purchaseFreight)

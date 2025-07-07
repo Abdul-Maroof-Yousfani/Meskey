@@ -1,15 +1,15 @@
- <form action="{{ route('raw-material.freight.update', $freight->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
+ <form action="{{ route('raw-material.freight.update', $ticket->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
      enctype="multipart/form-data">
      @csrf
      @method('PUT')
-     <input type="hidden" name="arrival_purchase_order_id" value="{{ $freight->arrival_purchase_order_id }}" />
+     <input type="hidden" name="arrival_purchase_order_id" value="{{ $ticket->purchase_order_id }}" />
      <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight') }}" />
 
      <div class="row form-mar">
          <div class="col-md-6">
              <div class="form-group">
                  <label>Contract #</label>
-                 <input type="text" class="form-control" value="{{ $freight->purchaseOrder->contract_no ?? 'N/A' }}"
+                 <input type="text" class="form-control" value="{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}"
                      readonly />
              </div>
          </div>
@@ -32,7 +32,7 @@
          <div class="col-md-6">
              <div class="form-group">
                  <label>Broker</label>
-                 <input type="text" name="broker" class="form-control" value="{{ $freight->broker }}" />
+                 <input type="text" name="broker" class="form-control" value="{{ $freight->broker_one_name }}" />
              </div>
          </div>
 
@@ -70,7 +70,7 @@
                      <option value="">Select Bag Condition</option>
                      @foreach ($bagTypes as $bagType)
                          <option value="{{ $bagType->id }}"
-                             {{ $freight->bag_condition_id == $bagType->id ? 'selected' : '' }}>
+                             {{ $ticket->bag_condition_id == $bagType->id ? 'selected' : '' }}>
                              {{ $bagType->name }}
                          </option>
                      @endforeach
@@ -81,7 +81,7 @@
          <div class="col-md-6">
              <div class="form-group">
                  <label>Commodity</label>
-                 <input type="text" name="commodity" class="form-control" value="{{ $freight->commodity }}"
+                 <input type="text" name="commodity" class="form-control" value="{{ $ticket->commodity }}"
                      readonly />
              </div>
          </div>
@@ -90,7 +90,7 @@
              <div class="form-group">
                  <label>Loading Weight (kg)</label>
                  <input type="number" step="0.01" name="loading_weight" class="form-control"
-                     value="{{ $freight->loading_weight }}" />
+                     value="{{ $ticket->loading_weight }}" />
              </div>
          </div>
 
@@ -98,7 +98,7 @@
              <div class="form-group">
                  <label>Kanta Charges</label>
                  <input type="number" step="0.01" name="kanta_charges" class="form-control"
-                     value="{{ $freight->kanta_charges }}" />
+                     value="{{ $ticket->kanta_charges }}" />
              </div>
          </div>
 
@@ -106,7 +106,7 @@
              <div class="form-group">
                  <label>Freight on Bilty</label>
                  <input type="number" step="0.01" name="freight_on_bilty" class="form-control"
-                     value="{{ $freight->freight_on_bilty }}" />
+                     value="{{ $ticket->freight_on_bilty }}" />
              </div>
          </div>
 
@@ -114,7 +114,7 @@
              <div class="form-group">
                  <label>Advance Freight</label>
                  <input type="number" step="0.01" name="advance_freight" class="form-control"
-                     value="{{ $freight->advance_freight }}" />
+                     value="{{ $ticket->advance_freight }}" />
              </div>
          </div>
 
@@ -136,10 +136,9 @@
              <div class="form-group">
                  <label>Bilty Slip</label>
                  <input type="file" name="bilty_slip" class="form-control-file" />
-                 @if ($freight->bilty_slip)
+                 @if ($ticket->bilty_slip)
                      <div class="mt-2">
-                         <a href="{{ asset($freight->bilty_slip) }}" target="_blank"
-                             class="btn btn-sm btn-info">View
+                         <a href="{{ asset($ticket->bilty_slip) }}" target="_blank" class="btn btn-sm btn-info">View
                              Current File</a>
                      </div>
                  @endif
@@ -150,9 +149,9 @@
              <div class="form-group">
                  <label>Weighbridge Slip</label>
                  <input type="file" name="weighbridge_slip" class="form-control-file" />
-                 @if ($freight->weighbridge_slip)
+                 @if ($ticket->weighbridge_slip)
                      <div class="mt-2">
-                         <a href="{{ asset($freight->weighbridge_slip) }}" target="_blank"
+                         <a href="{{ asset($ticket->weighbridge_slip) }}" target="_blank"
                              class="btn btn-sm btn-info">View Current File</a>
                      </div>
                  @endif
@@ -163,9 +162,9 @@
              <div class="form-group">
                  <label>Supplier Bill</label>
                  <input type="file" name="supplier_bill" class="form-control-file" />
-                 @if ($freight->supplier_bill)
+                 @if ($ticket->supplier_bill)
                      <div class="mt-2">
-                         <a href="{{ asset($freight->supplier_bill) }}" target="_blank"
+                         <a href="{{ asset($ticket->supplier_bill) }}" target="_blank"
                              class="btn btn-sm btn-info">View Current File</a>
                      </div>
                  @endif

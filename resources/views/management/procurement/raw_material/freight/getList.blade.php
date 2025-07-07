@@ -2,42 +2,46 @@
      <thead>
          <tr>
              <th class="col-sm-2">Contract No. </th>
+             <th class="col-sm-3">Supplier</th>
+             <th class="col-sm-3">Broker</th>
              <th class="col-sm-3">Product</th>
              <th class="col-sm-2">Status</th>
              <th class="col-sm-2">Action</th>
          </tr>
      </thead>
      <tbody>
-         @if (count($arrivalPurchaseOrders) != 0)
-             @foreach ($arrivalPurchaseOrders as $purchaseOrder)
-                 <tr class="bg-{{ $purchaseOrder->purchaseFreight ? '' : 'orange' }}">
-                     <td>{{ $purchaseOrder->contract_no ?? 'N/A' }}</td>
-                     <td> {{ $purchaseOrder->product->name ?? 'N/A' }}</td>
+         @if (count($purchaseTickets) != 0)
+             @foreach ($purchaseTickets as $ticket)
+                 <tr class="bg-orange">
+                     <td>{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }} <br>{{ $ticket->unique_no ?? 'N/A' }}</td>
+                     <td> {{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
+                     <td> {{ $ticket->purchaseOrder->broker_one_name ?? 'N/A' }}</td>
+                     <td> {{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}</td>
                      <td>
-                         <span
-                             class="badge badge-{{ $purchaseOrder->freight_status == 'pending' ? 'warning' : ($purchaseOrder->completed == 'approved' ? 'success' : 'danger') }}">
-                             {{ ucfirst($purchaseOrder->freight_status ?? 'Pending') }}
+                         <span class="badge badge-{{ $ticket->freight_status == 'pending' ? 'warning' : 'success' }}">
+                             {{ ucfirst($ticket->freight_status ?? 'Pending') }}
                          </span>
                      </td>
                      <td>
-                         @if ($purchaseOrder->purchaseFreight)
-                             <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $purchaseOrder->purchaseFreight->id) }}','Edit Loading', true)"
-                                 class="info p-1 text-center mr-2 position-relative">
-                                 <i class="ft-edit font-medium-3"></i>
-                             </a>
-                         @else
-                             <a onclick="openModal(this,'{{ route('raw-material.freight.create', ['arrival_purchase_order_id' => $purchaseOrder->id]) }}','Create Loading', false)"
-                                 class="success p-1 text-center mr-2 position-relative">
-                                 <i class="ft-edit font-medium-3"></i>
-                             </a>
-                         @endif
+                         {{-- @if ($ticket->purchaseOrder->purchaseFreight) --}}
+                         {{-- <a onclick="openModal(this,'{{ route('raw-material.freight.edit', $ticket->id) }}','Edit Loading', true)"
+                             class="info p-1 text-center mr-2 position-relative">
+                             <i class="ft-edit font-medium-3"></i>
+                         </a> --}}
+                         <a onclick="openModal(this,'{{ route('raw-material.freight.create', ['purchase_ticket_id' => $ticket->id]) }}','Create Loading', false)"
+                             class="success p-1 text-center mr-2 position-relative">
+                             <i class="ft-edit font-medium-3"></i>
+                         </a>
+                         {{-- @else
+                            
+                         @endif --}}
 
-                         @if ($purchaseOrder->purchaseFreight)
-                             <a onclick="deletemodal('{{ route('raw-material.freight.destroy', $purchaseOrder->purchaseFreight->id) }}','{{ route('raw-material.get.freight') }}')"
+                         {{--  @if ($ticket->purchaseOrder->purchaseFreight)
+                             <a onclick="deletemodal('{{ route('raw-material.freight.destroy', $ticket->purchaseOrder->purchaseFreight->id) }}','{{ route('raw-material.get.freight') }}')"
                                  class="danger p-1 text-center mr-2 position-relative">
                                  <i class="ft-x font-medium-3"></i>
                              </a>
-                         @endif
+                         @endif  --}}
                      </td>
                  </tr>
              @endforeach
@@ -69,6 +73,6 @@
 
  <div class="row d-flex" id="paginationLinks">
      <div class="col-md-12 text-right">
-         {{ $arrivalPurchaseOrders->links() }}
+         {{ $purchaseTickets->links() }}
      </div>
  </div>

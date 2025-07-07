@@ -2,8 +2,9 @@
     <thead>
         <tr>
             <th class="col-sm-2">Contract No. </th>
+            <th class="col-sm-2">Supplier</th>
             <th class="col-sm-3">Product</th>
-            <th class="col-sm-4">Remark</th>
+            <th class="col-sm-2">Remark</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -15,6 +16,11 @@
                     <td>
                         <p class="m-0">
                             #{{ $row->purchaseOrder->contract_no ?? 'N/A' }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->purchaseOrder->supplier->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>

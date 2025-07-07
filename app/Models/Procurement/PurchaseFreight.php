@@ -5,6 +5,7 @@ namespace App\Models\Procurement;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\BagCondition;
 use App\Models\Master\Station;
+use App\Models\PurchaseTicket;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,8 +17,9 @@ class PurchaseFreight extends Model
     protected $table = "purchase_freights";
 
     protected $fillable = [
-        'arrival_purchase_order_id',
         'company_id',
+        'arrival_purchase_order_id',
+        'purchase_ticket_id',
         'loading_date',
         'supplier_name',
         // 'broker',
@@ -46,6 +48,11 @@ class PurchaseFreight extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
+    }
+
+    public function ticket()
+    {
+        return $this->belongsTo(PurchaseTicket::class, 'ticket_id');
     }
 
     public function station()

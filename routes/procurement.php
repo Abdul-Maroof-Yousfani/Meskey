@@ -12,7 +12,8 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     PurchaseSamplingController,
     PurchaseSamplingMonitoringController,
     PurchaseSamplingRequestController,
-    TicketContractController
+    TicketContractController,
+    TicketPaymentRequestController
 };
 
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
@@ -57,6 +58,17 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('payment-request-approval.approve');
 
     Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('freight.getFreightForm');
+
+    Route::prefix('ticket')->group(function () {
+        Route::resource('payment-request', TicketPaymentRequestController::class)->names('ticket.payment-request');
+        Route::post('/get-payment-request', [TicketPaymentRequestController::class, 'getList'])->name('ticket.get.payment-request');
+
+        Route::resource('payment-request-approval', PaymentRequestApprovalController::class)->names('ticket.payment-request-approval');
+        Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('ticket.get.payment-request-approval');
+        Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('ticket.payment-request-approval.approve');
+
+        Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('ticket.freight.getFreightForm');
+    });
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

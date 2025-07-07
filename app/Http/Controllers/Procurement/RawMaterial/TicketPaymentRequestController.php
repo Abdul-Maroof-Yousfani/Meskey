@@ -19,49 +19,47 @@ use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PaymentRequestSamplingResult;
-use App\Models\Procurement\PurchaseFreight;
 use App\Models\Product;
-use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\TruckSizeRange;
 use Illuminate\Support\Facades\DB;
 
-class PaymentRequestController extends Controller
+class TicketPaymentRequestController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return view('management.procurement.raw_material.payment_request.index');
+        return view('management.procurement.raw_material.ticket_payment_request.index');
     }
 
     /**
-     * Get list of tickets with completed freight status.
+     * Get list of categories.
      */
     public function getList(Request $request)
     {
-        $query = PurchaseTicket::where('freight_status', 'completed')
-            ->with([
-                'paymentRequestData.paymentRequests',
-                'paymentRequestData.paymentRequests.approvals',
-                'purchaseOrder.supplier',
-                'product',
-                'qcProduct',
-                'purchaseFreight',
-                'paymentRequestData' => function ($query) {
-                    $query->with(['paymentRequests' => function ($q) {
-                        $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
-                            ->groupBy('payment_request_data_id', 'request_type', 'status');
-                    }]);
-                }
-            ]);
-        // dd($query);
+        // Handle ticket route case
+        $query = ArrivalTicket::with([
+            'purchaseOrder',
+            'paymentRequestData.paymentRequests',
+            'paymentRequestData.paymentRequests.approvals',
+            'broker',
+            'product',
+            'qcProduct',
+            'freight',
+            'paymentRequestData' => function ($query) {
+                $query->with(['paymentRequests' => function ($q) {
+                    $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                        ->groupBy('payment_request_data_id', 'request_type', 'status');
+                }]);
+            }
+        ])->whereHas('purchaseOrder'); // Only tickets with contracts attached
 
-        if ($request->has('supplier_id') && $request->supplier_id != '') {
+        if ($request->has('broker_id') && $request->broker_id != '') {
             $query->whereHas('purchaseOrder', function ($q) use ($request) {
-                $q->where('supplier_id', $request->supplier_id);
+                $q->where('broker_id', $request->broker_id);
             });
         }
 
@@ -73,6 +71,7 @@ class PaymentRequestController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('unique_no', 'like', "%{$search}%")
+                    ->orWhere('truck_no', 'like', "%{$search}%")
                     ->orWhereHas('purchaseOrder', function ($q) use ($search) {
                         $q->where('contract_no', 'like', "%{$search}%")
                             ->orWhere('ref_no', 'like', "%{$search}%");
@@ -87,6 +86,7 @@ class PaymentRequestController extends Controller
         }
 
         $tickets = $query->paginate($request->per_page ?? 10);
+
         $tickets->getCollection()->transform(function ($ticket) {
             $approvedPaymentSum = 0;
             $approvedFreightSum = 0;
@@ -131,23 +131,20 @@ class PaymentRequestController extends Controller
             return $ticket;
         });
 
-        return view('management.procurement.raw_material.payment_request.getList', [
+        return view('management.procurement.raw_material.ticket_payment_request.getList', [
             'tickets' => $tickets,
         ]);
     }
-
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        $data['tickets'] = PurchaseTicket::where('freight_status', 'completed')
-            ->with(['purchaseOrder', 'purchaseFreight'])
-            ->get();
+        $data['purchaseOrders'] = ArrivalPurchaseOrder::where('sauda_type_id', 2)->get();
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
-        return view('management.procurement.raw_material.payment_request.create', $data);
+        return view('management.procurement.raw_material.ticket_payment_request.create', $data);
     }
 
     /**
@@ -159,7 +156,7 @@ class PaymentRequestController extends Controller
             // Prepare base data
             $requestData = $request->validated();
             $requestData['is_loading'] = $request->loading_type === 'loading';
-            // dd($requestData);
+
             // Create main payment request data
             $paymentRequestData = PaymentRequestData::create($requestData);
 
@@ -211,6 +208,21 @@ class PaymentRequestController extends Controller
                 ]);
             }
         }
+
+        if ($request->other_deduction && isset($request->other_deduction['kg_value']) && $request->other_deduction['kg_value'] > 0) {
+            // PaymentRequestSamplingResult::create([
+            //     'payment_request_data_id' => $paymentRequest->id,
+            //     'slab_type_id' => null,
+            //     'name' => $request->other_deduction['slab_name'] ?? 'Other Deduction',
+            //     'checklist_value' => 0,
+            //     'suggested_deduction' => 0,
+            //     'applied_deduction' => $request->other_deduction['kg_value'],
+            //     'deduction_type' => 'kg',
+            //     'deduction_amount' => $request->other_deduction['deduction_amount'],
+            //     'is_other_deduction' => true,
+            //     'kg_value' => $request->other_deduction['kg_value']
+            // ]);
+        }
     }
 
     public function update(PaymentRequestRequest $request, $id)
@@ -246,11 +258,16 @@ class PaymentRequestController extends Controller
 
     protected function createPaymentRequests($paymentRequestData, $request)
     {
-        if (isset($request->ticket_id)) {
-            $ticket = PurchaseTicket::find($request->ticket_id);
-            if ($ticket && $ticket->purchaseOrder) {
-                $ticket->purchaseOrder->update(['bag_weight' => $request->bag_weight]);
-            }
+        // dd([
+        //     'payment_request_data_id' => $paymentRequestData->id,
+        //     'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
+        //     'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+        //     'request_type' => 'payment',
+        //     'amount' => $request->payment_request_amount ?? 0
+        // ]);
+
+        if (isset($request->arrival_purchase_order_id)) {
+            $result = ArrivalPurchaseOrder::find($request->arrival_purchase_order_id)->update(['bag_weight' => $request->bag_weight]);
         }
 
         PaymentRequest::create([
@@ -305,22 +322,26 @@ class PaymentRequestController extends Controller
         }
     }
 
+    /**
+     * Show the form for editing the specified resource.
+     */
     public function edit($id)
     {
-        $data['ticket'] = $ticket = PurchaseTicket::with(['purchaseOrder', 'purchaseFreight'])->findOrFail($id);
+        $data['arrivalTicket'] = $arrivalTicket = ArrivalTicket::findOrFail($id);
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
-        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $arrivalTicket->id))
             ->where('request_type', 'payment')->sum('amount');
 
-        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $arrivalTicket->id))
             ->where('request_type', 'payment')->where('status', 'approved')->sum('amount');
 
-        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
-            $query->where('ticket_id', $ticket->id);
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
+            $query->where('purchase_order_id', $arrivalTicket->id);
         })
             ->where('request_type', 'freight_payment')
+            // ->where('status', 'approved')
             ->sum('amount');
 
         $samplingRequest = null;
@@ -328,16 +349,16 @@ class PaymentRequestController extends Controller
         $samplingRequestResults = collect();
         $otherDeduction = null;
 
-        if ($ticket) {
-            $samplingRequest = PurchaseSamplingRequest::where('purchase_ticket_id', $id)
+        if ($arrivalTicket) {
+            $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $id)
                 ->whereIn('approved_status', ['approved', 'rejected'])
                 ->latest()
                 ->first();
 
             if ($samplingRequest) {
                 $rmPoSlabs = collect();
-                if ($ticket->purchaseOrder && $samplingRequest->arrival_product_id) {
-                    $rmPoSlabs = ProductSlabForRmPo::where('arrival_purchase_order_id', $ticket->purchaseOrder->id)
+                if ($arrivalTicket && $samplingRequest->arrival_product_id) {
+                    $rmPoSlabs = ProductSlabForRmPo::where('arrival_ticket_id', $arrivalTicket->id)
                         ->where('product_id', $samplingRequest->arrival_product_id)
                         ->get()
                         ->groupBy('product_slab_type_id');
@@ -359,16 +380,18 @@ class PaymentRequestController extends Controller
                         $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
                             ->values()
                             ->all();
+
                         if (!empty($matchingSlabs)) {
                             $result->deduction_type = $matchingSlabs[0]->deduction_type;
                         }
                     }
+
                     $result->matching_slabs = $matchingSlabs;
                 }
             }
 
-            $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
-                $query->where('ticket_id', $ticket->id);
+            $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
+                $query->where('purchase_order_id', $arrivalTicket->id);
             })->select('other_deduction_kg', 'other_deduction_value')
                 ->latest()
                 ->first();
@@ -381,9 +404,8 @@ class PaymentRequestController extends Controller
             });
         }
 
-        $data['html'] = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
-            'ticket' => $ticket,
-            'purchaseOrder' => $ticket->purchaseOrder,
+        $data['html'] = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
+            'purchaseOrder' => $purchaseOrder,
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
             'samplingRequestResults' => $samplingRequestResults,
@@ -394,25 +416,25 @@ class PaymentRequestController extends Controller
             'isRequestApprovalPage' => false
         ])->render();
 
-        return view('management.procurement.raw_material.payment_request.create', $data);
+        return view('management.procurement.raw_material.ticket_payment_request.create', $data);
     }
 
     public function editOld($id)
     {
         $paymentRequestData = PaymentRequestData::with([
-            'ticket.purchaseOrder',
+            'purchaseOrder',
             'samplingResults.slabType',
             'paymentRequests'
         ])->findOrFail($id);
 
-        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $paymentRequestData->ticket_id))
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
             ->where('request_type', 'payment')->sum('amount');
 
-        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $paymentRequestData->ticket_id))
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
             ->where('request_type', 'payment')->where('status', 'approved')->sum('amount');
 
         $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($paymentRequestData) {
-            $query->where('ticket_id', $paymentRequestData->ticket_id);
+            $query->where('purchase_order_id', $paymentRequestData->purchase_order_id);
         })
             ->where('request_type', 'freight_payment')
             ->sum('amount');
@@ -420,7 +442,10 @@ class PaymentRequestController extends Controller
         $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
         $freightRequest = $paymentRequestData->paymentRequests->where('request_type', 'freight_payment')->first();
 
-        return view('management.procurement.raw_material.payment_request.edit', [
+        // Get other deduction
+        // $otherDeduction = $paymentRequestData->samplingResults->where('is_other_deduction', true)->first();
+
+        return view('management.procurement.raw_material.ticket_payment_request.edit', [
             'paymentRequestData' => $paymentRequestData,
             'paymentRequest' => $paymentRequest,
             'freightRequest' => $freightRequest,
@@ -428,6 +453,7 @@ class PaymentRequestController extends Controller
             'approvedAmount' => $approvedAmount,
             'pRsSumForFreight' => $pRsSumForFreight,
             'samplingResults' => $paymentRequestData->samplingResults,
+            // 'otherDeduction' => $otherDeduction
         ]);
     }
 
@@ -449,6 +475,7 @@ class PaymentRequestController extends Controller
                 'is_done' => 'no',
                 'remark' => null,
             ]);
+
             $sampling->is_resampling_made = 'yes';
         }
 
@@ -460,29 +487,29 @@ class PaymentRequestController extends Controller
 
     public function getSlabsByPaymentRequestParams(Request $request)
     {
-        $ticket = PurchaseTicket::with(['purchaseOrder', 'purchaseFreight'])->findOrFail($request->ticket_id);
-        $purchaseOrder = $ticket->purchaseOrder;
+        $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->purchase_order_id);
 
-        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
             ->where('request_type', 'payment')->sum('amount');
 
-        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
             ->where('request_type', 'payment')->where('status', 'approved')->sum('amount');
 
-        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
-            $query->where('ticket_id', $ticket->id);
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
+            $query->where('purchase_order_id', $purchaseOrder->id);
         })
             ->where('request_type', 'freight_payment')
             ->sum('amount');
 
-        $tickets = PurchaseTicket::where('freight_status', 'completed')->get();
+        $purchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'completed')->get();
+
         $samplingRequest = null;
         $samplingRequestCompulsuryResults = collect();
         $samplingRequestResults = collect();
         $otherDeduction = null;
 
-        if ($ticket) {
-            $samplingRequest = PurchaseSamplingRequest::where('ticket_id', $request->ticket_id)
+        if ($purchaseOrder) {
+            $samplingRequest = PurchaseSamplingRequest::where('arrival_purchase_order_id', $request->purchase_order_id)
                 ->whereIn('approved_status', ['approved', 'rejected'])
                 ->latest()
                 ->first();
@@ -512,15 +539,22 @@ class PaymentRequestController extends Controller
                         $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
                             ->values()
                             ->all();
+
                         if (!empty($matchingSlabs)) {
                             $result->deduction_type = $matchingSlabs[0]->deduction_type;
                         }
                     }
+
                     $result->matching_slabs = $matchingSlabs;
                 }
             }
 
-            $existingPaymentRequestData = PaymentRequestData::where('ticket_id', $request->ticket_id)->first();
+            $existingPaymentRequestData = PaymentRequestData::where('purchase_order_id', $request->purchase_order_id)->first();
+            if ($existingPaymentRequestData) {
+                // $otherDeduction = PaymentRequestSamplingResult::where('payment_request_data_id', $existingPaymentRequestData->id)
+                //     ->where('is_other_deduction', true)
+                //     ->first();
+            }
         }
 
         if (isset($request->is_debug)) {
@@ -528,11 +562,11 @@ class PaymentRequestController extends Controller
             $samplingRequestResults = $samplingRequestResults->filter(function ($result) {
                 return $result->applied_deduction;
             });
+            // dd($samplingRequestResults, $orignalsamplingRequestResults, $rmPoSlabs);
         }
 
-        $html = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
-            'tickets' => $tickets,
-            'ticket' => $ticket,
+        $html = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
+            'purchaseOrders' => $purchaseOrders,
             'purchaseOrder' => $purchaseOrder,
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,

@@ -2,7 +2,9 @@
 
 namespace App\Models\Procurement;
 
+use App\Models\Arrival\ArrivalTicket;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\PurchaseTicket;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +16,7 @@ class PaymentRequestData extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'ticket_id',
         'request_type',
         'supplier_name',
         'contract_rate',
@@ -52,7 +55,12 @@ class PaymentRequestData extends Model
 
     public function purchaseOrder()
     {
-        return $this->belongsTo(ArrivalPurchaseOrder::class);
+        return $this->belongsTo(ArrivalPurchaseOrder::class, 'purchase_order_id');
+    }
+
+    public function purchaseTicket()
+    {
+        return $this->belongsTo(PurchaseTicket::class, 'ticket_id');
     }
 
     public function samplingResults()

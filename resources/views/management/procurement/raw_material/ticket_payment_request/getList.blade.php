@@ -1,8 +1,8 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No / Contract No</th>
-            <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Contract/Ticket No</th>
+            <th class="col-sm-2">Borker/Supplier</th>
             <th class="col-sm-1">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
@@ -15,15 +15,17 @@
         @if (count($tickets) != 0)
             @foreach ($tickets as $ticket)
                 <tr>
-                    <td>
-                        <strong>Ticket:</strong> #{{ $ticket->unique_no ?? 'N/A' }}<br>
-                        <strong>Contract:</strong> #{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}<br>
-                        {{-- <small>{{ $ticket->product->name ?? ($ticket->product->name ?? 'N/A') }}</small> --}}
+                    <td>#{{ $ticket->unique_no }} <br>
+                        #{{ $ticket->purchaseOrder->contract_no }}
                     </td>
-                    <td>{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
-                    <td>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}</td>
+                    {{-- @dd($ticket->purchaseFreights) --}}
+                    <td>{{ $ticket->broker_name ?? 'N/A' }} <br>{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}
+                    </td>
+                    <td>{{ $ticket->qcProduct->name ?? 'N/A' }}
+                        <br>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}
+                    </td>
                     <td>
-                        {{ $ticket->purchaseFreight ? \Carbon\Carbon::parse($ticket->purchaseFreight->loading_date)->format('Y-m-d') : 'N/A' }}
+                        {{ $ticket->purchaseOrder->purchaseFreights ? \Carbon\Carbon::parse($ticket->purchaseOrder->purchaseFreights->loading_date)->format('Y-m-d') : 'N/A' }}
                     </td>
                     <td>
                         <div class="div-box-b">
@@ -33,6 +35,7 @@
                                 <small>
                                     <strong>Total Amount:</strong> {{ $ticket->calculated_values['total_amount'] ?? 0 }}
                                     <br>
+                                    {{-- <strong>Paid Amount:</strong> {{ $ticket->calculated_values['paid_amount'] ?? 0 }} <br> --}}
                                     <strong>Approved Payment:</strong>
                                     {{ $ticket->calculated_values['approved_payment_sum'] ?? 0 }}<br>
                                     <strong>Approved Freight:</strong>
@@ -64,7 +67,7 @@
                         {{ \Carbon\Carbon::parse($ticket->calculated_values['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $ticket->id) }}','Manage Payment Request')"
+                        <a onclick="openModal(this,'{{ route('raw-material.ticket.payment-request.edit', $ticket->id) }}','Manage Payment Request')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
@@ -73,7 +76,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="8" class="ant-table-cell text-center">
+                <td colspan="7" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
