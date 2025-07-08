@@ -36,14 +36,14 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="supplier_id" class="form-control">
+                                                <select name="supplier_id" id="product_id_filter" class="form-control">
                                                     <option value="">
                                                         Select Supplier</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Commodity</label>
-                                                <select name="product_id" id="product_id" class="form-control">
+                                                <select name="product_id" id="product_id_filter" class="form-control">
                                                     <option value="">
                                                         Select Commodity</option>
                                                 </select>
@@ -93,8 +93,8 @@
     <script>
         $(document).ready(function() {
             initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
-            initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
-            initializeDynamicSelect2('#product_id', 'products', 'name', 'id', true, false);
+            initializeDynamicSelect2('#product_id_filter', 'suppliers', 'name', 'id', true, false);
+            initializeDynamicSelect2('#product_id_filter', 'products', 'name', 'id', true, false);
             filterationCommon(`{{ route('raw-material.get.purchase-sampling-request') }}`);
         });
     </script>
