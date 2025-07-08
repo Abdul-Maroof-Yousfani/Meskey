@@ -165,6 +165,7 @@ class SamplingMonitoringController extends Controller
             $initialResults->map(function ($item) use ($slabs) {
                 $slab = $slabs->get($item->product_slab_type_id);
                 $item->max_range = $slab ? $slab->to : null;
+                $item->deduction_type = $slab ? $slab->deduction_type : null;
                 return $item;
             });
 
@@ -182,6 +183,7 @@ class SamplingMonitoringController extends Controller
 
             $innerResults->map(function ($item) use ($slabs) {
                 $slab = $slabs->get($item->product_slab_type_id);
+                $item->deduction_type = $slab ? $slab->deduction_type : null;
                 $item->max_range = $slab ? $slab->to : null;
                 return $item;
             });
