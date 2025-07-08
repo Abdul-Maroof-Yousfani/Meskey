@@ -85,8 +85,8 @@
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
 
 
-            initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false);
-            initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false);
+            initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
         });
     </script>
 @endsection
