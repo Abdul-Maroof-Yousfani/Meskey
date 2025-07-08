@@ -474,6 +474,8 @@
                                                             if (!$slab->applied_deduction) {
                                                                 continue;
                                                             }
+
+                                                            $type = $slab->deduction_type ?? 'amount';
                                                         @endphp
                                                         <tr>
                                                             <td style="padding: 8px;border: 1px solid #ddd;">
@@ -482,7 +484,8 @@
                                                             <td
                                                                 style="padding: 8px; border: 1px solid #ddd;  text-align: center;">
                                                                 {{ $slab->applied_deduction }} <span
-                                                                    class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                                    class="text-sm">{{ $type == 'amount' ? 'Rs.' : 'KG\'s' }}
+                                                                </span>
                                                             </td>
                                                         </tr>
                                                     @endforeach

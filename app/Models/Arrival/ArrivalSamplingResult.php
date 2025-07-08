@@ -2,6 +2,7 @@
 
 namespace App\Models\Arrival;
 
+use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,6 @@ class ArrivalSamplingResult extends Model
         'suggested_deduction',
         'checklist_value',
         'remark',
-        'product_slab_type_id',
         'applied_deduction',
         'relief_deduction',
     ];
@@ -25,5 +25,10 @@ class ArrivalSamplingResult extends Model
     public function slabType()
     {
         return $this->hasOne(ProductSlabType::class, 'id', 'product_slab_type_id');
+    }
+
+    public function productSlab()
+    {
+        return $this->hasOne(ProductSlab::class, 'product_slab_type_id', 'product_slab_type_id');
     }
 }
