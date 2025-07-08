@@ -63,6 +63,11 @@ class PaymentRequestData extends Model
         return $this->belongsTo(PurchaseTicket::class, 'ticket_id');
     }
 
+    public function arrivalTicket()
+    {
+        return $this->belongsTo(ArrivalTicket::class, 'ticket_id');
+    }
+
     public function samplingResults()
     {
         return $this->hasMany(PaymentRequestSamplingResult::class);

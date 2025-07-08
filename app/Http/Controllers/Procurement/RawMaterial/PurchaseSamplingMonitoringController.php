@@ -12,6 +12,7 @@ use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\PurchaseSamplingRequest;
+use App\Models\PurchaseTicket;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
@@ -333,6 +334,7 @@ class PurchaseSamplingMonitoringController extends Controller
 
             if ($request->stage_status == 'approved') {
                 ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
+                PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['freight_status' => 'pending']);
             }
 
             return response()->json([

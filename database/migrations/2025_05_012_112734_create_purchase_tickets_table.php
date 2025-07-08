@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('purchase_order_id')->nullable();
 
             $table->enum('qc_status', ['resampling', 'pending', 'rejected', 'approved'])->nullable();
-            $table->enum('freight_status', ['completed', 'pending'])->default('pending')->nullable();
+            $table->enum('freight_status', ['completed', 'pending'])->nullable();
             $table->string('payment_request_status',)->nullable();
 
             $table->softDeletes();

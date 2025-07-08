@@ -102,14 +102,16 @@ class PurchaseSamplingRequestController extends Controller
         $datePrefix = date('m-d-Y') . '-';
         $unique_no = generateUniqueNumberByDate('purchase_tickets', $datePrefix, null, 'unique_no');
 
+        $purchaseOrder = ArrivalPurchaseOrder::find($request->purchase_contract_id);
+
         $purchaseTicket = PurchaseTicket::create([
             'unique_no' => $unique_no,
             'company_id' => $request->company_id,
-            'purchase_order_id' => $request->purchase_contract_id ?? null,
-            'product_id' => $request->product_id ?? null,
+            'purchase_order_id' => $request->purchase_contract_id,
+            'product_id' => $request->product_id,
+            'bag_weight' => $purchaseOrder?->bag_weight,
             'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
             'qc_status' => 'pending',
-            'freight_status' => 'pending',
         ]);
 
         $arrivalSampleReq = null;

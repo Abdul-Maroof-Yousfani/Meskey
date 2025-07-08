@@ -249,7 +249,8 @@ class PaymentRequestController extends Controller
         if (isset($request->ticket_id)) {
             $ticket = PurchaseTicket::find($request->ticket_id);
             if ($ticket && $ticket->purchaseOrder) {
-                $ticket->purchaseOrder->update(['bag_weight' => $request->bag_weight]);
+                // $ticket->purchaseOrder->update(['bag_weight' => $request->bag_weight]);
+                $ticket->update(['bag_weight' => $request->bag_weight]);
             }
         }
 
