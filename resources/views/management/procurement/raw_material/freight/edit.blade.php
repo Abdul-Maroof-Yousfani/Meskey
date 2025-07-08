@@ -66,7 +66,7 @@
          <div class="col-md-6">
              <div class="form-group">
                  <label>Bag Condition</label>
-                 <select class="form-control" name="bag_condition_id">
+                 <select class="form-control select2" name="bag_condition_id">
                      <option value="">Select Bag Condition</option>
                      @foreach ($bagTypes as $bagType)
                          <option value="{{ $bagType->id }}"

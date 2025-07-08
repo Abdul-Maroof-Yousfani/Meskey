@@ -1,8 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">#</th>
-            <th class="col-sm-2">Contract No</th>
+            <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-2">Type</th>
             <th class="col-sm-1">Amount</th>
@@ -15,8 +14,12 @@
         @if (count($paymentRequests) != 0)
             @foreach ($paymentRequests as $request)
                 <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>#{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}</td>
+                    <td>
+                        <strong>Ticket:</strong>
+                        #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? 'N/A' }}<br>
+                        <strong>Contract:</strong>
+                        #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? 'N/A' }}<br>
+                    </td>
                     <td>{{ $request->paymentRequestData->supplier_name ?? 'N/A' }}</td>
                     <td>
                         <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}">
@@ -27,29 +30,20 @@
                     <td>
                         @if ($request->status == 'approved')
                             <span class="badge badge-success">Approved</span>
+                        @elseif ($request->status == 'rejected')
+                            <span class="badge badge-danger">Rejected</span>
                         @else
                             <span class="badge badge-info">Pending</span>
                         @endif
-                        {{-- @if ($request->approvals->count() > 0)
-                            <span
-                                class="badge badge-{{ $request->approvals->first()->status == 'approved' ? 'success' : 'danger' }}">
-                                {{ ucfirst($request->approvals->first()->status) }}
-                            </span>
-                        @else
-                            <span class="badge badge-info">Pending</span>
-                        @endif --}}
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
                         @can('role-edit')
-                            {{-- <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->approvals->count() > 0 ? ', true' : '' }})"
-                                class="info p-1 text-center mr-2 position-relative"> --}}
                             <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
-
                     </td>
                 </tr>
             @endforeach

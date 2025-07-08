@@ -14,6 +14,7 @@ use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\PurchaseSamplingRequest;
+use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,11 +30,15 @@ class PaymentRequestApprovalController extends Controller
     {
         $paymentRequests = PaymentRequest::with([
             'paymentRequestData.purchaseOrder',
+            'paymentRequestData.purchaseTicket.purchaseOrder',
+            'paymentRequestData.purchaseTicket.purchaseFreight',
             'approvals.approver'
         ])
             ->whereHas('paymentRequestData', function ($q) {
-                $q->whereHas('purchaseOrder', function ($q) {
-                    $q->where('sauda_type_id', 2);
+                $q->whereHas('purchaseTicket', function ($q) {
+                    $q->whereHas('purchaseOrder', function ($q) {
+                        $q->where('sauda_type_id', 2);
+                    });
                 });
             })
             ->orderBy('created_at', 'desc')
@@ -46,25 +51,14 @@ class PaymentRequestApprovalController extends Controller
 
     public function store(PaymentRequestApprovalRequest $request)
     {
-        // $request->validate([
-        //     'remarks' => 'nullable|string',
-        //     'payment_request_id' => 'required|exists:payment_requests,id',
-        //     'status' => 'required|in:approved,rejected',
-        //     'payment_request_amount' => 'nullable|numeric|min:0',
-        //     'freight_pay_request_amount' => 'nullable|numeric|min:0',
-        //     'total_amount' => 'nullable|numeric',
-        //     'bag_weight' => 'nullable|numeric|min:0',
-        //     'bag_weight_amount' => 'nullable|numeric',
-        // ]);
-
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             $paymentRequestData = $paymentRequest->paymentRequestData;
-            $purchaseOrder = $paymentRequestData->purchaseOrder;
-
+            $ticket = $paymentRequestData->purchaseTicket;
+            $purchaseOrder = $ticket->purchaseOrder;
             // Validate maximum amount if status is approved
             // if ($request->status === 'approved') {
-            //     $this->validateMaximumAmount($request, $paymentRequest, $purchaseOrder);
+            //     $this->validateMaximumAmount($request, $paymentRequest, $ticket);
             // }
 
             if ($request->has('total_amount') || $request->has('bag_weight')) {
@@ -98,7 +92,8 @@ class PaymentRequestApprovalController extends Controller
             }
 
             if ($request->has('bag_weight')) {
-                $purchaseOrder->update(['bag_weight' => $request->bag_weight]);
+                // $purchaseOrder->update(['bag_weight' => $request->bag_weight]);
+                $ticket->update(['bag_weight' => $request->bag_weight]);
             }
 
             if ($request->has('other_deduction')) {
@@ -111,7 +106,8 @@ class PaymentRequestApprovalController extends Controller
             PaymentRequestApproval::create([
                 'payment_request_id' => $request->payment_request_id,
                 'payment_request_data_id' => $paymentRequest->payment_request_data_id,
-                'purchase_order_id' => $paymentRequestData->purchase_order_id,
+                'ticket_id' => $paymentRequestData->ticket_id,
+                'purchase_order_id' => $purchaseOrder->id,
                 'approver_id' => Auth::id(),
                 'status' => $request->status,
                 'remarks' => $request->remarks,
@@ -127,10 +123,10 @@ class PaymentRequestApprovalController extends Controller
         });
     }
 
-    private function validateMaximumAmount($request, $paymentRequest, $purchaseOrder)
+    private function validateMaximumAmount($request, $paymentRequest, $ticket)
     {
-        $totalApprovedPayments = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
-            $query->where('purchase_order_id', $purchaseOrder->id);
+        $totalApprovedPayments = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+            $query->where('ticket_id', $ticket->id);
         })
             ->where('request_type', 'payment')
             ->where('status', 'approved')
@@ -138,9 +134,7 @@ class PaymentRequestApprovalController extends Controller
             ->sum('amount');
 
         $currentRequestAmount = $request->payment_request_amount ?? $paymentRequest->amount;
-
         $totalAmountAfterApproval = $totalApprovedPayments + $currentRequestAmount;
-
         $maxAllowedAmount = $request->total_amount ?? $paymentRequest->paymentRequestData->total_amount;
 
         if ($totalAmountAfterApproval > $maxAllowedAmount) {
@@ -218,7 +212,9 @@ class PaymentRequestApprovalController extends Controller
     public function edit($paymentRequestId)
     {
         $paymentRequest = PaymentRequest::with([
+            // 'paymentRequestData',
             'paymentRequestData.purchaseOrder',
+            'paymentRequestData.purchaseTicket.purchaseFreight',
         ])->findOrFail($paymentRequestId);
 
         $isUpdated = 0;
@@ -231,19 +227,20 @@ class PaymentRequestApprovalController extends Controller
             $isUpdated = 1;
         }
 
-        $purchaseOrder = $paymentRequest->paymentRequestData->purchaseOrder;
+        // dd($paymentRequest->paymentRequestData->purchaseTicket);
+        $ticket = $paymentRequest->paymentRequestData->purchaseTicket;
+        $purchaseOrder = $ticket->purchaseOrder;
 
-        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
             ->where('request_type', 'payment')->sum('amount');
 
-        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
             ->where('request_type', 'payment')->where('status', 'approved')->sum('amount');
 
-        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
-            $query->where('purchase_order_id', $purchaseOrder->id);
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+            $query->where('ticket_id', $ticket->id);
         })
             ->where('request_type', 'freight_payment')
-            // ->where('status', 'approved')
             ->sum('amount');
 
         $samplingRequest = null;
@@ -251,8 +248,8 @@ class PaymentRequestApprovalController extends Controller
         $samplingRequestResults = collect();
         $otherDeduction = null;
 
-        if ($purchaseOrder) {
-            $samplingRequest = PurchaseSamplingRequest::where('arrival_purchase_order_id', $purchaseOrder->id)
+        if ($ticket) {
+            $samplingRequest = PurchaseSamplingRequest::where('purchase_ticket_id', $ticket->id)
                 ->whereIn('approved_status', ['approved', 'rejected'])
                 ->latest()
                 ->first();
@@ -282,24 +279,23 @@ class PaymentRequestApprovalController extends Controller
                         $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
                             ->values()
                             ->all();
-
                         if (!empty($matchingSlabs)) {
                             $result->deduction_type = $matchingSlabs[0]->deduction_type;
                         }
                     }
-
                     $result->matching_slabs = $matchingSlabs;
                 }
             }
 
-            $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($purchaseOrder) {
-                $query->where('purchase_order_id', $purchaseOrder->id);
+            $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+                $query->where('ticket_id', $ticket->id);
             })->select('other_deduction_kg', 'other_deduction_value')
                 ->latest()
                 ->first();
         }
 
         $requestPurchaseForm = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
+            'ticket' => $ticket,
             'purchaseOrder' => $purchaseOrder,
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
@@ -314,6 +310,7 @@ class PaymentRequestApprovalController extends Controller
 
         return view('management.procurement.raw_material.payment_request_approval.snippets.approvalForm', [
             'paymentRequest' => $paymentRequest,
+            'ticket' => $ticket,
             'isUpdated' => $isUpdated,
             'requestPurchaseForm' => $requestPurchaseForm,
             'approval' => $approval
