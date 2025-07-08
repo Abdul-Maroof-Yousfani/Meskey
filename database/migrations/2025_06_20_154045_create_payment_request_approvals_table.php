@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('payment_request_id')->constrained('payment_requests');
             $table->foreignId('payment_request_data_id')->constrained('payment_request_datas');
-            $table->foreignId('purchase_order_id')->constrained('arrival_purchase_orders');
+            $table->bigInteger('ticket_id')->nullable();
+            $table->foreignId('purchase_order_id')->nullable()->constrained('arrival_purchase_orders');
             $table->foreignId('approver_id')->constrained('users');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->text('remarks')->nullable();
