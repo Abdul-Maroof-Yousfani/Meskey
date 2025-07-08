@@ -290,13 +290,12 @@
                                      if (!$slab->applied_deduction) {
                                          continue;
                                      }
-
-                                     $type = $slab->deduction_type ?? 'amount';
                                  @endphp
                                  <tr>
                                      <td>{{ $slab->slabType->name }}</td>
                                      <td class="text-center">{{ $slab->applied_deduction }}
-                                         <span class="text-sm">{{ $type }}</span>
+                                         <span
+                                             class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                      </td>
                                  </tr>
                              @endforeach
