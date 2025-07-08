@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('product_id')->nullable();
             $table->unsignedBigInteger('qc_product')->nullable();
             $table->enum('is_custom_qc', ['yes', 'no'])->default('no');
+            $table->decimal('bag_weight', 10, 2)->nullable();
 
             $table->unsignedBigInteger('purchase_order_id')->nullable();
 
