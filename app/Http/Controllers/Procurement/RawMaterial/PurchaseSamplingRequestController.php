@@ -26,11 +26,11 @@ class PurchaseSamplingRequestController extends Controller
     public function getList(Request $request)
     {
         $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
-            ->when($request->filled('supplier_id'), function ($query) use ($request) {
-                $query->where('supplier_id', $request->supplier_id);
+            ->when($request->filled('supplier_id_filter'), function ($query) use ($request) {
+                $query->where('supplier_id', $request->supplier_id_filter);
             })
-            ->when($request->filled('product_id'), function ($query) use ($request) {
-                $query->where('product_id', $request->product_id);
+            ->when($request->filled('product_id_filter'), function ($query) use ($request) {
+                $query->where('product_id', $request->product_id_filter);
             })
             ->when($request->filled('company_location_id'), function ($query) use ($request) {
                 $query->where('company_location_id', $request->company_location_id);
