@@ -92,9 +92,9 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
-            initializeDynamicSelect2('#supplier_id_filter', 'suppliers', 'name', 'id', true, false);
-            initializeDynamicSelect2('#product_id_filter', 'products', 'name', 'id', true, false);
+            initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false,true, true);
+            initializeDynamicSelect2('#supplier_id_filter', 'suppliers', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#product_id_filter', 'products', 'name', 'id', true, false, true, true);
             filterationCommon(`{{ route('raw-material.get.purchase-sampling-request') }}`);
         });
     </script>
