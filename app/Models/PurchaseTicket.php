@@ -22,6 +22,7 @@ class PurchaseTicket extends Model
         'qc_product',
         'purchase_order_id',
         'bag_weight',
+        'bag_rate',
         'qc_status',
         'freight_status',
         'payment_request_status',

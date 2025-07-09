@@ -110,6 +110,7 @@ class PurchaseSamplingRequestController extends Controller
             'purchase_order_id' => $request->purchase_contract_id,
             'product_id' => $request->product_id,
             'bag_weight' => $purchaseOrder?->bag_weight,
+            'bag_rate' => $purchaseOrder?->bag_rate,
             'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
             'qc_status' => 'pending',
         ]);

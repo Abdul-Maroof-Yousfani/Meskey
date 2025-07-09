@@ -250,7 +250,7 @@ class PaymentRequestController extends Controller
             $ticket = PurchaseTicket::find($request->ticket_id);
             if ($ticket && $ticket->purchaseOrder) {
                 // $ticket->purchaseOrder->update(['bag_weight' => $request->bag_weight]);
-                $ticket->update(['bag_weight' => $request->bag_weight]);
+                $ticket->update(['bag_weight' => $request->bag_weight, 'bag_rate' => $request->bag_rate]);
             }
         }
 

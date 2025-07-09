@@ -3,14 +3,12 @@
     if ($ticket && $ticket->purchaseFreight && $ticket->purchaseFreight->loading_weight) {
         $hasLoadingWeight = true;
     }
-
     $purchaseOrder = $ticket->purchaseOrder ?? null;
     $isSlabs = false;
     $isCompulsury = false;
     $showLumpSum = false;
     $totalAmount = 0;
     $remaining = 0;
-
     if (
         isset($samplingRequest->is_lumpsum_deduction) &&
         $samplingRequest->is_lumpsum_deduction &&
@@ -18,17 +16,15 @@
     ) {
         $showLumpSum = true;
     }
-
     $totalDeductions = 0;
     $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
     // $bagWeight = $purchaseOrder->bag_weight ?? 0;
     $bagWeight = $ticket->bag_weight ?? 0;
     $noOfBags = $ticket->purchaseFreight->no_of_bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
-    $bagRate = $purchaseOrder->bag_rate ?? 0;
+    $bagRate = $ticket->bag_rate ?? 0;
     $kantaCharges = $ticket->purchaseFreight->kanta_charges ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
-
     foreach ($samplingRequestCompulsuryResults as $slab) {
         if (!$slab->applied_deduction) {
             continue;
@@ -37,7 +33,6 @@
         $deductionValue = $slab->applied_deduction ?? 0;
         $totalDeductions += $deductionValue * $netWeight;
     }
-
     foreach ($samplingRequestResults as $slab) {
         if (!$slab->applied_deduction) {
             continue;
@@ -46,12 +41,10 @@
         $deductionValue = $slab->applied_deduction ?? 0;
         $totalDeductions += $deductionValue * $netWeight;
     }
-
     $avgRate = 0;
     if ($noOfBags > 0) {
         $avgRate = $loadingWeight / $noOfBags;
     }
-
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
     $loadingWeighbridgeSum = $kantaCharges / 2;
     $bagsRateSum = $bagRate * $noOfBags;
@@ -59,19 +52,15 @@
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
-
     $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
-
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
     $existingOtherDeductionAmount = $otherDeduction->other_deduction_value ?? 0;
-
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
     $isPaymentType = 0;
-
     if ($isApprovalPage && isset($paymentRequest)) {
         if ($paymentRequest->request_type === 'payment') {
             $currentPaymentAmount = $paymentRequest->amount;
@@ -135,13 +124,11 @@
 </style>
 
 <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
-
-<!-- Hidden fields for calculations -->
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
+<input type="hidden" id="original_bag_rate" value="{{ $bagRate }}">
 <input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
-<input type="hidden" id="bag_rate" value="{{ $bagRate }}">
 <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}">
 
 <!-- Store sampling data for JS calculations -->
@@ -245,7 +232,6 @@
         <input type="hidden" name="{{ $hasLoadingWeight ? '' : 'loading_type' }}"
             value="{{ $hasLoadingWeight ? 'loading' : 'without_loading' }}">
     </div>
-
     @if ($hasLoadingWeight)
         <div id="loading-section" class="row w-100 mx-auto px-0">
             <div class="col-md-3">
@@ -298,7 +284,6 @@
                         value="{{ number_format($avgRate, 2) }}" readonly>
                 </div>
             </div>
-
             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
             @else
                 <div class="col-12" bis_skin_checked="1">
@@ -331,12 +316,10 @@
                                             $val = $slab->applied_deduction;
                                             $deductionValue = 0;
                                             $sumOfMatchingValues = '';
-
                                             if ($dValCalculatedOn == SLAB_TYPE_PERCENTAGE && $matchingSlabs) {
                                                 usort($matchingSlabs, function ($a, $b) {
                                                     return floatval($a['from']) <=> floatval($b['from']);
                                                 });
-
                                                 $rmPoSlabs = $slab->rm_po_slabs ?? [];
                                                 $highestRmPoEnd = 0;
                                                 foreach ($rmPoSlabs as $rmPoSlab) {
@@ -345,17 +328,14 @@
                                                         $highestRmPoEnd = $rmPoTo;
                                                     }
                                                 }
-
                                                 foreach ($matchingSlabs as $mSlab) {
                                                     $from = floatval($mSlab['from']);
                                                     $to = floatval($mSlab['to']);
                                                     $isTiered = intval($mSlab['is_tiered']);
                                                     $deductionVal = floatval($mSlab['deduction_value'] ?? 0);
-
                                                     if ($val >= $from) {
                                                         $effectiveFrom = max($from, $highestRmPoEnd + 1);
                                                         $effectiveTo = min($to, $val);
-
                                                         if ($effectiveFrom <= $effectiveTo) {
                                                             if ($isTiered === 1) {
                                                                 $applicableAmount = $effectiveTo - $effectiveFrom + 1;
@@ -371,7 +351,6 @@
                                                         }
                                                     }
                                                 }
-
                                                 if (!empty($rmPoSlabs)) {
                                                     $sumOfMatchingValues .= '<br><br>RM PO Slabs (Free Ranges):<br>';
                                                     foreach ($rmPoSlabs as $rmPoSlab) {
@@ -382,7 +361,6 @@
                                             } else {
                                                 $deductionValue = $appliedDeduction;
                                             }
-
                                             // Calculate deduction amount based on net weight
                                             $calculatedValue = $deductionValue * $netWeight;
                                             if (($slab->deduction_type ?? 'amount') !== 'amount') {
@@ -448,7 +426,6 @@
                                         </tr>
                                     @endforeach
                                 @endif
-
                                 @if ($isCompulsury)
                                     @foreach ($samplingRequestCompulsuryResults as $slab)
                                         @if (!$slab->applied_deduction)
@@ -496,7 +473,6 @@
                                         </tr>
                                     @endforeach
                                 @endif
-
                                 <!-- Other Deduction Row -->
                                 <tr class="other-deduction-row" data-other-deduction="true">
                                     <td><strong>Other Deduction</strong>
@@ -532,7 +508,6 @@
                     </div>
                 </div>
             @endif
-
             <div class="col-12">
                 <table class="table table-bordered mb-4" style="min-width: 500px;">
                     <tbody>
@@ -556,16 +531,15 @@
                         <tr>
                             <td><strong>Bags Rate</strong></td>
                             <td>
-                                <input type="text" class="form-control" name="bag_rate"
-                                    value="{{ number_format($bagRate, 2) }}" readonly>
+                                <input type="number" step="0.01" class="form-control editable-field"
+                                    name="bag_rate" id="bag_rate_input" value="{{ $bagRate }}">
                             </td>
                             <td>N/A</td>
                             <td>
-                                <input type="text" class="form-control" name="bag_rate_amount_display"
-                                    id="bag_rate_amount_display" value="{{ number_format($bagsRateSum, 2) }}"
-                                    readonly>
-                                <input type="hidden" class="form-control" name="bag_rate_amount"
-                                    id="bag_rate_amount" value="{{ $bagsRateSum }}" readonly>
+                                <input type="number" step="0.01" class="form-control editable-field"
+                                    name="bag_rate_amount" id="bag_rate_amount" value="{{ $bagsRateSum }}">
+                                <input type="hidden" class="form-control" name="bag_rate_amount_display"
+                                    id="bag_rate_amount_display" value="{{ number_format($bagsRateSum, 2) }}">
                             </td>
                         </tr>
                         <tr>
@@ -585,14 +559,11 @@
             </div>
         </div>
     @endif
-
     @php
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
     @endphp
-
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
-
         <div class="row mx-auto ">
             <div class="col-md-6">
                 <div class="form-group">
@@ -642,13 +613,11 @@
                 </div>
             @endif
         </div>
-
         <div class="row mx-auto">
             <div class="col-12">
                 <hr class="border">
             </div>
         </div>
-
         <div class="row mx-auto ">
             <div class="col-md-6">
                 <div class="form-group">
@@ -701,17 +670,15 @@
     <script>
         $(document).ready(function() {
             $('[data-toggle="tooltip"]').tooltip();
-
             const $loadingRadio = $('#loading');
             const $withoutLoadingRadio = $('#without_loading');
             const $loadingSection = $('#loading-section');
             const $contractRangeField = $('.contract-range-field');
-
             const originalBagWeight = parseFloat($('#original_bag_weight').val()) || 0;
+            const originalBagRate = parseFloat($('#original_bag_rate').val()) || 0;
             const loadingWeight = parseFloat($('#loading_weight').val()) || 0;
             const noOfBags = parseFloat($('#no_of_bags').val()) || 0;
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
-            const bagRate = parseFloat($('#bag_rate').val()) || 0;
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
             const paidAmount = parseFloat({{ $requestedAmount }});
 
@@ -740,7 +707,6 @@
 
                 if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
                     matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
-
                     let highestRmPoEnd = 0;
                     rmPoSlabs.forEach(rmPoSlab => {
                         const rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
@@ -758,7 +724,6 @@
                         if (val >= from) {
                             const effectiveFrom = Math.max(from, highestRmPoEnd + 1);
                             const effectiveTo = Math.min(to, val);
-
                             if (effectiveFrom <= effectiveTo) {
                                 if (isTiered === 1) {
                                     const applicableAmount = effectiveTo - effectiveFrom + 1;
@@ -777,7 +742,6 @@
                 if (slabData.deduction_type !== 'amount') {
                     calculatedValue = (calculatedValue / 100) * ratePerKg;
                 }
-
                 return calculatedValue;
             }
 
@@ -785,10 +749,8 @@
                 const otherDeductionKg = parseFloat($('#other_deduction_kg').val()) || 0;
                 const bagWeightTotal = parseFloat($('#bag_weight_total').val()) || 0;
                 const otherDeductionAmount = otherDeductionKg * (loadingWeight - bagWeightTotal);
-
                 $('#other_deduction_amount').val(otherDeductionAmount);
                 $('#other_deduction_amount_display').val(otherDeductionAmount.toFixed(2));
-
                 return otherDeductionAmount;
             }
 
@@ -799,7 +761,6 @@
                 window.samplingData.samplingResults.forEach(slabData => {
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
                     totalSamplingAmount += calculatedValue;
-
                     $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
                         .toFixed(2));
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
@@ -808,14 +769,12 @@
                 window.samplingData.compulsoryResults.forEach(slabData => {
                     const calculatedValue = slabData.applied_deduction * netWeight;
                     totalSamplingAmount += calculatedValue;
-
                     $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(
                         calculatedValue.toFixed(2));
                 });
 
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
-
                 return totalSamplingAmount;
             }
 
@@ -823,7 +782,6 @@
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
                 const bagWeightTotal = currentBagWeight * noOfBags;
-
                 $('#bag_weight_total').val(bagWeightTotal.toFixed(2));
 
                 const calculatedBagWeightAmount = ratePerKg * bagWeightTotal;
@@ -837,15 +795,30 @@
                 }
             }
 
+            function updateBagRateCalculations() {
+                const currentBagRate = parseFloat($('#bag_rate_input').val()) || 0;
+                const bagRateAmount = parseFloat($('#bag_rate_amount').val()) || 0;
+
+                const calculatedBagRateAmount = currentBagRate * noOfBags;
+                if (Math.abs(bagRateAmount - calculatedBagRateAmount) > 0.01) {
+                    const newBagRate = bagRateAmount / noOfBags;
+                    if (!isNaN(newBagRate) && isFinite(newBagRate)) {
+                        $('#bag_rate_input').val(newBagRate.toFixed(4));
+                    }
+                } else {
+                    $('#bag_rate_amount').val(calculatedBagRateAmount);
+                }
+
+                $('#bag_rate_amount_display').val($('#bag_rate_amount').val());
+            }
+
             function updateAllCalculations() {
                 updateBagWeightCalculations();
+                updateBagRateCalculations();
 
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
-                const bagRateAmount = bagRate * noOfBags;
-
-                $('#bag_rate_amount').val(bagRateAmount);
-                $('#bag_rate_amount_display').val(bagRateAmount.toFixed(2));
+                const bagRateAmount = parseFloat($('#bag_rate_amount').val()) || 0;
 
                 const loadingWeighbridgeAmount = kantaCharges / 2;
                 $('#loading_weighbridge_amount').val(loadingWeighbridgeAmount);
@@ -874,6 +847,17 @@
             });
 
             $('#bag_weight_amount').on('input', function() {
+                updateAllCalculations();
+            });
+
+            $('#bag_rate_input').on('input', function() {
+                const currentBagRate = parseFloat($(this).val()) || 0;
+                const bagRateAmount = currentBagRate * noOfBags;
+                $('#bag_rate_amount').val(bagRateAmount);
+                updateAllCalculations();
+            });
+
+            $('#bag_rate_amount').on('input', function() {
                 updateAllCalculations();
             });
 
