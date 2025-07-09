@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\Master\{
     AccountController,
     RegionController,
@@ -22,6 +23,8 @@ use App\Http\Controllers\Master\{
 
 //Route::resource('regions', RegionController::class);
 //Route::post('/get-regions', [RegionController::class, 'getList'])->name('get.regions');
+
+
 
 
 Route::resource('category', CategoryController::class);

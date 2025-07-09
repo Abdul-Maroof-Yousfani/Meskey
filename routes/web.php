@@ -15,6 +15,10 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Procurement\RawMaterial\PaymentRequestController;
 use Harimayco\Menu\Facades\Menu;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Reports\{
+    TransactionController
+};
+
 
 Auth::routes();
 
@@ -27,6 +31,12 @@ Route::get('/', function () {
 Route::fallback(function () {
     return view('404');
 });
+
+
+
+Route::resource('transactions/report', TransactionController::class);
+Route::post('/get-transactions-report', [TransactionController::class, 'getTransactionsReport'])->name('get.transactions-report');
+
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::prefix('approval')->group(function () {
