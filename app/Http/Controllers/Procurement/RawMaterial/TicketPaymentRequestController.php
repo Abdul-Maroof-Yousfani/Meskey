@@ -358,14 +358,14 @@ class TicketPaymentRequestController extends Controller
             if ($samplingRequest) {
                 $rmPoSlabs = collect();
                 if ($arrivalTicket && $samplingRequest->arrival_product_id) {
-                    $rmPoSlabs = ProductSlabForRmPo::where('arrival_ticket_id', $arrivalTicket->id)
-                        ->where('product_id', $samplingRequest->arrival_product_id)
-                        ->get()
-                        ->groupBy('product_slab_type_id');
+                    // $rmPoSlabs = ProductSlabForRmPo::where('arrival_ticket_id', $arrivalTicket->id)
+                    //     ->where('product_id', $samplingRequest->arrival_product_id)
+                    //     ->get()
+                    //     ->groupBy('product_slab_type_id');
                 }
 
-                $samplingRequestCompulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $samplingRequest->id)->get();
-                $samplingRequestResults = PurchaseSamplingResult::where('purchase_sampling_request_id', $samplingRequest->id)->get();
+                $samplingRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+                $samplingRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
 
                 $productSlabCalculations = null;
                 if ($samplingRequest->arrival_product_id) {
@@ -404,8 +404,24 @@ class TicketPaymentRequestController extends Controller
             });
         }
 
+        // dd([
+        //     'purchaseOrder' => $arrivalTicket->purchaseOrder,
+        //     'arrivalTicket' => $arrivalTicket,
+        //     'samplingRequest' => $samplingRequest,
+        //     'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
+        //     'samplingRequestResults' => $samplingRequestResults,
+        //     'requestedAmount' => $requestedAmount,
+        //     'approvedAmount' => $approvedAmount,
+        //     'pRsSumForFreight' => $pRsSumForFreight,
+        //     'otherDeduction' => $otherDeduction,
+        //     'isRequestApprovalPage' => false,
+        //     'isTicketApprovalPage' => false,
+        //     'isTicketPage' => true,
+        // ]);
+        $data['purchaseOrder'] = $arrivalTicket->purchaseOrder;
         $data['html'] = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
-            'purchaseOrder' => $purchaseOrder,
+            'purchaseOrder' => $arrivalTicket->purchaseOrder,
+            'arrivalTicket' => $arrivalTicket,
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
             'samplingRequestResults' => $samplingRequestResults,
@@ -413,9 +429,11 @@ class TicketPaymentRequestController extends Controller
             'approvedAmount' => $approvedAmount,
             'pRsSumForFreight' => $pRsSumForFreight,
             'otherDeduction' => $otherDeduction,
-            'isRequestApprovalPage' => false
+            'isRequestApprovalPage' => false,
+            'isTicketApprovalPage' => false,
+            'isTicketPage' => true,
         ])->render();
-
+        // dd($data);
         return view('management.procurement.raw_material.ticket_payment_request.create', $data);
     }
 

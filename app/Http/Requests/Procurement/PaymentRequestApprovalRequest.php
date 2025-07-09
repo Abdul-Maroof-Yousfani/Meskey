@@ -39,6 +39,7 @@ class PaymentRequestApprovalRequest extends FormRequest
             ],
             'total_amount' => 'nullable|numeric',
             'bag_weight' => 'nullable|numeric|min:0',
+            'bag_rate' => 'nullable|numeric|min:0',
             'bag_weight_amount' => 'nullable|numeric',
             'loading_weighbridge_amount' => 'nullable|numeric',
             'bag_rate_amount' => 'nullable|numeric',

@@ -93,7 +93,7 @@ class PaymentRequestApprovalController extends Controller
 
             if ($request->has('bag_weight')) {
                 // $purchaseOrder->update(['bag_weight' => $request->bag_weight]);
-                $ticket->update(['bag_weight' => $request->bag_weight]);
+                $ticket->update(['bag_weight' => $request->bag_weight, 'bag_rate' => $request->bag_rate]);
             }
 
             if ($request->has('other_deduction')) {
@@ -157,6 +157,10 @@ class PaymentRequestApprovalController extends Controller
 
         if ($request->has('bag_weight')) {
             $updateData['bag_weight'] = $request->bag_weight;
+        }
+
+        if ($request->has('bag_rate')) {
+            $updateData['bag_rate'] = $request->bag_rate;
         }
 
         if ($request->has('bag_weight_amount')) {
