@@ -3,6 +3,7 @@
 use App\Models\Acl\{Company, Menu};
 use App\Models\{User};
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use Illuminate\Support\Facades\Auth;
@@ -263,7 +264,7 @@ if (!function_exists('getDeductionSuggestion')) {
             ->get();
 
         if ($purchaseOrderID !== null) {
-            $rmPoSlabs =  ProductSlabForRmPo::where('arrival_purchase_order_id', $purchaseOrderID)
+            $rmPoSlabs = ProductSlabForRmPo::where('arrival_purchase_order_id', $purchaseOrderID)
                 ->where('product_id', $productId)
                 ->where('product_slab_type_id', $productSlabTypeId)
                 ->where('status', 'active')
@@ -280,7 +281,7 @@ if (!function_exists('getDeductionSuggestion')) {
                     }
 
                     if ($rmPoSlab->from <= $slab->from && ($rmPoSlab->to === null || $rmPoSlab->to >= $slab->to)) {
-                        $newSlabs->push((object)[
+                        $newSlabs->push((object) [
                             'from' => $slab->from,
                             'to' => $slab->to,
                             'is_tiered' => $slab->is_tiered,
@@ -289,7 +290,7 @@ if (!function_exists('getDeductionSuggestion')) {
                         ]);
                     } else {
                         if ($slab->from < $rmPoSlab->from) {
-                            $newSlabs->push((object)[
+                            $newSlabs->push((object) [
                                 'from' => $slab->from,
                                 'to' => $rmPoSlab->from - 1,
                                 'is_tiered' => $slab->is_tiered,
@@ -298,7 +299,7 @@ if (!function_exists('getDeductionSuggestion')) {
                             ]);
                         }
 
-                        $newSlabs->push((object)[
+                        $newSlabs->push((object) [
                             'from' => max($slab->from, $rmPoSlab->from),
                             'to' => min($slab->to ?? PHP_FLOAT_MAX, $rmPoSlab->to ?? PHP_FLOAT_MAX),
                             'is_tiered' => $slab->is_tiered,
@@ -307,7 +308,7 @@ if (!function_exists('getDeductionSuggestion')) {
                         ]);
 
                         if (($slab->to === null || $slab->to > $rmPoSlab->to) && ($rmPoSlab->to !== null)) {
-                            $newSlabs->push((object)[
+                            $newSlabs->push((object) [
                                 'from' => $rmPoSlab->to + 1,
                                 'to' => $slab->to,
                                 'is_tiered' => $slab->is_tiered,
@@ -367,5 +368,74 @@ if (!function_exists('checkIfNameExists')) {
     {
         $validNames = ['Unloading Instructions', 'QC Advice', 'QC Remarks', 'Yeild (%)', 'Yield (%)'];
         return in_array($name, $validNames);
+    }
+}
+
+
+
+
+if (!function_exists('createTransaction')) {
+    /**
+     * Create a new transaction
+     *
+     * @param float $amount
+     * @param int $accountId
+     * @param int $voucherTypeId
+     * @param string $voucherNo
+     * @param string $type (debit/credit)
+     * @param string $isOpening (yes/no)
+     * @param array $additionalData [optional] Additional data for the transaction
+     * @throws \Exception
+     */
+    function createTransaction(
+        float $amount,
+        int $accountId,
+        int $voucherTypeId,
+        string $voucherNo,
+        string $type = 'debit',
+        string $isOpening = 'no',
+        array $additionalData = []
+    ) {
+        try {
+            // Validate type
+            if (!in_array(strtolower($type), ['debit', 'credit'])) {
+                throw new \InvalidArgumentException("Transaction type must be either 'debit' or 'credit'");
+            }
+
+            // Validate is_opening_balance
+            if (!in_array(strtolower($isOpening), ['yes', 'no'])) {
+                throw new \InvalidArgumentException("is_opening_balance must be either 'yes' or 'no'");
+            }
+
+
+            $account = Account::findOrFail($accountId);
+            $accountUniqueNo = $account->unique_no; // Assuming the column is named 'unique_no'
+
+
+            // Merge additional data with default values
+            $transactionData = array_merge([
+                'company_id' => auth()->user()->current_company_id ?? null,
+                'voucher_date' => now()->format('Y-m-d'),
+                'amount' => $amount,
+                'account_id' => $accountId,
+                'account_unique_no' => $accountUniqueNo,
+
+                'transaction_voucher_type_id' => $voucherTypeId,
+                'voucher_no' => $voucherNo,
+                'type' => $type,
+                'is_opening_balance' => $isOpening,
+                'status' => 'active',
+                'created_by' => auth()->id(),
+                'payment_against' => null,
+                'against_reference_no' => null,
+            ], $additionalData);
+
+            // Create and return the transaction
+            return Transaction::create($transactionData);
+        } catch (\Exception $e) {
+            // Log the error
+            \Log::error('Failed to create transaction: ' . $e->getMessage());
+            throw $e;
+        }
     }
 }
