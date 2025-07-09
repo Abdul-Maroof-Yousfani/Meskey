@@ -539,7 +539,7 @@
                                                                                         <td class="text-center">
                                                                                             {{ $slab->applied_deduction }}
                                                                                             <span
-                                                                                                class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                                                                class="text-sm">Rs.</span>
                                                                                         </td>
                                                                                     </tr>
                                                                                 @endforeach

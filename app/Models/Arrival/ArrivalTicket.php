@@ -83,7 +83,7 @@ class ArrivalTicket extends Model
 
     public function paymentRequestData()
     {
-        return $this->hasMany(PaymentRequestData::class, 'arrival_ticket_id');
+        return $this->hasMany(PaymentRequestData::class, 'ticket_id');
     }
 
     public function paymentRequests()
