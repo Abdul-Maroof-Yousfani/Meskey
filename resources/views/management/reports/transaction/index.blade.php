@@ -61,10 +61,10 @@ Accounts Ledger
                                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') ?? date('Y-m-d') }}">
                                 </div>
                             </div>
-                            <div class="col-md-2 d-flex align-items-end">
+                            {{-- <div class="col-md-2 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary mr-1">Filter</button>
                                 <button type="reset" class="btn btn-secondary">Reset</button>
-                            </div>
+                            </div> --}}
                         </div>
                     </form>
 
