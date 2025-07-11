@@ -76,7 +76,7 @@ class PurchaseFreightController extends Controller
             ->update(['freight_status' => 'completed']);
 
         return response()->json([
-            'success' => 'Purchase freight created successfully.',
+            'success' => 'Purchase Loading created successfully.',
             'data' => $freight
         ], 201);
     }
