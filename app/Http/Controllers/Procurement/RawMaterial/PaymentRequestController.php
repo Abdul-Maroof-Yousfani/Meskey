@@ -157,7 +157,7 @@ class PaymentRequestController extends Controller
     {
         return DB::transaction(function () use ($request) {
             // Prepare base data
-            $requestData = $request->validated();
+            $requestData = $request->all();
             $requestData['is_loading'] = $request->loading_type === 'loading';
             $requestData['module_type'] = 'purchase_order';
             // dd($requestData);
@@ -220,7 +220,8 @@ class PaymentRequestController extends Controller
             $paymentRequestData = PaymentRequestData::findOrFail($id);
 
             // Prepare update data
-            $requestData = $request->validated();
+            // $requestData = $request->validated();
+            $requestData = $request->all();
             $requestData['is_loading'] = $request->loading_type === 'loading';
 
             // Calculate remaining amount
@@ -260,6 +261,7 @@ class PaymentRequestController extends Controller
             'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
             'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
             'request_type' => 'payment',
+            'module_type' => 'purchase_order',
             'amount' => $request->payment_request_amount ?? 0
         ]);
 
@@ -267,6 +269,7 @@ class PaymentRequestController extends Controller
             PaymentRequest::create([
                 'payment_request_data_id' => $paymentRequestData->id,
                 'request_type' => 'freight_payment',
+                'module_type' => 'purchase_order',
                 'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
                 'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
                 'amount' => $request->freight_pay_request_amount

@@ -123,6 +123,7 @@
     }
 </style>
 
+<input type="hidden" name="purchase_order_id" value="{{ $ticket->purchase_order_id ?? '' }}">
 <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
 <input type="hidden" id="original_bag_rate" value="{{ $bagRate }}">
@@ -578,7 +579,7 @@
                 <div class="form-group">
                     <label>Requested Amount</label>
                     <input type="number" step="0.01" readonly class="form-control" name="requested_amount"
-                        value="{{ $requestedAmount }}" placeholder="Enter requested amount">
+                        id="requested_amount" value="{{ $requestedAmount }}" placeholder="Enter requested amount">
                 </div>
             </div>
             <div class="col-md-3">

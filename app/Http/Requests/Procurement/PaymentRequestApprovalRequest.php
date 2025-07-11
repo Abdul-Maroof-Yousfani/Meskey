@@ -85,6 +85,7 @@ class PaymentRequestApprovalRequest extends FormRequest
         }
 
         $paymentRequestData = $paymentRequest->paymentRequestData;
+        $moduleType = $paymentRequestData->module_type;
         $ticket = $paymentRequestData->purchaseTicket ?? $paymentRequestData->arrivalTicket;
 
         if (!$ticket) {
@@ -97,15 +98,19 @@ class PaymentRequestApprovalRequest extends FormRequest
         })
             ->where('request_type', 'payment')
             ->where('status', 'approved')
+            ->where('module_type', $moduleType)
             ->where('id', '!=', $paymentRequest->id)
             ->sum('amount');
+
         // $totalAmountAfterApproval = $totalApprovedPayments + $value;
 
         $value = number_format((float) $value, 2, '.', '');
         $totalAmountAfterApproval = bcadd((string)$totalApprovedPayments, (string)$value, 2);
 
         $maxAllowedAmount = $this->total_amount ?? $paymentRequestData->total_amount;
+        $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
 
+        // dd($maxAllowedAmount, $totalAmountAfterApproval);
         // $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
         // dd($totalApprovedPayments, $value, $maxAllowedAmount, bccomp((string)$totalAmountAfterApproval, (string)$maxAllowedAmount, 2), $remainingAmount, bccomp((string)$remainingAmount, '0.00', 2));
 

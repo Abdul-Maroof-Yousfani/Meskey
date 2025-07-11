@@ -14,16 +14,16 @@ return new class extends Migration
             $table->string('voucher_no');
             $table->date('voucher_date');
             $table->foreignId('transaction_voucher_type_id')->constrained('transaction_voucher_types')->cascadeOnDelete();
-            $table->foreignId('account_id')->constrained('accounts');
-            $table->string('account_unique_no');
+            $table->foreignId('account_id')->constrained('accounts')->nullable();
+            $table->string('account_unique_no')->nullable();
             $table->enum('type', ['debit', 'credit']);
             $table->enum('is_opening_balance', ['yes', 'no'])->default('no');
             $table->string('action')->nullable();
             $table->decimal('amount', 15, 2);
             $table->text('remarks')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->constrained('users')->nullable()->nullOnDelete();
+            $table->foreignId('updated_by')->constrained('users')->nullable()->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 

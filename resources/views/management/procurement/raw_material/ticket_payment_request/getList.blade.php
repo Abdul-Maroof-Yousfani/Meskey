@@ -22,10 +22,10 @@
                     <td>{{ $ticket->broker_name ?? 'N/A' }} <br>{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}
                     </td>
                     <td>{{ $ticket->qcProduct->name ?? 'N/A' }}
-                        <br>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}
+                        {{-- <br>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }} --}}
                     </td>
                     <td>
-                        {{ $ticket->purchaseOrder->purchaseFreights ? \Carbon\Carbon::parse($ticket->purchaseOrder->purchaseFreights->loading_date)->format('Y-m-d') : 'N/A' }}
+                        {{ $ticket ? \Carbon\Carbon::parse($ticket->loading_date)->format('Y-m-d') : 'N/A' }}
                     </td>
                     <td>
                         <div class="div-box-b">

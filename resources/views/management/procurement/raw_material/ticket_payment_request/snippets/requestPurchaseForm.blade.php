@@ -27,12 +27,14 @@
         $showLumpSum = true;
     }
 
+    $bagWeight = $arrivalTicket->bag_weight ?? 0;
+    // $bagRate = $purchaseOrder->bag_rate ?? 0;
+    $bagRate = 0;
+
     $totalDeductions = 0;
     $loadingWeight = $arrivalTicket->freight->loaded_weight ?? 0;
-    $bagWeight = $purchaseOrder->bag_weight ?? 0;
     $noOfBags = $arrivalTicket->bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
-    $bagRate = $purchaseOrder->bag_rate ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
@@ -62,18 +64,15 @@
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
     $loadingWeighbridgeSum = $kantaCharges / 2;
     $bagsRateSum = $bagRate * $noOfBags;
-    $requestedAmount = $requestedAmount;
-    $paidAmount = $approvedAmount;
-    $advanceFreight = $purchaseOrder->purchaseFreight->advance_freight ?? 0;
-    $remainingFreight = $advanceFreight - $pRsSumForFreight;
-
+    $requestedAmount = $requestedAmount ?? 0;
+    $paidAmount = $approvedAmount ?? 0;
+    $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
+    $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
     $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
-
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
     $existingOtherDeductionAmount = $otherDeduction->other_deduction_value ?? 0;
-
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
@@ -142,8 +141,6 @@
 </style>
 
 <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
-
-<!-- Hidden fields for calculations -->
 <input type="hidden" name="ticket_id" value="{{ $arrivalTicket->id ?? '' }}">
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
 <input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">
@@ -560,7 +557,7 @@
                                     id="bag_weight_amount_display" value="{{ number_format($bagWeightInKgSum, 2) }}">
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="d-none">
                             <td><strong>Bags Rate</strong></td>
                             <td>
                                 <input type="text" class="form-control" name="bag_rate"
@@ -596,9 +593,9 @@
     @php
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
     @endphp
-
-    @if (!$isApprovalPage)
-        <div class="row mx-auto {{ $isApprovalPage ? 'd-none' : '' }}">
+    {{-- @if (!$isApprovalPage) --}}
+    <div class="col mb-3 px-0">
+        <div class="row mx-auto ">
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Amount</label>
@@ -611,15 +608,15 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Requested Amount</label>
-                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
-                        value="{{ $requestedAmount }}" placeholder="Enter paid amount">
+                    <input type="number" step="0.01" readonly class="form-control" name="requested_amount"
+                        id="requested_amount" value="{{ $requestedAmount }}" placeholder="Enter requested amount">
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Paid Amount</label>
                     <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
-                        value="{{ $paidAmount }}" placeholder="Enter paid amount">
+                        id="paid_amount" value="{{ $paidAmount }}" placeholder="Enter paid amount">
                 </div>
             </div>
             <div class="col-md-6">
@@ -629,69 +626,26 @@
                         value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
                 </div>
             </div>
-            <div class="col">
-                <div class="form-group">
-                    <label>Percentage</label>
-                    <input type="number" min="0" max="100" step="0.01"
-                        class="form-control percentage-input" value="0" placeholder="Enter percentage">
+            @if (!$isApprovalPage)
+                <div class="col">
+                    <div class="form-group">
+                        <label>Percentage</label>
+                        <input type="number" min="0" max="100" step="0.01"
+                            class="form-control percentage-input" value="0" placeholder="Enter percentage">
+                    </div>
                 </div>
-            </div>
-            <div class="col">
-                <div class="form-group">
-                    <label>Payment Request</label>
-                    <input type="number" step="0.01" class="form-control payment-request-input"
-                        name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}"
-                        value="{{ $currentPaymentAmount }}" placeholder="Enter payment request">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Payment Request</label>
+                        <input type="number" step="0.01" class="form-control payment-request-input"
+                            name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}"
+                            value="{{ $currentPaymentAmount }}" placeholder="Enter payment request">
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
-        <div class="row mx-auto">
-            <div class="col-12">
-                <hr class="border">
-            </div>
-        </div>
-        <div class="row mx-auto d-none">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Total Advance Freight</label>
-                    <input type="text" class="form-control" name="advance_freight_display"
-                        value="{{ number_format($advanceFreight, 2) }}" readonly>
-                    <input type="hidden" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
-                        readonly>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Paid Freight</label>
-                    <input type="text" class="form-control" name="paid_freight"
-                        value="{{ number_format($pRsSumForFreight, 2) }}" readonly>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Remaining Freight</label>
-                    <input type="text" class="form-control" name="remaining_freight"
-                        value="{{ $remainingFreight }}" readonly>
-                </div>
-            </div>
-            <div class="col">
-                <div class="form-group">
-                    <label>Percentage</label>
-                    <input type="number" min="0" max="100" step="0.01"
-                        class="form-control percentage-input-freight" value="0" placeholder="Enter percentage">
-                </div>
-            </div>
-            <div class="col">
-                <div class="form-group">
-                    <label>Freight Pay Request</label>
-                    <input type="number" class="form-control payment-request-freifht"
-                        name="{{ $isApprovalPage ? '' : 'freight_pay_request_amount' }}"
-                        value="{{ $currentFreightAmount }}" placeholder="Enter freight pay request"
-                        max="{{ (int) $remainingFreight }}">
-                </div>
-            </div>
-        </div>
-    @endif
+    </div>
+    {{-- @endif --}}
 
 </div>
 
@@ -887,8 +841,28 @@
                 // const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 // const
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const paymentRequest = parseFloat($(this).val()) || 0;
-                const remaining = totalAmount - paymentRequest - paidAmount;
+                const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                // const paymentRequest = parseFloat($(this).val()) || 0;
+                // const remaining = (totalAmount - paidAmount) - paymentRequest;
+                // const totalAmount = 178890;  
+                // const paymentRequest = 3000;
+                // const paidAmount = 179282;
+                // const remaining = (totalAmount - paidAmount) - paymentRequest;
+
+
+                // const totalAmount = 178890;
+                // const paidAmount = 179282;
+                const originalRequested = {{ $currentPaymentAmount }};
+                const newRequested = parseFloat($(this).val()) || 0;
+
+                const remaining = totalAmount - (paidAmount - originalRequested + newRequested);
+
+                // console.log({
+                //     totalAmount,
+                //     paymentRequest,
+                //     paidAmount
+                // });
+
                 $('#remaining_amount').val(remaining.toFixed(2));
             });
 

@@ -183,6 +183,15 @@ class SupplierController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
+            if (empty($supplier->account_id)) {
+                $account = Account::create(getParamsForAccountCreation(
+                    $request->company_id,
+                    $request->company_name,
+                    'Supplier'
+                ));
+                $requestData['account_id'] = $account->id;
+            }
+
             $supplier->update($requestData);
 
             $this->updateBankDetails(
@@ -218,9 +227,23 @@ class SupplierController extends Controller
                 ];
 
                 if ($supplier->broker) {
+                    if (empty($supplier->broker->account_id)) {
+                        $account = Account::create(getParamsForAccountCreation(
+                            $request->company_id,
+                            $request->company_name,
+                            'Broker'
+                        ));
+                        $brokerData['account_id'] = $account->id;
+                    }
                     $supplier->broker->update($brokerData);
                 } else {
                     $brokerData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
+                    $account = Account::create(getParamsForAccountCreation(
+                        $request->company_id,
+                        $request->company_name,
+                        'Broker'
+                    ));
+                    $brokerData['account_id'] = $account->id;
                     $supplier->broker()->create($brokerData);
                 }
             } elseif ($supplier->broker) {

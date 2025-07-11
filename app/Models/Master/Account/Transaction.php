@@ -12,12 +12,12 @@ class Transaction extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-      
+
         'voucher_no',
         'company_id',
         'voucher_date',
         'transaction_voucher_type_id',
-          'payment_against',
+        'payment_against',
         'against_reference_no',
         'account_id',
         'account_unique_no',

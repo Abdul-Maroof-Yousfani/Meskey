@@ -15,15 +15,26 @@
             @foreach ($paymentRequests as $request)
                 <tr>
                     <td>
-                        <strong>Ticket:</strong>
-                        #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? 'N/A' }}<br>
-                        <strong>Contract:</strong>
-                        #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? 'N/A' }}<br>
+                        #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') }}<br>
+                        #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? ($request->paymentRequestData->arrivalTicket->purchaseOrder->contract_no ?? 'N/A') }}
                     </td>
                     <td>{{ $request->paymentRequestData->supplier_name ?? 'N/A' }}</td>
                     <td>
-                        <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}">
+                        {{-- <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}">
+                            {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }} -
                             {{ formatEnumValue($request->request_type) }}
+                        </span> --}}
+
+                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                            <span
+                                class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
+                                style="border-radius: 3px 0 0 3px;">
+                                {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }}
+                            </span>
+                            <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}"
+                                style="border-radius: 0 3px 3px 0;">
+                                {{ formatEnumValue($request->request_type) }}
+                            </span>
                         </span>
                     </td>
                     <td>{{ number_format($request->amount, 2) }}</td>
