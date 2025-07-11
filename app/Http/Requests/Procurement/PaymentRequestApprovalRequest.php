@@ -99,7 +99,11 @@ class PaymentRequestApprovalRequest extends FormRequest
             ->where('status', 'approved')
             ->where('id', '!=', $paymentRequest->id)
             ->sum('amount');
-        $totalAmountAfterApproval = $totalApprovedPayments + $value;
+        // $totalAmountAfterApproval = $totalApprovedPayments + $value;
+
+        $value = number_format((float) $value, 2, '.', '');
+        $totalAmountAfterApproval = bcadd((string)$totalApprovedPayments, (string)$value, 2);
+
         $maxAllowedAmount = $this->total_amount ?? $paymentRequestData->total_amount;
 
         // $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
