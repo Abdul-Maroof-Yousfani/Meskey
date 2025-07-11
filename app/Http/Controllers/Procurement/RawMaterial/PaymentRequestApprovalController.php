@@ -61,6 +61,22 @@ class PaymentRequestApprovalController extends Controller
             //     $this->validateMaximumAmount($request, $paymentRequest, $ticket);
             // }
 
+            if ($request->status === 'approved') {
+                createTransaction(
+                    $request->has('payment_request_amount'), // amount
+                    $paymentRequestData->purchaseOrder->supplier->account_id, // account_id chart of account (assuming this is the supplier's payable account)
+                    $paymentRequestData->purchase_order_id, // purchase_order_id
+                    $paymentRequestData->purchaseOrder->contract_no, //purchase_order_no
+                    'credit', // crediting the supplier's account (increasing payable)
+                    'yes', // not an actual payment
+                    [
+                        'payment_against' => 'thadda-purchase',
+                        'against_reference_no' => 'Invoice No: INV-2023-005',
+                        'remarks' => 'Recording accounts payable for Thadda purchase. Amount to be paid to supplier.'
+                    ]
+                );
+            }
+
             if ($request->has('total_amount') || $request->has('bag_weight')) {
                 $this->updatePaymentRequestData($paymentRequestData, $request);
             }
