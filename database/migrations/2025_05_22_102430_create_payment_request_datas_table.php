@@ -36,6 +36,7 @@ return new class extends Migration
             $table->decimal('remaining_amount', 15, 2);
             $table->decimal('advance_freight', 15, 2)->default(0);
             $table->text('notes')->nullable();
+            $table->enum('module_type', ['ticket', 'purchase_order'])->default('purchase_order');
             $table->timestamps();
 
             $table->foreign('purchase_order_id')

@@ -159,6 +159,7 @@ class PaymentRequestController extends Controller
             // Prepare base data
             $requestData = $request->validated();
             $requestData['is_loading'] = $request->loading_type === 'loading';
+            $requestData['module_type'] = 'purchase_order';
             // dd($requestData);
             // Create main payment request data
             $paymentRequestData = PaymentRequestData::create($requestData);

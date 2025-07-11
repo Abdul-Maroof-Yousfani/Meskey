@@ -37,6 +37,7 @@ class PaymentRequestData extends Model
         'bag_rate_amount',
         'loading_weighbridge_amount',
         'total_amount',
+        'module_type',
         'paid_amount',
         'remaining_amount',
         'advance_freight',

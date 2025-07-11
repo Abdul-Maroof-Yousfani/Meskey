@@ -483,7 +483,7 @@
                                     <td>N/A</td>
                                     <td>
                                         <div class="input-group mb-0">
-                                            <input type="number" step="0.01" class="form-control editable-field"
+                                            <input type="number" step="any" class="form-control editable-field"
                                                 name="other_deduction[kg_value]" id="other_deduction_kg"
                                                 value="{{ $existingOtherDeductionKg }}" placeholder="Enter KG value">
                                             <div class="input-group-append">

@@ -1,7 +1,16 @@
 @php
+    $isThadda = $arrivalTicket->sauda_type_id == 2;
+
     $hasLoadingWeight = false;
-    if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
-        $hasLoadingWeight = true;
+
+    if ($isThadda) {
+        if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
+            $hasLoadingWeight = true;
+        }
+    } else {
+        if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->loaded_weight) {
+            $hasLoadingWeight = true;
+        }
     }
 
     $isSlabs = false;
@@ -19,12 +28,12 @@
     }
 
     $totalDeductions = 0;
-    $loadingWeight = $purchaseOrder->purchaseFreight->loading_weight ?? 0;
+    $loadingWeight = $arrivalTicket->freight->loaded_weight ?? 0;
     $bagWeight = $purchaseOrder->bag_weight ?? 0;
-    $noOfBags = $purchaseOrder->purchaseFreight->no_of_bags ?? 0;
+    $noOfBags = $arrivalTicket->bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $bagRate = $purchaseOrder->bag_rate ?? 0;
-    $kantaCharges = $purchaseOrder->purchaseFreight->kanta_charges ?? 0;
+    $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
@@ -135,6 +144,7 @@
 <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
 
 <!-- Hidden fields for calculations -->
+<input type="hidden" name="ticket_id" value="{{ $arrivalTicket->id ?? '' }}">
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
 <input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
@@ -243,14 +253,15 @@
                 <div class="form-group">
                     <label>Truck #</label>
                     <input type="text" class="form-control" name="truck_no"
-                        value="{{ $purchaseOrder->purchaseFreight->truck_no ?? 'N/A' }}" readonly>
+                        value="{{ $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Loading Date</label>
+                    {{-- @dd($arrivalTicket->loading_date->format('d-M-Y')) --}}
                     <input type="text" class="form-control" name="loading_date"
-                        value="{{ $purchaseOrder && $purchaseOrder->purchaseFreight->loading_date ? $purchaseOrder->purchaseFreight->loading_date->format('d-M-Y') : 'N/A' }}"
+                        value="{{ $arrivalTicket && $arrivalTicket->loading_date ? $arrivalTicket->loading_date->format('d-M-Y') : 'N/A' }}"
                         readonly>
                 </div>
             </div>
@@ -258,14 +269,14 @@
                 <div class="form-group">
                     <label>Bilty #</label>
                     <input type="text" class="form-control" name="bilty_no"
-                        value="{{ $purchaseOrder->purchaseFreight->bilty_no ?? 'N/A' }}" readonly>
+                        value="{{ $arrivalTicket->bilty_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Station</label>
                     <input type="text" class="form-control" name="station"
-                        value="{{ $purchaseOrder->station_name ?? 'N/A' }}" readonly>
+                        value="{{ $arrivalTicket->station_name ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -503,7 +514,7 @@
                                     <td>N/A</td>
                                     <td>
                                         <div class="input-group mb-0">
-                                            <input type="number" step="0.01" class="form-control editable-field"
+                                            <input type="number" step="any" class="form-control editable-field"
                                                 name="other_deduction[kg_value]" id="other_deduction_kg"
                                                 value="{{ $existingOtherDeductionKg }}" placeholder="Enter KG value">
                                             <div class="input-group-append">
@@ -639,7 +650,7 @@
                 <hr class="border">
             </div>
         </div>
-        <div class="row mx-auto ">
+        <div class="row mx-auto d-none">
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Total Advance Freight</label>

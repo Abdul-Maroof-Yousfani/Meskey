@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\PaymentRequestRequest;
+use App\Http\Requests\Procurement\TicketPaymentRequestRequest;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -55,7 +56,7 @@ class TicketPaymentRequestController extends Controller
                         ->groupBy('payment_request_data_id', 'request_type', 'status');
                 }]);
             }
-        ])->whereHas('purchaseOrder'); // Only tickets with contracts attached
+        ])->whereHas('purchaseOrder')->where('sauda_type_id', 1); // Only tickets with contracts attached
 
         if ($request->has('broker_id') && $request->broker_id != '') {
             $query->whereHas('purchaseOrder', function ($q) use ($request) {
@@ -150,12 +151,14 @@ class TicketPaymentRequestController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(PaymentRequestRequest $request)
+    public function store(TicketPaymentRequestRequest $request)
     {
+        // dd($request->all());
         return DB::transaction(function () use ($request) {
             // Prepare base data
             $requestData = $request->validated();
             $requestData['is_loading'] = $request->loading_type === 'loading';
+            $requestData['module_type'] = 'ticket';
 
             // Create main payment request data
             $paymentRequestData = PaymentRequestData::create($requestData);
@@ -267,7 +270,8 @@ class TicketPaymentRequestController extends Controller
         // ]);
 
         if (isset($request->arrival_purchase_order_id)) {
-            $result = ArrivalPurchaseOrder::find($request->arrival_purchase_order_id)->update(['bag_weight' => $request->bag_weight]);
+            $result = ArrivalPurchaseOrder::find($request->arrival_purchase_order_id)->update(['bag_weight' => $request->bag_weight, 'bag_rate' => $request->bag_rate]);
+            // $ticket->update(['bag_weight' => $request->bag_weight, 'bag_rate' => $request->bag_rate]);
         }
 
         PaymentRequest::create([
@@ -404,20 +408,6 @@ class TicketPaymentRequestController extends Controller
             });
         }
 
-        // dd([
-        //     'purchaseOrder' => $arrivalTicket->purchaseOrder,
-        //     'arrivalTicket' => $arrivalTicket,
-        //     'samplingRequest' => $samplingRequest,
-        //     'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
-        //     'samplingRequestResults' => $samplingRequestResults,
-        //     'requestedAmount' => $requestedAmount,
-        //     'approvedAmount' => $approvedAmount,
-        //     'pRsSumForFreight' => $pRsSumForFreight,
-        //     'otherDeduction' => $otherDeduction,
-        //     'isRequestApprovalPage' => false,
-        //     'isTicketApprovalPage' => false,
-        //     'isTicketPage' => true,
-        // ]);
         $data['purchaseOrder'] = $arrivalTicket->purchaseOrder;
         $data['html'] = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
             'purchaseOrder' => $arrivalTicket->purchaseOrder,
@@ -433,7 +423,7 @@ class TicketPaymentRequestController extends Controller
             'isTicketApprovalPage' => false,
             'isTicketPage' => true,
         ])->render();
-        // dd($data);
+
         return view('management.procurement.raw_material.ticket_payment_request.create', $data);
     }
 

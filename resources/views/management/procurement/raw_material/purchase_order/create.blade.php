@@ -79,7 +79,7 @@
             <div class="form-group ">
                 <label>Commission (per KG):</label>
                 <input type="number" name="broker_one_commission" placeholder="Commission (per KG)"
-                    class="form-control" />
+                    class="form-control" step="any" min="-999999" max="999999" />
             </div>
         </div>
     </div>
@@ -101,7 +101,7 @@
             <div class="form-group ">
                 <label>Commission (per KG):</label>
                 <input type="number" name="broker_two_commission" placeholder="Commission (per KG)"
-                    class="form-control" />
+                    class="form-control" step="any" min="-999999" max="999999" />
 
             </div>
         </div>
@@ -124,7 +124,7 @@
             <div class="form-group ">
                 <label>Commission (per KG):</label>
                 <input type="number" name="broker_three_commission" placeholder="Commission (per KG)"
-                    class="form-control" />
+                    class="form-control" step="any" min="-999999" max="999999" />
 
             </div>
         </div>

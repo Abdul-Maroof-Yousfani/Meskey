@@ -35,7 +35,7 @@ class TicketContractController extends Controller
      */
     public function getList(Request $request)
     {
-        $tickets = ArrivalTicket::where('freight_status', 'completed')->orderBy('created_at', 'asc')
+        $tickets = ArrivalTicket::where('freight_status', 'completed')->orderBy('created_at', 'desc')
             ->paginate(request('per_page', 25));
 
         return view('management.procurement.raw_material.ticket_contracts.getList', compact('tickets'));
@@ -162,55 +162,48 @@ class TicketContractController extends Controller
 
     public function searchContracts(Request $request)
     {
+        $ticket = ArrivalTicket::find($request->ticket_id);
         $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight'])
-            ->where('status', 'draft')
-            ->orderBy('created_at', 'desc');
+            ->where('status', 'draft');
 
-        if ($request->initial) {
-            $query->limit(10);
-        } else if ($request->search) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('contract_no', 'like', "%{$search}%")
-                    ->orWhereHas('product', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('supplier', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
+        if ($ticket?->sauda_type_id) {
+            $query->where('sauda_type_id', $ticket->sauda_type_id);
         }
 
         if ($request->ticket_id) {
-            $linkedContractId = ArrivalTicket::find($request->ticket_id)->arrival_purchase_order_id ?? null;
-            if ($linkedContractId) {
-                $query->where('id', $linkedContractId);
-            }
+            $linkedId = $ticket?->arrival_purchase_order_id;
+            if ($linkedId) $query->where('id', $linkedId);
         }
 
-        $contracts = $query->get()->map(function ($contract) {
-            return [
-                'id' => $contract->id,
-                'contract_no' => $contract->contract_no,
-                'qc_product_name' => $contract->product->name,
-                'supplier' => $contract->supplier,
-                'total_quantity' => $contract->total_quantity,
-                'min_quantity' => $contract->min_quantity,
-                'max_quantity' => $contract->max_quantity,
-                'remaining_quantity' => $contract->remaining_quantity,
-                'arrived_quantity' => $contract->arrived_quantity,
-                'truck_no' => $contract->truck_no,
-                'trucks_arrived' => $contract->trucks_arrived,
-                'no_of_trucks' => $contract->no_of_trucks,
-                'status' => $contract->status ? $contract->status : 'N/A',
-                'contract_date_formatted' => $contract->created_at->format('d-M-Y'),
-                'total_loading_weight' => $contract->totalLoadingWeight->total_loading_weight ?? null,
-            ];
-        });
+        if ($request->initial) {
+            $query->limit(10);
+        } elseif ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('contract_no', 'like', "%$search%")
+                    ->orWhereHas('product', fn($q) => $q->where('name', 'like', "%$search%"))
+                    ->orWhereHas('supplier', fn($q) => $q->where('name', 'like', "%$search%"));
+            });
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $contracts
+        $contracts = $query->orderBy('created_at', 'desc')->get()->map(fn($c) => [
+            'id' => $c->id,
+            'contract_no' => $c->contract_no,
+            'qc_product_name' => $c->product->name,
+            'supplier' => $c->supplier,
+            'total_quantity' => $c->total_quantity,
+            'min_quantity' => $c->min_quantity,
+            'max_quantity' => $c->max_quantity,
+            'remaining_quantity' => $c->remaining_quantity,
+            'arrived_quantity' => $c->arrived_quantity,
+            'truck_no' => $c->truck_no,
+            'trucks_arrived' => $c->trucks_arrived,
+            'no_of_trucks' => $c->no_of_trucks,
+            'status' => $c->status ?: 'N/A',
+            'contract_date_formatted' => $c->created_at->format('d-M-Y'),
+            'total_loading_weight' => $c->totalLoadingWeight->total_loading_weight ?? null,
         ]);
+
+        return response()->json(['success' => true, 'data' => $contracts]);
     }
 }

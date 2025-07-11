@@ -76,6 +76,12 @@ class ArrivalTicket extends Model
         'miller_id',
     ];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'loading_date'];
+
+    protected $casts = [
+        'loading_date' => 'date',
+    ];
+
     public function company()
     {
         return $this->belongsTo(Company::class);
