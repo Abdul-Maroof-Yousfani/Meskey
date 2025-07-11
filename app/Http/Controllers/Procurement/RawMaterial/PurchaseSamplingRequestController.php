@@ -132,7 +132,7 @@ class PurchaseSamplingRequestController extends Controller
         ]);
         // }
 
-        return response()->json(['success' => 'Inner Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
+        return response()->json(['success' => 'Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
     }
 
     /**
