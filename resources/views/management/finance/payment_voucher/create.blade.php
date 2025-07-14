@@ -16,7 +16,7 @@
                             @csrf
 
                             <input type="hidden" id="url" value="{{ route('payment-voucher.index') }}">
-                            <input type="hidden" name="supplier_id" id="supplier_id">
+                            <input type="hidden" name="supplier_id" id="supplier_id_d">
                             <input type="hidden" name="bank_account_number" id="bank_account_number">
                             <input type="hidden" name="bank_account_type" id="bank_account_type">
                             <div class="row">
@@ -90,7 +90,7 @@
                                 </div>
                             </div>
 
-                            <div class="row">
+                            {{-- <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="module_id">Purchase Order</label>
@@ -101,6 +101,20 @@
                                                     {{ $order->product->name ?? 'N/A' }}
                                                     ({{ $order->supplier_name ?? ($order->supplier->name ?? 'N/A') }})
                                                 </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div> --}}
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="supplier_id">Supplier</label>
+                                        <select name="supplier_id" id="supplier_id" class="form-control select2" required>
+                                            <option value="">Select Supplier</option>
+                                            @foreach ($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -116,18 +130,23 @@
                                                 <table class="table table-bordered" id="paymentRequestsTable">
                                                     <thead>
                                                         <tr>
-                                                            <th width="5%">Select</th>
-                                                            <th>Request No</th>
-                                                            <th>Date</th>
-                                                            <th>Amount</th>
+                                                            <th width="2%">*</th>
+                                                            <th>Contract No</th>
                                                             <th>Purpose</th>
+                                                            <th>Sauda Type</th>
+                                                            <th>Date</th>
                                                             <th>Type</th>
+                                                            <th>Truck No</th>
+                                                            <th>Bilty No</th>
+                                                            <th>Loading Date</th>
+                                                            <th>Weight</th>
+                                                            <th>Amount</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td colspan="6" class="text-center">No payment requests
-                                                                found please select purchase order first.</td>
+                                                            <td colspan="11" class="text-center">No payment requests
+                                                                found please select supplier first.</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -280,6 +299,133 @@
                 return `${type} - ${title} (${accountNo})`;
             }
 
+            $('#supplier_id').change(function() {
+                const supplierId = $(this).val();
+                const tbody = $('#paymentRequestsTable tbody');
+
+                if (supplierId) {
+                    tbody.html(`
+            <tr>
+                <td colspan="11" class="text-center">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                        Loading payment requests...
+                    </div>
+                </td>
+            </tr>
+        `);
+
+                    $.ajax({
+                        url: `/finance/payment-voucher/payment-requests/${supplierId}`,
+                        type: 'GET',
+                        success: function(response) {
+                            if (response.success) {
+                                tbody.empty();
+
+                                if (response.payment_requests.length > 0) {
+                                    $.each(response.payment_requests, function(index, request) {
+                                        tbody.append(`
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="request-checkbox" 
+                                            value="${request.id}" 
+                                            data-supplier-id="${request.supplier_id || ''}" 
+                                            data-amount="${request.amount}" 
+                                            data-purpose="${request.purpose}" 
+                                            data-request-no="${request.contract_no}" 
+                                            data-truck-no="${request.truck_no}"
+                                            data-bilty-no="${request.bilty_no}"
+                                            data-module-type="${request.module_type =='purchase_order' ? 'Contract' : 'Ticket'} "
+                                            data-loading-date="${request.loading_date}"
+                                            data-loading-weight="${request.loading_weight}">
+                                    </td>
+                                    <td>${request.contract_no}</td>
+                                    <td>${request.purpose}</td> 
+                                    <td>${request.saudaType}</td> 
+                                    <td>${request.request_date}</td>
+                                    <td>
+                                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                            <span
+                                            class="badge badge-${request.module_type =='purchase_order' ? 'primary' : 'info'}"
+                                                style="border-radius: 3px 0 0 3px;">
+                                                ${request.module_type =='purchase_order' ? 'Contract' : 'Ticket'} 
+                                            </span>
+                                            <span class="badge badge-${request.type =='payment' ? 'success' : 'warning'}"
+                                                style="border-radius: 0 3px 3px 0;">
+                                                ${request.type =='payment' ? 'Payment' : 'Freight Payment'}
+                                            </span>
+                                        </span>
+                                        </td>
+                                        <td>${request.truck_no}</td>
+                                        <td>${request.bilty_no}</td>
+                                        <td>${request.loading_date}</td>
+                                        <td>${request.loading_weight}</td>
+                                        <td>${request.amount}</td>
+                                </tr>
+                            `);
+                                    });
+                                } else {
+                                    tbody.append(
+                                        '<tr><td colspan="11" class="text-center">No payment requests found for this supplier</td></tr>'
+                                    );
+                                }
+
+                                // Update bank accounts dropdown
+                                bankAccountSelect.empty().append(
+                                    '<option value="">Select Bank Account</option>');
+                                if (response.bank_accounts.length > 0) {
+                                    $.each(response.bank_accounts, function(index, account) {
+                                        const option = new Option(
+                                            `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
+                                            account.id,
+                                            false,
+                                            false
+                                        );
+
+                                        $(option).attr('data-title', account.title ||
+                                            'No Title');
+                                        $(option).attr('data-account-title', account
+                                            .account_title || 'N/A');
+                                        $(option).attr('data-account-no', account
+                                            .account_number || 'N/A');
+                                        $(option).attr('data-bank-name', account
+                                            .bank_name || 'N/A');
+                                        $(option).attr('data-branch-name', account
+                                            .branch_name || 'N/A');
+                                        $(option).attr('data-type', account.type ||
+                                            'N/A');
+
+                                        bankAccountSelect.append(option);
+                                    });
+                                    bankAccountSelect.trigger('change');
+                                }
+
+                                // Reset selected requests
+                                listContainer.hide();
+                                emptyMessage.show();
+                                $('#supplier_id_d').val(supplierId);
+                            }
+                        },
+                        error: function(xhr) {
+                            tbody.html(`
+                    <tr>
+                        <td colspan="11" class="text-center text-danger">
+                            Error loading payment requests. Please try again.
+                        </td>
+                    </tr>
+                `);
+                            console.error('Error:', xhr.responseText);
+                        }
+                    });
+                } else {
+                    tbody.html(`
+            <tr>
+                <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
+            </tr>
+        `);
+                }
+            });
+
             $('#module_id').change(function() {
                 const poId = $(this).val();
 
@@ -384,7 +530,9 @@
                         purpose: $(this).data('purpose'),
                         supplierId: $(this).data('supplier-id'),
                         requestNo: $(this).data('request-no'),
-                        truckNo: $(this).data('truck-no')
+                        truckNo: $(this).data('truck-no'),
+                        biltyNo: $(this).data('bilty-no'),
+                        moduleType: $(this).data('module-type')
                     });
                     totalAmount += parseFloat($(this).data('amount'));
                 });
@@ -397,20 +545,25 @@
                         $('#supplier_id').val(request.supplierId);
 
                         listContainer.append(`
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>#${request.requestNo} ${request.truckNo ? '- ' + request.truckNo : ''}</span>
-                                <span class="badge badge-primary badge-pill">${request.amount}</span>
-                                <input type="hidden" name="payment_requests[]" value="${request.id}">
-                            </li>
-                        `);
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>#${request.requestNo}</span>
+                        <span class="badge badge-primary badge-pill">${request.amount}</span>
+                    </div>
+                    <div class="small text-muted">
+                        Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
+                    </div>
+                    <input type="hidden" name="payment_requests[]" value="${request.id}">
+                </li>
+            `);
                     });
 
                     listContainer.append(`
-                        <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                            <strong>Total Amount</strong>
-                            <strong>${totalAmount.toFixed(2)}</strong>
-                        </li>
-                    `);
+            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
+                <strong>Total Amount</strong>
+                <strong>${totalAmount.toFixed(2)}</strong>
+            </li>
+        `);
 
                     listContainer.show();
                 } else {
