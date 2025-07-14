@@ -429,7 +429,7 @@ if (!function_exists('createTransaction')) {
                 'payment_against' => null,
                 'against_reference_no' => null,
             ], $additionalData);
-
+            dd($transactionData);
             // Create and return the transaction
             return Transaction::create($transactionData);
         } catch (\Exception $e) {
