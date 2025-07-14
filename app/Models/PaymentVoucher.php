@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Master\Account\Account;
+use App\Models\Master\Supplier;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,11 @@ class PaymentVoucher extends Model
     public function account()
     {
         return $this->belongsTo(Account::class, 'account_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
     public function paymentVoucherData()

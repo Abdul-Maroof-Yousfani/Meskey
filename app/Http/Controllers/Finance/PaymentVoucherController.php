@@ -9,6 +9,8 @@ use App\Models\Master\Supplier;
 use App\Models\PaymentVoucher;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\PaymentVoucherData;
+use App\Models\SupplierCompanyBankDetail;
+use App\Models\SupplierOwnerBankDetail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -208,6 +210,19 @@ class PaymentVoucherController extends Controller
             $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
                 ->find($request->payment_requests[0]);
 
+            $bankAccount = null;
+            $bankName = '';
+            $accountNumber = '';
+            if ($request->bank_account_type === 'company') {
+                $bankAccount =  SupplierCompanyBankDetail::find($request->bank_account_id);
+            } elseif ($request->bank_account_type === 'owner') {
+                $bankAccount =  SupplierOwnerBankDetail::find($request->bank_account_id);
+            }
+            if ($bankAccount) {
+                $bankName = $bankAccount->bank_name ?? '';
+                $accountNumber = $bankAccount->account_number ?? '';
+            }
+
             $paymentVoucher = PaymentVoucher::create([
                 'unique_no' => $uniqueNo,
                 'pv_date' => $request->pv_date,
@@ -230,6 +245,53 @@ class PaymentVoucherController extends Controller
 
             foreach ($request->payment_requests as $requestId) {
                 $paymentRequest = PaymentRequest::findOrFail($requestId);
+                $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
+                $truckNo = $paymentRequest->paymentRequestData->truck_no;
+                $biltyNo = $paymentRequest->paymentRequestData->bilty_no;
+
+                $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
+                $amount = number_format($paymentRequest->amount, 2);
+
+                $remarks = "A payment of Rs. {$amount} has been made to {$supplierName}";
+                if ($bankName) {
+                    $remarks .= " against bank '{$bankName}'";
+                }
+                if ($accountNumber) {
+                    $remarks .= " with account number '{$accountNumber}'";
+                }
+                if ($request->voucher_type === 'bank_payment_voucher') {
+                    $remarks .= " through bank transfer.";
+                } else {
+                    $remarks .= " in cash.";
+                }
+
+                createTransaction(
+                    $paymentRequest->amount,
+                    $paymentVoucher->supplier->account_id,
+                    1,
+                    $uniqueNo,
+                    'debit',
+                    'no',
+                    [
+                        'payment_against' => "$ticketNo",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $remarks
+                    ]
+                );
+
+                createTransaction(
+                    $paymentRequest->amount,
+                    $request->account_id,
+                    1,
+                    $uniqueNo,
+                    'credit',
+                    'no',
+                    [
+                        'payment_against' => "$ticketNo",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $remarks
+                    ]
+                );
 
                 PaymentVoucherData::create([
                     'payment_voucher_id' => $paymentVoucher->id,

@@ -81,7 +81,7 @@ class PaymentRequestApprovalController extends Controller
                     // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
                     // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
                     'credit',
-                    'yes',
+                    'no',
                     [
                         'payment_against' => "$saudaType-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
@@ -102,7 +102,7 @@ class PaymentRequestApprovalController extends Controller
                         1,
                         $purchaseOrder->contract_no,
                         'credit',
-                        'yes',
+                        'no',
                         [
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
@@ -120,7 +120,7 @@ class PaymentRequestApprovalController extends Controller
                         1,
                         $purchaseOrder->contract_no,
                         'credit',
-                        'yes',
+                        'no',
                         [
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
@@ -138,7 +138,7 @@ class PaymentRequestApprovalController extends Controller
                         1,
                         $purchaseOrder->contract_no,
                         'credit',
-                        'yes',
+                        'no',
                         [
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
