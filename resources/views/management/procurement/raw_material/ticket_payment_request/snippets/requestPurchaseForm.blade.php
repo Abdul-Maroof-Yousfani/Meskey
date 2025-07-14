@@ -8,7 +8,7 @@
             $hasLoadingWeight = true;
         }
     } else {
-        if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->loaded_weight) {
+        if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->arrived_weight) {
             $hasLoadingWeight = true;
         }
     }
@@ -32,7 +32,7 @@
     $bagRate = 0;
 
     $totalDeductions = 0;
-    $loadingWeight = $arrivalTicket->freight->loaded_weight ?? 0;
+    $loadingWeight = $arrivalTicket->freight->arrived_weight ?? 0;
     $noOfBags = $arrivalTicket->bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
@@ -285,7 +285,7 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Loading Weight</label>
+                    <label>Arrival Weight</label>
                     <input type="text" class="form-control" name="loading_weight" value="{{ $loadingWeight }}"
                         readonly>
                 </div>
@@ -820,7 +820,6 @@
 
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
             }
-
 
             $('#bag_weight_input').on('input', function() {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
