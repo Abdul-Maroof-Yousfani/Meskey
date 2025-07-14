@@ -256,10 +256,10 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Loading Date</label>
+                    <label>Arrival Date</label>
                     {{-- @dd($arrivalTicket->loading_date->format('d-M-Y')) --}}
                     <input type="text" class="form-control" name="loading_date"
-                        value="{{ $arrivalTicket && $arrivalTicket->loading_date ? $arrivalTicket->loading_date->format('d-M-Y') : 'N/A' }}"
+                        value="{{ $arrivalTicket && $arrivalTicket->freight->created_at ? $arrivalTicket->freight->created_at->format('d-M-Y') : 'N/A' }}"
                         readonly>
                 </div>
             </div>
