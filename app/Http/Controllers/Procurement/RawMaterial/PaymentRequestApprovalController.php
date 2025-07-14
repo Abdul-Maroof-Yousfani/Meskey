@@ -70,7 +70,7 @@ class PaymentRequestApprovalController extends Controller
             $saudaType = $moduleType === 'ticket' ? 'pohanch' : 'thadda';
 
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
-            $biltyNo = $paymentRequestData->arrivalTicket->bilty ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty ?? 'N/A';
+            $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
             // dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier->account_id);
             if ($request->status === 'approved') {
                 createTransaction(
