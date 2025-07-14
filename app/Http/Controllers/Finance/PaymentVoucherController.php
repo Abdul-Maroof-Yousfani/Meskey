@@ -235,7 +235,8 @@ class PaymentVoucherController extends Controller
                 'bank_account_type' => $request->bank_account_type,
                 'supplier_id' => $request->supplier_id,
                 'module_id' => $firstRequest->paymentRequestData->purchase_order_id ?? null,
-                'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
+                // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
+                'module_type' => 'raw_material_purchase',
                 'voucher_type' => $request->voucher_type,
                 'remarks' => $request->remarks,
                 'total_amount' => 0
