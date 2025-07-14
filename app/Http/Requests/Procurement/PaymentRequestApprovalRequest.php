@@ -134,7 +134,8 @@ class PaymentRequestApprovalRequest extends FormRequest
         }
 
         $paymentRequestData = $paymentRequest->paymentRequestData;
-        $ticket = $paymentRequestData->ticket;
+        // $ticket = $paymentRequestData->ticket;
+        $ticket = $paymentRequestData->purchaseTicket ?? $paymentRequestData->arrivalTicket;
 
         if (!$ticket) {
             $fail('Invalid ticket associated with payment request.');
