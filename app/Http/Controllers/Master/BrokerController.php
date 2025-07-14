@@ -168,7 +168,7 @@ class BrokerController extends Controller
             'companyBankDetails',
             'ownerBankDetails'
         ])->findOrFail($id);
-        // dd($supplier->company_location_ids);
+        // dd($broker->company_location_ids);
         $companyLocations = CompanyLocation::all(); // Assuming you have a CompanyLocation model
 
         // Decode the JSON locations if needed
@@ -184,13 +184,131 @@ class BrokerController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(BrokerRequest $request, $id)
+    public function update(BrokerRequest $request, Broker $broker)
     {
-        $data = $request->validated();
-        $broker = Broker::findOrFail($id);
-        $broker->update($data);
+        DB::beginTransaction();
 
-        return response()->json(['success' => 'Broker updated successfully.', 'data' => $broker], 200);
+        try {
+            $data = $request->validated();
+            $requestData = $request->all();
+
+            if (empty($broker->account_id)) {
+                $account = Account::create(getParamsForAccountCreation(
+                    $request->company_id,
+                    $request->company_name,
+                    'Broker'
+                ));
+                $requestData['account_id'] = $account->id;
+            }
+
+            $broker->update($requestData);
+
+            $this->updateBankDetails(
+                $broker,
+                $request->company_bank_name ?? [],
+                $request->company_branch_name ?? [],
+                $request->company_branch_code ?? [],
+                $request->company_account_title ?? [],
+                $request->company_account_number ?? [],
+                'companyBankDetails'
+            );
+
+            $this->updateBankDetails(
+                $broker,
+                $request->owner_bank_name ?? [],
+                $request->owner_branch_name ?? [],
+                $request->owner_branch_code ?? [],
+                $request->owner_account_title ?? [],
+                $request->owner_account_number ?? [],
+                'ownerBankDetails'
+            );
+
+            // if ($request->has('create_as_broker')) {
+            //     $brokerData = [
+            //         'company_id' => $broker->company_id ?? null,
+            //         'name' => $broker->company_name,
+            //         'email' => $broker->email ?? null,
+            //         'phone' => $broker->phone ?? null,
+            //         'address' => $broker->address ?? null,
+            //         'ntn' => $broker->ntn ?? null,
+            //         'stn' => $broker->stn ?? null,
+            //         'status' => $broker->status,
+            //     ];
+
+            //     if ($broker->broker) {
+            //         if (empty($broker->broker->account_id)) {
+            //             $account = Account::create(getParamsForAccountCreation(
+            //                 $request->company_id,
+            //                 $request->company_name,
+            //                 'Broker'
+            //             ));
+            //             $brokerData['account_id'] = $account->id;
+            //         }
+            //         $broker->broker->update($brokerData);
+            //     } else {
+            //         $brokerData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
+            //         $account = Account::create(getParamsForAccountCreation(
+            //             $request->company_id,
+            //             $request->company_name,
+            //             'Broker'
+            //         ));
+            //         $brokerData['account_id'] = $account->id;
+            //         $broker->broker()->create($brokerData);
+            //     }
+            // } elseif ($broker->broker) {
+            //     $broker->broker->delete();
+            // }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Supplier updated successfully.',
+                'data' => []
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // \Log::error('Supplier update failed: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to update supplier. Please try again.',
+                'details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+        // $data = $request->validated();
+        // $broker = Broker::findOrFail($id);
+        // $broker->update($data);
+
+        // return response()->json(['success' => 'Broker updated successfully.', 'data' => $broker], 200);
+    }
+
+    protected function updateBankDetails($broker, $bankNames, $branchNames, $branchCodes, $accountTitles, $accountNumbers, $relation)
+    {
+        $existingIds = $broker->{$relation}->pluck('id')->toArray();
+        $updatedIds = [];
+
+        foreach ($bankNames as $index => $bankName) {
+            if (empty($bankName)) continue;
+
+            $bankData = [
+                'bank_name' => $bankName,
+                'branch_name' => $branchNames[$index] ?? '',
+                'branch_code' => $branchCodes[$index] ?? '',
+                'account_title' => $accountTitles[$index] ?? '',
+                'account_number' => $accountNumbers[$index] ?? '',
+            ];
+
+            if ($index < count($existingIds)) {
+                $broker->{$relation}()->where('id', $existingIds[$index])->update($bankData);
+                $updatedIds[] = $existingIds[$index];
+            } else {
+                $broker->{$relation}()->create($bankData);
+            }
+        }
+
+        $toDelete = array_diff($existingIds, $updatedIds);
+        if (!empty($toDelete)) {
+            $broker->{$relation}()->whereIn('id', $toDelete)->delete();
+        }
     }
 
     /**

@@ -137,7 +137,6 @@ class PaymentVoucherController extends Controller
             }
         }
 
-
         $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
             // ->whereHas('paymentRequestData', function ($q) use ($purchaseOrderId) {
             //     $q->where('purchase_order_id', $purchaseOrderId);
@@ -169,63 +168,6 @@ class PaymentVoucherController extends Controller
                 ];
             });
 
-        // $paymentRequests = PaymentRequest::with([
-        //     'paymentRequestData.purchaseOrder',
-        //     'paymentRequestData.arrivalTicket',
-        //     'paymentRequestData.purchaseFreight'
-        // ])
-        //     ->whereHas('paymentRequestData.purchaseOrder', function ($q) use ($supplierId) {
-        //         $q->where('supplier_id', $supplierId);
-        //     })
-        //     ->whereDoesntHave('paymentVoucherData')
-        //     ->where('status', 'approved')
-        //     ->get()
-        //     ->map(function ($request) {
-        //         $data = $request->paymentRequestData;
-
-        //         // Initialize variables
-        //         $truckNo = 'N/A';
-        //         $biltyNo = 'N/A';
-        //         $loadingDate = 'N/A';
-        //         $loadingWeight = 'N/A';
-
-        //         // Check module type and get data accordingly
-        //         if ($data->module_type === 'ticket' && $data->arrivalTicket) {
-        //             // Get data from arrivalTicket
-        //             $ticket = $data->arrivalTicket;
-        //             $truckNo = $ticket->truck_no ?? 'N/A';
-        //             $biltyNo = $ticket->bilty_no ?? 'N/A';
-        //             $loadingDate = $ticket->loading_date ? $ticket->loading_date->format('Y-m-d') : 'N/A';
-        //             $loadingWeight = $ticket->loading_weight ?? 'N/A';
-        //         } else {
-        //             // Get data from purchaseOrder and purchaseFreight
-        //             $purchaseOrder = $data->purchaseOrder;
-        //             $purchaseFreight = $purchaseOrder->purchaseFreight ?? null;
-
-        //             $truckNo = $purchaseFreight->truck_no ?? $purchaseOrder->truck_no ?? 'N/A';
-        //             $biltyNo = $purchaseFreight->bilty_no ?? 'N/A';
-        //             $loadingDate = $purchaseFreight->loading_date ? $purchaseFreight->loading_date->format('Y-m-d') : 'N/A';
-        //             $loadingWeight = $purchaseFreight->loading_weight ?? 'N/A';
-        //         }
-
-        //         return [
-        //             'id' => $request->id,
-        //             'supplier_id' => $data->purchaseOrder->supplier_id ?? null,
-        //             'purchaseOrder' => $data->purchaseOrder,
-        //             'request_no' => $data->purchaseOrder->contract_no ?? 'N/A',
-        //             'amount' => $request->amount,
-        //             'purpose' => $data->notes ?? 'No description',
-        //             'status' => $request->approval_status,
-        //             'type' => formatEnumValue($request->request_type),
-        //             'module_type' => $data->module_type ?? 'N/A',
-        //             'truck_no' => $truckNo,
-        //             'bilty_no' => $biltyNo,
-        //             'loading_date' => $loadingDate,
-        //             'loading_weight' => $loadingWeight,
-        //             'request_date' => $request->created_at->format('Y-m-d')
-        //         ];
-        //     });
-        // dd($paymentRequests);
         return response()->json([
             'success' => true,
             'payment_requests' => $paymentRequests,
@@ -247,7 +189,14 @@ class PaymentVoucherController extends Controller
             'supplier_id' => 'required|exists:suppliers,id',
             'payment_requests' => 'required|array',
             'payment_requests.*' => 'exists:payment_requests,id',
-            // ... other validation rules
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'supplier_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'remarks' => 'nullable|string'
         ]);
 
         DB::transaction(function () use ($request) {
@@ -256,7 +205,6 @@ class PaymentVoucherController extends Controller
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
-            // Get the first payment request to get module info
             $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
                 ->find($request->payment_requests[0]);
 
