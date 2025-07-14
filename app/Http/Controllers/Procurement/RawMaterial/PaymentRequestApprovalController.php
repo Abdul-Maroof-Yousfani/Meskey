@@ -72,7 +72,7 @@ class PaymentRequestApprovalController extends Controller
                 createTransaction(
                     $request->has('payment_request_amount'),
                     $purchaseOrder->supplier->account_id,
-                    $paymentRequestData->purchase_order_id,
+                    1, // for Purchase Order
                     $purchaseOrder->contract_no,
                     // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
                     // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
