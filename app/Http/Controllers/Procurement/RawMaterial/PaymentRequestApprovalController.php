@@ -69,21 +69,21 @@ class PaymentRequestApprovalController extends Controller
             $purchaseOrder = $ticket->purchaseOrder;
             // dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier->account_id);
             if ($request->status === 'approved') {
-                // createTransaction(
-                //     $request->has('payment_request_amount'),
-                //     $purchaseOrder->supplier->account_id,
-                //     $paymentRequestData->purchase_order_id,
-                //     $purchaseOrder->contract_no,
-                //     // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
-                //     // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
-                //     'credit',
-                //     'yes',
-                //     [
-                //         'payment_against' => 'thadda-purchase',
-                //         'against_reference_no' => 'Invoice No: INV-2023-005',
-                //         'remarks' => 'Recording accounts payable for Thadda purchase. Amount to be paid to supplier.'
-                //     ]
-                // );
+                createTransaction(
+                    $request->has('payment_request_amount'),
+                    $purchaseOrder->supplier->account_id,
+                    $paymentRequestData->purchase_order_id,
+                    $purchaseOrder->contract_no,
+                    // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
+                    // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
+                    'credit',
+                    'yes',
+                    [
+                        'payment_against' => 'thadda-purchase',
+                        'against_reference_no' => 'Invoice No: INV-2023-005',
+                        'remarks' => 'Recording accounts payable for Thadda purchase. Amount to be paid to supplier.'
+                    ]
+                );
             }
 
             if ($request->has('total_amount') || $request->has('bag_weight')) {
