@@ -36,6 +36,7 @@
     $noOfBags = $arrivalTicket->bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
+    $grossFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
@@ -68,7 +69,7 @@
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
-    $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum;
+    $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $grossFreightAmount;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
@@ -584,6 +585,18 @@
                                     id="loading_weighbridge_amount" value="{{ $loadingWeighbridgeSum }}" readonly>
                             </td>
                         </tr>
+                        <tr>
+                            <td><strong>Freight Deduction</strong></td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            <td>
+                                <input type="text" class="form-control" name="freight_deduction_amount_display"
+                                    id="freight_deduction_amount_display"
+                                    value="{{ number_format($grossFreightAmount, 2) }}" readonly>
+                                <input type="hidden" class="form-control" name="loading_weighbridge_amount"
+                                    id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -810,7 +823,8 @@
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount;
+                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
+                    {{ $grossFreightAmount ?? 0 }});
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
