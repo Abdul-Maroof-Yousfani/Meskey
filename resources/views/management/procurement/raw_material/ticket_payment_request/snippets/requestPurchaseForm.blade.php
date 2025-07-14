@@ -825,7 +825,7 @@
             $('#bag_weight_input').on('input', function() {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
                 const bagWeightAmount = ratePerKg * currentBagWeight * noOfBags;
-                $('#bag_weight_amount').val(bagWeightAmount);
+                $('#bag_weight_amount').val(bagWeightAmount.toFixed(2));
                 updateAllCalculations();
             });
 
