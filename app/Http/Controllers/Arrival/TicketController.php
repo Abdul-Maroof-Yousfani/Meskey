@@ -62,15 +62,25 @@ class TicketController extends Controller
     public function create(Request $request)
     {
         $authUserCompany = $request->company_id;
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::all();
 
-        $accountsOf = User::role('Purchaser')
-            ->whereHas('companies', function ($q) use ($authUserCompany) {
-                $q->where('companies.id', $authUserCompany);
-            })
-            ->get();
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])->where('purchase_type', 'regular')->get();
 
-        return view('management.arrival.ticket.create', ['accountsOf' => $accountsOf, 'arrivalPurchaseOrders' => $arrivalPurchaseOrders]);
+        $suppliers = Supplier::where('status', 'active')->get();
+
+        $products = $arrivalPurchaseOrders->map(function ($order) {
+            return $order->product;
+        })->filter()->unique('id');
+
+        $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
+            return $order->createdByUser;
+        })->filter()->unique('id');
+
+        return view('management.arrival.ticket.create', [
+            'accountsOf' => $accountsOf,
+            'arrivalPurchaseOrders' => $arrivalPurchaseOrders,
+            'suppliers' => $suppliers,
+            'products' => $products
+        ]);
     }
 
     /**

@@ -3,26 +3,44 @@
 namespace App\Http\Requests\Master;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class BrokerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Set to true if the user is authorized to make this request
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            'company_id' => 'required|exists:companies,id', // Ensure company exists in the 'companies' table
+            'company_id' => 'required|exists:companies,id',
             'unique_no' => 'nullable|string|max:255|unique:brokers,unique_no',
-            'name' => 'required|string|max:255',
+            'company_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('brokers', 'company_name')
+                    ->where('company_id', $this->input('company_id'))
+                    ->ignore($this->broker)
+            ],
+            // 'company_name' => 'required|string|max:255',
+            // 'account_type' => 'required|in:credit,debit',
+            'owner_name' => 'required|string|max:255',
+            'owner_mobile_no' => 'required|string|max:20',
+            'owner_cnic_no' => 'nullable|string|max:15',
+            'next_to_kin' => 'nullable|string|max:255',
+            'next_to_kin_mobile_no' => 'nullable|string|max:20',
+            'owner_bank_detail' => 'nullable|string|max:255',
+            'company_bank_detail' => 'nullable|string|max:255',
             'prefix' => 'nullable|string|max:10',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'ntn' => 'nullable|string|max:15',
             'stn' => 'nullable|string|max:15',
+            'attachment' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
         ];
     }
@@ -34,7 +52,16 @@ class BrokerRequest extends FormRequest
             'company_id.exists' => 'The selected company does not exist.',
             'unique_no.required' => 'The unique number is required.',
             'unique_no.unique' => 'The unique number must be unique.',
+            'name.unique' => 'The name has already been taken for the selected company.',
             'name.required' => 'The name is required.',
+            'company_name.required' => 'The company name is required.',
+            'owner_name.required' => 'The owner name is required.',
+            'owner_mobile_no.required' => 'The owner mobile number is required.',
+            'owner_cnic_no.string' => 'The owner CNIC must be a valid string.',
+            'next_to_kin.string' => 'The next to kin must be a valid string.',
+            'next_to_kin_mobile_no.string' => 'The next to kin mobile number must be a valid string.',
+            'owner_bank_detail.string' => 'The owner bank detail must be a valid string.',
+            'company_bank_detail.string' => 'The company bank detail must be a valid string.',
             'prefix.string' => 'The prefix must be a valid string.',
             'email.email' => 'Please provide a valid email address.',
             'phone.string' => 'The phone number must be a valid string.',

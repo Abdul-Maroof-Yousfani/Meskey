@@ -146,6 +146,7 @@ class PurchaseOrderController extends Controller
                 $arrivalPOData['broker_three_name'] = $b3->name ?? NULL;
             }
 
+            $arrivalPOData['created_by'] = auth()->user()->id;
             $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
 
             if (isset($data['slabs']) && count($data['slabs']) > 0) {

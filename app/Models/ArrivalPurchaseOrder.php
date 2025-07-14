@@ -113,6 +113,11 @@ class ArrivalPurchaseOrder extends Model
         return $this->belongsTo(Broker::class, 'broker_two_id');
     }
 
+    public function createdByUser()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function brokerThree()
     {
         return $this->belongsTo(Broker::class, 'broker_three_id');

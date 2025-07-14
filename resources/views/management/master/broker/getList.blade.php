@@ -1,10 +1,12 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Name </th>
-            <th class="col-sm-4">Description</th>
+            <th class="col-sm-1">S No. </th>
+            <th class="col-sm-2">Broker </th>
+            <th class="col-sm-2">Company </th>
+            <th class="col-sm-4">Address</th>
             <th class="col-sm-2">Created</th>
-            <th class="col-sm-2">Action</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -13,8 +15,20 @@
                 <tr>
                     <td>
                         <p class="m-0">
+                            {{ $row->unique_no }}
+
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
                             {{ $row->name }} <br>
-                            <small>{{ $row->email }}</small> <br>
+                            <small>{{ $row->email ?? '--' }}</small> <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->company_name }} <br>
+                            <small>{{ $row->company_mobile_no ?? '--' }}</small> <br>
                         </p>
                     </td>
                     <td>
@@ -24,7 +38,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
+                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
                             {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
 
                         </p>
@@ -39,7 +53,6 @@
                         @can('role-delete')
                             <a onclick="deletemodal('{{ route('broker.destroy', $row->id) }}','{{ route('get.broker') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
-
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
@@ -71,10 +84,6 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
 
 
 <div class="row d-flex" id="paginationLinks">

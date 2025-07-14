@@ -23,27 +23,35 @@
              </fieldset>
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
-             <div class="form-group ">
-                 <label>Product:</label>
-                 <select name="product_id" id="product_id" class="form-control select2">
-                     <option value="">Product Name</option>
-                 </select>
-             </div>
-         </div>
-         <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label class="d-block">Contract Detail:</label>
                  <select name="arrival_purchase_order_id" id="arrival_purchase_order_id" class="form-control select2">
                      <option value="">N/A</option>
-                     @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
-                         <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"
-                             data-brokerid="{{ $arrivalPurchaseOrder->broker->id ?? '' }}"
-                             data-brokername="{{ $arrivalPurchaseOrder->broker->name ?? '' }}"
-                             data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
-                             data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
-                             value="{{ $arrivalPurchaseOrder->id }}">
-                             {{ $arrivalPurchaseOrder->contract_no }}
+                     @foreach ($arrivalPurchaseOrders as $order)
+                         <option value="{{ $order->id }}" data-product-id="{{ $order->product->id ?? '' }}"
+                             data-product-name="{{ $order->product->name ?? '' }}"
+                             data-supplier-id="{{ $order->supplier->id ?? '' }}"
+                             data-supplier-name="{{ $order->supplier->name ?? '' }}"
+                             data-created-by-id="{{ $order->created_by ?? '' }}"
+                             data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
+                             data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
+                             data-created-at="{{ $order->created_at ?? '' }}">
+                             #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }}
                          </option>
+                     @endforeach
+                 </select>
+             </div>
+         </div>
+         <div class="col-xs-6 col-sm-6 col-md-6">
+             <div class="form-group ">
+                 <label>Product:</label>
+                 {{-- <select name="product_id" id="product_id" class="form-control select2">
+                     <option value="">Product Name</option>
+                 </select> --}}
+                 <select name="product_id" id="product_id" class="form-control select2">
+                     <option value="">Product Name</option>
+                     @foreach ($products as $product)
+                         <option value="{{ $product->id }}">{{ $product->name }}</option>
                      @endforeach
                  </select>
              </div>
@@ -62,6 +70,9 @@
                  <label>Broker:</label>
                  <select name="broker_name" id="broker_name" class="form-control select2">
                      <option value="">Broker Name</option>
+                     @foreach ($suppliers as $supplier)
+                         <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                     @endforeach
                  </select>
                  {{-- <input type="hidden" name="broker_name" id="broker_name_submit"> --}}
              </div>
@@ -82,6 +93,9 @@
                  <label>Accounts Of:</label>
                  <select name="accounts_of" id="accounts_of" class="form-control select2">
                      <option value="" hidden>Accounts Of</option>
+                     @foreach ($suppliers as $supplier)
+                         <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                     @endforeach
                  </select>
              </div>
          </div>
@@ -323,10 +337,10 @@
                  $('textarea[name="remarks"]').val(remarks[Math.floor(Math.random() * remarks.length)]);
              }
 
-             populateRandomValues();
+             //  populateRandomValues();
 
              $(document).on('select2:open', function() {
-                 setTimeout(populateRandomValues, 500);
+                 //  setTimeout(populateRandomValues, 500);
              });
          }
 
@@ -337,18 +351,18 @@
          $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
 
          initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
+         //  initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);
          //  initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
-         initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
+         //  initializeDynamicSelect2('#accounts_of', 'suppliers', 'name', 'name', true, false);
+         //  initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
-         $('[name="arrival_truck_type_id"], [name="decision_id"]').select2();
+         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id"]')
+             .select2();
 
          function calculateNetWeight() {
              const firstWeight = parseFloat($('#first_weight').val()) || 0;
              const secondWeight = parseFloat($('#second_weight').val()) || 0;
-
              const netWeight = secondWeight - firstWeight;
 
              $('#net_weight').val(netWeight || 0);
@@ -375,34 +389,35 @@
 
          $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
              var selectedOption = $(this).find('option:selected');
-             var brokerName = selectedOption.data('brokername');
-             var supplierName = selectedOption.data('suppliername');
 
-             // Handle supplier
-             if (supplierName) {
-                 $('#supplier_name').html('<option value="' + supplierName + '" selected>' +
-                     supplierName + '</option>');
-                 $('#supplier_name').prop('disabled', true);
-                 $('#supplier_name_submit').val(supplierName); // Set hidden field
-             } else {
-                 $('#supplier_name').html('<option value="">Supplier Name</option>');
-                 $('#supplier_name').prop('disabled', false);
-                 $('#supplier_name_submit').val(''); // Clear hidden field
-                 initializeDynamicSelect2('#supplier_name', 'suppliers', 'name', 'name', true, false);
+             // Get data from selected option's data attributes
+             var productId = selectedOption.data('product-id');
+             var supplierId = selectedOption.data('supplier-id');
+             var createdById = selectedOption.data('created-by-id');
+             var saudaTypeName = selectedOption.data('sauda-type-name');
+             var createdAt = selectedOption.data('created-at');
+
+             // Set product selection
+             if (productId) {
+                 $('#product_id').val(productId).trigger('change');
              }
 
-             // Handle broker
-             //  if (brokerName) {
-             //      $('#broker_name').html('<option value="' + brokerName + '" selected>' + brokerName +
-             //          '</option>');
-             //      $('#broker_name').prop('disabled', true);
-             //      $('#broker_name_submit').val(brokerName); // Set hidden field
-             //  } else {
-             //      $('#broker_name').html('<option value="">Broker Name</option>');
-             //      $('#broker_name').prop('disabled', false);
-             //      $('#broker_name_submit').val(''); // Clear hidden field
-             //      initializeDynamicSelect2('#broker_name', 'brokers', 'name', 'name', true, false);
-             //  }
+             // Set broker/supplier selection
+             if (supplierId) {
+                 $('#broker_name').val(supplierId).trigger('change');
+                 $('#accounts_of').val(supplierId).trigger('change');
+             }
+
+             // Set decision maker selection
+             if (createdById) {
+                 $('#decision_id').val(createdById).trigger('change');
+             }
+
+             // Set loading date
+             if (createdAt) {
+                 $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
+             }
+
          });
 
          // Sync values on any change (just in case)

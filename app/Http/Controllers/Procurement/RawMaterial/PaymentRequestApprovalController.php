@@ -88,6 +88,64 @@ class PaymentRequestApprovalController extends Controller
                         'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
                     ]
                 );
+
+                // $existingApprovals = PaymentRequestApproval::where('purchase_order_id', $purchaseOrder->id)
+                //     ->where('ticket_id', $ticket->id)
+                //     ->count();
+
+                if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $request->loading_weight) {
+                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_two_commission);
+
+                    createTransaction(
+                        $amount,
+                        $purchaseOrder->broker->account_id,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'credit',
+                        'yes',
+                        [
+                            'payment_against' => "$saudaType-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
+                        ]
+                    );
+                }
+
+                if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $request->loading_weight) {
+                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_two_commission);
+
+                    createTransaction(
+                        $amount,
+                        $purchaseOrder->brokerTwo->account_id,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'credit',
+                        'yes',
+                        [
+                            'payment_against' => "$saudaType-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
+                        ]
+                    );
+                }
+
+                if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $request->loading_weight) {
+                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_two_commission);
+
+                    createTransaction(
+                        $amount,
+                        $purchaseOrder->brokerThree->account_id,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'credit',
+                        'yes',
+                        [
+                            'payment_against' => "$saudaType-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
+                        ]
+                    );
+                }
             }
 
             if ($request->has('total_amount') || $request->has('bag_weight')) {
