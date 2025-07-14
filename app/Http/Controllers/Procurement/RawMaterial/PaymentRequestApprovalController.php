@@ -74,7 +74,7 @@ class PaymentRequestApprovalController extends Controller
             // dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier->account_id);
             if ($request->status === 'approved') {
                 createTransaction(
-                    $request->has('payment_request_amount'),
+                    (float)($request->has('payment_request_amount')),
                     $purchaseOrder->supplier->account_id,
                     1, // for Purchase Order
                     $purchaseOrder->contract_no,
