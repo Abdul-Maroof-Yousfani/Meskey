@@ -67,6 +67,10 @@ class PaymentRequestApprovalController extends Controller
             $moduleType = $paymentRequestData->module_type;
             $ticket = $moduleType === 'ticket' ? $paymentRequestData->arrivalTicket : $paymentRequestData->purchaseTicket;
             $purchaseOrder = $ticket->purchaseOrder;
+            $saudaType = $moduleType === 'ticket' ? 'pohanch' : 'thadda';
+
+            $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
+            $biltyNo = $paymentRequestData->arrivalTicket->bilty ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty ?? 'N/A';
             // dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier->account_id);
             if ($request->status === 'approved') {
                 createTransaction(
@@ -79,9 +83,9 @@ class PaymentRequestApprovalController extends Controller
                     'credit',
                     'yes',
                     [
-                        'payment_against' => 'thadda-purchase',
-                        'against_reference_no' => 'Invoice No: INV-2023-005',
-                        'remarks' => 'Recording accounts payable for Thadda purchase. Amount to be paid to supplier.'
+                        'payment_against' => "$saudaType-purchase",
+                        'against_reference_no' => "$truckNo - $biltyNo",
+                        'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
                     ]
                 );
             }
