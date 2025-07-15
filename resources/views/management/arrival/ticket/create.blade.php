@@ -30,7 +30,7 @@
                      @foreach ($arrivalPurchaseOrders as $order)
                          <option value="{{ $order->id }}" data-product-id="{{ $order->product->id ?? '' }}"
                              data-product-name="{{ $order->product->name ?? '' }}"
-                             data-supplier-id="{{ $order->supplier->id ?? '' }}"
+                             data-supplier-id="{{ $order->supplier->name ?? '' }}"
                              data-supplier-name="{{ $order->supplier->name ?? '' }}"
                              data-created-by-id="{{ $order->created_by ?? '' }}"
                              data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
@@ -71,7 +71,7 @@
                  <select name="broker_name" id="broker_name" class="form-control select2">
                      <option value="">Broker Name</option>
                      @foreach ($suppliers as $supplier)
-                         <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                         <option value="{{ $supplier->name }}">{{ $supplier->name }}</option>
                      @endforeach
                  </select>
                  {{-- <input type="hidden" name="broker_name" id="broker_name_submit"> --}}
@@ -94,7 +94,7 @@
                  <select name="accounts_of" id="accounts_of" class="form-control select2">
                      <option value="" hidden>Accounts Of</option>
                      @foreach ($suppliers as $supplier)
-                         <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                         <option value="{{ $supplier->name }}">{{ $supplier->name }}</option>
                      @endforeach
                  </select>
              </div>
