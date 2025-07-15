@@ -682,6 +682,7 @@
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
             const paidAmount = parseFloat({{ $requestedAmount }});
+            const isApprovalPage = {{ $isApprovalPage ? 1 : 0 }} ? true : false;
 
             function toggleSections() {
                 if ($loadingRadio.is(':checked')) {
@@ -866,12 +867,14 @@
                 updateAllCalculations();
             });
 
-            $('input[name="payment_request_amount"]').on('input', function() {
-                const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const paymentRequest = parseFloat($(this).val()) || 0;
-                const remaining = totalAmount - paymentRequest - paidAmount;
-                $('#remaining_amount').val(remaining.toFixed(2));
-            });
+            if (!isApprovalPage) {
+                $('input[name="payment_request_amount"]').on('input', function() {
+                    const totalAmount = parseFloat($('#total_amount').val()) || 0;
+                    const paymentRequest = parseFloat($(this).val()) || 0;
+                    const remaining = totalAmount - paymentRequest - paidAmount;
+                    $('#remaining_amount').val(remaining.toFixed(2));
+                });
+            }
 
             const percentageInput = $('.percentage-input');
             const paymentRequestInput = $('.payment-request-input');
