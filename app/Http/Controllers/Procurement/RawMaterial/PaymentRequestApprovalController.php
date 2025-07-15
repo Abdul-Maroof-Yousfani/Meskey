@@ -71,7 +71,7 @@ class PaymentRequestApprovalController extends Controller
 
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
-            // dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier->account_id);
+            dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier, $purchaseOrder->supplier->account_id);
             if ($request->status === 'approved') {
                 createTransaction(
                     (float)($request->payment_request_amount),
