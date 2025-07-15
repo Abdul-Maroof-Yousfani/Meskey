@@ -126,17 +126,19 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Owner Mobile No:</label>
-                 <input type="text" name="owner_mobile_no"
-                     value="{{ old('owner_mobile_no', $broker->owner_mobile_no) }}" placeholder="Owner Mobile No"
-                     class="form-control" autocomplete="off" />
+                 <input type="text" name="owner_mobile_no" placeholder="03001234567"
+                     value="{{ old('owner_mobile_no', $broker->owner_mobile_no) }}" class="form-control"
+                     autocomplete="off" maxlength="11" />
+                 <small class="text-muted">Enter 11 digit mobile number</small>
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Owner CNIC:</label>
-                 <input type="text" name="owner_cnic_no"
-                     value="{{ old('owner_cnic_no', $broker->owner_cnic_no) }}" placeholder="Owner CNIC"
-                     class="form-control" autocomplete="off" />
+                 <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
+                     value="{{ old('owner_cnic_no', $broker->owner_cnic_no) }}" class="form-control cnic-input"
+                     autocomplete="off" maxlength="15" />
+                 <small class="text-muted">Format: 12345-1234567-1</small>
              </div>
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
@@ -234,9 +236,10 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Mobile No:</label>
-                 <input type="text" name="next_to_kin_mobile_no"
-                     value="{{ old('next_to_kin_mobile_no', $broker->next_to_kin_mobile_no) }}"
-                     placeholder="Mobile No" class="form-control" autocomplete="off" />
+                 <input type="text" name="next_to_kin_mobile_no" placeholder="03001234567" class="form-control"
+                     value="{{ old('next_to_kin_mobile_no', $broker->next_to_kin_mobile_no) }}" autocomplete="off"
+                     maxlength="11" pattern="[0-9]{11}" />
+                 <small class="text-muted">Enter 11 digit mobile number</small>
              </div>
          </div>
      </div>
@@ -294,8 +297,21 @@
 
  <script>
      $(document).ready(function() {
-         console.log({
-             asd: $('#card-container .clonecard')
+         $(document).on('input', '.cnic-input', function() {
+             let value = $(this).val().replace(/\D/g, '');
+             let formattedValue = '';
+
+             if (value.length > 0) {
+                 formattedValue = value.substring(0, 5);
+             }
+             if (value.length > 5) {
+                 formattedValue += '-' + value.substring(5, 12);
+             }
+             if (value.length > 12) {
+                 formattedValue += '-' + value.substring(12, 13);
+             }
+
+             $(this).val(formattedValue);
          });
 
          if ($('#card-container .clonecard').length === 0) {

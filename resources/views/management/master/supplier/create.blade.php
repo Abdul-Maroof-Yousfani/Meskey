@@ -110,7 +110,6 @@
                 <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
                     class="form-control cnic-input" autocomplete="off" maxlength="15" />
                 <small class="text-muted">Format: 12345-1234567-1</small>
-
             </div>
         </div>
 
