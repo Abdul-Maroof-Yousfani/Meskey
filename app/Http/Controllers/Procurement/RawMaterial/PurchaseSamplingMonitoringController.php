@@ -300,7 +300,11 @@ class PurchaseSamplingMonitoringController extends Controller
             if ($request->stage_status == 'resampling') {
                 PurchaseSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
-                    'purchase_ticket_id'       => $ArrivalSamplingRequest->purchase_ticket_id,
+                    'purchase_ticket_id'        => $ArrivalSamplingRequest->purchase_ticket_id,
+                    'arrival_product_id'        => $ArrivalSamplingRequest->arrival_product_id,
+                    'supplier_name'        => $ArrivalSamplingRequest->supplier_name,
+                    'is_custom_qc'        => $ArrivalSamplingRequest->is_custom_qc,
+                    'qc_product_id'             => $ArrivalSamplingRequest->qc_product_id,
                     'arrival_purchase_order_id' => $ArrivalSamplingRequest->arrival_purchase_order_id,
                     'sampling_type' => $ArrivalSamplingRequest->sampling_type,
                     'is_re_sampling' => 'yes',

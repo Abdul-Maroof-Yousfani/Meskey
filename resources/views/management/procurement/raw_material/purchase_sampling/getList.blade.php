@@ -10,6 +10,7 @@
         </tr>
     </thead>
     <tbody>
+        {{-- @dd($samplingRequests) --}}
         @if (count($samplingRequests) != 0)
             @foreach ($samplingRequests as $key => $row)
                 <tr class="bg-{{ $row->is_done == 'yes' ? '' : 'orange' }}">

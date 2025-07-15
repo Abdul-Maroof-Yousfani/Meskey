@@ -28,7 +28,7 @@ class PaymentRequestRequest extends FormRequest
             'total_amount' => 'required|numeric',
             'paid_amount' => 'required|numeric',
             'remaining_amount' => 'required|numeric',
-            'payment_request_amount' => 'required|numeric',
+            'payment_request_amount' => 'required|numeric|min:0',
             'advance_freight' => 'required|numeric',
             'freight_pay_request_amount' => 'nullable|numeric|min:0',
             'sampling_results' => 'nullable|array',
@@ -73,6 +73,28 @@ class PaymentRequestRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $payment_request_amount = $this->input('payment_request_amount', 0);
+            $freight_pay_request_amount = $this->input('freight_pay_request_amount', 0);
+
+            $payment_request_amount = floatval($payment_request_amount);
+            $freight_pay_request_amount = floatval($freight_pay_request_amount);
+
+            if ($payment_request_amount <= 0 && $freight_pay_request_amount <= 0) {
+                $validator->errors()->add(
+                    'payment_request_amount',
+                    'At least one of Payment Request Amount or Freight Pay Request Amount must be greater than 0.'
+                );
+                $validator->errors()->add(
+                    'freight_pay_request_amount',
+                    'At least one of Payment Request Amount or Freight Pay Request Amount must be greater than 0.'
+                );
+            }
+        });
     }
 
     public function messages()
@@ -158,6 +180,8 @@ class PaymentRequestRequest extends FormRequest
             'compulsory_results.*.applied_deduction.numeric' => 'Applied deduction must be a number.',
             'compulsory_results.*.deduction_amount.required' => 'Deduction amount is required in compulsory results.',
             'compulsory_results.*.deduction_amount.numeric' => 'Deduction amount must be a number.',
+            // Custom error for both amounts being zero
+            'at_least_one_amount.required' => 'At least one of Payment Request Amount or Freight Pay Request Amount must be greater than 0.',
         ];
     }
 }

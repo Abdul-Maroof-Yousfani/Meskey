@@ -49,7 +49,10 @@ class PaymentRequestController extends Controller
                 'purchaseOrder.supplier',
                 'product',
                 'qcProduct',
-                'purchaseFreight',
+                // Order purchaseFreight by updated_at desc
+                'purchaseFreight' => function ($q) {
+                    $q->orderBy('updated_at', 'desc');
+                },
                 'paymentRequestData' => function ($query) {
                     $query->with(['paymentRequests' => function ($q) {
                         $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
@@ -256,14 +259,16 @@ class PaymentRequestController extends Controller
             }
         }
 
-        PaymentRequest::create([
-            'payment_request_data_id' => $paymentRequestData->id,
-            'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-            'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-            'request_type' => 'payment',
-            'module_type' => 'purchase_order',
-            'amount' => $request->payment_request_amount ?? 0
-        ]);
+        if ($request->payment_request_amount && $request->payment_request_amount > 0) {
+            PaymentRequest::create([
+                'payment_request_data_id' => $paymentRequestData->id,
+                'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
+                'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+                'request_type' => 'payment',
+                'module_type' => 'purchase_order',
+                'amount' => $request->payment_request_amount ?? 0
+            ]);
+        }
 
         if ($request->freight_pay_request_amount && $request->freight_pay_request_amount > 0) {
             PaymentRequest::create([
