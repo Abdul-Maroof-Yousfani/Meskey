@@ -172,8 +172,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Delivery Date:</label>
-                <input type="date" name="delivery_date" placeholder="Delivery Date" class="form-control"
-                    min="{{ date('Y-m-d') }}" />
+                <input type="date" name="delivery_date" id="delivery_date" placeholder="Delivery Date"
+                    class="form-control" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -345,6 +345,19 @@
     $(document).ready(function() {
         $('.select2').select2();
 
+        $('#contract_date').change(function() {
+            const contractDate = $(this).val();
+            if (contractDate) {
+                $('#delivery_date').attr('min', contractDate);
+
+                // If delivery date is already set and before contract date, reset it
+                const deliveryDate = $('#delivery_date').val();
+                if (deliveryDate && new Date(deliveryDate) < new Date(contractDate)) {
+                    $('#delivery_date').val(contractDate);
+                }
+            }
+        });
+
         $('#company_location_id').change(function() {
             var locationId = $(this).val();
 
@@ -388,6 +401,10 @@
         function generateContractNumber() {
             const locationId = $('#company_location_id').val();
             const contractDate = $('#contract_date').val();
+
+            if (contractDate) {
+                $('#delivery_date').attr('min', contractDate);
+            }
 
             if (locationId && contractDate) {
                 $.ajax({
