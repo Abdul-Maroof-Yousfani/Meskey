@@ -30,7 +30,7 @@
                     <td>
                         <p class="m-0">
                             #{{ $row->purchaseOrder->contract_no ?? ($row->purchaseTicket->unique_no ?? 'N/A') }}
-                            {{ $row->is_custom_qc == 'yes' ? '(Without Contract)' : '' }} <br>
+                            {{ $row->is_custom_qc == 'yes' ? '(Without Contract)' : '' }}
                         </p>
                     </td>
                     <td>
