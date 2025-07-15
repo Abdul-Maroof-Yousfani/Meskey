@@ -255,7 +255,6 @@ class PaymentRequestApprovalController extends Controller
     private function updateSamplingResults($paymentRequestData, $request)
     {
         $paymentRequestData->samplingResults()->delete();
-
         if ($request->has('sampling_results')) {
             foreach ($request->sampling_results as $result) {
                 PaymentRequestSamplingResult::create([
@@ -276,10 +275,14 @@ class PaymentRequestApprovalController extends Controller
             foreach ($request->compulsory_results as $result) {
                 PaymentRequestSamplingResult::create([
                     'payment_request_data_id' => $paymentRequestData->id,
-                    'qc_param_id' => $result['qc_param_id'] ?? null,
-                    'name' => $result['qc_name'] ?? '',
+                    'slab_type_id' => $result['qc_param_id'] ?? null,
+                    'name' => $result['qc_name'],
+                    'checklist_value' => 0,
+                    'suggested_deduction' => 0,
                     'applied_deduction' => $result['applied_deduction'] ?? 0,
+                    'deduction_type' => 'amount',
                     'deduction_amount' => $result['deduction_amount'] ?? 0,
+
                 ]);
             }
         }
