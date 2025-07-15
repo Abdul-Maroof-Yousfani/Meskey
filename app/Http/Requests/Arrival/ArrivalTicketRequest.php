@@ -30,6 +30,7 @@ class ArrivalTicketRequest extends FormRequest
             'product_id' => 'required|exists:products,id',
             'miller_name' => 'required|string|max:255',
             'arrival_truck_type_id' => 'required|max:255',
+            'arrival_purchase_order_id' => 'nullable|exists:arrival_purchase_orders,id',
             'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',
             'truck_no' => [
@@ -115,6 +116,7 @@ class ArrivalTicketRequest extends FormRequest
             'decision_id.required' => 'The decision of field is required.',
             'decision_id.exists' => 'The selected decision user does not exist.',
             'arrival_truck_type_id.required' => 'The truck type is required.',
+            'arrival_purchase_order_id.exists' => 'The selected purchase order does not exist.',
             'sample_money_type.required' => 'The sample money type is required.',
             'sample_money_type.in' => 'The sample money type must be either single or double.',
             'sample_money.required' => 'The sample money is required.',

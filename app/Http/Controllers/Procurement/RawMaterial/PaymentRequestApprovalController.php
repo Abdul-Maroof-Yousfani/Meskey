@@ -94,7 +94,7 @@ class PaymentRequestApprovalController extends Controller
                 //     ->count();
 
                 if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $request->loading_weight) {
-                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_two_commission);
+                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_one_id);
                     // dd($purchaseOrder->broker);
                     createTransaction(
                         $amount,
@@ -130,7 +130,7 @@ class PaymentRequestApprovalController extends Controller
                 }
 
                 if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $request->loading_weight) {
-                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_two_commission);
+                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_three_commission);
 
                     createTransaction(
                         $amount,
