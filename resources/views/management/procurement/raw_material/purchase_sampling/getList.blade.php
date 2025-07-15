@@ -24,7 +24,7 @@
                             {{ $row->purchaseOrder->supplier->name ?? ($row->supplier_name ?? 'N/A') }} <br>
                         </p>
                     </td>
-                    <td>@dd($row)
+                    <td>
                         <p class="m-0">
                             {{ $row->purchaseOrder->product->name ?? ($row->product->name ?? 'N/A') }} <br>
                         </p>

@@ -95,12 +95,10 @@ class PurchaseSamplingController extends Controller
             ]);
         }
 
-        // dd($PurchaseSamplingRequest);
-
         $PurchaseSamplingRequest->update([
             'remark' => $request->remarks,
-            'arrival_product_id' => $request->arrival_product_id,
             'is_done' => 'yes',
+            'qc_product_id' => $request->arrival_product_id,
             'party_ref_no' => $request->party_ref_no ?? NULL,
             'sample_taken_by' => $request->sample_taken_by ?? NULL,
             'done_by' => auth()->user()->id,

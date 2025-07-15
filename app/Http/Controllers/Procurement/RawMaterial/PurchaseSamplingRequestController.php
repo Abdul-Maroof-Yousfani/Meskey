@@ -121,6 +121,7 @@ class PurchaseSamplingRequestController extends Controller
         $arrivalSampleReq = PurchaseSamplingRequest::create([
             'company_id'       => $request->company_id,
             'purchase_ticket_id'       => $purchaseTicket->id,
+            'arrival_product_id' => $request->product_id ?? $purchaseOrder->product_id ?? null,
             'arrival_purchase_order_id' => $request->purchase_contract_id ?? null,
             'supplier_name' => $request->supplier_name ?? null,
             'address' => $request->address ?? null,
@@ -128,7 +129,7 @@ class PurchaseSamplingRequestController extends Controller
             'sampling_type'    => 'initial',
             'is_re_sampling'   => 'no',
             'is_done'          => 'no',
-            'remark'           => null,
+            'remark'           => $request->remark ?? null,
         ]);
         // }
 
