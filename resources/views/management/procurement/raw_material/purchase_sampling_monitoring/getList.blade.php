@@ -29,17 +29,19 @@
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
-                            #{{ $row->purchaseOrder->contract_no ?? 'N/A' }} <br>
+                            #{{ $row->purchaseOrder->contract_no ?? ($row->purchaseTicket->unique_no ?? 'N/A') }}
+                            {{ $row->is_custom_qc == 'yes' ? '(Without Contract)' : '' }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        {{-- @dd($row) --}}
+                        <p class="m-0">
+                            {{ $row->purchaseOrder->supplier->name ?? ($row->supplier_name ?? 'N/A') }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchaseOrder->supplier->name ?? 'N/A' }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->purchaseOrder->product->name ?? 'N/A' }} <br>
+                            {{ $row->purchaseOrder->product->name ?? ($row->product->name ?? 'N/A') }} <br>
                         </p>
                     </td>
                     {{-- <td>

@@ -49,6 +49,11 @@ class PurchaseSamplingRequest extends Model
         return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
     }
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'arrival_product_id');
+    }
+
     public function contractProduct()
     {
         return $this->belongsTo(Product::class, 'arrival_product_id');

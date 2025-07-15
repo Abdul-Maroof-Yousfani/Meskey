@@ -245,7 +245,7 @@ class PurchaseSamplingMonitoringController extends Controller
             $isDecisionMaking = convertToBoolean($decisionMakingValue);
             $isDecisionMakingReq = convertToBoolean($request->decision_making ?? 'off');
 
-            if (!$isDecisionMakingReq && $ArrivalSamplingRequest->purchaseOrder->decision_making === 1) {
+            if (!$isDecisionMakingReq && ($ArrivalSamplingRequest->purchaseOrder->decision_making ?? null) === 1) {
                 $decisionMadeOn = now();
             }
 
@@ -327,13 +327,20 @@ class PurchaseSamplingMonitoringController extends Controller
                 $updateData['first_qc_status'] = $request->stage_status;
             }
 
-            $ArrivalSamplingRequest->purchaseOrder()->first()->update($updateData);
+            $isCustomQC = $ArrivalSamplingRequest->is_custom_qc == 'yes';
+
+            if (!$isCustomQC) {
+                $ArrivalSamplingRequest->purchaseOrder()->first()->update($updateData);
+            }
 
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 
             if ($request->stage_status == 'approved') {
-                ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
+                if (!$isCustomQC) {
+                    ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
+                }
+
                 PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['freight_status' => 'pending']);
             }
 

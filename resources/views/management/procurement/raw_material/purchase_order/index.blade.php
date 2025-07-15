@@ -27,6 +27,15 @@
                                         <div class="row justify-content-end text">
                                             <div class="col-md-2">
                                                 <div class="form-group ">
+                                                    <label>Suppliers:</label>
+                                                    <select name="supplier_id" id="supplier_id_f"
+                                                        class="form-control select2">
+                                                        <option value="">Supplier</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group ">
                                                     <label>Sauda Type:</label>
                                                     <select name="sauda_type_id" id="sauda_type"
                                                         class="form-control select2">
@@ -85,8 +94,10 @@
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
 
 
-            initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true,
+                true);
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);
         });
     </script>
 @endsection

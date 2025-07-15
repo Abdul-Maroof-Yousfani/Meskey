@@ -15,17 +15,18 @@
                 <tr class="bg-{{ $row->is_done == 'yes' ? '' : 'orange' }}">
                     <td>
                         <p class="m-0">
-                            #{{ $row->purchaseOrder->contract_no ?? 'N/A' }} <br>
+                            #{{ $row->purchaseOrder->contract_no ?? ($row->purchaseTicket->unique_no ?? 'N/A') }}
+                            {{ $row->is_custom_qc == 'yes' ? '(Without Contract)' : '' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchaseOrder->supplier->name ?? 'N/A' }} <br>
+                            {{ $row->purchaseOrder->supplier->name ?? ($row->supplier_name ?? 'N/A') }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchaseOrder->product->name ?? 'N/A' }} <br>
+                            {{ $row->purchaseOrder->product->name ?? ($row->product->name ?? 'N/A') }} <br>
                         </p>
                     </td>
                     <td>
@@ -37,7 +38,6 @@
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-
                         </p>
                     </td>
                     <td>

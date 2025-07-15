@@ -43,6 +43,9 @@ class PurchaseOrderController extends Controller
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('company_location_id', $request->company_location_id);
             })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->where('supplier_id', $request->supplier_id);
+            })
             ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
                 return $q->where('sauda_type_id', $request->sauda_type_id);
             })

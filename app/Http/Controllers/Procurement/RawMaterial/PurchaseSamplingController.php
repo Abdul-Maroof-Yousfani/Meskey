@@ -87,11 +87,15 @@ class PurchaseSamplingController extends Controller
     public function store(PurchaseSamplingResultRequest $request)
     {
         $PurchaseSamplingRequest = PurchaseSamplingRequest::findOrFail($request->purchase_sampling_request_id);
-        $purchaseOrder = ArrivalPurchaseOrder::findOrFail($PurchaseSamplingRequest->purchaseOrder->id);
+        $purchaseOrder = ArrivalPurchaseOrder::find($PurchaseSamplingRequest?->purchaseOrder?->id);
 
-        $purchaseOrder->update([
-            'qc_product' => $request->arrival_product_id
-        ]);
+        if ($purchaseOrder) {
+            $purchaseOrder->update([
+                'qc_product' => $request->arrival_product_id
+            ]);
+        }
+
+        // dd($PurchaseSamplingRequest);
 
         $PurchaseSamplingRequest->update([
             'remark' => $request->remarks,
