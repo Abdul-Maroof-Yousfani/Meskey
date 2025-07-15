@@ -62,8 +62,9 @@ class TicketController extends Controller
     public function create(Request $request)
     {
         $authUserCompany = $request->company_id;
+        $userLocation = auth()->user()->company_location_id;
 
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])->where('purchase_type', 'regular')->get();
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])->where('purchase_type', 'regular')->where('company_location_id', $userLocation)->get();
 
         $suppliers = Supplier::where('status', 'active')->get();
 

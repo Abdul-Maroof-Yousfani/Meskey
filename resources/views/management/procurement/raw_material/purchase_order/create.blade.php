@@ -17,7 +17,6 @@
                     class="form-control" max="{{ date('Y-m-d') }}" />
             </div>
         </div>
-
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Contract No:</label>
