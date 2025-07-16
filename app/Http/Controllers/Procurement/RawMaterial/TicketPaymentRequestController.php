@@ -41,7 +41,6 @@ class TicketPaymentRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        // Handle ticket route case
         $query = ArrivalTicket::with([
             'purchaseOrder',
             'paymentRequestData.paymentRequests',
@@ -56,7 +55,13 @@ class TicketPaymentRequestController extends Controller
                         ->groupBy('payment_request_data_id', 'request_type', 'status');
                 }]);
             }
-        ])->whereHas('purchaseOrder')->where('sauda_type_id', 1); // Only tickets with contracts attached
+        ])->whereHas('purchaseOrder')->where('sauda_type_id', 1)->orderByDesc(function ($query) {
+            $query->select('created_at')
+                ->from('arrival_freights')
+                ->whereColumn('arrival_freights.arrival_ticket_id', 'arrival_tickets.id')
+                ->limit(1);
+        })
+            ->orderByDesc('created_at');
 
         if ($request->has('broker_id') && $request->broker_id != '') {
             $query->whereHas('purchaseOrder', function ($q) use ($request) {
@@ -126,7 +131,7 @@ class TicketPaymentRequestController extends Controller
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
-                'created_at' => $ticket->paymentRequestData->first()->created_at ?? $ticket->created_at
+                'created_at' => $ticket->freight->first()->created_at ?? $ticket->created_at
             ];
 
             return $ticket;

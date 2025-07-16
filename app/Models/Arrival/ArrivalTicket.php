@@ -32,6 +32,7 @@ class ArrivalTicket extends Model
         'company_id',
         'product_id',
         'qc_product',
+        'location_id',
         // 'supplier_name',
         'broker_name',
         'bag_weight',

@@ -49,18 +49,21 @@ class PaymentRequestController extends Controller
                 'purchaseOrder.supplier',
                 'product',
                 'qcProduct',
-                // Order purchaseFreight by updated_at desc
-                'purchaseFreight' => function ($q) {
-                    $q->orderBy('updated_at', 'desc');
-                },
+                'purchaseFreight',
                 'paymentRequestData' => function ($query) {
                     $query->with(['paymentRequests' => function ($q) {
                         $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
                             ->groupBy('payment_request_data_id', 'request_type', 'status');
                     }]);
                 }
-            ]);
-        // dd($query);
+            ])
+            ->orderByDesc(function ($query) {
+                $query->select('created_at')
+                    ->from('purchase_freights')
+                    ->whereColumn('purchase_freights.purchase_ticket_id', 'purchase_tickets.id')
+                    ->limit(1);
+            })
+            ->orderByDesc('created_at');
 
         if ($request->has('supplier_id') && $request->supplier_id != '') {
             $query->whereHas('purchaseOrder', function ($q) use ($request) {
@@ -128,7 +131,7 @@ class PaymentRequestController extends Controller
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
-                'created_at' => $ticket->paymentRequestData->first()->created_at ?? $ticket->created_at
+                'created_at' => $ticket->purchaseFreight->created_at ?? $ticket->created_at
             ];
 
             return $ticket;

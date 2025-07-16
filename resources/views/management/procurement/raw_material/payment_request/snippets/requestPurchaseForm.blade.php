@@ -18,29 +18,48 @@
     }
     $totalDeductions = 0;
     $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
-    // $bagWeight = $purchaseOrder->bag_weight ?? 0;
     $bagWeight = $ticket->bag_weight ?? 0;
     $noOfBags = $ticket->purchaseFreight->no_of_bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $bagRate = $ticket->bag_rate ?? 0;
     $kantaCharges = $ticket->purchaseFreight->kanta_charges ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
-    foreach ($samplingRequestCompulsuryResults as $slab) {
-        if (!$slab->applied_deduction) {
-            continue;
+
+    $lumpsumDeduction = $samplingRequest->lumpsum_deduction ?? 0;
+    $lumpsumDeductionKgs = $samplingRequest->lumpsum_deduction_kgs ?? 0;
+    $lumpsumCalculatedValue = 0;
+    $lumpsumKgsCalculatedValue = 0;
+
+    if ($showLumpSum) {
+        if ($lumpsumDeduction > 0) {
+            $lumpsumCalculatedValue = $lumpsumDeduction * $netWeight;
+            $totalDeductions += $lumpsumCalculatedValue;
         }
-        $isCompulsury = true;
-        $deductionValue = $slab->applied_deduction ?? 0;
-        $totalDeductions += $deductionValue * $netWeight;
-    }
-    foreach ($samplingRequestResults as $slab) {
-        if (!$slab->applied_deduction) {
-            continue;
+
+        if ($lumpsumDeductionKgs > 0) {
+            $lumpsumKgsCalculatedValue = $lumpsumDeductionKgs * $netWeight;
+            $lumpsumKgsCalculatedValue = ($lumpsumKgsCalculatedValue / 100) * $ratePerKg;
+            $totalDeductions += $lumpsumKgsCalculatedValue;
         }
-        $isSlabs = true;
-        $deductionValue = $slab->applied_deduction ?? 0;
-        $totalDeductions += $deductionValue * $netWeight;
+    } else {
+        foreach ($samplingRequestCompulsuryResults as $slab) {
+            if (!$slab->applied_deduction) {
+                continue;
+            }
+            $isCompulsury = true;
+            $deductionValue = $slab->applied_deduction ?? 0;
+            $totalDeductions += $deductionValue * $netWeight;
+        }
+        foreach ($samplingRequestResults as $slab) {
+            if (!$slab->applied_deduction) {
+                continue;
+            }
+            $isSlabs = true;
+            $deductionValue = $slab->applied_deduction ?? 0;
+            $totalDeductions += $deductionValue * $netWeight;
+        }
     }
+
     $avgRate = 0;
     if ($noOfBags > 0) {
         $avgRate = $loadingWeight / $noOfBags;
@@ -117,6 +136,11 @@
         border-left: 4px solid #27489a;
     }
 
+    /* .lumpsum-row {
+        background-color: #e8f4fd;
+        border-left: 4px solid #007bff;
+    } */
+
     .approval-editable {
         background-color: #fff3cd !important;
         border-color: #ffc107 !important;
@@ -131,6 +155,9 @@
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
 <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}">
+<input type="hidden" id="show_lumpsum" value="{{ $showLumpSum ? 1 : 0 }}">
+<input type="hidden" id="lumpsum_deduction" value="{{ $lumpsumDeduction }}">
+<input type="hidden" id="lumpsum_deduction_kgs" value="{{ $lumpsumDeductionKgs }}">
 
 <!-- Store sampling data for JS calculations -->
 <script type="text/javascript">
@@ -163,6 +190,11 @@
         existingOtherDeduction: {
             kg_value: {{ $existingOtherDeductionKg }},
             deduction_amount: {{ $existingOtherDeductionAmount }}
+        },
+        lumpsum: {
+            showLumpSum: {{ $showLumpSum ? 1 : 0 }},
+            lumpsumDeduction: {{ $lumpsumDeduction }},
+            lumpsumDeductionKgs: {{ $lumpsumDeductionKgs }}
         }
     };
 </script>
@@ -285,9 +317,132 @@
                         value="{{ number_format($avgRate, 2) }}" readonly>
                 </div>
             </div>
-            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+
+            @if ($showLumpSum)
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">
+                        Lumpsum Deductions
+                    </h6>
+                </div>
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th width="25%">Name</th>
+                                    <th width="20%">Deduction Value</th>
+                                    <th width="20%">Net Weight</th>
+                                    <th width="20%">Deduction Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lumpsum-results-tbody">
+                                @if ($lumpsumDeduction > 0)
+                                    <tr class="lumpsum-row" data-lumpsum-type="amount">
+                                        <td><strong>Lumpsum Deduction (Amount)</strong>
+                                            <input type="hidden" name="lumpsum[amount][name]"
+                                                value="Lumpsum Deduction (Amount)">
+                                        </td>
+                                        <td>
+                                            <div class="input-group mb-0">
+                                                <input type="number" step="0.01"
+                                                    class="form-control editable-field"
+                                                    name="lumpsum[amount][deduction_value]"
+                                                    id="lumpsum_deduction_input" value="{{ $lumpsumDeduction }}"
+                                                    placeholder="Enter deduction value">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text text-sm">Rs.</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                name="lumpsum[amount][net_weight]" id="lumpsum_net_weight_display"
+                                                value="{{ number_format($netWeight, 2) }}" readonly>
+                                        </td>
+                                        <td>
+                                            <div class="input-group mb-0">
+                                                <input type="text" class="form-control"
+                                                    name="lumpsum[amount][deduction_amount_display]"
+                                                    id="lumpsum_amount_display"
+                                                    value="{{ number_format($lumpsumCalculatedValue, 2) }}" readonly>
+                                                <input type="hidden" name="lumpsum[amount][deduction_amount]"
+                                                    id="lumpsum_amount_hidden" value="{{ $lumpsumCalculatedValue }}">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+                                @if ($lumpsumDeductionKgs > 0)
+                                    <tr class="lumpsum-row" data-lumpsum-type="kgs">
+                                        <td><strong>Lumpsum Deduction (KGs)</strong>
+                                            <input type="hidden" name="lumpsum[kgs][name]"
+                                                value="Lumpsum Deduction (KGs)">
+                                        </td>
+                                        <td>
+                                            <div class="input-group mb-0">
+                                                <input type="number" step="0.01"
+                                                    class="form-control editable-field"
+                                                    name="lumpsum[kgs][deduction_value]"
+                                                    id="lumpsum_deduction_kgs_input"
+                                                    value="{{ $lumpsumDeductionKgs }}"
+                                                    placeholder="Enter deduction value">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text text-sm">%</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                name="lumpsum[kgs][net_weight]" id="lumpsum_kgs_net_weight_display"
+                                                value="{{ number_format($netWeight, 2) }}" readonly>
+                                        </td>
+                                        <td>
+                                            <div class="input-group mb-0">
+                                                <input type="text" class="form-control"
+                                                    name="lumpsum[kgs][deduction_amount_display]"
+                                                    id="lumpsum_kgs_amount_display"
+                                                    value="{{ number_format($lumpsumKgsCalculatedValue, 2) }}"
+                                                    readonly>
+                                                <input type="hidden" name="lumpsum[kgs][deduction_amount]"
+                                                    id="lumpsum_kgs_amount_hidden"
+                                                    value="{{ $lumpsumKgsCalculatedValue }}">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Other Deduction</strong>
+                                        <input type="hidden" name="other_deduction[slab_name]"
+                                            value="Other Deduction">
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="other_deduction[kg_value]" id="other_deduction_kg"
+                                                value="{{ $existingOtherDeductionKg }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">KG</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control"
+                                                name="other_deduction[kg_amount]" id="other_deduction_amount_display"
+                                                value="{{ number_format($existingOtherDeductionAmount, 2) }}"
+                                                readonly>
+                                            <input type="hidden" class="form-control"
+                                                name="other_deduction[deduction_amount]" id="other_deduction_amount"
+                                                value="{{ $existingOtherDeductionAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             @else
-                <div class="col-12" bis_skin_checked="1">
+                <div class="col-12">
                     <h6 class="header-heading-sepration">
                         Sampling Results
                     </h6>
@@ -509,6 +664,7 @@
                     </div>
                 </div>
             @endif
+
             <div class="col-12">
                 <table class="table table-bordered mb-4" style="min-width: 500px;">
                     <tbody>
@@ -563,7 +719,6 @@
     @php
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
     @endphp
-    {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
         <div class="row mx-auto ">
             <div class="col-md-6">
@@ -625,8 +780,8 @@
                     <label>Total Advance Freight</label>
                     <input type="text" class="form-control" name="advance_freight_display"
                         value="{{ number_format($advanceFreight, 2) }}" readonly>
-                    <input type="hidden" class="form-control" name="advance_freight" value="{{ $advanceFreight }}"
-                        readonly>
+                    <input type="hidden" class="form-control" name="advance_freight"
+                        value="{{ $advanceFreight }}" readonly>
                 </div>
             </div>
             <div class="col-md-6">
@@ -664,7 +819,6 @@
             @endif
         </div>
     </div>
-    {{-- @endif --}}
 </div>
 
 @if ($hasLoadingWeight)
@@ -683,6 +837,7 @@
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
             const paidAmount = parseFloat({{ $requestedAmount }});
             const isApprovalPage = {{ $isApprovalPage ? 1 : 0 }} ? true : false;
+            const showLumpSum = {{ $showLumpSum ? 1 : 0 }} ? true : false;
 
             function toggleSections() {
                 if ($loadingRadio.is(':checked')) {
@@ -697,6 +852,32 @@
             function calculateNetWeight() {
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 return loadingWeight - (currentBagWeight * noOfBags);
+            }
+
+            function calculateLumpsumDeductions() {
+                const netWeight = calculateNetWeight();
+                let totalLumpsumAmount = 0;
+
+                const lumpsumDeduction = parseFloat($('#lumpsum_deduction_input').val()) || 0;
+                if (lumpsumDeduction > 0) {
+                    const lumpsumCalculatedValue = lumpsumDeduction * netWeight;
+                    totalLumpsumAmount += lumpsumCalculatedValue;
+                    $('#lumpsum_amount_display').val(lumpsumCalculatedValue.toFixed(2));
+                    $('#lumpsum_amount_hidden').val(lumpsumCalculatedValue);
+                    $('#lumpsum_net_weight_display').val(netWeight.toFixed(2));
+                }
+
+                const lumpsumDeductionKgs = parseFloat($('#lumpsum_deduction_kgs_input').val()) || 0;
+                if (lumpsumDeductionKgs > 0) {
+                    let lumpsumKgsCalculatedValue = lumpsumDeductionKgs * netWeight;
+                    lumpsumKgsCalculatedValue = (lumpsumKgsCalculatedValue / 100) * ratePerKg;
+                    totalLumpsumAmount += lumpsumKgsCalculatedValue;
+                    $('#lumpsum_kgs_amount_display').val(lumpsumKgsCalculatedValue.toFixed(2));
+                    $('#lumpsum_kgs_amount_hidden').val(lumpsumKgsCalculatedValue);
+                    $('#lumpsum_kgs_net_weight_display').val(netWeight.toFixed(2));
+                }
+
+                return totalLumpsumAmount;
             }
 
             function calculateSlabDeduction(slabData, netWeight) {
@@ -760,20 +941,24 @@
                 const netWeight = calculateNetWeight();
                 let totalSamplingAmount = 0;
 
-                window.samplingData.samplingResults.forEach(slabData => {
-                    const calculatedValue = calculateSlabDeduction(slabData, netWeight);
-                    totalSamplingAmount += calculatedValue;
-                    $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
-                        .toFixed(2));
-                    $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
-                });
+                if (showLumpSum) {
+                    totalSamplingAmount = calculateLumpsumDeductions();
+                } else {
+                    window.samplingData.samplingResults.forEach(slabData => {
+                        const calculatedValue = calculateSlabDeduction(slabData, netWeight);
+                        totalSamplingAmount += calculatedValue;
+                        $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
+                            .toFixed(2));
+                        $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
+                    });
 
-                window.samplingData.compulsoryResults.forEach(slabData => {
-                    const calculatedValue = slabData.applied_deduction * netWeight;
-                    totalSamplingAmount += calculatedValue;
-                    $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(
-                        calculatedValue.toFixed(2));
-                });
+                    window.samplingData.compulsoryResults.forEach(slabData => {
+                        const calculatedValue = slabData.applied_deduction * netWeight;
+                        totalSamplingAmount += calculatedValue;
+                        $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(
+                            calculatedValue.toFixed(2));
+                    });
+                }
 
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
@@ -788,7 +973,6 @@
 
                 const calculatedBagWeightAmount = ratePerKg * bagWeightTotal;
                 if (Math.abs(bagWeightAmount - calculatedBagWeightAmount) > 0.01) {
-                    // Amount was manually changed, calculate weight
                     const newBagWeight = bagWeightAmount / (ratePerKg * noOfBags);
                     if (!isNaN(newBagWeight) && isFinite(newBagWeight)) {
                         $('#bag_weight_input').val(newBagWeight.toFixed(4));
@@ -800,8 +984,8 @@
             function updateBagRateCalculations() {
                 const currentBagRate = parseFloat($('#bag_rate_input').val()) || 0;
                 const bagRateAmount = parseFloat($('#bag_rate_amount').val()) || 0;
-
                 const calculatedBagRateAmount = currentBagRate * noOfBags;
+
                 if (Math.abs(bagRateAmount - calculatedBagRateAmount) > 0.01) {
                     const newBagRate = bagRateAmount / noOfBags;
                     if (!isNaN(newBagRate) && isFinite(newBagRate)) {
@@ -810,7 +994,6 @@
                 } else {
                     $('#bag_rate_amount').val(calculatedBagRateAmount);
                 }
-
                 $('#bag_rate_amount_display').val($('#bag_rate_amount').val());
             }
 
@@ -821,8 +1004,8 @@
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
                 const bagRateAmount = parseFloat($('#bag_rate_amount').val()) || 0;
-
                 const loadingWeighbridgeAmount = kantaCharges / 2;
+
                 $('#loading_weighbridge_amount').val(loadingWeighbridgeAmount);
                 $('#loading_weighbridge_amount_display').val(loadingWeighbridgeAmount.toFixed(2));
 
@@ -837,10 +1020,29 @@
 
                 const remainingAmount = totalAmount - paidAmount;
                 $('#remaining_amount').val(remainingAmount.toFixed(2));
-
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
             }
 
+            $('#lumpsum_deduction_input').on('input', function() {
+                updateAllCalculations();
+            });
+
+            $('#lumpsum_deduction_kgs_input').on('input', function() {
+                updateAllCalculations();
+            });
+
+            $('.remove-lumpsum').on('click', function() {
+                const type = $(this).data('type');
+                if (type === 'amount') {
+                    $('#lumpsum_deduction_input').val(0);
+                    $('tr[data-lumpsum-type="amount"]').hide();
+                } else if (type === 'kgs') {
+                    $('#lumpsum_deduction_kgs_input').val(0);
+                    $('tr[data-lumpsum-type="kgs"]').hide();
+                }
+                updateAllCalculations();
+            });
+ 
             $('#bag_weight_input').on('input', function() {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
                 const bagWeightAmount = ratePerKg * currentBagWeight * noOfBags;
@@ -878,7 +1080,6 @@
 
             const percentageInput = $('.percentage-input');
             const paymentRequestInput = $('.payment-request-input');
-
             percentageInput.on('input', function() {
                 let percentage = parseFloat($(this).val()) || 0;
                 if (percentage > 100) {
@@ -914,7 +1115,6 @@
             const remainingAmountF = parseFloat($('input[name="remaining_freight"]').val()) || 0;
             const percentageInputF = $('.percentage-input-freight');
             const paymentRequestInputF = $('.payment-request-freifht');
-
             percentageInputF.on('input', function() {
                 let percentage = parseFloat($(this).val()) || 0;
                 if (percentage > 100) {
@@ -937,7 +1137,6 @@
 
             toggleSections();
             updateAllCalculations();
-
             $loadingRadio.on('change', toggleSections);
             $withoutLoadingRadio.on('change', toggleSections);
         });

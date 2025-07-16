@@ -32,11 +32,8 @@ Route::fallback(function () {
     return view('404');
 });
 
-
-
 Route::resource('transactions/report', TransactionController::class);
 Route::post('/get-transactions-report', [TransactionController::class, 'getTransactionsReport'])->name('get.transactions-report');
-
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::prefix('approval')->group(function () {
@@ -59,7 +56,6 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
             ->json(['message' => 'Cookie set'])
             ->cookie('layout', $layout, 60 * 24 * 30);
     });
-
 
     Route::get('getSlabsByProduct', [ProductSlabController::class, 'getSlabsByProduct'])->name('getSlabsByProduct');
     Route::get('getSlabsByPaymentRequestParams', [PaymentRequestController::class, 'getSlabsByPaymentRequestParams'])->name('getSlabsByPaymentRequestParams');
@@ -95,11 +91,6 @@ Route::group(['middleware' => ['auth']], function () {
     })->name('logouts');
 });
 
-
-
-
-
-
 Route::get('/migrate-refresh', function () {
     // Rollback migrations
     Artisan::call('migrate:fresh');
@@ -109,7 +100,6 @@ Route::get('/migrate-refresh', function () {
 
     return 'Migrations rolled back and seeders executed successfully.';
 });
-
 
 Route::get('/migrate-specific/{id}', function ($id) {
     // Run a specific migration

@@ -18,6 +18,7 @@ class ArrivalTicketObserver
         $companyLocation = $authUser->companyLocation ?? null;
         $code = $companyLocation->code ?? 'KHI';
 
+        $arrivalTicket->location_id = $companyLocation->id;
         $arrivalTicket->unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
     }
     /**

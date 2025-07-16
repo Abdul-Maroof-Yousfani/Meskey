@@ -98,6 +98,7 @@ class PurchaseOrderController extends Controller
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['brokers'] = Broker::all();
         $authUser = auth()->user();
         $locationId = $authUser->companyLocation?->id ?? '1';
         $locationId = (string)$locationId;
@@ -185,6 +186,7 @@ class PurchaseOrderController extends Controller
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['brokers'] = Broker::all();
 
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)

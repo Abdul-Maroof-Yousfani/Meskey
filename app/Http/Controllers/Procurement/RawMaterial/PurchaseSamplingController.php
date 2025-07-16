@@ -52,7 +52,7 @@ class PurchaseSamplingController extends Controller
         })
             // ->where("is_done", "")
             ->orderByRaw("CASE WHEN is_done = 'no' THEN 0 ELSE 1 END")
-            ->orderBy('created_at', 'asc')
+            ->orderBy('created_at', 'desc')
             ->paginate(request('per_page', 25));
 
         return view('management.procurement.raw_material.purchase_sampling.getList', compact('samplingRequests', 'isResampling'));
@@ -153,22 +153,41 @@ class PurchaseSamplingController extends Controller
         $PurchaseSamplingRequest = PurchaseSamplingRequest::findOrFail($id);
 
         if ($PurchaseSamplingRequest->is_done == 'no') {
-            $isResampling = request()->route()->getName() === 'raw-material.purchase-resampling.create';
+            $isResampling = request()->route()->getName() === 'raw-material.purchase-resampling.edit';
 
-            $query = PurchaseSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no');
+            $query = PurchaseSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'yes')->where('is_done', 'yes')->where('purchase_ticket_id', $PurchaseSamplingRequest->purchase_ticket_id)->where('is_resampling_made', 'yes');
 
-            if ($isResampling) {
-                $query->where('is_re_sampling', 'yes');
-            } else {
-                $query->where('is_re_sampling', 'no');
-            }
-
-            $samplingRequests = $query->get();
+            $samplingRequest = $query->latest()->first();
             $arrivalCustomSampling = ArrivalCustomSampling::all();
             $sampleTakenByUsers = User::all();
             $products = Product::all();
+            $slabs = null;
+            $results = [];
+            $compulsuryResults = [];
+            $isResamplingReq = null;
 
-            return view('management.procurement.raw_material.purchase_sampling.create', compact('samplingRequests', 'isResampling', 'PurchaseSamplingRequest', 'arrivalCustomSampling', 'sampleTakenByUsers', 'products'));
+            if ($samplingRequest) {
+                $isResamplingReq = true;
+
+                $slabs = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)
+                    ->get()
+                    ->groupBy('product_slab_type_id')
+                    ->map(function ($group) {
+                        return $group->sortBy('from')->first();
+                    });
+
+                $results = PurchaseSamplingResult::where('purchase_sampling_request_id', $samplingRequest->id)->get();
+
+                $results->map(function ($item) use ($slabs) {
+                    $slab = $slabs->get($item->product_slab_type_id);
+                    $item->max_range = $slab ? $slab->to : null;
+                    return $item;
+                });
+
+                $compulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $samplingRequest->id)->get();
+            }
+
+            return view('management.procurement.raw_material.purchase_sampling.create', compact('samplingRequest', 'isResamplingReq', 'isResampling', 'compulsuryResults', 'results', 'PurchaseSamplingRequest', 'arrivalCustomSampling', 'sampleTakenByUsers', 'products'));
         }
 
         $slabs = ProductSlab::where('product_id', $PurchaseSamplingRequest->arrival_product_id)

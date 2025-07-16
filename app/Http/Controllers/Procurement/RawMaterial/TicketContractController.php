@@ -164,7 +164,8 @@ class TicketContractController extends Controller
     {
         $ticket = ArrivalTicket::find($request->ticket_id);
         $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight'])
-            ->where('status', 'draft');
+            ->where('status', 'draft')
+            ->where('company_location_id', $ticket->location_id);
 
         if ($ticket?->sauda_type_id) {
             $query->where('sauda_type_id', $ticket->sauda_type_id);

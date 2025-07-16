@@ -72,9 +72,15 @@ class TicketController extends Controller
             return $order->product;
         })->filter()->unique('id');
 
-        $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
-            return $order->createdByUser;
-        })->filter()->unique('id');
+        // $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
+        //     return $order->createdByUser;
+        // })->filter()->unique('id');
+
+        $accountsOf = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
 
         return view('management.arrival.ticket.create', [
             'accountsOf' => $accountsOf,

@@ -35,23 +35,25 @@ class PaymentRequestApprovalController extends Controller
             'paymentRequestData.purchaseOrder',
             'paymentRequestData.purchaseTicket.purchaseOrder',
             'paymentRequestData.purchaseTicket.purchaseFreight',
+            'paymentRequestData.arrivalTicket.freight',
             'approvals.approver'
         ])
-            // ->whereHas('paymentRequestData', function ($q) {
-            //     $q->whereHas('purchaseTicket', function ($q) {
-            //         $q->whereHas('purchaseOrder', function ($q) {
-            //             // $q->where('sauda_type_id', 2);
-            //         });
-            //     });
-            // })
-            // ->orderByDesc(
-            //     PaymentRequest::select('id')
-            //         ->whereColumn('payment_request_data_id', 'payment_requests.payment_request_data_id')
-            //         ->orderBy('payment_request_data_id', 'desc')
-            //         ->limit(1)
-            // )
             ->orderBy('created_at', 'desc')
             ->paginate(25);
+
+        $paymentRequests->getCollection()->transform(function ($request) {
+            $freightData = null;
+
+            if ($request->module_type === 'purchase_order') {
+                $freightData = optional($request->paymentRequestData)->purchaseTicket->purchaseFreight ?? null;
+            } else {
+                $freightData = optional($request->paymentRequestData)->arrivalTicket->freight ?? null;
+            }
+
+            $request->freight_data = $freightData;
+
+            return $request;
+        });
 
         return view('management.procurement.raw_material.payment_request_approval.getList', [
             'paymentRequests' => $paymentRequests

@@ -68,8 +68,12 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_one_id" id="broker_one_id" class="form-control select2">
-                    <option value="">Broker </option>
+                <select name="broker_one_id" id="broker_one_id" class="form-control select2 broker-select"
+                    data-commission="#broker_one_commission">
+                    <option value="">N/A</option>
+                    @foreach ($brokers as $broker)
+                        <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -77,8 +81,9 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission (per KG):</label>
-                <input type="number" name="broker_one_commission" placeholder="Commission (per KG)"
-                    class="form-control" step="any" min="-999999" max="999999" />
+                <input type="number" id="broker_one_commission" name="broker_one_commission"
+                    placeholder="Commission (per KG)" class="form-control" step="any" min="-999999"
+                    max="999999" />
             </div>
         </div>
     </div>
@@ -91,16 +96,21 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_two_id" id="broker_two_id" class="form-control select2">
-                    <option value="">Broker</option>
+                <select name="broker_two_id" id="broker_two_id" class="form-control select2 broker-select"
+                    data-commission="#broker_two_commission">
+                    <option value="">N/A</option>
+                    @foreach ($brokers as $broker)
+                        <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission (per KG):</label>
-                <input type="number" name="broker_two_commission" placeholder="Commission (per KG)"
-                    class="form-control" step="any" min="-999999" max="999999" />
+                <input type="number" id="broker_two_commission" name="broker_two_commission"
+                    placeholder="Commission (per KG)" class="form-control" step="any" min="-999999"
+                    max="999999" />
 
             </div>
         </div>
@@ -114,16 +124,21 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_three_id" id="broker_three_id" class="form-control select2">
-                    <option value="">Broker</option>
+                <select name="broker_three_id" id="broker_three_id" class="form-control select2 broker-select"
+                    data-commission="#broker_three_commission">
+                    <option value="">N/A</option>
+                    @foreach ($brokers as $broker)
+                        <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission (per KG):</label>
-                <input type="number" name="broker_three_commission" placeholder="Commission (per KG)"
-                    class="form-control" step="any" min="-999999" max="999999" />
+                <input type="number" id="broker_three_commission" name="broker_three_commission"
+                    placeholder="Commission (per KG)" class="form-control" step="any" min="-999999"
+                    max="999999" />
 
             </div>
         </div>
@@ -343,6 +358,13 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        $('.broker-select').on('change', function() {
+            var commissionInput = $($(this).data('commission'));
+            if ($(this).val() === '') {
+                commissionInput.val('');
+            }
+        });
 
         $('#contract_date').change(function() {
             const contractDate = $(this).val();
@@ -651,8 +673,8 @@
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
-        initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
-        initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
-        initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', false, false);
+        // initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', false, false);
+        // initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', false, false);
     });
 </script>

@@ -336,7 +336,7 @@ class SamplingMonitoringController extends Controller
                 'decision_making_time' => $decisionMadeOn,
                 //'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
                 'sauda_type_id' => $request->sauda_type_id,
-                'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
+                // 'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
             ];
 
             if ($ArrivalSamplingRequest->sampling_type == 'inner') {

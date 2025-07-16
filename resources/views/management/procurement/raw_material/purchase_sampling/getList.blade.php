@@ -27,7 +27,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchaseOrder->product->name ?? ($row->product->name ?? 'N/A') }} <br>
+                            {{ $row->purchaseOrder->product->name ?? ($row->qcProduct->name ?? ($row->product->name ?? 'N/A')) }}
                         </p>
                     </td>
                     <td>
