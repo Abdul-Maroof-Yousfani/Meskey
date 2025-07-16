@@ -1042,7 +1042,7 @@
                 }
                 updateAllCalculations();
             });
- 
+
             $('#bag_weight_input').on('input', function() {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
                 const bagWeightAmount = ratePerKg * currentBagWeight * noOfBags;
