@@ -238,7 +238,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Type:</label>
-                <select name="calculation_type" id="calculation_type" class="form-control select2">
+                <select name="calculation_type" id="calculation_type" class="form-control select22">
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
                 </select>
@@ -247,7 +247,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4 fields-hidable">
             <div class="form-group">
                 <label for="truck_size_range">Truck Size Ranges:</label>
-                <select name="truck_size_range" id="truck_size_range" class="form-control select2"
+                <select name="truck_size_range" id="truck_size_range" class="form-control select22"
                     data-default-min="{{ $truckSizeRanges->first()->min_number }}"
                     data-default-max="{{ $truckSizeRanges->first()->max_number }}">
                     @foreach ($truckSizeRanges as $range)
@@ -357,7 +357,7 @@
 
 <script>
     $(document).ready(function() {
-        $('.select2').select2();
+        $('.select22').select2();
 
         $('.broker-select').on('change', function() {
             var commissionInput = $($(this).data('commission'));
