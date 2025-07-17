@@ -15,8 +15,21 @@
                 <tr
                     class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '  ' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
                     <td>
+
                         <p class="m-0">
-                            #{{ $row->unique_no ?? 'N/A' }} {{ $row->purchaseOrder->status ?? '' }}<br>
+                            #{{ $row->unique_no ?? 'N/A' }}
+                            @if (isset($row->purchaseOrder->status) && $row->purchaseOrder->status)
+                                <span
+                                    class="badge 
+                                    @if ($row->purchaseOrder->status == 'draft') bg-warning
+                                    @elseif($row->purchaseOrder->status == 'approved') bg-success
+                                    @elseif($row->purchaseOrder->status == 'rejected') bg-danger
+                                    @else bg-secondary @endif
+                                ">
+                                    {{ ucfirst($row->purchaseOrder->status) }}
+                                </span>
+                            @endif
+                            <br>
                         </p>
                     </td>
                     <td>

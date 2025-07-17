@@ -25,23 +25,31 @@ class PurchaseSamplingRequestController extends Controller
 
     public function getList(Request $request)
     {
-        // $ArrivalSamplingRequests = PurchaseSamplingRequest::where('sampling_type', 'initial')->when($request->filled('search'), function ($q) use ($request) {
-        //     $searchTerm = '%' . $request->search . '%';
-        //     return $q->where(function ($sq) use ($searchTerm) {
-        //         $sq->where('name', 'like', $searchTerm);
-        //     });
-        // })
-        //     ->where('company_id', $request->company_id)
-        //     ->latest()
-        //     ->paginate(request('per_page', 25));
-
-        $purchaseOrders = ArrivalPurchaseOrder::
-            // whereDoesntHave('purchaseSamplingRequests')->
-            where('sauda_type_id', 2)
+        $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
+            ->when($request->filled('supplier_id_filter'), function ($query) use ($request) {
+                $query->where('supplier_id', $request->supplier_id_filter);
+            })
+            ->when($request->filled('product_id_filter'), function ($query) use ($request) {
+                $query->where('product_id', $request->product_id_filter);
+            })
+            ->when($request->filled('company_location_id'), function ($query) use ($request) {
+                $query->where('company_location_id', $request->company_location_id);
+            })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('contract_no', 'like', '%' . $request->search . '%')
+                        ->orWhereHas('supplier', function ($q) use ($request) {
+                            $q->where('name', 'like', '%' . $request->search . '%');
+                        });
+                });
+            })
+            ->with(['supplier', 'product', 'location'])
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.raw_material.purchase_sampling_request.getList', compact('purchaseOrders'));
+        return view('management.procurement.raw_material.purchase_sampling_request.getList', compact(
+            'purchaseOrders'
+        ));
     }
     /**
      * Show the form for creating a new resource.
@@ -94,14 +102,17 @@ class PurchaseSamplingRequestController extends Controller
         $datePrefix = date('m-d-Y') . '-';
         $unique_no = generateUniqueNumberByDate('purchase_tickets', $datePrefix, null, 'unique_no');
 
+        $purchaseOrder = ArrivalPurchaseOrder::find($request->purchase_contract_id);
+
         $purchaseTicket = PurchaseTicket::create([
             'unique_no' => $unique_no,
             'company_id' => $request->company_id,
-            'purchase_order_id' => $request->purchase_contract_id ?? null,
-            'product_id' => $request->product_id ?? null,
+            'purchase_order_id' => $request->purchase_contract_id,
+            'product_id' => $request->product_id,
+            'bag_weight' => $purchaseOrder?->bag_weight,
+            'bag_rate' => $purchaseOrder?->bag_rate,
             'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
             'qc_status' => 'pending',
-            'freight_status' => 'pending',
         ]);
 
         $arrivalSampleReq = null;
@@ -110,6 +121,7 @@ class PurchaseSamplingRequestController extends Controller
         $arrivalSampleReq = PurchaseSamplingRequest::create([
             'company_id'       => $request->company_id,
             'purchase_ticket_id'       => $purchaseTicket->id,
+            'arrival_product_id' => $request->product_id ?? $purchaseOrder->product_id ?? null,
             'arrival_purchase_order_id' => $request->purchase_contract_id ?? null,
             'supplier_name' => $request->supplier_name ?? null,
             'address' => $request->address ?? null,
@@ -117,11 +129,11 @@ class PurchaseSamplingRequestController extends Controller
             'sampling_type'    => 'initial',
             'is_re_sampling'   => 'no',
             'is_done'          => 'no',
-            'remark'           => null,
+            'remark'           => $request->remark ?? null,
         ]);
         // }
 
-        return response()->json(['success' => 'Inner Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
+        return response()->json(['success' => 'Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
     }
 
     /**

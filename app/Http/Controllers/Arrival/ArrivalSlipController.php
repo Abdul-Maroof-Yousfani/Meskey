@@ -10,6 +10,7 @@ use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSlip;
 use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -104,6 +105,20 @@ class ArrivalSlipController extends Controller
         $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
         $samplingRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
 
+        $slabs = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
+        $samplingRequestResults->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            $item->deduction_type = $slab ? $slab->deduction_type : null;
+            return $item;
+        });
+
         $isNotGeneratable = false;
 
         $isNotGeneratable = $arrivalTicket->decision_making == 1;
@@ -149,6 +164,20 @@ class ArrivalSlipController extends Controller
 
         $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
         $samplingRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+
+        $slabs = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
+        $samplingRequestResults->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            $item->deduction_type = $slab ? $slab->deduction_type : null;
+            return $item;
+        });
 
         $isNotGeneratable = false;
 

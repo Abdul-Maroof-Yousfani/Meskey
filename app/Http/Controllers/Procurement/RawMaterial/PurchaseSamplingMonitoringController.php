@@ -12,6 +12,7 @@ use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\PurchaseSamplingRequest;
+use App\Models\PurchaseTicket;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
@@ -244,7 +245,7 @@ class PurchaseSamplingMonitoringController extends Controller
             $isDecisionMaking = convertToBoolean($decisionMakingValue);
             $isDecisionMakingReq = convertToBoolean($request->decision_making ?? 'off');
 
-            if (!$isDecisionMakingReq && $ArrivalSamplingRequest->purchaseOrder->decision_making === 1) {
+            if (!$isDecisionMakingReq && ($ArrivalSamplingRequest->purchaseOrder->decision_making ?? null) === 1) {
                 $decisionMadeOn = now();
             }
 
@@ -299,7 +300,11 @@ class PurchaseSamplingMonitoringController extends Controller
             if ($request->stage_status == 'resampling') {
                 PurchaseSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
-                    'purchase_ticket_id'       => $ArrivalSamplingRequest->purchase_ticket_id,
+                    'purchase_ticket_id'        => $ArrivalSamplingRequest->purchase_ticket_id,
+                    'arrival_product_id'        => $ArrivalSamplingRequest->arrival_product_id,
+                    'supplier_name'        => $ArrivalSamplingRequest->supplier_name,
+                    'is_custom_qc'        => $ArrivalSamplingRequest->is_custom_qc,
+                    'qc_product_id'             => $ArrivalSamplingRequest->qc_product_id,
                     'arrival_purchase_order_id' => $ArrivalSamplingRequest->arrival_purchase_order_id,
                     'sampling_type' => $ArrivalSamplingRequest->sampling_type,
                     'is_re_sampling' => 'yes',
@@ -326,13 +331,21 @@ class PurchaseSamplingMonitoringController extends Controller
                 $updateData['first_qc_status'] = $request->stage_status;
             }
 
-            $ArrivalSamplingRequest->purchaseOrder()->first()->update($updateData);
+            $isCustomQC = $ArrivalSamplingRequest->is_custom_qc == 'yes';
+
+            if (!$isCustomQC) {
+                $ArrivalSamplingRequest->purchaseOrder()->first()->update($updateData);
+            }
 
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 
             if ($request->stage_status == 'approved') {
-                ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
+                if (!$isCustomQC) {
+                    ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
+                }
+
+                PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['freight_status' => 'pending']);
             }
 
             return response()->json([

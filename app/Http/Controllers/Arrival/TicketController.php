@@ -62,7 +62,19 @@ class TicketController extends Controller
     public function create(Request $request)
     {
         $authUserCompany = $request->company_id;
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::all();
+        $userLocation = auth()->user()->company_location_id;
+
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])->where('purchase_type', 'regular')->where('company_location_id', $userLocation)->get();
+
+        $suppliers = Supplier::where('status', 'active')->get();
+
+        $products = $arrivalPurchaseOrders->map(function ($order) {
+            return $order->product;
+        })->filter()->unique('id');
+
+        // $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
+        //     return $order->createdByUser;
+        // })->filter()->unique('id');
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -70,7 +82,12 @@ class TicketController extends Controller
             })
             ->get();
 
-        return view('management.arrival.ticket.create', ['accountsOf' => $accountsOf, 'arrivalPurchaseOrders' => $arrivalPurchaseOrders]);
+        return view('management.arrival.ticket.create', [
+            'accountsOf' => $accountsOf,
+            'arrivalPurchaseOrders' => $arrivalPurchaseOrders,
+            'suppliers' => $suppliers,
+            'products' => $products
+        ]);
     }
 
     /**

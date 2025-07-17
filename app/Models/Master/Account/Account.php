@@ -42,6 +42,43 @@ class Account extends Model
         return $this->hasMany(Account::class, 'parent_id');
     }
 
+
+
+
+    public static function getTree()
+    {
+        $accounts = Account::with('children')
+            ->whereNull('parent_id')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return self::buildTree($accounts);
+    }
+
+    protected static function buildTree($accounts, $prefix = '')
+    {
+        $tree = collect();
+
+        foreach ($accounts as $account) {
+            $account->name = $prefix . $account->name;
+            $tree->push($account);
+
+            if ($account->children->isNotEmpty()) {
+                $tree = $tree->merge(
+                    self::buildTree($account->children, $prefix . '--')
+                );
+            }
+        }
+
+        return $tree;
+    }
+
+
+
+
+
+
     public function transactions()
     {
         return $this->hasMany(Transaction::class);

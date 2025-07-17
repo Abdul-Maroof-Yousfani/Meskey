@@ -709,37 +709,62 @@ function initializeDynamicSelect2(
   columnName,
   idColumn = "id",
   enableTags = false,
-  isMultiple = true,
-  isSelectOnClose = true
+  isMultiple = false,
+  isSelectOnClose = true,
+  isAllowClear = false
 ) {
-  $(selector)
-    .select2({
-      ajax: {
-        url: "/dynamic-fetch-data", // Your dynamic route
-        type: "GET",
-        dataType: "json",
-        delay: 250,
-        data: function (params) {
-          return {
-            search: params.term || "", // Empty by default to load first 10 records
-            table: tableName,
-            column: columnName,
-            idColumn: idColumn,
-            enableTags: enableTags,
-          };
-        },
-        processResults: function (data) {
-          return {
-            results: data.items,
-          };
-        },
+  const $el = $(selector);
+
+  $el.select2({
+    ajax: {
+      url: "/dynamic-fetch-data",
+      type: "GET",
+      dataType: "json",
+      delay: 250,
+      data: function (params) {
+        return {
+          search: params.term || "",
+          table: tableName,
+          column: columnName,
+          idColumn: idColumn,
+          enableTags: enableTags,
+        };
       },
-      minimumInputLength: 0, // Load data without typing
-      tags: enableTags,
-      multiple: isMultiple,
-      selectOnClose: isSelectOnClose,
-    })
-    .trigger("select2:open"); // Open dropdown immediately to show data
+      processResults: function (data) {
+        // Manually insert the null/placeholder option at the beginning
+        const items = isAllowClear
+          ? [{ id: "all", text: "Select an option" }, ...data.items]
+          : data.items;
+
+        return {
+          results: items,
+        };
+      },
+    },
+    minimumInputLength: 0,
+    tags: enableTags,
+    multiple: isMultiple,
+    allowClear: isAllowClear,
+    selectOnClose: isSelectOnClose,
+    placeholder: "Select an option",
+  });
+
+  // Set the placeholder as selected by default
+  // $el.val('').trigger('change');
+
+  // Ensure placeholder remains selected when cleared
+  $el.on("select2:clear", function () {
+    console.log("dd");
+    const newOption = new Option("Select an option", "", true, true);
+    $(this).append(newOption).trigger("change");
+  });
+
+  // Optional: If you want to prevent selecting the placeholder option
+  $el.on("select2:select", function (e) {
+    if (e.params.data.id === "all") {
+      $(this).val("").trigger("change");
+    }
+  });
 }
 
 // Handle select change event

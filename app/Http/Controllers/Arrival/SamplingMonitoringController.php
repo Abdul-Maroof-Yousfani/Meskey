@@ -165,6 +165,7 @@ class SamplingMonitoringController extends Controller
             $initialResults->map(function ($item) use ($slabs) {
                 $slab = $slabs->get($item->product_slab_type_id);
                 $item->max_range = $slab ? $slab->to : null;
+                $item->deduction_type = $slab ? $slab->deduction_type : null;
                 return $item;
             });
 
@@ -182,6 +183,7 @@ class SamplingMonitoringController extends Controller
 
             $innerResults->map(function ($item) use ($slabs) {
                 $slab = $slabs->get($item->product_slab_type_id);
+                $item->deduction_type = $slab ? $slab->deduction_type : null;
                 $item->max_range = $slab ? $slab->to : null;
                 return $item;
             });
@@ -334,7 +336,7 @@ class SamplingMonitoringController extends Controller
                 'decision_making_time' => $decisionMadeOn,
                 //'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
                 'sauda_type_id' => $request->sauda_type_id,
-                'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
+                // 'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
             ];
 
             if ($ArrivalSamplingRequest->sampling_type == 'inner') {

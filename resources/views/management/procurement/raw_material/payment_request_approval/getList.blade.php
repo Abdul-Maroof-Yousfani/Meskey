@@ -1,8 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">#</th>
-            <th class="col-sm-2">Contract No</th>
+            <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-2">Type</th>
             <th class="col-sm-1">Amount</th>
@@ -15,35 +14,47 @@
         @if (count($paymentRequests) != 0)
             @foreach ($paymentRequests as $request)
                 <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>#{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}</td>
+                    <td>
+                        #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') }}<br>
+                        #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? ($request->paymentRequestData->arrivalTicket->purchaseOrder->contract_no ?? 'N/A') }}
+                    </td>
                     <td>{{ $request->paymentRequestData->supplier_name ?? 'N/A' }}</td>
                     <td>
-                        <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}">
+                        {{-- <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}">
+                            {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }} -
                             {{ formatEnumValue($request->request_type) }}
+                        </span> --}}
+
+                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                            <span
+                                class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
+                                style="border-radius: 3px 0 0 3px;">
+                                {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }}
+                            </span>
+                            <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}"
+                                style="border-radius: 0 3px 3px 0;">
+                                {{ formatEnumValue($request->request_type) }}
+                            </span>
                         </span>
                     </td>
                     <td>{{ number_format($request->amount, 2) }}</td>
                     <td>
-                        @if ($request->approvals->count() > 0)
-                            <span
-                                class="badge badge-{{ $request->approvals->first()->status == 'approved' ? 'success' : 'danger' }}">
-                                {{ ucfirst($request->approvals->first()->status) }}
-                            </span>
+                        @if ($request->status == 'approved')
+                            <span class="badge badge-success">Approved</span>
+                        @elseif ($request->status == 'rejected')
+                            <span class="badge badge-danger">Rejected</span>
                         @else
                             <span class="badge badge-info">Pending</span>
                         @endif
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
-
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->approvals->count() > 0 ? ', true' : '' }})"
+                            <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
-
                     </td>
                 </tr>
             @endforeach

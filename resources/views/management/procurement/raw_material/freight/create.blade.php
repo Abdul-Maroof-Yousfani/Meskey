@@ -2,14 +2,16 @@
     <form action="{{ route('raw-material.freight.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
         enctype="multipart/form-data">
         @csrf
-        <input type="hidden" name="arrival_purchase_order_id" value="{{ $purchaseOrder->id }}" />
+        <input type="hidden" name="purchase_ticket_id" value="{{ $ticket->id }}" />
+        <input type="hidden" name="arrival_purchase_order_id" value="{{ $ticket->purchaseOrder->id }}" />
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight') }}" />
 
         <div class="row form-mar">
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Contract #</label>
-                    <input type="text" class="form-control" value="{{ $purchaseOrder->contract_no }}" readonly />
+                    <input type="text" class="form-control" value="{{ $ticket->purchaseOrder->contract_no }}"
+                        readonly />
                 </div>
             </div>
             <div class="col-md-6">
@@ -23,35 +25,35 @@
                 <div class="form-group">
                     <label>Supplier Name</label>
                     <input type="text" name="supplier_name" class="form-control"
-                        value="{{ $purchaseOrder->supplier->name ?? '' }}" readonly />
+                        value="{{ $ticket->purchaseOrder->supplier->name ?? '' }}" readonly />
                 </div>
             </div>
-            @if ($purchaseOrder->broker_one_id)
+            @if ($ticket->purchaseOrder->broker_one_id)
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Broker One</label>
                         <input type="text" name="broker_one" class="form-control"
-                            value="{{ $purchaseOrder->broker_one_name ?? '' }}" readonly />
+                            value="{{ $ticket->purchaseOrder->broker_one_name ?? '' }}" readonly />
                     </div>
                 </div>
             @endif
 
-            @if ($purchaseOrder->broker_two_id)
+            @if ($ticket->purchaseOrder->broker_two_id)
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Broker Two</label>
                         <input type="text" name="broker_two" class="form-control"
-                            value="{{ $purchaseOrder->broker_two_name ?? '' }}" readonly />
+                            value="{{ $ticket->purchaseOrder->broker_two_name ?? '' }}" readonly />
                     </div>
                 </div>
             @endif
 
-            @if ($purchaseOrder->broker_three_id)
+            @if ($ticket->purchaseOrder->broker_three_id)
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Broker Three</label>
                         <input type="text" name="broker_three" class="form-control"
-                            value="{{ $purchaseOrder->broker_three_name ?? '' }}" readonly />
+                            value="{{ $ticket->purchaseOrder->broker_three_name ?? '' }}" readonly />
                     </div>
                 </div>
             @endif
@@ -88,7 +90,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Bag Condition</label>
-                    <select class="form-control" name="bag_condition_id">
+                    <select class="form-control select2" name="bag_condition_id">
                         <option value="">Select Bag Condition</option>
                         @foreach ($bagTypes as $bagType)
                             <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
@@ -101,7 +103,7 @@
                 <div class="form-group">
                     <label>Commodity</label>
                     <input type="text" name="commodity" class="form-control"
-                        value="{{ $purchaseOrder->product->name ?? '' }}" readonly />
+                        value="{{ $ticket->purchaseOrder->product->name ?? '' }}" readonly />
                 </div>
             </div>
 
@@ -122,7 +124,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Freight on Bilty</label>
-                    <input type="number" step="0.01" name="freight_on_bilty" class="form-control" value="0" />
+                    <input type="number" step="0.01" name="freight_on_bilty" class="form-control"
+                        value="0" />
                 </div>
             </div>
 

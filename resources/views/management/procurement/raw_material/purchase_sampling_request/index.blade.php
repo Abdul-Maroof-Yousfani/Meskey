@@ -14,7 +14,7 @@
                     <button
                         onclick="openModal(this,'{{ route('raw-material.purchase-sampling-request.create') }}','Create Sampling Request (Purchase)')"
                         type="button" class="btn btn-primary position-relative">
-                        Create Sampling Request
+                        Create Request (Without Contract)
                     </button>
                 </div>
             </div>
@@ -25,7 +25,29 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
+                                        <div class="row justify-content-end text-right1">
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Location</label>
+                                                <select name="company_location_id" id="company_location_id"
+                                                    class="form-control">
+                                                    <option value="">
+                                                        Select Location</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Supplier</label>
+                                                <select name="supplier_id_filter" id="supplier_id_filter" class="form-control">
+                                                    <option value="">
+                                                        Select Supplier</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Commodity</label>
+                                                <select name="product_id_filter" id="product_id_filter" class="form-control">
+                                                    <option value="">
+                                                        Select Commodity</option>
+                                                </select>
+                                            </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -38,8 +60,8 @@
                                     </div>
                                 </div>
                             </form>
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
+
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
                                 <table class="table m-0">
@@ -70,7 +92,10 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('raw-material.get.purchase-sampling-request') }}`)
+            initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false,true, true);
+            initializeDynamicSelect2('#supplier_id_filter', 'suppliers', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#product_id_filter', 'products', 'name', 'id', true, false, true, true);
+            filterationCommon(`{{ route('raw-material.get.purchase-sampling-request') }}`);
         });
     </script>
 @endsection

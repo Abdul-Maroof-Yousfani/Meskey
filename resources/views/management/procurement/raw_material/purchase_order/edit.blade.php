@@ -70,7 +70,6 @@
              </div>
          </div>
      </div>
-
      <div class="row">
          <div class="col-12">
              <h6 class="header-heading-sepration">
@@ -78,24 +77,28 @@
              </h6>
          </div>
          <div class="col-xs-8 col-sm-8 col-md-8">
-             <div class="form-group">
+             <div class="form-group ">
                  <label>Broker:</label>
-                 <select name="broker_one_id" id="broker_one_id" class="form-control ">
-                     <option value="{{ $arrivalPurchaseOrder->broker->id ?? null }}" selected>
-                         {{ $arrivalPurchaseOrder->broker->name ?? 'Broker' }}</option>
+                 <select name="broker_one_id" id="broker_one_id" class="form-control select2 broker-select"
+                     data-commission="#broker_one_commission">
+                     <option value="">N/A</option>
+                     @foreach ($brokers as $broker)
+                         <option @selected($broker->id == ($arrivalPurchaseOrder->broker->id ?? null)) value="{{ $broker->id }}">{{ $broker->name }}
+                         </option>
+                     @endforeach
                  </select>
              </div>
          </div>
+
          <div class="col-xs-4 col-sm-4 col-md-4">
-             <div class="form-group">
-                 <label>Commission:</label>
-                 <input type="number" name="broker_one_commission"
-                     value="{{ $arrivalPurchaseOrder->broker_one_commission }}" placeholder="Commission"
-                     class="form-control" />
+             <div class="form-group ">
+                 <label>Commission (per KG):</label>
+                 <input type="number" value="{{ $arrivalPurchaseOrder->broker_one_commission }}"
+                     id="broker_one_commission" name="broker_one_commission" placeholder="Commission (per KG)"
+                     class="form-control" step="any" min="-999999" max="999999" />
              </div>
          </div>
      </div>
-
      <div class="row">
          <div class="col-12">
              <h6 class="header-heading-sepration">
@@ -103,24 +106,28 @@
              </h6>
          </div>
          <div class="col-xs-8 col-sm-8 col-md-8">
-             <div class="form-group">
+             <div class="form-group ">
                  <label>Broker:</label>
-                 <select name="broker_two_id" id="broker_two_id" class="form-control ">
-                     <option value="{{ $arrivalPurchaseOrder->brokerTwo->id ?? null }}" selected>
-                         {{ $arrivalPurchaseOrder->brokerTwo->name ?? 'Broker' }}</option>
+                 <select name="broker_two_id" id="broker_two_id" class="form-control select2 broker-select"
+                     data-commission="#broker_two_commission">
+                     <option value="">N/A</option>
+                     @foreach ($brokers as $broker)
+                         <option @selected($broker->id == ($arrivalPurchaseOrder->brokerTwo->id ?? null)) value="{{ $broker->id }}">{{ $broker->name }}
+                         </option>
+                     @endforeach
                  </select>
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
-             <div class="form-group">
-                 <label>Commission:</label>
-                 <input type="number" name="broker_two_commission"
-                     value="{{ $arrivalPurchaseOrder->broker_two_commission }}" placeholder="Commission"
-                     class="form-control" />
+             <div class="form-group ">
+                 <label>Commission (per KG):</label>
+                 <input type="number" value="{{ $arrivalPurchaseOrder->broker_two_commission }}"
+                     id="broker_two_commission" name="broker_two_commission" placeholder="Commission (per KG)"
+                     class="form-control" step="any" min="-999999" max="999999" />
+
              </div>
          </div>
      </div>
-
      <div class="row">
          <div class="col-12">
              <h6 class="header-heading-sepration">
@@ -128,20 +135,25 @@
              </h6>
          </div>
          <div class="col-xs-8 col-sm-8 col-md-8">
-             <div class="form-group">
+             <div class="form-group ">
                  <label>Broker:</label>
-                 <select name="broker_three_id" id="broker_three_id" class="form-control ">
-                     <option value="{{ $arrivalPurchaseOrder->brokerThree->id ?? null }}" selected>
-                         {{ $arrivalPurchaseOrder->brokerThree->name ?? 'Broker' }}</option>
+                 <select name="broker_three_id" id="broker_three_id" class="form-control select2 broker-select"
+                     data-commission="#broker_three_commission">
+                     <option value="">N/A</option>
+                     @foreach ($brokers as $broker)
+                         <option @selected($broker->id == ($arrivalPurchaseOrder->brokerThree->id ?? null)) value="{{ $broker->id }}">{{ $broker->name }}
+                         </option>
+                     @endforeach
                  </select>
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
-             <div class="form-group">
-                 <label>Commission:</label>
-                 <input type="number" name="broker_three_commission"
-                     value="{{ $arrivalPurchaseOrder->broker_three_commission }}" placeholder="Commission"
-                     class="form-control" />
+             <div class="form-group ">
+                 <label>Commission (per KG):</label>
+                 <input type="number" value="{{ $arrivalPurchaseOrder->broker_three_commission }}"
+                     id="broker_three_commission" name="broker_three_commission" placeholder="Commission (per KG)"
+                     class="form-control" step="any" min="-999999" max="999999" />
+
              </div>
          </div>
      </div>
@@ -196,7 +208,8 @@
                  <label>Delivery Date:</label>
                  <input type="date" name="delivery_date"
                      value="{{ isset($arrivalPurchaseOrder->delivery_date) ? $arrivalPurchaseOrder->delivery_date->format('Y-m-d') : null }}"
-                     placeholder="Delivery Date" class="form-control" />
+                     placeholder="Delivery Date" class="form-control"
+                     min="{{ isset($arrivalPurchaseOrder->contract_date) ? $arrivalPurchaseOrder->contract_date->format('Y-m-d') : null }}" />
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -386,6 +399,13 @@
  <script>
      $(document).ready(function() {
          $('.select2').select2();
+
+         $('.broker-select').on('change', function() {
+             var commissionInput = $($(this).data('commission'));
+             if ($(this).val() === '') {
+                 commissionInput.val('');
+             }
+         });
 
          $('#company_location_id, #contract_date').change(function() {
              generateContractNumber();
@@ -645,8 +665,8 @@
          initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
          initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
          initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
-         initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
-         initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
-         initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);
+         //  initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
+         //  initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
+         //  initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);
      });
  </script>

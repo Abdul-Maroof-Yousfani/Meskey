@@ -17,6 +17,8 @@ use App\Models\Master\{
     Supplier,
     Miller
 };
+use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestData;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,8 +32,10 @@ class ArrivalTicket extends Model
         'company_id',
         'product_id',
         'qc_product',
+        'location_id',
         // 'supplier_name',
         'broker_name',
+        'bag_weight',
         'decision_id',
         'accounts_of_id',
         'accounts_of_name',
@@ -74,9 +78,49 @@ class ArrivalTicket extends Model
         'miller_id',
     ];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'loading_date'];
+
+    protected $casts = [
+        'loading_date' => 'date',
+    ];
+
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function paymentRequestData()
+    {
+        return $this->hasMany(PaymentRequestData::class, 'ticket_id');
+    }
+
+    public function paymentRequests()
+    {
+        return $this->hasManyThrough(
+            PaymentRequest::class,
+            PaymentRequestData::class,
+            'arrival_ticket_id',
+            'payment_request_data_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function approvedPaymentRequests()
+    {
+        return $this->paymentRequests()
+            ->whereHas('approvals', function ($query) {
+                $query->where('status', 'approved');
+            });
+    }
+
+    public function pendingPaymentRequests()
+    {
+        return $this->paymentRequests()
+            ->whereDoesntHave('approvals')
+            ->orWhereHas('approvals', function ($query) {
+                $query->where('status', 'pending');
+            });
     }
 
     public function product()

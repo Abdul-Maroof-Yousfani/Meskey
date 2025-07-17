@@ -67,7 +67,7 @@
 </form>
 <script>
     $(document).ready(function() {
-        $('.select2').select2();
+        $('#ajaxSubmit .select2').select2();
 
         initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
         initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);

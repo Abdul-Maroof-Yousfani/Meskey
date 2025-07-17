@@ -14,6 +14,7 @@ class PaymentRequestApproval extends Model
     protected $fillable = [
         'payment_request_id',
         'payment_request_data_id',
+        'ticket_id',
         'purchase_order_id',
         'approver_id',
         'status',
@@ -30,6 +31,11 @@ class PaymentRequestApproval extends Model
     public function paymentRequestData()
     {
         return $this->belongsTo(PaymentRequestData::class);
+    }
+
+    public function ticket()
+    {
+        return $this->belongsTo(PurchaseTicket::class, 'ticket_id');
     }
 
     public function purchaseOrder()

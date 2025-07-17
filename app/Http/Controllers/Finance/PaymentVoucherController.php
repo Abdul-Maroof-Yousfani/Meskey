@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
+use App\Models\Master\Supplier;
 use App\Models\PaymentVoucher;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\PaymentVoucherData;
+use App\Models\SupplierCompanyBankDetail;
+use App\Models\SupplierOwnerBankDetail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,16 +48,30 @@ class PaymentVoucherController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    // public function create()
+    // {
+    //     $data['accounts'] = Account::where('is_operational', 'yes')->get();
+    //     $data['purchaseOrders'] = ArrivalPurchaseOrder::with(['product'])
+    //         ->whereHas('paymentRequestData.paymentRequests', function ($query) {
+    //             $query->where('status', 'approved')
+    //                 ->whereDoesntHave('paymentVoucherData');
+    //         })
+    //         ->latest()
+    //         ->get();
+
+    //     return view('management.finance.payment_voucher.create', $data);
+    // }
+
     public function create()
     {
         $data['accounts'] = Account::where('is_operational', 'yes')->get();
-        $data['purchaseOrders'] = ArrivalPurchaseOrder::with(['product'])
-            ->whereHas('paymentRequestData.paymentRequests', function ($query) {
-                $query->where('status', 'approved')
+
+        $data['suppliers'] = Supplier::whereHas('arrivalPurchaseOrders', function ($query) {
+            $query->whereHas('paymentRequestData.paymentRequests', function ($q) {
+                $q->where('status', 'approved')
                     ->whereDoesntHave('paymentVoucherData');
-            })
-            ->latest()
-            ->get();
+            });
+        })->latest()->get();
 
         return view('management.finance.payment_voucher.create', $data);
     }
@@ -83,14 +100,12 @@ class PaymentVoucherController extends Controller
     /**
      * Get payment requests for purchase order
      */
-    public function getPaymentRequests($purchaseOrderId)
+    public function getPaymentRequests($supplierId)
     {
-        $purchaseOrder = ArrivalPurchaseOrder::with('supplier')->findOrFail($purchaseOrderId);
+        $supplier = Supplier::with(['companyBankDetails', 'ownerBankDetails'])->findOrFail($supplierId);
 
-        $supplier = $purchaseOrder->supplier;
-
-        $companyBankAccounts = $supplier ? $supplier->companyBankDetails : collect();
-        $ownerBankAccounts = $supplier ? $supplier->ownerBankDetails : collect();
+        $companyBankAccounts = $supplier->companyBankDetails ?? collect();
+        $ownerBankAccounts = $supplier->ownerBankDetails ?? collect();
 
         $bankAccounts = collect();
 
@@ -125,8 +140,11 @@ class PaymentVoucherController extends Controller
         }
 
         $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
-            ->whereHas('paymentRequestData', function ($q) use ($purchaseOrderId) {
-                $q->where('purchase_order_id', $purchaseOrderId);
+            // ->whereHas('paymentRequestData', function ($q) use ($purchaseOrderId) {
+            //     $q->where('purchase_order_id', $purchaseOrderId);
+            // }) 
+            ->whereHas('paymentRequestData.purchaseOrder', function ($q) use ($supplierId) {
+                $q->where('supplier_id', $supplierId);
             })
             ->whereDoesntHave('paymentVoucherData')
             ->where('status', 'approved')
@@ -136,15 +154,22 @@ class PaymentVoucherController extends Controller
                     'id' => $request->id,
                     'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? null,
                     'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                    'request_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                    'truck_no' => $request->paymentRequestData->truck_no,
+                    'bilty_no' => $request->paymentRequestData->bilty_no,
+                    'loading_date' => $request->paymentRequestData->loading_date->format('Y-m-d'),
+                    'no_of_bags' => $request->paymentRequestData->no_of_bags,
+                    'loading_weight' => $request->paymentRequestData->loading_weight,
+                    'module_type' => $request->paymentRequestData->module_type,
+                    'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
                     'amount' => $request->amount,
                     'purpose' => $request->paymentRequestData->notes ?? 'No description',
                     'status' => $request->approval_status,
-                    'type' => formatEnumValue($request->request_type),
+                    'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name,
+                    'type' => ($request->request_type),
                     'request_date' => $request->created_at->format('Y-m-d')
                 ];
             });
-        // dd($paymentRequests);
+
         return response()->json([
             'success' => true,
             'payment_requests' => $paymentRequests,
@@ -155,7 +180,140 @@ class PaymentVoucherController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
+    {
+        $request->validate([
+            'unique_no' => 'required',
+            'pv_date' => 'required|date',
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'account_id' => 'required|exists:accounts,id',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'payment_requests' => 'required|array',
+            'payment_requests.*' => 'exists:payment_requests,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'supplier_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'remarks' => 'nullable|string'
+        ]);
+
+        DB::transaction(function () use ($request) {
+            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+
+            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
+            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
+
+            $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
+                ->find($request->payment_requests[0]);
+
+            $bankAccount = null;
+            $bankName = '';
+            $accountNumber = '';
+            if ($request->bank_account_type === 'company') {
+                $bankAccount =  SupplierCompanyBankDetail::find($request->bank_account_id);
+            } elseif ($request->bank_account_type === 'owner') {
+                $bankAccount =  SupplierOwnerBankDetail::find($request->bank_account_id);
+            }
+            if ($bankAccount) {
+                $bankName = $bankAccount->bank_name ?? '';
+                $accountNumber = $bankAccount->account_number ?? '';
+            }
+
+            $paymentVoucher = PaymentVoucher::create([
+                'unique_no' => $uniqueNo,
+                'pv_date' => $request->pv_date,
+                'ref_bill_no' => $request->ref_bill_no,
+                'bill_date' => $request->bill_date,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'account_id' => $request->account_id,
+                'bank_account_id' => $request->bank_account_id,
+                'bank_account_type' => $request->bank_account_type,
+                'supplier_id' => $request->supplier_id,
+                'module_id' => $firstRequest->paymentRequestData->purchase_order_id ?? null,
+                // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
+                'module_type' => 'raw_material_purchase',
+                'voucher_type' => $request->voucher_type,
+                'remarks' => $request->remarks,
+                'total_amount' => 0
+            ]);
+
+            $totalAmount = 0;
+
+            foreach ($request->payment_requests as $requestId) {
+                $paymentRequest = PaymentRequest::findOrFail($requestId);
+                $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
+                $truckNo = $paymentRequest->paymentRequestData->truck_no;
+                $biltyNo = $paymentRequest->paymentRequestData->bilty_no;
+
+                $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
+                $amount = number_format($paymentRequest->amount, 2);
+
+                $remarks = "A payment of Rs. {$amount} has been made to {$supplierName}";
+                if ($bankName) {
+                    $remarks .= " against bank '{$bankName}'";
+                }
+                if ($accountNumber) {
+                    $remarks .= " with account number '{$accountNumber}'";
+                }
+                if ($request->voucher_type === 'bank_payment_voucher') {
+                    $remarks .= " through bank transfer.";
+                } else {
+                    $remarks .= " in cash.";
+                }
+
+                createTransaction(
+                    $paymentRequest->amount,
+                    $paymentVoucher->supplier->account_id,
+                    1,
+                    $uniqueNo,
+                    'debit',
+                    'no',
+                    [
+                        'payment_against' => "$ticketNo",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $remarks
+                    ]
+                );
+
+                createTransaction(
+                    $paymentRequest->amount,
+                    $request->account_id,
+                    1,
+                    $uniqueNo,
+                    'credit',
+                    'no',
+                    [
+                        'payment_against' => "$ticketNo",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $remarks
+                    ]
+                );
+
+                PaymentVoucherData::create([
+                    'payment_voucher_id' => $paymentVoucher->id,
+                    'payment_request_id' => $requestId,
+                    'amount' => $paymentRequest->amount,
+                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description'
+                ]);
+
+                $totalAmount += $paymentRequest->amount;
+            }
+
+            $paymentVoucher->update(['total_amount' => $totalAmount]);
+        });
+
+        return response()->json([
+            'success' => 'Payment voucher created successfully!',
+            'redirect' => route('payment-voucher.index')
+        ]);
+    }
+
+    public function _store(Request $request)
     {
         $request->validate([
             'unique_no' => 'required',

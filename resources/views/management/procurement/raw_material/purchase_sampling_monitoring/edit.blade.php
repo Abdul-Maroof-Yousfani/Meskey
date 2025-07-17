@@ -8,7 +8,7 @@
     $isDecisionMakingForInitial =
         isset($initialRequestForInnerReq) && $initialRequestForInnerReq->decision_making == 1 ? true : false;
     $isDecisionMakingDisabled =
-        isset($arrivalSamplingRequest) &&
+        isset($arrivalSamplingRequest, $arrivalSamplingRequest->purchaseOrder) &&
         $arrivalSamplingRequest->purchaseOrder->decision_making == 0 &&
         $arrivalSamplingRequest->purchaseOrder->decision_making_time
             ? true
@@ -28,6 +28,7 @@
         $previousInnerRequest = $initialRequestsData[count($initialRequestsData) - 1];
     }
 
+    $isCustomQC = $arrivalSamplingRequest->is_custom_qc == 'yes';
 @endphp
 
 <form action="{{ route('raw-material.sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST"
@@ -46,9 +47,9 @@
             <div class="row">
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group">
-                        <label>Contract No:</label>
+                        <label>{{ $isCustomQC ? 'Ticket No' : 'Contract No' }}:</label>
                         <input type="text" disabled="" class="form-control"
-                            value="{{ $arrivalSamplingRequest->purchaseOrder->contract_no ?? 'N/A' }}"
+                            value="{{ $arrivalSamplingRequest->purchaseOrder->contract_no ?? ($arrivalSamplingRequest->unique_no ?? 'N/A') }}"
                             placeholder="QC Product">
                     </div>
                 </div>
@@ -56,7 +57,7 @@
                     <div class="form-group">
                         <label>QC Product:</label>
                         <input type="text" disabled="" class="form-control"
-                            value="{{ $arrivalSamplingRequest->purchaseOrder->qcProduct->name ?? 'N/A' }}"
+                            value="{{ $arrivalSamplingRequest->purchaseOrder->qcProduct->name ?? ($arrivalSamplingRequest->product->name ?? 'N/A') }}"
                             placeholder="QC Product">
                     </div>
                 </div>
@@ -333,7 +334,8 @@
 
                                 $getDeductionSuggestion = getDeductionSuggestion(
                                     $slab->slabType->id,
-                                    optional($arrivalSamplingRequest->purchaseOrder)->qc_product,
+                                    $arrivalSamplingRequest->purchaseOrder->qc_product ??
+                                        $arrivalSamplingRequest->product,
                                     $displayValue,
                                     $arrivalSamplingRequest->purchaseOrder->id ?? null,
                                 );
@@ -442,7 +444,7 @@
                                             data-rm-po-slabs="{{ json_encode($slab->rm_po_slabs) }}"
                                             data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                             data-slab-id="{{ $slab->slabType->id }}"
-                                            data-product-id="{{ optional($arrivalSamplingRequest->purchaseOrder)->product->id }}"
+                                            data-product-id="{{ $arrivalSamplingRequest->purchaseOrder->product->id ?? ($arrivalSamplingRequest->product->id ?? null) }}"
                                             data-checklist="{{ $displayValue }}"
                                             {{ $latestIsLumpsum ? 'readonly' : '' }}>
                                         <div class="input-group-append">
@@ -666,7 +668,7 @@
                     @endif
                     <option value="">Select Sauda Type</option>
                     @foreach ($saudaTypes as $saudaType)
-                        <option @selected(optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
+                        <option @selected((optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id ?? null) == $saudaType->id) value="{{ $saudaType->id }}">
                             {{ $saudaType->name }}</option>
                     @endforeach
                     </select>

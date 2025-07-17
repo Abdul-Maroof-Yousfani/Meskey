@@ -43,6 +43,9 @@ class PurchaseOrderController extends Controller
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('company_location_id', $request->company_location_id);
             })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->where('supplier_id', $request->supplier_id);
+            })
             ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
                 return $q->where('sauda_type_id', $request->sauda_type_id);
             })
@@ -95,6 +98,7 @@ class PurchaseOrderController extends Controller
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['brokers'] = Broker::all();
         $authUser = auth()->user();
         $locationId = $authUser->companyLocation?->id ?? '1';
         $locationId = (string)$locationId;
@@ -146,6 +150,7 @@ class PurchaseOrderController extends Controller
                 $arrivalPOData['broker_three_name'] = $b3->name ?? NULL;
             }
 
+            $arrivalPOData['created_by'] = auth()->user()->id;
             $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
 
             if (isset($data['slabs']) && count($data['slabs']) > 0) {
@@ -181,6 +186,7 @@ class PurchaseOrderController extends Controller
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['brokers'] = Broker::all();
 
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)

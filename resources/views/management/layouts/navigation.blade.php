@@ -208,13 +208,19 @@
                                 </a>
                             </li>
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.ticket.payment-request.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.ticket.payment-request.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Payment Request (Ticket)</span>
+                                </a>
+                            </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.payment-request-approval.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.payment-request-approval.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                                     <span data-i18n="Task Board">Payment Request Approval's</span>
                                 </a>
                             </li>
-
                             @endcanAccess
                         </ul>
                     </li>
@@ -293,6 +299,13 @@
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
                 <ul class="dropdown-menu">
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ url('transactions/report') }}"
+                            onclick="loadPageContent('{{ url('transactions/report') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Ledger
+                                Reports</span></a>
+                    </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.reports') }}"
                             onclick="loadPageContent('{{ route('indicative-prices.reports') }}')"

@@ -19,6 +19,7 @@ class PurchaseSamplingRequest extends Model
         'sampling_type',
         'is_custom_qc',
         'is_re_sampling',
+        'qc_product_id',
         'remark',
         'decision_making',
         'is_done',
@@ -44,9 +45,19 @@ class PurchaseSamplingRequest extends Model
         return $this->belongsTo(PurchaseTicket::class, 'purchase_ticket_id');
     }
 
+    public function qcProduct()
+    {
+        return $this->belongsTo(Product::class, 'qc_product_id');
+    }
+
     public function purchaseOrder()
     {
         return $this->belongsTo(ArrivalPurchaseOrder::class, 'arrival_purchase_order_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'arrival_product_id');
     }
 
     public function contractProduct()

@@ -2,24 +2,32 @@
     <thead>
         <tr>
             <th class="col-sm-2">Contract No. </th>
+            <th class="col-sm-2">Supplier</th>
             <th class="col-sm-3">Product</th>
-            <th class="col-sm-4">Remark</th>
+            <th class="col-sm-2">Remark</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
+        {{-- @dd($samplingRequests) --}}
         @if (count($samplingRequests) != 0)
             @foreach ($samplingRequests as $key => $row)
                 <tr class="bg-{{ $row->is_done == 'yes' ? '' : 'orange' }}">
                     <td>
                         <p class="m-0">
-                            #{{ $row->purchaseOrder->contract_no ?? 'N/A' }} <br>
+                            #{{ $row->purchaseOrder->contract_no ?? ($row->purchaseTicket->unique_no ?? 'N/A') }}
+                            {{ $row->is_custom_qc == 'yes' ? '(Without Contract)' : '' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchaseOrder->product->name ?? 'N/A' }} <br>
+                            {{ $row->purchaseOrder->supplier->name ?? ($row->supplier_name ?? 'N/A') }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->purchaseOrder->product->name ?? ($row->qcProduct->name ?? ($row->product->name ?? 'N/A')) }}
                         </p>
                     </td>
                     <td>
@@ -31,7 +39,6 @@
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-
                         </p>
                     </td>
                     <td>

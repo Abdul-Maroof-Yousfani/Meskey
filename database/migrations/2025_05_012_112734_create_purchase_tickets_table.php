@@ -14,11 +14,13 @@ return new class extends Migration {
             $table->unsignedBigInteger('product_id')->nullable();
             $table->unsignedBigInteger('qc_product')->nullable();
             $table->enum('is_custom_qc', ['yes', 'no'])->default('no');
+            $table->decimal('bag_weight', 10, 2)->nullable();
+            $table->decimal('bag_rate', 10, 2)->nullable();
 
             $table->unsignedBigInteger('purchase_order_id')->nullable();
 
             $table->enum('qc_status', ['resampling', 'pending', 'rejected', 'approved'])->nullable();
-            $table->enum('freight_status', ['completed', 'pending'])->default('pending')->nullable();
+            $table->enum('freight_status', ['completed', 'pending'])->nullable();
             $table->string('payment_request_status',)->nullable();
 
             $table->softDeletes();

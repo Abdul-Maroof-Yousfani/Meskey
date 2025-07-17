@@ -166,9 +166,11 @@
                                                 </div>
 
                                                 <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Sauda Type</label>
+                                                    <div class="form-group"
+                                                        style="background-color: #ffff99; padding: 10px; border-radius: 5px;">
+                                                        <label style="font-weight: bold;">Sauda Type</label>
                                                         <input type="text" class="form-control"
+                                                            style="font-weight: bold;"
                                                             value="{{ $arrivalTicket->saudaType->name ?? 'N/A' }}"
                                                             readonly>
                                                     </div>
@@ -539,7 +541,7 @@
                                                                                         <td class="text-center">
                                                                                             {{ $slab->applied_deduction }}
                                                                                             <span
-                                                                                                class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                                                                class="text-sm">Rs.</span>
                                                                                         </td>
                                                                                     </tr>
                                                                                 @endforeach

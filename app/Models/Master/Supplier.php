@@ -3,6 +3,7 @@
 namespace App\Models\Master;
 
 use App\Models\Acl\Company;
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -55,6 +56,11 @@ class Supplier extends Model
     public function ownerBankDetails()
     {
         return $this->hasMany(SupplierOwnerBankDetail::class,);
+    }
+
+    public function arrivalPurchaseOrders()
+    {
+        return $this->hasMany(ArrivalPurchaseOrder::class, 'supplier_id');
     }
 
     public function scopeForUserLocation($query, $user)

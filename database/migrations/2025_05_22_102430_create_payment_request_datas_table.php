@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::create('payment_request_datas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('purchase_order_id')->constrained('arrival_purchase_orders')->onDelete('cascade');
+            $table->unsignedBigInteger('purchase_order_id')->nullable();
+            $table->unsignedBigInteger('ticket_id')->nullable();
+
             $table->string('supplier_name');
             $table->decimal('contract_rate', 15, 2);
             $table->decimal('min_contract_range', 15, 2);
@@ -35,35 +37,16 @@ return new class extends Migration
             $table->decimal('advance_freight', 15, 2)->default(0);
             $table->text('notes')->nullable();
             $table->timestamps();
-        });
 
-        Schema::create('payment_requests', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('payment_request_data_id')->constrained()->onDelete('cascade');
-            $table->enum('request_type', ['payment', 'freight_payment']);
-            $table->decimal('amount', 15, 2);
-            $table->enum('status', ['approved', 'pending', 'rejected'])->default('pending');
-            $table->timestamps();
-        });
-
-        Schema::create('payment_request_sampling_results', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('payment_request_data_id')->constrained()->onDelete('cascade');
-            $table->foreignId('slab_type_id')->nullable()->constrained('product_slab_types')->onDelete('set null');
-            $table->string('name');
-            $table->decimal('checklist_value', 15, 2);
-            $table->decimal('suggested_deduction', 15, 2);
-            $table->decimal('applied_deduction', 15, 2);
-            $table->string('deduction_type');
-            $table->decimal('deduction_amount', 15, 2);
-            $table->timestamps();
+            $table->foreign('purchase_order_id')
+                ->references('id')
+                ->on('arrival_purchase_orders')
+                ->onDelete('cascade');
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('payment_requests');
         Schema::dropIfExists('payment_request_datas');
-        Schema::dropIfExists('payment_request_sampling_results');
     }
 };

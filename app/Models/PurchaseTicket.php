@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Acl\Company;
+use App\Models\Procurement\PaymentRequestData;
+use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -19,6 +21,8 @@ class PurchaseTicket extends Model
         'is_custom_qc',
         'qc_product',
         'purchase_order_id',
+        'bag_weight',
+        'bag_rate',
         'qc_status',
         'freight_status',
         'payment_request_status',
@@ -42,5 +46,20 @@ class PurchaseTicket extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(ArrivalPurchaseOrder::class, 'purchase_order_id');
+    }
+
+    public function paymentRequestData()
+    {
+        return $this->hasMany(PaymentRequestData::class, 'ticket_id');
+    }
+
+    public function purchaseFreight()
+    {
+        return $this->hasOne(PurchaseFreight::class, 'purchase_ticket_id');
+    }
+
+    public function purchaseSamplingRequests()
+    {
+        return $this->hasMany(PurchaseSamplingRequest::class, 'purchase_ticket_id');
     }
 }

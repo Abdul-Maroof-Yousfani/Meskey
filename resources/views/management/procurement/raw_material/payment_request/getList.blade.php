@@ -1,88 +1,79 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Contract No</th>
+            <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-1">Commodity</th>
+            <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-2">Type</th>
+            <th class="col-sm-2">Total Requested Amount</th>
             <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($purchaseOrders) != 0)
-            @foreach ($purchaseOrders as $po)
+        @if (count($tickets) != 0)
+            @foreach ($tickets as $ticket)
                 <tr>
-                    <td>#{{ $po->contract_no ?? 'N/A' }} <br>
-                        {{ $po->qcProduct->name ?? ($po->product->name ?? 'N/A') }}
+                    <td>
+                        <strong>Ticket:</strong> #{{ $ticket->unique_no ?? 'N/A' }}<br>
+                        <strong>Contract:</strong> #{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}<br>
+                        {{-- <small>{{ $ticket->product->name ?? ($ticket->product->name ?? 'N/A') }}</small> --}}
                     </td>
-                    <td>{{ $po->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}</td>
+                    <td>
+                        {{ $ticket->purchaseFreight ? \Carbon\Carbon::parse($ticket->purchaseFreight->loading_date)->format('Y-m-d') : 'N/A' }}
+                    </td>
                     <td>
                         <div class="div-box-b">
-                            <small>
-                                <strong>Total Amount:</strong> {{ $po->calculated_values['total_amount'] ?? 0 }} <br>
-                                <strong>Paid Amount:</strong> {{ $po->calculated_values['paid_amount'] ?? 0 }} <br>
-                                <strong>Payment Request:</strong> {{ $po->calculated_values['payment_sum'] ?? 0 }}<br>
-                                @if ($po->calculated_values['freight_sum'] > 0)
-                                    <strong>Freight Request:</strong>
-                                    {{ $po->calculated_values['freight_sum'] ?? 0 }}<br>
-                                @endif
-                                <strong>Remaining Amount:</strong>
-                                {{ $po->calculated_values['remaining_amount'] ?? 0 }}<br>
-                            </small>
+                            @if ($ticket->calculated_values['total_payment_sum'] == 0 && $ticket->calculated_values['total_freight_sum'] == 0)
+                                <span class="text-muted"> No requests generated yet</span>
+                            @else
+                                <small>
+                                    <strong>Total Amount:</strong> {{ $ticket->calculated_values['total_amount'] ?? 0 }}
+                                    <br>
+                                    <strong>Approved Payment:</strong>
+                                    {{ $ticket->calculated_values['approved_payment_sum'] ?? 0 }}<br>
+                                    <strong>Approved Freight:</strong>
+                                    {{ $ticket->calculated_values['approved_freight_sum'] ?? 0 }}<br>
+                                    <strong>Remaining Amount:</strong>
+                                    {{ $ticket->calculated_values['remaining_amount'] ?? 0 }}<br>
+                                </small>
+                            @endif
                         </div>
                     </td>
-                    {{-- <td>
-                        @if (!count($po->calculated_values['all_requests'] ?? []))
-                            N/A
-                        @else
-                            @foreach ($po->calculated_values['all_requests'] as $request)
-                                <span
-                                    class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }} mb-1">
-                                    {{ formatEnumValue($request->request_type) }}: {{ $request->amount }}
-                                </span><br>
-                            @endforeach
-                        @endif
-                    </td> --}}
                     <td>
-                        @if ($po->calculated_values['payment_sum'] == 0 && $po->calculated_values['freight_sum'] == 0)
-                            N/A
+                        @if ($ticket->calculated_values['total_payment_sum'] == 0 && $ticket->calculated_values['total_freight_sum'] == 0)
+                            <span class="text-muted"> N/A </span>
                         @else
-                            @if ($po->calculated_values['payment_sum'] > 0)
+                            @if ($ticket->calculated_values['total_payment_sum'] > 0)
                                 <span class="badge badge-success mb-1">
-                                    Payment: {{ number_format($po->calculated_values['payment_sum'], 2) }}
+                                    Payment: {{ number_format($ticket->calculated_values['total_payment_sum'], 2) }}
                                 </span><br>
                             @endif
-                            @if ($po->calculated_values['freight_sum'] > 0)
+                            @if ($ticket->calculated_values['total_freight_sum'] > 0)
                                 <span class="badge badge-warning">
-                                    Freight: {{ number_format($po->calculated_values['freight_sum'], 2) }}
+                                    Freight: {{ number_format($ticket->calculated_values['total_freight_sum'], 2) }}
                                 </span>
                             @endif
                         @endif
                     </td>
                     <td>
-                        {{ \Carbon\Carbon::parse($po->calculated_values['created_at'])->format('Y-m-d') }} <br>
-                        {{ \Carbon\Carbon::parse($po->calculated_values['created_at'])->format('H:i A') }}
+                        {{ \Carbon\Carbon::parse($ticket->calculated_values['created_at'])->format('Y-m-d') }} <br>
+                        {{ \Carbon\Carbon::parse($ticket->calculated_values['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $po->id) }}','Manage Payment Request')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('raw-material.payment-request.destroy', $po->id) }}','{{ route('raw-material.get.payment-request') }}')"
-                                class="danger p-1 text-center mr-2 position-relative">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
+                        <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $ticket->id) }}','Manage Payment Request')"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="7" class="ant-table-cell text-center">
+                <td colspan="8" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -105,9 +96,3 @@
         @endif
     </tbody>
 </table>
-
-<div class="row d-flex" id="paginationLinks">
-    <div class="col-md-12 text-right">
-        {{ $purchaseOrders->links() }}
-    </div>
-</div>

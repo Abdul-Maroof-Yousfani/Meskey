@@ -113,6 +113,11 @@ class ArrivalPurchaseOrder extends Model
         return $this->belongsTo(Broker::class, 'broker_two_id');
     }
 
+    public function createdByUser()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function brokerThree()
     {
         return $this->belongsTo(Broker::class, 'broker_three_id');
@@ -120,7 +125,7 @@ class ArrivalPurchaseOrder extends Model
 
     public function supplier()
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
     public function saudaType()
@@ -140,7 +145,7 @@ class ArrivalPurchaseOrder extends Model
 
     public function purchaseFreights()
     {
-        return $this->hasMany(PurchaseFreight::class, 'arrival_purchase_order_id');
+        return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id');
     }
 
     public function totalLoadingWeight()

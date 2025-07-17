@@ -201,7 +201,7 @@
                     </div>
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group ">
-                            <label>LOading Date: (Optional)</label>
+                            <label>Loading Date: (Optional)</label>
                             <input type="date" name="loading_date" disabled
                                 value="{{ optional($arrivalSamplingRequest->arrivalTicket)->loading_date }}"
                                 placeholder="Bilty No" class="form-control" autocomplete="off" />
@@ -338,6 +338,8 @@
                     @php
                         $suggestedInitialValue = 0;
                         $suggestedInitialKgs = 0;
+
+                        $totalSuggested = ['amount' => 0, 'kg' => 0];
                     @endphp
                     <div class="tab-pane fade" id="initial-{{ $index }}" role="tabpanel"
                         aria-labelledby="initial-{{ $index }}-tab">
@@ -369,7 +371,7 @@
                                             $initialData['request']->is_lumpsum_deduction == 1
                                                 ? 0
                                                 : $slab->applied_deduction ?? 0;
-                                        $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
+                                        $suggestedDeductionType = $slab->deduction_type ?? 'amount';
 
                                         $suggestedDeductionType == 'amount'
                                             ? ($suggestedInitialValue += $getDeductionSuggestion->deduction_value ?? 0)
@@ -397,6 +399,12 @@
 
                                         if (((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0)) {
                                             $comparisonClass = 'slabs-checklist-rise';
+                                        }
+
+                                        if ($suggestedDeductionType == 'amount') {
+                                            $totalSuggested['amount'] += $slab->suggested_deduction ?? 0;
+                                        } elseif ($suggestedDeductionType == 2) {
+                                            $totalSuggested['kg'] += $slab->suggested_deduction ?? 0;
                                         }
 
                                     @endphp
@@ -513,20 +521,17 @@
                                             for="lumpsum-toggle-initial-{{ $index }}"></label>
                                     </div>
                                 </div>
-                                <div class="col {{ $index == 0 ? '' : 'd-none' }}">
+                                <div class="col {{ $index == 0 ? '' : 'd-none-1' }}">
                                     <div class="input-group mb-1">
-                                        <input type="text" id="suggessions-sum-initial-{{ $index }}"
-                                            class="form-control" name="suggessions_sum_initial" disabled
-                                            value="{{ $suggestedInitialValue ?? 0 }}" placeholder="Suggested Sum">
-
+                                        <input type="text" class="form-control" readonly
+                                            value="{{ $totalSuggested['amount'] }} ">
                                         <div class="input-group-append">
                                             <span class="input-group-text text-sm">Rs.</span>
                                         </div>
                                     </div>
                                     <div class="input-group mb-0">
-                                        <input type="text" id="suggessions-sum-initial-kgs-{{ $index }}"
-                                            class="form-control" name="suggessions_sum_initial_kgs" disabled
-                                            value="{{ $suggestedInitialKgs ?? 0 }}" placeholder="Suggested Sum">
+                                        <input type="text" class="form-control" readonly
+                                            value="{{ $totalSuggested['kg'] }} ">
                                         <div class="input-group-append">
                                             <span class="input-group-text text-sm">KG's</span>
                                         </div>
@@ -590,6 +595,9 @@
                     </div>
 
                     <div class="striped-rows">
+                        @php
+                            $totalSuggested = ['amount' => 0, 'kg' => 0];
+                        @endphp
                         @if (count($innerData['results']) != 0)
                             @foreach ($innerData['results'] as $slab)
                                 @php
@@ -628,6 +636,14 @@
                                     if (((float) $slab->checklist_value ?? 0) > ((float) $slab->max_range ?? 0)) {
                                         $comparisonClass = 'slabs-checklist-rise';
                                     }
+
+                                    $suggestedDeductionType = $slab->deduction_type ?? 'amount';
+
+                                    if ($suggestedDeductionType == 'amount') {
+                                        $totalSuggested['amount'] += $slab->suggested_deduction ?? 0;
+                                    } elseif ($suggestedDeductionType == 2) {
+                                        $totalSuggested['kg'] += $slab->suggested_deduction ?? 0;
+                                    }
                                 @endphp
                                 <div class="form-group row checklist-box">
                                     <label
@@ -653,7 +669,8 @@
                                             <input type="text" disabled class="form-control"
                                                 value="{{ $slab->suggested_deduction ?? 0 }}">
                                             <div class="input-group-append">
-                                                <span class="input-group-text text-sm">Rs.</span>
+                                                <span class="input-group-text text-sm">
+                                                    {{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -662,7 +679,8 @@
                                             <input type="text" readonly class="form-control"
                                                 value="{{ $slab->applied_deduction ?? 0 }}">
                                             <div class="input-group-append">
-                                                <span class="input-group-text text-sm">Rs.</span>
+                                                <span
+                                                    class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -739,13 +757,27 @@
                             <div class="col">
                                 <div class="input-group mb-1">
                                     <input type="text" class="form-control" readonly
+                                        value="{{ $totalSuggested['amount'] }} ">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">Rs.</span>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-0">
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $totalSuggested['kg'] }} ">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text text-sm">KG's</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group mb-1">
+                                    <input type="text" class="form-control" readonly
                                         value="{{ $innerData['request']->lumpsum_deduction ?? 0 }}">
                                     <div class="input-group-append">
                                         <span class="input-group-text text-sm">Rs.</span>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col">
                                 <div class="input-group mb-0">
                                     <input type="text" class="form-control" readonly
                                         value="{{ $innerData['request']->lumpsum_deduction_kgs ?? 0 }}">
