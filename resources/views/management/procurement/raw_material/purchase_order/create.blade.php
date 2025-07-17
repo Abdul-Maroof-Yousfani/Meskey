@@ -5,7 +5,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Location:</label>
-                <select name="company_location_id" id="company_location_id" class="form-control select2">
+                <select name="company_location_id" id="company_location_id" class="form-control select22">
                     <option value="">Location</option>
                 </select>
             </div>
@@ -26,7 +26,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Sauda Type:</label>
-                <select name="sauda_type_id" id="sauda_type_id" class="form-control select2">
+                <select name="sauda_type_id" id="sauda_type_id" class="form-control select22">
                     <option value="">Sauda Type Name</option>
                 </select>
             </div>
@@ -42,7 +42,7 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Supplier:</label>
-                <select name="supplier_id" id="supplier_id" class="form-control select2">
+                <select name="supplier_id" id="supplier_id" class="form-control select22">
                     <option value="">Supplier</option>
                     {{-- @foreach ($suppliers as $supplier)
                         <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
@@ -68,7 +68,7 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_one_id" id="broker_one_id" class="form-control select2 broker-select"
+                <select name="broker_one_id" id="broker_one_id" class="form-control select22 broker-select"
                     data-commission="#broker_one_commission">
                     <option value="">N/A</option>
                     @foreach ($brokers as $broker)
@@ -96,7 +96,7 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_two_id" id="broker_two_id" class="form-control select2 broker-select"
+                <select name="broker_two_id" id="broker_two_id" class="form-control select22 broker-select"
                     data-commission="#broker_two_commission">
                     <option value="">N/A</option>
                     @foreach ($brokers as $broker)
@@ -124,7 +124,7 @@
         <div class="col-xs-8 col-sm-8 col-md-8">
             <div class="form-group ">
                 <label>Broker:</label>
-                <select name="broker_three_id" id="broker_three_id" class="form-control select2 broker-select"
+                <select name="broker_three_id" id="broker_three_id" class="form-control select22 broker-select"
                     data-commission="#broker_three_commission">
                     <option value="">N/A</option>
                     @foreach ($brokers as $broker)
@@ -147,7 +147,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Commodity:</label>
-                <select name="product_id" id="product_id" class="form-control select2">
+                <select name="product_id" id="product_id" class="form-control select22">
                     <option value="">Commodity</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}"
@@ -163,7 +163,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Line:</label>
-                <select name="line_type" id="line_type" class="form-control select2">
+                <select name="line_type" id="line_type" class="form-control select22">
                     <option value="">Select line</option>
                     <option value="bari">Bari</option>
                     <option value="choti">Choti</option>
@@ -357,7 +357,7 @@
 
 <script>
     $(document).ready(function() {
-        $('.select22').select2();
+        $('.select22').select22();
 
         $('.broker-select').on('change', function() {
             var commissionInput = $($(this).data('commission'));
@@ -670,11 +670,11 @@
             calculateQuantityAndBags();
         });
 
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
-        initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
-        // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
-        // initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', false, false);
-        // initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', false, false);
-        // initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', false, false);
+        initializeDynamicselect22('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicselect22('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
+        // initializeDynamicselect22('#supplier_id', 'suppliers', 'name', 'id', true, false);
+        // initializeDynamicselect22('#broker_one_id', 'brokers', 'name', 'id', false, false);
+        // initializeDynamicselect22('#broker_two_id', 'brokers', 'name', 'id', false, false);
+        // initializeDynamicselect22('#broker_three_id', 'brokers', 'name', 'id', false, false);
     });
 </script>
