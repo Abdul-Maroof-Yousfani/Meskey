@@ -26,7 +26,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Sauda Type:</label>
-                <select name="sauda_type_id" id="sauda_type_id" class="form-control select22">
+                <select name="sauda_type_id" id="sauda_type_id" class="form-control select2">
                     <option value="">Sauda Type Name</option>
                 </select>
             </div>
@@ -238,7 +238,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Type:</label>
-                <select name="calculation_type" id="calculation_type" class="form-control select22">
+                <select name="calculation_type" id="calculation_type" class="form-control select2">
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
                 </select>
@@ -247,7 +247,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4 fields-hidable">
             <div class="form-group">
                 <label for="truck_size_range">Truck Size Ranges:</label>
-                <select name="truck_size_range" id="truck_size_range" class="form-control select22"
+                <select name="truck_size_range" id="truck_size_range" class="form-control select2"
                     data-default-min="{{ $truckSizeRanges->first()->min_number }}"
                     data-default-max="{{ $truckSizeRanges->first()->max_number }}">
                     @foreach ($truckSizeRanges as $range)
@@ -357,7 +357,7 @@
 
 <script>
     $(document).ready(function() {
-        $('.select22').select22();
+        $('.select22').select2();
 
         $('.broker-select').on('change', function() {
             var commissionInput = $($(this).data('commission'));
@@ -670,11 +670,11 @@
             calculateQuantityAndBags();
         });
 
-        initializeDynamicselect22('#company_location_id', 'company_locations', 'name', 'id', true, false);
-        initializeDynamicselect22('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
-        // initializeDynamicselect22('#supplier_id', 'suppliers', 'name', 'id', true, false);
-        // initializeDynamicselect22('#broker_one_id', 'brokers', 'name', 'id', false, false);
-        // initializeDynamicselect22('#broker_two_id', 'brokers', 'name', 'id', false, false);
-        // initializeDynamicselect22('#broker_three_id', 'brokers', 'name', 'id', false, false);
+        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', false, false);
+        // initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', false, false);
+        // initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', false, false);
     });
 </script>
