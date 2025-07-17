@@ -14,6 +14,7 @@ use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\Station;
 use App\Models\Master\Supplier;
+use App\Models\Product;
 use App\Models\SaudaType;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -68,9 +69,12 @@ class TicketController extends Controller
 
         $suppliers = Supplier::where('status', 'active')->get();
 
-        $products = $arrivalPurchaseOrders->map(function ($order) {
-            return $order->product;
-        })->filter()->unique('id');
+        //$products = $arrivalPurchaseOrders->map(function ($order) {
+         //   return $order->product;
+       // })->filter()->unique('id');
+
+
+        $products = Product::where('status','active')->get();
 
         // $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
         //     return $order->createdByUser;
