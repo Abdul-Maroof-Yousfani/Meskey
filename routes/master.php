@@ -39,6 +39,8 @@ Route::post('/get-approval-modules', [ApprovalModuleController::class, 'getList'
 
 Route::resource('product', ProductController::class);
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
+Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.items');
+
 
 
 Route::resource('supplier', SupplierController::class);

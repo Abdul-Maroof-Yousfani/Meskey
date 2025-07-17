@@ -15,6 +15,9 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     TicketContractController,
     TicketPaymentRequestController
 };
+use App\Http\Controllers\Procurement\Store\{
+    PurchaseRequestController as StorePurchaseRequestController,
+};
 
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-request', PurchaseRequestController::class);
@@ -69,6 +72,11 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
         Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('ticket.freight.getFreightForm');
     });
+});
+
+Route::prefix('store')->name('store.')->group(function () {
+    Route::resource('purchase-request', StorePurchaseRequestController::class);
+    Route::post('get-purchase-request', [StorePurchaseRequestController::class, 'getList'])->name('get.purchase-request');
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

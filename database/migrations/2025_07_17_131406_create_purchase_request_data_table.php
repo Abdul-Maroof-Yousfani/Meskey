@@ -18,6 +18,11 @@ return new class extends Migration
             $table->decimal('qty', 15, 2);
             $table->text('remarks')->nullable();
             $table->timestamps();
+
+            $table->foreign('purchase_request_id')
+            ->references('id')->on('purchase_requests')
+            ->onDelete('cascade'); // Cascade on hard delete
+            
         });
     }
 
@@ -26,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('purchase_requests_data');
+        Schema::dropIfExists('purchase_request_data');
     }
 };
