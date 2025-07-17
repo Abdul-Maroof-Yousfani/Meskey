@@ -70,5 +70,51 @@
         $(document).ready(function() {
             filterationCommon(`{{ route('get.product') }}`)
         });
+
+        function check(value){
+
+            var type = 'raw_finish';
+            if(value === 'general_items'){
+                type = 'general_items';
+                $('.showhide').hide();
+            }else{
+                $('.showhide').show();
+            }
+
+            filter_categories(type);
+        }
+
+        function filter_categories(type) {
+            $.ajax({
+                url: '{{route('get.categories')}}', // Replace with your actual API endpoint
+                type: 'GET',
+                data: { category_type: type },
+                dataType: 'json',
+                success: function(response) {
+                    // Assuming response contains an array of categories
+                    if (response.success && response.categories) {
+                        // Clear existing options
+                        $('#category_id').empty();
+                        
+                        // Add default option
+                        $('#category_id').append('<option value="">Select a category</option>');
+                        
+                        // Append new category options to the select element
+                        $.each(response.categories, function(index, category) {
+                            $('#category_id').append(
+                                `<option value="${category.id}">${category.name}</option>`
+                            );
+                        });
+                    } else {
+                        console.error('No categories found or request failed');
+                        $('#category_id').html('<option value="">No categories available</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error);
+                    $('#category_id').html('<option value="">Error loading categories</option>');
+                }
+            });
+        }
     </script>
 @endsection

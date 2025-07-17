@@ -5,6 +5,16 @@
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
+                <label>Category Type</label>
+                <select class="form-control" name="category_type">
+                    <option value="">Select Category Type</option>
+                    <option {{$category->category_type == 'raw_finish' ? 'selected' : ''}} value="raw_finish" selected>Raw / Finish</option>
+                    <option {{$category->category_type == 'general_items' ? 'selected' : ''}} value="general_items">General Item</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
                 <label>Parent Category <small>(Optional)</small></label>
                 <select class="form-control" name="parent_id">
                     <option value="">Select Parent Category</option>

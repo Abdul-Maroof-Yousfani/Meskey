@@ -26,6 +26,7 @@ use App\Http\Controllers\Master\{
 
 Route::resource('category', CategoryController::class);
 Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');
+Route::get('/get-categories', [CategoryController::class, 'getCategories'])->name('get.categories');
 
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
