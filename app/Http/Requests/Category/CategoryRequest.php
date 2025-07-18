@@ -15,6 +15,7 @@ class CategoryRequest extends FormRequest
     {
         return [
             'parent_id' => 'nullable|exists:categories,id',
+            'category_type' => 'required|in:raw_finish,general_items',
             'name' => 'required|string|max:255',
             //this value set in middleware 
             'company_id' => 'required|exists:companies,id',

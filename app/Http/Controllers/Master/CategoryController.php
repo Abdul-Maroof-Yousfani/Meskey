@@ -35,6 +35,32 @@ class CategoryController extends Controller
         return view('management.master.category.getList', compact('categories'));
     }
 
+    public function getCategories(Request $request)
+    {
+        try {
+            $categoryType = $request->query('category_type');
+            
+            // Fetch categories based on category_type
+            $query = Category::select('id', 'name');
+            
+            if ($categoryType) {
+                $query->where('category_type', $categoryType);
+            }
+            
+            $categories = $query->get();
+            
+            return response()->json([
+                'success' => true,
+                'categories' => $categories
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching categories'
+            ], 500);
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */

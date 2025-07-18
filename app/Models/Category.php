@@ -8,6 +8,7 @@ class Category extends Model
     protected $fillable = [
         'company_id',
         'parent_id',
+        'category_type',
         'name',
     ];
 

@@ -18,14 +18,23 @@
                 </div>
             </div>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Product Type:</label>
+                <select class="form-control" onchange="check(this.value)" name="product_type">
+                    <option value="">Select Product Type</option>
+                    <option value="raw_material">Raw Material</option>
+                    <option value="finish_good">Finish Good</option>
+                    <option value="general_items">General Items</option>
+                </select>
+            </div>
+        </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Category:</label>
-                <select class="form-control" name="category_id">
+                <select class="form-control" name="category_id" id="category_id">
                     <option value="">Select Category</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                    @endforeach
+
                 </select>
             </div>
         </div>
@@ -53,30 +62,22 @@
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+ 
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide" >
             <div class="form-group">
                 <label>Bag Weight for Purchasing:</label>
                 <input type="text" name="bag_weight_for_purchasing" placeholder="Bag Weight for Purchasing"
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Product Type:</label>
-                <select class="form-control" name="product_type">
-                    <option value="">Select Product Type</option>
-                    <option value="raw_material">Raw Material</option>
-                    <option value="finish_good">Finish Good</option>
-                </select>
-            </div>
-        </div>
+
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Barcode:</label>
                 <input type="text" name="barcode" placeholder="Barcode" class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide">
             <div class="form-group">
                 <label>Price:</label>
                 <input type="text" name="price" placeholder="Price" class="form-control" />

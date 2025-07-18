@@ -29,6 +29,7 @@ use App\Http\Controllers\Master\{
 
 Route::resource('category', CategoryController::class);
 Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');
+Route::get('/get-categories', [CategoryController::class, 'getCategories'])->name('get.categories');
 
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
@@ -38,6 +39,8 @@ Route::post('/get-approval-modules', [ApprovalModuleController::class, 'getList'
 
 Route::resource('product', ProductController::class);
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
+Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.items');
+
 
 
 Route::resource('supplier', SupplierController::class);

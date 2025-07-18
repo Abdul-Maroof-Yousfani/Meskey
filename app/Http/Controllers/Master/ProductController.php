@@ -37,6 +37,26 @@ class ProductController extends Controller
         return view('management.master.product.getList', compact('UnitOfMeasures'));
     }
 
+    public function getItems(Request $request)
+    {
+        try {
+            $category_id = $request->query('category_id');
+            
+            // Fetch categories based on category_type
+            $products = Product::with('unitOfMeasure')->where('category_id', $category_id)->get();
+                    
+            return response()->json([
+                'success' => true,
+                'products' => $products
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching categories'
+            ], 500);
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */

@@ -34,6 +34,20 @@
         </div>
     </div>
     <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Product Type:</label>
+                <select class="form-control" onchange="check(this.value)" name="product_type">
+                    <option value="">Select Product Type</option>
+                    <option value="raw_material" {{ $product->product_type == 'raw_material' ? 'selected' : '' }}>Raw
+                        Material</option>
+                    <option value="finish_good" {{ $product->product_type == 'finish_good' ? 'selected' : '' }}>Finish
+                        Good</option>
+                    <option value="general_items" {{ $product->product_type == 'general_items' ? 'selected' : '' }}>
+                        General Items</option>
+                </select>
+            </div>
+        </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Category:</label>
@@ -74,7 +88,7 @@
             </div>
         </div>
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide" style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
             <div class="form-group">
                 <label>Bag Weight for Purchasing:</label>
                 <input type="text" name="bag_weight_for_purchasing"
@@ -82,18 +96,7 @@
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Product Type:</label>
-                <select class="form-control" name="product_type">
-                    <option value="">Select Product Type</option>
-                    <option value="raw_material" {{ $product->product_type == 'raw_material' ? 'selected' : '' }}>Raw
-                        Material</option>
-                    <option value="finish_good" {{ $product->product_type == 'finish_good' ? 'selected' : '' }}>Finish
-                        Good</option>
-                </select>
-            </div>
-        </div>
+        
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Barcode:</label>
@@ -101,7 +104,7 @@
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide" style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
             <div class="form-group">
                 <label>Price:</label>
                 <input type="text" name="price" value="{{ $product->price }}" placeholder="Price"

@@ -236,6 +236,19 @@
                     </li>
                 </ul>
             </li>
+              <li class="dropdown nav-item" data-menu="dropdown"><a
+                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+                    data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Store
+                        Management</span></a>
+                <ul class="dropdown-menu">
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.purchase-request.index') }}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Request
+                            </span></a>
+                    </li>
+                   
+                </ul>
+            </li>
 
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
