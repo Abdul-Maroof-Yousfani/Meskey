@@ -86,6 +86,7 @@ class PaymentRequestApprovalController extends Controller
                     'credit',
                     'no',
                     [
+                        'purpose' => "supplier",
                         'payment_against' => "$saudaType-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
@@ -107,6 +108,7 @@ class PaymentRequestApprovalController extends Controller
                         'credit',
                         'no',
                         [
+                            'purpose' => "broker",
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
@@ -125,6 +127,7 @@ class PaymentRequestApprovalController extends Controller
                         'credit',
                         'no',
                         [
+                            'purpose' => "broker",
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
@@ -143,6 +146,7 @@ class PaymentRequestApprovalController extends Controller
                         'credit',
                         'no',
                         [
+                            'purpose' => "broker",
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'

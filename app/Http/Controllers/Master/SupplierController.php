@@ -48,7 +48,12 @@ class SupplierController extends Controller
     public function create()
     {
         $companyLocation = CompanyLocation::where('status', 'active')->get();
-        return view('management.master.supplier.create', compact('companyLocation'));
+        $accounts = Account::whereHas('parent', function ($query) {
+            $query->where('name', 'Supplier')
+                ->orWhere('name', 'Broker');
+        })->get();
+
+        return view('management.master.supplier.create', compact('companyLocation', 'accounts'));
     }
 
     /**
@@ -75,11 +80,14 @@ class SupplierController extends Controller
 
             $requestData['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
             $requestData['name'] = $request->company_name;
-
             $requestData['company_location_ids'] = $request->company_location_ids;
 
-            $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
-            $requestData['account_id'] = $account->id;
+            if ($request->account_id) {
+                $requestData['account_id'] = $request->account_id;
+            } else {
+                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
+                $requestData['account_id'] = $account->id;
+            }
 
             $supplier = Supplier::create($requestData);
 
@@ -98,7 +106,6 @@ class SupplierController extends Controller
                 }
             }
 
-            // Save owner bank details
             if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
                     if (empty($bankName)) continue;
@@ -115,13 +122,17 @@ class SupplierController extends Controller
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
-                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Broker'));
+                if ($request->account_id) {
+                    $brokerData['account_id'] = $request->account_id;
+                } else {
+                    $brokerData['account_id'] = $requestData['account_id'];
+                }
 
                 $brokerData = [
                     'company_id' => $supplier->company_id ?? null,
                     'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
                     'name' => $supplier->company_name,
-                    'account_id' => $account->id,
+                    'account_id' => $brokerData['account_id'],
                     'email' => $supplier->email ?? null,
                     'phone' => $supplier->phone ?? null,
                     'address' => $supplier->address ?? null,
@@ -141,8 +152,6 @@ class SupplierController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            // \Log::error('Supplier creation failed: ' . $e->getMessage());
-
             return response()->json([
                 'error' => 'Failed to create supplier. Please try again.',
                 'details' => config('app.debug') ? $e->getMessage() : null
@@ -159,16 +168,19 @@ class SupplierController extends Controller
             'companyBankDetails',
             'ownerBankDetails'
         ])->findOrFail($id);
-        // dd($supplier->company_location_ids);
-        $companyLocations = CompanyLocation::all(); // Assuming you have a CompanyLocation model
 
-        // Decode the JSON locations if needed
+        $companyLocations = CompanyLocation::all();
         $selectedLocations = $supplier->company_location_ids ?? [];
+        $accounts = Account::whereHas('parent', function ($query) {
+            $query->where('name', 'Supplier')
+                ->orWhere('name', 'Broker');
+        })->get();
 
         return view('management.master.supplier.edit', [
             'supplier' => $supplier,
             'companyLocations' => $companyLocations,
-            'selectedLocations' => $selectedLocations
+            'selectedLocations' => $selectedLocations,
+            'accounts' => $accounts
         ]);
     }
 
@@ -183,7 +195,9 @@ class SupplierController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
-            if (empty($supplier->account_id)) {
+            if ($request->account_id) {
+                $requestData['account_id'] = $request->account_id;
+            } elseif (empty($supplier->account_id)) {
                 $account = Account::create(getParamsForAccountCreation(
                     $request->company_id,
                     $request->company_name,
@@ -227,23 +241,15 @@ class SupplierController extends Controller
                 ];
 
                 if ($supplier->broker) {
-                    if (empty($supplier->broker->account_id)) {
-                        $account = Account::create(getParamsForAccountCreation(
-                            $request->company_id,
-                            $request->company_name,
-                            'Broker'
-                        ));
-                        $brokerData['account_id'] = $account->id;
+                    if ($request->account_id) {
+                        $brokerData['account_id'] = $request->account_id;
+                    } elseif (empty($supplier->broker->account_id)) {
+                        $brokerData['account_id'] = $supplier->account_id;
                     }
                     $supplier->broker->update($brokerData);
                 } else {
                     $brokerData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
-                    $account = Account::create(getParamsForAccountCreation(
-                        $request->company_id,
-                        $request->company_name,
-                        'Broker'
-                    ));
-                    $brokerData['account_id'] = $account->id;
+                    $brokerData['account_id'] = $request->account_id ?: $supplier->account_id;
                     $supplier->broker()->create($brokerData);
                 }
             } elseif ($supplier->broker) {
@@ -258,8 +264,6 @@ class SupplierController extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            // \Log::error('Supplier update failed: ' . $e->getMessage());
-
             return response()->json([
                 'error' => 'Failed to update supplier. Please try again.',
                 'details' => config('app.debug') ? $e->getMessage() : null

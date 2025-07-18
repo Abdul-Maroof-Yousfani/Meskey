@@ -12,7 +12,6 @@ class Transaction extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-
         'voucher_no',
         'company_id',
         'voucher_date',
@@ -25,6 +24,7 @@ class Transaction extends Model
         'is_opening_balance',
         'action',
         'amount',
+        'purpose',
         'remarks',
         'status',
         'created_by',
@@ -35,6 +35,7 @@ class Transaction extends Model
         'type' => 'string',
         'is_opening_balance' => 'string',
         'status' => 'string',
+        'purpose' => 'string',
         'voucher_date' => 'date',
         'amount' => 'decimal:2'
     ];
