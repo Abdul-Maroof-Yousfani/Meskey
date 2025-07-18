@@ -89,14 +89,14 @@
             <div class="form-group">
                 <label>Freight per Ton</label>
                 <input type="number" step="0.01" value="0" name="freight_per_ton"
-                    class="form-control calculate-freight" required />
+                    class="form-control calculate-freight" min="0" required />
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label>Kanta Loading Charges</label>
-                <input type="number" step="0.01" name="kanta_golarchi_charges" class="form-control calculate-final"
+                <input type="number" step="0.01" min="0" name="kanta_golarchi_charges" class="form-control calculate-final"
                     value="0" />
             </div>
         </div>
@@ -105,7 +105,7 @@
             <div class="form-group">
                 <label>Arrived Kanta Charges</label>
                 <input type="number" step="0.01" name="karachi_kanta_charges" readonly
-                    class="form-control calculate-final" value="{{ $ticket->truckType->weighbridge_amount ?? 0 }}" />
+                    class="form-control calculate-final" min="0" value="{{ $ticket->truckType->weighbridge_amount ?? 0 }}" />
             </div>
         </div>
 
@@ -113,14 +113,14 @@
             <div class="form-group">
                 <label>Other (+)/Labour Charges</label>
                 <input type="number" step="0.01" name="other_labour_charges"
-                    class="form-control calculate-final" value="0" />
+                    class="form-control calculate-final" value="0" min="0"/>
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label>Other Deduction</label>
-                <input type="number" step="0.01" name="other_deduction" class="form-control calculate-final"
+                <input type="number" step="0.01" name="other_deduction" min="0" class="form-control calculate-final"
                     value="0" />
             </div>
         </div>
@@ -129,7 +129,7 @@
             <div class="form-group">
                 <label>Unpaid Labor Charges</label>
                 <input type="number" step="0.01" name="unpaid_labor_charges"
-                    class="form-control calculate-final" value="0" />
+                    class="form-control calculate-final" value="0" min="0"/>
             </div>
         </div>
 
@@ -137,7 +137,7 @@
             <div class="form-group">
                 <label>Freight Written on Bilty</label>
                 <input type="number" step="0.01" name="freight_written_on_bilty"
-                    class="form-control calculate-final" value="0" />
+                    class="form-control calculate-final" value="0"  min="0"/>
             </div>
         </div>
 
