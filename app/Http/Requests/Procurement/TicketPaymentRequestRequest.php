@@ -28,7 +28,7 @@ class TicketPaymentRequestRequest extends FormRequest
             'total_amount' => 'required|numeric',
             'paid_amount' => 'required|numeric',
             'remaining_amount' => 'required|numeric',
-            'payment_request_amount' => 'required|numeric',
+            'payment_request_amount' => 'required|numeric|min:0',
             // 'advance_freight' => 'required|numeric',
             // 'freight_pay_request_amount' => 'nullable|numeric|min:0',
             'sampling_results' => 'nullable|array',
@@ -74,6 +74,24 @@ class TicketPaymentRequestRequest extends FormRequest
 
         return $rules;
     }
+
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $payment_request_amount = $this->input('payment_request_amount', 0); 
+
+            $payment_request_amount = floatval($payment_request_amount); 
+
+            if ($payment_request_amount <= 0) {
+                $validator->errors()->add(
+                    'payment_request_amount',
+                    'Payment Request Amount must be greater than 0.'
+                ); 
+            }
+        });
+    }
+
 
     public function messages()
     {

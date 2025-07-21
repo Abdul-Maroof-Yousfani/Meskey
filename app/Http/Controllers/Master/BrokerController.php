@@ -58,7 +58,12 @@ class BrokerController extends Controller
     public function create()
     {
         $companyLocation = CompanyLocation::where('status', 'active')->get();
-        return view('management.master.broker.create', compact('companyLocation'));
+        $accounts = Account::whereHas('parent', function ($query) {
+            $query->where('name', 'Supplier')
+                ->orWhere('name', 'Broker');
+        })->get();
+
+        return view('management.master.broker.create', compact('companyLocation', 'accounts'));
     }
 
     /**
@@ -66,13 +71,6 @@ class BrokerController extends Controller
      */
     public function store(BrokerRequest $request)
     {
-        // $data = $request->validated();
-        // $request = $request->all();
-
-        // $request['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
-        // $broker = Broker::create($request);
-
-        // return response()->json(['success' => 'Broker created successfully.', 'data' => $broker], 201);
         DB::beginTransaction();
 
         try {
@@ -81,11 +79,14 @@ class BrokerController extends Controller
 
             $requestData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
             $requestData['name'] = $request->company_name;
-
             $requestData['company_location_ids'] = $request->company_location_ids;
 
-            $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Broker'));
-            $requestData['account_id'] = $account->id;
+            if ($request->account_id) {
+                $requestData['account_id'] = $request->account_id;
+            } else {
+                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Broker'));
+                $requestData['account_id'] = $account->id;
+            }
 
             $broker = Broker::create($requestData);
 
@@ -104,7 +105,6 @@ class BrokerController extends Controller
                 }
             }
 
-            // Save owner bank details
             if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
                     if (empty($bankName)) continue;
@@ -120,25 +120,6 @@ class BrokerController extends Controller
                 }
             }
 
-            // if ($request->has('create_as_broker') && $request->create_as_broker) {
-            //     $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Broker'));
-
-            //     $brokerData = [
-            //         'company_id' => $broker->company_id ?? null,
-            //         'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
-            //         'name' => $broker->company_name,
-            //         'account_id' => $account->id,
-            //         'email' => $broker->email ?? null,
-            //         'phone' => $broker->phone ?? null,
-            //         'address' => $broker->address ?? null,
-            //         'ntn' => $broker->ntn ?? null,
-            //         'stn' => $broker->stn ?? null,
-            //         'status' => $broker->status,
-            //     ];
-
-            // $broker = Broker::create($brokerData);
-            // }
-
             DB::commit();
 
             return response()->json([
@@ -147,8 +128,6 @@ class BrokerController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            // \Log::error('Supplier creation failed: ' . $e->getMessage());
-
             return response()->json([
                 'error' => 'Failed to create broker. Please try again.',
                 'details' => config('app.debug') ? $e->getMessage() : null
@@ -161,23 +140,23 @@ class BrokerController extends Controller
      */
     public function edit($id)
     {
-        // $broker = Broker::findOrFail($id);
-        // return view('management.master.broker.edit', compact('broker'));
-
         $broker = Broker::with([
             'companyBankDetails',
             'ownerBankDetails'
         ])->findOrFail($id);
-        // dd($broker->company_location_ids);
-        $companyLocations = CompanyLocation::all(); // Assuming you have a CompanyLocation model
 
-        // Decode the JSON locations if needed
+        $companyLocations = CompanyLocation::all();
         $selectedLocations = $broker->company_location_ids ?? [];
+        $accounts = Account::whereHas('parent', function ($query) {
+            $query->where('name', 'Supplier')
+                ->orWhere('name', 'Broker');
+        })->get();
 
         return view('management.master.broker.edit', [
             'broker' => $broker,
             'companyLocations' => $companyLocations,
-            'selectedLocations' => $selectedLocations
+            'selectedLocations' => $selectedLocations,
+            'accounts' => $accounts,
         ]);
     }
 
@@ -192,7 +171,9 @@ class BrokerController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
-            if (empty($broker->account_id)) {
+            if ($request->account_id) {
+                $requestData['account_id'] = $request->account_id;
+            } elseif (empty($broker->account_id)) {
                 $account = Account::create(getParamsForAccountCreation(
                     $request->company_id,
                     $request->company_name,
@@ -223,62 +204,19 @@ class BrokerController extends Controller
                 'ownerBankDetails'
             );
 
-            // if ($request->has('create_as_broker')) {
-            //     $brokerData = [
-            //         'company_id' => $broker->company_id ?? null,
-            //         'name' => $broker->company_name,
-            //         'email' => $broker->email ?? null,
-            //         'phone' => $broker->phone ?? null,
-            //         'address' => $broker->address ?? null,
-            //         'ntn' => $broker->ntn ?? null,
-            //         'stn' => $broker->stn ?? null,
-            //         'status' => $broker->status,
-            //     ];
-
-            //     if ($broker->broker) {
-            //         if (empty($broker->broker->account_id)) {
-            //             $account = Account::create(getParamsForAccountCreation(
-            //                 $request->company_id,
-            //                 $request->company_name,
-            //                 'Broker'
-            //             ));
-            //             $brokerData['account_id'] = $account->id;
-            //         }
-            //         $broker->broker->update($brokerData);
-            //     } else {
-            //         $brokerData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
-            //         $account = Account::create(getParamsForAccountCreation(
-            //             $request->company_id,
-            //             $request->company_name,
-            //             'Broker'
-            //         ));
-            //         $brokerData['account_id'] = $account->id;
-            //         $broker->broker()->create($brokerData);
-            //     }
-            // } elseif ($broker->broker) {
-            //     $broker->broker->delete();
-            // }
-
             DB::commit();
 
             return response()->json([
-                'success' => 'Supplier updated successfully.',
+                'success' => 'Broker updated successfully.',
                 'data' => []
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            // \Log::error('Supplier update failed: ' . $e->getMessage());
-
             return response()->json([
-                'error' => 'Failed to update supplier. Please try again.',
+                'error' => 'Failed to update broker. Please try again.',
                 'details' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
-        // $data = $request->validated();
-        // $broker = Broker::findOrFail($id);
-        // $broker->update($data);
-
-        // return response()->json(['success' => 'Broker updated successfully.', 'data' => $broker], 200);
     }
 
     protected function updateBankDetails($broker, $bankNames, $branchNames, $branchCodes, $accountTitles, $accountNumbers, $relation)

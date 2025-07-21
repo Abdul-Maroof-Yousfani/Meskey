@@ -204,14 +204,14 @@
                                     href="{{ route('raw-material.payment-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.payment-request.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Payment Request</span>
+                                    <span data-i18n="Task Board">Payment Request (Thadda)</span>
                                 </a>
                             </li>
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.ticket.payment-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.ticket.payment-request.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Payment Request (Ticket)</span>
+                                    <span data-i18n="Task Board">Payment Request (Pohouch)</span>
                                 </a>
                             </li>
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"

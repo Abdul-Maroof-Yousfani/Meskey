@@ -81,6 +81,21 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Link Existing Account:</label>
+                <select name="account_id" class="form-control select2">
+                    <option value="">-- Create New Account --</option>
+                    @foreach ($accounts as $account)
+                        <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                    @endforeach
+                </select>
+                <small class="text-muted">Select an existing account or leave blank to create a new one</small>
+            </div>
+        </div>
+    </div>
+
     <div class="row ">
         <div class="col-12">
             <h6 class="header-heading-sepration">

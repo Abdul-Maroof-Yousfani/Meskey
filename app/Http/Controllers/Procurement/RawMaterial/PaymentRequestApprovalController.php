@@ -73,10 +73,11 @@ class PaymentRequestApprovalController extends Controller
 
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
-            // dd($ticket->id, $ticket->unique_no, $purchaseOrder->supplier, $purchaseOrder->supplier->account_id);
+            $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
+
             if ($request->status === 'approved') {
                 createTransaction(
-                    (float)($request->payment_request_amount),
+                    (float) ($request->payment_request_amount),
                     $purchaseOrder->supplier->account_id,
                     1, // for Purchase Order
                     $purchaseOrder->contract_no,
@@ -85,19 +86,20 @@ class PaymentRequestApprovalController extends Controller
                     'credit',
                     'no',
                     [
+                        'purpose' => "supplier",
                         'payment_against' => "$saudaType-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
                     ]
                 );
 
-                // $existingApprovals = PaymentRequestApproval::where('purchase_order_id', $purchaseOrder->id)
-                //     ->where('ticket_id', $ticket->id)
-                //     ->count();
+                $existingApprovals = PaymentRequestApproval::where('purchase_order_id', $purchaseOrder->id)
+                    ->where('ticket_id', $ticket->id)
+                    ->count();
 
-                if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $request->loading_weight) {
-                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_one_id);
-                    // dd($purchaseOrder->broker);
+                if (!$existingApprovals && $purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+
                     createTransaction(
                         $amount,
                         $purchaseOrder->broker->account_id,
@@ -106,6 +108,7 @@ class PaymentRequestApprovalController extends Controller
                         'credit',
                         'no',
                         [
+                            'purpose' => "broker",
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
@@ -113,8 +116,8 @@ class PaymentRequestApprovalController extends Controller
                     );
                 }
 
-                if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $request->loading_weight) {
-                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_two_commission);
+                if (!$existingApprovals && $purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
 
                     createTransaction(
                         $amount,
@@ -124,6 +127,7 @@ class PaymentRequestApprovalController extends Controller
                         'credit',
                         'no',
                         [
+                            'purpose' => "broker",
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
@@ -131,8 +135,8 @@ class PaymentRequestApprovalController extends Controller
                     );
                 }
 
-                if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $request->loading_weight) {
-                    $amount = ($request->payment_request_amount / $request->contract_rate * $purchaseOrder->broker_three_commission);
+                if (!$existingApprovals && $purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
 
                     createTransaction(
                         $amount,
@@ -142,6 +146,7 @@ class PaymentRequestApprovalController extends Controller
                         'credit',
                         'no',
                         [
+                            'purpose' => "broker",
                             'payment_against' => "$saudaType-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
