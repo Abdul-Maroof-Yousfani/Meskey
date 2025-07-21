@@ -14,6 +14,7 @@ return new class extends Migration
          Schema::create('purchase_requests', function (Blueprint $table) {
             $table->id();
             $table->string('purchase_request_no')->unique();
+            $table->unsignedBigInteger('company_id');
             $table->date('purchase_date');
             $table->unsignedBigInteger('location_id');
             $table->string('reference_no')->nullable();

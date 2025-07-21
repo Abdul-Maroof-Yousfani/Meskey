@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('purchase_request_data', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('purchase_request_id');
+            $table->unsignedBigInteger('category_id');
             $table->unsignedBigInteger('item_id');
             $table->decimal('qty', 15, 2);
             $table->text('remarks')->nullable();
