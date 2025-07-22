@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseAgainstJobOrder extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'purchase_request_id',
+        'purchase_request_data_id',
+        'job_order_id',
+    ];
 }

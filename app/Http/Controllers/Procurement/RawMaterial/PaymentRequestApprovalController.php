@@ -73,11 +73,11 @@ class PaymentRequestApprovalController extends Controller
 
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
-            $loadingWeight =  $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
+            $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
 
             if ($request->status === 'approved') {
                 createTransaction(
-                    (float)($request->payment_request_amount),
+                    (float) ($request->payment_request_amount),
                     $purchaseOrder->supplier->account_id,
                     1, // for Purchase Order
                     $purchaseOrder->contract_no,

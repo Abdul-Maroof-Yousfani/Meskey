@@ -7,7 +7,6 @@
             <th class="col-sm-2">Reference No</th>
             <th class="col-sm-1">Remarks</th>
             <th class="col-sm-1">Status</th>
-            <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -30,7 +29,7 @@
                     <td>
                         <p class="m-0">
                             
-                            {{ $row->location_id}} 
+                            {{ optional($row->location)->name}} 
                         </p>
                     </td>
                     <td>
@@ -42,24 +41,24 @@
                     <td>
                         <p class="m-0">
                             
-                            {{ $row->remarks}} 
+                            {{ $row->description}} 
                         </p>
                     </td>
                     <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                            {{ $row->status }}
+                        <label class="badge bg-light-{{ $row->status == 1 ? 'primary' : 'danger' }}">
+                            {{ $row->status == 1 ? 'Active' : 'InActive'}}
                         </label>
                     </td>
                    
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request')"
+                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('get.purchase-request') }}')"
+                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>

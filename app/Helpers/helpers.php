@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{User};
+use App\Models\{Category, Product, User};
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\ProductSlab;
@@ -252,6 +252,22 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName)
     $account = Account::where('name', $pAccName)->first();
 
     return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'is_operational' => $account->is_operational ?? 'yes', 'parent_id' => $account->id ?? NULL];
+}
+
+
+function get_product_by_category($id)
+{
+    $Product = Product::where('category_id', $id)->get();
+
+    return $Product;
+}
+
+function get_uom($id)
+{
+    $Product = Product::find($id);
+
+    $name = optional($Product->unitOfMeasure)->name;
+    return $name;
 }
 
 function getUserParams($param)
