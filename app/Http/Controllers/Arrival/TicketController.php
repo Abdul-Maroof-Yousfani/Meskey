@@ -71,6 +71,7 @@ class TicketController extends Controller
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
                 $q->where('company_location_id', $userLocation);
             })
+            ->orderByDesc('id')
             ->get();
 
         $suppliers = Supplier::where('status', 'active')->get();
@@ -135,6 +136,7 @@ class TicketController extends Controller
         $requestData['first_qc_status'] = 'pending';
         $requestData['closing_trucks_qty'] = 1;
         $requestData['truck_type_id'] = $requestData['arrival_truck_type_id'] ?? null;
+        $requestData['sauda_type_id'] = $request->sauda_type_id ?? null;
 
         $arrivalTicket = ArrivalTicket::create($requestData);
 
@@ -158,6 +160,7 @@ class TicketController extends Controller
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
                 $q->where('company_location_id', $userLocation);
             })
+            ->orderByDesc('id')
             ->get();
 
         $accountsOf = User::role('Purchaser')

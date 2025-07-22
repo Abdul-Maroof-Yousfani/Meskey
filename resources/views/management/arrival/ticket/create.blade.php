@@ -35,11 +35,19 @@
                              data-created-by-id="{{ $order->created_by ?? '' }}"
                              data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
                              data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
+                             data-sauda-type-id="{{ $order->saudaType->id ?? '' }}"
                              data-created-at="{{ $order->created_at ?? '' }}">
                              #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }}
                          </option>
                      @endforeach
                  </select>
+             </div>
+         </div>
+         <div class="col-xs-6 col-sm-6 col-md-6 d-none">
+             <div class="form-group">
+                 <label>Sauda Type:</label>
+                 <input type="text" name="sauda_type_display" id="sauda_type" class="form-control" readonly />
+                 <input type="hidden" name="sauda_type_id" id="sauda_type_id">
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -116,7 +124,8 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Bilty No: </label>
-                 <input type="text" name="bilty_no" placeholder="Bilty No" class="form-control" autocomplete="off" />
+                 <input type="text" name="bilty_no" placeholder="Bilty No" class="form-control"
+                     autocomplete="off" />
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -404,13 +413,13 @@
              var productId = selectedOption.data('product-id');
              var createdById = selectedOption.data('created-by-id');
              var saudaTypeName = selectedOption.data('sauda-type-name');
+             var saudaTypeId = selectedOption.data('sauda-type-id');
              var createdAt = selectedOption.data('created-at');
 
              // Set product selection
              if (productId) {
                  $('#product_id').val(productId).trigger('change');
                  $('#product_id_hidden').val(productId);
-                 // Disable the product dropdown and style it to look disabled
                  $('#product_id').prop('disabled', true).addClass('disabled-field');
              }
 
@@ -419,13 +428,19 @@
                  $('#broker_name').val(supplierId).trigger('change');
                  $('#accounts_of').val(supplierId).trigger('change');
                  $('#accounts_of_hidden').val(supplierId);
-                 // Disable the accounts_of dropdown and style it to look disabled
                  $('#accounts_of').prop('disabled', true).addClass('disabled-field');
              }
 
              // Set decision maker selection
              if (createdById) {
                  $('#decision_id').val(createdById).trigger('change');
+             }
+
+             // Set Sauda Type
+             if (saudaTypeName) {
+                 $('#sauda_type').val(saudaTypeName);
+                 // If you need to store the sauda_type_id, you would need to add it to the data attributes
+                 $('#sauda_type_id').val(saudaTypeId);
              }
 
              // Set loading date
@@ -439,6 +454,9 @@
              $('#product_id').val('').trigger('change');
              $('#product_id_hidden').val('');
              $('#product_id').prop('disabled', false).removeClass('disabled-field');
+
+             $('#sauda_type').val('');
+             $('#sauda_type_id').val('');
 
              // Reset broker/supplier fields
              $('#broker_name').val('').trigger('change');
