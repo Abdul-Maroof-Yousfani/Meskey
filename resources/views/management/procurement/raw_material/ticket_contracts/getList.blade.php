@@ -18,7 +18,7 @@
 
                         <p class="m-0">
                             #{{ $row->unique_no ?? 'N/A' }}
-                            @if (isset($row->purchaseOrder->status) && $row->purchaseOrder->status)
+                            @if (false&&isset($row->purchaseOrder->status) && $row->purchaseOrder->status)
                                 <span
                                     class="badge 
                                     @if ($row->purchaseOrder->status == 'draft') bg-warning
