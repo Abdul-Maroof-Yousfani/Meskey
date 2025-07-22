@@ -61,16 +61,16 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Ticket No. </th>
-                                            <th class="col-sm-2">Commodity</th>
-                                            <th class="col-sm-2">Supplier</th>
+                                            <th class="col-sm-2">Ticket No. </th>
+                                            <th class="col-sm-3">Commodity</th>
+                                            <th class="col-sm-3">Miller</th>
                                             <th class="col-sm-1">Truck No</th>
                                             <th class="col-sm-1">Bilty No</th>
-                                            <th class="col-sm-2">Created</th>
+                                            <th class="col-sm-1">First QC</th>
+                                            <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
-
                                 </table>
                             </div>
                         </div>

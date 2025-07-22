@@ -45,15 +45,13 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Product:</label>
-                 {{-- <select name="product_id" id="product_id" class="form-control select2">
-                     <option value="">Product Name</option>
-                 </select> --}}
-                 <select name="product_id" id="product_id" class="form-control select2">
+                 <select name="product_id_display" id="product_id" class="form-control select2">
                      <option value="">Product Name</option>
                      @foreach ($products as $product)
                          <option value="{{ $product->id }}">{{ $product->name }}</option>
                      @endforeach
                  </select>
+                 <input type="hidden" name="product_id" id="product_id_hidden">
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -191,7 +189,7 @@
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
-                 <label>1st Weight:</label>
+                 <label>First Weight:</label>
                  <input type="text" name="first_weight" id="first_weight" placeholder="First Weight"
                      class="form-control" autocomplete="off" />
              </div>
@@ -358,7 +356,7 @@
          //  initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
-         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id"]')
+         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id_display"]')
              .select2();
 
          function calculateNetWeight() {
@@ -393,24 +391,16 @@
          //});
 
          $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
+             // First reset all form fields
+             resetAllFormFields();
+
              var selectedOption = $(this).find('option:selected');
-             var supplierId = selectedOption.data('supplier-id');
-
-             // Set broker/supplier selection
-             if (supplierId) {
-                 $('#broker_name').val(supplierId).trigger('change');
-                 $('#accounts_of').val(supplierId).trigger('change');
-                 $('#accounts_of_hidden').val(supplierId);
-
-                 // Disable the accounts_of dropdown and style it to look disabled
-                 $('#accounts_of').prop('disabled', true).addClass('disabled-field');
-             } else {
-                 // If "N/A" is selected, re-enable the field
-                 $('#accounts_of').prop('disabled', false).removeClass('disabled-field');
-                 $('#accounts_of_hidden').val('');
+             if (selectedOption.val() === "") {
+                 return; // If N/A is selected, just keep all fields reset
              }
 
-             // Rest of your existing code...
+             // Now populate fields from the selected contract
+             var supplierId = selectedOption.data('supplier-id');
              var productId = selectedOption.data('product-id');
              var createdById = selectedOption.data('created-by-id');
              var saudaTypeName = selectedOption.data('sauda-type-name');
@@ -419,6 +409,18 @@
              // Set product selection
              if (productId) {
                  $('#product_id').val(productId).trigger('change');
+                 $('#product_id_hidden').val(productId);
+                 // Disable the product dropdown and style it to look disabled
+                 $('#product_id').prop('disabled', true).addClass('disabled-field');
+             }
+
+             // Set broker/supplier selection
+             if (supplierId) {
+                 $('#broker_name').val(supplierId).trigger('change');
+                 $('#accounts_of').val(supplierId).trigger('change');
+                 $('#accounts_of_hidden').val(supplierId);
+                 // Disable the accounts_of dropdown and style it to look disabled
+                 $('#accounts_of').prop('disabled', true).addClass('disabled-field');
              }
 
              // Set decision maker selection
@@ -430,6 +432,47 @@
              if (createdAt) {
                  $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
              }
+         });
+
+         function resetAllFormFields() {
+             // Reset product fields
+             $('#product_id').val('').trigger('change');
+             $('#product_id_hidden').val('');
+             $('#product_id').prop('disabled', false).removeClass('disabled-field');
+
+             // Reset broker/supplier fields
+             $('#broker_name').val('').trigger('change');
+             $('#accounts_of').val('').trigger('change');
+             $('#accounts_of_hidden').val('');
+             $('#accounts_of').prop('disabled', false).removeClass('disabled-field');
+
+             // Reset decision field
+             $('#decision_id').val('').trigger('change');
+
+             // Reset loading date
+             $('input[name="loading_date"]').val('');
+
+             // Reset other fields you want to clear
+             $('#miller_id').val('').trigger('change');
+             $('#station_id').val('').trigger('change');
+             $('input[name="truck_no"]').val('');
+             $('input[name="bilty_no"]').val('');
+             $('[name="arrival_truck_type_id"]').val('').trigger('change');
+             $('[name="sample_money_type"]').val('n/a').trigger('change');
+             $('input[name="sample_money"]').val('');
+             $('input[name="bags"]').val('');
+             $('#first_weight').val('');
+             $('#second_weight').val('');
+             $('#net_weight').val('');
+             $('textarea[name="remarks"]').val('');
+
+             // Reset any validation errors
+             $('#net_weight').removeClass('is-invalid');
+             $('#net_weight').siblings('.error-message').hide();
+         }
+
+         $(document).on('change', '#product_id', function() {
+             $('#product_id_hidden').val($(this).val());
          });
 
          // Sync values on any change (just in case)

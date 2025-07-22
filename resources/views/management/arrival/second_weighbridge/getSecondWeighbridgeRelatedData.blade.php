@@ -33,7 +33,7 @@
 </div>
 <div class="col-xs-4 col-sm-4 col-md-4">
     <div class="form-group ">
-        <label>1st Weight:</label>
+        <label>First Weight:</label>
         <input type="text" id="first_weight" placeholder="First Weight" value="{{ $ArrivalTicket->first_weight }}"
             readonly class="form-control" autocomplete="off" />
     </div>
@@ -60,7 +60,7 @@
 </div>
 <div class="col-xs-4 col-sm-4 col-md-4">
     <div class="form-group ">
-        <label>1st Weighbridge Weight:</label>
+        <label>First Weighbridge Weight:</label>
         <input type="text" id="first_weighbridge" value="{{ $ArrivalTicket->firstWeighbridge->weight }}"
             class="form-control" autocomplete="off" disabled />
     </div>
@@ -116,7 +116,7 @@ $(document).ready(function() {
         const secondWB = parseFloat($(this).val()) || 0;
         const errorElement = $('#weight_error');
         
-        // Validate 2nd weight isn't greater than 1st weight
+        // Validate 2nd weight isn't greater than First weight
         if (secondWB > firstWB) {
             errorElement.removeClass('d-none');
             $('#weighbridge_net_weight').val('');

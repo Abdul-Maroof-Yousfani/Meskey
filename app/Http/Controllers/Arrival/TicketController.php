@@ -150,6 +150,15 @@ class TicketController extends Controller
     public function edit(Request $request, $id)
     {
         $authUserCompany = $request->company_id;
+        $isSuperAdmin = getUserParams('user_type') == 'super-admin';
+        $userLocation = getUserParams('company_location_id');
+
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where('purchase_type', 'regular')
+            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
+                $q->where('company_location_id', $userLocation);
+            })
+            ->get();
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -157,8 +166,11 @@ class TicketController extends Controller
             })
             ->get();
 
+        $suppliers = Supplier::where('status', 'active')->get();
+        $products = Product::where('status', 'active')->get();
+
         $arrivalTicket = ArrivalTicket::findOrFail($id);
-        return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf'));
+        return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf', 'arrivalPurchaseOrders', 'suppliers', 'products'));
     }
     public function show(Request $request, $id)
     {
