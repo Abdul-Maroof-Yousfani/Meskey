@@ -92,7 +92,7 @@
 
 
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')"
+                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests',false,'90%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
