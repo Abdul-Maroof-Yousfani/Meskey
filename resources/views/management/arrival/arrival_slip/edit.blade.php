@@ -558,7 +558,7 @@
                                     </div>
                                 </td>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: bold; margin-bottom: 5px;">Contract Number</div>
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Contact Number</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                                     </div>
