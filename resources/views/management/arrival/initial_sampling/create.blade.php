@@ -16,7 +16,8 @@
                         <option value="{{ $samplingRequest->id }}"
                             data-product-id="{{ optional($samplingRequest->arrivalTicket)->qc_product }}"
                             data-ticket-id="{{ optional($samplingRequest->arrivalTicket)->id }}">
-                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}
+                            Ticket No: {{ $samplingRequest->arrivalTicket->unique_no }} --
+                            Truck No: {{ $samplingRequest->arrivalTicket->truck_no ?? '-' }}
                         </option>
                     @endforeach
                 </select>
