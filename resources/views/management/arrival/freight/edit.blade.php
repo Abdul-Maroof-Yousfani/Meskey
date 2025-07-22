@@ -42,6 +42,14 @@
             </div>
         </div>
 
+         <div class="col-md-6">
+            <div class="form-group">
+                <label>Sauda Type</label>
+           <input type="text" disabled name="sauda_type" class="form-control"
+    value="{{ optional($freight->arrivalTicket->saudaType)->name }}"  />
+            </div>
+        </div>
+
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Estimated Freight
