@@ -445,7 +445,7 @@
 
              // Set loading date
              if (createdAt) {
-                 $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
+                 //  $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
              }
          });
 
