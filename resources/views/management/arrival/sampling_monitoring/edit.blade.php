@@ -60,125 +60,131 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div id="collapse11" role="tabpanel" aria-labelledby="headingCollapse11" class="collapse " style="">
                 <div class="row form-mar">
-                    <div class="col-xs-4 col-sm-4 col-md-12">
-                        <div class="form-group">
-                            <label>Ticket Product:</label>
-                            <input type="text" disabled="" class="form-control"
-                                value=" {{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name }}"
-                                placeholder="Ticket Product">
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Miller:</label>
-                            <input type="text" class="form-control" name="supplier"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->miller->name }}" disabled>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Broker:</label>
-                            <input type="text" class="form-control" name="broker"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name }}" disabled>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4 full">
+                    <!-- Ticket Number -->
+                    {{-- <div class="col-xs-6 col-sm-6 col-md-6">
+                        <fieldset>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-primary" type="button">Ticket No#</button>
+                                </div>
+                                <input type="text" disabled class="form-control"
+                                    value="{{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no ?? 'N/A' }}">
+                            </div>
+                        </fieldset>
+                    </div> --}}
+
+                    <!-- Contract Detail -->
+                    <div class="col-xs-12 col-sm-12 col-md-12">
                         <div class="form-group">
                             <label class="d-block">Contract Detail:</label>
                             <select name="arrival_purchase_order_id" id="arrival_purchase_order_id"
-                                class="form-control select2" disabled>
+                                class="form-control " disabled>
                                 <option value="">N/A</option>
                                 @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
-                                    <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"
-                                        data-brokerid="{{ $arrivalPurchaseOrder->broker->id ?? '' }}"
-                                        data-brokername="{{ $arrivalPurchaseOrder->broker->name ?? '' }}"
-                                        data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
-                                        data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
-                                        value="{{ $arrivalPurchaseOrder->id }}" @selected(optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id == $arrivalPurchaseOrder->id)>
-                                        {{ $arrivalPurchaseOrder->unique_no }}
+                                    <option value="{{ $arrivalPurchaseOrder->id }}" @selected(optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id == $arrivalPurchaseOrder->id)>
+                                        #{{ $arrivalPurchaseOrder->contract_no ?? 'N/A' }} - Type:
+                                        {{ $arrivalPurchaseOrder->saudaType->name ?? 'N/A' }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4 full">
+
+                    <div class="col-xs-6 col-sm-6 col-md-6">
                         <div class="form-group">
-                            <label class="d-block">Sauda Type:</label>
-
-                            <select disabled name="sauda_type_id_display" id="sauda_type_id"
-                                @disabled(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
-                                        (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ?? null)) class="form-control w-100 select2">
-                                <option value="">Select Sauda Type</option>
-                                @foreach ($saudaTypes as $saudaType)
-                                    <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
-                                        {{ $saudaType->name }}</option>
-                                @endforeach
-                            </select>
+                            <label>Product:</label>
+                            <input type="text" disabled class="form-control"
+                                value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name ?? 'N/A' }}"
+                                placeholder="Product Name">
                         </div>
                     </div>
 
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label class="d-block">Decisioned Of:</label>
-                            <input type="text" name="accounts_of" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->decisionBy->name ?? '' }}"
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Sauda Type:</label>
+                            <input type="text" disabled class="form-control"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->saudaType->name ?? 'N/A' }}"
+                                placeholder="Sauda Type">
                         </div>
                     </div>
 
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label class="d-block">Accounts Of:</label>
-                            <input type="text" name="accounts_of" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_name ?? '' }}"
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
+                    <!-- Millers -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Millers:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->miller->name ?? 'N/A' }}">
                         </div>
                     </div>
 
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
+                    <!-- Broker -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Broker:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name ?? 'N/A' }}">
+                        </div>
+                    </div>
+
+                    <!-- Decision Of -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Decision Of:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->decisionBy)->name ?? 'N/A' }}">
+                        </div>
+                    </div>
+
+                    <!-- Accounts Of -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Accounts Of:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_name ?? 'N/A' }}">
+                        </div>
+                    </div>
+
+                    <!-- Station -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
                             <label>Station:</label>
-                            <input type="text" name="station_id" placeholder="Station" class="form-control" disabled
-                                autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->station_name ?? 'N/A' }}" />
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->station)->name ?? 'N/A' }}">
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Truck Type:</label>
-                            <input type="text" name="arrival_truck_type_id" placeholder="Truck Type" disabled
-                                class="form-control" autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truckType->name ?? '' }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
+
+                    <!-- Truck No -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
                             <label>Truck No:</label>
-                            <input type="text" name="truck_no"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truck_no }}" disabled
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
+                            <input type="text" class="form-control text-uppercase" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truck_no ?? 'N/A' }}">
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Bilty No: </label>
-                            <input type="text" name="bilty_no" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bilty_no }}"
-                                placeholder="Bilty No" class="form-control" autocomplete="off" />
+
+                    <!-- Bilty No -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Bilty No:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bilty_no ?? 'N/A' }}">
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>No of bags: </label>
-                            <input type="text" name="bags" placeholder="No of bags" class="form-control"
-                                disabled autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bags }}" />
+
+                    <!-- Truck Type -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Truck Type:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->truckType)->name ?? 'N/A' }}">
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Sample Money Type: </label>
-                            <select name="sample_money_type" class="form-control" disabled>
+
+                    <!-- Sample Money Type -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Sample Money Type:</label>
+                            <select class="form-control" disabled>
                                 <option
                                     {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'n/a' ? 'selected' : '' }}
                                     value="n/a">N/A</option>
@@ -191,34 +197,78 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Sample Money: </label>
-                            <input type="text" readonly name="sample_money"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money ?? 0 }}"
-                                placeholder="No of bags" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Loading Date: (Optional)</label>
-                          <input type="text" name="loading_date" disabled
-    value="{{ optional($arrivalSamplingRequest->arrivalTicket)->loading_date ? \Carbon\Carbon::parse($arrivalSamplingRequest->arrivalTicket->loading_date)->format('Y-m-d') : '' }}"
-    placeholder="Bilty No" class="form-control" autocomplete="off" />
 
+                    <!-- Sample Money -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Sample Money:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money ?? '0' }}">
                         </div>
                     </div>
 
+                    <!-- No of Bags -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>No of bags:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bags ?? '0' }}">
+                        </div>
+                    </div>
+
+                    <!-- Loading Date -->
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <label>Loading Date:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->loading_date ? \Carbon\Carbon::parse($arrivalSamplingRequest->arrivalTicket->loading_date)->format('Y-m-d') : 'N/A' }}">
+                        </div>
+                    </div>
+
+                    <!-- Weight Details Section -->
+                    <div class="col-12">
+                        <h6 class="header-heading-sepration">
+                            Weight Detail
+                        </h6>
+                    </div>
+
+                    <!-- First Weight -->
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>First Weight:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->first_weight ?? '0' }}">
+                        </div>
+                    </div>
+
+                    <!-- Second Weight -->
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>Second Weight:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->second_weight ?? '0' }}">
+                        </div>
+                    </div>
+
+                    <!-- Net Weight -->
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>Net Weight:</label>
+                            <input type="text" class="form-control" disabled
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->net_weight ?? '0' }}">
+                        </div>
+                    </div>
+
+                    <!-- Remarks -->
                     <div class="col-xs-12 col-sm-12 col-md-12">
-                        <div class="form-group ">
+                        <div class="form-group">
                             <label>Ticket Remarks:</label>
-                            <textarea name="remarks" row="2" class="form-control" disabled placeholder="Remarks">{{ optional($arrivalSamplingRequest->arrivalTicket)->remarks }}</textarea>
+                            <textarea class="form-control" disabled rows="3">{{ optional($arrivalSamplingRequest->arrivalTicket)->remarks ?? 'N/A' }}</textarea>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="row">
-
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group">
                         <label>QC Product:</label>
@@ -229,56 +279,56 @@
                 </div>
 
             </div>
-            
-        <div class="row">
-            <div class="col-xs-6 col-sm-6 col-md-6 full">
-                <div class="form-group">
-                    <label class="d-block">Sauda Type:</label>
-                    @php
-                        $isDisabled =
-                            optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
-                            (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ??
-                                null);
-                    @endphp
 
-                    @if ($isDisabled)
-                        <input type="hidden" name="sauda_type_id"
-                            value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
-                        <select disabled class="form-control w-100 select2">
-                        @else
-                            <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
-                    @endif
-                    <option value="">Select Sauda Type</option>
-                    @foreach ($saudaTypes as $saudaType)
-                        <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
-                            {{ $saudaType->name }}</option>
-                    @endforeach
-                    </select>
+            <div class="row">
+                <div class="col-xs-6 col-sm-6 col-md-6 full">
+                    <div class="form-group">
+                        <label class="d-block">Sauda Type:</label>
+                        @php
+                            $isDisabled =
+                                optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
+                                (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ??
+                                    null);
+                        @endphp
+
+                        @if ($isDisabled)
+                            <input type="hidden" name="sauda_type_id"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
+                            <select disabled class="form-control w-100 select2">
+                            @else
+                                <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
+                        @endif
+                        <option value="">Select Sauda Type</option>
+                        @foreach ($saudaTypes as $saudaType)
+                            <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
+                                {{ $saudaType->name }}</option>
+                        @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-6 col-md-6 full">
+                    <div class="form-group ">
+                        <label>Status:</label>
+                        @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
+                            <input type="hidden" name="stage_status"
+                                value="{{ $arrivalSamplingRequest->approved_status }}">
+                        @endif
+                        <select
+                            name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status_display' : 'stage_status' }}"
+                            id="stage_status" class="form-control select2" @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
+                            <option value="" hidden>Choose Status</option>
+                            <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
+                                value="approved">
+                                Approved</option>
+                            <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }}
+                                value="resampling">Request Resampling</option>
+                            <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }}
+                                value="rejected">
+                                Rejected</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div class="col-xs-6 col-sm-6 col-md-6 full">
-                <div class="form-group ">
-                    <label>Status:</label>
-                    @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
-                        <input type="hidden" name="stage_status"
-                            value="{{ $arrivalSamplingRequest->approved_status }}">
-                    @endif
-                    <select
-                        name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status_display' : 'stage_status' }}"
-                        id="stage_status" class="form-control select2" @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
-                        <option value="" hidden>Choose Status</option>
-                        <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
-                            value="approved">
-                            Approved</option>
-                        <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }}
-                            value="resampling">Request Resampling</option>
-                        <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }}
-                            value="rejected">
-                            Rejected</option>
-                    </select>
-                </div>
-            </div>
-        </div>
         </div>
     </div>
 
