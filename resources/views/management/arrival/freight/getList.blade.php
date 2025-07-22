@@ -3,6 +3,7 @@
          <tr>
              <th class="col-sm-2">Ticket No.</th>
              <th class="col-sm-2">Miller</th>
+             <th class="col-sm-2">Accounts Of</th>
              <th class="col-sm-2">Truck No.</th>
              <th class="col-sm-2">Bilty No.</th>
              <th class="col-sm-2">Net Freight</th>
@@ -16,6 +17,7 @@
                  <tr>
                      <td>{{ $freight->arrivalTicket->unique_no ?? 'N/A' }}</td>
                      <td>{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}</td>
+                     <td>{{ $freight->arrivalTicket->accounts_of_name ?? 'N/A' }}</td>
                      <td>{{ $freight->arrivalTicket->truck_no ?? 'N/A' }}</td>
                      <td>{{ $freight->arrivalTicket->bilty_no ?? 'N/A' }}</td>
                      <td>{{ number_format($freight->net_freight, 2) }}</td>

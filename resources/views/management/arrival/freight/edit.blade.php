@@ -14,12 +14,18 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label>Supplier</label>
+                <label>MIller</label>
                 <input type="text" name="supplier" class="form-control"
                     value="{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}" readonly />
             </div>
         </div>
-
+   <div class="col-md-6">
+            <div class="form-group">
+                <label>Accounts Of</label>
+                <input type="text" name="supplier" class="form-control" value="{{ $freight->arrivalTicket->accounts_of_name ?? 'N/A' }} "
+                    readonly />
+            </div>
+        </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Commodity</label>

@@ -21,6 +21,14 @@
                     readonly />
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Accounts Of</label>
+                <input type="text" name="supplier" class="form-control" value="{{ $ticket->accounts_of_name ?? 'N/A' }} "
+                    readonly />
+            </div>
+        </div>
+        
 
         <div class="col-md-6">
             <div class="form-group">
