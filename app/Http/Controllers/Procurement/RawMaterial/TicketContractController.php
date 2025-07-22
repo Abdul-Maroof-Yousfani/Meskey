@@ -77,9 +77,27 @@ class TicketContractController extends Controller
             $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
             $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->selected_contract);
 
+            $amount = $arrivalTicket->arrived_net_weight * $purchaseOrder->rate_per_kg;
+            $truckNo = $arrivalTicket->truck_no ?? 'N/A';
+            $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
+            // dd($arrivalTicket->qcProduct);
+            createTransaction(
+                (float)($amount),
+                $arrivalTicket->qcProduct->account_id,
+                1,
+                $arrivalTicket->arrivalSlip->unique_no ?? '',
+                'debit',
+                'no',
+                [
+                    'purpose' => "ticket-contract-linking",
+                    'payment_against' => "pohanch-purchase",
+                    'against_reference_no' => "$truckNo/$biltyNo",
+                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket->arrived_net_weight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                ]
+            );
+
             $arrivalTicket->update([
-                'arrival_purchase_order_id' => $request->selected_contract,
-                // 'closing_trucks_qty' => $request->closing_trucks_qty
+                'arrival_purchase_order_id' => $request->selected_contract
             ]);
 
             $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
@@ -165,6 +183,7 @@ class TicketContractController extends Controller
         $ticket = ArrivalTicket::find($request->ticket_id);
         $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight'])
             ->where('status', 'draft')
+            ->where('supplier_id', $ticket->accounts_of_id)
             ->where('company_location_id', $ticket->location_id);
 
         if ($ticket?->sauda_type_id) {

@@ -96,7 +96,7 @@ class ArrivalSlipController extends Controller
             'firstWeighbridge',
             'purchaseOrder'
         ])->findOrFail($arrival_slip->arrival_ticket_id);
-
+        // dd(1);
         $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
             // ->where('sampling_type', 'initial')
             ->whereIn('approved_status', ['approved', 'rejected'])

@@ -89,14 +89,15 @@
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
-             <div class="form-group ">
+             <div class="form-group">
                  <label>Accounts Of:</label>
-                 <select name="accounts_of" id="accounts_of" class="form-control select2">
+                 <select name="accounts_of_display" id="accounts_of" class="form-control select2">
                      <option value="" hidden>Accounts Of</option>
                      @foreach ($suppliers as $supplier)
                          <option value="{{ $supplier->name }}">{{ $supplier->name }}</option>
                      @endforeach
                  </select>
+                 <input type="hidden" name="accounts_of" id="accounts_of_hidden">
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -357,7 +358,7 @@
          //  initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
-         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id"]')
+         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id"]')
              .select2();
 
          function calculateNetWeight() {
@@ -382,6 +383,10 @@
              calculateNetWeight();
          });
 
+         $(document).on('change', '#accounts_of', function() {
+             $('#accounts_of_hidden').val($(this).val());
+         });
+
          //   $(document).on('change', '[name="arrival_truck_type_id"]', function () {
          //  let sampleMoney = $(this).find(':selected').data('samplemoney');
          //   $('input[name="sample_money"]').val(sampleMoney ?? '');
@@ -389,10 +394,24 @@
 
          $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
              var selectedOption = $(this).find('option:selected');
-
-             // Get data from selected option's data attributes
-             var productId = selectedOption.data('product-id');
              var supplierId = selectedOption.data('supplier-id');
+
+             // Set broker/supplier selection
+             if (supplierId) {
+                 $('#broker_name').val(supplierId).trigger('change');
+                 $('#accounts_of').val(supplierId).trigger('change');
+                 $('#accounts_of_hidden').val(supplierId);
+
+                 // Disable the accounts_of dropdown and style it to look disabled
+                 $('#accounts_of').prop('disabled', true).addClass('disabled-field');
+             } else {
+                 // If "N/A" is selected, re-enable the field
+                 $('#accounts_of').prop('disabled', false).removeClass('disabled-field');
+                 $('#accounts_of_hidden').val('');
+             }
+
+             // Rest of your existing code...
+             var productId = selectedOption.data('product-id');
              var createdById = selectedOption.data('created-by-id');
              var saudaTypeName = selectedOption.data('sauda-type-name');
              var createdAt = selectedOption.data('created-at');
@@ -400,12 +419,6 @@
              // Set product selection
              if (productId) {
                  $('#product_id').val(productId).trigger('change');
-             }
-
-             // Set broker/supplier selection
-             if (supplierId) {
-                 $('#broker_name').val(supplierId).trigger('change');
-                 $('#accounts_of').val(supplierId).trigger('change');
              }
 
              // Set decision maker selection
@@ -417,7 +430,6 @@
              if (createdAt) {
                  $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
              }
-
          });
 
          // Sync values on any change (just in case)

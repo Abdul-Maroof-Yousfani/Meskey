@@ -429,8 +429,10 @@
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
+                                                        {{-- <span
+                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span> --}}
                                                         <span
-                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                            class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
                                                 </div>
                                             </td>

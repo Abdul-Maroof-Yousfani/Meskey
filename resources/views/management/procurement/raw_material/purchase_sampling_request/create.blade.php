@@ -8,7 +8,7 @@
     @endif
     <div class="row form-mar">
         @if (!isset($ind))
-            <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="col-xs-12 col-sm-12 col-md-12 d-none">
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" checked disabled id="customQC"

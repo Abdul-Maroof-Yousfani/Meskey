@@ -27,6 +27,15 @@
                                         <div class="row justify-content-end text">
                                             <div class="col-md-2">
                                                 <div class="form-group ">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id" id="company_location"
+                                                        class="form-control select2">
+                                                        <option value="">Location</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group ">
                                                     <label>Suppliers:</label>
                                                     <select name="supplier_id" id="supplier_id_f"
                                                         class="form-control select2">
@@ -40,15 +49,6 @@
                                                     <select name="sauda_type_id" id="sauda_type"
                                                         class="form-control select2">
                                                         <option value="">Sauda Type Name</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <div class="form-group ">
-                                                    <label>Location:</label>
-                                                    <select name="company_location_id" id="company_location"
-                                                        class="form-control select2">
-                                                        <option value="">Location</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -91,13 +91,26 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('raw-material.get.purchase-order') }}`)
+            filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
-
-            initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true,
-                true);
+            // initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true, true);
+            // initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
-            initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);
+
+            initializeDynamicDependentSelect2(
+                '#company_location',
+                '#supplier_id_f',
+                'company_locations',
+                'name',
+                'id',
+                'suppliers',
+                'company_location_ids',
+                'name',
+                true,
+                false,
+                true,
+                true,
+            );
         });
     </script>
 @endsection

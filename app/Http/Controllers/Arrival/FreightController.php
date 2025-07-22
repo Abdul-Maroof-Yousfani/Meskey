@@ -44,8 +44,14 @@ class FreightController extends Controller
     {
         $data = $request->all();
 
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['freight_status' => 'completed', 'arrival_slip_status' => 'generated']);
+        $ticket = ArrivalTicket::where('id', $request->arrival_ticket_id)->first();
+
+        if ($ticket) {
+            $ticket->update([
+                'freight_status' => 'completed',
+                'arrival_slip_status' => 'generated'
+            ]);
+        }
 
         $data['arrived_weight'] = $request->arrived_weight ?? 0;
         $data['loaded_weight'] = $request->loaded_weight ?? 0;
@@ -60,6 +66,27 @@ class FreightController extends Controller
         $data['remark'] = $request->note ?? '';
 
         $arrivalApprove = ArrivalSlip::create($data);
+
+        $truckNo = $ticket->truck_no ?? 'N/A';
+        $biltyNo = $ticket->bilty_no ?? 'N/A';
+        if ($ticket->arrival_purchase_order_id) {
+            $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
+            // dd($amount, $ticket->purchaseOrder->rate_per_kg, $data['arrived_weight']);
+            createTransaction(
+                (float)($amount),
+                $ticket->qcProduct->account_id,
+                1,
+                $arrivalApprove->unique_no,
+                'debit',
+                'no',
+                [
+                    'purpose' => "arrival-slip",
+                    'payment_against' => "pohanch-purchase",
+                    'against_reference_no' => "$truckNo/$biltyNo",
+                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                ]
+            );
+        }
 
         return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
     }

@@ -63,18 +63,24 @@ class TicketController extends Controller
     public function create(Request $request)
     {
         $authUserCompany = $request->company_id;
-        $userLocation = auth()->user()->company_location_id;
+        $isSuperAdmin = getUserParams('user_type') == 'super-admin';
+        $userLocation = getUserParams('company_location_id');
 
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])->where('purchase_type', 'regular')->where('company_location_id', $userLocation)->get();
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where('purchase_type', 'regular')
+            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
+                $q->where('company_location_id', $userLocation);
+            })
+            ->get();
 
         $suppliers = Supplier::where('status', 'active')->get();
 
         //$products = $arrivalPurchaseOrders->map(function ($order) {
-         //   return $order->product;
-       // })->filter()->unique('id');
+        //   return $order->product;
+        // })->filter()->unique('id');
 
 
-        $products = Product::where('status','active')->get();
+        $products = Product::where('status', 'active')->get();
 
         // $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
         //     return $order->createdByUser;
@@ -100,7 +106,7 @@ class TicketController extends Controller
     public function store(ArrivalTicketRequest $request)
     {
         $requestData = $request->validated();
-
+        // dd($requestData);
         if (!empty($requestData['accounts_of'])) {
             $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
             $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
@@ -127,6 +133,7 @@ class TicketController extends Controller
         }
 
         $requestData['first_qc_status'] = 'pending';
+        $requestData['closing_trucks_qty'] = 1;
         $requestData['truck_type_id'] = $requestData['arrival_truck_type_id'] ?? null;
 
         $arrivalTicket = ArrivalTicket::create($requestData);

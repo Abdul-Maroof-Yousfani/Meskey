@@ -254,6 +254,23 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName)
     return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'is_operational' => $account->is_operational ?? 'yes', 'parent_id' => $account->id ?? NULL];
 }
 
+function getUserParams($param)
+{
+    if (!auth()->check()) return is_array($param) ? [] : null;
+
+    $user = auth()->user();
+
+    if (is_array($param)) {
+        $result = [];
+        foreach ($param as $key) {
+            $result[$key] = $user->{$key} ?? null;
+        }
+        return $result;
+    }
+
+    return $user->{$param} ?? null;
+}
+
 if (!function_exists('getDeductionSuggestion')) {
     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult, $purchaseOrderID = null)
     {

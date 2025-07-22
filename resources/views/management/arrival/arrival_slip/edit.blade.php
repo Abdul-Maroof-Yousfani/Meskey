@@ -126,11 +126,12 @@
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="{{ $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
                             </td>
-                            <td style=" padding: 8px;border: none;">Bill/T No.</td>
-                            <td style="padding: 8px; border: none;" colspan="2">
+
+                            <td style=" padding: 8px;border: none;">Contract No.</td>
+                            <td style="padding: 8px; border: none;">
                                 <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->bilty_no }}"
-                                    readonly>
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
+                                    value="{{ $arrivalTicket->purchaseOrder->contract_no ?? 'N/A' }}" readonly>
                             </td>
                         </tr>
                         <tr>
@@ -152,6 +153,12 @@
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="" readonly>
+                            </td>
+                            <td style=" padding: 8px;border: none;">Bill/T No.</td>
+                            <td style="padding: 8px; border: none;" colspan="2">
+                                <input type="text"
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->bilty_no }}"
+                                    readonly>
                             </td>
                         </tr>
                         <tr>

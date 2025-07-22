@@ -50,11 +50,11 @@
                                         <label for="account_id">Account</label>
                                         <select name="account_id" id="account_id" class="form-control select2" required>
                                             <option value="">Select Account</option>
-                                            @foreach ($accounts as $account)
+                                            {{-- @foreach ($accounts as $account)
                                                 <option value="{{ $account->id }}">{{ $account->name }}
                                                     ({{ $account->unique_no }})
                                                 </option>
-                                            @endforeach
+                                            @endforeach --}}
                                         </select>
                                     </div>
                                 </div>
@@ -204,18 +204,33 @@
     <script>
         $(document).ready(function() {
             $('#voucher_type, #pv_date').change(function() {
-                if ($('#voucher_type').val() && $('#pv_date').val()) {
+                if ($('#voucher_type').val()) {
                     $.ajax({
                         url: '{{ route('payment-voucher.generate-pv-number') }}',
                         type: 'POST',
                         data: {
                             _token: '{{ csrf_token() }}',
                             voucher_type: $('#voucher_type').val(),
-                            pv_date: $('#pv_date').val()
+                            pv_date: $('#pv_date').val() || null
                         },
                         success: function(response) {
                             if (response.success) {
-                                $('#unique_no').val(response.pv_number);
+                                if ($('#pv_date').val()) {
+                                    $('#unique_no').val(response.pv_number);
+                                } else {
+                                    let $accountSelect = $('#account_id');
+                                    $accountSelect.empty();
+                                    $accountSelect.append(
+                                        '<option value="">Select Account</option>');
+
+                                    response.accounts.forEach(function(account) {
+                                        $accountSelect.append(
+                                            `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
+                                        );
+                                    });
+
+                                    $accountSelect.trigger('change');
+                                }
                             }
                         }
                     });

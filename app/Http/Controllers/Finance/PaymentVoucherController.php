@@ -64,7 +64,7 @@ class PaymentVoucherController extends Controller
 
     public function create()
     {
-        $data['accounts'] = Account::where('is_operational', 'yes')->get();
+        // $data['accounts'] = Account::where('is_operational', 'yes')->get();
 
         $data['suppliers'] = Supplier::whereHas('arrivalPurchaseOrders', function ($query) {
             $query->whereHas('paymentRequestData.paymentRequests', function ($q) {
@@ -83,17 +83,24 @@ class PaymentVoucherController extends Controller
     {
         $request->validate([
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
-            'pv_date' => 'required|date'
+            'pv_date' => 'nullable|date'
         ]);
 
         $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+        $prefixForAccounts = $request->voucher_type === 'bank_payment_voucher' ? 'Bank' : 'Cash';
 
-        $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
+        $accounts = Account::whereHas('parent', function ($query) use ($prefixForAccounts) {
+            $query->where('name', $prefixForAccounts);
+        })->get();
+
+        $pvDate = $request->pv_date ? date('m-d-Y', strtotime($request->pv_date)) : date('m-d-Y');
+        $datePrefix = $prefix . '-' . $pvDate . '-';
         $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
         return response()->json([
             'success' => true,
-            'pv_number' => $uniqueNo
+            'pv_number' => $uniqueNo,
+            'accounts' => $accounts
         ]);
     }
 

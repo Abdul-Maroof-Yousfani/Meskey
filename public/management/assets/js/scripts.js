@@ -766,6 +766,124 @@ function initializeDynamicSelect2(
     }
   });
 }
+function initializeDynamicDependentSelect2(
+  selector,
+  target,
+  tableName,
+  columnName,
+  idColumn = "id",
+  targetTable = null,
+  targetColumn = null,
+  targetDisplayColumn = "name",
+  enableTags = false,
+  isMultiple = false,
+  isSelectOnClose = true,
+  isAllowClear = false
+) {
+  const $el = $(selector);
+  const $targetEl = $(target);
+
+  $targetEl.select2({
+    ajax: {
+      url: "/dynamic-dependent-fetch-data",
+      dataType: "json",
+      delay: 250,
+      data: function (params) {
+        return {
+          search: params.term,
+          table: targetTable,
+          column: targetDisplayColumn,
+          idColumn: "id",
+          targetTable: targetTable,
+          targetColumn: targetColumn,
+          fetchMode: "target",
+          sourceId: $el.val(),
+        };
+      },
+      processResults: function (data) {
+        return {
+          results: data.items,
+        };
+      },
+    },
+    minimumInputLength: 0,
+    allowClear: true,
+    placeholder: "Select options",
+  });
+
+  $el.select2({
+    ajax: {
+      url: "/dynamic-dependent-fetch-data",
+      type: "GET",
+      dataType: "json",
+      delay: 250,
+      data: function (params) {
+        return {
+          search: params.term || "",
+          table: tableName,
+          column: columnName,
+          idColumn: idColumn,
+          enableTags: enableTags,
+          targetTable: targetTable,
+          targetColumn: targetColumn,
+          fetchMode: "source",
+        };
+      },
+      processResults: function (data) {
+        const items = isAllowClear
+          ? [{ id: "all", text: "Select an option" }, ...data.items]
+          : data.items;
+
+        return {
+          results: items,
+        };
+      },
+    },
+    minimumInputLength: 0,
+    tags: enableTags,
+    multiple: isMultiple,
+    allowClear: isAllowClear,
+    selectOnClose: isSelectOnClose,
+    placeholder: "Select an option",
+  });
+
+  $el.on("change", function () {
+    const selectedId = $(this).val();
+    $targetEl.val(null).trigger("change");
+
+    if (selectedId && selectedId !== "all") {
+      $targetEl.select2("open");
+
+      $.ajax({
+        url: "/dynamic-dependent-fetch-data",
+        data: {
+          table: targetTable,
+          column: targetDisplayColumn,
+          fetchMode: "target",
+          sourceId: selectedId,
+        },
+        success: function (data) {
+          const options = data.items.map(
+            (item) => new Option(item.text, item.id, true, true)
+          );
+          $targetEl.empty().append(options).trigger("change");
+        },
+      });
+    }
+  });
+
+  $el.on("select2:clear", function () {
+    $targetEl.val(null).trigger("change");
+    const newOption = new Option("Select an option", "", true, true);
+    $(this).append(newOption).trigger("change");
+  });
+
+  $el.on("select2:select", function (e) {
+    if (e.params.data.id === "all") {
+      $(this).val("").trigger("change");
+    }
+  });
+}
 
 // Handle select change event
 function handleSelectChange(selectElement) {
