@@ -78,7 +78,7 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         $data = $request->all();
-        $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory'));
+        $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory', 'yes'));
 
         $data['account_id'] = $account->id;
         $UnitOfMeasure = Product::create($data);
@@ -118,7 +118,8 @@ class ProductController extends Controller
             $account = Account::create(getParamsForAccountCreation(
                 $request->company_id,
                 $request->name,
-                'Inventory'
+                'Inventory',
+                'yes'
             ));
             $data['account_id'] = $account->id;
         } else {
