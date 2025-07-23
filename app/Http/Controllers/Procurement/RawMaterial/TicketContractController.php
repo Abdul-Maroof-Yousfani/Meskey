@@ -97,10 +97,11 @@ class TicketContractController extends Controller
             );
 
             $arrivalTicket->update([
-                'arrival_purchase_order_id' => $request->selected_contract
+                'arrival_purchase_order_id' => $request->selected_contract,
+                'closing_trucks_qty'=>$request->closing_trucks_qty
             ]);
 
-            $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
+          //  $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
             // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
             // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
 
