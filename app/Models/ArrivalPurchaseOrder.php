@@ -167,4 +167,11 @@ class ArrivalPurchaseOrder extends Model
             ->selectRaw('arrival_purchase_order_id, SUM(arrived_net_weight) as total_arrived_net_weight')
             ->groupBy('arrival_purchase_order_id');
     }
+
+    public function totalClosingTrucksQty()
+    {
+        return $this->hasOne(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, SUM(closing_trucks_qty) as total_closing_trucks_qty')
+            ->groupBy('arrival_purchase_order_id');
+    }
 }
