@@ -25,7 +25,32 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
+                                        <div class="row justify-content-end text-right1">
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Date:</label>
+                                                    <input type="text" name="daterange" class="form-control"
+                                                        value="{{ \Carbon\Carbon::now()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id" id="company_location"
+                                                        class="form-control select2">
+                                                        <option value="">Location</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Suppliers:</label>
+                                                    <select name="supplier_id" id="supplier_id_f"
+                                                        class="form-control select2">
+                                                        <option value="">Supplier</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -65,9 +90,24 @@
 @section('script')
     <script>
         $(document).ready(function() {
+            initializeDynamicDependentSelect2(
+                '#company_location',
+                '#supplier_id_f',
+                'company_locations',
+                'name',
+                'id',
+                'suppliers',
+                'company_location_ids',
+                'name',
+                true,
+                false,
+                true,
+                true,
+            );
+
             filterationCommon(
                 `{{ route($isResampling ? 'raw-material.get.purchase-resampling' : 'raw-material.get.purchase-sampling') }}`
-            )
+            );
         });
     </script>
 @endsection

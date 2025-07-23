@@ -29,6 +29,35 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
     };
   }
 
+  $('input[name="daterange"]').daterangepicker(
+    {
+      opens: "left",
+      // autoUpdateInput: false,
+      locale: {
+        cancelLabel: "Clear",
+      },
+    },
+    function (start, end, label) {
+      console.log(
+        "A new date selection was made: " +
+          start.format("YYYY-MM-DD") +
+          "  -  " +
+          start +
+          " to " +
+          end.format("YYYY-MM-DD")
+      );
+      $("[name='daterange']").val(
+        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
+      );
+
+      renderLoadingTable("#filteredData table", 12);
+      var formData = $("#filterForm").serialize();
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    }
+  );
+
   // Handle form input changes
   $("#filterForm input, #filterForm select")
     .off("change keyup")

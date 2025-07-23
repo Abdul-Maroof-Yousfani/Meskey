@@ -26,6 +26,13 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text">
                                             <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Date:</label>
+                                                    <input type="text" name="daterange" class="form-control"
+                                                        value="{{ \Carbon\Carbon::now()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
                                                 <div class="form-group ">
                                                     <label>Location:</label>
                                                     <select name="company_location_id" id="company_location"
@@ -88,13 +95,12 @@
         </section>
     </div>
 @endsection
+
 @section('script')
     <script>
         $(document).ready(function() {
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
-            // initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true, true);
-            // initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
 
             initializeDynamicDependentSelect2(

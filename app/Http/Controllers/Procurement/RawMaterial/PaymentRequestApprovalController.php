@@ -38,6 +38,24 @@ class PaymentRequestApprovalController extends Controller
             'paymentRequestData.arrivalTicket.freight',
             'approvals.approver'
         ])
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
+                    $query->where('company_location_id', $request->company_location_id);
+                });
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
+                    $query->where('supplier_id', $request->supplier_id);
+                });
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(25);
 

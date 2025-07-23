@@ -21,11 +21,29 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right1">
                                             <div class="col-md-2">
-                                                <label for="customers" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="supplier_id" class="form-control">
-                                                    <option value="">
-                                                        Select Supplier</option>
-                                                </select>
+                                                <div class="form-group">
+                                                    <label>Date:</label>
+                                                    <input type="text" name="daterange" class="form-control"
+                                                        value="{{ \Carbon\Carbon::now()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id" id="company_location"
+                                                        class="form-control select2">
+                                                        <option value="">Location</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Suppliers:</label>
+                                                    <select name="supplier_id" id="supplier_id_f"
+                                                        class="form-control select2">
+                                                        <option value="">Supplier</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Commodity</label>
@@ -75,7 +93,22 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
+            // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
+            initializeDynamicDependentSelect2(
+                '#company_location',
+                '#supplier_id_f',
+                'company_locations',
+                'name',
+                'id',
+                'suppliers',
+                'company_location_ids',
+                'name',
+                true,
+                false,
+                true,
+                true,
+            );
+
             initializeDynamicSelect2('#product_id', 'products', 'name', 'id', true, false, true, true);
             filterationCommon(
                 `{{ route('raw-material.get.payment-request') }}`

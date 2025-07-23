@@ -60,6 +60,9 @@
     <script src="{{ asset('assets/js/custom.js') }}"></script>
     <!-- END: Custom CSS-->
 
+    {{-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css"> --}}
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
     <script>
         const SUBMISSION_ON_ENTER = @json(env('SUBMISSION_ON_ENTER', false));
         const IS_LOCAL = @json(env('IS_LOCAL', false));

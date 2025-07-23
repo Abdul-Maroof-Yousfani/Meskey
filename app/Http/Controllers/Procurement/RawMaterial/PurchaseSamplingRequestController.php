@@ -43,6 +43,14 @@ class PurchaseSamplingRequestController extends Controller
                         });
                 });
             })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
             ->with(['supplier', 'product', 'location'])
             ->latest()
             ->paginate(request('per_page', 25));

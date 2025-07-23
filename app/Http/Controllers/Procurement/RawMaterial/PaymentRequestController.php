@@ -57,6 +57,24 @@ class PaymentRequestController extends Controller
                     }]);
                 }
             ])
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('company_location_id', $request->company_location_id);
+                });
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('supplier_id', $request->supplier_id);
+                });
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
             ->orderByDesc(function ($query) {
                 $query->select('created_at')
                     ->from('purchase_freights')
@@ -65,11 +83,11 @@ class PaymentRequestController extends Controller
             })
             ->orderByDesc('created_at');
 
-        if ($request->has('supplier_id') && $request->supplier_id != '') {
-            $query->whereHas('purchaseOrder', function ($q) use ($request) {
-                $q->where('supplier_id', $request->supplier_id);
-            });
-        }
+        // if ($request->has('supplier_id') && $request->supplier_id != '') {
+        //     $query->whereHas('purchaseOrder', function ($q) use ($request) {
+        //         $q->where('supplier_id', $request->supplier_id);
+        //     });
+        // }
 
         if ($request->has('product_id') && $request->product_id != '') {
             $query->where('qc_product', $request->product_id);

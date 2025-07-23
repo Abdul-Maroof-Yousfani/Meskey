@@ -55,12 +55,27 @@ class TicketPaymentRequestController extends Controller
                         ->groupBy('payment_request_data_id', 'request_type', 'status');
                 }]);
             }
-        ])->whereHas('purchaseOrder')->where('sauda_type_id', 1)->orderByDesc(function ($query) {
-            $query->select('created_at')
-                ->from('arrival_freights')
-                ->whereColumn('arrival_freights.arrival_ticket_id', 'arrival_tickets.id')
-                ->limit(1);
-        })
+        ])
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->where('location_id', $request->company_location_id);
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->where('accounts_of_id', $request->supplier_id);
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
+            ->whereHas('purchaseOrder')->where('sauda_type_id', 1)->orderByDesc(function ($query) {
+                $query->select('created_at')
+                    ->from('arrival_freights')
+                    ->whereColumn('arrival_freights.arrival_ticket_id', 'arrival_tickets.id')
+                    ->limit(1);
+            })
             ->orderByDesc('created_at');
 
         if ($request->has('broker_id') && $request->broker_id != '') {
