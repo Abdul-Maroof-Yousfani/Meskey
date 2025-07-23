@@ -15,10 +15,9 @@
             @foreach ($arrivalPurchaseOrder as $key => $row)
                 <tr>
                     <td>#{{ $row->contract_no }} <br> {{ $row->product->name ?? ' N/A' }}
-                        {{-- <br><span
-                            class="badge badge-primary mt-2">
-                            {{ formatEnumValue($row->purchase_type ?? 'N/A') }}
-                        </span> --}}
+                        <br><span class="badge badge-primary mt-2">
+                            {{-- {{ formatEnumValue($row->saudaType->name ?? 'N/A') }} --}}
+                        </span>
                     </td>
                     <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
                     </td>

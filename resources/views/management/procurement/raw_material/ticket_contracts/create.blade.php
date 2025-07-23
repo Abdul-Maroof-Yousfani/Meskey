@@ -68,17 +68,18 @@
                                                 <table class="table table-sm table-bordered table-hover">
                                                     <thead class="thead-light">
                                                         <tr>
-                                                            <th width="5%">Select</th>
-                                                            <th width="15%">Contract No</th>
-                                                            <th width="15%">Product</th>
-                                                            <th width="15%">Supplier</th>
-                                                            <th width="10%">Ordered Qty</th>
-                                                            <th width="10%">Remaining Qty</th>
-                                                            <th width="10%">Arrived Qty</th>
-                                                            <th width="10%">Truck No</th>
-                                                            <th width="10%">Trucks Arrived</th>
-                                                            <th width="10%">Status</th>
-                                                            {{-- <th width="5%">Action</th> --}}
+                                                            <th style="width: 5%;">Select</th>
+                                                            <th style="width: 12%;">Contract No</th>
+                                                            <th style="width: 12%;">Product</th>
+                                                            <th style="width: 12%;">Supplier</th>
+                                                            <th style="width: 10%;">Ordered Qty</th>
+                                                            <th style="width: 10%;">Remaining Qty</th>
+                                                            <th style="width: 8%;">Arrived Qty</th>
+                                                            <th style="width: 8%;">Truck Ordered</th>
+                                                            <th style="width: 8%;">Remaining Truck</th>
+                                                            <th style="width: 8%;">Trucks Arrived</th>
+                                                            <th style="width: 7%;">Status</th>
+                                                            {{-- <th style="width: 5%;">Action</th> --}}
                                                         </tr>
                                                     </thead>
                                                     <tbody id="contract_results_body"></tbody>
@@ -801,6 +802,7 @@
                                 </td>
                                 <td>${contract?.total_loading_weight || '-'}</td>
                                 <td>${contract.no_of_trucks || '-'}</td>
+                                <td>${contract.remaining_trucks || '-'}</td>
                                 <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td>
                                 <td>${statusBadge}</td> 
                             </tr>

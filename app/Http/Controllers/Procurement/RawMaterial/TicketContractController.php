@@ -98,10 +98,10 @@ class TicketContractController extends Controller
 
             $arrivalTicket->update([
                 'arrival_purchase_order_id' => $request->selected_contract,
-                'closing_trucks_qty'=>$request->closing_trucks_qty
+                'closing_trucks_qty' => $request->closing_trucks_qty
             ]);
 
-          //  $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
+            //  $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
             // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
             // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
 
@@ -182,7 +182,7 @@ class TicketContractController extends Controller
     public function searchContracts(Request $request)
     {
         $ticket = ArrivalTicket::find($request->ticket_id);
-        $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight'])
+        $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight', 'totalArrivedNetWeight'])
             ->where('status', 'draft')
             ->where('supplier_id', $ticket->accounts_of_id)
             ->where('company_location_id', $ticket->location_id);
@@ -220,9 +220,11 @@ class TicketContractController extends Controller
             'truck_no' => $c->truck_no,
             'trucks_arrived' => $c->trucks_arrived,
             'no_of_trucks' => $c->no_of_trucks,
+            'remaining_trucks' => $c->no_of_trucks - $ticket->closing_trucks_qty,
             'status' => $c->status ?: 'N/A',
             'contract_date_formatted' => $c->created_at->format('d-M-Y'),
-            'total_loading_weight' => $c->totalLoadingWeight->total_loading_weight ?? null,
+            // 'total_loading_weight' => $c->totalLoadingWeight->total_loading_weight ?? null,
+            'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? null,
         ]);
 
         return response()->json(['success' => true, 'data' => $contracts]);

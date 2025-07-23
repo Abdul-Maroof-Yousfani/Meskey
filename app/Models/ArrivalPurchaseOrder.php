@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
@@ -88,6 +89,11 @@ class ArrivalPurchaseOrder extends Model
         return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id');
     }
 
+    public function arrivalTickets()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id');
+    }
+
     public function paymentRequestData()
     {
         return $this->hasMany(PaymentRequestData::class, 'purchase_order_id');
@@ -152,6 +158,13 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id')
             ->selectRaw('arrival_purchase_order_id, SUM(loading_weight) as total_loading_weight')
+            ->groupBy('arrival_purchase_order_id');
+    }
+
+    public function totalArrivedNetWeight()
+    {
+        return $this->hasOne(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, SUM(arrived_net_weight) as total_arrived_net_weight')
             ->groupBy('arrival_purchase_order_id');
     }
 }
