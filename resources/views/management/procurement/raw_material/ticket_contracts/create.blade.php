@@ -68,17 +68,18 @@
                                                 <table class="table table-sm table-bordered table-hover">
                                                     <thead class="thead-light">
                                                         <tr>
-                                                            <th style="width: 5%;">Select</th>
-                                                            <th style="width: 12%;">Contract No</th>
-                                                            <th style="width: 12%;">Product</th>
-                                                            <th style="width: 12%;">Supplier</th>
+                                                            <th style="width: 6%;">Select</th>
+                                                            <th style="width: 13%;">Contract No</th>
+                                                            <th style="width: 13%;">Product</th>
+                                                            <th style="width: 7%;">Type</th>
+                                                            <th style="width: 13%;">Supplier</th>
                                                             <th style="width: 10%;">Ordered Qty</th>
-                                                            <th style="width: 10%;">Remaining Qty</th>
                                                             <th style="width: 8%;">Arrived Qty</th>
-                                                            <th style="width: 8%;">Truck Ordered</th>
-                                                            <th style="width: 8%;">Remaining Truck</th>
-                                                            <th style="width: 8%;">Trucks Arrived</th>
-                                                            <th style="width: 7%;">Status</th>
+                                                            <th style="width: 10%;">Remaining Qty</th>
+                                                            <th style="width: 7%;">Truck Ordered</th>
+                                                            <th style="width: 7%;">Trucks Arrived</th>
+                                                            <th style="width: 7%;">Remaining Truck</th>
+                                                            <th style="width: 9%;">Status</th>
                                                             {{-- <th style="width: 5%;">Action</th> --}}
                                                         </tr>
                                                     </thead>
@@ -790,20 +791,21 @@
                                 </td>
                                 <td>${contract.contract_no || '-'}</td>
                                 <td>${contract.qc_product_name || '-'}</td>
+                                <td class="text-capitalize">${contract.calculation_type || '-'}</td>
                                 <td>${contract.supplier?.name || '-'}</td>
                                 <td>${(contract?.min_quantity || '-') + " - " + (contract?.max_quantity || '-')}</td>
+                                <td>${contract?.total_loading_weight || '-'}</td>
                                 <td>
                                     ${
                                         (contract.total_loading_weight !== undefined && contract.total_loading_weight !== null)
                                             ? ((contract.min_quantity !== undefined && contract.min_quantity !== null ? (contract.min_quantity - contract.total_loading_weight) : '-') + ' - ' +
                                                (contract.max_quantity !== undefined && contract.max_quantity !== null ? (contract.max_quantity - contract.total_loading_weight) : '-'))
-                                            : '-'
+                                            : 0
                                     }
                                 </td>
-                                <td>${contract?.total_loading_weight || '-'}</td>
                                 <td>${contract.no_of_trucks || '-'}</td>
-                                <td>${contract.remaining_trucks || '-'}</td>
                                 <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td>
+                                <td>${contract.remaining_trucks || 0}</td>
                                 <td>${statusBadge}</td> 
                             </tr>
                         `;

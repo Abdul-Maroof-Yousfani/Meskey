@@ -216,6 +216,7 @@ class TicketContractController extends Controller
             'min_quantity' => $c->min_quantity,
             'max_quantity' => $c->max_quantity,
             'remaining_quantity' => $c->remaining_quantity,
+            'calculation_type' => $c->calculation_type,
             'arrived_quantity' => $c->arrived_quantity,
             'truck_no' => $c->truck_no,
             'trucks_arrived' => $c->trucks_arrived,

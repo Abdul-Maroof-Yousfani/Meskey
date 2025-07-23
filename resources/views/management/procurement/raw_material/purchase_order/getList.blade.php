@@ -2,7 +2,8 @@
     <thead>
         <tr>
             <th class="col-sm-2">Contract No</th>
-            <th class="col-sm-3">Supplier</th>
+            <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Arrival Details</th>
             <th class="col-sm-2">Rate</th>
             <th class="col-sm-1">Contract Type</th>
             <th class="col-sm-1">Replacement</th>
@@ -15,11 +16,23 @@
             @foreach ($arrivalPurchaseOrder as $key => $row)
                 <tr>
                     <td>#{{ $row->contract_no }} <br> {{ $row->product->name ?? ' N/A' }}
-                        <br><span class="badge badge-primary mt-2">
-                            {{-- {{ formatEnumValue($row->saudaType->name ?? 'N/A') }} --}}
-                        </span>
+                        {{-- <br><span class="badge badge-primary mt-2">
+                            {{ formatEnumValue($row->saudaType->name ?? 'N/A') }}
+                        </span> --}}
                     </td>
                     <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
+                    </td>
+                    <td>
+                        <div class="div-box-b">
+                            <small>
+                                <strong>Ordered Qty:</strong> {{ $row->rate_per_kg ?? 0 }} <br>
+                                <strong>Remaining Qty:</strong> {{ $row->rate_per_mound ?? 0 }} <br>
+                                <strong>Arrived Qty:</strong> {{ $row->rate_per_mound ?? 0 }} <br>
+                                <strong>Truck Ordered:</strong> {{ $row->rate_per_mound ?? 0 }} <br>
+                                <strong>Remaining Truck:</strong> {{ $row->rate_per_mound ?? 0 }} <br>
+                                <strong>Trucks Arrived:</strong> {{ $row->rate_per_mound ?? 0 }} <br>
+                            </small>
+                        </div>
                     </td>
                     <td>
                         <div class="div-box-b">
