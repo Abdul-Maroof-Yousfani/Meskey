@@ -71,7 +71,7 @@
                                                             <th style="width: 6%;">Select</th>
                                                             <th style="width: 13%;">Contract No</th>
                                                             <th style="width: 13%;">Product</th>
-                                                            <th style="width: 7%;">Type</th>
+                                                            <th style="width: 7%;">Sauda Calc Type</th>
                                                             <th style="width: 13%;">Supplier</th>
                                                             <th style="width: 10%;">Ordered Qty</th>
                                                             <th style="width: 8%;">Arrived Qty</th>
