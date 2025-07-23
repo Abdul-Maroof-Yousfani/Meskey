@@ -187,7 +187,7 @@
                             </div>
 
                             <!-- Sample Money Type -->
-                            <div class="col-xs-6 col-sm-6 col-md-6">
+                            {{-- <div class="col-xs-6 col-sm-6 col-md-6">
                                 <div class="form-group">
                                     <label>Sample Money Type:</label>
                                     <select class="form-control" disabled>
@@ -205,7 +205,7 @@
                                     <input type="text" class="form-control" disabled
                                         value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money ?? '0' }}">
                                 </div>
-                            </div>
+                            </div> --}}
 
                             <!-- No of Bags -->
                             <div class="col-xs-6 col-sm-6 col-md-6">
@@ -232,7 +232,7 @@
                                 </h6>
                             </div>
 
-                            <!-- First Weight -->
+                            {{-- <!-- First Weight -->
                             <div class="col-xs-4 col-sm-4 col-md-4">
                                 <div class="form-group">
                                     <label>First Weight:</label>
@@ -248,10 +248,10 @@
                                     <input type="text" class="form-control" disabled
                                         value="{{ optional($arrivalSamplingRequest->arrivalTicket)->second_weight ?? '0' }}">
                                 </div>
-                            </div>
+                            </div> --}}
 
                             <!-- Net Weight -->
-                            <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
                                 <div class="form-group">
                                     <label>Net Weight:</label>
                                     <input type="text" class="form-control" disabled
