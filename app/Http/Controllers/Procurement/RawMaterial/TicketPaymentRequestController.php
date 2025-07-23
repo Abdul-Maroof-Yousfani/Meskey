@@ -131,7 +131,7 @@ class TicketPaymentRequestController extends Controller
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
-                'created_at' => $ticket->freight->first()->created_at ?? $ticket->created_at
+                'created_at' => $ticket?->freight?->first()->created_at ?? $ticket->created_at
             ];
 
             return $ticket;
