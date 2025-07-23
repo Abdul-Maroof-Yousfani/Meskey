@@ -36,7 +36,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'bag_weight'             => 'nullable|numeric',
             'bag_rate'               => 'nullable|numeric',
             'delivery_date'          => 'required|date',
-            'credit_days'           => 'nullable|integer',
+            'credit_days'           => 'required|integer',
             'delivery_address'       => 'required|string',
             'rate_per_kg'           => 'required|numeric',
             'rate_per_mound'         => 'required|numeric',
