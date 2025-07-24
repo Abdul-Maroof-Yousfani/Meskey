@@ -5,6 +5,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Contract:</label>
+                @dd($PurchaseSamplingRequest->purchaseOrder)
                 <input type="text" readonly name="purchase_contract" placeholder="Contract No" class="form-control"
                     autocomplete="off" value="{{ $PurchaseSamplingRequest->purchaseOrder->contract_no ?? 'N/A' }}" />
             </div>
