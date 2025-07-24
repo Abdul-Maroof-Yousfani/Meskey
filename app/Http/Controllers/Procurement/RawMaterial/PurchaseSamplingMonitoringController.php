@@ -232,7 +232,6 @@ class PurchaseSamplingMonitoringController extends Controller
             $ArrivalSamplingRequest = PurchaseSamplingRequest::findOrFail($id);
             $reqStatus = $ArrivalSamplingRequest->approved_status;
 
-
             if ($reqStatus === 'approved' && $request->stage_status !== 'approved') {
                 return response()->json([
                     'errors' => [
@@ -358,7 +357,7 @@ class PurchaseSamplingMonitoringController extends Controller
             $ArrivalSamplingRequest->approved_status = $request->stage_status;
             $ArrivalSamplingRequest->save();
 
-            if ($request->stage_status == 'approved') {
+            if ($request->stage_status == 'approved' && $reqStatus == 'pending') {
                 if (!$isCustomQC) {
                     ArrivalPurchaseOrder::where('id', $ArrivalSamplingRequest->arrival_purchase_order_id)->update(['freight_status' => 'pending']);
                 }

@@ -69,9 +69,29 @@ class FreightController extends Controller
 
         $truckNo = $ticket->truck_no ?? 'N/A';
         $biltyNo = $ticket->bilty_no ?? 'N/A';
+
         if ($ticket->arrival_purchase_order_id) {
             $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
-            // dd($amount, $ticket->purchaseOrder->rate_per_kg, $data['arrived_weight']);
+            $paymentDetails = calculatePaymentDetails($ticket->id, 1);
+            $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
+
+            if ($ticket->saudaType->name == 'Pohanch') {
+                createTransaction(
+                    $paymentDetails['calculations']['net_amount'] ?? 0,
+                    $ticket->accountsOf->account_id,
+                    1,
+                    $arrivalApprove->unique_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "arrival-slip-supplier",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                    ]
+                );
+            }
+
             createTransaction(
                 (float)($amount),
                 $ticket->qcProduct->account_id,
