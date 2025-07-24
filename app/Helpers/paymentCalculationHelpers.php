@@ -435,7 +435,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionValue,
-        // 'loading_weighbridge_sum' => $loadingWeighbridgeSum,
+        'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
     ];
