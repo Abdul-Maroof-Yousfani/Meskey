@@ -415,27 +415,26 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
 
-
-    // Other deduction value from sampling request or ticket
     $otherDeductionValue = 0;
-    if ($samplingData['sampling_request']) {
-        $otherDeductionValue = $samplingData['sampling_request']->other_deduction_value ?? 0;
-    }
 
-    // If not found in sampling request, check in arrival ticket
-    if ($otherDeductionValue == 0) {
-        $arrivalTicket = ArrivalTicket::find($ticketId);
-        $otherDeductionValue = $arrivalTicket->other_deduction_value ?? 0;
-    }
+    if (!empty($samplingData['sampling_request'])) {
+        $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticketId) {
+            $query->where('ticket_id', $ticketId)
+                ->where('module_type', 'ticket');
+        })
+            ->select('other_deduction_kg', 'other_deduction_value')
+            ->latest()
+            ->first();
 
-    $otherDeductionCalculated = $otherDeductionValue * $loadingInfo['net_weight'];
+        $otherDeductionValue = (float)($otherDeduction->other_deduction_value ?? 0);
+    }
 
     return [
         'total_sampling_deductions' => $totalSamplingDeductions,
         'sampling_deduction_details' => $samplingDeductionDetails,
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
-        'other_deduction_calculated' => $otherDeductionCalculated,
+        'other_deduction_calculated' => $otherDeductionValue,
         // 'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -506,16 +505,31 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
     $loadingWeighbridgeSum = $loadingInfo['kanta_charges'] / 2;
     $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
 
+    // $otherDeductionValue = 0;
+
+    // if ($samplingData['sampling_request']) {
+    //     $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticketId) {
+    //         $query->where('ticket_id', $ticketId);
+    //     })->select('other_deduction_kg', 'other_deduction_value')
+    //         ->latest()
+    //         ->first();
+
+    //     $otherDeductionValue = (float)($otherDeduction->other_deduction_value ?? '0');
+    // }
+
+
     $otherDeductionValue = 0;
 
-    if ($samplingData['sampling_request']) {
+    if (!empty($samplingData['sampling_request'])) {
         $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticketId) {
-            $query->where('ticket_id', $ticketId);
-        })->select('other_deduction_kg', 'other_deduction_value')
+            $query->where('ticket_id', $ticketId)
+                ->where('module_type', 'ticket');
+        })
+            ->select('other_deduction_kg', 'other_deduction_value')
             ->latest()
             ->first();
 
-        $otherDeductionValue = $otherDeduction->other_deduction_value ?? 0;
+        $otherDeductionValue = (float)($otherDeduction->other_deduction_value ?? 0);
     }
 
     return [
