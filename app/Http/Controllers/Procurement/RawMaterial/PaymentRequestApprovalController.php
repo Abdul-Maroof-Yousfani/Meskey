@@ -95,24 +95,24 @@ class PaymentRequestApprovalController extends Controller
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
 
-            if ($request->status === 'approved') {
-                createTransaction(
-                    (float) ($request->payment_request_amount),
-                    $purchaseOrder->supplier->account_id,
-                    1, // for Purchase Order
-                    $purchaseOrder->contract_no,
-                    // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
-                    // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "supplier",
-                        'payment_against' => "$saudaType-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
-                    ]
-                );
-            }
+            // if ($request->status === 'approved') {
+            //     createTransaction(
+            //         (float) ($request->payment_request_amount),
+            //         $purchaseOrder->supplier->account_id,
+            //         1, // for Purchase Order
+            //         $purchaseOrder->contract_no,
+            //         // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
+            //         // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
+            //         'credit',
+            //         'no',
+            //         [
+            //             'purpose' => "supplier",
+            //             'payment_against' => "$saudaType-purchase",
+            //             'against_reference_no' => "$truckNo/$biltyNo",
+            //             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
+            //         ]
+            //     );
+            // }
 
             // ----------------------
 
@@ -129,7 +129,7 @@ class PaymentRequestApprovalController extends Controller
                 ->first();
 
             $supplierData = [
-                'amount' => $amount,
+                'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                 'account_id' => $purchaseOrder->supplier->account_id,
                 'type' => 'credit',
                 'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
@@ -139,7 +139,7 @@ class PaymentRequestApprovalController extends Controller
                 $supplierTxn->update($supplierData);
             } else {
                 createTransaction(
-                    $amount,
+                    $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                     $purchaseOrder->supplier->account_id,
                     1,
                     $contractNo,
