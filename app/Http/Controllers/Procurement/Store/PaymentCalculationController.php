@@ -8,7 +8,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
-use function App\Helpers\calculatePaymentDetails;
 
 class PaymentCalculationController extends Controller
 {
