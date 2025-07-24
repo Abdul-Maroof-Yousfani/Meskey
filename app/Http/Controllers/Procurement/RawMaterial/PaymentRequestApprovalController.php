@@ -114,6 +114,73 @@ class PaymentRequestApprovalController extends Controller
             //     );
             // }
 
+
+
+
+
+            if ($request->has('total_amount') || $request->has('bag_weight')) {
+                $this->updatePaymentRequestData($paymentRequestData, $request);
+            }
+
+            if ($request->has('sampling_results') || $request->has('compulsory_results') || $request->has('other_deduction')) {
+                $this->updateSamplingResults($paymentRequestData, $request);
+            }
+
+            if ($request->has('payment_request_amount')) {
+                $paymentRequest->update(['amount' => $request->payment_request_amount]);
+            }
+
+            if ($request->has('freight_pay_request_amount') && $request->freight_pay_request_amount > 0 && $moduleType !== 'ticket') {
+                $freightRequest = PaymentRequest::where('payment_request_data_id', $paymentRequestData->id)
+                    ->where('request_type', 'freight_payment')
+                    ->first();
+
+                if ($freightRequest) {
+                    $freightRequest->update(['amount' => $request->freight_pay_request_amount]);
+                } else {
+                    PaymentRequest::create([
+                        'payment_request_data_id' => $paymentRequestData->id,
+                        'request_type' => 'freight_payment',
+                        'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
+                        'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+                        'amount' => $request->freight_pay_request_amount
+                    ]);
+                }
+            }
+
+            if ($request->has('bag_weight')) {
+                $dataToUpdate = ['bag_weight' => $request->bag_weight];
+
+                if ($moduleType !== 'ticket') {
+                    $dataToUpdate = ['bag_weight' => (float) $request->bag_weight];
+                }
+
+                $ticket->update($dataToUpdate);
+            }
+
+            if ($request->has('other_deduction')) {
+                $paymentRequest->update([
+                    'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
+                    'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+                ]);
+            }
+
+            PaymentRequestApproval::create([
+                'payment_request_id' => $request->payment_request_id,
+                'payment_request_data_id' => $paymentRequest->payment_request_data_id,
+                'ticket_id' => $paymentRequestData->ticket_id,
+                'purchase_order_id' => $purchaseOrder->id,
+                'approver_id' => Auth::id(),
+                'status' => $request->status,
+                'remarks' => $request->remarks,
+                'amount' => $paymentRequest->amount,
+                'request_type' => $paymentRequest->request_type
+            ]);
+
+            $paymentRequest->update(['status' => $request->status]);
+
+
+
             // ----------------------
 
             $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
@@ -188,67 +255,6 @@ class PaymentRequestApprovalController extends Controller
             // ----------------------
 
 
-
-            if ($request->has('total_amount') || $request->has('bag_weight')) {
-                $this->updatePaymentRequestData($paymentRequestData, $request);
-            }
-
-            if ($request->has('sampling_results') || $request->has('compulsory_results') || $request->has('other_deduction')) {
-                $this->updateSamplingResults($paymentRequestData, $request);
-            }
-
-            if ($request->has('payment_request_amount')) {
-                $paymentRequest->update(['amount' => $request->payment_request_amount]);
-            }
-
-            if ($request->has('freight_pay_request_amount') && $request->freight_pay_request_amount > 0 && $moduleType !== 'ticket') {
-                $freightRequest = PaymentRequest::where('payment_request_data_id', $paymentRequestData->id)
-                    ->where('request_type', 'freight_payment')
-                    ->first();
-
-                if ($freightRequest) {
-                    $freightRequest->update(['amount' => $request->freight_pay_request_amount]);
-                } else {
-                    PaymentRequest::create([
-                        'payment_request_data_id' => $paymentRequestData->id,
-                        'request_type' => 'freight_payment',
-                        'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-                        'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-                        'amount' => $request->freight_pay_request_amount
-                    ]);
-                }
-            }
-
-            if ($request->has('bag_weight')) {
-                $dataToUpdate = ['bag_weight' => $request->bag_weight];
-
-                if ($moduleType !== 'ticket') {
-                    $dataToUpdate = ['bag_weight' => (float) $request->bag_weight];
-                }
-
-                $ticket->update($dataToUpdate);
-            }
-
-            if ($request->has('other_deduction')) {
-                $paymentRequest->update([
-                    'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-                    'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-                ]);
-            }
-
-            PaymentRequestApproval::create([
-                'payment_request_id' => $request->payment_request_id,
-                'payment_request_data_id' => $paymentRequest->payment_request_data_id,
-                'ticket_id' => $paymentRequestData->ticket_id,
-                'purchase_order_id' => $purchaseOrder->id,
-                'approver_id' => Auth::id(),
-                'status' => $request->status,
-                'remarks' => $request->remarks,
-                'amount' => $paymentRequest->amount,
-                'request_type' => $paymentRequest->request_type
-            ]);
-
-            $paymentRequest->update(['status' => $request->status]);
 
             return response()->json([
                 'success' => 'Payment request ' . $request->status . ' successfully!'
