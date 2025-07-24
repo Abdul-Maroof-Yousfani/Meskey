@@ -79,7 +79,7 @@ function calculatePohaunchPayment($ticketId)
     $samplingData = getPohaunchSamplingResults($ticketId, $loadingInfo['net_weight'], $ratePerKg);
 
     // Calculate Deductions
-    $deductions = calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg);
+    $deductions = calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $ticketId);
 
     // Get Payment History
     $paymentHistory = getPaymentHistory($arrivalTicket->paymentRequestData);
@@ -162,7 +162,7 @@ function calculateThaddaPayment($ticketId)
     $samplingData = getThaddaSamplingResults($ticketId, $loadingInfo['net_weight'], $ratePerKg);
 
     // Calculate Deductions
-    $deductions = calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg);
+    $deductions = calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $ticketId);
 
     // Get Payment History
     $paymentHistory = getPaymentHistory($purchaseTicket->paymentRequestData);
@@ -339,7 +339,7 @@ function getThaddaSamplingResults($ticketId, $netWeight, $ratePerKg)
 /**
  * Calculate deductions for Pohanch
  */
-function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg)
+function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $ticketId)
 {
     $totalSamplingDeductions = 0;
     $samplingDeductionDetails = [];
@@ -414,11 +414,27 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg)
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
 
+
+    // Other deduction value from sampling request or ticket
+    $otherDeductionValue = 0;
+    if ($samplingData['sampling_request']) {
+        $otherDeductionValue = $samplingData['sampling_request']->other_deduction_value ?? 0;
+    }
+
+    // If not found in sampling request, check in arrival ticket
+    if ($otherDeductionValue == 0) {
+        $arrivalTicket = ArrivalTicket::find($ticketId);
+        $otherDeductionValue = $arrivalTicket->other_deduction_value ?? 0;
+    }
+
+    $otherDeductionCalculated = $otherDeductionValue * $loadingInfo['net_weight'];
+
     return [
         'total_sampling_deductions' => $totalSamplingDeductions,
         'sampling_deduction_details' => $samplingDeductionDetails,
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
+        'other_deduction_calculated' => $otherDeductionCalculated,
         // 'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -428,7 +444,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg)
 /**
  * Calculate deductions for Thadda
  */
-function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg)
+function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $ticketId)
 {
     $totalSamplingDeductions = 0;
     $samplingDeductionDetails = [];
@@ -489,11 +505,27 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg)
     $loadingWeighbridgeSum = $loadingInfo['kanta_charges'] / 2;
     $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
 
+    // Other deduction value from sampling request or ticket
+    $otherDeductionValue = 0;
+    if ($samplingData['sampling_request']) {
+        $otherDeductionValue = $samplingData['sampling_request']->other_deduction_value ?? 0;
+    }
+
+    // If not found in sampling request, check in purchase ticket
+    if ($otherDeductionValue == 0) {
+        $purchaseTicket = PurchaseTicket::find($ticketId);
+        $otherDeductionValue = $purchaseTicket->other_deduction_value ?? 0;
+    }
+
+    $otherDeductionCalculated = $otherDeductionValue * $loadingInfo['net_weight'];
+
+
     return [
         'total_sampling_deductions' => $totalSamplingDeductions,
         'sampling_deduction_details' => $samplingDeductionDetails,
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
+        'other_deduction_calculated' => $otherDeductionCalculated,
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -522,19 +554,20 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
 /**
  * Calculate amounts for Thadda
  */
-function calculateThaddaAmounts($loadingInfo, $deductions, $ratePerKg, $paymentHistory)
+function calculateThaddaAmounts($loadingInfo, $deductions, $ratePerKg)
 {
     $grossAmount = $ratePerKg * $loadingInfo['loading_weight'];
     $totalDeductionsForFormula = $deductions['total_sampling_deductions'] +
         $deductions['bag_weight_in_kg_sum'] +
-        $deductions['loading_weighbridge_sum'];
+        $deductions['loading_weighbridge_sum'] +
+        $deductions['other_deduction_calculated'];
 
     $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
 
     return [
         'gross_amount' => $grossAmount,
         'total_amount' => $totalAmount,
-        'remaining_amount' => $totalAmount - $paymentHistory['total_payment_sum'], // Will be updated with payment history
+        'remaining_amount' => $totalAmount, // Will be updated with payment history
     ];
 }
 
