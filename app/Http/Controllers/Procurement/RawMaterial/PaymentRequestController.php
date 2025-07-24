@@ -303,7 +303,7 @@ class PaymentRequestController extends Controller
                         'purpose' => "broker",
                         'payment_against' => "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to supplier.'
+                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to broker.'
                     ]
                 );
             }
@@ -322,7 +322,7 @@ class PaymentRequestController extends Controller
                         'purpose' => "broker",
                         'payment_against' => "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to supplier.'
+                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to broker.'
                     ]
                 );
             }
@@ -341,7 +341,7 @@ class PaymentRequestController extends Controller
                         'purpose' => "broker",
                         'payment_against' => "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to supplier.'
+                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to broker.'
                     ]
                 );
             }

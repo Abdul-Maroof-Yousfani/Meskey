@@ -297,7 +297,7 @@ class TicketPaymentRequestController extends Controller
                         'purpose' => "broker",
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to supplier.'
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
                     ]
                 );
             }
@@ -316,7 +316,7 @@ class TicketPaymentRequestController extends Controller
                         'purpose' => "broker",
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to supplier.'
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
                     ]
                 );
             }
@@ -335,7 +335,7 @@ class TicketPaymentRequestController extends Controller
                         'purpose' => "broker",
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to supplier.'
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
                     ]
                 );
             }
