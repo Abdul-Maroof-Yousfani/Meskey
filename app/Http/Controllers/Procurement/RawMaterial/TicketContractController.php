@@ -12,6 +12,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\PurchaseSamplingResult;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use App\Models\Master\QcReliefParameter;
@@ -80,21 +81,27 @@ class TicketContractController extends Controller
             $amount = $arrivalTicket->arrived_net_weight * $purchaseOrder->rate_per_kg;
             $truckNo = $arrivalTicket->truck_no ?? 'N/A';
             $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
-            // dd($arrivalTicket->qcProduct);
-            createTransaction(
-                (float)($amount),
-                $arrivalTicket->qcProduct->account_id,
-                1,
-                $arrivalTicket->arrivalSlip->unique_no ?? '',
-                'debit',
-                'no',
-                [
-                    'purpose' => "ticket-contract-linking",
-                    'payment_against' => "pohanch-purchase",
-                    'against_reference_no' => "$truckNo/$biltyNo",
-                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket->arrived_net_weight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
-                ]
-            );
+
+            $existingTransaction = Transaction::where('purpose', 'ticket-contract-linking')
+                ->where('voucher_no', $arrivalTicket->arrivalSlip->unique_no ?? '')
+                ->exists();
+
+            if (!$existingTransaction) {
+                createTransaction(
+                    (float)($amount),
+                    $arrivalTicket->qcProduct->account_id,
+                    1,
+                    $arrivalTicket->arrivalSlip->unique_no ?? '',
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "ticket-contract-linking",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket->arrived_net_weight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                    ]
+                );
+            }
 
             $arrivalTicket->update([
                 'arrival_purchase_order_id' => $request->selected_contract,
