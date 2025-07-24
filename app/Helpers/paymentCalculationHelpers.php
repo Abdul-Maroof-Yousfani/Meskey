@@ -517,7 +517,6 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
     //     $otherDeductionValue = (float)($otherDeduction->other_deduction_value ?? '0');
     // }
 
-
     $otherDeductionValue = 0;
 
     if (!empty($samplingData['sampling_request'])) {
