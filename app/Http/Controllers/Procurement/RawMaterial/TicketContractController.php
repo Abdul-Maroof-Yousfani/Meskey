@@ -103,7 +103,7 @@ class TicketContractController extends Controller
                 ]);
             }
 
-            $existingTransaction = Transaction::where('purpose', 'ticket-contract-linking')
+            $existingTransaction = Transaction::where('purpose', 'stock-in-transit')
                 ->where('voucher_no', $arrivalTicket->arrivalSlip->unique_no ?? '')
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->exists();
