@@ -352,6 +352,7 @@
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
                         Control</span></a>
                 <ul class="dropdown-menu">
+                    @canAccess('product')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
@@ -400,6 +401,7 @@
                         </ul>
                     </li>
                     @endcanAccess
+
 
                     @canAccess('approval-modules')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
@@ -485,6 +487,7 @@
                     </li>
                 </ul>
             </li>
+            @endcanAccess
         </ul>
     </div>
 </div>
