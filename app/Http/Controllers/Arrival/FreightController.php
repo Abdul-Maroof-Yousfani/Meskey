@@ -8,6 +8,7 @@ use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSlip;
 use App\Models\Arrival\Freight;
+use App\Models\Master\Account\Account;
 use App\Models\Master\ArrivalLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -71,13 +72,18 @@ class FreightController extends Controller
         $biltyNo = $ticket->bilty_no ?? 'N/A';
 
         if ($ticket->arrival_purchase_order_id) {
-            $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
+            $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
+
+            // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
+            $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
             $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
+            $qcProduct = $ticket->purchaseOrder->qcProduct->name;
+            $loadingWeight = $ticket->arrived_net_weight;
 
             if ($ticket->saudaType->name == 'Pohanch') {
                 createTransaction(
-                    $paymentDetails['calculations']['net_amount'] ?? 0,
+                    $amount,
                     $ticket->accountsOf->account_id,
                     1,
                     $arrivalApprove->unique_no,
@@ -90,10 +96,39 @@ class FreightController extends Controller
                         'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
                     ]
                 );
+            } else {
+                // createTransaction(
+                //     $amount,
+                //     $ticket->qcProduct->account_id,
+                //     1,
+                //     $arrivalApprove->unique_no,
+                //     'debit',
+                //     'no',
+                //     [
+                //         'purpose' => "arrival-slip",
+                //         'payment_against' => "pohanch-purchase",
+                //         'against_reference_no' => "$truckNo/$biltyNo",
+                //         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                //     ]
+                // );
+                createTransaction(
+                    $amount,
+                    $stockInTransitAccount->id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "stock-in-transit",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$ticket->purchaseOrder->rate_per_kg}/kg."
+                    ]
+                );
             }
 
             createTransaction(
-                (float)($amount),
+                $amount,
                 $ticket->qcProduct->account_id,
                 1,
                 $arrivalApprove->unique_no,
