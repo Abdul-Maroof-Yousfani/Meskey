@@ -152,7 +152,7 @@ class TicketContractController extends Controller
                     'debit',
                     'no',
                     [
-                        'purpose' => "stock-in-transit",
+                        'purpose' => "arrival-slip",
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket['arrived_net_weight'] . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
