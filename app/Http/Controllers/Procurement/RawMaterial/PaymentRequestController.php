@@ -216,6 +216,7 @@ class PaymentRequestController extends Controller
 
             $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 2);
             $contractNo = $purchaseOrder->contract_no;
+            $qcProduct = $purchaseOrder->qcProduct->name;
 
             $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
 
@@ -259,7 +260,7 @@ class PaymentRequestController extends Controller
                 'amount' => $amount,
                 'account_id' => $stockInTransitAccount->id,
                 'type' => 'debit',
-                'remarks' => "Stock-in-transit recorded for raw material arrival under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$requestData['loading_weight']} kg at rate {$purchaseOrder->rate_per_kg}/kg."
+                'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseOrder->rate_per_kg}/kg."
             ];
 
             if ($transitTxn) {
