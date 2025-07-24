@@ -283,7 +283,7 @@ class PaymentRequestController extends Controller
             // $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('ticket_id', $ticket->id)
-                ->count();
+                ->first();
 
             dd($loadingWeight, $purchaseOrder, $existingApprovals);
 
