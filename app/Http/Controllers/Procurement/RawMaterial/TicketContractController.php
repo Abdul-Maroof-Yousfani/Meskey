@@ -82,6 +82,27 @@ class TicketContractController extends Controller
             $truckNo = $arrivalTicket->truck_no ?? 'N/A';
             $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
 
+            $arrivalTicket->update([
+                'arrival_purchase_order_id' => $request->selected_contract,
+                'closing_trucks_qty' => $request->closing_trucks_qty
+            ]);
+
+            //  $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
+            // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
+            // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
+
+            if ($request->mark_completed || $purchaseOrder->remaining_quantity <= 0) {
+                $purchaseOrder->update([
+                    'completed_at' => now()
+                ]);
+            }
+
+            if ($request->mark_completed == 1) {
+                $purchaseOrder->update([
+                    'status' => 'completed',
+                ]);
+            }
+
             $existingTransaction = Transaction::where('purpose', 'ticket-contract-linking')
                 ->where('voucher_no', $arrivalTicket->arrivalSlip->unique_no ?? '')
                 ->where('against_reference_no', "$truckNo/$biltyNo")
@@ -108,7 +129,7 @@ class TicketContractController extends Controller
 
                 if ($arrivalTicket->saudaType->name == 'Pohanch') {
                     createTransaction(
-                        $paymentDetails['calculations']['net_amount'] ?? 0,
+                        $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                         $arrivalTicket->qcProduct->account_id,
                         1,
                         $arrivalTicket->arrivalSlip->unique_no ?? '',
@@ -124,7 +145,7 @@ class TicketContractController extends Controller
                 }
 
                 createTransaction(
-                    (float)($amount),
+                    $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                     $arrivalTicket->qcProduct->account_id,
                     1,
                     $arrivalTicket->arrivalSlip->unique_no,
@@ -137,27 +158,6 @@ class TicketContractController extends Controller
                         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket['arrived_net_weight'] . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
                     ]
                 );
-            }
-
-            $arrivalTicket->update([
-                'arrival_purchase_order_id' => $request->selected_contract,
-                'closing_trucks_qty' => $request->closing_trucks_qty
-            ]);
-
-            //  $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
-            // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
-            // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
-
-            if ($request->mark_completed || $purchaseOrder->remaining_quantity <= 0) {
-                $purchaseOrder->update([
-                    'completed_at' => now()
-                ]);
-            }
-
-            if ($request->mark_completed == 1) {
-                $purchaseOrder->update([
-                    'status' => 'completed',
-                ]);
             }
 
             DB::commit();
