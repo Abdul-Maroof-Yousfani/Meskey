@@ -346,6 +346,7 @@
                 </ul>
             </li>
             @endcanAccess
+            @canAccess('master')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
@@ -398,6 +399,7 @@
                             @endcanAccess
                         </ul>
                     </li>
+                    @endcanAccess
 
                     @canAccess('approval-modules')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
@@ -419,7 +421,7 @@
                         </ul>
                     </li>
                     @endcanAccess
-
+                    @canAccess('manage-arrival')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
@@ -460,7 +462,7 @@
                             @endcanAccess
                         </ul>
                     </li>
-
+                    @endcanAccess
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
