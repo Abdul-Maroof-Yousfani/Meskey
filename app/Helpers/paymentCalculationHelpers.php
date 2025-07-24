@@ -507,6 +507,7 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
     $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
 
     $otherDeductionValue = 0;
+
     if ($samplingData['sampling_request']) {
         $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticketId) {
             $query->where('ticket_id', $ticketId);
@@ -517,25 +518,12 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
         $otherDeductionValue = $otherDeduction->other_deduction_value ?? 0;
     }
 
-    // If not found in sampling request, check in purchase ticket
-    // if ($otherDeductionValue == 0) {
-    //     $otherDeductionValue = $purchaseTicket->other_deduction_value ?? 0;
-    // }
-
-    // $otherDeductionCalculated = $otherDeductionValue * $loadingInfo['net_weight'];
-
-
     return [
         'total_sampling_deductions' => $totalSamplingDeductions,
         'sampling_deduction_details' => $samplingDeductionDetails,
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionValue,
-        'aa' => $samplingData['sampling_request'],
-        'ticket' => $purchaseTicket ?? '11',
-
-
-
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
