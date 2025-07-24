@@ -522,7 +522,7 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
     if (!empty($samplingData['sampling_request'])) {
         $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticketId) {
             $query->where('ticket_id', $ticketId)
-                ->where('module_type', 'ticket');
+                ->where('module_type', 'purchase_order');
         })
             ->select('other_deduction_kg', 'other_deduction_value')
             ->latest()
