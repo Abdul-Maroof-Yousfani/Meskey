@@ -31,11 +31,12 @@
                 @endcanAccess
             @endforeach
 
+            @canAccess('dashboard')
             <li class="nav-item" data-menu="dropdown">
                 <a class="dropdown-toggle nav-link d-flex align-items-center" href="{{ url('dashboard') }}"
                     data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
             </li>
-
+            @endcanAccess
             @canAccess('arrival')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
@@ -200,12 +201,13 @@
                     </li>
 
 
+                    @canAccess('procurement-raw-material-payment-management')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Payment Management</span></a>
                         <ul class="dropdown-menu">
-                            @canAccess('arrival-location')
+                            @canAccess('p-r-m-payment-request-thadda')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.payment-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.payment-request.index') }}')"
@@ -213,6 +215,8 @@
                                     <span data-i18n="Task Board">Payment Request (Thadda)</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess('p-r-m-payment-request-pohouch')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.ticket.payment-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.ticket.payment-request.index') }}')"
@@ -220,6 +224,8 @@
                                     <span data-i18n="Task Board">Payment Request (Pohouch)</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess('p-r-m-payment-request-approvals')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.payment-request-approval.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.payment-request-approval.index') }}')"
@@ -230,16 +236,21 @@
                             @endcanAccess
                         </ul>
                     </li>
+                    @endcanAccess
+                    @canAccess('procurement-raw-material-contract-selection')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.ticket-contracts.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Contract Selection
                             </span></a>
                     </li>
+                    @endcanAccess
+                    @canAccess('procurement-raw-material-inicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Prices
                             </span></a>
                     </li>
+                    @endcanAccess
                 </ul>
             </li>
             @endcanAccess
