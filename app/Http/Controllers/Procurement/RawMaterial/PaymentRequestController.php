@@ -260,7 +260,7 @@ class PaymentRequestController extends Controller
                 'amount' => $amount,
                 'account_id' => $stockInTransitAccount->id,
                 'type' => 'debit',
-                'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseOrder->rate_per_kg}/kg."
+                'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$requestData['loading_weight']} kg at rate {$purchaseOrder->rate_per_kg}/kg."
             ];
 
             if ($transitTxn) {
