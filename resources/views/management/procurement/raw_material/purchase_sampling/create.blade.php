@@ -6,7 +6,7 @@
         value="{{ route($isResampling ? 'raw-material.get.purchase-resampling' : 'raw-material.get.purchase-sampling') }}" />
 
     <input type="hidden" value="{{ $PurchaseSamplingRequest->id }}" name="purchase_sampling_request_id" />
-
+    @dd($samplingRequest, $samplingRequest->purchaseOrder ?? '1')
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
