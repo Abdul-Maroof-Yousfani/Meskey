@@ -526,6 +526,11 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionCalculated,
+        'aa' => $samplingData['sampling_request'],
+        'ticket' => $purchaseTicket ?? '11',
+
+
+
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
