@@ -79,15 +79,15 @@ class TicketPaymentRequestRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $payment_request_amount = $this->input('payment_request_amount', 0); 
+            $payment_request_amount = $this->input('payment_request_amount', 0);
 
-            $payment_request_amount = floatval($payment_request_amount); 
+            $payment_request_amount = floatval($payment_request_amount);
 
             if ($payment_request_amount <= 0) {
                 $validator->errors()->add(
                     'payment_request_amount',
                     'Payment Request Amount must be greater than 0.'
-                ); 
+                );
             }
         });
     }

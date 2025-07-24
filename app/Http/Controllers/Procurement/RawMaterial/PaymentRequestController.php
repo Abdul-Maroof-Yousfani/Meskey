@@ -11,12 +11,15 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\PurchaseSamplingResult;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\ProductSlabType;
 use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestApproval;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PaymentRequestSamplingResult;
 use App\Models\Procurement\PurchaseFreight;
@@ -111,6 +114,7 @@ class PaymentRequestController extends Controller
         }
 
         $tickets = $query->paginate($request->per_page ?? 10);
+
         $tickets->getCollection()->transform(function ($ticket) {
             $approvedPaymentSum = 0;
             $approvedFreightSum = 0;
@@ -180,21 +184,168 @@ class PaymentRequestController extends Controller
     public function store(PaymentRequestRequest $request)
     {
         return DB::transaction(function () use ($request) {
-            // Prepare base data
             $requestData = $request->all();
             $requestData['is_loading'] = $request->loading_type === 'loading';
             $requestData['module_type'] = 'purchase_order';
-            // dd($requestData);
-            // Create main payment request data
+
+            $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
+            $ticket = PurchaseTicket::where('id', $requestData['ticket_id'])->first();
+            $purchaseOrder = ArrivalPurchaseOrder::where('id', $requestData['purchase_order_id'])->first();
+
+            $truckNo = $ticket->purchaseFreight->truck_no ?? 'N/A';
+            $biltyNo = $ticket->purchaseFreight->bilty_no ?? 'N/A';
+
             $paymentRequestData = PaymentRequestData::create($requestData);
 
-            // Create payment request records
             $this->createPaymentRequests($paymentRequestData, $request);
 
-            // Save sampling results if exists
             if (isset($request->sampling_results) || isset($request->compulsory_results)) {
                 $this->saveSamplingResults($paymentRequestData, $request);
             }
+
+
+
+
+
+
+            // ----------------------
+
+            $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 2);
+            $contractNo = $purchaseOrder->contract_no;
+
+            $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
+
+            $supplierTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'supplier-payable')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            $supplierData = [
+                'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                'account_id' => $purchaseOrder->supplier->account_id,
+                'type' => 'credit',
+                'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+            ];
+
+            if ($supplierTxn) {
+                $supplierTxn->update($supplierData);
+            } else {
+                createTransaction(
+                    $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                    $purchaseOrder->supplier->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "supplier-payable",
+                        'payment_against' => "thadda-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $supplierData['remarks']
+                    ]
+                );
+            }
+
+            $transitTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'stock-in-transit')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            $transitData = [
+                'amount' => $amount,
+                'account_id' => $stockInTransitAccount->id,
+                'type' => 'debit',
+                'remarks' => "Stock-in-transit recorded for raw material arrival under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$requestData['loading_weight']} kg at rate {$purchaseOrder->rate_per_kg}/kg."
+            ];
+
+            if ($transitTxn) {
+                $transitTxn->update($transitData);
+            } else {
+                createTransaction(
+                    $amount,
+                    $stockInTransitAccount->id,
+                    1,
+                    $contractNo,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "stock-in-transit",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $transitData['remarks']
+                    ]
+                );
+            }
+
+
+
+            $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
+            // $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
+
+            $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
+                ->where('ticket_id', $ticket->id)
+                ->count();
+
+            if (!$existingApprovals && $purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
+                $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->broker->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'payment_against' => "thadda-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to supplier.'
+                    ]
+                );
+            }
+
+            if (!$existingApprovals && $purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
+                $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
+
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->brokerTwo->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'payment_against' => "thadda-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to supplier.'
+                    ]
+                );
+            }
+
+            if (!$existingApprovals && $purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
+                $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
+
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->brokerThree->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'payment_against' => "thadda-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to supplier.'
+                    ]
+                );
+            }
+
+            // ----------------------
+
+
 
             $message = $request->freight_pay_request_amount ?
                 'Payment and freight payment requests created successfully' :

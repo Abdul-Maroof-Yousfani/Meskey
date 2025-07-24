@@ -224,7 +224,9 @@ function generateTicketNoWithDateFormat($tableName, $locationCode = 'LOC', $comp
 if (!function_exists('formatEnumValue')) {
     function formatEnumValue($value)
     {
-        return ucwords(str_replace('_', ' ', $value));
+        return ucwords(
+            str_replace('_', ' ', str_replace('-', ' ', $value))
+        );
     }
 }
 

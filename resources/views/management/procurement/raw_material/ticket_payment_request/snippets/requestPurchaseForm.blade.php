@@ -65,7 +65,8 @@
     }
 
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
-    $loadingWeighbridgeSum = $kantaCharges / 2;
+    // $loadingWeighbridgeSum = $kantaCharges / 2;
+    $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
     $paidAmount = $approvedAmount ?? 0;
@@ -296,8 +297,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Avg Rate</label>
-                    <input type="text" class="form-control" name="avg_rate"
-                        value="{{ number_format($avgRate, 2) }}" readonly>
+                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}"
+                        readonly>
                 </div>
             </div>
 
@@ -322,6 +323,7 @@
                                 </tr>
                             </thead>
                             <tbody id="sampling-results-tbody">
+                                {{-- @dd($samplingRequestResults) --}}
                                 @if (count($samplingRequestResults) != 0)
                                     @foreach ($samplingRequestResults as $slab)
                                         @php
@@ -577,7 +579,7 @@
                                     id="bag_rate_amount" value="{{ $bagsRateSum }}" readonly>
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="d-none">
                             <td><strong>Loading weighbridge</strong></td>
                             <td>N/A</td>
                             <td>N/A</td>
