@@ -291,6 +291,7 @@
                 </ul>
             </li>
             @endcanAccess
+            @canAccess('access-control')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Access
@@ -322,6 +323,7 @@
                     </li> --}}
                 </ul>
             </li>
+            @endcanAccess
             @canAccess('reports')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
