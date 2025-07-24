@@ -243,6 +243,7 @@
                 </ul>
             </li>
             @endcanAccess
+            @canAccess('procurement-store')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Store
@@ -256,11 +257,14 @@
 
                 </ul>
             </li>
+            @endcanAccess
 
+            @canAccess('finance')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Finance</span></a>
                 <ul class="dropdown-menu">
+                    @canAccess('finance-chart-of-account')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('account.index') }}"
                             onclick="loadPageContent('{{ route('account.index') }}')" data-toggle="dropdown"><i
@@ -268,6 +272,8 @@
                             <span data-i18n="Task Board">Manage Chart of Account</span>
                         </a>
                     </li>
+                    @endcanAccess
+                    @canAccess('finance-payment-voucher')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('payment-voucher.index') }}"
                             onclick="loadPageContent('{{ route('payment-voucher.index') }}')" data-toggle="dropdown"><i
@@ -275,7 +281,7 @@
                             <span data-i18n="Task Board">Payment Vouchers</span>
                         </a>
                     </li>
-
+                    @endcanAccess
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
@@ -284,6 +290,7 @@
                     </li> --}}
                 </ul>
             </li>
+            @endcanAccess
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Access
