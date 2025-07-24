@@ -10,6 +10,7 @@ use App\Models\Arrival\PurchaseSamplingResult;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
+use App\Models\Procurement\PaymentRequest;
 
 /**
  * Calculate payment details for a ticket based on sauda type
@@ -505,19 +506,23 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
     $loadingWeighbridgeSum = $loadingInfo['kanta_charges'] / 2;
     $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
 
-    // Other deduction value from sampling request or ticket
     $otherDeductionValue = 0;
     if ($samplingData['sampling_request']) {
-        $otherDeductionValue = $samplingData['sampling_request']->other_deduction_value ?? 0;
+        $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticketId) {
+            $query->where('ticket_id', $ticketId);
+        })->select('other_deduction_kg', 'other_deduction_value')
+            ->latest()
+            ->first();
+
+        $otherDeductionValue = $otherDeduction->other_deduction_value ?? 0;
     }
 
     // If not found in sampling request, check in purchase ticket
-    if ($otherDeductionValue == 0) {
-        $purchaseTicket = PurchaseTicket::find($ticketId);
-        $otherDeductionValue = $purchaseTicket->other_deduction_value ?? 0;
-    }
+    // if ($otherDeductionValue == 0) {
+    //     $otherDeductionValue = $purchaseTicket->other_deduction_value ?? 0;
+    // }
 
-    $otherDeductionCalculated = $otherDeductionValue * $loadingInfo['net_weight'];
+    // $otherDeductionCalculated = $otherDeductionValue * $loadingInfo['net_weight'];
 
 
     return [
@@ -525,7 +530,7 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
         'sampling_deduction_details' => $samplingDeductionDetails,
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
-        'other_deduction_calculated' => $otherDeductionCalculated,
+        'other_deduction_calculated' => $otherDeductionValue,
         'aa' => $samplingData['sampling_request'],
         'ticket' => $purchaseTicket ?? '11',
 
