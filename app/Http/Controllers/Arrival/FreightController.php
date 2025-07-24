@@ -75,8 +75,9 @@ class FreightController extends Controller
             $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
 
             // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
-            $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
+
+            $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
             $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
             $qcProduct = $ticket->purchaseOrder->qcProduct->name ?? $ticket->purchaseOrder->product->name ?? 'N/A';
             $loadingWeight = $ticket->arrived_net_weight;
