@@ -195,6 +195,10 @@ class PaymentRequestController extends Controller
             $truckNo = $ticket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $ticket->purchaseFreight->bilty_no ?? 'N/A';
 
+            $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
+                ->where('ticket_id', $ticket->id)
+                ->first();
+
             $paymentRequestData = PaymentRequestData::create($requestData);
 
             $this->createPaymentRequests($paymentRequestData, $request);
@@ -281,11 +285,9 @@ class PaymentRequestController extends Controller
 
             $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
             // $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
-            $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
-                ->where('ticket_id', $ticket->id)
-                ->first();
 
-            dd($loadingWeight, $purchaseOrder, $existingApprovals);
+
+            // dd($loadingWeight, $purchaseOrder, $existingApprovals);
 
             if (!$existingApprovals && $purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
