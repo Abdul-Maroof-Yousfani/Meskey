@@ -53,7 +53,7 @@
                                             </div>
 
                                             <div class="col-md-2">
-                                                <div class="form-group ">
+                                                <div class="form-group mb-0">
                                                     <label>Suppliers:</label>
                                                     <select name="supplier_id" id="supplier_id_f"
                                                         class="form-control select2">
@@ -62,7 +62,7 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-2">
-                                                <div class="form-group ">
+                                                <div class="form-group mb-0">
                                                     <label>Sauda Type:</label>
                                                     <select name="sauda_type_id" id="sauda_type"
                                                         class="form-control select2">
