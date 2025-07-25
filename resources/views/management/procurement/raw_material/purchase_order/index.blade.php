@@ -41,6 +41,17 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="row justify-content-end text">
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Search</label>
+                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                                <input type="text" class="form-control" id="search"
+                                                    placeholder="Search here" name="search"
+                                                    value="{{ request('search', '') }}">
+                                            </div>
+
                                             <div class="col-md-2">
                                                 <div class="form-group ">
                                                     <label>Suppliers:</label>
@@ -59,14 +70,7 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -98,7 +102,7 @@
 
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
