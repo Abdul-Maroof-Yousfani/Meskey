@@ -81,10 +81,10 @@
                                         <tr>
                                             <th class="col-sm-2">Contract No</th>
                                             <th class="col-sm-2">Supplier</th>
-                                            <th class="col-sm-1">Commodity</th>
+                                            <th class="col-sm-2">Commodity</th>
                                             <th class="col-sm-1">Loading date</th>
                                             <th class="col-sm-2">Amounts</th>
-                                            <th class="col-sm-2">Total Requested Amount</th>
+                                            <th class="col-sm-1">Total Requested Amount</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
