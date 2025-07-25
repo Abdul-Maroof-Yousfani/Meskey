@@ -84,7 +84,7 @@
                                             <th class="col-sm-2">Commodity</th>
                                             <th class="col-sm-1">Loading date</th>
                                             <th class="col-sm-2">Amounts</th>
-                                            <th class="col-sm-1">Total Requested Amount</th>
+                                            <th class="col-sm-1">Total Req Amount</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>

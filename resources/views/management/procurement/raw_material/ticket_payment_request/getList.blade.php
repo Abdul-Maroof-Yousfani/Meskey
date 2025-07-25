@@ -1,12 +1,12 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Contract/Ticket No</th>
-            <th class="col-sm-2">Borker/Supplier</th>
-            <th class="col-sm-1">Commodity</th>
+            <th class="col-sm-2">Contract No</th>
+            <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-2">Total Requested Amount</th>
+            <th class="col-sm-1">Total Req Amount</th>
             <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -35,7 +35,8 @@
                                 <small>
                                     <strong>Total Amount:</strong> {{ $ticket->calculated_values['total_amount'] ?? 0 }}
                                     <br>
-                                    {{-- <strong>Paid Amount:</strong> {{ $ticket->calculated_values['paid_amount'] ?? 0 }} <br> --}}
+                                    {{-- <strong>Paid Amount:</strong> {{ $ticket->calculated_values['paid_amount'] ?? 0 }} <br>
+                                    --}}
                                     <strong>Approved Payment:</strong>
                                     {{ $ticket->calculated_values['approved_payment_sum'] ?? 0 }}<br>
                                     <strong>Approved Freight:</strong>
