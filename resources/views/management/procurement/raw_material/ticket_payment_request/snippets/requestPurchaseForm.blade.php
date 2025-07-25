@@ -611,7 +611,7 @@
                             <div class="input-group mb-0" bis_skin_checked="1">
                                                     <input type="text" class="form-control" name="" value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction" readonly="">
                                                     <div class="input-group-append" bis_skin_checked="1">
-                                                        <span class="input-group-text text-sm">KG's</span>
+                                                        <span class="input-group-text text-sm">Rs/KG's</span>
                                                     </div>
                                                 </div>
                             </td>
@@ -630,7 +630,9 @@
     @endif
 
     @php
+    $totalSupplierCommission =  $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
+        $totalwithCommision = $totalAmount + $totalSupplierCommission;
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
@@ -641,7 +643,7 @@
                     <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
                         value="{{ number_format($totalAmount, 2) }}" readonly>
                     <input type="hidden" class="form-control" name="total_amount" id="total_amount"
-                        value="{{ $totalAmount }}" readonly>
+                        value="{{ $totalwithCommision }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
