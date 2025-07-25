@@ -604,6 +604,18 @@
                                     id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
                             </td>
                         </tr>
+                        <tr>
+                            <td><strong>Supplier Commision</strong></td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            <td>
+                                <input type="text" class="form-control" name="supplier_commission_display"
+                                    id="supplier_commission_display"
+                                    value="{{ number_format($purchaseOrder->supplier_commission, 2) }}" readonly>
+                                <input type="hidden" class="form-control" name="supplier_commission"
+                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission }}" readonly>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
