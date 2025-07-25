@@ -176,7 +176,7 @@ class TicketPaymentRequestController extends Controller
      */
     public function store(TicketPaymentRequestRequest $request)
     {
-        // dd($request->all());
+      dd($request->all());
         return DB::transaction(function () use ($request) {
             // Prepare base data
             $requestData = $request->all();
