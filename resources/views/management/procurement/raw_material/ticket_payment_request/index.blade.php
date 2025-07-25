@@ -24,13 +24,23 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right1">
+                                        <div class="row justify-content-ed text-right1">
                                             <div class="col-md-2">
                                                 <div class="form-group">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
                                                         value="{{ \Carbon\Carbon::now()->subMonth()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div class="row justify-content-ed text-right1">
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Search</label>
+                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                                <input type="text" class="form-control" id="search"
+                                                    placeholder="Search here" name="search"
+                                                    value="{{ request('search', '') }}">
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group">
@@ -57,14 +67,7 @@
                                                         Select Commodity</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -96,7 +99,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
 
             initializeDynamicDependentSelect2(
