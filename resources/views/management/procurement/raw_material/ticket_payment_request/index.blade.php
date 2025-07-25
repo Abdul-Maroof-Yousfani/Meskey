@@ -32,6 +32,15 @@
                                                         value="{{ \Carbon\Carbon::now()->subMonth()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
                                                 </div>
                                             </div>
+                                              <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id" id="company_location"
+                                                        class="form-control select2">
+                                                        <option value="">Location</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="row justify-content-ed text-right1">
                                             <div class="col-md-2">
@@ -42,15 +51,7 @@
                                                     placeholder="Search here" name="search"
                                                     value="{{ request('search', '') }}">
                                             </div>
-                                            <div class="col-md-2">
-                                                <div class="form-group">
-                                                    <label>Location:</label>
-                                                    <select name="company_location_id" id="company_location"
-                                                        class="form-control select2">
-                                                        <option value="">Location</option>
-                                                    </select>
-                                                </div>
-                                            </div>
+                                          
                                             <div class="col-md-2">
                                                 <div class="form-group">
                                                     <label>Accounts Of:</label>
