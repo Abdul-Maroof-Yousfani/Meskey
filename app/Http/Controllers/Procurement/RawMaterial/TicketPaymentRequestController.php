@@ -176,7 +176,7 @@ class TicketPaymentRequestController extends Controller
      */
     public function store(TicketPaymentRequestRequest $request)
     {
-     // dd($request->all());
+        // dd($request->all());
         return DB::transaction(function () use ($request) {
             // Prepare base data
             $requestData = $request->all();
@@ -206,7 +206,7 @@ class TicketPaymentRequestController extends Controller
 
             // ----------------------
 
-            $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 1);
+            $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 2);
             $contractNo = $purchaseOrder->contract_no;
 
             $amount = $paymentDetails['calculations']['net_amount'] ?? 0;

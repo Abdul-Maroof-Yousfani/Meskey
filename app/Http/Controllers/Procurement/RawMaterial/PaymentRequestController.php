@@ -275,7 +275,7 @@ class PaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "stock-in-transit",
-                        'payment_against' => "pohanch-purchase",
+                        'payment_against' => "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $transitData['remarks']
                     ]
