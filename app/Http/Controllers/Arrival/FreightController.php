@@ -200,7 +200,7 @@ class FreightController extends Controller
             }
 
             createTransaction(
-                $amount,
+                $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                 $ticket->qcProduct->account_id,
                 1,
                 $arrivalApprove->unique_no,
