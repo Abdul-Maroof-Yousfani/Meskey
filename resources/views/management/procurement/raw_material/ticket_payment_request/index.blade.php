@@ -26,14 +26,14 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-ed text-right1">
                                             <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
                                                         value="{{ \Carbon\Carbon::now()->subMonth()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
                                                 </div>
                                             </div>
                                               <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id" id="company_location"
                                                         class="form-control select2">
@@ -53,7 +53,7 @@
                                             </div>
                                           
                                             <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Accounts Of:</label>
                                                     <select name="supplier_id" id="supplier_id_f"
                                                         class="form-control select2">
