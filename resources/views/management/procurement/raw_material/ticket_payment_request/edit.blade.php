@@ -297,8 +297,11 @@
                                 <td>N/A</td>
                                 <td>N/A</td>
                                 <td>
-                                    <input type="text" class="form-control" name="loading_weighbridge_amount"
+                                    {{-- <input type="text" class="form-control" name="loading_weighbridge_amount"
                                         value="{{ $paymentRequest->loading_weighbridge_amount ?? ($purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->kanta_charges ? $purchaseOrder->purchaseFreight->kanta_charges / 2 : 0) }}"
+                                        readonly> --}}
+                                    <input type="text" class="form-control" name="loading_weighbridge_amount"
+                                        value="0"
                                         readonly>
                                 </td>
                             </tr>
