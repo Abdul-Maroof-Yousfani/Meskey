@@ -852,7 +852,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }});
+                    {{ $grossFreightAmount ?? 0 }}) + {{$totalSupplierCommission}};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
