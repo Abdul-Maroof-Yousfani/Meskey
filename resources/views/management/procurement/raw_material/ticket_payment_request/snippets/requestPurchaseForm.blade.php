@@ -151,7 +151,8 @@
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
 <input type="hidden" id="bag_rate" value="{{ $bagRate }}">
-<input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}">
+{{-- <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}"> --}}
+<input type="hidden" id="kanta_charges" value="0">
 
 <!-- Store sampling data for JS calculations -->
 <script type="text/javascript">
@@ -599,7 +600,7 @@
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
                                     value="{{ number_format($grossFreightAmount, 2) }}" readonly>
-                                <input type="hidden" class="form-control" name="loading_weighbridge_amount"
+                                <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
                                     id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
                             </td>
                         </tr>
