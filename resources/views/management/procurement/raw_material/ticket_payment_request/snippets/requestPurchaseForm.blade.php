@@ -641,7 +641,7 @@
                 <div class="form-group">
                     <label>Amount</label>
                     <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                        value="{{ number_format($totalwithCommision, 2) }}" readonly>
                     <input type="hidden" class="form-control" name="total_amount" id="total_amount"
                         value="{{ $totalwithCommision }}" readonly>
                 </div>
