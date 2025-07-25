@@ -151,7 +151,8 @@
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
 <input type="hidden" id="bag_rate" value="{{ $bagRate }}">
-<input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}">
+{{-- <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}"> --}}
+<input type="hidden" id="kanta_charges" value="0">
 
 <!-- Store sampling data for JS calculations -->
 <script type="text/javascript">
@@ -599,8 +600,27 @@
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
                                     value="{{ number_format($grossFreightAmount, 2) }}" readonly>
-                                <input type="hidden" class="form-control" name="loading_weighbridge_amount"
+                                <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
                                     id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Supplier Commision</strong></td>
+                            <td>N/A</td>
+                            <td>
+                            <div class="input-group mb-0" bis_skin_checked="1">
+                                                    <input type="text" class="form-control" name="" value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction" readonly="">
+                                                    <div class="input-group-append" bis_skin_checked="1">
+                                                        <span class="input-group-text text-sm">Rs/KG's</span>
+                                                    </div>
+                                                </div>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="supplier_commission_display"
+                                    id="supplier_commission_display"
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}" readonly>
+                                <input type="hidden" class="form-control" name="supplier_commission"
+                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission * $loadingWeight}}" readonly>
                             </td>
                         </tr>
                     </tbody>
@@ -610,7 +630,9 @@
     @endif
 
     @php
+    $totalSupplierCommission =  $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
+        $totalwithCommision = $totalAmount + $totalSupplierCommission;
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
@@ -619,9 +641,9 @@
                 <div class="form-group">
                     <label>Amount</label>
                     <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                        value="{{ number_format($totalwithCommision, 2) }}" readonly>
                     <input type="hidden" class="form-control" name="total_amount" id="total_amount"
-                        value="{{ $totalAmount }}" readonly>
+                        value="{{ $totalwithCommision }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -830,7 +852,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }});
+                    {{ $grossFreightAmount ?? 0 }}) + {{$totalSupplierCommission}};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
