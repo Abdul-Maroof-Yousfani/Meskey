@@ -24,7 +24,7 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text">
+                                        <div class="row justify-content-nd text">
                                             <div class="col-md-2">
                                                 <div class="form-group">
                                                     <label>Date:</label>
@@ -42,7 +42,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row justify-content-end text">
+                                        <div class="row justify-content-nd text">
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
