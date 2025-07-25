@@ -607,13 +607,20 @@
                         <tr>
                             <td><strong>Supplier Commision</strong></td>
                             <td>N/A</td>
-                            <td>N/A</td>
+                            <td>
+                            <div class="input-group mb-0" bis_skin_checked="1">
+                                                    <input type="text" class="form-control" name="" value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction" readonly="">
+                                                    <div class="input-group-append" bis_skin_checked="1">
+                                                        <span class="input-group-text text-sm">KG's</span>
+                                                    </div>
+                                                </div>
+                            </td>
                             <td>
                                 <input type="text" class="form-control" name="supplier_commission_display"
                                     id="supplier_commission_display"
-                                    value="{{ number_format($purchaseOrder->supplier_commission, 2) }}" readonly>
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}" readonly>
                                 <input type="hidden" class="form-control" name="supplier_commission"
-                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission }}" readonly>
+                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission * $loadingWeight}}" readonly>
                             </td>
                         </tr>
                     </tbody>
