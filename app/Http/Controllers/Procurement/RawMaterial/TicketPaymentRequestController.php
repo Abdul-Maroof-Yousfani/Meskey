@@ -176,7 +176,7 @@ class TicketPaymentRequestController extends Controller
      */
     public function store(TicketPaymentRequestRequest $request)
     {
-      dd($request->all());
+        // dd($request->all());
         return DB::transaction(function () use ($request) {
             // Prepare base data
             $requestData = $request->all();
@@ -187,11 +187,11 @@ class TicketPaymentRequestController extends Controller
             $paymentRequestData = PaymentRequestData::create($requestData);
 
             $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
-            $ticket = PurchaseTicket::where('id', $requestData['ticket_id'])->first();
+            $ticket = ArrivalTicket::where('id', $requestData['ticket_id'])->first();
             $purchaseOrder = ArrivalPurchaseOrder::where('id', $requestData['purchase_order_id'])->first();
 
-            $truckNo = $ticket->purchaseFreight->truck_no ?? 'N/A';
-            $biltyNo = $ticket->purchaseFreight->bilty_no ?? 'N/A';
+            $truckNo = $ticket->truck_no ?? 'N/A';
+            $biltyNo = $ticket->bilty_no ?? 'N/A';
 
             $this->createPaymentRequests($paymentRequestData, $request);
 
@@ -227,6 +227,7 @@ class TicketPaymentRequestController extends Controller
             if ($supplierTxn) {
                 $supplierTxn->update($supplierData);
             } else {
+                // dd($purchaseOrder->supplier);
                 createTransaction(
                     $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                     $purchaseOrder->supplier->account_id,
