@@ -238,7 +238,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "supplier-payable",
-                        'payment_against' => "thadda-purchase",
+                        'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $supplierData['remarks']
                     ]

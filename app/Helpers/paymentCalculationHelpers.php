@@ -410,12 +410,12 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
     }
 
     // Other calculations
-  //  $bagWeightInKgSum = $ratePerKg * ($loadingInfo['bag_weight'] * $loadingInfo['no_of_bags']);
-     $bagWeightInKgSum = 0;
+    //  $bagWeightInKgSum = $ratePerKg * ($loadingInfo['bag_weight'] * $loadingInfo['no_of_bags']);
+    $bagWeightInKgSum = 0;
     // $loadingWeighbridgeSum = $loadingInfo['kanta_charges'] / 2;
     $loadingWeighbridgeSum = 0;
-   // $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
-$bagsRateSum = 0;
+    // $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];
+    $bagsRateSum = 0;
     $otherDeductionValue = 0;
 
     if (!empty($samplingData['sampling_request'])) {
@@ -552,7 +552,8 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
     $grossAmount = $ratePerKg * $loadingInfo['loading_weight'];
     $totalDeductionsForFormula = $deductions['total_sampling_deductions'] +
         $deductions['bag_weight_in_kg_sum'] +
-        $deductions['loading_weighbridge_sum'];
+        $deductions['loading_weighbridge_sum'] +
+        $deductions['other_deduction_calculated'];;
 
     $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
 
