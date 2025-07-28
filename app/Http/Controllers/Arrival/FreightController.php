@@ -10,6 +10,7 @@ use App\Models\Arrival\ArrivalSlip;
 use App\Models\Arrival\Freight;
 use App\Models\Master\Account\Account;
 use App\Models\Master\ArrivalLocation;
+use App\Models\Master\GrnNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -67,6 +68,13 @@ class FreightController extends Controller
         $data['remark'] = $request->note ?? '';
 
         $arrivalApprove = ArrivalSlip::create($data);
+
+        $grnNumber = GrnNumber::create([
+            'model_id' => $arrivalApprove->id,
+            'model_type' => 'arrival-slip',
+            'location_id' => $ticket->location_id,
+            'unique_no' => generateLocationBasedCode('grn_numbers', $ticket->location?->code ?? 'KHI')
+        ]);
 
         $truckNo = $ticket->truck_no ?? 'N/A';
         $biltyNo = $ticket->bilty_no ?? 'N/A';

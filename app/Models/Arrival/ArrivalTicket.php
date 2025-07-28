@@ -13,6 +13,7 @@ use App\Models\ACL\Company;
 use App\Models\FirstWeighbridge;
 use App\Models\Master\{
     ArrivalTruckType,
+    CompanyLocation,
     Station,
     Supplier,
     Miller
@@ -136,6 +137,11 @@ class ArrivalTicket extends Model
     public function decisionBy()
     {
         return $this->belongsTo(User::class, 'decision_id');
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(CompanyLocation::class, 'location_id');
     }
 
     public function truckType()

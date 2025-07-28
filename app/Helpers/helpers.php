@@ -196,6 +196,34 @@ function generateUniqueNumberByDate($tableName, $prefix = null, $company_id = nu
         : str_pad($newUniqueNo, 6, '0', STR_PAD_LEFT);
 }
 
+function generateLocationBasedCode($tableName, $locationCode = 'KHI', $company_id = null, $uniqueColumn = 'unique_no')
+{
+    if (is_null($company_id)) {
+        // $company_id = auth()->user()->current_company_id;
+    }
+
+    $month = date('m');
+    $year = date('Y');
+
+    $searchPattern = $locationCode . '-' . $month . '-' . $year . '-%';
+
+    $latestRecord = DB::table($tableName)
+        ->when($company_id, function ($query) use ($company_id) {
+            return $query->where('company_id', $company_id);
+        })
+        ->where($uniqueColumn, 'like', $searchPattern)
+        ->orderBy($uniqueColumn, 'desc')
+        ->first();
+
+    $lastNumber = $latestRecord
+        ? intval(substr($latestRecord->{$uniqueColumn}, -5))
+        : 0;
+
+    $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+
+    return $locationCode . '-' . $month . '-' . $year . '-' . $newNumber;
+}
+
 function generateTicketNoWithDateFormat($tableName, $locationCode = 'LOC', $company_id = null, $uniqueColumn = 'unique_no')
 {
     if (is_null($company_id)) {
