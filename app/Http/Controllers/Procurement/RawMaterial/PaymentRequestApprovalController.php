@@ -199,7 +199,7 @@ class PaymentRequestApprovalController extends Controller
                 'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                 'account_id' => $purchaseOrder->supplier->account_id,
                 'type' => 'credit',
-                'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                // 'remarks' => "Accounts payable recorded against the contract ($purchaseOrder->contract_no) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
             ];
 
             if ($supplierTxn) {
