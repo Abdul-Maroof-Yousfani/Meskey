@@ -136,7 +136,7 @@ class TicketContractController extends Controller
                         'credit',
                         'no',
                         [
-                            'purpose' => "arrival-slip-supplier",
+                            'purpose' => "supplier-payable",
                             'payment_against' => "pohanch-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",

@@ -208,12 +208,13 @@ class TicketPaymentRequestController extends Controller
 
             $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 1);
             $contractNo = $purchaseOrder->contract_no;
+            $arrivalSlipNo = $ticket->arrivalSlip->unique_no;
 
             $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
 
             // 1. Supplier Payable Transaction
-            $supplierTxn = Transaction::where('voucher_no', $contractNo)
-                ->where('purpose', 'arrival-slip-supplier')
+            $supplierTxn = Transaction::where('voucher_no', $arrivalSlipNo)
+                ->where('purpose', 'supplier-payable')
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
 
@@ -236,7 +237,7 @@ class TicketPaymentRequestController extends Controller
                     'credit',
                     'no',
                     [
-                        'purpose' => "arrival-slip-supplier",
+                        'purpose' => "supplier-payable",
                         'payment_against' => "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $supplierData['remarks']
@@ -244,36 +245,36 @@ class TicketPaymentRequestController extends Controller
                 );
             }
 
-            // $transitTxn = Transaction::where('voucher_no', $contractNo)
-            //     ->where('purpose', 'stock-in-transit')
-            //     ->where('against_reference_no', "$truckNo/$biltyNo")
-            //     ->first();
+            $transitTxn = Transaction::where('voucher_no', $arrivalSlipNo)
+                ->where('purpose', 'arrival-slip')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
 
-            // $transitData = [
-            //     'amount' => $amount,
-            //     'account_id' => $stockInTransitAccount->id,
-            //     'type' => 'debit',
-            //     'remarks' => "Stock-in-transit recorded for raw material arrival under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$requestData['loading_weight']} kg at rate {$purchaseOrder->rate_per_kg}/kg."
-            // ];
+            $transitData = [
+                'amount' => $amount,
+                'account_id' => $stockInTransitAccount->id,
+                'type' => 'debit',
+                'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $ticket->arrived_net_weight . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
+            ];
 
-            // if ($transitTxn) {
-            //     $transitTxn->update($transitData);
-            // } else {
-            //     createTransaction(
-            //         $amount,
-            //         $stockInTransitAccount->id,
-            //         1,
-            //         $contractNo,
-            //         'debit',
-            //         'no',
-            //         [
-            //             'purpose' => "stock-in-transit",
-            //             'payment_against' => "pohanch-purchase",
-            //             'against_reference_no' => "$truckNo/$biltyNo",
-            //             'remarks' => $transitData['remarks']
-            //         ]
-            //     );
-            // }
+            if ($transitTxn) {
+                $transitTxn->update($transitData);
+            } else {
+                createTransaction(
+                    $amount,
+                    $stockInTransitAccount->id,
+                    1,
+                    $contractNo,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "arrival-slip",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $transitData['remarks']
+                    ]
+                );
+            }
 
 
 
