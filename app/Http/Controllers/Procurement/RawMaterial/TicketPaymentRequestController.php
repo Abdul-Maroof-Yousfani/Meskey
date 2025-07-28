@@ -213,7 +213,7 @@ class TicketPaymentRequestController extends Controller
 
             // 1. Supplier Payable Transaction
             $supplierTxn = Transaction::where('voucher_no', $contractNo)
-                ->where('purpose', 'supplier-payable')
+                ->where('purpose', 'arrival-slip-supplier')
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
 
