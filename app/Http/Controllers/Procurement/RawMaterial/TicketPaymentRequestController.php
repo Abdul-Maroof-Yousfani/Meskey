@@ -206,7 +206,7 @@ class TicketPaymentRequestController extends Controller
 
             // ----------------------
 
-            $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 2);
+            $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 1);
             $contractNo = $purchaseOrder->contract_no;
 
             $amount = $paymentDetails['calculations']['net_amount'] ?? 0;

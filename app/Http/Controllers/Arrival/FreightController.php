@@ -99,75 +99,62 @@ class FreightController extends Controller
                 );
 
 
-            if ($ticket->purchaseOrder->broker_one_id && $ticket->purchaseOrder->broker_one_commission && $loadingWeight) {
-                $amount = ($loadingWeight * $ticket->purchaseOrder->broker_one_commission);
+                if ($ticket->purchaseOrder->broker_one_id && $ticket->purchaseOrder->broker_one_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $ticket->purchaseOrder->broker_one_commission);
 
-                createTransaction(
-                    $amount,
-                    $ticket->purchaseOrder->broker->account_id,
-                    1,
-                    $ticket->purchaseOrder->contract_no,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "broker",
-                        'payment_against' => "pohanch-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
-                    ]
-                );
-            }
+                    createTransaction(
+                        $amount,
+                        $ticket->purchaseOrder->broker->account_id,
+                        1,
+                        $ticket->purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "broker",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                        ]
+                    );
+                }
 
-            if ($ticket->purchaseOrder->broker_two_id && $ticket->purchaseOrder->broker_two_commission && $loadingWeight) {
-                $amount = ($loadingWeight * $ticket->purchaseOrder->broker_two_commission);
+                if ($ticket->purchaseOrder->broker_two_id && $ticket->purchaseOrder->broker_two_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $ticket->purchaseOrder->broker_two_commission);
 
-                createTransaction(
-                    $amount,
-                    $ticket->purchaseOrder->brokerTwo->account_id,
-                    1,
-                    $ticket->purchaseOrder->contract_no,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "broker",
-                        'payment_against' => "pohanch-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
-                    ]
-                );
-            }
+                    createTransaction(
+                        $amount,
+                        $ticket->purchaseOrder->brokerTwo->account_id,
+                        1,
+                        $ticket->purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "broker",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                        ]
+                    );
+                }
 
-            if ($ticket->purchaseOrder->broker_three_id && $ticket->purchaseOrder->broker_three_commission && $loadingWeight) {
-                $amount = ($loadingWeight * $ticket->purchaseOrder->broker_three_commission);
+                if ($ticket->purchaseOrder->broker_three_id && $ticket->purchaseOrder->broker_three_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $ticket->purchaseOrder->broker_three_commission);
 
-                createTransaction(
-                    $amount,
-                    $ticket->purchaseOrder->brokerThree->account_id,
-                    1,
-                    $ticket->purchaseOrder->contract_no,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "broker",
-                        'payment_against' => "pohanch-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
-                    ]
-                );
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-
+                    createTransaction(
+                        $amount,
+                        $ticket->purchaseOrder->brokerThree->account_id,
+                        1,
+                        $ticket->purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "broker",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                        ]
+                    );
+                }
             } else {
                 // createTransaction(
                 //     $amount,
@@ -200,7 +187,7 @@ class FreightController extends Controller
             }
 
             createTransaction(
-                $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                $paymentDetails['calculations']['net_amount'] ?? 0,
                 $ticket->qcProduct->account_id,
                 1,
                 $arrivalApprove->unique_no,
@@ -210,7 +197,7 @@ class FreightController extends Controller
                     'purpose' => "arrival-slip",
                     'payment_against' => "pohanch-purchase",
                     'against_reference_no' => "$truckNo/$biltyNo",
-                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
                 ]
             );
         }
