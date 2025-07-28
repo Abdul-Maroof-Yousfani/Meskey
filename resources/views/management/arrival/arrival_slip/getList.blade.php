@@ -14,7 +14,10 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->unique_no ?? 'N/A' }} <br>
+                            Ticket: {{ $row->arrivalTicket->unique_no }} <br>
+                            @if ($row->grn_unique_no)
+                                GRN: {{ $row->grn_unique_no }}
+                            @endif
                         </p>
                     </td>
                     <td>

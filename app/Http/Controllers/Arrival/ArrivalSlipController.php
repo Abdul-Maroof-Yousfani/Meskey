@@ -31,15 +31,20 @@ class ArrivalSlipController extends Controller
      */
     public function getList(Request $request)
     {
-        $ArrivalSlip = ArrivalSlip::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
-            ->where('company_id', $request->company_id)
-
-            ->latest()
+        $ArrivalSlip = ArrivalSlip::select('arrival_slips.*', 'grn_numbers.unique_no as grn_unique_no')
+            ->leftJoin('grn_numbers', function ($join) {
+                $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
+                    ->where('grn_numbers.model_type', 'arrival-slip');
+            })
+            ->with(['arrivalTicket'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('arrival_slips.unique_no', 'like', $searchTerm);
+                });
+            })
+            ->where('arrival_slips.company_id', $request->company_id)
+            ->latest('arrival_slips.created_at')
             ->paginate(request('per_page', 25));
 
         return view('management.arrival.arrival_slip.getList', compact('ArrivalSlip'));

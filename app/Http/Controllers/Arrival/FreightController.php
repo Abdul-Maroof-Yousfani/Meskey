@@ -73,6 +73,7 @@ class FreightController extends Controller
             'model_id' => $arrivalApprove->id,
             'model_type' => 'arrival-slip',
             'location_id' => $ticket->location_id,
+            'product_id' => $ticket->qc_product ?? $ticket->product_id ?? null,
             'unique_no' => generateLocationBasedCode('grn_numbers', $ticket->location?->code ?? 'KHI')
         ]);
 

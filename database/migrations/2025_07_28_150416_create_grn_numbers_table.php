@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('location_id')->nullable();
             $table->unsignedBigInteger('model_id');
             $table->string('model_type');
+            $table->unsignedBigInteger('product_id')->nullable();
             $table->timestamps();
         });
     }
