@@ -23,6 +23,11 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('check.company:arrival-ticket', ['only' => ['index']]);
+    }
+
     /**
      * Display a listing of the resource.
      */
