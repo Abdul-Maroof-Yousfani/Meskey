@@ -478,7 +478,7 @@
                         </ul>
                     </li>
                     @endcanAccess
-                     @canAccess('procurement-raw-material-supplier')
+                     @canAccess('raw-material-supplier')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
@@ -487,7 +487,7 @@
                         </a>
                     </li>
                     @endcanAccess
-                     @canAccess('procurement-raw-material-broker')
+                     @canAccess('raw-material-broker')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('broker.index') }}" onclick="loadPageContent('{{ route('broker.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
