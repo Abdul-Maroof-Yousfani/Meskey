@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\Validator;
 
 class SecondWeighbridgeController extends Controller
 {
+
+
+        
+    function __construct()
+    {
+        $this->middleware('check.company:arrival-second-weighbridge', ['only' => ['index']]);
+        $this->middleware('check.company:arrival-second-weighbridge', ['only' => ['edit']]);
+    }
     /**
      * Display a listing of the resource.
      */
