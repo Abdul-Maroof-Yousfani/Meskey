@@ -23,8 +23,9 @@ class UserUpdateRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $userId,
-            'password' => 'nullable|same:confirm-password',
+            // 'username' => 'required|unique:users,username',
+            'company_location_id' => 'required_if:user_type,user|nullable|exists:company_locations,id',
+            'password' => 'nullable|confirmed',
             'role' => 'required|array',
             'role.*' => 'exists:roles,id',
             'company' => 'required|array',
@@ -39,8 +40,8 @@ class UserUpdateRequest extends FormRequest
     {
         return [
             'name.required' => 'The name field is required.',
-            'email.required' => 'The email field is required.',
-            'email.unique' => 'This email is already in use.',
+            // 'email.required' => 'The email field is required.',
+            // 'email.unique' => 'This email is already in use.',
             'password.same' => 'The password and confirmation password must match.',
             'role.required' => 'At least one role is required.',
             'role.*.exists' => 'One or more selected roles are invalid.',

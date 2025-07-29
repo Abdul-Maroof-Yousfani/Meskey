@@ -7,6 +7,8 @@ use Spatie\Permission\Models\{Role};
 use Illuminate\Http\{JsonResponse, Request};
 use App\Http\Requests\User\{UserStoreRequest, UserUpdateRequest};
 use App\Http\Controllers\Controller;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\CompanyLocation;
 use Illuminate\Support\Facades\{Validator, Hash};
 use Illuminate\Support\Arr;
 use PhpOffice\PhpSpreadsheet\{Spreadsheet, Writer\Xlsx};
@@ -45,9 +47,9 @@ class UserController extends Controller
     public function create(): View
     {
         $roles = Role::all();
-        return view('management.acl.users.create', compact('roles'));
+        $locations = CompanyLocation::all();
+        return view('management.acl.users.create', compact('roles', 'locations'));
     }
-
     /**
      * Store a newly created resource in storage.
      *
@@ -56,6 +58,10 @@ class UserController extends Controller
      */
     public function store(UserStoreRequest $request): JsonResponse
     {
+        $request->validated();
+
+        $input = $request->all();
+
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
 
@@ -74,6 +80,31 @@ class UserController extends Controller
         $user->assignRole($rolesname);
 
         return response()->json(['success' => 'Successfully Saved.', 'data' => $user]);
+    }
+
+    public function getArrivalLocations($companyLocationId)
+    {
+        $locations = ArrivalLocation::where('company_location_id', $companyLocationId)->get();
+        return response()->json($locations);
+    }
+
+    public function checkUsernameAvailability(Request $request)
+    {
+        $username = $request->input('username');
+        $userId = $request->input('user_id');
+
+        $query = User::where('username', $username);
+
+        if ($userId) {
+            $query->where('id', '!=', $userId);
+        }
+
+        $exists = $query->exists();
+
+        return response()->json([
+            'available' => !$exists,
+            'username' => $username
+        ]);
     }
 
     /**
@@ -96,11 +127,12 @@ class UserController extends Controller
      */
     public function edit($id): View
     {
-        $user = User::find($id);
+        $user = User::with(['companies', 'roles', 'companyLocation.arrivalLocations'])->findOrFail($id);
         $roles = Role::all();
+        $locations = CompanyLocation::all();
         $userRole = $user->roles->pluck('id', 'name')->all();
 
-        return view('management.acl.users.edit', compact('user', 'roles', 'userRole'));
+        return view('management.acl.users.edit', compact('user', 'roles', 'userRole', 'locations'));
     }
 
     /**
@@ -115,6 +147,7 @@ class UserController extends Controller
         try {
             $input = $request->all();
 
+            // Handle password update
             if (!empty($input['password'])) {
                 $input['password'] = Hash::make($input['password']);
             } else {
@@ -122,6 +155,22 @@ class UserController extends Controller
             }
 
             $user = User::findOrFail($id);
+
+            // Check if username is being changed
+            if ($user->username !== $input['username']) {
+                // Verify new username is available
+                $usernameExists = User::where('username', $input['username'])
+                    ->where('id', '!=', $id)
+                    ->exists();
+
+                if ($usernameExists) {
+                    return response()->json([
+                        'error' => 'Username is already taken',
+                        'errors' => ['username' => ['This username is already in use']]
+                    ], 422);
+                }
+            }
+            // Update user attributes including username
             $user->update($input);
 
             // Update Company and Role relationships
@@ -134,25 +183,29 @@ class UserController extends Controller
             }
             $user->companies()->sync($companyRoles);
 
+            // Sync roles
             DB::table('model_has_roles')->where('model_id', $id)->delete();
             $rolesname = Role::whereIn('id', $roles)->pluck('name')->toArray();
-
             $user->assignRole($rolesname);
 
-            return response()->json(['success' => 'Successfully Saved.', 'data' => $user]);
+            return response()->json([
+                'success' => 'Successfully Saved.',
+                'data' => $user,
+                'username' => $user->username // Return updated username
+            ]);
         } catch (\Exception $e) {
-            // Log the exception for debugging
             \Log::error('User update failed: ' . $e->getMessage(), [
                 'exception' => $e,
                 'user_id' => $id,
                 'input' => $request->all(),
             ]);
 
-            // Return a JSON response with the error
-            return response()->json(['error' => 'Failed to update user. Please try again.'], 500);
+            return response()->json([
+                'error' => 'Failed to update user. Please try again.',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.

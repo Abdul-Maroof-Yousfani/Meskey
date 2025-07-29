@@ -26,6 +26,7 @@ class ArrivalTicketRequest extends FormRequest
     {
         return [
             'unique_no' => 'nullable|string|max:255|unique:arrival_tickets,unique_no,NULL,id,company_id,' . $this->company_id,
+            'company_location_id' => 'required',
             'company_id' => 'required|exists:companies,id',
             'product_id' => 'required|exists:products,id',
             'miller_name' => 'required|string|max:255',
@@ -96,6 +97,7 @@ class ArrivalTicketRequest extends FormRequest
     {
         $this->merge([
             'truck_no' => strtoupper($this->truck_no),
+            // 'company_location_id' => $this->company_location_id ?? auth()->user()->company_location_id
         ]);
     }
 

@@ -14,12 +14,12 @@ class ArrivalTicketObserver
      */
     public function creating(ArrivalTicket $arrivalTicket)
     {
-        $authUser = auth()->user();
-        $companyLocation = $authUser->companyLocation ?? null;
-        $code = $companyLocation->code ?? 'KHI';
+        // $authUser = auth()->user();
+        // $companyLocation = $authUser->companyLocation ?? null;
+        // $code = $companyLocation->code ?? 'KHI';
 
-        $arrivalTicket->location_id = $companyLocation->id;
-        $arrivalTicket->unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
+        // $arrivalTicket->location_id = $companyLocation->id;
+        // $arrivalTicket->unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
     }
     /**
      * Handle the ArrivalTicket "created" event.

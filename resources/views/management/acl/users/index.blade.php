@@ -8,12 +8,12 @@
 
         <section id="extended">
             <div class="row w-100 mx-auto">
-            
+
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title"> Users</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                   
+
                     @canAccess('user-create')
                     <button onclick="openModal(this,'{{ route('users.create') }}','Create User')" type="button"
                         class="btn btn-primary position-relative ">
@@ -49,12 +49,13 @@
                                     <thead>
                                         <tr>
                                             <th class="col-sm-1">Image</th>
-                                            <th class="col-sm-3">Name/Email</th>
-                                            <th class="col-sm-6">Companies Assign</th>
+                                            <th class="col-sm-2">Name</th>
+                                            <th class="col-sm-2">Username</th>
+                                            <th class="col-sm-3">Role</th>
+                                            <th class="col-sm-3">Companies Assign</th>
                                             <th class="col-sm-2">Action</th>
                                         </tr>
                                     </thead>
-
                                 </table>
                             </div>
                         </div>

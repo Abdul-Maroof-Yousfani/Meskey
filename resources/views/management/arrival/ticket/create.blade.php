@@ -3,22 +3,52 @@
      <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
      <div class="row form-mar">
 
-         <?php
+         {{-- <?php
          $authUser = auth()->user();
          $companyLocation = $authUser->companyLocation ?? null;
          $code = $companyLocation->code ?? 'KHI';
          
          $unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
+         ?> --}}
+
+         <?php
+         $authUser = auth()->user();
+         $isRegularUser = $authUser->user_type === 'user';
+         $userLocation = $authUser->companyLocation ?? null;
+         
+         $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', $userLocation->code) : '';
          ?>
 
-         <div class="col-xs-6 col-sm-6 col-md-6">
+         @if ($isRegularUser)
+             <div class="col-xs-12 col-sm-12 col-md-12">
+                 <div class="form-group">
+                     <label>Location:</label>
+                     <input type="text" class="form-control" value="{{ $userLocation->name ?? 'N/A' }}" disabled>
+                     <input type="hidden" name="company_location_id" value="{{ $userLocation->id ?? null }}">
+                 </div>
+             </div>
+         @else
+             <div class="col-xs-12 col-sm-12 col-md-12">
+                 <div class="form-group">
+                     <label>Location:</label>
+                     <select name="company_location_id" id="company_location_id" class="form-control select2">
+                         <option value="">Select Location</option>
+                         @foreach ($companyLocations as $location)
+                             <option value="{{ $location->id }}">{{ $location->name }}</option>
+                         @endforeach
+                     </select>
+                 </div>
+             </div>
+         @endif
+
+         <div class="col-xs-12 col-sm-12 col-md-12">
              <fieldset>
                  <div class="input-group">
                      <div class="input-group-prepend">
                          <button class="btn btn-primary" type="button">Ticket No#</button>
                      </div>
-                     <input type="text" disabled class="form-control" value="{{ $unique_no }}"
-                         placeholder="Button on left">
+                     <input type="text" disabled class="form-control" name="unique_no" value="{{ $unique_no }}"
+                         placeholder="Select Location">
                  </div>
              </fieldset>
          </div>
@@ -365,7 +395,7 @@
          //  initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
-         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id_display"]')
+         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id_display"], #company_location_id')
              .select2();
 
          function calculateNetWeight() {
@@ -501,5 +531,16 @@
                  $('#broker_name_submit').val($(this).val());
              }
          });
+
+         @if (auth()->user()->user_type === 'super-admin')
+             $('#company_location_id').on('change', function() {
+                 const locationId = $(this).val();
+                 if (locationId) {
+                     $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
+                         $('input[name="unique_no"]').val(data.ticket_no);
+                     });
+                 }
+             });
+         @endif
      });
  </script>

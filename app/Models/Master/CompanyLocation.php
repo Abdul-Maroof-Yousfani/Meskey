@@ -56,6 +56,11 @@ class CompanyLocation extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function arrivalLocations()
+    {
+        return $this->hasMany(ArrivalLocation::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

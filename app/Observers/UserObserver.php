@@ -12,10 +12,10 @@ class UserObserver
      */
     public function creating(User $user)
     {
-        if (empty($user->username)) {
-            $emailPrefix = Str::before($user->email, '@');
-            $user->username = Str::slug($emailPrefix) . '-' . Str::random(5);
-        }
+        // if (empty($user->username)) {
+        //     $emailPrefix = Str::before($user->email, '@');
+        //     $user->username = Str::slug($emailPrefix) . '-' . Str::random(5);
+        // }
 
         if (request()->hasFile('profile_image')) {
             $user->profile_image = 'storage/' . $this->storeProfileImage(request()->file('profile_image'), $user);
@@ -35,10 +35,10 @@ class UserObserver
     }
     public function saving(User $user)
     {
-        if ($user->isDirty('email')) {
-            $emailPrefix = Str::before($user->email, '@');
-            $user->username = Str::slug($emailPrefix) . '-' . Str::random(5);
-        }
+        // if ($user->isDirty('email')) {
+        //     $emailPrefix = Str::before($user->email, '@');
+        //     $user->username = Str::slug($emailPrefix) . '-' . Str::random(5);
+        // }
 
         if (request()->hasFile('profile_image')) {
             $user->profile_image = 'storage/' . $this->storeProfileImage(request()->file('profile_image'), $user);

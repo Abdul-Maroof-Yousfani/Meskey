@@ -37,8 +37,12 @@ class LoginController extends Controller
      */
     public function __construct()
     {
-
         $this->middleware('guest')->except('logout');
+    }
+
+    public function username()
+    {
+        return 'username';
     }
 
     protected function authenticated(Request $request, $user)
@@ -53,7 +57,7 @@ class LoginController extends Controller
             if ($user->security == 1) {
                 $user->sendTwoFactorAuthenticationCode();
                 return redirect('/verify');
-            } elseif ($user->security == 2 ) {
+            } elseif ($user->security == 2) {
                 return redirect('/setup-google-authenticator');
             }
         }
@@ -66,5 +70,4 @@ class LoginController extends Controller
 
         return redirect()->intended($this->redirectPath());
     }
-
 }

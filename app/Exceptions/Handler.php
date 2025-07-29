@@ -46,14 +46,17 @@ class Handler extends ExceptionHandler
         });
     }
 
-    
+
 
     /**
      * Handle exceptions and customize responses.
      */
     public function render($request, Throwable $exception)
     {
-        // Validation Error
+        if ($request->has('skip-error-format')) {
+            return parent::render($request, $exception);
+        }
+
         if ($exception instanceof \Illuminate\Validation\ValidationException) {
             return response()->json([
                 'message' => 'Validation failed.',
@@ -61,30 +64,24 @@ class Handler extends ExceptionHandler
             ], 422);
         }
 
-        // Authorization Error
         if ($exception instanceof \Illuminate\Auth\Access\AuthorizationException) {
             return response()->json([
                 'message' => 'You do not have permission to perform this action.',
             ], 403);
         }
 
-        // Model Not Found Error
         if ($exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
             return response()->json([
                 'message' => 'The requested resource was not found.',
             ], 404);
         }
 
-        // Default behavior (for general errors)
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => $exception->getMessage() ?: 'An error occurred.',
             ], $this->isHttpException($exception) ? $exception->getStatusCode() : 500);
         }
 
-        // Fallback to Laravel's default handling
         return parent::render($request, $exception);
     }
-
-
 }

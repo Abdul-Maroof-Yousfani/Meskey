@@ -15,20 +15,41 @@
                     </div>
                 </div>
             </div>
-            <p class="text-center mt-2">{{ '@' . auth()->user()->username }}</p>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                {!! Form::text('name', null, ['placeholder' => 'Name', 'class' => 'form-control']) !!}
+                {!! Form::text('name', null, [
+                    'placeholder' => 'Name',
+                    'class' => 'form-control',
+                    'id' => 'name',
+                ]) !!}
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Email:</label>
-                {!! Form::text('email', null, ['placeholder' => 'Email', 'class' => 'form-control']) !!}
+                <label>Username:</label>
+                {!! Form::text('username', null, [
+                    'placeholder' => 'Username',
+                    'class' => 'form-control',
+                    'id' => 'username',
+                ]) !!}
+                <small id="username-help" class="form-text text-muted">Will be generated automatically from name</small>
             </div>
         </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Email:</label>
+                {!! Form::text('email', null, [
+                    'placeholder' => 'Email',
+                    'class' => 'form-control',
+                    'id' => 'email',
+                ]) !!}
+            </div>
+        </div>
+
+        <!-- Password Fields (existing) -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Password:</label>
@@ -38,19 +59,50 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Confirm Password:</label>
-                {!! Form::password('confirm-password', ['placeholder' => 'Confirm Password', 'class' => 'form-control']) !!}
+                {!! Form::password('password_confirmation', ['placeholder' => 'Confirm Password', 'class' => 'form-control']) !!}
             </div>
         </div>
-        {{--        <div class="col-xs-12 col-sm-12 col-md-12"> --}}
-        {{--            <div class="form-group"> --}}
-        {{--                <label>Role:</label> --}}
-        {{--                {!! Form::select('roles[]', $roles,[], array('class' => 'form-control','multiple')) !!} --}}
-        {{--            </div> --}}
-        {{--        </div> --}}
 
+        <!-- New User Type Field -->
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>User Type:</label>
+                <select name="user_type" id="user_type" class="form-control">
+                    <option value="user">User</option>
+                    <option value="super-admin">Super Admin</option>
+                </select>
+            </div>
+        </div>
 
+        <!-- Location Field -->
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Location:</label>
+                <select name="company_location_id" id="company_location" class="form-control">
+                    <option value="">Select Location</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
 
-
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Arrival Location:</label>
+                <select name="arrival_location_id" id="arrival_location" class="form-control">
+                    {{-- <option value="">Select Arrival Location</option> --}}
+                    @if (isset($user) && $user->company_location_id)
+                        @foreach ($user->companyLocation->arrivalLocations as $location)
+                            <option value="{{ $location->id }}"
+                                {{ $user->arrival_location_id == $location->id ? 'selected' : '' }}>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+        </div>
 
     </div>
 
@@ -105,32 +157,89 @@
     {!! Form::close() !!}
 
     <script>
-        // Function to add more cards
-        // Function to toggle visibility of the Remove button
-        function toggleRemoveButton() {
-            if ($('#card-container .clonecard').length === 1) {
-                $('#card-container .clonecard .remove-card').hide(); // Hide Remove button
-            } else {
-                $('#card-container .clonecard .remove-card').show(); // Show Remove button
+        $(document).ready(function() {
+            $('#company_location').on('change', function() {
+                const companyLocationId = $(this).val();
+                const arrivalLocationSelect = $('#arrival_location');
+
+                arrivalLocationSelect.empty().append('<option value="">Select Arrival Location</option>');
+
+                if (companyLocationId) {
+                    $.get(`/acl/get-arrival-locations/${companyLocationId}`, function(data) {
+                        data.forEach(location => {
+                            arrivalLocationSelect.append(
+                                `<option value="${location.id}">${location.name}</option>`
+                            );
+                        });
+                    });
+                }
+            });
+
+            $('#name').on('keyup', function() {
+                // if (!$('#username').val()) {
+                const name = $(this).val().trim();
+                const username = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9-]/g, '');
+                $('#username').val(username);
+                checkUsernameAvailability(username);
+                // }
+            });
+
+            $('#username').on('keyup', function() {
+                checkUsernameAvailability($(this).val());
+            });
+
+            function checkUsernameAvailability(username) {
+                // if (username) {
+                $.get('/acl/check-username', {
+                    username: username
+                }, function(data) {
+                    if (data.available) {
+                        $('#username').removeClass('is-invalid').addClass('is-valid');
+                        $('#username-help').text('Username is available').removeClass('text-danger')
+                            .addClass('text-success');
+                    } else {
+                        $('#username').removeClass('is-valid').addClass('is-invalid');
+                        $('#username-help').text('Username is not available').removeClass(
+                            'text-success').addClass('text-danger');
+                    }
+                });
+                // }
             }
-        }
 
-        // Initialize Remove button visibility
-        toggleRemoveButton();
+            // Toggle location field based on user type
+            $('#user_type').on('change', function() {
+                if ($(this).val() === 'super-admin') {
+                    $('#company_location').val('').prop('disabled', true);
+                } else {
+                    $('#company_location').prop('disabled', false);
+                }
+            }).trigger('change');
 
-        // Add More button click event
-        $('body').on('click', '.add-more', function() {
-            var newCard = $('#card-container .clonecard:first').clone(); // Clone the first card
-            newCard.find('select').val(''); // Clear select values
-            $('#card-container').append(newCard); // Append the new card
-            toggleRemoveButton(); // Toggle Remove button visibility
-        });
+            function toggleRemoveButton() {
+                if ($('#card-container .clonecard').length === 1) {
+                    $('#card-container .clonecard .remove-card').hide(); // Hide Remove button
+                } else {
+                    $('#card-container .clonecard .remove-card').show(); // Show Remove button
+                }
+            }
 
-        // Remove button click event
-        $(document).on('click', '.remove-card', function() {
-            if ($('#card-container .clonecard').length > 1) {
-                $(this).closest('.clonecard').remove(); // Remove the specific card
+            // Initialize Remove button visibility
+            toggleRemoveButton();
+
+            // Add More button click event
+            $('body').on('click', '.add-more', function() {
+                var newCard = $('#card-container .clonecard:first').clone(); // Clone the first card
+                newCard.find('select').val(''); // Clear select values
+                $('#card-container').append(newCard); // Append the new card
                 toggleRemoveButton(); // Toggle Remove button visibility
-            }
+            });
+
+            // Remove button click event
+            $(document).on('click', '.remove-card', function() {
+                if ($('#card-container .clonecard').length > 1) {
+                    $(this).closest('.clonecard').remove(); // Remove the specific card
+                    toggleRemoveButton(); // Toggle Remove button visibility
+                }
+            });
         });
     </script>
