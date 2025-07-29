@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\Validator;
 
 class ArrivalSlipController extends Controller
 {
+    
+    function __construct()
+    {
+        $this->middleware('check.company:arrival-slip', ['only' => ['index']]);
+    }
     /**
      * Display a listing of the resource.
      */
