@@ -79,6 +79,8 @@
                                                             <th style="width: 7%;">Truck Ordered</th>
                                                             <th style="width: 7%;">Trucks Arrived</th>
                                                             <th style="width: 7%;">Remaining Truck</th>
+                                                            <th style="width: 9%;">Remarks</th>
+                                                            <th style="width: 9%;">Is Replacement</th>
                                                             <th style="width: 9%;">Status</th>
                                                             {{-- <th style="width: 5%;">Action</th> --}}
                                                         </tr>
@@ -775,6 +777,10 @@
                             '<span class="badge badge-success">Completed</span>' :
                             '<span class="badge badge-warning">Pending</span>';
 
+                        const replacementBadge = contract.is_replacement === 'Yes' ?
+                            '<span class="badge badge-success">Yes</span>' :
+                            '<span class="badge badge-warning">No</span>';
+
                         const markCompletedBtn = contract.status === 'completed' ?
                             '' :
                             `<button class="btn btn-sm btn-info mark-completed" data-id="${contract.id}">
@@ -807,6 +813,8 @@
                                 <!-- <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td> -->
                                 <td>${contract.closed_arrivals || 0}</td> 
                                 <td>${contract.remaining_trucks || 0}</td>
+                                <td>${contract.remarks}</td> 
+                                <td>${replacementBadge}</td> 
                                 <td>${statusBadge}</td> 
                             </tr>
                         `;

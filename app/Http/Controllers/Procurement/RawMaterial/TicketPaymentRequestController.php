@@ -73,6 +73,7 @@ class TicketPaymentRequestController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            ->where('first_qc_status', '!=', 'rejected')
             ->whereHas('purchaseOrder')->where('sauda_type_id', 1)->orderByDesc(function ($query) {
                 $query->select('created_at')
                     ->from('arrival_freights')
