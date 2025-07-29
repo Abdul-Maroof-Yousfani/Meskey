@@ -36,7 +36,12 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}</h4>
+                        <h4 class="card-title">
+                            Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}
+                            @if ($arrivalTicket->first_qc_status == 'rejected')
+                                <span class="badge badge-danger ml-2">Rejected</span>
+                            @endif
+                        </h4>
                     </div>
                     <div class="card-body">
                         <form action="{{ route('raw-material.ticket-contracts.store') }}" method="POST" id="ajaxSubmit">
