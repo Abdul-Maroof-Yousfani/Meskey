@@ -10,6 +10,7 @@ use App\Models\Master\ArrivalLocation;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\ArrivalLocationRequest;
+use App\Models\Master\CompanyLocation;
 use App\Models\User;
 
 class ArrivalLocationController extends Controller
@@ -46,7 +47,8 @@ class ArrivalLocationController extends Controller
      */
     public function create()
     {
-        return view('management.master.arrival_location.create');
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        return view('management.master.arrival_location.create', compact('companyLocations'));
     }
 
     /**
@@ -65,8 +67,9 @@ class ArrivalLocationController extends Controller
      */
     public function edit($id)
     {
-        $arrival_location = ArrivalLocation::findOrFail($id);
-        return view('management.master.arrival_location.edit', compact('arrival_location'));
+        $arrivalLocation = ArrivalLocation::findOrFail($id);
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        return view('management.master.arrival_location.edit', compact('arrivalLocation', 'companyLocations'));
     }
 
     /**
@@ -75,6 +78,7 @@ class ArrivalLocationController extends Controller
     public function update(ArrivalLocationRequest $request, ArrivalLocation $arrival_location)
     {
         $data = $request->validated();
+        $data = $request->all();
         $arrival_location->update($data);
         return response()->json(['success' => 'Arrival Location updated successfully.', 'data' => $arrival_location], 200);
     }

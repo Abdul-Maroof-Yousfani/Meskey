@@ -9,9 +9,10 @@ class ArrivalLocation extends Model
 {
     use SoftDeletes;
 
-    
+
     protected $fillable = [
         'company_id',
+        'company_location_id',
         'name',
         'description',
         'status',
@@ -21,5 +22,10 @@ class ArrivalLocation extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function companyLocation()
+    {
+        return $this->belongsTo(CompanyLocation::class);
     }
 }

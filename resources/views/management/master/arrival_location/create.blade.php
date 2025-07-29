@@ -4,8 +4,20 @@
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
+                <label>Company Location:</label>
+                <select name="company_location_id" class="form-control select2" required>
+                    <option value="">Select Location</option>
+                    @foreach ($companyLocations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Name" class="form-control"  />
+                <input type="text" name="name" placeholder="Name" class="form-control" required />
             </div>
         </div>
 
@@ -16,11 +28,12 @@
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
+
         <!-- Status -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Status:</label>
-                <select class="form-control" name="status" >
+                <select class="form-control" name="status" required>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
