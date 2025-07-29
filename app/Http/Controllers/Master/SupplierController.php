@@ -19,7 +19,7 @@ class SupplierController extends Controller
     
     function __construct()
     {
-        $this->middleware('check.company:procurement-raw-material-supplier', ['only' => ['index','edit','getList']]);
+        $this->middleware('check.company:raw-material-supplier', ['only' => ['index','edit','getList']]);
     }
     /**
      * Display a listing of the resource.
