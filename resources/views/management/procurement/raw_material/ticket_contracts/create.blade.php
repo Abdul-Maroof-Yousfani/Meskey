@@ -253,224 +253,228 @@
                                                 </div>
                                             </div>
 
-                                            <div class="row mt-3">
-                                                <div class="col-md-12">
-                                                    <h5 class="section-title">Weight Information</h5>
-                                                    <hr>
-                                                </div>
+                                            @if ($arrivalTicket->first_qc_status != 'rejected')
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <h5 class="section-title">Weight Information</h5>
+                                                        <hr>
+                                                    </div>
 
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>First Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}"
-                                                            readonly>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>First Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Second Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Net Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->net_weight ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Arrival Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>No. of Bags</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->total_bags }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Avg. Weight per Bag</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Packing</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->bagType->name ?? 'N/A' }} ⸺ {{ $arrivalTicket->approvals->bagPacking->name ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Gala No</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->gala_name ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Second Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}"
-                                                            readonly>
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <h5 class="section-title">Freight Information</h5>
+                                                        <hr>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Filling Bags</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }} × 10 = {{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Freight (Rs.)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Freight per Ton</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Arrived Kanta Charges</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Kanta Loading Charges</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Other/Labour Charges</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Other/Labour Charges (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Other Deduction</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Other Deduction (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Total Freight Payable</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Total Freight Payable (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Unpaid Labour Charge</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Unpaid Labour Charge (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Final Figure</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Final Figure (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}"
+                                                                readonly>
+                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Net Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Arrival Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>No. of Bags</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->total_bags }}" readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Avg. Weight per Bag</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Packing</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->bagType->name ?? 'N/A' }} ⸺ {{ $arrivalTicket->approvals->bagPacking->name ?? 'N/A' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Gala No</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->gala_name ?? 'N/A' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row mt-3">
-                                                <div class="col-md-12">
-                                                    <h5 class="section-title">Freight Information</h5>
-                                                    <hr>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Filling Bags</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }} × 10 = {{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Freight (Rs.)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Freight per Ton</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Arrived Kanta Charges</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Kanta Loading Charges</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Other/Labour Charges</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Other/Labour Charges (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Other Deduction</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Other Deduction (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Total Freight Payable</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Total Freight Payable (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Unpaid Labour Charge</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Unpaid Labour Charge (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Final Figure</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Final Figure (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            @endif
 
                                             @if ($isCompulsury || $isSlabs || $showLumpSum)
                                                 <div class="row mt-3">
@@ -515,7 +519,8 @@
                                                                                     }
                                                                                 @endphp
                                                                                 <tr>
-                                                                                    <td>{{ $slab->slabType->name }}</td>
+                                                                                    <td>{{ $slab->slabType->name }}
+                                                                                    </td>
                                                                                     <td class="text-center">
                                                                                         {{ $slab->applied_deduction }}
                                                                                         <span
@@ -541,7 +546,8 @@
                                                                                         }
                                                                                     @endphp
                                                                                     <tr>
-                                                                                        <td>{{ $slab->qcParam->name }}</td>
+                                                                                        <td>{{ $slab->qcParam->name }}
+                                                                                        </td>
                                                                                         <td class="text-center">
                                                                                             {{ $slab->applied_deduction }}
                                                                                             <span
