@@ -126,11 +126,11 @@ class TicketController extends Controller
         $authUser = auth()->user();
         $isSuperAdmin = $authUser->user_type === 'super-admin';
 
-        // if (!$isSuperAdmin) {
-        $request->merge([
-            'location_id' => $authUser->company_location_id
-        ]);
-        // }
+        if (!$isSuperAdmin) {
+            $requestData['location_id'] = $authUser->company_location_id;
+        } else {
+            $requestData['location_id'] = $request->company_location_id;
+        }
 
         $locationCode = CompanyLocation::find($request->company_location_id)->code ?? 'KHI';
         $uniqueNo = generateTicketNoWithDateFormat('arrival_tickets', $locationCode);

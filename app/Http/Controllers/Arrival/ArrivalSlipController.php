@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Validator;
 
 class ArrivalSlipController extends Controller
 {
-    
+
     function __construct()
     {
         $this->middleware('check.company:arrival-slip', ['only' => ['index']]);
@@ -36,6 +36,9 @@ class ArrivalSlipController extends Controller
      */
     public function getList(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $ArrivalSlip = ArrivalSlip::select('arrival_slips.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('grn_numbers', function ($join) {
                 $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
@@ -46,6 +49,11 @@ class ArrivalSlipController extends Controller
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('arrival_slips.unique_no', 'like', $searchTerm);
+                });
+            })
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+                    $query->where('location_id', $authUser->company_location_id);
                 });
             })
             ->where('arrival_slips.company_id', $request->company_id)
@@ -60,8 +68,13 @@ class ArrivalSlipController extends Controller
      */
     public function create()
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('arrival_slip_status', 'pending')->get();
+        $data['ArrivalTickets'] =  ArrivalTicket::where('arrival_slip_status', 'pending')->when(!$isSuperAdmin, function ($query) use ($authUser) {
+            return $query->where('location_id', $authUser->company_location_id);
+        })->get();
         return view('management.arrival.arrival_slip.create', $data);
     }
 
