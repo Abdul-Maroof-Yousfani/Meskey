@@ -36,7 +36,11 @@ class TicketContractController extends Controller
      */
     public function getList(Request $request)
     {
-        $tickets = ArrivalTicket::where('freight_status', 'completed')->orderBy('created_at', 'desc')
+        $tickets = ArrivalTicket::where(function ($query) {
+            $query->where('freight_status', 'completed')
+                ->orWhere('first_qc_status', 'rejected');
+        })
+            ->orderBy('created_at', 'desc')
             ->paginate(request('per_page', 25));
 
         return view('management.procurement.raw_material.ticket_contracts.getList', compact('tickets'));

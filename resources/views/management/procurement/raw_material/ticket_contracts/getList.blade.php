@@ -15,10 +15,9 @@
                 <tr
                     class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '  ' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
                     <td>
-
                         <p class="m-0">
                             #{{ $row->unique_no ?? 'N/A' }}
-                            @if (false&&isset($row->purchaseOrder->status) && $row->purchaseOrder->status)
+                            @if (false && isset($row->purchaseOrder->status) && $row->purchaseOrder->status)
                                 <span
                                     class="badge 
                                     @if ($row->purchaseOrder->status == 'draft') bg-warning
@@ -92,19 +91,19 @@
                         </p>
                     </td>
                     <td>
-                        @can('role-edit')
-                            @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
-                                <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
-                                    class="info p-1 text-center mr-2 position-relative">
-                                    <i class="ft-edit font-medium-3"></i>
-                                </a>
-                            @else
-                                <a href="{{ route('raw-material.ticket-contracts.edit', $row->id) }}"
-                                    class="info p-1 text-center mr-2 position-relative">
-                                    <i class="ft-eye font-medium-3"></i>
-                                </a>
-                            @endif
-                        @endcan
+                        {{-- @can('role-edit') --}}
+                        @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
+                            <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
+                                class="info p-1 text-center mr-2 position-relative">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
+                        @else
+                            <a href="{{ route('raw-material.ticket-contracts.edit', $row->id) }}"
+                                class="info p-1 text-center mr-2 position-relative">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                        @endif
+                        {{-- @endcan --}}
                     </td>
                 </tr>
             @endforeach
