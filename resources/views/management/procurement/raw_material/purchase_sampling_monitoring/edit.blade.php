@@ -338,7 +338,7 @@
                                         ($arrivalSamplingRequest->qc_product_id ??
                                             $arrivalSamplingRequest->arrival_product_id),
                                     $displayValue,
-                                    null,
+                                    $arrivalSamplingRequest->purchaseOrder->id ?? null,
                                 );
 
                                 $previousDeduction = null;
