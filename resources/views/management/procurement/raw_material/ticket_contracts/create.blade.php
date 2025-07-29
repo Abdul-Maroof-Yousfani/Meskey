@@ -805,7 +805,7 @@
                                 </td>
                                 <td>${contract.no_of_trucks || '-'}</td>
                                 <!-- <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td> -->
-                                <td>${contract.closed_arrivals || '-'}</td> 
+                                <td>${contract.closed_arrivals || 0}</td> 
                                 <td>${contract.remaining_trucks || 0}</td>
                                 <td>${statusBadge}</td> 
                             </tr>

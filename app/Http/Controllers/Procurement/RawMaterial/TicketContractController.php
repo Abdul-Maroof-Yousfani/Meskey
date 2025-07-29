@@ -272,7 +272,7 @@ class TicketContractController extends Controller
             'truck_no' => $c->truck_no,
             'trucks_arrived' => $c->trucks_arrived,
             'no_of_trucks' => $c->no_of_trucks,
-            'remaining_trucks' => $c->no_of_trucks - $ticket->closing_trucks_qty,
+            'remaining_trucks' => $c->no_of_trucks - $c->closed_arrivals_count,
             'status' => $c->status ?: 'N/A',
             'contract_date_formatted' => $c->created_at->format('d-M-Y'),
             'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? null,
