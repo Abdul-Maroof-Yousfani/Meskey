@@ -225,7 +225,15 @@ class TicketContractController extends Controller
     public function searchContracts(Request $request)
     {
         $ticket = ArrivalTicket::find($request->ticket_id);
-        $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight', 'totalArrivedNetWeight'])
+        $query = ArrivalPurchaseOrder::with([
+            'supplier',
+            'product',
+            'totalLoadingWeight',
+            'totalArrivedNetWeight'
+        ])
+            ->withCount(['arrivalTickets as closed_arrivals_count' => function ($q) {
+                $q->whereHas('arrivalSlip');
+            }])
             ->where('status', 'draft')
             ->where('supplier_id', $ticket->accounts_of_id)
             ->where('company_location_id', $ticket->location_id);
@@ -267,8 +275,8 @@ class TicketContractController extends Controller
             'remaining_trucks' => $c->no_of_trucks - $ticket->closing_trucks_qty,
             'status' => $c->status ?: 'N/A',
             'contract_date_formatted' => $c->created_at->format('d-M-Y'),
-            // 'total_loading_weight' => $c->totalLoadingWeight->total_loading_weight ?? null,
             'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? null,
+            'closed_arrivals' => $c->closed_arrivals_count,
         ]);
 
         return response()->json(['success' => true, 'data' => $contracts]);

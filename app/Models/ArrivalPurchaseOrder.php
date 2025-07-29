@@ -174,4 +174,12 @@ class ArrivalPurchaseOrder extends Model
             ->selectRaw('arrival_purchase_order_id, SUM(closing_trucks_qty) as total_closing_trucks_qty')
             ->groupBy('arrival_purchase_order_id');
     }
+
+    public function ticketsWithArrivalSlipsCount()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, count(*) as count')
+            ->whereHas('arrivalSlip')
+            ->groupBy('arrival_purchase_order_id');
+    }
 }
