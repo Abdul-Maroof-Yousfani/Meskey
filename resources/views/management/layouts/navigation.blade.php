@@ -478,6 +478,7 @@
                         </ul>
                     </li>
                     @endcanAccess
+                     @canAccess('procurement-raw-material-supplier')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
@@ -485,12 +486,15 @@
                             <span data-i18n="Task Board">Manage Supplier</span>
                         </a>
                     </li>
+                    @endcanAccess
+                     @canAccess('procurement-raw-material-broker')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('broker.index') }}" onclick="loadPageContent('{{ route('broker.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Manage Broker</span>
                         </a>
                     </li>
+                    @endcanAccess
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('company-location.index') }}"
                             onclick="loadPageContent('{{ route('company-location.index') }}')" data-toggle="dropdown"><i
