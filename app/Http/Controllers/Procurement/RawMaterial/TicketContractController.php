@@ -236,7 +236,7 @@ class TicketContractController extends Controller
 
         if ($request->ticket_id) {
             $linkedId = $ticket?->arrival_purchase_order_id;
-            if ($linkedId) $query->where('id', $linkedId);
+            // if ($linkedId) $query->where('id', $linkedId);
         }
 
         if ($request->initial) {
