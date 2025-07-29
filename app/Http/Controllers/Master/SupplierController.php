@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\DB;
 
 class SupplierController extends Controller
 {
+
+    
+    function __construct()
+    {
+        $this->middleware('check.company:procurement-raw-material-supplier', ['only' => ['index','edit','getList']]);
+    }
     /**
      * Display a listing of the resource.
      */
