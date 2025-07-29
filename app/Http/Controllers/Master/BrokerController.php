@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class BrokerController extends Controller
 {
+
+        
+    function __construct()
+    {
+        $this->middleware('check.company:procurement-raw-material-broker', ['only' => ['index','edit','getList']]);
+    }
     /**
      * Display a listing of the resource.
      */
