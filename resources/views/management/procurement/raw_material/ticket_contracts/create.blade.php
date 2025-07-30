@@ -836,7 +836,7 @@
                 } else {
                     resultsBody.html(`
                         <tr>
-                            <td colspan="11" class="text-center text-muted">
+                            <td colspan="14" class="text-center text-muted">
                                 No contracts found
                             </td>
                         </tr>
