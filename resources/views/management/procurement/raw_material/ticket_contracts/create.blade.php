@@ -69,8 +69,11 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="contract-results mt-3" id="contracts_table"
+                                                style="display: none; max-height: 400px; overflow-y: auto;">
+                                            </div>
 
-                                            <div class="contract-results mt-3"
+                                            {{-- <div class="contract-results mt-3"
                                                 style="display: none; max-height: 400px; overflow-y: auto;">
                                                 <table class="table table-sm table-bordered table-hover">
                                                     <thead class="thead-light">
@@ -88,13 +91,12 @@
                                                             <th style="width: 7%;">Remaining Truck</th>
                                                             <th style="width: 9%;">Remarks</th>
                                                             <th style="width: 9%;">Is Replacement</th>
-                                                            <th style="width: 9%;">Status</th>
-                                                            {{-- <th style="width: 5%;">Action</th> --}}
+                                                            <th style="width: 9%;">Status</th> 
                                                         </tr>
                                                     </thead>
                                                     <tbody id="contract_results_body"></tbody>
                                                 </table>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -615,15 +617,18 @@
                 $(this).closest('.contract-row').addClass('table-active');
             });
 
-            $('#confirm_submit_btn').on('click', function() {
-                const contractId = $('input[name="selected_contract"]:checked').val();
+            $(document).on('click', '#confirm_submit_btn', function() {
+                const contractId = $(this).closest('#ajaxSubmit').find(
+                    'input[name="selected_contract"]:checked').val();
                 if (!contractId) {
                     Swal.fire('Error', 'Please select a contract first', 'error');
                     return;
                 }
 
-                const contractRow = $(`input[name="selected_contract"][value="${contractId}"]`).closest(
+                const contractRow = $(this).closest('#ajaxSubmit').find(
+                    `input[name="selected_contract"][value="${contractId}"]`).closest(
                     '.contract-row');
+
                 const remainingQty = parseFloat(contractRow.find('td:eq(7)').text().split(' - ')[1]) ||
                     0; // Get max remaining quantity
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
@@ -811,59 +816,65 @@
 
             function populateContractResults(response) {
                 const resultsBody = $('#contract_results_body');
-                resultsBody.empty();
+                // resultsBody.empty();
+                $('#contracts_table').empty();
 
-                if (response.success && response.data.length > 0) {
-                    response.data.forEach(contract => {
-                        const statusBadge = contract.status === 'completed' ?
-                            '<span class="badge badge-success">Completed</span>' :
-                            '<span class="badge badge-warning">Pending</span>';
-
-                        const replacementBadge = contract.is_replacement === 'Yes' ?
-                            '<span class="badge badge-success">Yes</span>' :
-                            '<span class="badge badge-warning">No</span>';
-
-                        const markCompletedBtn = contract.status === 'completed' ?
-                            '' :
-                            `<button class="btn btn-sm btn-info mark-completed" data-id="${contract.id}">
-                                <i class="fa fa-check"></i> Mark Completed
-                            </button>`;
-
-                        // <td>${contract.arrived_quantity ? contract.arrived_quantity + ' kg' : '-'}</td>
-                        const row = `
-                            <tr class="contract-row" data-id="${contract.id}">
-                                <td class="text-center">
-                                    <input type="radio" name="selected_contract" 
-                                           value="${contract.id}" {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
-                                           ${contract.id == '{{ $arrivalTicket->arrival_purchase_order_id ?? '' }}' ? 'checked' : ''}>
-                                </td>
-                                <td>${contract.contract_no || '-'}</td>
-                                <td>${contract.qc_product_name || '-'}</td>
-                                <td class="text-capitalize">${contract.calculation_type || '-'}</td>
-                                <td>${contract.supplier?.name || '-'}</td>
-                                <td>${(contract?.min_quantity || '-') + " - " + (contract?.max_quantity || '-')}</td>
-                                <td>${contract?.total_loading_weight || '-'}</td>
-                                <td>
-                                    ${
-                                        (contract.total_loading_weight !== undefined && contract.total_loading_weight !== null)
-                                            ? ((contract.min_quantity !== undefined && contract.min_quantity !== null ? (contract.min_quantity - contract.total_loading_weight) : '-') + ' - ' +
-                                               (contract.max_quantity !== undefined && contract.max_quantity !== null ? (contract.max_quantity - contract.total_loading_weight) : '-'))
-                                            : 0
-                                    }
-                                </td>
-                                <td>${contract.no_of_trucks || '-'}</td>
-                                <!-- <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td> -->
-                                <td>${contract.closed_arrivals || 0}</td> 
-                                <td>${contract.remaining_trucks || 0}</td>
-                                <td>${contract.remarks}</td> 
-                                <td>${replacementBadge}</td> 
-                                <td>${statusBadge}</td> 
-                            </tr>
-                        `;
-                        resultsBody.append(row);
+                if (response.success && response.html) {
+                    console.log({
+                        asd: response.html
                     });
 
+                    // response.data.forEach(contract => {
+                    //     const statusBadge = contract.status === 'completed' ?
+                    //         '<span class="badge badge-success">Completed</span>' :
+                    //         '<span class="badge badge-warning">Pending</span>';
+
+                    //     const replacementBadge = contract.is_replacement === 'Yes' ?
+                    //         '<span class="badge badge-success">Yes</span>' :
+                    //         '<span class="badge badge-warning">No</span>';
+
+                    //     const markCompletedBtn = contract.status === 'completed' ?
+                    //         '' :
+                    //         `<button class="btn btn-sm btn-info mark-completed" data-id="${contract.id}">
+                //             <i class="fa fa-check"></i> Mark Completed
+                //         </button>`;
+
+                    //     // <td>${contract.arrived_quantity ? contract.arrived_quantity + ' kg' : '-'}</td>
+                    //     const row = `
+                //         <tr class="contract-row" data-id="${contract.id}">
+                //             <td class="text-center">
+                //                 <input type="radio" name="selected_contract" 
+                //                        value="${contract.id}" {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
+                //                        ${contract.id == '{{ $arrivalTicket->arrival_purchase_order_id ?? '' }}' ? 'checked' : ''}>
+                //             </td>
+                //             <td>${contract.contract_no || '-'}</td>
+                //             <td>${contract.qc_product_name || '-'}</td>
+                //             <td class="text-capitalize">${contract.calculation_type || '-'}</td>
+                //             <td>${contract.supplier?.name || '-'}</td>
+                //             <td>${(contract?.min_quantity || '-') + " - " + (contract?.max_quantity || '-')}</td>
+                //             <td>${contract?.total_loading_weight || '-'}</td>
+                //             <td>
+                //                 ${
+                //                     (contract.total_loading_weight !== undefined && contract.total_loading_weight !== null)
+                //                         ? ((contract.min_quantity !== undefined && contract.min_quantity !== null ? (contract.min_quantity - contract.total_loading_weight) : '-') + ' - ' +
+                //                            (contract.max_quantity !== undefined && contract.max_quantity !== null ? (contract.max_quantity - contract.total_loading_weight) : '-'))
+                //                         : 0
+                //                 }
+                //             </td>
+                //             <td>${contract.no_of_trucks || '-'}</td>
+                //             <!-- <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td> -->
+                //             <td>${contract.closed_arrivals || 0}</td> 
+                //             <td>${contract.remaining_trucks || 0}</td>
+                //             <td>${contract.remarks}</td> 
+                //             <td>${replacementBadge}</td> 
+                //             <td>${statusBadge}</td> 
+                //         </tr>
+                //     `;
+                    //     resultsBody.append(row);
+                    // });
+
                     $('.contract-results').show();
+                    $('#contracts_table').html(response.html);
                 } else {
                     resultsBody.html(`
                         <tr>

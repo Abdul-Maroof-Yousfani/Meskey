@@ -70,7 +70,6 @@
                                                     </select>
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
@@ -102,7 +101,7 @@
 
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);

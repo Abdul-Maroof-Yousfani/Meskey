@@ -221,7 +221,7 @@ class TicketContractController extends Controller
 
     public function searchContracts(Request $request)
     {
-        $ticket = ArrivalTicket::find($request->ticket_id);
+        $arrivalTicket = ArrivalTicket::find($request->ticket_id);
         $query = ArrivalPurchaseOrder::with([
             'supplier',
             'product',
@@ -232,15 +232,15 @@ class TicketContractController extends Controller
                 $q->whereHas('arrivalSlip');
             }])
             ->where('status', 'draft')
-            ->where('supplier_id', $ticket->accounts_of_id)
-            ->where('company_location_id', $ticket->location_id);
+            ->where('supplier_id', $arrivalTicket->accounts_of_id)
+            ->where('company_location_id', $arrivalTicket->location_id);
 
-        if ($ticket?->sauda_type_id) {
-            $query->where('sauda_type_id', $ticket->sauda_type_id);
+        if ($arrivalTicket?->sauda_type_id) {
+            $query->where('sauda_type_id', $arrivalTicket->sauda_type_id);
         }
 
         if ($request->ticket_id) {
-            $linkedId = $ticket?->arrival_purchase_order_id;
+            $linkedId = $arrivalTicket?->arrival_purchase_order_id;
             // if ($linkedId) $query->where('id', $linkedId);
         }
 
@@ -278,6 +278,8 @@ class TicketContractController extends Controller
             'remarks' => $c->remarks ?? 'N/A',
         ]);
 
-        return response()->json(['success' => true, 'data' => $contracts]);
+        $html = view('management.procurement.raw_material.ticket_contracts.contract_table', compact('arrivalTicket', 'contracts'))->render();
+
+        return response()->json(['success' => true, 'html' => $html, 'data' => $contracts]);
     }
 }

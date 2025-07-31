@@ -885,3 +885,80 @@ tr.editing {
 .cursor-pointer {
   cursor: pointer;
 }
+
+.navbar {
+  z-index: 15;
+}
+
+.sticky-table-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  /* border: 1px solid #e0e0e0; */
+  border-radius: 4px;
+  /* background: white; */
+}
+
+.sticky-table-scroller {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sticky-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: fit-content;
+}
+
+.sticky-table th,
+.sticky-table td {
+  padding: 12px 15px;
+  vertical-align: middle;
+  border-bottom: 1px solid #e0e0e0;
+  white-space: nowrap;
+  background: white;
+}
+
+.sticky-table th {
+  position: sticky;
+  top: 0;
+  /* background: #f8f9fa !important; */
+  z-index: 10;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  /* color: #495057; */
+}
+
+.sticky-table td[data-sticky],
+.sticky-table th[data-sticky] {
+  position: sticky;
+  z-index: 11;
+}
+
+.sticky-table td[data-sticky-left],
+.sticky-table th[data-sticky-left] {
+  left: 0;
+  border-right: 1px solid #e0e0e0;
+}
+
+.sticky-table td[data-sticky-right],
+.sticky-table th[data-sticky-right] {
+  right: 0;
+  border-left: 1px solid #e0e0e0;
+}
+
+.sticky-table td[data-sticky-left-last],
+.sticky-table th[data-sticky-left-last] {
+  box-shadow: 5px 0px 10px -4px rgb(0 0 0 / 14%);
+}
+
+.sticky-table td[data-sticky-right-first],
+.sticky-table th[data-sticky-right-first] {
+  box-shadow: -5px 0px 10px -4px rgb(0 0 0 / 14%);
+}
+
+.sticky-table thead tr {
+  background-color: #d6ddec;
+}
