@@ -40,6 +40,8 @@
                             Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}
                             @if ($arrivalTicket->first_qc_status == 'rejected')
                                 <span class="badge badge-danger ml-2">Rejected</span>
+                            @elseif($arrivalTicket->is_ticket_verified == 1)
+                                <span class="badge badge-danger ml-2">Contract Verified</span>
                             @endif
                         </h4>
                     </div>
@@ -622,30 +624,42 @@
 
                 const contractRow = $(`input[name="selected_contract"][value="${contractId}"]`).closest(
                     '.contract-row');
-                const remainingQty = parseFloat(contractRow.find('td:eq(5)').text().replace(' kg', ''));
+                const remainingQty = parseFloat(contractRow.find('td:eq(7)').text().split(' - ')[1]) ||
+                    0; // Get max remaining quantity
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
-
+                const remainingTrucks = parseInt(contractRow.find('td:eq(10)').text()) || 0;
+                //  ${
+                // remainingQty - ticketWeight <= 0 ? 
+                //     '<div class="alert alert-warning mt-3">This will complete the contract as remaining quantity will be zero</div>' : 
+                //     '<div class="form-check text-left mt-3">' +
+                //     '<input type="checkbox" class="form-check-input" id="swal-mark-completed">' +
+                //     '<label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>' +
+                //     '</div>'
+                // }
                 Swal.fire({
                     title: 'Confirm Submission',
                     html: `
-                <div class="form-group text-left">
-                    <label>Closing Trucks Quantity</label>
-                    <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" required>
-                </div>
-                ${remainingQty - ticketWeight <= 0 ? 
-                    '<div class="alert alert-warning mt-3">This will complete the contract as remaining quantity will be zero</div>' : 
-                    '<div class="form-check text-left mt-3">' +
-                    '<input type="checkbox" class="form-check-input" id="swal-mark-completed">' +
-                    '<label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>' +
-                    '</div>'
-                }
-            `,
+                            <div class="form-group text-left">
+                                <label>Closing Trucks Quantity</label>
+                                <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" max="${remainingTrucks}" required>
+                                <small class="text-muted">Max allowed: ${remainingTrucks}</small>
+                            </div>
+                            <div class="form-check text-left mt-3">
+                                <input type="checkbox" class="form-check-input" id="swal-verify-ticket">
+                                <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
+                            </div> 
+                            <div class="form-check text-left mt-3">
+                                <input type="checkbox" class="form-check-input" id="swal-mark-completed"> 
+                                <label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label> 
+                            </div>
+                        `,
                     showCancelButton: true,
                     confirmButtonText: 'Submit',
                     cancelButtonText: 'Cancel',
                     focusConfirm: false,
                     preConfirm: () => {
-                        const trucksQty = $('#swal-closing-trucks').val();
+                        const trucksQty = parseInt($('#swal-closing-trucks').val());
+                        const verifyTicket = $('#swal-verify-ticket').is(':checked');
 
                         if (!trucksQty || trucksQty < 1) {
                             Swal.showValidationMessage(
@@ -654,18 +668,27 @@
                             return false;
                         }
 
+                        if (trucksQty > remainingTrucks) {
+                            Swal.showValidationMessage(
+                                `Closing trucks quantity cannot exceed remaining trucks (${remainingTrucks})`
+                            );
+                            return false;
+                        }
+
                         const markCompleted = remainingQty - ticketWeight <= 0 || $(
                             '#swal-mark-completed').is(':checked');
                         return {
                             trucksQty,
-                            markCompleted
+                            markCompleted,
+                            verifyTicket
                         };
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const {
                             trucksQty,
-                            markCompleted
+                            markCompleted,
+                            verifyTicket
                         } = result.value;
 
                         // Add hidden fields to form
@@ -679,6 +702,14 @@
                             $('<input>').attr({
                                 type: 'hidden',
                                 name: 'mark_completed',
+                                value: '1'
+                            }).appendTo('#ajaxSubmit');
+                        }
+
+                        if (verifyTicket) {
+                            $('<input>').attr({
+                                type: 'hidden',
+                                name: 'verify_ticket',
                                 value: '1'
                             }).appendTo('#ajaxSubmit');
                         }
@@ -803,7 +834,7 @@
                             <tr class="contract-row" data-id="${contract.id}">
                                 <td class="text-center">
                                     <input type="radio" name="selected_contract" 
-                                           value="${contract.id}" 
+                                           value="${contract.id}" {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
                                            ${contract.id == '{{ $arrivalTicket->arrival_purchase_order_id ?? '' }}' ? 'checked' : ''}>
                                 </td>
                                 <td>${contract.contract_no || '-'}</td>

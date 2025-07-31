@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Division;
 use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PurchaseFreight;
@@ -30,6 +31,7 @@ class ArrivalPurchaseOrder extends Model
         'broker_two_name',
         'broker_three_name',
         'broker_one_id',
+        'division_id',
         'decision_making',
         'decision_making_time',
         'lumpsum_deduction',
@@ -83,6 +85,11 @@ class ArrivalPurchaseOrder extends Model
         'contract_date' => 'date',
         'delivery_date' => 'date',
     ];
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
 
     public function purchaseFreight()
     {

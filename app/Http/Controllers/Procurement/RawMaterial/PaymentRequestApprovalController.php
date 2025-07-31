@@ -170,7 +170,7 @@ class PaymentRequestApprovalController extends Controller
                 'payment_request_data_id' => $paymentRequest->payment_request_data_id,
                 'ticket_id' => $paymentRequestData->ticket_id,
                 'purchase_order_id' => $purchaseOrder->id,
-                'approver_id' => Auth::id(),
+                'approver_id' => auth()->user()->id,
                 'status' => $request->status,
                 'remarks' => $request->remarks,
                 'amount' => $paymentRequest->amount,

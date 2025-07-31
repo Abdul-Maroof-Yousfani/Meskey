@@ -55,6 +55,8 @@ class ArrivalTicket extends Model
         'station_id',
         'station_name',
         'loading_date',
+        'is_ticket_verified',
+        'ticket_verified_by',
         'loading_weight',
         'remarks',
         'status',

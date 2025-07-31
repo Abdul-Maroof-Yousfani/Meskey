@@ -50,7 +50,7 @@ class IndicativePriceController extends Controller
             'credit_days' => $request->credit_days,
             'others' => $request->others,
             'remarks' => $request->remarks,
-            'created_by' => auth()->id(),
+            'created_by' => auth()->user()->id,
         ]);
 
         return response()->json([

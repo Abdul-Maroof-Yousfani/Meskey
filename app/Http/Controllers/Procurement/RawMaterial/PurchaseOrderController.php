@@ -241,6 +241,7 @@ class PurchaseOrderController extends Controller
             $updateData = [
                 'sauda_type_id' => $data['sauda_type_id'] ?? null,
                 'supplier_id' => $data['supplier_id'] ?? null,
+                'division_id' => $data['division_id'] ?? null,
                 'supplier_commission' => $data['supplier_commission'] ?? null,
                 'broker_one_id' => $data['broker_one_id'] ?? null,
                 'broker_one_commission' => $data['broker_one_commission'] ?? 0,

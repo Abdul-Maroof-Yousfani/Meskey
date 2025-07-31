@@ -12,6 +12,7 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     PurchaseSamplingController,
     PurchaseSamplingMonitoringController,
     PurchaseSamplingRequestController,
+    SITVehicleController,
     TicketContractController,
     TicketPaymentRequestController
 };
@@ -48,6 +49,9 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('freight', PurchaseFreightController::class);
     Route::post('/get-freight', [PurchaseFreightController::class, 'getList'])->name('get.freight');
+
+    Route::resource('sit-vehicle', SITVehicleController::class);
+    Route::post('/get-sit-vehicle', [SITVehicleController::class, 'getList'])->name('get.sit-vehicle');
 
     Route::get('/ticket-contracts/search-contracts', [TicketContractController::class, 'searchContracts'])->name('ticket-contracts.search-contracts');
     Route::resource('ticket-contracts', TicketContractController::class);

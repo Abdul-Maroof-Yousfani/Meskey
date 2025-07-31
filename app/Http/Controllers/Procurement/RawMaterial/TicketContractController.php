@@ -86,14 +86,22 @@ class TicketContractController extends Controller
             $truckNo = $arrivalTicket->truck_no ?? 'N/A';
             $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
 
-            $arrivalTicket->update([
+            $updateData = [
                 'arrival_purchase_order_id' => $request->selected_contract,
                 'closing_trucks_qty' => $request->closing_trucks_qty
-            ]);
+            ];
 
-            //  $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
-            // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
-            // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
+            if ($request->verify_ticket) {
+                $updateData['is_ticket_verified'] = 1;
+                $updateData['ticket_verified_by'] = auth()->user()->id;
+                $updateData['ticket_verified_at'] = now();
+            } else {
+                $updateData['is_ticket_verified'] = 0;
+                // $updateData['ticket_verified_by'] = auth()->user()->id;
+                // $updateData['ticket_verified_at'] = now();
+            }
+
+            $arrivalTicket->update($updateData);
 
             if ($request->mark_completed || $purchaseOrder->remaining_quantity <= 0) {
                 $purchaseOrder->update([
@@ -113,23 +121,8 @@ class TicketContractController extends Controller
                 ->exists();
 
             if (!$existingTransaction) {
-                // createTransaction(
-                //     (float)($amount),
-                //     $arrivalTicket->qcProduct->account_id,
-                //     1,
-                //     $arrivalTicket->arrivalSlip->unique_no ?? '',
-                //     'debit',
-                //     'no',
-                //     [
-                //         'purpose' => "ticket-contract-linking",
-                //         'payment_against' => "pohanch-purchase",
-                //         'against_reference_no' => "$truckNo/$biltyNo",
-                //         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket->arrived_net_weight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
-                //     ]
-                // );
-
                 $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
-                $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
+                $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
 
                 if ($arrivalTicket->saudaType->name == 'Pohanch') {
                     createTransaction(

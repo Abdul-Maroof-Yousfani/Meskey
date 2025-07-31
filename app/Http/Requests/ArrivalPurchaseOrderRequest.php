@@ -23,6 +23,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'sauda_type_id'           => 'required|integer|exists:sauda_types,id',
             'truck_size_range_id'     => 'nullable|integer|exists:truck_size_ranges,id',
             'account_of'              => 'nullable|integer|exists:users,id',
+            'division_id'              => 'nullable|integer|exists:divisions,id',
             'supplier_id'             => 'required|integer|exists:suppliers,id',
             'supplier_commission'     => 'nullable|numeric',
             'broker_one_id'           => 'nullable|integer|exists:brokers,id',

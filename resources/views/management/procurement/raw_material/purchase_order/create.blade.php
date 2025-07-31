@@ -316,17 +316,25 @@
                 </div>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Weighbridge only From:</label>
                 <input type="text" name="weighbridge_from" placeholder="Weighbridge only From"
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Delivery Address:</label>
                 <input type="text" name="delivery_address" placeholder="delivery address" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group ">
+                <label>Division:</label>
+                <select name="division_id" id="division_id" class="form-control select22">
+                    <option value="">Select Division</option>
+                </select>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -671,6 +679,7 @@
         });
 
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
         // initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', false, false);

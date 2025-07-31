@@ -488,7 +488,7 @@ if (!function_exists('createTransaction')) {
                 'type' => $type,
                 'is_opening_balance' => $isOpening,
                 'status' => 'active',
-                'created_by' => auth()->id(),
+                'created_by' => auth()->user()->id,
                 'payment_against' => null,
                 'against_reference_no' => null,
             ], $additionalData);
