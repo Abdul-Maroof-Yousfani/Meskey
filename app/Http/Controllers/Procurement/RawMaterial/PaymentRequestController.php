@@ -46,6 +46,12 @@ class PaymentRequestController extends Controller
     public function getList(Request $request)
     {
         $query = PurchaseTicket::where('freight_status', 'completed')
+            ->whereHas('purchaseOrder.arrivalTickets', function ($q) {
+                return $q->where('is_ticket_verified', 1);
+                // ->where('is_ticket_verified', 1);
+                // $q->where('freight_status', 'completed')
+                //     ->where('is_ticket_verified', 1);
+            })
             ->with([
                 'paymentRequestData.paymentRequests',
                 'paymentRequestData.paymentRequests.approvals',
