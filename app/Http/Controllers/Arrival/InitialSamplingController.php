@@ -54,9 +54,10 @@ class InitialSamplingController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $isResampling = request()->route()->getName() === 'initial-resampling.create';
+        $authUserCompany = $request->company_id;
 
         $query = ArrivalSamplingRequest::where('sampling_type', 'initial')->where('is_done', 'no');
 
@@ -68,7 +69,20 @@ class InitialSamplingController extends Controller
 
         $samplingRequests = $query->get();
         $arrivalCustomSampling = ArrivalCustomSampling::all();
-        $sampleTakenByUsers = User::all();
+      //  $sampleTakenByUsers = User::all();
+
+
+
+        $sampleTakenByUsers = User::role('QC')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
+
+
+
+
+
         $products = Product::all();
 
         return view('management.arrival.initial_sampling.create', compact('samplingRequests', 'isResampling', 'arrivalCustomSampling', 'sampleTakenByUsers', 'products'));
