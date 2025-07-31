@@ -482,7 +482,6 @@ if (!function_exists('createTransaction')) {
                 'amount' => $amount,
                 'account_id' => $accountId,
                 'account_unique_no' => $accountUniqueNo,
-
                 'transaction_voucher_type_id' => $voucherTypeId,
                 'voucher_no' => $voucherNo,
                 'type' => $type,
