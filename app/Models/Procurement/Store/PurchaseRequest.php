@@ -28,7 +28,7 @@ class PurchaseRequest extends Model
         return $this->belongsTo(CompanyLocation::class, 'location_id');
     }
 
-     public function PurchaseData()
+    public function PurchaseData()
     {
         return $this->hasMany(PurchaseRequestData::class);
     }

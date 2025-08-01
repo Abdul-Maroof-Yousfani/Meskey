@@ -7,20 +7,17 @@ use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseRequestData extends Model
+class PurchaseQuotationData extends Model
 {
     use HasFactory;
 
-     protected $guarded = [];
+    protected $table = "purchase_quotation_data";
+    protected $guarded = [];
 
-    public function JobOrder()
-    {
-        return $this->hasMany(PurchaseAgainstJobOrder::class);
-    }
 
-    public function purchase_request()
+    public function purchase_quotation()
     {
-        return $this->belongsTo(PurchaseRequest::class);
+        return $this->belongsTo(PurchaseQuotation::class);
     }
 
     public function category()
@@ -37,5 +34,4 @@ class PurchaseRequestData extends Model
     {
         return $this->hasMany(PurchaseItemApprove::class, 'purchase_request_data_id');
     }
-
 }

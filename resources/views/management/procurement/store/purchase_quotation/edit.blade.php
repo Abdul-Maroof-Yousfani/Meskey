@@ -1,4 +1,4 @@
-<form action="{{ route('store.purchase-request.update', $purchase_request->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-request.update', $data->purchase_request->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
      @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-request') }}" />
@@ -9,7 +9,7 @@
                 <select name="company_location_id" id="company_location_id" class="form-control">
                     <option value="">Select Location</option>
                     @foreach ($locations ?? [] as $loc)
-                        <option {{$loc->id == $purchase_request->loction_id ? 'selected' : ''}} value="{{$loc->id}}">{{$loc->name}}</option>
+                        <option {{$loc->id == $data->purchase_request->loction_id ? 'selected' : ''}} value="{{$loc->id}}">{{$loc->name}}</option>
                     @endforeach
                 </select>
             </div>
@@ -17,13 +17,13 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Purchase Date:</label>
-                <input type="date" name="purchase_date" value="{{$purchase_request->purchase_date}}" class="form-control">
+                <input type="date" name="purchase_date" value="{{$data->purchase_request->purchase_date}}" class="form-control">
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Reference No:</label>
-                <input type="text" name="reference_no" class="form-control" value="{{$purchase_request->reference_no}}">
+                <input type="text" name="reference_no" class="form-control" value="{{$data->purchase_request->reference_no}}">
             </div>
         </div>
 
@@ -31,7 +31,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea name="description" placeholder="Description" class="form-control">{{$purchase_request->description}}</textarea>
+                <textarea name="description" placeholder="Description" class="form-control">{{$data->purchase_request->description}}</textarea>
             </div>
         </div>
        
@@ -58,43 +58,43 @@
                     </tr>
                 </thead>
                 <tbody id="purchaseRequestBody">
-                    @foreach ($purchase_request->PurchaseData ?? [] as $key => $value)
+                    {{-- @foreach ($data ?? [] as $key => $data) --}}
                         <tr id="row_0">
                             <td style="width: 25%">
-                                <select name="category_id[]" id="category_id_{{$key}}" onchange="filter_items(this.value,{{$key}})" class="form-control item-select" data-index="0">
+                                <select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)" class="form-control item-select" data-index="0">
                                     <option value="">Select Category</option>
                                     @foreach ($categories ?? [] as $category)
-                                        <option {{$category->id == $value->category_id ? 'selected' : ''}} value="{{$category->id}}">{{$category->name}}</option>
+                                        <option {{$category->id == $data->category_id ? 'selected' : ''}} value="{{$category->id}}">{{$category->name}}</option>
                                     @endforeach
                                 </select>
                             </td>
                             <td style="width: 25%">
-                               <select name="item_id[]" id="item_id_{{$key}}" onchange="get_uom({{$key}})" class="form-control item-select" data-index="{{$key}}">
-                                    @foreach (get_product_by_category($value->category_id) as $item)
+                               <select name="item_id[]" id="item_id_0" onchange="get_uom(0)" class="form-control item-select" data-index="0">
+                                    @foreach (get_product_by_category($data->category_id) as $item)
                                         <option 
                                             data-uom="{{ $item->unit_of_measure->name ?? '' }}" 
                                             value="{{ $item->id }}"
-                                            {{ $item->id == $value->item_id ? 'selected' : '' }}
+                                            {{ $item->id == $data->item_id ? 'selected' : '' }}
                                         >
                                             {{ $item->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </td>
-                            <td style="width: 10%"><input type="text" name="uom[]" value="{{get_uom($value->item_id)}}" id="uom_{{$key}}" class="form-control uom" readonly></td>
-                            <td style="width: 10%"><input type="number" name="qty[]" value="{{$value->qty}}" id="qty_{{$key}}" class="form-control" step="0.01" min="0"></td>
+                            <td style="width: 10%"><input type="text" name="uom[]" value="{{get_uom($data->item_id)}}" id="uom_0" class="form-control uom" readonly></td>
+                            <td style="width: 10%"><input type="number" name="qty[]" value="{{$data->qty}}" id="qty_0" class="form-control" step="0.01" min="0"></td>
                             <td style="width: 20%">
-                                <select name="job_order_id[{{$key}}][]" id="job_order_id_{{$key}}" multiple class="form-control item-select" data-index="0">
+                                <select name="job_order_id[0][]" id="job_order_id_0" multiple class="form-control item-select" data-index="0">
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
-                                        <option {{ (isset($value->JobOrder) && in_array($job_order->id, $value->JobOrder->pluck('job_order_id')->toArray())) ? 'selected' : '' }} value="{{$job_order->id}}">{{$job_order->name}}</option>
+                                        <option {{ (isset($data->JobOrder) && in_array($job_order->id, $data->JobOrder->pluck('job_order_id')->toArray())) ? 'selected' : '' }} value="{{$job_order->id}}">{{$job_order->name}}</option>
                                     @endforeach
                                 </select>
                             </td>
-                            <td style="width: 25%"><input type="text" name="remarks[]" value="{{$value->remarks}}" id="remark_{{$key}}" class="form-control"></td>
+                            <td style="width: 25%"><input type="text" name="remarks[]" value="{{$data->remarks}}" id="remark_0" class="form-control"></td>
                             <td><button type="button" disabled class="btn btn-danger btn-sm removeRowBtn" data-id="0">Remove</button></td>
                         </tr>
-                    @endforeach
+                    {{-- @endforeach --}}
                 </tbody>
             </table>
         </div>
@@ -122,7 +122,7 @@
     $(document).ready(function() {
         // Set preselected value after a slight delay to ensure select2 has initialized
         setTimeout(function () {
-            $('#company_location_id').val({{ $purchase_request->location_id }}).trigger('change');
+            $('#company_location_id').val({{ $data->purchase_request->location_id }}).trigger('change');
         }, 500);
         $('#category_id_0').select2();
         $('#job_order_id_0').select2({
@@ -132,7 +132,7 @@
 
 
     });
-    let rowIndex = 1;
+    let rowIndex = 0;
     function addRow() {
         let index = rowIndex++;
         let row = `
@@ -198,19 +198,7 @@
 
                     $itemSelect.select2();
 
-                    // If selectedItemId is provided, select it, else select first item
-                    // if (selectedItemId && $itemSelect.find(`option[value='${selectedItemId}']`).length) {
-                    //     $itemSelect.val(selectedItemId).trigger('change');
-                    // } else {
-                    //     const firstItemValue = $itemSelect.find('option:eq(1)').val();
-                    //     if (firstItemValue) {
-                    //         $itemSelect.val(firstItemValue).trigger('change');
-                    //     } else {
-                    //         $('#uom_' + count).val('');
-                    //     }
-                    // }
-
-                    // get_uom(count);
+        
                 } else {
                     console.error('No products found or request failed');
                     $('#item_id_' + count).html('<option value="">No products available</option>');

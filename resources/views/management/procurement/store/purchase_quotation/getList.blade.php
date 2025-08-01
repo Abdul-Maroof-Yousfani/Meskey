@@ -1,37 +1,39 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Purchase Request No </th>
-            <th class="col-sm-2">Purchase Request Date</th>
+            <th class="col-sm-2">Purchase Quotation No </th>
+            <th class="col-sm-2">Purchase Quotation Date</th>
             <th class="col-sm-2">Location</th>
             <th class="col-sm-2">Category</th>
             <th class="col-sm-2">Item</th>
             <th class="col-sm-2">Item UOM</th>
             <th class="col-sm-2">Qty</th>
+            <th class="col-sm-2">Rate</th>
+            <th class="col-sm-2">Total Amount</th>
             {{-- <th class="col-sm-2">Item Status</th> --}}
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($PurchaseRequests) != 0)
-            @foreach ($PurchaseRequests as $key => $row)
+        @if (count($PurchaseQuotation) != 0)
+            @foreach ($PurchaseQuotation as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchase_request->purchase_request_no }} <br>
+                            {{ $row->purchase_quotation->purchase_quotation_no }} <br>
                         </p>
                     </td>
                     <td>
                          <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('h:i A') }} <br>
+                            {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('Y-m-d') }} /
+                            {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('h:i A') }} <br>
 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
                             
-                            {{ optional($row->purchase_request->location)->name}} 
+                            {{ optional($row->purchase_quotation->location)->name}} 
                         </p>
                     </td>
                     <td>
@@ -58,24 +60,36 @@
                             {{ $row->qty}} 
                         </p>
                     </td>
+                    <td>
+                        <p class="m-0">
+                            
+                            {{ $row->rate}} 
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            
+                            {{ $row->total}} 
+                        </p>
+                    </td>
                     
                    
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
+                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $row->id) }}','Edit Purchase Quotation',false,'80%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
+                            <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $row->id) }}','{{ route('store.get.purchase-quotation') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
-                        @can('role-delete')
-                        @php
+                        {{-- @can('role-delete') --}}
+                        {{-- @php
                             $currentUserRoleId = Auth::user()->role_id; // adjust if many-to-many
                             $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
                         @endphp
@@ -87,7 +101,7 @@
                             @else
                                 <span class="badge badge-success">Approved</span>
                             @endif
-                        @endcan
+                        @endcan --}}
                     </td>
                 </tr>
             @endforeach
@@ -124,7 +138,7 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $PurchaseRequests->links() }}
+        {{ $PurchaseQuotation->links() }}
     </div>
 </div>
 <script>

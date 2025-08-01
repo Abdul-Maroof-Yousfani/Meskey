@@ -8,13 +8,13 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Purchase Request </h2>
+                    <h2 class="page-title">Purchase Quotation </h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('store.purchase-request.create') }}','Add Purchase Request',false,'80%')"
+                        onclick="openModal(this,'{{ route('store.purchase-quotation.create') }}','Add Purchase Quotation',false,'90%')"
                         type="button" class="btn btn-primary position-relative">
-                        Create Purchase Request
+                        Create Purchase Quotation
                     </button>
                 </div>
             </div>
@@ -45,13 +45,15 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Purchase Request No </th>
-                                            <th class="col-sm-2">Purchase Request Date</th>
+                                            <th class="col-sm-2">Purchase Quotation No </th>
+                                            <th class="col-sm-2">Purchase Quotation Date</th>
                                             <th class="col-sm-2">Location</th>
                                             <th class="col-sm-2">Category</th>
                                             <th class="col-sm-2">Item</th>
                                             <th class="col-sm-2">Item UOM</th>
                                             <th class="col-sm-2">Qty</th>
+                                            <th class="col-sm-2">Rate</th>
+                                            <th class="col-sm-2">Total Amount</th>
                                             {{-- <th class="col-sm-2">Item Status</th> --}}
                                             <th class="col-sm-1">Action</th>
                                         </tr>
@@ -70,7 +72,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('store.get.purchase-request') }}`)
+            filterationCommon(`{{ route('store.get.purchase-quotation') }}`)
         });
     </script>
 @endsection
