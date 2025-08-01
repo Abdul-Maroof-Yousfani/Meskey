@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('purchase_requests', function (Blueprint $table) {
+        Schema::create('purchase_quotations', function (Blueprint $table) {
             $table->id();
-            $table->string('purchase_request_no')->unique();
+            $table->unsignedBigInteger('purchase_request_id');
+            $table->string('purchase_quotation_no')->unique();
             $table->unsignedBigInteger('company_id');
-            $table->date('purchase_date');
+            $table->date('quotation_date');
             $table->unsignedBigInteger('location_id');
             $table->string('reference_no')->nullable();
             $table->text('description')->nullable();
             $table->enum('status', ['1', '0'])->default('1')->comment('1 = active, 0 = inactive');
             $table->softDeletes(); // Adds `deleted_at` column for soft deletes
             $table->timestamps();
-
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('purchase_requests');
+        Schema::dropIfExists('purchase_quotations');
     }
 };

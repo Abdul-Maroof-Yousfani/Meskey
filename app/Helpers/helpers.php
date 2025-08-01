@@ -4,9 +4,14 @@ use App\Models\Acl\{Company, Menu};
 use App\Models\{Category, Product, User};
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
+use App\Models\Master\Supplier;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Fluent;
 
 const SLAB_TYPE_PERCENTAGE = 1;
@@ -257,9 +262,23 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName)
 
 function get_product_by_category($id)
 {
-    $Product = Product::where('category_id', $id)->get();
+    $Product = Product::with('unitOfMeasure')->where('category_id', $id)->get();
 
     return $Product;
+}
+
+function get_locations()
+{
+    $CompanyLocation = CompanyLocation::all();
+
+    return $CompanyLocation;
+}
+
+function get_supplier()
+{
+    $Supplier = Supplier::all();
+
+    return $Supplier;
 }
 
 function get_uom($id)
@@ -450,7 +469,7 @@ if (!function_exists('createTransaction')) {
             return Transaction::create($transactionData);
         } catch (\Exception $e) {
             // Log the error
-            \Log::error('Failed to create transaction: ' . $e->getMessage());
+            Log::error('Failed to create transaction: ' . $e->getMessage());
             throw $e;
         }
     }

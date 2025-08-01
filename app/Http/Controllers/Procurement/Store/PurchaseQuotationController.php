@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Http\Controllers\Procurement\Store;
-
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseAgainstJobOrder;
 use App\Models\Procurement\Store\PurchaseItemApprove;
-use Illuminate\Http\Request;
+use App\Models\Procurement\Store\PurchaseQuotation;
+use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Sales\JobOrder;
@@ -15,12 +16,11 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-
-class PurchaseRequestController extends Controller
+class PurchaseQuotationController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_request.index');
+        return view('management.procurement.store.purchase_quotation.index');
     }
 
      /**
@@ -28,26 +28,40 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $PurchaseRequests = PurchaseRequestData::with('purchase_request','category','item','approval')
+        $PurchaseQuotation = PurchaseQuotationData::with('purchase_quotation','category','item','approval')
         // ->when($request->filled('search'), function ($q) use ($request) {
         //     $searchTerm = '%' . $request->search . '%';
         //     return $q->where(function ($sq) use ($searchTerm) {
-        //         $sq->where('purchase_request_no', 'like', $searchTerm);
+        //         $sq->where('purchase_quotation_no', 'like', $searchTerm);
         //     });
         // })
         ->whereStatus(true)->latest()
         ->paginate(request('per_page', 25));
 
-        return view('management.procurement.store.purchase_request.getList', compact('PurchaseRequests'));
+        return view('management.procurement.store.purchase_quotation.getList', compact('PurchaseQuotation'));
     }
 
-    public function approve($id){
+    public function approve_item(Request $request){
         
-        PurchaseItemApprove::create([
-            'status_id' => 2,
-            'role_id' => Auth::id(),
-            'purchase_request_data_id' => $id,
-        ]);
+        $requestId = $request->id;
+
+        $master = PurchaseRequest::find($requestId);
+        $dataItems = PurchaseRequestData::with(['approval', 'purchase_request', 'item', 'category'])
+        ->where('purchase_request_id', $requestId)
+        ->where('status', 1)
+        ->where('quotation_status',1)
+        ->whereHas('approval') // sirf existence check
+        ->get();
+        
+        $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+
+        $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems','categories','job_orders'))->render();
+
+        return response()->json(
+            ['html' => $html, 'master' => $master]
+        );
     }
 
     /**
@@ -55,9 +69,20 @@ class PurchaseRequestController extends Controller
      */
     public function create()
     {
+
+        $approvedRequests = PurchaseRequestData::with(['approval','purchase_request'])
+        ->where('status', 1)
+        ->where('quotation_status',1)
+        ->whereHas('approval') // sirf existence check
+        ->select('purchase_request_id')
+        ->groupBy('purchase_request_id')
+        ->get();
+        
         $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
-        return view('management.procurement.store.purchase_request.create',compact('categories','job_orders'));
+
+
+
+        return view('management.procurement.store.purchase_quotation.create',compact('categories','approvedRequests'));
     }
 
     /**
@@ -65,9 +90,11 @@ class PurchaseRequestController extends Controller
      */
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'purchase_date'    => 'required|date',
-            'company_location_id'      => 'required|exists:company_locations,id',
+            'purchase_request_id'      => 'required|exists:purchase_requests,id',
+            'location_id'      => 'required|exists:company_locations,id',
             'reference_no'     => 'nullable|string|max:255',
             'description'      => 'nullable|string',
 
@@ -82,48 +109,47 @@ class PurchaseRequestController extends Controller
 
             'qty'              => 'required|array|min:1',
             'qty.*'            => 'required|numeric|min:0.01',
-
-            'job_order_id'     => 'nullable|array',
-            'job_order_id.*'   => 'nullable|exists:job_orders,id',
+            
+            'rate'              => 'required|array|min:1',
+            'rate.*'            => 'required|numeric|min:0.01',
 
             'remarks'          => 'nullable|array',
             'remarks.*'        => 'nullable|string|max:1000',
         ]);
 
-
         DB::beginTransaction();
         try {
 
             $datePrefix = date('m-d-Y') . '-';
-            $purchaseRequest = PurchaseRequest::create([
-                'purchase_request_no' => self::getNumber($request, $request->company_location_id, $request->purchase_date),
-                'purchase_date' => $request->purchase_date,
-                'location_id' => $request->company_location_id,
+            $PurchaseQuotation = PurchaseQuotation::create([
+                'purchase_quotation_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
+                'purchase_request_id' => $request->purchase_request_id,
+                'quotation_date' => $request->purchase_date,
+                'location_id' => $request->location_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_request_data
-                $requestData = PurchaseRequestData::create([
-                    'purchase_request_id' => $purchaseRequest->id,
+                // Save purchase_quotation_data
+                $requestData = PurchaseQuotationData::create([
+                    'purchase_quotation_id' => $PurchaseQuotation->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
+                    'rate' => $request->rate[$index],
+                    'total' => $request->total[$index],
+                    'supplier_id' => $request->supplier_id[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
-                // Insert related job orders if any
-                if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                    foreach ($request->job_order_id[$index] as $jobOrderId) {
-                        PurchaseAgainstJobOrder::create([
-                            'purchase_request_id' => $purchaseRequest->id,
-                            'purchase_request_data_id' => $requestData->id,
-                            'job_order_id' => $jobOrderId,
-                        ]);
-                    }
+                if($request->data_id[$index] != 0){
+                   $data =  PurchaseRequestData::find($request->data_id[$index])->update([
+                      'quotation_status' => 2,
+                   ]);
                 }
+                
             }
 
             DB::commit();
@@ -131,7 +157,7 @@ class PurchaseRequestController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Purchase request created successfully.',
-                'data' => $purchaseRequest,
+                'data' => $PurchaseQuotation,
             ], 201);
 
         } catch (\Exception $e) {
@@ -154,9 +180,9 @@ class PurchaseRequestController extends Controller
         $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-        $data = PurchaseRequestData::with('purchase_request','category','item')
+        $data = PurchaseQuotationData::with('purchase_quotation','category','item')
             ->findOrFail($id);
-        return view('management.procurement.store.purchase_request.edit',compact('data','categories','locations','job_orders'));
+        return view('management.procurement.store.purchase_quotation.edit',compact('data','categories','locations','job_orders'));
     }
 
     /**
@@ -166,7 +192,7 @@ class PurchaseRequestController extends Controller
     {
         $validated = $request->validate([
             'purchase_date'    => 'required|date',
-            'company_location_id' => 'required|exists:company_locations,id',
+            'location_id' => 'required|exists:company_locations,id',
             'reference_no'     => 'nullable|string|max:255',
             'description'      => 'nullable|string',
 
@@ -195,25 +221,28 @@ class PurchaseRequestController extends Controller
         DB::beginTransaction();
         try {
             // Find existing purchase request by ID
-            $purchaseRequest = PurchaseRequest::findOrFail($id);
+            $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
 
-            // Update purchase request fields (do NOT update purchase_request_no)
-            $purchaseRequest->update([
+            // Update purchase request fields (do NOT update purchase_quotation_no)
+            $PurchaseQuotation->update([
                 'purchase_date' => $request->purchase_date,
-                'location_id' => $request->company_location_id,
+                'location_id' => $request->location_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
             ]);
 
-            $data = PurchaseRequestData::find($request->data_id)->delete();
-            // Delete existing related purchase_request_data and their job orders to avoid duplicates
-            PurchaseAgainstJobOrder::where('purchase_request_data_id', $request->id)->delete();
-            // Insert new purchase_request_data and job orders
+            // Delete existing related purchase_quotation_data and their job orders to avoid duplicates
+            foreach ($PurchaseQuotation->PurchaseData as $existingData) {
+                PurchaseAgainstJobOrder::where('purchase_quotation_data_id', $existingData->id)->delete();
+                $existingData->delete();
+            }
+
+            // Insert new purchase_quotation_data and job orders
             foreach ($request->item_id as $index => $itemId) {
 
-                $requestData = PurchaseRequestData::create([
-                    'purchase_request_id' => $purchaseRequest->id,
+                $requestData = PurchaseQuotationData::create([
+                    'purchase_quotation_id' => $PurchaseQuotation->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
@@ -223,8 +252,8 @@ class PurchaseRequestController extends Controller
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
                         PurchaseAgainstJobOrder::create([
-                            'purchase_request_id' => $purchaseRequest->id,
-                            'purchase_request_data_id' => $requestData->id,
+                            'purchase_quotation_id' => $PurchaseQuotation->id,
+                            'purchase_quotation_data_id' => $requestData->id,
                             'job_order_id' => $jobOrderId,
                         ]);
                     }
@@ -236,7 +265,7 @@ class PurchaseRequestController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Purchase request updated successfully.',
-                'data' => $purchaseRequest,
+                'data' => $PurchaseQuotation,
             ], 200);
 
         } catch (\Exception $e) {
@@ -256,20 +285,20 @@ class PurchaseRequestController extends Controller
      */
     public function destroy($id)
     {
-        // $PurchaseRequest = PurchaseRequest::findOrFail($id);
-        $PurchaseRequestData = PurchaseRequestData::where('id',$id)->update(['status' => 0]);
-        // $PurchaseRequest->delete();
+        // $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
+        $PurchaseQuotationData = PurchaseQuotationData::where('id',$id)->delete();
+        // $PurchaseQuotation->delete();
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
-        $location = CompanyLocation::find($locationId ?? $request->company_location_id);
+        $location = CompanyLocation::find($locationId ?? $request->location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $prefix = $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $latestContract = PurchaseRequest::where('purchase_request_no', 'like', "$prefix-%")
+        $latestContract = PurchaseQuotation::where('purchase_quotation_no', 'like', "$prefix-%")
             ->latest()
             ->first();
 
@@ -284,16 +313,16 @@ class PurchaseRequestController extends Controller
             $newNumber = 1;
         }
 
-        $purchase_request_no = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_quotation_no = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
-                'purchase_request_no' => $purchase_request_no
+                'purchase_quotation_no' => $purchase_quotation_no
             ]);
         }
 
-        return $purchase_request_no;
+        return $purchase_quotation_no;
     }
 
 }
