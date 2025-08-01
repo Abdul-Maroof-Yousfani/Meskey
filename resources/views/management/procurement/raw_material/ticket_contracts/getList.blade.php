@@ -27,7 +27,7 @@
                 $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
             @endphp
             <tr
-                class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
+                class="{{ is_null($row->arrival_purchase_order_id) || ($row->arrival_purchase_order_id && $row->is_ticket_verified == 0) ? ' bg-orange ' : '' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
                 <td>
                     #{{ $row->unique_no ?? 'N/A' }}
                     @if ($row->first_qc_status == 'rejected')
