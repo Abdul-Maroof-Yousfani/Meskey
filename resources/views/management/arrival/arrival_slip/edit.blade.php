@@ -74,8 +74,8 @@
                             </div>
                             <div class="head-add1">
                                 <h5>
-                                Arrival
-                                Slip
+                                    Arrival
+                                    Slip
                                 </h5>
                             </div>
 

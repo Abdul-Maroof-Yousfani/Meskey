@@ -1,140 +1,135 @@
-<table class="table m-0">
-    <thead>
-        <tr>
-            <th class="col-sm-2">Ticket No.</th>
-            <th class="col-sm-2">Ticket Details</th>
-            <th class="col-sm-2">Contract Details</th>
-            <th class="col-sm-2">Arrival Details</th>
-            <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (count($tickets) != 0)
-            @foreach ($tickets as $key => $row)
-                <tr
-                    class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '  ' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
-                    <td>
-                        <p class="m-0">
-                            #{{ $row->unique_no ?? 'N/A' }}
-                            @if (false && isset($row->purchaseOrder->status) && $row->purchaseOrder->status)
-                                <span
-                                    class="badge 
-                                    @if ($row->purchaseOrder->status == 'draft') bg-warning
-                                    @elseif($row->purchaseOrder->status == 'approved') bg-success
-                                    @elseif($row->purchaseOrder->status == 'rejected') bg-danger
-                                    @else bg-secondary @endif
-                                ">
-                                    {{ ucfirst($row->purchaseOrder->status) }}
-                                </span>
-                            @endif
-                            <br>
-                        </p>
-                    </td>
-                    <td>
-                        <div class="div-box-b">
-                            <small>
-                                <strong>Broker Name:</strong> {{ $row->broker_name ?? 'N/A' }} <br>
-                                <strong>Account Name:</strong> {{ $row->accounts_of_name ?? 'N/A' }} <br>
-                                <strong>Truck Number:</strong> {{ $row->truck_no ?? 'N/A' }} <br>
-                                <strong>Bilty Number:</strong> {{ $row->bilty_no ?? 'N/A' }} <br>
-                                <strong>QC Product:</strong> {{ $row->qcProduct->name ?? 'N/A' }} <br>
-                                <strong>Bags:</strong> {{ $row->bags ?? 'N/A' }} <br>
-                                <strong>Net Weight:</strong> {{ $row->net_weight ?? 'N/A' }} <br>
-                            </small>
-                        </div>
-                    </td>
-                    <td>
-                        @if ($row->purchaseOrder)
-                            <div class="div-box-b">
-                                <small>
-                                    <strong>Contract No:</strong> {{ $row->purchaseOrder->contract_no ?? 'N/A' }} <br>
-                                    <strong>Supplier Name:</strong> {{ $row->purchaseOrder->supplier->name ?? 'N/A' }}
-                                    <br>
-                                    <strong>Broker Name:</strong> {{ $row->purchaseOrder->broker_one_name ?? 'N/A' }}
-                                    <br>
-                                    <strong>Purchase Type:</strong>
-                                    {{ formatEnumValue($row->purchaseOrder->purchase_type ?? 'N/A') }} <br>
-                                    <strong>No. of Trucks:</strong> {{ $row->purchaseOrder->no_of_trucks ?? 'N/A' }}
-                                    <br>
-                                    <strong>Truck Number:</strong> {{ $row->purchaseOrder->truck_no ?? 'N/A' }} <br>
-                                    <strong>QC Product:</strong> {{ $row->purchaseOrder->qcProduct->name ?? 'N/A' }}
-                                    <br>
-                                </small>
-                            </div>
+<x-sticky-table :items="$tickets" :leftSticky="2" :rightSticky="1" :emptyMessage="'No tickets found'" :pagination="$tickets->links()">
+    @slot('head')
+        <th>Ticket #</th>
+        <th>GRN #</th>
+        <th>Miller</th>
+        <th>Broker</th>
+        <th>A/c Of</th>
+        <th>Commodity</th>
+        <th>Truck #</th>
+        <th>Status</th>
+        <th>Station</th>
+        <th>Tabaar Remarks</th>
+        <th>Loaded Weight</th>
+        <th>Arrived Weight</th>
+        <th>Contract</th>
+        <th>Final QC Report</th>
+        <th>Bilty</th>
+        <th>Loading Weight</th>
+        <th>Arrival Slip</th>
+        <th>Action</th>
+    @endslot
+
+    @slot('body')
+        @foreach ($tickets as $row)
+            @php
+                $tabaar = formatDeductionsAsString(getTicketDeductions($row));
+                $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
+            @endphp
+            <tr
+                class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
+                <td>#{{ $row->unique_no ?? 'N/A' }}</td>
+                <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
+                <td>{{ $row->miller->name ?? 'N/A' }}</td>
+                <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
+                <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
+                <td>{{ $row->qcProduct->name ?? ($row->product->name ?? 'N/A') }}</td>
+                <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
+                <td>
+                    @php
+                        $status = 'RF';
+                        if (isset($row->saudaType->id)) {
+                            if ($row->saudaType->id == 1) {
+                                if ($row->document_approval_status == 'fully_approved') {
+                                    $status = 'OK';
+                                } elseif ($row->document_approval_status == 'half_approved') {
+                                    $status = 'P-RH';
+                                } else {
+                                    $status = 'RF';
+                                }
+                            } elseif ($row->saudaType->id == 2) {
+                                if ($row->document_approval_status == 'fully_approved') {
+                                    $status = 'TS';
+                                } elseif ($row->document_approval_status == 'half_approved') {
+                                    $status = 'TS-RH';
+                                } else {
+                                    $status = 'RF';
+                                }
+                            } else {
+                                $status = 'RF';
+                            }
+                        } else {
+                            $status = 'RF';
+                        }
+                    @endphp
+                    @if ($row->first_qc_status == 'rejected')
+                        <span class="badge bg-danger">RH</span>
+                    @else
+                        @if ($status == 'OK')
+                            <span class="badge bg-success">OK</span>
+                        @elseif ($status == 'P-RH')
+                            <span class="badge bg-warning">P-RH</span>
+                        @elseif ($status == 'TS')
+                            <span class="badge bg-primary">TS</span>
+                        @elseif ($status == 'TS-RH')
+                            <span class="badge bg-warning">TS-RH</span>
                         @else
-                            N/A
+                            <span class="badge bg-info">RF</span>
                         @endif
-                    </td>
-                    <td>
-                        <div class="div-box-b">
-                            <small>
-                                <strong>Arrival Weight:</strong>
-                                {{ ($row->firstWeighbridge->weight ?? 0) - ($row->secondWeighbridge->weight ?? 0) ?? 'N/A' }}
-                                <br>
-                                <strong>First Weight:</strong> {{ $row->firstWeighbridge->weight ?? 'N/A' }} <br>
-                                <strong>Second Weight:</strong> {{ $row->secondWeighbridge->weight ?? 'N/A' }} <br>
-                                <strong>Station:</strong> {{ $row->station->name ?? 'N/A' }} <br>
-                                <strong>Arrival Date:</strong>
-                                {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                                <strong>Arrival Time:</strong>
-                                {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-                                <strong>Status:</strong>
-                                {{ formatEnumValue($row->document_approval_status) ?? 'N/A' }} <br>
-                            </small>
-                        </div>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        {{-- @can('role-edit') --}}
-                        @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
-                            <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @else
-                            <a href="{{ route('raw-material.ticket-contracts.edit', $row->id) }}"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @endif
-                        {{-- @endcan --}}
-                    </td>
-                </tr>
-            @endforeach
-        @else
-            <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
-                    <div class="my-5">
-                        <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
-                            <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
-                                <ellipse fill="#f5f5f5" cx="32" cy="33" rx="32" ry="7">
-                                </ellipse>
-                                <g fill-rule="nonzero" stroke="#d9d9d9">
-                                    <path
-                                        d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z">
-                                    </path>
-                                    <path
-                                        d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z"
-                                        fill="#fafafa"></path>
-                                </g>
-                            </g>
-                        </svg>
-                        <p class="ant-empty-description">No data</p>
-                    </div>
+                    @endif
+                </td>
+                <td>{{ $row->station->name ?? 'N/A' }}</td>
+                <td>{{ $tabaar }}</td>
+                <td>{{ $row->net_weight ?? 'N/A' }}</td>
+                <td>{{ $row->arrived_net_weight ?? 0 }}</td>
+                <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td>
+                <td>
+                    <button class="info p-1 text-center mr-2 position-relative btn"
+                        onclick="openModal(this,'{{ route('ticket.show', ['ticket' => $row->id, 'source' => 'contract']) }}','Ticket: {{ $row->unique_no }}', true, '90%')">
+                        <a href="#">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                    </button>
+                </td>
+                <td>
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight->bilty_document)
+                        onclick="openImageModal(['{{ $row->freight->bilty_document ? asset($row->freight->bilty_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
+                        <a href="#">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                    </button>
+                </td>
+                <td>
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight->loading_weight_document)
+                        onclick="openImageModal(['{{ $row->freight->loading_weight_document ? asset($row->freight->loading_weight_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
+                        <a href="#">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                    </button>
+                </td>
+                <td>
+                    <button
+                        onclick="openModal(this,'{{ route('arrival-slip.edit', $row->arrivalSlip->id) }}','Ticket: {{ $row->unique_no }}', true, '100%')"
+                        class="info p-1 text-center mr-2 position-relative btn">
+                        <a href="#">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                    </button>
+                </td>
+                <td>
+                    @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
+                        <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
+                    @else
+                        <a href="{{ route('raw-material.ticket-contracts.edit', $row->id) }}"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                    @endif
                 </td>
             </tr>
-        @endif
-    </tbody>
-</table>
-
-<div class="row d-flex" id="paginationLinks">
-    <div class="col-md-12 text-right">
-        {{ $tickets->links() }}
-    </div>
-</div>
+        @endforeach
+    @endslot
+</x-sticky-table>

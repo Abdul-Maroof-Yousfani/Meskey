@@ -19,11 +19,11 @@
                     value="{{ $freight->arrivalTicket->miller->name ?? 'N/A' }}" readonly />
             </div>
         </div>
-   <div class="col-md-6">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Accounts Of</label>
-                <input type="text" name="supplier" class="form-control" value="{{ $freight->arrivalTicket->accounts_of_name ?? 'N/A' }} "
-                    readonly />
+                <input type="text" name="supplier" class="form-control"
+                    value="{{ $freight->arrivalTicket->accounts_of_name ?? 'N/A' }} " readonly />
             </div>
         </div>
         <div class="col-md-6">
@@ -48,11 +48,11 @@
             </div>
         </div>
 
-         <div class="col-md-6">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Sauda Type</label>
-           <input type="text" disabled name="sauda_type" class="form-control"
-    value="{{ optional($freight->arrivalTicket->saudaType)->name }}"  />
+                <input type="text" disabled name="sauda_type" class="form-control"
+                    value="{{ optional($freight->arrivalTicket->saudaType)->name }}" />
             </div>
         </div>
 

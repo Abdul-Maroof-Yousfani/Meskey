@@ -204,9 +204,11 @@ class TicketController extends Controller
         $arrivalTicket = ArrivalTicket::findOrFail($id);
         return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf', 'arrivalPurchaseOrders', 'suppliers', 'products'));
     }
+
     public function show(Request $request, $id)
     {
         $authUserCompany = $request->company_id;
+        $source = $request->source ?? false;
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -328,13 +330,13 @@ class TicketController extends Controller
             }
         }
 
-
-        // dd($allInitialRequests);
-
+        $layout = !isset($source) || $source != 'contract' ? 'management.layouts.master' : 'management.layouts.master_blank';
 
         return view('management.arrival.ticket.show', compact(
             'arrivalTicket',
             'accountsOf',
+            'source',
+            'layout',
             'innerRequestsData',
             'arrivalSamplingRequest',
             'initialRequestsData',

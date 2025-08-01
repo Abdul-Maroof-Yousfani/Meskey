@@ -17,8 +17,6 @@
         </div>
     </aside>
 
-
-
     <div class="model d-none" id="settinsgs">
         <div class="model-content">
             <div class="d-flex justify-content-between align-items-center">

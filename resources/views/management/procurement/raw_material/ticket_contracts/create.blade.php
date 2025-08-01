@@ -41,7 +41,7 @@
                             @if ($arrivalTicket->first_qc_status == 'rejected')
                                 <span class="badge badge-danger ml-2">Rejected</span>
                             @elseif($arrivalTicket->is_ticket_verified == 1)
-                                <span class="badge badge-danger ml-2">Contract Verified</span>
+                                <span class="badge badge-success ml-2">Contract Verified</span>
                             @endif
                         </h4>
                     </div>

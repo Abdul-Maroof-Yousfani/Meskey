@@ -28,7 +28,8 @@
                 <td>{{ $row->broker_one_name ?? ($row->broker_two_name ?? ($row->broker_three_name ?? 'N/A')) }}</td>
                 <td>{{ $row->createdByUser->name ?? 'N/A' }}</td>
                 <td>
-                    <div class="div-box-b">
+                    {{ $row->rate_per_100kg ?? 'N/A' }}
+                    <div class="d-none div-box-b">
                         <small>
                             <strong>KG:</strong> {{ $row->rate_per_kg ?? 0 }}<br>
                             <strong>Mound:</strong> {{ $row->rate_per_mound ?? 0 }}<br>

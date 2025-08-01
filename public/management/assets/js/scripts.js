@@ -501,6 +501,100 @@ function printErrorMsg(errors) {
     }
   });
 }
+function openImageModal(
+  imageUrls,
+  title = "Image Viewer",
+  drawerWidth = "50%"
+) {
+  $("#modal-sidebar .modal-title").html(title);
+  $("#modal-sidebar").css("width", drawerWidth).css("right", `-${drawerWidth}`);
+
+  $("#modal-sidebar .modal-tab-content").html(`
+    <div class="image-viewer-container" style="height: 100%; overflow-y: auto;">
+      <div class="image-loader text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <p class="mt-2">Loading images...</p>
+      </div>
+    </div>
+  `);
+
+  $("#modal-sidebar").addClass("open");
+  $("body").addClass("drawer-opened");
+
+  const images = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+  const container = $("#modal-sidebar .image-viewer-container");
+  let loadedImages = 0;
+
+  images.forEach((imageUrl, index) => {
+    const img = new Image();
+    img.onload = function () {
+      loadedImages++;
+
+      const imageElement = $(`
+        <div class="image-wrapper mb-4" style="text-align: center;">
+          <img src="${imageUrl}" class="img-fluid" style="max-height: 70vh; max-width: 100%;">
+          ${
+            images.length > 1
+              ? `<div class="image-counter mt-2">Image ${index + 1} of ${
+                  images.length
+                }</div>`
+              : ""
+          }
+          <div class="image-actions mt-2">
+            <button class="btn btn-sm btn-primary zoom-in" data-image="${imageUrl}">
+              <i class="ft-plus"></i> Zoom In
+            </button>
+            <button class="btn btn-sm btn-primary zoom-out" data-image="${imageUrl}">
+              <i class="ft-minus"></i> Zoom Out
+            </button>
+            <button class="btn btn-sm btn-primary zoom-reset" data-image="${imageUrl}">
+              <i class="ft-refresh-cw"></i> Reset
+            </button>
+          </div>
+        </div>
+      `);
+
+      container.find(".image-loader").before(imageElement);
+
+      if (loadedImages === images.length) {
+        container.find(".image-loader").remove();
+      }
+    };
+
+    img.onerror = function () {
+      loadedImages++;
+      container.find(".image-loader").before(`
+        <div class="alert alert-danger">
+          Failed to load image: ${imageUrl}
+        </div>
+      `);
+
+      if (loadedImages === images.length) {
+        container.find(".image-loader").remove();
+      }
+    };
+
+    img.src = imageUrl;
+  });
+
+  $(document).on("click", ".zoom-in", function () {
+    const img = $(this).closest(".image-wrapper").find("img");
+    const currentWidth = img.width();
+    img.css("width", currentWidth * 1.2);
+  });
+
+  $(document).on("click", ".zoom-out", function () {
+    const img = $(this).closest(".image-wrapper").find("img");
+    const currentWidth = img.width();
+    img.css("width", currentWidth * 0.8);
+  });
+
+  $(document).on("click", ".zoom-reset", function () {
+    $(this).closest(".image-wrapper").find("img").css("width", "");
+  });
+}
 
 function openModal(button, url, title, viewonly = false, drawerWidth = "50%") {
   var $button = $(button); // Get the button element

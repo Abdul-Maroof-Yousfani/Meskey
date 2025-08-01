@@ -894,9 +894,9 @@ tr.editing {
   position: relative;
   width: 100%;
   overflow: hidden;
-  /* border: 1px solid #e0e0e0; */
   border-radius: 4px;
   /* background: white; */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .sticky-table-scroller {
@@ -928,25 +928,45 @@ tr.editing {
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.8rem;
-  /* color: #495057; */
+  color: #495057;
 }
 
-.sticky-table td[data-sticky],
-.sticky-table th[data-sticky] {
+.sticky-table .sticky-col-left {
   position: sticky;
-  z-index: 11;
-}
-
-.sticky-table td[data-sticky-left],
-.sticky-table th[data-sticky-left] {
   left: 0;
-  border-right: 1px solid #e0e0e0;
+  z-index: 11;
+  /* background: white; */
 }
 
-.sticky-table td[data-sticky-right],
-.sticky-table th[data-sticky-right] {
+.sticky-table .sticky-col-right {
+  position: sticky;
   right: 0;
-  border-left: 1px solid #e0e0e0;
+  z-index: 12;
+  /* background: white; */
+}
+
+.sticky-table .sticky-col-left-last {
+  box-shadow: 5px 0 10px -4px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-table .sticky-col-right-first {
+  box-shadow: -5px 0 10px -4px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-table thead .sticky-col-left,
+.sticky-table thead .sticky-col-right {
+  z-index: 14;
+  /* background: #f8f9fa !important; */
+}
+
+.sticky-table tr:hover td {
+  /* background-color: #f5f5f5 !important; */
+}
+
+.sticky-table-pagination {
+  padding: 15px;
+  border-top: 1px solid #e0e0e0;
+  /* background: white; */
 }
 
 .sticky-table td[data-sticky-left-last],

@@ -39,67 +39,108 @@
     </div>
 
     @if ($pagination)
-        <div class="sticky-table-pagination">
-            {!! $pagination !!}
+        <div class="row d-flex" id="paginationLinks">
+            <div class="col-md-12 text-right">
+                {!! $pagination !!}
+            </div>
         </div>
     @endif
 </div>
 
-<script>
-    document.querySelectorAll('.sticky-table-container').forEach(container => {
-        const leftSticky = parseInt(container.dataset.leftSticky) || 0;
-        const rightSticky = parseInt(container.dataset.rightSticky) || 0;
+@once
 
-        const table = container.querySelector('.sticky-table');
+    <script>
+        document.querySelectorAll('.sticky-table-container').forEach(container => {
+            const leftSticky = parseInt(container.dataset.leftSticky) || 0;
+            const rightSticky = parseInt(container.dataset.rightSticky) || 0;
 
-        if (!table) return;
+            const table = container.querySelector('.sticky-table');
+            if (!table) return;
 
-        const headers = table.querySelectorAll('thead th');
-        headers.forEach((th, index) => {
-            if (index < leftSticky) {
-                th.setAttribute('data-sticky', '');
-                th.setAttribute('data-sticky-left', '');
-                th.style.left = calculateLeftPosition(index, leftSticky);
-            } else if (index >= headers.length - rightSticky) {
-                th.setAttribute('data-sticky', '');
-                th.setAttribute('data-sticky-right', '');
-                th.style.right = calculateRightPosition(headers.length - index - 1,
-                    rightSticky);
-            }
-        });
+            const headers = table.querySelectorAll('thead th');
+            const headerRow = table.querySelector('thead tr');
 
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            cells.forEach((td, index) => {
+            headers.forEach((th, index) => {
                 if (index < leftSticky) {
-                    td.setAttribute('data-sticky', '');
-                    td.setAttribute('data-sticky-left', '');
-                    td.style.left = calculateLeftPosition(index, leftSticky);
-
+                    th.classList.add('sticky-col-left');
                     if (index === leftSticky - 1) {
-                        td.setAttribute('data-sticky-left-last', '');
+                        th.classList.add('sticky-col-left-last');
                     }
-                } else if (index >= cells.length - rightSticky) {
-                    td.setAttribute('data-sticky', '');
-                    td.setAttribute('data-sticky-right', '');
-                    td.style.right = calculateRightPosition(cells.length - index - 1,
-                        rightSticky);
-
-                    if (index === cells.length - rightSticky) {
-                        td.setAttribute('data-sticky-right-first', '');
+                } else if (index >= headers.length - rightSticky) {
+                    th.classList.add('sticky-col-right');
+                    if (index === headers.length - rightSticky) {
+                        th.classList.add('sticky-col-right-first');
                     }
                 }
             });
+
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                cells.forEach((td, index) => {
+                    if (index < leftSticky) {
+                        td.classList.add('sticky-col-left');
+                        if (index === leftSticky - 1) {
+                            td.classList.add('sticky-col-left-last');
+                        }
+                    } else if (index >= cells.length - rightSticky) {
+                        td.classList.add('sticky-col-right');
+                        if (index === cells.length - rightSticky) {
+                            td.classList.add('sticky-col-right-first');
+                        }
+                    }
+                });
+            });
+
+            if (leftSticky > 0) {
+                let leftPositions = [];
+                let cumulativeWidth = 0;
+
+                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td') : [];
+
+                for (let i = 0; i < leftSticky; i++) {
+                    if (firstRowCells[i]) {
+                        cumulativeWidth += firstRowCells[i].offsetWidth;
+                    } else {
+                        cumulativeWidth += 150;
+                    }
+                    leftPositions.push(cumulativeWidth);
+                }
+
+                const leftStickyCells = table.querySelectorAll('.sticky-col-left');
+                leftStickyCells.forEach(cell => {
+                    const index = Array.from(cell.parentNode.children).indexOf(cell);
+                    if (index < leftSticky) {
+                        cell.style.left = (index === 0 ? 0 : leftPositions[index - 1]) + 'px';
+                    }
+                });
+            }
+
+            if (rightSticky > 0) {
+                let rightPositions = [];
+                let cumulativeWidth = 0;
+
+                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td') : [];
+                const totalCells = firstRowCells.length;
+
+                for (let i = totalCells - 1; i >= totalCells - rightSticky; i--) {
+                    if (firstRowCells[i]) {
+                        cumulativeWidth += firstRowCells[i].offsetWidth;
+                    } else {
+                        cumulativeWidth += 150;
+                    }
+                    rightPositions.unshift(cumulativeWidth);
+                }
+
+                const rightStickyCells = table.querySelectorAll('.sticky-col-right');
+                rightStickyCells.forEach(cell => {
+                    const index = Array.from(cell.parentNode.children).indexOf(cell);
+                    if (index >= totalCells - rightSticky) {
+                        const posIndex = rightSticky - (totalCells - index);
+                        cell.style.right = (posIndex === 0 ? 0 : rightPositions[posIndex - 1]) + 'px';
+                    }
+                });
+            }
         });
-
-    });
-
-    function calculateLeftPosition(index, total) {
-        return `${index * 150}px`;
-    }
-
-    function calculateRightPosition(index, total) {
-        return `${index * 150}px`;
-    }
-</script>
+    </script>
+@endonce
