@@ -313,8 +313,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Avg Rate</label>
-                    <input type="text" class="form-control" name="avg_rate"
-                        value="{{ number_format($avgRate, 2) }}" readonly>
+                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}"
+                        readonly>
                 </div>
             </div>
 
@@ -560,8 +560,10 @@
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
+                                                        {{-- <span
+                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span> --}}
                                                         <span
-                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                            class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -711,13 +713,37 @@
                                     id="loading_weighbridge_amount" value="{{ $loadingWeighbridgeSum }}" readonly>
                             </td>
                         </tr>
+
+                          <tr>
+                            <td><strong>Supplier Commision</strong></td>
+                            <td>N/A</td>
+                            <td>
+                            <div class="input-group mb-0" bis_skin_checked="1">
+                                                    <input type="text" class="form-control" name="" value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction" readonly="">
+                                                    <div class="input-group-append" bis_skin_checked="1">
+                                                        <span class="input-group-text text-sm">Rs/KG's</span>
+                                                    </div>
+                                                </div>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="supplier_commission_display"
+                                    id="supplier_commission_display"
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}" readonly>
+                                <input type="hidden" class="form-control" name="supplier_commission"
+                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission * $loadingWeight}}" readonly>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     @endif
     @php
+        $totalSupplierCommission =  $purchaseOrder->supplier_commission * $loadingWeight;
+
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
+                $totalwithCommision = $totalAmount + $totalSupplierCommission;
+
     @endphp
     <div class="col mb-3 px-0">
         <div class="row mx-auto ">
@@ -725,9 +751,9 @@
                 <div class="form-group">
                     <label>Amount</label>
                     <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                        value="{{ number_format($totalwithCommision, 2) }}" readonly>
                     <input type="hidden" class="form-control" name="total_amount" id="total_amount"
-                        value="{{ $totalAmount }}" readonly>
+                        value="{{ $totalwithCommision }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -1013,7 +1039,7 @@
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount;
+                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount + {{$totalSupplierCommission}};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));

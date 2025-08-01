@@ -14,6 +14,8 @@ use App\Models\Procurement\PaymentRequestApproval;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PaymentRequestSamplingResult;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\PurchaseSamplingRequest;
@@ -38,6 +40,24 @@ class PaymentRequestApprovalController extends Controller
             'paymentRequestData.arrivalTicket.freight',
             'approvals.approver'
         ])
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
+                    $query->where('company_location_id', $request->company_location_id);
+                });
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
+                    $query->where('supplier_id', $request->supplier_id);
+                });
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(25);
 
@@ -70,90 +90,33 @@ class PaymentRequestApprovalController extends Controller
             $ticket = $moduleType === 'ticket' ? $paymentRequestData->arrivalTicket : $paymentRequestData->purchaseTicket;
             $purchaseOrder = $ticket->purchaseOrder;
             $saudaType = $moduleType === 'ticket' ? 'pohanch' : 'thadda';
+            $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
 
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
-            $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
 
-            if ($request->status === 'approved') {
-                createTransaction(
-                    (float) ($request->payment_request_amount),
-                    $purchaseOrder->supplier->account_id,
-                    1, // for Purchase Order
-                    $purchaseOrder->contract_no,
-                    // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
-                    // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "supplier",
-                        'payment_against' => "$saudaType-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
-                    ]
-                );
+            // if ($request->status === 'approved') {
+            //     createTransaction(
+            //         (float) ($request->payment_request_amount),
+            //         $purchaseOrder->supplier->account_id,
+            //         1, // for Purchase Order
+            //         $purchaseOrder->contract_no,
+            //         // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
+            //         // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
+            //         'credit',
+            //         'no',
+            //         [
+            //             'purpose' => "supplier",
+            //             'payment_against' => "$saudaType-purchase",
+            //             'against_reference_no' => "$truckNo/$biltyNo",
+            //             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
+            //         ]
+            //     );
+            // }
 
-                $existingApprovals = PaymentRequestApproval::where('purchase_order_id', $purchaseOrder->id)
-                    ->where('ticket_id', $ticket->id)
-                    ->count();
 
-                if (!$existingApprovals && $purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
-                    $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
 
-                    createTransaction(
-                        $amount,
-                        $purchaseOrder->broker->account_id,
-                        1,
-                        $purchaseOrder->contract_no,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "broker",
-                            'payment_against' => "$saudaType-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
-                        ]
-                    );
-                }
 
-                if (!$existingApprovals && $purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
-                    $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
-
-                    createTransaction(
-                        $amount,
-                        $purchaseOrder->brokerTwo->account_id,
-                        1,
-                        $purchaseOrder->contract_no,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "broker",
-                            'payment_against' => "$saudaType-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
-                        ]
-                    );
-                }
-
-                if (!$existingApprovals && $purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
-                    $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
-
-                    createTransaction(
-                        $amount,
-                        $purchaseOrder->brokerThree->account_id,
-                        1,
-                        $purchaseOrder->contract_no,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "broker",
-                            'payment_against' => "$saudaType-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
-                        ]
-                    );
-                }
-            }
 
             if ($request->has('total_amount') || $request->has('bag_weight')) {
                 $this->updatePaymentRequestData($paymentRequestData, $request);
@@ -207,7 +170,7 @@ class PaymentRequestApprovalController extends Controller
                 'payment_request_data_id' => $paymentRequest->payment_request_data_id,
                 'ticket_id' => $paymentRequestData->ticket_id,
                 'purchase_order_id' => $purchaseOrder->id,
-                'approver_id' => Auth::id(),
+                'approver_id' => auth()->user()->id,
                 'status' => $request->status,
                 'remarks' => $request->remarks,
                 'amount' => $paymentRequest->amount,
@@ -215,6 +178,84 @@ class PaymentRequestApprovalController extends Controller
             ]);
 
             $paymentRequest->update(['status' => $request->status]);
+
+
+
+            // ----------------------
+
+            $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
+            $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no;
+            $qcProduct = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
+            $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
+
+            $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
+
+            $supplierTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'supplier-payable')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            $supplierData = [
+                'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                'account_id' => $purchaseOrder->supplier->account_id,
+                'type' => 'credit',
+                // 'remarks' => "Accounts payable recorded against the contract ($purchaseOrder->contract_no) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+            ];
+
+            if ($supplierTxn) {
+                $supplierTxn->update($supplierData);
+            } else {
+                createTransaction(
+                    $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                    $purchaseOrder->supplier->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "supplier-payable",
+                        'payment_against' => "thadda-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $supplierData['remarks']
+                    ]
+                );
+            }
+
+            if ($moduleType !== 'ticket') {
+                $transitTxn = Transaction::where('voucher_no', $contractNo)
+                    ->where('purpose', 'stock-in-transit')
+                    ->where('against_reference_no', "$truckNo/$biltyNo")
+                    ->first();
+
+                $transitData = [
+                    'amount' => $amount,
+                    'account_id' => $stockInTransitAccount->id,
+                    'type' => 'debit',
+                    'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseOrder->rate_per_kg}/kg."
+                ];
+
+                if ($transitTxn) {
+                    $transitTxn->update($transitData);
+                } else {
+                    createTransaction(
+                        $amount,
+                        $stockInTransitAccount->id,
+                        1,
+                        $contractNo,
+                        'debit',
+                        'no',
+                        [
+                            'purpose' => "stock-in-transit",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => $transitData['remarks']
+                        ]
+                    );
+                }
+            }
+
+            // ----------------------
+
 
             return response()->json([
                 'success' => 'Payment request ' . $request->status . ' successfully!'

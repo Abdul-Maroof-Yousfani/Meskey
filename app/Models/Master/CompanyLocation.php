@@ -31,20 +31,20 @@ class CompanyLocation extends Model
 
         static::creating(function ($model) {
             if (Auth::check()) {
-                $model->created_by = Auth::id();
-                $model->updated_by = Auth::id();
+                $model->created_by = auth()->user()->id;
+                $model->updated_by = auth()->user()->id;
             }
         });
 
         static::updating(function ($model) {
             if (Auth::check()) {
-                $model->updated_by = Auth::id();
+                $model->updated_by = auth()->user()->id;
             }
         });
 
         static::deleting(function ($model) {
             if (Auth::check()) {
-                $model->deleted_by = Auth::id();
+                $model->deleted_by = auth()->user()->id;
                 $model->save(); // update deleted_by before soft delete
             }
         });
@@ -54,6 +54,11 @@ class CompanyLocation extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function arrivalLocations()
+    {
+        return $this->hasMany(ArrivalLocation::class);
     }
 
     public function creator()

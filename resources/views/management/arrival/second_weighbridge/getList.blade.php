@@ -4,6 +4,7 @@
             <th class="col-sm-2">Ticket</th>
             <th class="col-sm-2">Product</th>
             <th class="col-sm-1">Weight</th>
+            <th class="col-sm-1">Arrival Location</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -20,11 +21,11 @@
                     </td>
                     <td>{{ $row->arrivalTicket->qcProduct->name ?? '-' }}</td>
                     <td>{{ $row->weight ?? '-' }}</td>
+                    <td>{{ $row->arrivalTicket->unloadingLocation->arrivalLocation->name ?? '-' }}</td>
                     <td>
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-
                         </p>
                     </td>
                     <td>

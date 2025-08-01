@@ -46,7 +46,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group filling-bags-field">
                 <label>Filling Bags: </label>
-                <input type="number" name="filling_bags_no" placeholder="Filling Bags" class="form-control"
+                <input type="number" min="0" name="filling_bags_no" placeholder="Filling Bags" class="form-control"
                     autocomplete="off" />
             </div>
         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models\Arrival;
 
+use App\Models\Master\GrnNumber;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,5 +22,10 @@ class ArrivalSlip extends Model
     public function arrivalTicket()
     {
         return $this->belongsTo(ArrivalTicket::class);
+    }
+
+    public function grnNumber()
+    {
+        return $this->morphOne(GrnNumber::class, 'model');
     }
 }

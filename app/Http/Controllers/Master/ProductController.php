@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\{StoreProductRequest, UpdateProductRequest};
 use App\Models\{Product, UnitOfMeasure, Category};
+use App\Models\Master\Account\Account;
 use Illuminate\Http\Request;
 
 
@@ -41,10 +42,10 @@ class ProductController extends Controller
     {
         try {
             $category_id = $request->query('category_id');
-            
+
             // Fetch categories based on category_type
             $products = Product::with('unitOfMeasure')->where('category_id', $category_id)->get();
-                    
+
             return response()->json([
                 'success' => true,
                 'products' => $products
@@ -76,8 +77,11 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        $data = $request->validated();
-        $UnitOfMeasure = Product::create($request->all());
+        $data = $request->all();
+        $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory', 'yes'));
+
+        $data['account_id'] = $account->id;
+        $UnitOfMeasure = Product::create($data);
 
         return response()->json(['success' => 'Product created successfully.', 'data' => $UnitOfMeasure], 201);
     }
@@ -109,9 +113,28 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product)
     {
         $data = $request->validated();
-        $product->update($request->all());
 
-        return response()->json(['success' => 'Product updated successfully.', 'data' => $product], 200);
+        if (empty($product->account_id)) {
+            $account = Account::create(getParamsForAccountCreation(
+                $request->company_id,
+                $request->name,
+                'Inventory',
+                'yes'
+            ));
+            $data['account_id'] = $account->id;
+        } else {
+            if ($product->name !== $request->name) {
+                Account::where('id', $product->account_id)
+                    ->update(['name' => $request->name]);
+            }
+        }
+
+        $product->update($data);
+
+        return response()->json([
+            'success' => 'Product updated successfully.',
+            'data' => $product
+        ], 200);
     }
 
     /**

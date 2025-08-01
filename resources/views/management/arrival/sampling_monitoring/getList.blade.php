@@ -91,12 +91,12 @@
                         {{-- @endif --}}
 
 
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @endcan
+                        {{-- @can('role-edit') --}}
+                        <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests',false,'90%')"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        {{-- @endcan --}}
                         {{-- @can('role-delete')
                         <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
                             class="danger p-1 text-center mr-2 position-relative ">

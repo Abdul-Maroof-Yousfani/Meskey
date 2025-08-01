@@ -8,7 +8,9 @@ use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSlip;
 use App\Models\Arrival\Freight;
+use App\Models\Master\Account\Account;
 use App\Models\Master\ArrivalLocation;
+use App\Models\Master\GrnNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -21,21 +23,44 @@ class FreightController extends Controller
 
     public function getList(Request $request)
     {
-        $freights = Freight::with('arrivalTicket')->when($request->filled('search'), function ($q) use ($request) {
-            $q->where('ticket_number', 'like', '%' . $request->search . '%')
-                ->orWhere('truck_number', 'like', '%' . $request->search . '%')
-                ->orWhere('billy_number', 'like', '%' . $request->search . '%');
-        })
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        $query = Freight::with(['arrivalTicket'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('ticket_number', 'like', $searchTerm)
+                        ->orWhere('truck_number', 'like', $searchTerm)
+                        ->orWhere('billy_number', 'like', $searchTerm);
+                });
+            })
             ->where('company_id', $request->company_id)
-            ->latest()
-            ->paginate(request('per_page', 25));
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+                    $query->where('location_id', $authUser->company_location_id);
+                });
+            });
+
+        $freights = $query->latest()
+            ->paginate($request->get('per_page', 25));
 
         return view('management.arrival.freight.getList', compact('freights'));
     }
 
     public function create()
     {
-        $tickets = ArrivalTicket::where('freight_status', 'pending')->whereNotNull('qc_product')->get();
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        $tickets = ArrivalTicket::where('freight_status', 'pending')
+            ->whereNotNull('qc_product')
+            ->when(!$isSuperAdmin, function ($query) use ($authUser) {
+                // return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                return $query->where('location_id', $authUser->company_location_id);
+                // });
+            })
+            ->get();
 
         return view('management.arrival.freight.create', ['tickets' => $tickets]);
     }
@@ -44,8 +69,14 @@ class FreightController extends Controller
     {
         $data = $request->all();
 
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(['freight_status' => 'completed', 'arrival_slip_status' => 'generated']);
+        $ticket = ArrivalTicket::where('id', $request->arrival_ticket_id)->first();
+
+        if ($ticket) {
+            $ticket->update([
+                'freight_status' => 'completed',
+                'arrival_slip_status' => 'generated'
+            ]);
+        }
 
         $data['arrived_weight'] = $request->arrived_weight ?? 0;
         $data['loaded_weight'] = $request->loaded_weight ?? 0;
@@ -60,6 +91,147 @@ class FreightController extends Controller
         $data['remark'] = $request->note ?? '';
 
         $arrivalApprove = ArrivalSlip::create($data);
+
+        $grnNumber = GrnNumber::create([
+            'model_id' => $arrivalApprove->id,
+            'model_type' => 'arrival-slip',
+            'location_id' => $ticket->location_id,
+            'product_id' => $ticket->qc_product ?? $ticket->product_id ?? null,
+            'unique_no' => generateLocationBasedCode('grn_numbers', $ticket->location?->code ?? 'KHI')
+        ]);
+
+        $truckNo = $ticket->truck_no ?? 'N/A';
+        $biltyNo = $ticket->bilty_no ?? 'N/A';
+
+        if ($ticket->arrival_purchase_order_id) {
+            $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
+
+            // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
+            $paymentDetails = calculatePaymentDetails($ticket->id, 1);
+
+            $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
+            $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
+            $qcProduct = $ticket->purchaseOrder->qcProduct->name ?? $ticket->purchaseOrder->product->name ?? 'N/A';
+            $loadingWeight = $ticket->arrived_net_weight;
+
+            if ($ticket->saudaType->name == 'Pohanch') {
+                createTransaction(
+                    $amount,
+                    $ticket->accountsOf->account_id,
+                    1,
+                    $arrivalApprove->unique_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "supplier-payable",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                    ]
+                );
+
+                if ($ticket->purchaseOrder->broker_one_id && $ticket->purchaseOrder->broker_one_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $ticket->purchaseOrder->broker_one_commission);
+
+                    createTransaction(
+                        $amount,
+                        $ticket->purchaseOrder->broker->account_id,
+                        1,
+                        $ticket->purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "broker",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                        ]
+                    );
+                }
+
+                if ($ticket->purchaseOrder->broker_two_id && $ticket->purchaseOrder->broker_two_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $ticket->purchaseOrder->broker_two_commission);
+
+                    createTransaction(
+                        $amount,
+                        $ticket->purchaseOrder->brokerTwo->account_id,
+                        1,
+                        $ticket->purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "broker",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                        ]
+                    );
+                }
+
+                if ($ticket->purchaseOrder->broker_three_id && $ticket->purchaseOrder->broker_three_commission && $loadingWeight) {
+                    $amount = ($loadingWeight * $ticket->purchaseOrder->broker_three_commission);
+
+                    createTransaction(
+                        $amount,
+                        $ticket->purchaseOrder->brokerThree->account_id,
+                        1,
+                        $ticket->purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "broker",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                        ]
+                    );
+                }
+            } else {
+                // createTransaction(
+                //     $amount,
+                //     $ticket->qcProduct->account_id,
+                //     1,
+                //     $arrivalApprove->unique_no,
+                //     'debit',
+                //     'no',
+                //     [
+                //         'purpose' => "arrival-slip",
+                //         'payment_against' => "pohanch-purchase",
+                //         'against_reference_no' => "$truckNo/$biltyNo",
+                //         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                //     ]
+                // );
+                createTransaction(
+                    $amount,
+                    $stockInTransitAccount->id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "stock-in-transit",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$ticket->purchaseOrder->rate_per_kg}/kg."
+                    ]
+                );
+            }
+
+            createTransaction(
+                $paymentDetails['calculations']['net_amount'] ?? 0,
+                $ticket->qcProduct->account_id,
+                1,
+                $arrivalApprove->unique_no,
+                'debit',
+                'no',
+                [
+                    'purpose' => "arrival-slip",
+                    'payment_against' => "pohanch-purchase",
+                    'against_reference_no' => "$truckNo/$biltyNo",
+                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
+                ]
+            );
+        }
 
         return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
     }

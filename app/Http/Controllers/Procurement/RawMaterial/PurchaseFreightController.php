@@ -30,6 +30,24 @@ class PurchaseFreightController extends Controller
         // return view('management.procurement.raw_material.freight.getList', compact('arrivalPurchaseOrders'));
 
         $purchaseTickets = PurchaseTicket::where('freight_status', 'pending')
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('company_location_id', $request->company_location_id);
+                });
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('supplier_id', $request->supplier_id);
+                });
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
             ->where('company_id', $request->company_id)
             ->whereNotNull('purchase_order_id')
             ->latest()

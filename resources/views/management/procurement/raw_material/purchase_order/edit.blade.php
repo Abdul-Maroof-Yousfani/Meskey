@@ -353,19 +353,27 @@
                  </div>
              </div>
          </div>
-         <div class="col-xs-6 col-sm-6 col-md-6">
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Weighbridge only From:</label>
                  <input type="text" name="weighbridge_from" value="{{ $arrivalPurchaseOrder->weighbridge_from }}"
                      placeholder="Weighbridge From" class="form-control" />
              </div>
          </div>
-         <div class="col-xs-6 col-sm-6 col-md-6">
-
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Delivery Address:</label>
                  <input type="text" name="delivery_address" value="{{ $arrivalPurchaseOrder->delivery_address }}"
                      placeholder="Delivery Address" class="form-control" />
+             </div>
+         </div>
+         <div class="col-xs-4 col-sm-4 col-md-4">
+             <div class="form-group ">
+                 <label>Division:</label>
+                 <select name="division_id" id="division_id" class="form-control select22">
+                     <option value="{{ $arrivalPurchaseOrder->division->id ?? '' }}" selected>
+                         {{ $arrivalPurchaseOrder->division->name ?? 'Select Division' }} </option>
+                 </select>
              </div>
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
@@ -665,6 +673,7 @@
          initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
          initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
          initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
+         initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);

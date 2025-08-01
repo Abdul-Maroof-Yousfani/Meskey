@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Acl\{LoginHistory, Company};
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -28,7 +29,17 @@ class User extends Authenticatable
      * @var array
 
      */
-    protected $fillable = ['name', 'email', 'password', 'user_type', 'status', 'current_company_id', 'company_location_id'];
+    protected $fillable = [
+        'name',
+        'username',
+        'email',
+        'password',
+        'user_type',
+        'status',
+        'current_company_id',
+        'company_location_id',
+        'arrival_location_id',
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -50,6 +61,11 @@ class User extends Authenticatable
         return $this->belongsTo(CompanyLocation::class, 'company_location_id');
     }
 
+    public function arrivalLocation()
+    {
+        return $this->belongsTo(ArrivalLocation::class, 'arrival_location_id');
+    }
+
     public function currentCompany()
     {
         return $this->hasOne(Company::class, 'id', 'current_company_id');
@@ -58,6 +74,16 @@ class User extends Authenticatable
     public function loginHistories()
     {
         return $this->hasMany(LoginHistory::class, 'user_id')->orderBy('id', 'desc');
+    }
+
+    public function getAuthIdentifierName()
+    {
+        return 'username';
+    }
+
+    public function getAuthIdentifier()
+    {
+        return $this->username;
     }
 
     public static function loginHistory()

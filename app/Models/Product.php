@@ -17,6 +17,7 @@ class Product extends Model
     protected $fillable = [
         'company_id',
         'category_id',
+        'account_id',
         'bag_weight_for_purchasing',
         'unit_of_measure_id',
         'product_type',

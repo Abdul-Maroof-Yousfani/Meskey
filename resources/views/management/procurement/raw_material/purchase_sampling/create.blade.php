@@ -13,7 +13,7 @@
                 <label>{{ $samplingRequest?->is_custom_qc == 'yes' ? 'Ticket' : 'Contract' }}:</label>
                 <input type="text" readonly name="purchase_contract" placeholder="Sample Analysis By"
                     class="form-control" autocomplete="off"
-                    value="{{ $samplingRequest->purchaseOrder->contract_no ?? ($samplingRequest->purchaseTicket->unique_no ?? 'N/A') }}" />
+                    value="{{ $samplingRequest->purchaseOrder->contract_no ?? ($samplingRequest->purchaseTicket->unique_no ?? ($PurchaseSamplingRequest->purchaseOrder->contract_no ?? ($PurchaseSamplingRequest->purchaseTicket->unique_no ?? 'N/A'))) }}" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">

@@ -2,8 +2,10 @@
     <thead>
         <tr>
             <th class="col-sm-1">Image</th>
-            <th class="col-sm-3">Name/Email</th>
-            <th class="col-sm-6">Companies Assign</th>
+            <th class="col-sm-2">Name</th>
+            <th class="col-sm-2">Username</th>
+            <th class="col-sm-3">Role</th>
+            <th class="col-sm-3">Companies Assign</th>
             <th class="col-sm-2">Action</th>
         </tr>
     </thead>
@@ -16,17 +18,22 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $user->name }} <br />
-                            <small>{{ $user->email }}</small>
+                            {{ $user->name }}
                         </p>
                     </td>
-                    {{-- <td>
+                    <td>
+                        <p class="m-0">
+                            {{ $user->username }}
+
+                        </p>
+                    </td>
+                    <td>
                         @if (!empty($user->getRoleNames()))
                             @foreach ($user->getRoleNames() as $v)
                                 <label class="badge badge-success">{{ $v }}</label>
                             @endforeach
                         @endif
-                    </td> --}}
+                    </td>
                     <td>
 
                         @if (!empty(getUserAllCompanies(auth()->user()->id)))

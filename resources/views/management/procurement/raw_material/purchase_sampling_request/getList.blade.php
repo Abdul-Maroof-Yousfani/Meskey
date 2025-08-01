@@ -18,8 +18,8 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->contract_no }}{!! $row->is_custom_qc == 'yes' ? '' : '<br>' !!}
-                            {{ $row->purchaseTicket->unique_no ?? '' }}
+                            #{{ $row->contract_no }}{!! $row->is_custom_qc == 'yes' ? '' : '<br>' !!}
+                            {{ $row?->purchaseTicket?->unique_no ? '#' . $row?->purchaseTicket?->unique_no : '' }}
                         </p>
                     </td>
                     <td>

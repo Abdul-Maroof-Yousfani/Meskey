@@ -16,9 +16,19 @@
                         <option value="{{ $samplingRequest->id }}"
                             data-product-id="{{ optional($samplingRequest->arrivalTicket)->qc_product }}"
                             data-ticket-id="{{ optional($samplingRequest->arrivalTicket)->id }}">
-                            {{ optional($samplingRequest->arrivalTicket)->unique_no }}
+                            Ticket No: {{ $samplingRequest->arrivalTicket->unique_no }} 
+                            {{-- Truck No: {{ $samplingRequest->arrivalTicket->truck_no ?? '-' }} --}}
                         </option>
                     @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-group ">
+                <label>Party Ref. No: </label>
+                <select name="party_ref_no" id="party_ref_no" class="form-control select2">
+                    <option value="N/A">
+                        N/A</option>
                 </select>
             </div>
         </div>
@@ -69,15 +79,7 @@
                     class="form-control" autocomplete="off" value="{{ auth()->user()->name }}" />
             </div>
         </div>
-        <div class="col-12 px-3">
-            <div class="form-group ">
-                <label>Party Ref. No: </label>
-                <select name="party_ref_no" id="party_ref_no" class="form-control select2">
-                    <option value="N/A">
-                        N/A</option>
-                </select>
-            </div>
-        </div>
+        
     </div>
 
     <div class="row bottom-button-bar">

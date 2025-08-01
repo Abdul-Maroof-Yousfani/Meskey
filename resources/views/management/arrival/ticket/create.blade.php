@@ -3,22 +3,52 @@
      <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
      <div class="row form-mar">
 
-         <?php
+         {{-- <?php
          $authUser = auth()->user();
          $companyLocation = $authUser->companyLocation ?? null;
          $code = $companyLocation->code ?? 'KHI';
          
          $unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
+         ?> --}}
+
+         <?php
+         $authUser = auth()->user();
+         $isRegularUser = $authUser->user_type === 'user';
+         $userLocation = $authUser->companyLocation ?? null;
+         
+         $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', $userLocation->code) : '';
          ?>
 
-         <div class="col-xs-6 col-sm-6 col-md-6">
+         @if ($isRegularUser)
+             <div class="col-xs-12 col-sm-12 col-md-12">
+                 <div class="form-group">
+                     <label>Location:</label>
+                     <input type="text" class="form-control" value="{{ $userLocation->name ?? 'N/A' }}" disabled>
+                     <input type="hidden" name="company_location_id" value="{{ $userLocation->id ?? null }}">
+                 </div>
+             </div>
+         @else
+             <div class="col-xs-12 col-sm-12 col-md-12">
+                 <div class="form-group">
+                     <label>Location:</label>
+                     <select name="company_location_id" id="company_location_id" class="form-control select2">
+                         <option value="">Select Location</option>
+                         @foreach ($companyLocations as $location)
+                             <option value="{{ $location->id }}">{{ $location->name }}</option>
+                         @endforeach
+                     </select>
+                 </div>
+             </div>
+         @endif
+
+         <div class="col-xs-12 col-sm-12 col-md-12">
              <fieldset>
                  <div class="input-group">
                      <div class="input-group-prepend">
                          <button class="btn btn-primary" type="button">Ticket No#</button>
                      </div>
-                     <input type="text" disabled class="form-control" value="{{ $unique_no }}"
-                         placeholder="Button on left">
+                     <input type="text" disabled class="form-control" name="unique_no" value="{{ $unique_no }}"
+                         placeholder="Select Location">
                  </div>
              </fieldset>
          </div>
@@ -35,6 +65,7 @@
                              data-created-by-id="{{ $order->created_by ?? '' }}"
                              data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
                              data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
+                             data-sauda-type-id="{{ $order->saudaType->id ?? '' }}"
                              data-created-at="{{ $order->created_at ?? '' }}">
                              #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }}
                          </option>
@@ -42,18 +73,23 @@
                  </select>
              </div>
          </div>
+         <div class="col-xs-6 col-sm-6 col-md-6 d-none">
+             <div class="form-group">
+                 <label>Sauda Type:</label>
+                 <input type="text" name="sauda_type_display" id="sauda_type" class="form-control" readonly />
+                 <input type="hidden" name="sauda_type_id" id="sauda_type_id">
+             </div>
+         </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Product:</label>
-                 {{-- <select name="product_id" id="product_id" class="form-control select2">
-                     <option value="">Product Name</option>
-                 </select> --}}
-                 <select name="product_id" id="product_id" class="form-control select2">
+                 <select name="product_id_display" id="product_id" class="form-control select2">
                      <option value="">Product Name</option>
                      @foreach ($products as $product)
                          <option value="{{ $product->id }}">{{ $product->name }}</option>
                      @endforeach
                  </select>
+                 <input type="hidden" name="product_id" id="product_id_hidden">
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -89,14 +125,15 @@
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
-             <div class="form-group ">
+             <div class="form-group">
                  <label>Accounts Of:</label>
-                 <select name="accounts_of" id="accounts_of" class="form-control select2">
+                 <select name="accounts_of_display" id="accounts_of" class="form-control select2">
                      <option value="" hidden>Accounts Of</option>
                      @foreach ($suppliers as $supplier)
                          <option value="{{ $supplier->name }}">{{ $supplier->name }}</option>
                      @endforeach
                  </select>
+                 <input type="hidden" name="accounts_of" id="accounts_of_hidden">
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -117,7 +154,8 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Bilty No: </label>
-                 <input type="text" name="bilty_no" placeholder="Bilty No" class="form-control" autocomplete="off" />
+                 <input type="text" name="bilty_no" placeholder="Bilty No" class="form-control"
+                     autocomplete="off" />
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
@@ -190,7 +228,7 @@
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
-                 <label>1st Weight:</label>
+                 <label>First Weight:</label>
                  <input type="text" name="first_weight" id="first_weight" placeholder="First Weight"
                      class="form-control" autocomplete="off" />
              </div>
@@ -357,7 +395,7 @@
          //  initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
          initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
-         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id"]')
+         $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id_display"], #company_location_id')
              .select2();
 
          function calculateNetWeight() {
@@ -382,30 +420,45 @@
              calculateNetWeight();
          });
 
+         $(document).on('change', '#accounts_of', function() {
+             $('#accounts_of_hidden').val($(this).val());
+         });
+
          //   $(document).on('change', '[name="arrival_truck_type_id"]', function () {
          //  let sampleMoney = $(this).find(':selected').data('samplemoney');
          //   $('input[name="sample_money"]').val(sampleMoney ?? '');
          //});
 
          $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
-             var selectedOption = $(this).find('option:selected');
+             // First reset all form fields
+             resetAllFormFields();
 
-             // Get data from selected option's data attributes
-             var productId = selectedOption.data('product-id');
+             var selectedOption = $(this).find('option:selected');
+             if (selectedOption.val() === "") {
+                 return; // If N/A is selected, just keep all fields reset
+             }
+
+             // Now populate fields from the selected contract
              var supplierId = selectedOption.data('supplier-id');
+             var productId = selectedOption.data('product-id');
              var createdById = selectedOption.data('created-by-id');
              var saudaTypeName = selectedOption.data('sauda-type-name');
+             var saudaTypeId = selectedOption.data('sauda-type-id');
              var createdAt = selectedOption.data('created-at');
 
              // Set product selection
              if (productId) {
                  $('#product_id').val(productId).trigger('change');
+                 $('#product_id_hidden').val(productId);
+                 $('#product_id').prop('disabled', true).addClass('disabled-field');
              }
 
              // Set broker/supplier selection
              if (supplierId) {
                  $('#broker_name').val(supplierId).trigger('change');
                  $('#accounts_of').val(supplierId).trigger('change');
+                 $('#accounts_of_hidden').val(supplierId);
+                 $('#accounts_of').prop('disabled', true).addClass('disabled-field');
              }
 
              // Set decision maker selection
@@ -413,11 +466,61 @@
                  $('#decision_id').val(createdById).trigger('change');
              }
 
-             // Set loading date
-             if (createdAt) {
-                 $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
+             // Set Sauda Type
+             if (saudaTypeName) {
+                 $('#sauda_type').val(saudaTypeName);
+                 // If you need to store the sauda_type_id, you would need to add it to the data attributes
+                 $('#sauda_type_id').val(saudaTypeId);
              }
 
+             // Set loading date
+             if (createdAt) {
+                 //  $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
+             }
+         });
+
+         function resetAllFormFields() {
+             // Reset product fields
+             $('#product_id').val('').trigger('change');
+             $('#product_id_hidden').val('');
+             $('#product_id').prop('disabled', false).removeClass('disabled-field');
+
+             $('#sauda_type').val('');
+             $('#sauda_type_id').val('');
+
+             // Reset broker/supplier fields
+             $('#broker_name').val('').trigger('change');
+             $('#accounts_of').val('').trigger('change');
+             $('#accounts_of_hidden').val('');
+             $('#accounts_of').prop('disabled', false).removeClass('disabled-field');
+
+             // Reset decision field
+             $('#decision_id').val('').trigger('change');
+
+             // Reset loading date
+             $('input[name="loading_date"]').val('');
+
+             // Reset other fields you want to clear
+             $('#miller_id').val('').trigger('change');
+             $('#station_id').val('').trigger('change');
+             $('input[name="truck_no"]').val('');
+             $('input[name="bilty_no"]').val('');
+             $('[name="arrival_truck_type_id"]').val('').trigger('change');
+             $('[name="sample_money_type"]').val('n/a').trigger('change');
+             $('input[name="sample_money"]').val('');
+             $('input[name="bags"]').val('');
+             $('#first_weight').val('');
+             $('#second_weight').val('');
+             $('#net_weight').val('');
+             $('textarea[name="remarks"]').val('');
+
+             // Reset any validation errors
+             $('#net_weight').removeClass('is-invalid');
+             $('#net_weight').siblings('.error-message').hide();
+         }
+
+         $(document).on('change', '#product_id', function() {
+             $('#product_id_hidden').val($(this).val());
          });
 
          // Sync values on any change (just in case)
@@ -428,5 +531,16 @@
                  $('#broker_name_submit').val($(this).val());
              }
          });
+
+         @if (auth()->user()->user_type === 'super-admin')
+             $('#company_location_id').on('change', function() {
+                 const locationId = $(this).val();
+                 if (locationId) {
+                     $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
+                         $('input[name="unique_no"]').val(data.ticket_no);
+                     });
+                 }
+             });
+         @endif
      });
  </script>

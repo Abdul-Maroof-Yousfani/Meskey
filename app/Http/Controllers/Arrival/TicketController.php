@@ -10,6 +10,7 @@ use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\Station;
@@ -22,6 +23,11 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('check.company:arrival-ticket', ['only' => ['index']]);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -62,23 +68,25 @@ class TicketController extends Controller
      */
     public function create(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+        $userLocation = $authUser->companyLocation ?? null;
         $authUserCompany = $request->company_id;
-        $userLocation = auth()->user()->company_location_id;
 
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])->where('purchase_type', 'regular')->where('company_location_id', $userLocation)->get();
+        $companyLocations = $isSuperAdmin
+            ? CompanyLocation::all()
+            : collect([$userLocation])->filter();
+
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where('purchase_type', 'regular')
+            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
+                $q->where('company_location_id', $userLocation?->id);
+            })
+            ->orderByDesc('id')
+            ->get();
 
         $suppliers = Supplier::where('status', 'active')->get();
-
-        //$products = $arrivalPurchaseOrders->map(function ($order) {
-         //   return $order->product;
-       // })->filter()->unique('id');
-
-
-        $products = Product::where('status','active')->get();
-
-        // $accountsOf = $arrivalPurchaseOrders->map(function ($order) {
-        //     return $order->createdByUser;
-        // })->filter()->unique('id');
+        $products = Product::where('status', 'active')->get();
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -90,7 +98,21 @@ class TicketController extends Controller
             'accountsOf' => $accountsOf,
             'arrivalPurchaseOrders' => $arrivalPurchaseOrders,
             'suppliers' => $suppliers,
-            'products' => $products
+            'products' => $products,
+            'companyLocations' => $companyLocations,
+            'isSuperAdmin' => $isSuperAdmin
+        ]);
+    }
+
+    public function getTicketNumber($locationId)
+    {
+        $location = CompanyLocation::find($locationId);
+        $code = $location->code ?? 'KHI';
+
+        $ticketNo = generateTicketNoWithDateFormat('arrival_tickets', $code);
+
+        return response()->json([
+            'ticket_no' => $ticketNo
         ]);
     }
 
@@ -100,6 +122,20 @@ class TicketController extends Controller
     public function store(ArrivalTicketRequest $request)
     {
         $requestData = $request->validated();
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        if (!$isSuperAdmin) {
+            $requestData['location_id'] = $authUser->company_location_id;
+        } else {
+            $requestData['location_id'] = $request->company_location_id;
+        }
+
+        $locationCode = CompanyLocation::find($request->company_location_id)->code ?? 'KHI';
+        $uniqueNo = generateTicketNoWithDateFormat('arrival_tickets', $locationCode);
+
+        $requestData['unique_no'] = $uniqueNo;
 
         if (!empty($requestData['accounts_of'])) {
             $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
@@ -127,7 +163,9 @@ class TicketController extends Controller
         }
 
         $requestData['first_qc_status'] = 'pending';
+        $requestData['closing_trucks_qty'] = 1;
         $requestData['truck_type_id'] = $requestData['arrival_truck_type_id'] ?? null;
+        $requestData['sauda_type_id'] = $request->sauda_type_id ?? null;
 
         $arrivalTicket = ArrivalTicket::create($requestData);
 
@@ -143,6 +181,16 @@ class TicketController extends Controller
     public function edit(Request $request, $id)
     {
         $authUserCompany = $request->company_id;
+        $isSuperAdmin = getUserParams('user_type') == 'super-admin';
+        $userLocation = getUserParams('company_location_id');
+
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where('purchase_type', 'regular')
+            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
+                $q->where('company_location_id', $userLocation);
+            })
+            ->orderByDesc('id')
+            ->get();
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -150,12 +198,17 @@ class TicketController extends Controller
             })
             ->get();
 
+        $suppliers = Supplier::where('status', 'active')->get();
+        $products = Product::where('status', 'active')->get();
+
         $arrivalTicket = ArrivalTicket::findOrFail($id);
-        return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf'));
+        return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf', 'arrivalPurchaseOrders', 'suppliers', 'products'));
     }
+
     public function show(Request $request, $id)
     {
         $authUserCompany = $request->company_id;
+        $source = $request->source ?? false;
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -277,13 +330,13 @@ class TicketController extends Controller
             }
         }
 
-
-        // dd($allInitialRequests);
-
+        $layout = !isset($source) || $source != 'contract' ? 'management.layouts.master' : 'management.layouts.master_blank';
 
         return view('management.arrival.ticket.show', compact(
             'arrivalTicket',
             'accountsOf',
+            'source',
+            'layout',
             'innerRequestsData',
             'arrivalSamplingRequest',
             'initialRequestsData',

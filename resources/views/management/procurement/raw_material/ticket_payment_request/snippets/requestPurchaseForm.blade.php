@@ -1,17 +1,19 @@
 @php
     $isThadda = $arrivalTicket->sauda_type_id == 2;
 
-    $hasLoadingWeight = false;
+    $hasLoadingWeight = true;
 
-    if ($isThadda) {
-        if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
-            $hasLoadingWeight = true;
-        }
-    } else {
-        if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->arrived_weight) {
-            $hasLoadingWeight = true;
-        }
-    }
+    // $hasLoadingWeight = false;
+
+    // if ($isThadda) {
+    //     if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
+    //         $hasLoadingWeight = true;
+    //     }
+    // } else {
+    //     if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->arrived_weight) {
+    //         $hasLoadingWeight = true;
+    //     }
+    // }
 
     $isSlabs = false;
     $isCompulsury = false;
@@ -63,7 +65,8 @@
     }
 
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
-    $loadingWeighbridgeSum = $kantaCharges / 2;
+    // $loadingWeighbridgeSum = $kantaCharges / 2;
+    $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
     $paidAmount = $approvedAmount ?? 0;
@@ -148,7 +151,8 @@
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
 <input type="hidden" id="bag_rate" value="{{ $bagRate }}">
-<input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}">
+{{-- <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}"> --}}
+<input type="hidden" id="kanta_charges" value="0">
 
 <!-- Store sampling data for JS calculations -->
 <script type="text/javascript">
@@ -229,7 +233,7 @@
             Loading Information
         </h6>
     </div>
-    <div class="col-md-12 mb-3">
+    <div class="col-md-12 mb-3 d-none">
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="loading_type" id="loading" value="loading"
                 {{ $hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>
@@ -294,8 +298,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Avg Rate</label>
-                    <input type="text" class="form-control" name="avg_rate"
-                        value="{{ number_format($avgRate, 2) }}" readonly>
+                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}"
+                        readonly>
                 </div>
             </div>
 
@@ -320,6 +324,7 @@
                                 </tr>
                             </thead>
                             <tbody id="sampling-results-tbody">
+                                {{-- @dd($samplingRequestResults) --}}
                                 @if (count($samplingRequestResults) != 0)
                                     @foreach ($samplingRequestResults as $slab)
                                         @php
@@ -429,8 +434,10 @@
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
+                                                        {{-- <span
+                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span> --}}
                                                         <span
-                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                            class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -573,7 +580,7 @@
                                     id="bag_rate_amount" value="{{ $bagsRateSum }}" readonly>
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="d-none">
                             <td><strong>Loading weighbridge</strong></td>
                             <td>N/A</td>
                             <td>N/A</td>
@@ -593,8 +600,27 @@
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
                                     value="{{ number_format($grossFreightAmount, 2) }}" readonly>
-                                <input type="hidden" class="form-control" name="loading_weighbridge_amount"
+                                <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
                                     id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Supplier Commision</strong></td>
+                            <td>N/A</td>
+                            <td>
+                            <div class="input-group mb-0" bis_skin_checked="1">
+                                                    <input type="text" class="form-control" name="" value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction" readonly="">
+                                                    <div class="input-group-append" bis_skin_checked="1">
+                                                        <span class="input-group-text text-sm">Rs/KG's</span>
+                                                    </div>
+                                                </div>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="supplier_commission_display"
+                                    id="supplier_commission_display"
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}" readonly>
+                                <input type="hidden" class="form-control" name="supplier_commission"
+                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission * $loadingWeight}}" readonly>
                             </td>
                         </tr>
                     </tbody>
@@ -604,7 +630,9 @@
     @endif
 
     @php
+    $totalSupplierCommission =  $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
+        $totalwithCommision = $totalAmount + $totalSupplierCommission;
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
@@ -613,9 +641,9 @@
                 <div class="form-group">
                     <label>Amount</label>
                     <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                        value="{{ number_format($totalwithCommision, 2) }}" readonly>
                     <input type="hidden" class="form-control" name="total_amount" id="total_amount"
-                        value="{{ $totalAmount }}" readonly>
+                        value="{{ $totalwithCommision }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -824,7 +852,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }});
+                    {{ $grossFreightAmount ?? 0 }}) + {{$totalSupplierCommission}};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));

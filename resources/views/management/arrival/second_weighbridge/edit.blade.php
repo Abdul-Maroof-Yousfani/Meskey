@@ -65,7 +65,7 @@
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>1st Weight:</label>
+                <label>First Weight:</label>
                 <input type="text" id="first_weight" placeholder="First Weight"
                     value="{{ $ArrivalTicket->first_weight }}" readonly class="form-control" autocomplete="off" />
             </div>
@@ -92,7 +92,7 @@
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>1st Weighbridge Weight:</label>
+                <label>First Weighbridge Weight:</label>
                 <input type="text" id="first_weighbridge" value="{{ $ArrivalTicket->firstWeighbridge->weight }}"
                     class="form-control" autocomplete="off" disabled />
             </div>

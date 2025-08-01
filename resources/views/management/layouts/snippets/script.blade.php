@@ -1,5 +1,6 @@
 <script>
     $(document).ready(function() {
+
         $(document).on('click', '.add-range', function() {
             const slabTypeId = $(this).data('slab-type');
             const $container = $(`.slab-ranges-container[data-slab-type="${slabTypeId}"]`);

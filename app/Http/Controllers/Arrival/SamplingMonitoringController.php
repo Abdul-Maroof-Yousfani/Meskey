@@ -27,12 +27,16 @@ class SamplingMonitoringController extends Controller
      */
     public function getList(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+        // $isSuperAdmin = true;
+
         $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
             ->where('is_done', 'yes')
             ->groupBy('arrival_ticket_id')
             ->pluck('id');
 
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+        $query = ArrivalSamplingRequest::with(['arrivalTicket'])
             ->whereIn('id', $latestRequestIds)
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
@@ -46,6 +50,11 @@ class SamplingMonitoringController extends Controller
             ->when($request->filled('sampling_type'), function ($q) use ($request) {
                 return $q->where('sampling_type', 'like', $request->sampling_type);
             })
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+                    $query->where('decision_id', $authUser->id);
+                });
+            })
             ->where(function ($q) {
                 $q->where('approved_status', 'pending')
                     ->orWhere(function ($q) {
@@ -53,9 +62,10 @@ class SamplingMonitoringController extends Controller
                         // ->where('lumpsum_deduction', 0)
                         // ->where('lumpsum_deduction_kgs', 0);
                     });
-            })
-            ->latest()
-            ->paginate(request('per_page', 25));
+            });
+
+        $samplingRequests = $query->latest()
+            ->paginate($request->get('per_page', 25));
 
         return view('management.arrival.sampling_monitoring.getList', compact('samplingRequests'));
     }

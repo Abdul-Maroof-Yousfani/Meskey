@@ -21,6 +21,14 @@
                     readonly />
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Accounts Of</label>
+                <input type="text" name="supplier" class="form-control" value="{{ $ticket->accounts_of_name ?? 'N/A' }} "
+                    readonly />
+            </div>
+        </div>
+        
 
         <div class="col-md-6">
             <div class="form-group">
@@ -41,6 +49,13 @@
                 <label>Bilty #</label>
                 <input type="text" name="billy_number" class="form-control" value="{{ $ticket->bilty_no }}"
                     readonly />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Sauda Type</label>
+           <input type="text" disabled name="sauda_type" class="form-control"
+    value="{{ optional($ticket->saudaType)->name }}"  />
             </div>
         </div>
         <div class="col-12" bis_skin_checked="1">
@@ -229,7 +244,7 @@
     $('.calculate-net-shortage').on('input', function() {
         const exemptedWeight = parseFloat($(this).val()) || 0;
         const netShortage = parseFloat(
-            "{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}") - exemptedWeight;
+            "{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}") + exemptedWeight;
         $('input[name="net_shortage"]').val(netShortage);
         calculateFinalAmounts();
     });

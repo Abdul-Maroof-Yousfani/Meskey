@@ -40,14 +40,22 @@ class PurchaseOrderController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
+                return $q->where('sauda_type_id', $request->sauda_type_id);
+            })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('company_location_id', $request->company_location_id);
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('supplier_id', $request->supplier_id);
             })
-            ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
-                return $q->where('sauda_type_id', $request->sauda_type_id);
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
             })
             ->where('purchase_type', 'regular')
             ->latest()
@@ -233,6 +241,7 @@ class PurchaseOrderController extends Controller
             $updateData = [
                 'sauda_type_id' => $data['sauda_type_id'] ?? null,
                 'supplier_id' => $data['supplier_id'] ?? null,
+                'division_id' => $data['division_id'] ?? null,
                 'supplier_commission' => $data['supplier_commission'] ?? null,
                 'broker_one_id' => $data['broker_one_id'] ?? null,
                 'broker_one_commission' => $data['broker_one_commission'] ?? 0,

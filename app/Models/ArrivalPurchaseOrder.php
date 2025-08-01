@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Division;
 use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PurchaseFreight;
@@ -29,6 +31,7 @@ class ArrivalPurchaseOrder extends Model
         'broker_two_name',
         'broker_three_name',
         'broker_one_id',
+        'division_id',
         'decision_making',
         'decision_making_time',
         'lumpsum_deduction',
@@ -83,9 +86,19 @@ class ArrivalPurchaseOrder extends Model
         'delivery_date' => 'date',
     ];
 
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
     public function purchaseFreight()
     {
         return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id');
+    }
+
+    public function arrivalTickets()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id');
     }
 
     public function paymentRequestData()
@@ -152,6 +165,28 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id')
             ->selectRaw('arrival_purchase_order_id, SUM(loading_weight) as total_loading_weight')
+            ->groupBy('arrival_purchase_order_id');
+    }
+
+    public function totalArrivedNetWeight()
+    {
+        return $this->hasOne(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, SUM(arrived_net_weight) as total_arrived_net_weight')
+            ->groupBy('arrival_purchase_order_id');
+    }
+
+    public function totalClosingTrucksQty()
+    {
+        return $this->hasOne(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, SUM(closing_trucks_qty) as total_closing_trucks_qty')
+            ->groupBy('arrival_purchase_order_id');
+    }
+
+    public function ticketsWithArrivalSlipsCount()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->selectRaw('arrival_purchase_order_id, count(*) as count')
+            ->whereHas('arrivalSlip')
             ->groupBy('arrival_purchase_order_id');
     }
 }

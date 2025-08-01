@@ -32,10 +32,12 @@
                 @endcanAccess
             @endforeach
 
+            @canAccess('dashboard')
             <li class="nav-item" data-menu="dropdown">
                 <a class="dropdown-toggle nav-link d-flex align-items-center" href="{{ url('dashboard') }}"
                     data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
             </li>
+            @endcanAccess
             @canAccess('arrival')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
@@ -135,6 +137,7 @@
                 </ul>
             </li>
             @endcanAccess
+            @canAccess('procurement-raw-material')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Purchase
@@ -155,7 +158,6 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Purchase Sampling</span></a>
                         <ul class="dropdown-menu">
-                            @canAccess('arrival-location')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.purchase-sampling-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')"
@@ -177,6 +179,7 @@
                                     <span data-i18n="Task Board">Purchase Re-Sampling/QC</span>
                                 </a>
                             </li>
+                            @canAccess('procurement-raw-material-purchaser-approval')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.sampling-monitoring.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.sampling-monitoring.index') }}')"
@@ -184,6 +187,8 @@
                                     <span data-i18n="Task Board">Purchaser's Approval</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess('procurement-raw-material-loading')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.freight.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.freight.index') }}')"
@@ -192,14 +197,26 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            {{-- @canAccess('procurement-raw-material-loading') --}}
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.sit-vehicle.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.sit-vehicle.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Stock in Transit Vehicles</span>
+                                </a>
+                            </li>
+                            {{-- @endcanAccess --}}
                         </ul>
                     </li>
+
+
+                    @canAccess('procurement-raw-material-payment-management')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Payment Management</span></a>
                         <ul class="dropdown-menu">
-                            @canAccess('arrival-location')
+                            @canAccess('p-r-m-payment-request-thadda')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.payment-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.payment-request.index') }}')"
@@ -207,6 +224,8 @@
                                     <span data-i18n="Task Board">Payment Request (Thadda)</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess('p-r-m-payment-request-pohouch')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.ticket.payment-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.ticket.payment-request.index') }}')"
@@ -214,6 +233,8 @@
                                     <span data-i18n="Task Board">Payment Request (Pohouch)</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess('p-r-m-payment-request-approvals')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.payment-request-approval.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.payment-request-approval.index') }}')"
@@ -224,19 +245,26 @@
                             @endcanAccess
                         </ul>
                     </li>
+                    @endcanAccess
+                    @canAccess('procurement-raw-material-contract-selection')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.ticket-contracts.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Contract Selection
                             </span></a>
                     </li>
+                    @endcanAccess
+                    @canAccess('procurement-raw-material-inicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Prices
                             </span></a>
                     </li>
+                    @endcanAccess
                 </ul>
             </li>
-              <li class="dropdown nav-item" data-menu="dropdown"><a
+            @endcanAccess
+            @canAccess('procurement-store')
+            <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Store
                         Management</span></a>
@@ -252,13 +280,17 @@
                             </span></a>
                     </li>
                    
+
                 </ul>
             </li>
+            @endcanAccess
 
+            @canAccess('finance')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Finance</span></a>
                 <ul class="dropdown-menu">
+                    @canAccess('finance-chart-of-account')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('account.index') }}"
                             onclick="loadPageContent('{{ route('account.index') }}')" data-toggle="dropdown"><i
@@ -266,6 +298,8 @@
                             <span data-i18n="Task Board">Manage Chart of Account</span>
                         </a>
                     </li>
+                    @endcanAccess
+                    @canAccess('finance-payment-voucher')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('payment-voucher.index') }}"
                             onclick="loadPageContent('{{ route('payment-voucher.index') }}')"
@@ -273,7 +307,7 @@
                             <span data-i18n="Task Board">Payment Vouchers</span>
                         </a>
                     </li>
-
+                    @endcanAccess
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
@@ -282,6 +316,8 @@
                     </li> --}}
                 </ul>
             </li>
+            @endcanAccess
+            @canAccess('access-control')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Access
@@ -313,30 +349,38 @@
                     </li> --}}
                 </ul>
             </li>
+            @endcanAccess
+            @canAccess('reports')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
                 <ul class="dropdown-menu">
-
+                    @canAccess('report-ledger-report')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ url('transactions/report') }}"
                             onclick="loadPageContent('{{ url('transactions/report') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Ledger
                                 Reports</span></a>
                     </li>
+                    @endcanAccess
+                    @canAccess('report-indicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.reports') }}"
                             onclick="loadPageContent('{{ route('indicative-prices.reports') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Email">Indicative Price Reports</span></a>
                     </li>
+                    @endcanAccess
                 </ul>
             </li>
+            @endcanAccess
+            @canAccess('master')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
                         Control</span></a>
                 <ul class="dropdown-menu">
+                    @canAccess('product')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
@@ -384,6 +428,8 @@
                             @endcanAccess
                         </ul>
                     </li>
+                    @endcanAccess
+
 
                     @canAccess('approval-modules')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
@@ -405,7 +451,7 @@
                         </ul>
                     </li>
                     @endcanAccess
-
+                    @canAccess('manage-arrival')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
@@ -446,7 +492,8 @@
                             @endcanAccess
                         </ul>
                     </li>
-
+                    @endcanAccess
+                    @canAccess('raw-material-supplier')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
@@ -454,6 +501,17 @@
                             <span data-i18n="Task Board">Manage Supplier</span>
                         </a>
                     </li>
+                    @endcanAccess
+                    {{-- @canAccess('raw-material-supplier') --}}
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('division.index') }}"
+                            onclick="loadPageContent('{{ route('division.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Divisions</span>
+                        </a>
+                    </li>
+                    {{-- @endcanAccess --}}
+                    @canAccess('raw-material-broker')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('broker.index') }}"
                             onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
@@ -461,6 +519,7 @@
                             <span data-i18n="Task Board">Manage Broker</span>
                         </a>
                     </li>
+                    @endcanAccess
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('company-location.index') }}"
                             onclick="loadPageContent('{{ route('company-location.index') }}')"
@@ -470,6 +529,7 @@
                     </li>
                 </ul>
             </li>
+            @endcanAccess
         </ul>
     </div>
 </div>

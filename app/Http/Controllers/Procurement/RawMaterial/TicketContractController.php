@@ -12,6 +12,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\PurchaseSamplingResult;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use App\Models\Master\QcReliefParameter;
@@ -35,7 +36,17 @@ class TicketContractController extends Controller
      */
     public function getList(Request $request)
     {
-        $tickets = ArrivalTicket::where('freight_status', 'completed')->orderBy('created_at', 'desc')
+        $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
+            ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
+            ->leftJoin('grn_numbers', function ($join) {
+                $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
+                    ->where('grn_numbers.model_type', 'arrival-slip');
+            })
+            ->where(function ($query) {
+                $query->where('arrival_tickets.freight_status', 'completed')
+                    ->orWhere('arrival_tickets.first_qc_status', 'rejected');
+            })
+            ->orderBy('arrival_tickets.created_at', 'desc')
             ->paginate(request('per_page', 25));
 
         return view('management.procurement.raw_material.ticket_contracts.getList', compact('tickets'));
@@ -77,14 +88,26 @@ class TicketContractController extends Controller
             $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
             $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->selected_contract);
 
-            $arrivalTicket->update([
-                'arrival_purchase_order_id' => $request->selected_contract,
-                // 'closing_trucks_qty' => $request->closing_trucks_qty
-            ]);
+            $amount = $arrivalTicket->arrived_net_weight * $purchaseOrder->rate_per_kg;
+            $truckNo = $arrivalTicket->truck_no ?? 'N/A';
+            $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
 
-            $arrivalTicket->increment('closing_trucks_qty', $request->closing_trucks_qty);
-            // $purchaseOrder->increment('arrived_quantity', $arrivalTicket->net_weight);
-            // $purchaseOrder->decrement('remaining_quantity', $arrivalTicket->net_weight);
+            $updateData = [
+                'arrival_purchase_order_id' => $request->selected_contract,
+                'closing_trucks_qty' => $request->closing_trucks_qty
+            ];
+
+            if ($request->verify_ticket) {
+                $updateData['is_ticket_verified'] = 1;
+                $updateData['ticket_verified_by'] = auth()->user()->id;
+                $updateData['ticket_verified_at'] = now();
+            } else {
+                $updateData['is_ticket_verified'] = 0;
+                // $updateData['ticket_verified_by'] = auth()->user()->id;
+                // $updateData['ticket_verified_at'] = now();
+            }
+
+            $arrivalTicket->update($updateData);
 
             if ($request->mark_completed || $purchaseOrder->remaining_quantity <= 0) {
                 $purchaseOrder->update([
@@ -96,6 +119,48 @@ class TicketContractController extends Controller
                 $purchaseOrder->update([
                     'status' => 'completed',
                 ]);
+            }
+
+            $existingTransaction = Transaction::where('purpose', 'stock-in-transit')
+                ->where('voucher_no', $arrivalTicket->arrivalSlip->unique_no ?? '')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->exists();
+
+            if (!$existingTransaction) {
+                $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
+                $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
+
+                if ($arrivalTicket->saudaType->name == 'Pohanch') {
+                    createTransaction(
+                        $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                        $arrivalTicket->qcProduct->account_id,
+                        1,
+                        $arrivalTicket->arrivalSlip->unique_no ?? '',
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "supplier-payable",
+                            'payment_against' => "pohanch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                        ]
+                    );
+                }
+
+                createTransaction(
+                    $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                    $arrivalTicket->qcProduct->account_id,
+                    1,
+                    $arrivalTicket->arrivalSlip->unique_no,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "arrival-slip",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket['arrived_net_weight'] . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                    ]
+                );
             }
 
             DB::commit();
@@ -162,19 +227,25 @@ class TicketContractController extends Controller
 
     public function searchContracts(Request $request)
     {
-        $ticket = ArrivalTicket::find($request->ticket_id);
-        $query = ArrivalPurchaseOrder::with(['supplier', 'product', 'totalLoadingWeight'])
+        $arrivalTicket = ArrivalTicket::find($request->ticket_id);
+        $query = ArrivalPurchaseOrder::with([
+            'supplier',
+            'product',
+            'totalLoadingWeight',
+            'totalArrivedNetWeight'
+        ])
+            ->withCount(['arrivalTickets as closed_arrivals_count' => function ($q) {
+                $q->whereHas('arrivalSlip');
+            }])
             ->where('status', 'draft')
-            ->where('company_location_id', $ticket->location_id);
+            ->where('supplier_id', $arrivalTicket->accounts_of_id)
+            ->where('company_location_id', $arrivalTicket->location_id);
 
-        if ($ticket?->sauda_type_id) {
-            $query->where('sauda_type_id', $ticket->sauda_type_id);
+        if ($arrivalTicket?->sauda_type_id) {
+            $query->where('sauda_type_id', $arrivalTicket->sauda_type_id);
         }
 
-        if ($request->ticket_id) {
-            $linkedId = $ticket?->arrival_purchase_order_id;
-            if ($linkedId) $query->where('id', $linkedId);
-        }
+        $linkedPurchaseOrder = $arrivalTicket->purchaseOrder ?? null;
 
         if ($request->initial) {
             $query->limit(10);
@@ -196,15 +267,50 @@ class TicketContractController extends Controller
             'min_quantity' => $c->min_quantity,
             'max_quantity' => $c->max_quantity,
             'remaining_quantity' => $c->remaining_quantity,
+            'calculation_type' => $c->calculation_type,
             'arrived_quantity' => $c->arrived_quantity,
             'truck_no' => $c->truck_no,
             'trucks_arrived' => $c->trucks_arrived,
             'no_of_trucks' => $c->no_of_trucks,
+            'is_replacement' => $c->is_replacement ? 'Yes' : 'No',
+            'remaining_trucks' => $c->no_of_trucks - $c->closed_arrivals_count,
             'status' => $c->status ?: 'N/A',
             'contract_date_formatted' => $c->created_at->format('d-M-Y'),
-            'total_loading_weight' => $c->totalLoadingWeight->total_loading_weight ?? null,
-        ]);
+            'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? null,
+            'closed_arrivals' => $c->closed_arrivals_count,
+            'remarks' => $c->remarks ?? 'N/A',
+        ])->toArray();
 
-        return response()->json(['success' => true, 'data' => $contracts]);
+        if ($linkedPurchaseOrder) {
+            $linkedContract = [
+                'id' => $linkedPurchaseOrder->id,
+                'contract_no' => $linkedPurchaseOrder->contract_no,
+                'qc_product_name' => $linkedPurchaseOrder->product->name,
+                'supplier' => $linkedPurchaseOrder->supplier,
+                'total_quantity' => $linkedPurchaseOrder->total_quantity,
+                'min_quantity' => $linkedPurchaseOrder->min_quantity,
+                'max_quantity' => $linkedPurchaseOrder->max_quantity,
+                'remaining_quantity' => $linkedPurchaseOrder->remaining_quantity,
+                'calculation_type' => $linkedPurchaseOrder->calculation_type,
+                'arrived_quantity' => $linkedPurchaseOrder->arrived_quantity,
+                'truck_no' => $linkedPurchaseOrder->truck_no,
+                'trucks_arrived' => $linkedPurchaseOrder->trucks_arrived,
+                'no_of_trucks' => $linkedPurchaseOrder->no_of_trucks,
+                'is_replacement' => $linkedPurchaseOrder->is_replacement ? 'Yes' : 'No',
+                'remaining_trucks' => $linkedPurchaseOrder->no_of_trucks - $linkedPurchaseOrder->closed_arrivals_count,
+                'status' => $linkedPurchaseOrder->status ?: 'N/A',
+                'contract_date_formatted' => $linkedPurchaseOrder->created_at->format('d-M-Y'),
+                'total_loading_weight' => $linkedPurchaseOrder->totalArrivedNetWeight->total_arrived_net_weight ?? null,
+                'closed_arrivals' => $linkedPurchaseOrder->closed_arrivals_count,
+                'remarks' => $linkedPurchaseOrder->remarks ?? 'N/A',
+                'is_linked' => true,
+            ];
+
+            array_unshift($contracts, $linkedContract);
+        }
+
+        $html = view('management.procurement.raw_material.ticket_contracts.contract_table', compact('arrivalTicket', 'contracts'))->render();
+
+        return response()->json(['success' => true, 'html' => $html, 'data' => $contracts]);
     }
 }

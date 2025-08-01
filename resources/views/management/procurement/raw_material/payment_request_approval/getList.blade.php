@@ -49,12 +49,12 @@
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
+                        {{-- @can('role-edit') --}}
+                        <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
+                        {{-- @endcan --}}
                     </td>
                 </tr>
             @endforeach

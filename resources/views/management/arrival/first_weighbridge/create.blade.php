@@ -19,8 +19,6 @@
     </div>
     <div class="row" id="slabsContainer">
     </div>
-
-
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -28,8 +26,6 @@
         </div>
     </div>
 </form>
-
-
 
 <script>
     $(document).ready(function() {

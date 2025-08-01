@@ -14,7 +14,10 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->arrivalTicket->unique_no ?? 'N/A' }} <br>
+                            Ticket: {{ $row->arrivalTicket->unique_no }} <br>
+                            @if ($row->grn_unique_no)
+                                GRN: {{ $row->grn_unique_no }}
+                            @endif
                         </p>
                     </td>
                     <td>
@@ -34,18 +37,18 @@
                         </p>
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('arrival-slip.edit', $row->id) }}','View Arrival Slip', true, '100%')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            {{-- <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
+                        {{-- @can('role-edit') --}}
+                        <a onclick="openModal(this,'{{ route('arrival-slip.edit', $row->id) }}','View Arrival Slip', true, '100%')"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        {{-- @endcan
+                        @can('role-delete') --}}
+                        {{-- <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
                                 <i class="ft-x font-medium-3"></i>
                             </a> --}}
-                        @endcan
+                        {{-- @endcan --}}
                     </td>
                 </tr>
             @endforeach

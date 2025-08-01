@@ -11,8 +11,8 @@
         isset($arrivalSamplingRequest) &&
         $arrivalSamplingRequest->arrivalTicket->decision_making == 0 &&
         $arrivalSamplingRequest->arrivalTicket->decision_making_time
-            ? true
-            : false;
+        ? true
+        : false;
     $valuesOfInitialSlabs = [];
     $suggestedValueForInner = 0;
     $suggestedValue = 0;
@@ -34,203 +34,313 @@
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.sampling-monitoring') }}" />
-    <div class="row form-mar">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Ticket Detail
-            </h6>
-        </div>
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <fieldset data-toggle="collapse" href="#collapse11" aria-expanded="false" aria-controls="collapse11">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <button class="btn btn-primary" type="button">
-                            Ticket No.
-                            <i class="fa fa-chevron-down ml-2 toggle-icon" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                    <input type="text" disabled class="form-control"
-                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no }}"
-                        placeholder="Ticket No.">
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="row form-mar">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">
+                        Ticket Detail
+                    </h6>
                 </div>
-            </fieldset>
-        </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div id="collapse11" role="tabpanel" aria-labelledby="headingCollapse11" class="collapse " style="">
-                <div class="row form-mar">
-                    <div class="col-xs-4 col-sm-4 col-md-12">
-                        <div class="form-group">
-                            <label>Ticket Product:</label>
-                            <input type="text" disabled="" class="form-control"
-                                value=" {{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name }}"
-                                placeholder="Ticket Product">
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <fieldset data-toggle="collapse" href="#collapse11" aria-expanded="false"
+                        aria-controls="collapse11">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <button class="btn btn-primary" type="button">
+                                    Ticket No.
+                                    {{-- <i class="fa fa-chevron-down ml-2 toggle-icon" aria-hidden="true"></i> --}}
+                                </button>
+                            </div>
+                            <input type="text" disabled class="form-control"
+                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no }}"
+                                placeholder="Ticket No.">
                         </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Miller:</label>
-                            <input type="text" class="form-control" name="supplier"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->miller->name }}" disabled>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Broker:</label>
-                            <input type="text" class="form-control" name="broker"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name }}" disabled>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4 full">
-                        <div class="form-group">
-                            <label class="d-block">Contract Detail:</label>
-                            <select name="arrival_purchase_order_id" id="arrival_purchase_order_id"
-                                class="form-control select2" disabled>
-                                <option value="">N/A</option>
-                                @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
-                                    <option data-saudatypeid="{{ $arrivalPurchaseOrder->sauda_type_id }}"
-                                        data-brokerid="{{ $arrivalPurchaseOrder->broker->id ?? '' }}"
-                                        data-brokername="{{ $arrivalPurchaseOrder->broker->name ?? '' }}"
-                                        data-supplierid="{{ $arrivalPurchaseOrder->supplier->id ?? '' }}"
-                                        data-suppliername="{{ $arrivalPurchaseOrder->supplier->name ?? '' }}"
-                                        value="{{ $arrivalPurchaseOrder->id }}" @selected(optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id == $arrivalPurchaseOrder->id)>
-                                        {{ $arrivalPurchaseOrder->unique_no }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4 full">
-                        <div class="form-group">
-                            <label class="d-block">Sauda Type:</label>
-
-                            <select disabled name="sauda_type_id_display" id="sauda_type_id"
-                                @disabled(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
-                                        (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ?? null)) class="form-control w-100 select2">
-                                <option value="">Select Sauda Type</option>
-                                @foreach ($saudaTypes as $saudaType)
-                                    <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
-                                        {{ $saudaType->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label class="d-block">Decisioned Of:</label>
-                            <input type="text" name="accounts_of" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->decisionBy->name ?? '' }}"
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label class="d-block">Accounts Of:</label>
-                            <input type="text" name="accounts_of" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_name ?? '' }}"
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Station:</label>
-                            <input type="text" name="station_id" placeholder="Station" class="form-control" disabled
-                                autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->station_name ?? 'N/A' }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Truck Type:</label>
-                            <input type="text" name="arrival_truck_type_id" placeholder="Truck Type" disabled
-                                class="form-control" autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truckType->name ?? '' }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Truck No:</label>
-                            <input type="text" name="truck_no"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truck_no }}" disabled
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Bilty No: </label>
-                            <input type="text" name="bilty_no" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bilty_no }}"
-                                placeholder="Bilty No" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>No of bags: </label>
-                            <input type="text" name="bags" placeholder="No of bags" class="form-control"
-                                disabled autocomplete="off"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bags }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Sample Money Type: </label>
-                            <select name="sample_money_type" class="form-control" disabled>
-                                <option
-                                    {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'n/a' ? 'selected' : '' }}
-                                    value="n/a">N/A</option>
-                                <option
-                                    {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'single' ? 'selected' : '' }}
-                                    value="single">Single</option>
-                                <option
-                                    {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'double' ? 'selected' : '' }}
-                                    value="double">Double</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Sample Money: </label>
-                            <input type="text" readonly name="sample_money"
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money ?? 0 }}"
-                                placeholder="No of bags" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group ">
-                            <label>Loading Date: (Optional)</label>
-                            <input type="date" name="loading_date" disabled
-                                value="{{ optional($arrivalSamplingRequest->arrivalTicket)->loading_date }}"
-                                placeholder="Bilty No" class="form-control" autocomplete="off" />
-                        </div>
-                    </div>
-
-                    <div class="col-xs-12 col-sm-12 col-md-12">
-                        <div class="form-group ">
-                            <label>Ticket Remarks:</label>
-                            <textarea name="remarks" row="2" class="form-control" disabled placeholder="Remarks">{{ optional($arrivalSamplingRequest->arrivalTicket)->remarks }}</textarea>
-                        </div>
-                    </div>
+                    </fieldset>
                 </div>
-            </div>
-            <div class="row">
 
                 <div class="col-xs-12 col-sm-12 col-md-12">
-                    <div class="form-group">
-                        <label>QC Product:</label>
-                        <input type="text" disabled="" class="form-control"
-                            value="{{ $arrivalSamplingRequest->arrivalProduct->name ?? '' }}"
-                            placeholder="QC Product">
-                    </div>
-                </div>
+                    <div id="collapse1" role="tabpanel" aria-labelledby="headingCollapse11" class="cllapse " style="">
+                        <div class="row form-mar">
+                            <!-- Ticket Number -->
+                            {{-- <div class="col-xs-6 col-sm-6 col-md-6">
+                                <fieldset>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <button class="btn btn-primary" type="button">Ticket No#</button>
+                                        </div>
+                                        <input type="text" disabled class="form-control"
+                                            value="{{ optional($arrivalSamplingRequest->arrivalTicket)->unique_no ?? 'N/A' }}">
+                                    </div>
+                                </fieldset>
+                            </div> --}}
 
+                            <!-- Contract Detail -->
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label class="d-block">Contract Detail:</label>
+                                    <select name="arrival_purchase_order_id" id="arrival_purchase_order_id"
+                                        class="form-control " disabled>
+                                        <option value="">N/A</option>
+                                        @foreach ($arrivalPurchaseOrders as $arrivalPurchaseOrder)
+                                            <option value="{{ $arrivalPurchaseOrder->id }}"
+                                                @selected(optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id == $arrivalPurchaseOrder->id)>
+                                                #{{ $arrivalPurchaseOrder->contract_no ?? 'N/A' }} - Type:
+                                                {{ $arrivalPurchaseOrder->saudaType->name ?? 'N/A' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Product:</label>
+                                    <input type="text" disabled class="form-control"
+                                        value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->product)->name ?? 'N/A' }}"
+                                        placeholder="Product Name">
+                                </div>
+                            </div>
+
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Sauda Type:</label>
+                                    <input type="text" disabled class="form-control"
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->saudaType->name ?? 'N/A' }}"
+                                        placeholder="Sauda Type">
+                                </div>
+                            </div>
+
+                            <!-- Millers -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Millers:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->miller->name ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Broker -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Broker:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->broker_name ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Decision Of -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Decision Of:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->decisionBy)->name ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Accounts Of -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Accounts Of:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->accounts_of_name ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Station -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Station:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->station)->name ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Truck No -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Truck No:</label>
+                                    <input type="text" class="form-control text-uppercase" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->truck_no ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Bilty No -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Bilty No:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bilty_no ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Truck Type -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Truck Type:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional(optional($arrivalSamplingRequest->arrivalTicket)->truckType)->name ?? 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Sample Money Type -->
+                            {{-- <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Sample Money Type:</label>
+                                    <select class="form-control" disabled>
+                                        <option {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'n/a' ? 'selected' : '' }} value="n/a">N/A</option>
+                                        <option {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'single' ? 'selected' : '' }} value="single">Single</option>
+                                        <option {{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money_type == 'double' ? 'selected' : '' }} value="double">Double</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Sample Money -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Sample Money:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sample_money ?? '0' }}">
+                                </div>
+                            </div> --}}
+
+                            <!-- No of Bags -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>No of bags:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->bags ?? '0' }}">
+                                </div>
+                            </div>
+
+                            <!-- Loading Date -->
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Loading Date:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->loading_date ? \Carbon\Carbon::parse($arrivalSamplingRequest->arrivalTicket->loading_date)->format('Y-m-d') : 'N/A' }}">
+                                </div>
+                            </div>
+
+                            <!-- Weight Details Section -->
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Weight Detail
+                                </h6>
+                            </div>
+
+                            {{-- <!-- First Weight -->
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <label>First Weight:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->first_weight ?? '0' }}">
+                                </div>
+                            </div>
+
+                            <!-- Second Weight -->
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <label>Second Weight:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->second_weight ?? '0' }}">
+                                </div>
+                            </div> --}}
+
+                            <!-- Net Weight -->
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label>Net Weight:</label>
+                                    <input type="text" class="form-control" disabled
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->net_weight ?? '0' }}">
+                                </div>
+                            </div>
+
+                            <!-- Remarks -->
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label>Ticket Remarks:</label>
+                                    <textarea class="form-control" disabled
+                                        rows="3">{{ optional($arrivalSamplingRequest->arrivalTicket)->remarks ?? 'N/A' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                   
+
+                  
+                </div>
             </div>
         </div>
-    </div>
 
+
+         <div class="col-md-6">
+          <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                                <label>QC Product:</label>
+                                <input type="text" disabled="" class="form-control"
+                                    value="{{ $arrivalSamplingRequest->arrivalProduct->name ?? '' }}"
+                                    placeholder="QC Product">
+                            </div>
+                        </div>
+
+                    </div>
+           <div class="row">
+                        <div class="col-xs-6 col-sm-6 col-md-6 full">
+                            <div class="form-group">
+                                <label class="d-block">Sauda Type:</label>
+                                @php
+                                    $isDisabled =
+                                        optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
+                                        (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ??
+                                            null);
+                                @endphp
+
+                                @if ($isDisabled)
+                                    <input type="hidden" name="sauda_type_id"
+                                        value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
+                                    <select disabled class="form-control w-100 select2">
+                                @else
+                                        <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
+                                    @endif
+                                        <option value="">Select Sauda Type</option>
+                                        @foreach ($saudaTypes as $saudaType)
+                                            <option
+                                                @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id)
+                                                value="{{ $saudaType->id }}">
+                                                {{ $saudaType->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6 full">
+                            <div class="form-group ">
+                                <label>Status:</label>
+                                @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
+                                    <input type="hidden" name="stage_status"
+                                        value="{{ $arrivalSamplingRequest->approved_status }}">
+                                @endif
+                                <select
+                                    name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status_display' : 'stage_status' }}"
+                                    id="stage_status" class="form-control select2"
+                                    @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
+                                    <option value="" hidden>Choose Status</option>
+                                    <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
+                                        value="approved">
+                                        Approved</option>
+                                    <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }} value="resampling">Request Resampling</option>
+                                    <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }}
+                                        value="rejected">
+                                        Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
     <div id="slabsContainer">
         <div class="row">
             <div class="col-12">
@@ -257,12 +367,10 @@
                         }
                     @endphp
                     <li class="nav-item">
-                        <a class="nav-link" id="initial-{{ $index }}-tab" data-toggle="tab"
-                            href="#initial-{{ $index }}" role="tab"
-                            aria-controls="initial-{{ $index }}" aria-selected="false">
+                        <a class="nav-link" id="initial-{{ $index }}-tab" data-toggle="tab" href="#initial-{{ $index }}"
+                            role="tab" aria-controls="initial-{{ $index }}" aria-selected="false">
                             <div>{{ $statusLabel }}</div>
-                            <small
-                                class="text-muted">{{ $initialData['request']->created_at->format('M d, Y h:i A') }}</small>
+                            <small class="text-muted">{{ $initialData['request']->created_at->format('M d, Y h:i A') }}</small>
                         </a>
                     </li>
                 @endforeach
@@ -290,12 +398,10 @@
                     }
                 @endphp
                 <li class="nav-item">
-                    <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab"
-                        href="#inner-{{ $index }}" role="tab" aria-controls="inner-{{ $index }}"
-                        aria-selected="false">
+                    <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab" href="#inner-{{ $index }}" role="tab"
+                        aria-controls="inner-{{ $index }}" aria-selected="false">
                         <div>{{ $statusLabel }}</div>
-                        <small
-                            class="text-muted">{{ $innerData['request']->created_at->format('M d, Y h:i A') }}</small>
+                        <small class="text-muted">{{ $innerData['request']->created_at->format('M d, Y h:i A') }}</small>
                     </a>
                 </li>
             @endforeach
@@ -315,19 +421,18 @@
                     default:
                         $currentTabLabel = ucwords(
                             ($arrivalSamplingRequest->sampling_type == 'inner' ? 'Current ' : '') .
-                                $arrivalSamplingRequest->sampling_type,
+                            $arrivalSamplingRequest->sampling_type,
                         );
                 }
             @endphp
 
             <li class="nav-item">
-                <a class="nav-link active" id="current-inner-tab" data-toggle="tab" href="#current-inner"
-                    role="tab" aria-controls="current-inner" aria-selected="true">
+                <a class="nav-link active" id="current-inner-tab" data-toggle="tab" href="#current-inner" role="tab"
+                    aria-controls="current-inner" aria-selected="true">
                     <div>
                         {{ $arrivalSamplingRequest->is_re_sampling == 'yes' ? 'Current ' . ucwords($arrivalSamplingRequest->sampling_type) . ' Resampling' : 'Current ' . $arrivalSamplingRequest->sampling_type . ' Checklist' }}
                     </div>
-                    <small
-                        class="text-muted">{{ $arrivalSamplingRequest->created_at->format('M d, Y h:i A') }}</small>
+                    <small class="text-muted">{{ $arrivalSamplingRequest->created_at->format('M d, Y h:i A') }}</small>
                 </a>
             </li>
         </ul>
@@ -369,8 +474,8 @@
                                         );
                                         $deductionValue =
                                             $initialData['request']->is_lumpsum_deduction == 1
-                                                ? 0
-                                                : $slab->applied_deduction ?? 0;
+                                            ? 0
+                                            : $slab->applied_deduction ?? 0;
                                         $suggestedDeductionType = $slab->deduction_type ?? 'amount';
 
                                         $suggestedDeductionType == 'amount'
@@ -409,16 +514,13 @@
 
                                     @endphp
                                     <div class="form-group row checklist-box">
-                                        <label
-                                            class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
+                                        <label class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                         <div class="col-md-3 QcResult">
                                             <div class="input-group mb-0">
-                                                <input type="text" readonly
-                                                    class="form-control {{ $comparisonClass }}"
+                                                <input type="text" readonly class="form-control {{ $comparisonClass }}"
                                                     value="{{ $slab->checklist_value }}" placeholder="%" disabled>
                                                 <div class="input-group-append">
-                                                    <span
-                                                        class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                    <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                                 </div>
                                             </div>
                                             @if ($previousChecklistValue !== null)
@@ -440,8 +542,8 @@
                                         </div>
                                         <div class="col-md-2 QcResult">
                                             <div class="input-group mb-0">
-                                                <input type="text" class="form-control bg-white"
-                                                    value="{{ $deductionValue }}" placeholder="Deduction" disabled>
+                                                <input type="text" class="form-control bg-white" value="{{ $deductionValue }}"
+                                                    placeholder="Deduction" disabled>
                                                 <div class="input-group-append">
                                                     <span
                                                         class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
@@ -484,20 +586,19 @@
                                     <div class="form-group row ">
                                         <label class="label-control font-weight-bold col-md-4"
                                             data-default-value="{{ $defaultValue }}">{{ $slab->qcParam->name }}</label>
-                                        <div
-                                            class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                        <div class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                             @if ($slab->qcParam->type == 'dropdown')
-                                                <input type="text" readonly
-                                                    class="form-control {{ $compulsaryClass }}"
+                                                <input type="text" readonly class="form-control {{ $compulsaryClass }}"
                                                     value="{{ $slab->compulsory_checklist_value }}" disabled>
                                             @else
-                                                <textarea readonly class="form-control {{ $compulsaryClass }}" disabled>{{ $slab->compulsory_checklist_value }}</textarea>
+                                                <textarea readonly class="form-control {{ $compulsaryClass }}"
+                                                    disabled>{{ $slab->compulsory_checklist_value }}</textarea>
                                             @endif
                                         </div>
                                         @if (!checkIfNameExists($slab->qcParam->name))
                                             <div class="col-md-2 QcResult">
-                                                <input type="text" class="form-control bg-white"
-                                                    value="{{ $slab->applied_deduction ?? 0 }}" disabled>
+                                                <input type="text" class="form-control bg-white" value="{{ $slab->applied_deduction ?? 0 }}"
+                                                    disabled>
                                             </div>
                                         @endif
                                     </div>
@@ -513,12 +614,10 @@
                                     Deduction</label>
                                 <div class="col-md-3">
                                     <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="is_lumpsum_deduction_initial"
-                                            class="custom-control-input"
+                                        <input type="checkbox" name="is_lumpsum_deduction_initial" class="custom-control-input"
                                             id="lumpsum-toggle-initial-{{ $index }}"
                                             @checked($initialData['request']->is_lumpsum_deduction == 1) disabled>
-                                        <label class="custom-control-label"
-                                            for="lumpsum-toggle-initial-{{ $index }}"></label>
+                                        <label class="custom-control-label" for="lumpsum-toggle-initial-{{ $index }}"></label>
                                     </div>
                                 </div>
                                 <div class="col {{ $index == 0 ? '' : 'd-none-1' }}">
@@ -530,8 +629,7 @@
                                         </div>
                                     </div>
                                     <div class="input-group mb-0">
-                                        <input type="text" class="form-control" readonly
-                                            value="{{ $totalSuggested['kg'] }} ">
+                                        <input type="text" class="form-control" readonly value="{{ $totalSuggested['kg'] }} ">
                                         <div class="input-group-append">
                                             <span class="input-group-text text-sm">KG's</span>
                                         </div>
@@ -539,8 +637,8 @@
                                 </div>
                                 <div class="col">
                                     <div class="input-group mb-1">
-                                        <input type="text" id="lumpsum-value-initial-{{ $index }}"
-                                            class="form-control" name="lumpsum_deduction_initial" disabled
+                                        <input type="text" id="lumpsum-value-initial-{{ $index }}" class="form-control"
+                                            name="lumpsum_deduction_initial" disabled
                                             value="{{ $initialData['request']->lumpsum_deduction ?? 0 }}"
                                             placeholder="Lumpsum Deduction">
                                         <div class="input-group-append">
@@ -548,8 +646,8 @@
                                         </div>
                                     </div>
                                     <div class="input-group mb-0">
-                                        <input type="text" id="lumpsum-kgs-value-initial-{{ $index }}"
-                                            class="form-control" name="lumpsum_deduction_kgs_initial" readonly
+                                        <input type="text" id="lumpsum-kgs-value-initial-{{ $index }}" class="form-control"
+                                            name="lumpsum_deduction_kgs_initial" readonly
                                             value="{{ $initialData['request']->lumpsum_deduction_kgs ?? 0 }}"
                                             placeholder="Lumpsum Deduction">
                                         <div class="input-group-append">
@@ -564,12 +662,10 @@
                                     Making on Avg.</label>
                                 <div class="col-md-3">
                                     <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="decision_making_initial"
-                                            class="custom-control-input"
+                                        <input type="checkbox" name="decision_making_initial" class="custom-control-input"
                                             id="decision_making_initial_{{ $index }}"
                                             @checked($initialData['request']->decision_making == 1) disabled>
-                                        <label class="custom-control-label"
-                                            for="decision_making_initial_{{ $index }}"></label>
+                                        <label class="custom-control-label" for="decision_making_initial_{{ $index }}"></label>
                                     </div>
                                 </div>
                             </div>
@@ -579,8 +675,7 @@
             @endif
 
             @foreach ($innerRequestsData as $index => $innerData)
-                <div class="tab-pane fade" id="inner-{{ $index }}" role="tabpanel"
-                    aria-labelledby="inner-{{ $index }}-tab">
+                <div class="tab-pane fade" id="inner-{{ $index }}" role="tabpanel" aria-labelledby="inner-{{ $index }}-tab">
                     <div class="row w-100 mx-auto">
                         <div class="col-md-4"></div>
                         <div class="col-md-3 py-2 QcResult">
@@ -646,16 +741,13 @@
                                     }
                                 @endphp
                                 <div class="form-group row checklist-box">
-                                    <label
-                                        class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
+                                    <label class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                     <div class="col-md-3 QcResult">
                                         <div class="input-group mb-0">
-                                            <input type="text" readonly
-                                                class="form-control {{ $comparisonClass }}"
+                                            <input type="text" readonly class="form-control {{ $comparisonClass }}"
                                                 value="{{ $slab->checklist_value }}">
                                             <div class="input-group-append">
-                                                <span
-                                                    class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                             </div>
                                         </div>
                                         @if ($previousChecklistValue !== null)
@@ -722,19 +814,18 @@
                                 <div class="form-group row">
                                     <label class="label-control font-weight-bold col-md-4"
                                         data-default-value="{{ $defaultValue }}">{{ $slab->qcParam->name }}</label>
-                                    <div
-                                        class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                    <div class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                         @if ($slab->qcParam->type == 'dropdown')
                                             <input type="text" class="form-control {{ $compulsaryClass }}"
                                                 value="{{ $slab->compulsory_checklist_value }}" readonly>
                                         @else
-                                            <textarea class="form-control {{ $compulsaryClass }}" readonly>{{ $slab->compulsory_checklist_value }}</textarea>
+                                            <textarea class="form-control {{ $compulsaryClass }}"
+                                                readonly>{{ $slab->compulsory_checklist_value }}</textarea>
                                         @endif
                                     </div>
                                     @if (!checkIfNameExists($slab->qcParam->name))
                                         <div class="col-md-2 QcResult">
-                                            <input type="text" class="form-control  " readonly
-                                                value="{{ $slab->applied_deduction }}">
+                                            <input type="text" class="form-control  " readonly value="{{ $slab->applied_deduction }}">
                                         </div>
                                     @endif
                                 </div>
@@ -763,8 +854,7 @@
                                     </div>
                                 </div>
                                 <div class="input-group mb-0">
-                                    <input type="text" class="form-control" readonly
-                                        value="{{ $totalSuggested['kg'] }} ">
+                                    <input type="text" class="form-control" readonly value="{{ $totalSuggested['kg'] }} ">
                                     <div class="input-group-append">
                                         <span class="input-group-text text-sm">KG's</span>
                                     </div>
@@ -859,7 +949,7 @@
                                 $innerDeductionValue = $isLumpSumEnabledInTicket
                                     ? 0
                                     : $previousDeduction ??
-                                        ($slab->applied_deduction ?? ($valuesOfInitialSlabs[$slab->slabType->id] ?? 0));
+                                    ($slab->applied_deduction ?? ($valuesOfInitialSlabs[$slab->slabType->id] ?? 0));
 
                                 $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
 
@@ -908,18 +998,14 @@
                                 }
                             @endphp
                             <div class="form-group row checklist-box">
-                                <input type="hidden" name="product_slab_type_id[]"
-                                    value="{{ $slab->slabType->id }}">
-                                <label
-                                    class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
+                                <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
+                                <label class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
                                     <div class="input-group mb-0">
-                                        <input type="text" class="form-control {{ $comparisonClass }}"
-                                            name="checklist_value[]" value="{{ $displayValue }}" placeholder="%"
-                                            readonly>
+                                        <input type="text" class="form-control {{ $comparisonClass }}" name="checklist_value[]"
+                                            value="{{ $displayValue }}" placeholder="%" readonly>
                                         <div class="input-group-append">
-                                            <span
-                                                class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                            <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                         </div>
                                     </div>
                                     @if ($previousChecklistValue !== null)
@@ -948,8 +1034,7 @@
                                             data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                             data-slab-id="{{ $slab->slabType->id }}"
                                             data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
-                                            data-checklist="{{ $displayValue }}"
-                                            {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                            data-checklist="{{ $displayValue }}" {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                         <div class="input-group-append">
                                             <span
                                                 class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
@@ -1006,31 +1091,27 @@
                             @endphp
 
                             <div class="form-group row">
-                                <input type="hidden" name="compulsory_param_id[]"
-                                    value="{{ $slab->qcParam->id }}">
-                                <label
-                                    class="label-control font-weight-bold col-md-4  ">{{ $slab->qcParam->name }}</label>
-                                <div
-                                    class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
+                                <label class="label-control font-weight-bold col-md-4  ">{{ $slab->qcParam->name }}</label>
+                                <div class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
                                         <input type="text" class="form-control {{ $compulsaryClass }}"
                                             name="compulsory_checklist_value[]" value="{{ $displayCompValue }}"
                                             data-default-value="{{ $defaultValue }}" readonly>
                                     @else
-                                        <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
+                                        <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]"
+                                            readonly>{{ $displayCompValue }}</textarea>
                                     @endif
                                 </div>
                                 @if (!checkIfNameExists($slab->qcParam->name))
                                     <div class="col-md-2 QcResult">
                                         <div class="input-group mb-0">
                                             <input type="text" id="inp-{{ $slab->qcParam->id }}"
-                                                class="form-control bg-white deduction-field"
-                                                name="compulsory_aapplied_deduction[]"
+                                                class="form-control bg-white deduction-field" name="compulsory_aapplied_deduction[]"
                                                 value="{{ $compDeductionValue }}" placeholder="Deduction"
                                                 data-slab-id="{{ $slab->qcParam->id }}"
                                                 data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
-                                                data-checklist="{{ $displayCompValue }}"
-                                                {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                data-checklist="{{ $displayCompValue }}" {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                             <div class="input-group-append">
                                                 <span
                                                     class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
@@ -1064,17 +1145,15 @@
                         </div>
                         <div class="col">
                             <div class="input-group mb-2">
-                                <input type="text" id="suggessions-sum" class="form-control"
-                                    name="suggessions_sum" disabled value="{{ $suggestedValue }}"
-                                    placeholder="Suggested Sum">
+                                <input type="text" id="suggessions-sum" class="form-control" name="suggessions_sum"
+                                    disabled value="{{ $suggestedValue }}" placeholder="Suggested Sum">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
                                 </div>
                             </div>
                             <div class="input-group mb-0">
-                                <input type="text" id="suggessions-sum" class="form-control"
-                                    name="suggessions_sum" disabled value="{{ $suggestedValueKgs }}"
-                                    placeholder="Suggested Sum">
+                                <input type="text" id="suggessions-sum" class="form-control" name="suggessions_sum"
+                                    disabled value="{{ $suggestedValueKgs }}" placeholder="Suggested Sum">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Kgs.</span>
                                 </div>
@@ -1082,19 +1161,18 @@
                         </div>
                         <div class="col">
                             <div class="input-group mb-2">
-                                <input type="text" id="lumpsum-value" class="form-control"
-                                    name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}" --}} value="{{ $rupeeLumpSum ?? 0 }}"
-                                    placeholder="Lumpsum Deduction">
+                                <input type="text" id="lumpsum-value" class="form-control" name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }} {{--
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}"
+                                    --}} value="{{ $rupeeLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
                                 </div>
                             </div>
                             <div class="input-group mb-0">
                                 <input type="text" id="lumpsum-kgs-value" class="form-control"
-                                    name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}" --}} value="{{ $kgLumpSum ?? 0 }}"
-                                    placeholder="Lumpsum Deduction">
+                                    name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }} {{--
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}"
+                                    --}} value="{{ $kgLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">KG's</span>
                                 </div>
@@ -1108,7 +1186,8 @@
                         <div class="col-md-3">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" name="decision_making" class="custom-control-input"
-                                    id="decision_making" @checked($isDecisionMaking) @disabled($isDecisionMakingDisabled)>
+                                    id="decision_making" @checked($isDecisionMaking)
+                                    @disabled($isDecisionMakingDisabled)>
                                 <label class="custom-control-label" for="decision_making"></label>
                             </div>
                         </div>
@@ -1128,8 +1207,10 @@
                     <select name="sample_taken_by" id="sample_taken_by" class="form-control select2" disabled>
                         <option value="">Sample Taken By</option>
                         @foreach ($sampleTakenByUsers as $sampleTakenUser)
-                            <option @selected($arrivalSamplingRequest->sample_taken_by == $sampleTakenUser->id) value="{{ $sampleTakenUser->id }}">
-                                {{ $sampleTakenUser->name }}</option>
+                            <option @selected($arrivalSamplingRequest->sample_taken_by == $sampleTakenUser->id)
+                                value="{{ $sampleTakenUser->id }}">
+                                {{ $sampleTakenUser->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -1137,9 +1218,8 @@
             <div class="col-12 px-3">
                 <div class="form-group ">
                     <label>Sample Analysis By: </label>
-                    <input type="text" readonly disabled name="sample_analysis_by"
-                        placeholder="Sample Analysis By" class="form-control" autocomplete="off"
-                        value="{{ auth()->user()->name ?? '' }}" />
+                    <input type="text" readonly disabled name="sample_analysis_by" placeholder="Sample Analysis By"
+                        class="form-control" autocomplete="off" value="{{ auth()->user()->name ?? '' }}" />
                 </div>
             </div>
             <div class="col-12 px-3">
@@ -1147,71 +1227,34 @@
                     <label>Party Ref. No: </label>
                     <select name="party_ref_no" id="party_ref_no" class="form-control select2" disabled>
                         <option value="{{ $arrivalSamplingRequest->party_ref_no }}">
-                            {{ $arrivalSamplingRequest->party_ref_no }}</option>
+                            {{ $arrivalSamplingRequest->party_ref_no }}
+                        </option>
                     </select>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-xs-6 col-sm-6 col-md-6 full">
-                <div class="form-group">
-                    <label class="d-block">Sauda Type:</label>
-                    @php
-                        $isDisabled =
-                            optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ??
-                            (null && optional($arrivalSamplingRequest->arrivalTicket)->arrival_purchase_order_id ??
-                                null);
-                    @endphp
-
-                    @if ($isDisabled)
-                        <input type="hidden" name="sauda_type_id"
-                            value="{{ optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id ?? '' }}">
-                        <select disabled class="form-control w-100 select2">
-                        @else
-                            <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
-                    @endif
-                    <option value="">Select Sauda Type</option>
-                    @foreach ($saudaTypes as $saudaType)
-                        <option @selected(optional($arrivalSamplingRequest->arrivalTicket)->sauda_type_id == $saudaType->id) value="{{ $saudaType->id }}">
-                            {{ $saudaType->name }}</option>
-                    @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="col-xs-6 col-sm-6 col-md-6 full">
-                <div class="form-group ">
-                    <label>Status:</label>
-                    @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
-                        <input type="hidden" name="stage_status"
-                            value="{{ $arrivalSamplingRequest->approved_status }}">
-                    @endif
-                    <select
-                        name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status_display' : 'stage_status' }}"
-                        id="stage_status" class="form-control select2" @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
-                        <option value="" hidden>Choose Status</option>
-                        <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
-                            value="approved">
-                            Approved</option>
-                        <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }}
-                            value="resampling">Request Resampling</option>
-                        <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }}
-                            value="rejected">
-                            Rejected</option>
-                    </select>
-                </div>
-            </div>
-        </div>
         <div class="row">
             <div class="col-xs-12 col-sm-12 col-md-12">
                 <div class="form-group ">
                     <label>Your Remarks (Optional):</label>
-                    <textarea name="remarks" row="4" class="form-control" placeholder="Description">{{ $arrivalSamplingRequest->remark }}</textarea>
+                    <textarea name="remarks" row="4" class="form-control"
+                        placeholder="Description">{{ $arrivalSamplingRequest->remark }}</textarea>
                 </div>
             </div>
         </div>
 
     </div>
+
+         </div>
+    </div>
+
+
+
+
+
+
+
 
     <div class="row bottom-button-bar">
         <div class="col-12">
@@ -1222,12 +1265,12 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         function calculateTotal() {
             let total = 0;
             let totalKgs = 0;
 
-            $('.deduction-field').each(function() {
+            $('.deduction-field').each(function () {
                 let matchingSlabs = $(this).data('matching-slabs');
                 let calculatedOn = $(this).data('calculated-on');
                 let slabId = $(this).data('slab-id');
@@ -1287,7 +1330,7 @@
 
         $('.deduction-field').on('input', calculateTotal);
 
-        $('#lumpsum-toggle').change(function() {
+        $('#lumpsum-toggle').change(function () {
             if ($(this).is(':checked')) {
                 Swal.fire({
                     title: 'Are you sure?',
@@ -1315,7 +1358,7 @@
             }
         });
 
-        $('#arrival_sampling_request_id').change(function() {
+        $('#arrival_sampling_request_id').change(function () {
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
@@ -1326,7 +1369,7 @@
                         sampling_request_id: samplingRequestId
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching slabs.",
@@ -1336,7 +1379,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Append the rendered HTML to a container element
@@ -1346,7 +1389,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -1357,7 +1400,7 @@
 
         $('.select2').select2();
 
-        $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
+        $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
             let saudaTypeId = $(this).find(':selected').data('saudatypeid');
 
             let $saudaTypeSelect = $('#sauda_type_id');
@@ -1368,7 +1411,7 @@
                 $saudaTypeSelect.prop('disabled', true);
                 $hiddenInput.val(saudaTypeId);
             } else {
-                $saudaTypeSelect.prop('disabled', false).val('').trigger('change');
+$saudaTypeSelect.prop('disabled', false).val('').trigger('change');
                 $hiddenInput.val('');
             }
         });

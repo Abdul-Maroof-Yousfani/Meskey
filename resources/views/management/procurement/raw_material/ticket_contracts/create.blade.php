@@ -36,7 +36,14 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}</h4>
+                        <h4 class="card-title">
+                            Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}
+                            @if ($arrivalTicket->first_qc_status == 'rejected')
+                                <span class="badge badge-danger ml-2">Rejected</span>
+                            @elseif($arrivalTicket->is_ticket_verified == 1)
+                                <span class="badge badge-success ml-2">Contract Verified</span>
+                            @endif
+                        </h4>
                     </div>
                     <div class="card-body">
                         <form action="{{ route('raw-material.ticket-contracts.store') }}" method="POST" id="ajaxSubmit">
@@ -62,28 +69,34 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="contract-results mt-3" id="contracts_table"
+                                                style="display: none; max-height: 400px; overflow-y: auto;">
+                                            </div>
 
-                                            <div class="contract-results mt-3"
+                                            {{-- <div class="contract-results mt-3"
                                                 style="display: none; max-height: 400px; overflow-y: auto;">
                                                 <table class="table table-sm table-bordered table-hover">
                                                     <thead class="thead-light">
                                                         <tr>
-                                                            <th width="5%">Select</th>
-                                                            <th width="15%">Contract No</th>
-                                                            <th width="15%">Product</th>
-                                                            <th width="15%">Supplier</th>
-                                                            <th width="10%">Ordered Qty</th>
-                                                            <th width="10%">Remaining Qty</th>
-                                                            <th width="10%">Arrived Qty</th>
-                                                            <th width="10%">Truck No</th>
-                                                            <th width="10%">Trucks Arrived</th>
-                                                            <th width="10%">Status</th>
-                                                            {{-- <th width="5%">Action</th> --}}
+                                                            <th style="width: 6%;">Select</th>
+                                                            <th style="width: 13%;">Contract No</th>
+                                                            <th style="width: 13%;">Product</th>
+                                                            <th style="width: 7%;">Sauda Calc Type</th>
+                                                            <th style="width: 13%;">Supplier</th>
+                                                            <th style="width: 10%;">Ordered Qty</th>
+                                                            <th style="width: 8%;">Arrived Qty</th>
+                                                            <th style="width: 10%;">Remaining Qty</th>
+                                                            <th style="width: 7%;">Truck Ordered</th>
+                                                            <th style="width: 7%;">Trucks Arrived</th>
+                                                            <th style="width: 7%;">Remaining Truck</th>
+                                                            <th style="width: 9%;">Remarks</th>
+                                                            <th style="width: 9%;">Is Replacement</th>
+                                                            <th style="width: 9%;">Status</th> 
                                                         </tr>
                                                     </thead>
                                                     <tbody id="contract_results_body"></tbody>
                                                 </table>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -249,224 +262,228 @@
                                                 </div>
                                             </div>
 
-                                            <div class="row mt-3">
-                                                <div class="col-md-12">
-                                                    <h5 class="section-title">Weight Information</h5>
-                                                    <hr>
-                                                </div>
+                                            @if ($arrivalTicket->first_qc_status != 'rejected')
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <h5 class="section-title">Weight Information</h5>
+                                                        <hr>
+                                                    </div>
 
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>First Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}"
-                                                            readonly>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>First Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->firstWeighbridge->weight ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Second Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Net Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->net_weight ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Arrival Weight</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>No. of Bags</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->total_bags }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Avg. Weight per Bag</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Packing</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->bagType->name ?? 'N/A' }} ⸺ {{ $arrivalTicket->approvals->bagPacking->name ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Gala No</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->gala_name ?? 'N/A' }}"
+                                                                readonly>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Second Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->secondWeighbridge->weight ?? 'N/A' }}"
-                                                            readonly>
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <h5 class="section-title">Freight Information</h5>
+                                                        <hr>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Filling Bags</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }} × 10 = {{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Freight (Rs.)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Freight per Ton</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Arrived Kanta Charges</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Kanta Loading Charges</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Other/Labour Charges</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Other/Labour Charges (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Other Deduction</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Other Deduction (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Total Freight Payable</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Total Freight Payable (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Unpaid Labour Charge</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Unpaid Labour Charge (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Final Figure</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}"
+                                                                readonly>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Final Figure (in words)</label>
+                                                            <input type="text" class="form-control"
+                                                                value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}"
+                                                                readonly>
+                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Net Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->net_weight ?? 'N/A' }}" readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Arrival Weight</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>No. of Bags</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->total_bags }}" readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Avg. Weight per Bag</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Packing</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->bagType->name ?? 'N/A' }} ⸺ {{ $arrivalTicket->approvals->bagPacking->name ?? 'N/A' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Gala No</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->gala_name ?? 'N/A' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row mt-3">
-                                                <div class="col-md-12">
-                                                    <h5 class="section-title">Freight Information</h5>
-                                                    <hr>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Filling Bags</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->approvals->filling_bags_no ?? '0' }} × 10 = {{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Freight (Rs.)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Freight per Ton</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Arrived Kanta Charges</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Kanta Loading Charges</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Other/Labour Charges</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Other/Labour Charges (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Other Deduction</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Other Deduction (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Total Freight Payable</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->gross_freight_amount ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Total Freight Payable (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->gross_freight_amount ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Unpaid Labour Charge</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Unpaid Labour Charge (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Final Figure</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Final Figure (in words)</label>
-                                                        <input type="text" class="form-control"
-                                                            value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}"
-                                                            readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            @endif
 
                                             @if ($isCompulsury || $isSlabs || $showLumpSum)
                                                 <div class="row mt-3">
@@ -511,7 +528,8 @@
                                                                                     }
                                                                                 @endphp
                                                                                 <tr>
-                                                                                    <td>{{ $slab->slabType->name }}</td>
+                                                                                    <td>{{ $slab->slabType->name }}
+                                                                                    </td>
                                                                                     <td class="text-center">
                                                                                         {{ $slab->applied_deduction }}
                                                                                         <span
@@ -537,7 +555,8 @@
                                                                                         }
                                                                                     @endphp
                                                                                     <tr>
-                                                                                        <td>{{ $slab->qcParam->name }}</td>
+                                                                                        <td>{{ $slab->qcParam->name }}
+                                                                                        </td>
                                                                                         <td class="text-center">
                                                                                             {{ $slab->applied_deduction }}
                                                                                             <span
@@ -598,39 +617,54 @@
                 $(this).closest('.contract-row').addClass('table-active');
             });
 
-            $('#confirm_submit_btn').on('click', function() {
-                const contractId = $('input[name="selected_contract"]:checked').val();
+            $(document).on('click', '#confirm_submit_btn', function() {
+                const contractId = $(this).closest('#ajaxSubmit').find(
+                    'input[name="selected_contract"]:checked').val();
                 if (!contractId) {
                     Swal.fire('Error', 'Please select a contract first', 'error');
                     return;
                 }
 
-                const contractRow = $(`input[name="selected_contract"][value="${contractId}"]`).closest(
+                const contractRow = $(this).closest('#ajaxSubmit').find(
+                    `input[name="selected_contract"][value="${contractId}"]`).closest(
                     '.contract-row');
-                const remainingQty = parseFloat(contractRow.find('td:eq(5)').text().replace(' kg', ''));
-                const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
 
+                const remainingQty = parseFloat(contractRow.find('td:eq(7)').text().split(' - ')[1]) ||
+                    0; // Get max remaining quantity
+                const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
+                const remainingTrucks = parseInt(contractRow.find('td:eq(10)').text()) || 0;
+                //  ${
+                // remainingQty - ticketWeight <= 0 ? 
+                //     '<div class="alert alert-warning mt-3">This will complete the contract as remaining quantity will be zero</div>' : 
+                //     '<div class="form-check text-left mt-3">' +
+                //     '<input type="checkbox" class="form-check-input" id="swal-mark-completed">' +
+                //     '<label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>' +
+                //     '</div>'
+                // }
                 Swal.fire({
                     title: 'Confirm Submission',
                     html: `
-                <div class="form-group text-left">
-                    <label>Closing Trucks Quantity</label>
-                    <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" required>
-                </div>
-                ${remainingQty - ticketWeight <= 0 ? 
-                    '<div class="alert alert-warning mt-3">This will complete the contract as remaining quantity will be zero</div>' : 
-                    '<div class="form-check text-left mt-3">' +
-                    '<input type="checkbox" class="form-check-input" id="swal-mark-completed">' +
-                    '<label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>' +
-                    '</div>'
-                }
-            `,
+                            <div class="form-group text-left">
+                                <label>Closing Trucks Quantity</label>
+                                <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" max="${remainingTrucks}" required>
+                                <small class="text-muted">Max allowed: ${remainingTrucks}</small>
+                            </div>
+                            <div class="form-check text-left mt-3">
+                                <input type="checkbox" class="form-check-input" id="swal-verify-ticket">
+                                <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
+                            </div> 
+                            <div class="form-check text-left mt-3">
+                                <input type="checkbox" class="form-check-input" id="swal-mark-completed"> 
+                                <label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label> 
+                            </div>
+                        `,
                     showCancelButton: true,
                     confirmButtonText: 'Submit',
                     cancelButtonText: 'Cancel',
                     focusConfirm: false,
                     preConfirm: () => {
-                        const trucksQty = $('#swal-closing-trucks').val();
+                        const trucksQty = parseInt($('#swal-closing-trucks').val());
+                        const verifyTicket = $('#swal-verify-ticket').is(':checked');
 
                         if (!trucksQty || trucksQty < 1) {
                             Swal.showValidationMessage(
@@ -639,18 +673,27 @@
                             return false;
                         }
 
+                        if (trucksQty > remainingTrucks) {
+                            Swal.showValidationMessage(
+                                `Closing trucks quantity cannot exceed remaining trucks (${remainingTrucks})`
+                            );
+                            return false;
+                        }
+
                         const markCompleted = remainingQty - ticketWeight <= 0 || $(
                             '#swal-mark-completed').is(':checked');
                         return {
                             trucksQty,
-                            markCompleted
+                            markCompleted,
+                            verifyTicket
                         };
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const {
                             trucksQty,
-                            markCompleted
+                            markCompleted,
+                            verifyTicket
                         } = result.value;
 
                         // Add hidden fields to form
@@ -664,6 +707,14 @@
                             $('<input>').attr({
                                 type: 'hidden',
                                 name: 'mark_completed',
+                                value: '1'
+                            }).appendTo('#ajaxSubmit');
+                        }
+
+                        if (verifyTicket) {
+                            $('<input>').attr({
+                                type: 'hidden',
+                                name: 'verify_ticket',
                                 value: '1'
                             }).appendTo('#ajaxSubmit');
                         }
@@ -765,54 +816,69 @@
 
             function populateContractResults(response) {
                 const resultsBody = $('#contract_results_body');
-                resultsBody.empty();
+                // resultsBody.empty();
+                $('#contracts_table').empty();
 
-                if (response.success && response.data.length > 0) {
-                    response.data.forEach(contract => {
-                        const statusBadge = contract.status === 'completed' ?
-                            '<span class="badge badge-success">Completed</span>' :
-                            '<span class="badge badge-warning">Pending</span>';
-
-                        const markCompletedBtn = contract.status === 'completed' ?
-                            '' :
-                            `<button class="btn btn-sm btn-info mark-completed" data-id="${contract.id}">
-                                <i class="fa fa-check"></i> Mark Completed
-                            </button>`;
-
-                        // <td>${contract.arrived_quantity ? contract.arrived_quantity + ' kg' : '-'}</td>
-                        const row = `
-                            <tr class="contract-row" data-id="${contract.id}">
-                                <td class="text-center">
-                                    <input type="radio" name="selected_contract" 
-                                           value="${contract.id}" 
-                                           ${contract.id == '{{ $arrivalTicket->arrival_purchase_order_id ?? '' }}' ? 'checked' : ''}>
-                                </td>
-                                <td>${contract.contract_no || '-'}</td>
-                                <td>${contract.qc_product_name || '-'}</td>
-                                <td>${contract.supplier?.name || '-'}</td>
-                                <td>${(contract?.min_quantity || '-') + " - " + (contract?.max_quantity || '-')}</td>
-                                <td>
-                                    ${
-                                        (contract.total_loading_weight !== undefined && contract.total_loading_weight !== null)
-                                            ? ((contract.min_quantity !== undefined && contract.min_quantity !== null ? (contract.min_quantity - contract.total_loading_weight) : '-') + ' - ' +
-                                               (contract.max_quantity !== undefined && contract.max_quantity !== null ? (contract.max_quantity - contract.total_loading_weight) : '-'))
-                                            : '-'
-                                    }
-                                </td>
-                                <td>${contract?.total_loading_weight || '-'}</td>
-                                <td>${contract.no_of_trucks || '-'}</td>
-                                <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td>
-                                <td>${statusBadge}</td> 
-                            </tr>
-                        `;
-                        resultsBody.append(row);
+                if (response.success && response.html) {
+                    console.log({
+                        asd: response.html
                     });
 
+                    // response.data.forEach(contract => {
+                    //     const statusBadge = contract.status === 'completed' ?
+                    //         '<span class="badge badge-success">Completed</span>' :
+                    //         '<span class="badge badge-warning">Pending</span>';
+
+                    //     const replacementBadge = contract.is_replacement === 'Yes' ?
+                    //         '<span class="badge badge-success">Yes</span>' :
+                    //         '<span class="badge badge-warning">No</span>';
+
+                    //     const markCompletedBtn = contract.status === 'completed' ?
+                    //         '' :
+                    //         `<button class="btn btn-sm btn-info mark-completed" data-id="${contract.id}">
+                //             <i class="fa fa-check"></i> Mark Completed
+                //         </button>`;
+
+                    //     // <td>${contract.arrived_quantity ? contract.arrived_quantity + ' kg' : '-'}</td>
+                    //     const row = `
+                //         <tr class="contract-row" data-id="${contract.id}">
+                //             <td class="text-center">
+                //                 <input type="radio" name="selected_contract" 
+                //                        value="${contract.id}" {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
+                //                        ${contract.id == '{{ $arrivalTicket->arrival_purchase_order_id ?? '' }}' ? 'checked' : ''}>
+                //             </td>
+                //             <td>${contract.contract_no || '-'}</td>
+                //             <td>${contract.qc_product_name || '-'}</td>
+                //             <td class="text-capitalize">${contract.calculation_type || '-'}</td>
+                //             <td>${contract.supplier?.name || '-'}</td>
+                //             <td>${(contract?.min_quantity || '-') + " - " + (contract?.max_quantity || '-')}</td>
+                //             <td>${contract?.total_loading_weight || '-'}</td>
+                //             <td>
+                //                 ${
+                //                     (contract.total_loading_weight !== undefined && contract.total_loading_weight !== null)
+                //                         ? ((contract.min_quantity !== undefined && contract.min_quantity !== null ? (contract.min_quantity - contract.total_loading_weight) : '-') + ' - ' +
+                //                            (contract.max_quantity !== undefined && contract.max_quantity !== null ? (contract.max_quantity - contract.total_loading_weight) : '-'))
+                //                         : 0
+                //                 }
+                //             </td>
+                //             <td>${contract.no_of_trucks || '-'}</td>
+                //             <!-- <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td> -->
+                //             <td>${contract.closed_arrivals || 0}</td> 
+                //             <td>${contract.remaining_trucks || 0}</td>
+                //             <td>${contract.remarks}</td> 
+                //             <td>${replacementBadge}</td> 
+                //             <td>${statusBadge}</td> 
+                //         </tr>
+                //     `;
+                    //     resultsBody.append(row);
+                    // });
+
                     $('.contract-results').show();
+                    $('#contracts_table').html(response.html);
                 } else {
                     resultsBody.html(`
                         <tr>
-                            <td colspan="11" class="text-center text-muted">
+                            <td colspan="14" class="text-center text-muted">
                                 No contracts found
                             </td>
                         </tr>

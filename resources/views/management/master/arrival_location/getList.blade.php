@@ -31,13 +31,12 @@
                         <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-
                         </p>
                     </td>
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('arrival-location.edit', $row->id) }}','Edit Arrival Location')"
-                                class="info p-1 text-center mr-2 position-relative ">
+                                class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan

@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\Validator;
 
 class SecondWeighbridgeController extends Controller
 {
+
+
+        
+    function __construct()
+    {
+        $this->middleware('check.company:arrival-second-weighbridge', ['only' => ['index']]);
+        $this->middleware('check.company:arrival-second-weighbridge', ['only' => ['edit']]);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -28,14 +36,23 @@ class SecondWeighbridgeController extends Controller
      */
     public function getList(Request $request)
     {
-        $ArrivalSamplingRequests = SecondWeighbridge::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        $ArrivalSamplingRequests = SecondWeighbridge::with(['arrivalTicket.unloadingLocation.arrivalLocation'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm);
+                });
+            })
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
+                    $query->where('arrival_location_id', $authUser->arrival_location_id);
+                });
+            })
             ->latest()
-            ->paginate(request('per_page', 25));
+            ->paginate($request->get('per_page', 25));
 
         return view('management.arrival.second_weighbridge.getList', compact('ArrivalSamplingRequests'));
     }
@@ -45,8 +62,21 @@ class SecondWeighbridgeController extends Controller
      */
     public function create()
     {
-        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('second_weighbridge_status', 'pending')->get();
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        $data = [
+            'ArrivalLocations' => ArrivalLocation::where('status', 'active')->get(),
+            'ArrivalTickets' => ArrivalTicket::with('unloadingLocation')
+                ->where('second_weighbridge_status', 'pending')
+                ->when(!$isSuperAdmin, function ($query) use ($authUser) {
+                    return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                        $q->where('arrival_location_id', $authUser->arrival_location_id);
+                    });
+                })
+                ->get()
+        ];
+
         return view('management.arrival.second_weighbridge.create', $data);
     }
 

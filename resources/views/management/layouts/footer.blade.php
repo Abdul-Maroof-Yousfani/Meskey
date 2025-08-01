@@ -335,6 +335,8 @@
     <!-- BEGIN PAGE LEVEL JS-->
     <script src="{{ asset('management/app-assets/js/dashboard1.js') }}"></script>
     <!-- END PAGE LEVEL JS-->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <!-- BEGIN: Custom CSS-->
     {{-- <script src="{{ asset('management/assets/js/pageload.js') }}"></script> --}}
 

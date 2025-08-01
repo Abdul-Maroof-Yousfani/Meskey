@@ -236,6 +236,7 @@ class InnersamplingController extends Controller
             if ($initialStatus === 'approved') {
                 $updateData['is_lumpsum_deduction'] = $initialRequestForInnerReq->is_lumpsum_deduction ?? 0;
                 $updateData['lumpsum_deduction'] = $initialRequestForInnerReq->lumpsum_deduction ?? 0;
+                $updateData['lumpsum_deduction_kgs'] = $initialRequestForInnerReq->lumpsum_deduction_kgs ?? 0;
             }
 
             $ArrivalSamplingRequest->update($updateData);

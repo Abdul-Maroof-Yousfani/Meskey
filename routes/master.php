@@ -17,6 +17,7 @@ use App\Http\Controllers\Master\{
     TruckTypeController,
     StationController,
     CompanyLocationController,
+    DivisionController,
     QcReliefController
 };
 
@@ -41,10 +42,11 @@ Route::resource('product', ProductController::class);
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
 Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.items');
 
-
-
 Route::resource('supplier', SupplierController::class);
 Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
+
+Route::resource('division', DivisionController::class);
+Route::post('/get-division', [DivisionController::class, 'getList'])->name('get.division');
 
 Route::resource('broker', BrokerController::class);
 Route::post('/get-broker', [BrokerController::class, 'getList'])->name('get.broker');

@@ -12,8 +12,8 @@
 </div>
 <div class="col-xs-4 col-sm-4 col-md-4">
     <div class="form-group ">
-        <label>1st Weight:</label>
-        <input type="text" placeholder="1st Weight" value="{{ $ArrivalTicket->first_weight }}" disabled
+        <label>First Weight:</label>
+        <input type="text" placeholder="First Weight" value="{{ $ArrivalTicket->first_weight }}" disabled
             class="form-control" autocomplete="off" />
     </div>
 </div>

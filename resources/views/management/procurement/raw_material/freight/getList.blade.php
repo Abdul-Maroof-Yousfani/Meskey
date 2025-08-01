@@ -15,7 +15,8 @@
                  <tr class="bg-orange">
                      <td>#{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }} <br>#{{ $ticket->unique_no ?? 'N/A' }}</td>
                      <td> {{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
-                     <td> {{ $ticket->purchaseOrder->broker_one_name ?? 'N/A' }}</td>
+                     <td> {{ $ticket->purchaseOrder->broker_one_name ?? ($ticket->purchaseOrder->broker_two_name ?? ($ticket->purchaseOrder->broker_three_name ?? 'N/A')) }}
+                     </td>
                      <td> {{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}</td>
                      <td>
                          <span class="badge badge-{{ $ticket->freight_status == 'pending' ? 'warning' : 'success' }}">

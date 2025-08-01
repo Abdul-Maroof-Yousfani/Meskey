@@ -334,9 +334,11 @@
 
                                 $getDeductionSuggestion = getDeductionSuggestion(
                                     $slab->slabType->id,
-                                    $arrivalSamplingRequest->qcProduct,
+                                    $arrivalSamplingRequest->purchaseOrder->qc_product ??
+                                        ($arrivalSamplingRequest->qc_product_id ??
+                                            $arrivalSamplingRequest->arrival_product_id),
                                     $displayValue,
-                                 null,
+                                    $arrivalSamplingRequest->purchaseOrder->id ?? null,
                                 );
 
                                 $previousDeduction = null;

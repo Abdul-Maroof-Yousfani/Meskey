@@ -21,8 +21,9 @@ class UserStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|same:confirm-password',
+            'username' => 'required|unique:users,username',
+            'company_location_id' => 'required_if:user_type,user|nullable|exists:company_locations,id',
+            'password' => 'required|confirmed',
             'role' => 'required|array',
             'role.*' => 'exists:roles,id',
             'company' => 'required|array',
@@ -37,8 +38,8 @@ class UserStoreRequest extends FormRequest
     {
         return [
             'name.required' => 'The name field is required.',
-            'email.required' => 'The email field is required.',
-            'email.unique' => 'This email is already in use.',
+            // 'email.required' => 'The email field is required.',
+            // 'email.unique' => 'This email is already in use.',
             'password.required' => 'The password field is required.',
             'password.same' => 'The password and confirmation password must match.',
             'role.required' => 'At least one role is required.',

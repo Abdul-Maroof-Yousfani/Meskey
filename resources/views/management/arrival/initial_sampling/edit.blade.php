@@ -17,6 +17,15 @@
                 </select>
             </div>
         </div>
+        <div class="col-12 ">
+            <div class="form-group ">
+                <label>Party Ref. No: </label>
+                <select name="party_ref_no" id="party_ref_no" class="form-control select2">
+                    <option value="{{ $arrivalSamplingRequest->party_ref_no }}">
+                        {{ $arrivalSamplingRequest->party_ref_no }}</option>
+                </select>
+            </div>
+        </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>QC Product:</label>
@@ -120,15 +129,7 @@
                     class="form-control" autocomplete="off" value="{{ auth()->user()->name }}" />
             </div>
         </div>
-        <div class="col-12 px-3">
-            <div class="form-group ">
-                <label>Party Ref. No: </label>
-                <select name="party_ref_no" id="party_ref_no" class="form-control select2">
-                    <option value="{{ $arrivalSamplingRequest->party_ref_no }}">
-                        {{ $arrivalSamplingRequest->party_ref_no }}</option>
-                </select>
-            </div>
-        </div>
+        
     </div>
 
     <div class="row ">
