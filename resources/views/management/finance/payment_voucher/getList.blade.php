@@ -23,9 +23,18 @@
                      <td>{{ $voucher->cheque_no ?? 'N/A' }}</td>
                      <td>{{ number_format($voucher->total_amount, 2) }}</td>
                      <td>
-                         <a href="{{ route('payment-voucher.edit', $voucher->id) }}"
-                             class="btn btn-sm btn-primary">Edit</a>
-                         <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $voucher->id }}">Delete</button>
+                         <a onclick="openModal(this, '{{ route('payment-voucher.show', $voucher->id) }}', 'View Voucher', true, '80%')"
+                             class="info p-1 text-center mr-2 position-relative">
+                             <i class="ft-eye font-medium-3"></i>
+                         </a>
+                         <a class="info p-1 text-center mr-2 position-relative"
+                             href="{{ route('payment-voucher.edit', $voucher->id) }}">
+                             <i class="ft-edit font-medium-3"></i>
+                         </a>
+                         {{-- <a onclick="deletemodal('{{ route('payment-voucher.destroy', $voucher->id) }}','{{ route('get.payment-vouchers') }}')"
+                             class="danger p-1 text-center mr-2 position-relative">
+                             <i class="ft-x font-medium-3"></i>
+                         </a> --}}
                      </td>
                  </tr>
              @endforeach

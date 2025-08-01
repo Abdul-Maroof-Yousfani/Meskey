@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\Supplier;
 use App\Models\PaymentVoucher;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\PaymentVoucherData;
+use App\Models\Procurement\PaymentRequestData;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
 use Carbon\Carbon;
@@ -48,20 +50,6 @@ class PaymentVoucherController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    // public function create()
-    // {
-    //     $data['accounts'] = Account::where('is_operational', 'yes')->get();
-    //     $data['purchaseOrders'] = ArrivalPurchaseOrder::with(['product'])
-    //         ->whereHas('paymentRequestData.paymentRequests', function ($query) {
-    //             $query->where('status', 'approved')
-    //                 ->whereDoesntHave('paymentVoucherData');
-    //         })
-    //         ->latest()
-    //         ->get();
-
-    //     return view('management.finance.payment_voucher.create', $data);
-    // }
-
     public function create()
     {
         // $data['accounts'] = Account::where('is_operational', 'yes')->get();
@@ -74,6 +62,35 @@ class PaymentVoucherController extends Controller
         })->latest()->get();
 
         return view('management.finance.payment_voucher.create', $data);
+    }
+
+    /**
+     * Show the specified payment voucher.
+     */
+    public function show($id)
+    {
+        $paymentVoucher = PaymentVoucher::with([
+            'paymentVoucherData',
+            'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
+            'account',
+            'supplier'
+        ])->findOrFail($id);
+
+        $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
+            ->get();
+
+        $bankAccount = null;
+        if ($paymentVoucher->bank_account_type === 'company') {
+            $bankAccount =  SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        } elseif ($paymentVoucher->bank_account_type === 'owner') {
+            $bankAccount =  SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+        }
+
+        return view('management.finance.payment_voucher.show', [
+            'paymentVoucher' => $paymentVoucher,
+            'transactions' => $transactions,
+            'bankAccount' => $bankAccount
+        ]);
     }
 
     /**
@@ -147,9 +164,6 @@ class PaymentVoucherController extends Controller
         }
 
         $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
-            // ->whereHas('paymentRequestData', function ($q) use ($purchaseOrderId) {
-            //     $q->where('purchase_order_id', $purchaseOrderId);
-            // }) 
             ->whereHas('paymentRequestData.purchaseOrder', function ($q) use ($supplierId) {
                 $q->where('supplier_id', $supplierId);
             })
@@ -187,7 +201,6 @@ class PaymentVoucherController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-
     public function store(Request $request)
     {
         $request->validate([
@@ -273,6 +286,8 @@ class PaymentVoucherController extends Controller
                     $remarks .= " in cash.";
                 }
 
+                $paymentRequestDataId = $paymentRequest->paymentRequestData->id;
+
                 createTransaction(
                     $paymentRequest->amount,
                     $paymentVoucher->supplier->account_id,
@@ -281,7 +296,8 @@ class PaymentVoucherController extends Controller
                     'debit',
                     'no',
                     [
-                        'payment_against' => "$ticketNo",
+                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
+                        'payment_against' => "$ticketNo-$paymentRequestDataId",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $remarks
                     ]
@@ -295,7 +311,8 @@ class PaymentVoucherController extends Controller
                     'credit',
                     'no',
                     [
-                        'payment_against' => "$ticketNo",
+                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
+                        'payment_against' => "$ticketNo-$paymentRequestDataId",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $remarks
                     ]
