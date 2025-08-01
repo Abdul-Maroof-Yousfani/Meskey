@@ -28,7 +28,18 @@
             @endphp
             <tr
                 class="{{ !$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft' ? ' bg-orange ' : '' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
-                <td>#{{ $row->unique_no ?? 'N/A' }}</td>
+                <td>
+                    #{{ $row->unique_no ?? 'N/A' }}
+                    @if ($row->first_qc_status == 'rejected')
+                        <span class="badge bg-danger ml-1">Rejected</span>
+                    @elseif (is_null($row->arrival_purchase_order_id))
+                        <span class="badge bg-warning ml-1">Pending</span>
+                    @elseif ($row->arrival_purchase_order_id && $row->is_ticket_verified == 0)
+                        <span class="badge bg-warning ml-1">Not Verified</span>
+                    @elseif ($row->is_ticket_verified == 1)
+                        <span class="badge bg-success ml-1">Verified</span>
+                    @endif
+                </td>
                 <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
                 <td>{{ $row->miller->name ?? 'N/A' }}</td>
                 <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>

@@ -920,6 +920,17 @@ tr.editing {
   background: white;
 }
 
+/* .sticky-table :is(td.sticky-col-left, td.sticky-col-right) {
+  background: white;
+} */
+
+.sticky-table tr.bg-orange :is(th, td) {
+  background: #ffe5b5;
+}
+.sticky-table tr.bg-red :is(th, td) {
+  background: #ffb5b5;
+}
+
 .sticky-table th {
   position: sticky;
   top: 0;
