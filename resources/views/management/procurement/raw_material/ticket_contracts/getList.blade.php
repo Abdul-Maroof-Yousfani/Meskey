@@ -22,6 +22,9 @@
 
     @slot('body')
         @foreach ($tickets as $row)
+            @if (!$row->freight || !$row->arrivalSlip)
+                @continue
+            @endif
             @php
                 $tabaar = formatDeductionsAsString(getTicketDeductions($row));
                 $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
