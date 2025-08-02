@@ -103,16 +103,16 @@
                     </button>
                 </td>
                 <td>
-                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight->bilty_document)
-                        onclick="openImageModal(['{{ $row->freight->bilty_document ? asset($row->freight->bilty_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight?->bilty_document)
+                        onclick="openImageModal(['{{ $row->freight?->bilty_document ? asset($row->freight?->bilty_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
                         <a href="#">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                     </button>
                 </td>
                 <td>
-                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight->loading_weight_document)
-                        onclick="openImageModal(['{{ $row->freight->loading_weight_document ? asset($row->freight->loading_weight_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight?->loading_weight_document)
+                        onclick="openImageModal(['{{ $row->freight?->loading_weight_document ? asset($row->freight?->loading_weight_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
                         <a href="#">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
