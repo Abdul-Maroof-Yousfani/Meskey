@@ -1,4 +1,4 @@
-<form action="{{ route('arrival-location.update', $arrivalLocation->id) }}" method="POST" id="ajaxSubmit"
+<form action="{{ route('arrival-location.update', $locationTransfer->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -12,7 +12,7 @@
                     <option value="">Select Location</option>
                     @foreach ($companyLocations as $location)
                         <option value="{{ $location->id }}"
-                            {{ $arrivalLocation->company_location_id == $location->id ? 'selected' : '' }}>
+                            {{ $locationTransfer->company_location_id == $location->id ? 'selected' : '' }}>
                             {{ $location->name }}
                         </option>
                     @endforeach
@@ -24,7 +24,7 @@
             <div class="form-group">
                 <label>Name:</label>
                 <input type="text" name="name" placeholder="Name" class="form-control"
-                    value="{{ $arrivalLocation->name }}" required />
+                    value="{{ $locationTransfer->name }}" required />
             </div>
         </div>
 
@@ -32,7 +32,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
-                <textarea name="description" placeholder="Description" class="form-control">{{ $arrivalLocation->description }}</textarea>
+                <textarea name="description" placeholder="Description" class="form-control">{{ $locationTransfer->description }}</textarea>
             </div>
         </div>
 
@@ -41,8 +41,8 @@
             <div class="form-group">
                 <label>Status:</label>
                 <select class="form-control" name="status" required>
-                    <option value="active" {{ $arrivalLocation->status == 'active' ? 'selected' : '' }}>Active</option>
-                    <option value="inactive" {{ $arrivalLocation->status == 'inactive' ? 'selected' : '' }}>Inactive
+                    <option value="active" {{ $locationTransfer->status == 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ $locationTransfer->status == 'inactive' ? 'selected' : '' }}>Inactive
                     </option>
                 </select>
             </div>
