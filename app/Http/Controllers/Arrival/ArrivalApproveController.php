@@ -26,16 +26,23 @@ class ArrivalApproveController extends Controller
      */
     public function getList(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $ArrivalApproves = ArrivalApprove::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
+                    $query->where('arrival_location_id', $authUser->arrival_location_id);
+                });
+            })
             ->with(['bagType', 'bagCondition', 'bagPacking', 'arrivalTicket'])
             ->latest()
             ->paginate(request('per_page', 25));
-        // dd($ArrivalApproves);
         return view('management.arrival.approved_arrival.getList', compact('ArrivalApproves'));
     }
 
@@ -44,6 +51,9 @@ class ArrivalApproveController extends Controller
      */
     public function create()
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
             ->whereNull('document_approval_status')
             ->leftJoin('arrival_sampling_requests', function ($join) {
@@ -52,6 +62,11 @@ class ArrivalApproveController extends Controller
                     ->where('approved_status', 'pending');
             })
             ->whereNull('arrival_sampling_requests.id')
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+                    $query->where('arrival_location_id', $authUser->arrival_location_id);
+                });
+            })
             ->select('arrival_tickets.*')
             ->get();
 
