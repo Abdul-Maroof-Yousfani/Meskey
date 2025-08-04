@@ -22,6 +22,16 @@
 
     @slot('body')
         @foreach ($arrivalPurchaseOrder as $row)
+            @php
+                $arrivedTrucks = $row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0;
+                $rejectedTrucks = $row->rejectedArrivalTickets->count();
+                $orderedTrucks = $row->no_of_trucks ?? 0;
+                if ($row->is_replacement == 0) {
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
+                } else {
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks;
+                }
+            @endphp
             <tr>
                 <td>#{{ $row->contract_no }}</td>
                 <td>{{ $row->product->name ?? 'N/A' }}</td>
@@ -48,14 +58,14 @@
                 <td>{{ $row->remarks ?? 'N/A' }}</td>
                 <td>{{ $row->no_of_trucks ?? 0 }}</td>
                 <td>{{ ($row->min_quantity ?? '-') . ' - ' . ($row->max_quantity ?? '-') }}</td>
-                <td>{{ $row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0 }}</td>
+                <td>{{ $arrivedTrucks }}</td>
                 <td>{{ $row->totalArrivedNetWeight->total_arrived_net_weight ?? 0 }}</td>
-                <td>{{ ($row->no_of_trucks ?? 0) - ($row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0) }}</td>
+                <td>{{ $balanceTrucks }}</td>
                 <td>
                     {{ (($row->min_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') . ' - ' . (($row->max_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') }}
                 </td>
                 <td>{{ $row->stockInTransitTickets->count() }}</td>
-                <td>{{ $row->rejectedArrivalTickets->count() }}</td>
+                <td>{{ $rejectedTrucks }}</td>
                 <td>
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">
