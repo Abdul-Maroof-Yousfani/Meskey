@@ -22,6 +22,9 @@
 
     @slot('body')
         @foreach ($tickets as $row)
+            {{-- @if (!$row->freight || !$row->arrivalSlip)
+                @continue
+            @endif --}}
             @php
                 $tabaar = formatDeductionsAsString(getTicketDeductions($row));
                 $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
@@ -103,25 +106,28 @@
                     </button>
                 </td>
                 <td>
-                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight->bilty_document)
-                        onclick="openImageModal(['{{ $row->freight->bilty_document ? asset($row->freight->bilty_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight || !$row->freight?->bilty_document)
+                        @if (!$row->freight || !$row->freight?->bilty_document) disabled @endif
+                        @if ($row->freight && $row->freight?->bilty_document) onclick="openImageModal(['{{ asset($row->freight->bilty_document) }}'], 'Ticket: {{ $row->unique_no }}')" @endif>
                         <a href="#">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                     </button>
                 </td>
                 <td>
-                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight->loading_weight_document)
-                        onclick="openImageModal(['{{ $row->freight->loading_weight_document ? asset($row->freight->loading_weight_document) : '' }}'], 'Ticket: {{ $row->unique_no }}')">
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->freight || !$row->freight?->loading_weight_document)
+                        @if (!$row->freight || !$row->freight?->loading_weight_document) disabled @endif
+                        @if ($row->freight && $row->freight?->loading_weight_document) onclick="openImageModal(['{{ asset($row->freight->loading_weight_document) }}'], 'Ticket: {{ $row->unique_no }}')" @endif>
                         <a href="#">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                     </button>
                 </td>
                 <td>
-                    <button
-                        onclick="openModal(this,'{{ route('arrival-slip.edit', $row->arrivalSlip->id) }}','Ticket: {{ $row->unique_no }}', true, '100%')"
-                        class="info p-1 text-center mr-2 position-relative btn">
+                    <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->arrivalSlip)
+                        @if (!$row->arrivalSlip) disabled
+                        @else
+                            onclick="openModal(this,'{{ route('arrival-slip.edit', $row->arrivalSlip->id) }}','Ticket: {{ $row->unique_no }}', true, '100%')" @endif>
                         <a href="#">
                             <i class="ft-eye font-medium-3"></i>
                         </a>

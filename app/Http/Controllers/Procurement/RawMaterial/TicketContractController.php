@@ -247,6 +247,10 @@ class TicketContractController extends Controller
 
         $linkedPurchaseOrder = $arrivalTicket->purchaseOrder ?? null;
 
+        if ($linkedPurchaseOrder) {
+            $query->where('id', '!=', $linkedPurchaseOrder->id);
+        }
+
         if ($request->initial) {
             $query->limit(10);
         } elseif ($request->search) {

@@ -23,7 +23,9 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            <small> {{ $approval->arrivalTicket->unique_no ?? '-' }} </small>
+                            <small> {{ $approval->arrivalTicket->unique_no ?? '-' }} <span
+                                    class="d-none arrivalLocationName">{{ $approval->arrivalTicket->unloadingLocation->ArrivalLocation->name ?? 'N/A' }}</span>
+                            </small>
                         </p>
                     </td>
                     <td>{{ $approval->arrivalTicket->product->name ?? '-' }}</td>

@@ -608,21 +608,54 @@
                             <td><strong>Supplier Commision</strong></td>
                             <td>N/A</td>
                             <td>
-                            <div class="input-group mb-0" bis_skin_checked="1">
-                                                    <input type="text" class="form-control" name="" value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction" readonly="">
-                                                    <div class="input-group-append" bis_skin_checked="1">
-                                                        <span class="input-group-text text-sm">Rs/KG's</span>
-                                                    </div>
-                                                </div>
+                                <div class="input-group mb-0" bis_skin_checked="1">
+                                    <input type="text" class="form-control" name=""
+                                        value="{{ $purchaseOrder->supplier_commission }}"
+                                        placeholder="Suggested Deduction" readonly="">
+                                    <div class="input-group-append" bis_skin_checked="1">
+                                        <span class="input-group-text text-sm">Rs/KG's</span>
+                                    </div>
+                                </div>
                             </td>
                             <td>
                                 <input type="text" class="form-control" name="supplier_commission_display"
                                     id="supplier_commission_display"
-                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}" readonly>
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                    readonly>
                                 <input type="hidden" class="form-control" name="supplier_commission"
-                                    id="supplier_commission" value="{{ $purchaseOrder->supplier_commission * $loadingWeight}}" readonly>
+                                    id="supplier_commission"
+                                    value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
                             </td>
                         </tr>
+                        @if ($purchaseOrder->supplier_commission * $loadingWeight < 0)
+                            <tr>
+                                <td><strong>Broker</strong></td>
+                                <td>N/A</td>
+                                <td>
+                                    <div class="form-group mb-0 my-1 w-100">
+                                        <select name="broker_id" id="broker_id" class="form-control select_b"
+                                            @disabled(($paymentRequestData->broker_id ?? null) !== null) data-commission="#broker_commission">
+                                            <option value="">N/A
+                                            </option>
+                                            @foreach ($brokers as $broker)
+                                                <option value="{{ $broker->id }}" @selected($broker->id == ($paymentRequestData->broker_id ?? null))>
+                                                    {{ $broker->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" name="brokery_amount_display"
+                                        id="brokery_amount_display"
+                                        value="{{ $paymentRequestData->brokery_amount ?? number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                        readonly>
+                                    <input type="hidden" class="form-control" name="brokery_amount"
+                                        id="brokery_amount"
+                                        value="{{ $paymentRequestData->brokery_amount ?? $purchaseOrder->supplier_commission * $loadingWeight }}"
+                                        readonly>
+                                </td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
@@ -630,7 +663,7 @@
     @endif
 
     @php
-    $totalSupplierCommission =  $purchaseOrder->supplier_commission * $loadingWeight;
+        $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
         $totalwithCommision = $totalAmount + $totalSupplierCommission;
     @endphp
@@ -694,6 +727,7 @@
     <script>
         $(document).ready(function() {
             $('[data-toggle="tooltip"]').tooltip();
+            $('.select_b').select2();
 
             const $loadingRadio = $('#loading');
             const $withoutLoadingRadio = $('#without_loading');
@@ -852,7 +886,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }}) + {{$totalSupplierCommission}};
+                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));

@@ -629,10 +629,11 @@
                     `input[name="selected_contract"][value="${contractId}"]`).closest(
                     '.contract-row');
 
-                const remainingQty = parseFloat(contractRow.find('td:eq(7)').text().split(' - ')[1]) ||
+                const remainingQty = parseFloat(contractRow.find('td:eq(6)').text().split(' - ')[1] ||
+                        contractRow.find('td:eq(6)').text().split(' - ')[0]) ||
                     0; // Get max remaining quantity
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
-                const remainingTrucks = parseInt(contractRow.find('td:eq(10)').text()) || 0;
+                const remainingTrucks = parseInt(contractRow.find('td:eq(9)').text()) || 0;
                 //  ${
                 // remainingQty - ticketWeight <= 0 ? 
                 //     '<div class="alert alert-warning mt-3">This will complete the contract as remaining quantity will be zero</div>' : 
@@ -820,9 +821,9 @@
                 $('#contracts_table').empty();
 
                 if (response.success && response.html) {
-                    console.log({
-                        asd: response.html
-                    });
+                    // console.log({
+                    //     asd: response.html
+                    // });
 
                     // response.data.forEach(contract => {
                     //     const statusBadge = contract.status === 'completed' ?
@@ -875,6 +876,8 @@
 
                     $('.contract-results').show();
                     $('#contracts_table').html(response.html);
+                    // html append krny ke bad onchange trigger krna hai
+                    $('input[name="selected_contract"]').trigger('change');
                 } else {
                     resultsBody.html(`
                         <tr>

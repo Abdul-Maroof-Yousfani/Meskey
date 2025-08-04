@@ -38,7 +38,7 @@
                         -
                         {{ isset($contract['max_quantity']) && $contract['max_quantity'] !== null ? $contract['max_quantity'] - $contract['total_loading_weight'] : '-' }}
                     @else
-                        0
+                        {{ ($contract['min_quantity'] ?? '-') . ' - ' . ($contract['max_quantity'] ?? '-') }}
                     @endif
                 </td>
                 <td>{{ $contract['no_of_trucks'] ?? '-' }}</td>

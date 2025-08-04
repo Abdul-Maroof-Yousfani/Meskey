@@ -345,7 +345,7 @@ class PurchaseSamplingMonitoringController extends Controller
             if ($ArrivalSamplingRequest->sampling_type == 'inner') {
                 $updateData['second_qc_status'] = $request->stage_status;
             } else {
-                $updateData['first_qc_status'] = $request->stage_status;
+                // $updateData['first_qc_status'] = $request->stage_status;
             }
 
             $isCustomQC = $ArrivalSamplingRequest->is_custom_qc == 'yes';
@@ -364,6 +364,10 @@ class PurchaseSamplingMonitoringController extends Controller
 
                 PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['freight_status' => 'pending']);
             }
+
+            // if ($request->stage_status == 'rejected') {
+            //     PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['first_qc_status' => 'rejected']);
+            // }
 
             return response()->json([
                 'success' => 'Data stored successfully',

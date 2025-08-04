@@ -34,10 +34,33 @@ class PurchaseOrderController extends Controller
      */
     public function getList(Request $request)
     {
-        $arrivalPurchaseOrder = ArrivalPurchaseOrder::when($request->filled('search'), function ($q) use ($request) {
+        $arrivalPurchaseOrder = ArrivalPurchaseOrder::with([
+            'stockInTransitTickets',
+            'rejectedArrivalTickets',
+        ])->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
+                $sq->orWhereHas('supplier', function ($supplierQ) use ($searchTerm) {
+                    $supplierQ->where('name', 'like', $searchTerm);
+                })
+                    ->orWhereHas('location', function ($locationQ) use ($searchTerm) {
+                        $locationQ->where('name', 'like', $searchTerm);
+                    })
+                    ->orWhereHas('qcProduct', function ($qcProduct) use ($searchTerm) {
+                        $qcProduct->where('name', 'like', $searchTerm);
+                    })
+                    ->orWhere('broker_one_name', 'like', $searchTerm)
+                    ->orWhere('broker_two_name', 'like', $searchTerm)
+                    ->orWhere('broker_three_name', 'like', $searchTerm)
+                    ->orWhere('delivery_date', 'like', $searchTerm)
+                    ->orWhere('delivery_address', 'like', $searchTerm)
+                    ->orWhere('contract_date', 'like', $searchTerm)
+                    ->orWhere('line_type', 'like', $searchTerm)
+                    ->orWhere('bag_weight', 'like', $searchTerm)
+                    ->orWhere('no_of_trucks', 'like', $searchTerm)
+                    ->orWhere('weighbridge_from', 'like', $searchTerm)
+                    ->orWhere('truck_no', 'like', $searchTerm)
+                    ->orWhere('rate_per_kg', 'like', $searchTerm);
             });
         })
             ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
