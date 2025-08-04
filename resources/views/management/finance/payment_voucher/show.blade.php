@@ -4,12 +4,12 @@
 <div class="payment-voucher-print pri" id="printSection">
     <!-- Header Section -->
     <div class="voucher-header mb-4">
-        <div class="row">
-            <div class="col-md-6">
+        <div class="row" style=" width: 100% !important;">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h4 class="font-weight-bold">Voucher No.</h4>
                 <h6 class="text-dark font-weight-bold">{{ $paymentVoucher->unique_no }}</h6>
             </div>
-            <div class="col-md-6 text-right">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 text-right">
                 <p class="mb-1"><strong>Date:</strong> {{ $paymentVoucher->pv_date->format('d-M-Y') }}</p>
                 <p class="mb-1"><strong>Type:</strong> {{ formatEnumValue($paymentVoucher->voucher_type) }}</p>
             </div>
@@ -17,12 +17,12 @@
     </div>
 
     <div class="mb-4">
-        <div class="row">
-            <div class="col-md-6">
+        <div class="row" style=" width: 100% !important;">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Paid to:</h5>
                 <p><strong>Supplier:</strong> {{ $paymentVoucher->supplier->name ?? 'N/A' }}</p>
             </div>
-            <div class="col-md-6">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Reference Information</h5>
                 <p><strong>Bill/Ref No.:</strong> {{ $paymentVoucher->ref_bill_no ?? 'N/A' }}</p>
                 <p><strong>Bill Date:</strong>
@@ -33,7 +33,7 @@
         {{-- @dd($paymentVoucher->voucher_type == 'bank_payment_voucher', $bankAccount) --}}
         @if ($paymentVoucher->voucher_type == 'bank_payment_voucher' && $bankAccount)
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
                     <h5 class="font-weight-bold">Bank Details</h5>
                     <p>
                         <strong>Bank / Branch:</strong>
@@ -79,7 +79,7 @@
     <div class="voucher-requests mb-4 d-none">
         <h5 class="  mb-3">Payment Requests</h5>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
+            <table class="table  sale_older_tab userlittab table table-bordered sf-table-list sale-list table-hover" style="border-collapse: collapse; ">
                 <thead class="thead-light">
                     <tr>
                         <th>#</th>
@@ -110,23 +110,21 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
-                <tfoot class="table-primary">
                     <tr>
                         <td colspan="3" class="text-right"><strong>Total Amount:</strong></td>
                         <td class="text-right"><strong>{{ number_format($paymentVoucher->total_amount, 2) }}</strong>
                         </td>
                         <td colspan="2"></td>
                     </tr>
-                </tfoot>
+                </tbody>
             </table>
         </div>
     </div>
 
     <div class="voucher-transactions mb-4">
-        <h5 class="  mb-3">Transaction Details</h5>
+        <h5 class="mb-3">Transaction Details</h5>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
+            <table class="table  sale_older_tab userlittab table table-bordered sf-table-list sale-list table-hover" style="border-collapse: collapse; ">
                 <thead class="thead-light">
                     <tr>
                         {{-- <th class="text-center">Date</th> --}}
@@ -185,7 +183,7 @@
                     <tr>
                         {{-- <td class="text-center">{{ $transaction->voucher_date->format('d-m-Y') }}</td> --}}
                         <td>
-                            <h5 class="my-2">
+                            <h5 style="margin: 0 !important;" class="my-2">
                                 <strong>
                                     Total:
                                 </strong>
@@ -215,15 +213,15 @@
 
     <div class="voucher-footer mt-4 pt-3 border-top">
         <div class="row">
-            <div class="col-md-4 text-center">
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
                 <p class="mb-1">_________________________</p>
                 <p class="mb-0">Prepared By</p>
             </div>
-            <div class="col-md-4 text-center">
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
                 <p class="mb-1">_________________________</p>
                 <p class="mb-0">Checked By</p>
             </div>
-            <div class="col-md-4 text-center">
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
                 <p class="mb-1">_________________________</p>
                 <p class="mb-0">Approved By</p>
             </div>
@@ -240,77 +238,16 @@
 </div>
 
 <style>
-    .payment-voucher-print {
-        font-family: Arial, sans-serif;
-        color: #333;
-    }
-
-    .voucher-header {
-        border-bottom: 2px solid #000000;
-        padding-bottom: 15px;
-    }
-
-    .voucher-info,
-    .voucher-po,
-    .voucher-remarks,
-    .voucher-total {
-        background-color: #f8f9fa;
-    }
-
-    .info-item {
-        padding: 10px;
-        background-color: white;
-        border-radius: 5px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .table thead th {
-        background-color: #e9ecef;
-        font-weight: 600;
-    }
-
-    .table-bordered {
-        border: 1px solid #dee2e6;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-
-    .badge-success {
-        background-color: #28a745;
-    }
-
-    .badge-warning {
-        background-color: #ffc107;
-        color: #212529;
-    }
-
-    @media print {
-        body {
-            padding: 20px;
-            background: white;
-        }
-
-        .payment-voucher-print {
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        .no-print {
-            display: none !important;
-        }
-
-        .table {
-            page-break-inside: avoid;
-        }
-    }
-
-    p {
-        margin-bottom: 0;
-        padding-bottom: 2px
-    }
+    .payment-voucher-print{font-family:Arial,sans-serif;color:#333;}
+    .voucher-header{border-bottom:2px solid #000000;padding-bottom:15px;}
+    .voucher-info,.voucher-po,.voucher-remarks,.voucher-total{background-color:#f8f9fa;}
+    .info-item{padding:10px;background-color:white;border-radius:5px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    .table thead th{background-color:#e9ecef;font-weight:600;}
+    .table-bordered{border:1px solid #dee2e6;}
+    .table-hover tbody tr:hover{background-color:rgba(0,123,255,0.05);}
+    .badge-success{background-color:#28a745;}
+    .badge-warning{background-color:#ffc107;color:#212529;}
+    p{margin-bottom:0;padding-bottom:2px}
 </style>
 
 <script>
@@ -330,26 +267,41 @@
 
         // Define print styles
         var printStyles = `
-      <style>
-        @media print{
-            @page{margin:2mm !important;margin-top:1mm !important;}
-            .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
-            .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
-            .logo img{width:67% !important;}
-            .head-add1 h5{font-size:15px !important;font-weight:700 !important;margin-bottom:6px !important;}
-            .head-add1 p{font-size:12px !important;margin-bottom:8px !important;}
-            .add-main2{display:flex !important;align-items:center !important;justify-content:space-between !important;}
-            a.btn.btn-a{border:2px solid #ddd;color:#000;}
-            a.btn.btn-a:hover{box-shadow:0 2px 7px rgba(0,0,0,0.28) !important;cursor:pointer !important;background:#008749 !important;color:#fff !important;}
-            .logo p{font-weight:bold !important;}
-            #modal-sidebar.open{width:100% !important;}
-            table td input{padding:8px 8px !important;}
-            table tbody tr td{white-space:nowrap !important;}
-            .row{display:flex !important;flex-wrap:nowrap !important;}
-            [class*="col-"]{float:left !important;display:block !important;}
-            table td{padding:5px 5px !important;}
-        }
-      </style>
+        <style>
+            @media print{
+                @page{margin:1em !important;}
+                body{background:white !important;}
+                .row{display:flex !important;flex-wrap:wrap !important;width:100% !important;margin:0 !important;padding:0 !important;}
+                [class*="col-"]{flex:0 0 50% !important;/* for col-6 */
+                max-width:50% !important;box-sizing:border-box;padding:0 10px !important;}
+                .voucher-header,.payment-voucher-print{width:100% !important;margin:0 !important;padding:0 !important;}
+                .text-right{text-align:right !important;}
+                .no-print{display:none !important;}
+                .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
+                .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
+                .logo img{width:67% !important;}
+                .head-add1 h5{font-size:15px !important;font-weight:700 !important;margin-bottom:6px !important;}
+                .head-add1 p{font-size:12px !important;margin-bottom:8px !important;}
+                .add-main2{display:flex !important;align-items:center !important;justify-content:space-between !important;}
+                a.btn.btn-a{border:2px solid #ddd;color:#000;}
+                a.btn.btn-a:hover{box-shadow:0 2px 7px rgba(0,0,0,0.28) !important;cursor:pointer !important;background:#008749 !important;color:#fff !important;}
+                .logo p{font-weight:bold !important;}
+                #modal-sidebar.open{width:100% !important;}
+                table td input{padding:8px 8px !important;}
+                table tbody tr td{white-space:nowrap !important;}
+                table td{padding:5px 5px !important;}
+                .table-responsive .sale_older_tab > caption + thead > tr:first-child > th,.sale_older_tab > colgroup + thead > tr:first-child > th,.sale_older_tab > thead:first-child > tr:first-child > th,.sale_older_tab > caption + thead > tr:first-child > td,.sale_older_tab > colgroup + thead > tr:first-child > td,.sale_older_tab > thead:first-child > tr:first-child > td{border-top:0;font-size:10px !important;padding:9px 5px !important;}
+                .table-responsive .sale_older_tab > thead > tr > th,.sale_older_tab > tbody > tr > th,.sale_older_tab > tfoot > tr > th,.sale_older_tab > thead > tr > td,.sale_older_tab > tbody > tr > td,.table > tfoot > tr > td{padding:2px 5px !important;font-size:10px !important;border-top:1px solid #000000 !important;border-bottom:1px solid #000000 !important;border-left:1px solid #000000 !important;border-right:1px solid #000000 !important;}
+                .table{page-break-inside:avoid !important;}
+                .table-bordered th,.table-bordered td{border:1px solid #E0E0E0 !important;}
+                .table .thead-light th{color:#495057 !important;background-color:#e9ecef !important;border-color:#E0E0E0 !important;}
+                .table th,.table td{padding:0.4rem 1rem !important;vertical-align:center !important;border-top:1px solid #E0E0E0 !important;}
+                .voucher-footer{width:100% !important;margin-top:2rem !important;padding-top:1rem !important;border-top:1px solid #000 !important;}
+                .voucher-footer .row{display:flex !important;flex-wrap:wrap !important;justify-content:space-between !important;text-align:center !important;}
+                .voucher-footer [class*="col-"]{flex:0 0 33.333% !important;max-width:33.333% !important;box-sizing:border-box !important;padding:0 10px !important;}
+                .voucher-footer p{margin:5px 0 !important;font-size:12px !important;}
+            }
+        </style>
     `;
 
         printWindow.document.write('<html><head><title>Print</title>');
