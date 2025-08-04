@@ -33,6 +33,11 @@ class PurchaseRequestData extends Model
         return $this->belongsTo(Product::class,'item_id');
     }
 
+     public function purchase_quotation_data()
+    {
+        return $this->hasOne(PurchaseQuotationData::class,'purchase_request_data_id');
+    }
+
     public function approval()
     {
         return $this->hasMany(PurchaseItemApprove::class, 'purchase_request_data_id');

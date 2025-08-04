@@ -8,17 +8,16 @@ use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseQuotationData extends Model
+class PurchaseOrderData extends Model
 {
     use HasFactory;
-
-    protected $table = "purchase_quotation_data";
+    protected $table = "purchase_order_data";
     protected $guarded = [];
 
 
-    public function purchase_quotation()
+    public function purchase_order()
     {
-        return $this->belongsTo(PurchaseQuotation::class);
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     public function category()
@@ -26,20 +25,14 @@ class PurchaseQuotationData extends Model
         return $this->belongsTo(Category::class,'category_id');
     }
 
-    public function supplier()
+     public function supplier()
     {
         return $this->belongsTo(Supplier::class,'supplier_id');
     }
-
-   
 
     public function item()
     {
         return $this->belongsTo(Product::class,'item_id');
     }
 
-    public function approval()
-    {
-        return $this->hasMany(PurchaseItemApprove::class, 'purchase_request_data_id');
-    }
 }

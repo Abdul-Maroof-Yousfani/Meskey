@@ -6,11 +6,10 @@ use App\Models\Master\CompanyLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseQuotation extends Model
+class PurchaseOrder extends Model
 {
     use HasFactory;
-
-    protected $table = "purchase_quotations";
+    protected $table = "purchase_orders";
     protected $guarded = [];
 
     public function location()
@@ -23,8 +22,8 @@ class PurchaseQuotation extends Model
         return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
     }
 
-    public function quotation_data()
+    public function po_data()
     {
-        return $this->hasMany(PurchaseQuotationData::class);
+        return $this->hasMany(PurchaseOrderData::class);
     }
 }

@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('purchase_quotation_data', function (Blueprint $table) {
+        Schema::create('purchase_order_data', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('purchase_quotation_id');
-            $table->unsignedBigInteger('purchase_request_data_id');
+            $table->unsignedBigInteger('purchase_order_id');
+            $table->unsignedBigInteger('purchase_request_data_id')->nullable();;
+            $table->unsignedBigInteger('purchase_quotation_data_id')->nullable();
             $table->unsignedBigInteger('category_id');
             $table->unsignedBigInteger('item_id');
             $table->unsignedBigInteger('supplier_id');
@@ -22,13 +23,13 @@ return new class extends Migration
             $table->decimal('rate', 15, 2)->unsigned()->default(0);
             $table->decimal('total', 15, 2)->unsigned()->default(0);
             $table->text('remarks')->nullable();
-            $table->enum('quotation_status', ['1', '2'])->default('1')->comment('1 = pending, 2 = complete');
+            $table->enum('order_status', ['1', '2'])->default('1')->comment('1 = pending, 2 = complete');
             $table->enum('po_status', ['1', '2'])->default('1')->comment('1 = pending, 2 = complete');
             $table->enum('status', ['1', '0'])->default('1')->comment('1 = active, 0 = inactive');
             $table->timestamps();
 
-            $table->foreign('purchase_quotation_id')
-            ->references('id')->on('purchase_quotations')
+            $table->foreign('purchase_order_id')
+            ->references('id')->on('purchase_orders')
             ->onDelete('cascade'); // Cascade on hard delete
         });
     }
@@ -38,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-         Schema::dropIfExists('purchase_quotation_data');
+        Schema::dropIfExists('purchase_order_data');
     }
 };

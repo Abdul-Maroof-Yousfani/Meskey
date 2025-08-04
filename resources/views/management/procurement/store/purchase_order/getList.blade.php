@@ -1,8 +1,8 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Purchase Quotation No </th>
-            <th class="col-sm-2">Purchase Quotation Date</th>
+            <th class="col-sm-2">Purchase Order No </th>
+            <th class="col-sm-2">Purchase Order Date</th>
             <th class="col-sm-2">Location</th>
             <th class="col-sm-2">Category</th>
             <th class="col-sm-2">Item</th>
@@ -16,25 +16,25 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($PurchaseQuotation) != 0)
-            @foreach ($PurchaseQuotation as $key => $row)
+        @if (count($PurchaseOrder) != 0)
+            @foreach ($PurchaseOrder as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchase_quotation->purchase_quotation_no }} <br>
+                            {{ $row->purchase_order->purchase_order_no }} <br>
                         </p>
                     </td>
                     <td>
                          <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('h:i A') }} <br>
+                            {{ \Carbon\Carbon::parse($row->purchase_order->created_at)->format('Y-m-d') }} /
+                            {{ \Carbon\Carbon::parse($row->purchase_order->created_at)->format('h:i A') }} <br>
 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
                             
-                            {{ optional($row->purchase_quotation->location)->name}} 
+                            {{ optional($row->purchase_order->location)->name}} 
                         </p>
                     </td>
                     <td>
@@ -83,13 +83,13 @@
                    
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $row->id) }}','Edit Purchase Quotation',false,'80%')"
+                            <a onclick="openModal(this,'{{ route('store.purchase-order.edit', $row->id) }}','Edit Purchase Order',false,'80%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $row->id) }}','{{ route('store.get.purchase-quotation') }}')"
+                            <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $row->id) }}','{{ route('store.get.purchase-order') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
@@ -145,7 +145,7 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $PurchaseQuotation->links() }}
+        {{ $PurchaseOrder->links() }}
     </div>
 </div>
 <script>

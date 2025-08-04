@@ -22,10 +22,6 @@ return new class extends Migration
             $table->enum('po_status', ['1', '2'])->default('1')->comment('1 = pending, 2 = complete');
             $table->enum('status', ['1', '0'])->default('1')->comment('1 = active, 0 = inactive');
             $table->timestamps();
-
-            $table->foreign('purchase_request_id')
-            ->references('id')->on('purchase_requests')
-            ->onDelete('cascade'); // Cascade on hard delete
             
         });
     }

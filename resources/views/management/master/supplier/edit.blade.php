@@ -10,6 +10,16 @@
                  Company Detail
              </h6>
          </div>
+          <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Supplier Type</label>
+                <select class="form-control" name="type">
+                    <option value="">Select Supplier Type</option>
+                    <option {{$supplier->type == 'raw_material' ? 'selected' : ''}} value="raw_material" selected>Raw Material Supplier</option>
+                    <option {{$supplier->type == 'store_supplier' ? 'selected' : ''}} value="store_supplier">Store Supplier</option>
+                </select>
+            </div>
+        </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group">
                  <label>Company Name:</label>

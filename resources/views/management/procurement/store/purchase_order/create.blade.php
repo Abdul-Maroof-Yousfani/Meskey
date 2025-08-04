@@ -1,15 +1,15 @@
-<form action="{{ route('store.purchase-quotation.update', optional($data->purchase_quotation)->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
-    <input type="hidden" name="data_id" value="{{$data->id}}">
-    <input type="hidden" name="purchase_request_data_id" value="{{$data->purchase_request_data_id}}">
+    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
     <div class="row form-mar"> 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Purchase Request:</label>
                 <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                     <option value="{{optional($data->purchase_quotation->purchase_request)->id}}<">{{optional($data->purchase_quotation->purchase_request)->purchase_request_no}}</option>
+                    <option value="">Select Purchase Request</option>
+                    @foreach ($approvedRequests ?? [] as $value)
+                        <option value="{{$value->purchase_request->id}}">{{$value->purchase_request->purchase_request_no}}</option>
+                    @endforeach
                 </select>
             </div>
         </div>       
@@ -18,23 +18,23 @@
                 <label>Location:</label>
                 <select disabled name="company_location" id="company_location_id" class="form-control select2">
                     <option value="">Select Location</option>
-                    @foreach (get_locations() as $loc)
-                       <option {{optional($data->purchase_quotation)->location_id == $loc->id ? 'selected' : ''}} value="{{$loc->id}}">{{$loc->name}}</option>
+                    @foreach (get_locations() as $value)
+                        <option value="{{$value->id}}">{{$value->name}}</option>
                     @endforeach
-                    <input type="hidden" name="location_id" value="{{optional($data->purchase_quotation)->location_id}}" id="location_id">
+                    <input type="hidden" name="location_id" id="location_id">
                 </select>
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Purchase Date:</label>
-                <input readonly type="date" id="purchase_date" value="{{optional($data->purchase_quotation)->quotation_date}}" name="purchase_date" class="form-control">
+                <input readonly type="date" id="purchase_date" name="purchase_date" class="form-control">
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Reference No:</label>
-                <input readonly type="text" name="reference_no" id="reference_no" value="{{optional($data->purchase_quotation)->reference_no}}" class="form-control">
+                <input readonly type="text" name="reference_no" id="reference_no" class="form-control">
             </div>
         </div>
 
@@ -42,7 +42,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{optional($data->purchase_quotation)->description}}</textarea>
+                <textarea readonly name="description" id="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
        
@@ -70,44 +70,8 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="purchaseRequestBody">
-                     <tr id="row_0">
-                            <td style="width: 25%">
-                                <select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)" class="form-control item-select" data-index="0">
-                                    <option value="">Select Category</option>
-                                    @foreach ($categories ?? [] as $category)
-                                        <option {{$category->id == $data->category_id ? 'selected' : ''}} value="{{$category->id}}">{{$category->name}}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="width: 25%">
-                               <select name="item_id[]" id="item_id_0" onchange="get_uom(0)" class="form-control item-select" data-index="0">
-                                    @foreach (get_product_by_category($data->category_id) as $item)
-                                        <option 
-                                            data-uom="{{ $item->unit_of_measure->name ?? '' }}" 
-                                            value="{{ $item->id }}"
-                                            {{ $item->id == $data->item_id ? 'selected' : '' }}
-                                        >
-                                            {{ $item->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="width: 10%"><input type="text" name="uom[]" value="{{get_uom($data->item_id)}}" id="uom_0" class="form-control uom" readonly></td>
-                            <td style="width: 20%">
-                                <select name="supplier_id[]" id="supplier_id_0" class="form-control item-select" data-index="0">
-                                    <option value="">Select Vendor</option>
-                                    @foreach (get_supplier() as $supplier)
-                                        <option {{$data->supplier_id == $supplier->id ? 'selected' : ''}} value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="width: 10%"><input  onkeyup="calc(0)" onblur="calc(0)" style="width: 100px" type="number" name="qty[]" id="qty_0" value="{{$data->qty}}" class="form-control" step="0.01" min="0"></td>
-                            <td style="width: 20%"><input  onkeyup="calc(0)" onblur="calc(0)" style="width: 100px" type="number" name="rate[]" id="rate_0" class="form-control" value="{{$data->rate}}" step="0.01" min="0"></td>
-                            <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_0" class="form-control" value="{{$data->total}}" step="0.01" min="0"></td>
-                            <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_0" value="{{$data->remarks}}" class="form-control"></td>
-                            <td><button type="button" disabled class="btn btn-danger btn-sm removeRowBtn" data-id="0">Remove</button></td>
-                        </tr>
+                <tbody id="purchaseOrderBody">
+                    
                 </tbody>
             </table>
         </div>
@@ -150,7 +114,7 @@
                 </td>
                 <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                  <td style="width: 20%">
-                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                    <select name="supplier_id[]" id="supplier_id_${index}" class="form-control item-select" data-index="0">
                         <option value="">Select Vendor</option>
                         @foreach (get_supplier() as $supplier)
                             <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
@@ -164,7 +128,7 @@
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
-        $('#purchaseRequestBody').append(row);        
+        $('#purchaseOrderBody').append(row);        
     }
 
     function remove(id) {
@@ -213,11 +177,11 @@
             if (!purchaseRequestId) return;
 
             $.ajax({
-                url: "{{ route('store.purchase-quotation.approve-item') }}",
+                url: "{{ route('store.purchase-order.approve-item') }}",
                 type: "GET",
                 data: { id: purchaseRequestId },
                 beforeSend: function () {
-                    $('#purchaseRequestBody').html('<p>Loading...</p>');
+                    $('#purchaseOrderBody').html('<p>Loading...</p>');
                 },
                 success: function (response) {
                     let html = response.html;
@@ -231,14 +195,14 @@
                     $('#reference_no').val(master.reference_no);
                     $('#description').val(master.description);
                     $('#company_location_id').val(master.location_id).trigger('change');
-                    $('#purchaseRequestBody').html('').html(html);
+                    $('#purchaseOrderBody').html('').html(html);
                     $('.select2').select2({
                         placeholder: 'Please Select', // or 'resolve', '300px', etc.
                         width: '100%' // or 'resolve', '300px', etc.
                     });
                 },
                 error: function () {
-                    $('#purchaseRequestBody').html('<p>Error loading data.</p>');
+                    $('#purchaseOrderBody').html('<p>Error loading data.</p>');
                 }
             });
         }

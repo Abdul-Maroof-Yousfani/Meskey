@@ -17,6 +17,7 @@ use App\Http\Controllers\Procurement\RawMaterial\{
     TicketPaymentRequestController
 };
 use App\Http\Controllers\Procurement\Store\{
+    PurchaseOrderController as StorePurchaseOrderController,
     PurchaseQuotationController,
     PurchaseRequestController as StorePurchaseRequestController,
 };
@@ -88,6 +89,12 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-quotation', PurchaseQuotationController::class)->except(['show']);
     Route::post('get-purchase-quotation', [PurchaseQuotationController::class, 'getList'])->name('get.purchase-quotation');
     Route::get('purchase-quotation/approve-item', [PurchaseQuotationController::class, 'approve_item'])->name('purchase-quotation.approve-item');
+
+    // purchase order route
+     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
+    Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
+    Route::get('purchase-order/approve-item', [StorePurchaseOrderController::class, 'approve_item'])->name('purchase-order.approve-item');
+
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseAgainstJobOrder;
 use App\Models\Procurement\Store\PurchaseItemApprove;
+use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseQuotation;
 use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
@@ -135,6 +136,7 @@ class PurchaseQuotationController extends Controller
                 // Save purchase_quotation_data
                 $requestData = PurchaseQuotationData::create([
                     'purchase_quotation_id' => $PurchaseQuotation->id,
+                    'purchase_request_data_id' => $request->data_id[$index],
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
@@ -192,7 +194,8 @@ class PurchaseQuotationController extends Controller
     {
         $validated = $request->validate([
             'purchase_date'    => 'required|date',
-            'location_id' => 'required|exists:company_locations,id',
+            'purchase_request_id'      => 'required|exists:purchase_requests,id',
+            'location_id'      => 'required|exists:company_locations,id',
             'reference_no'     => 'nullable|string|max:255',
             'description'      => 'nullable|string',
 
@@ -207,9 +210,9 @@ class PurchaseQuotationController extends Controller
 
             'qty'              => 'required|array|min:1',
             'qty.*'            => 'required|numeric|min:0.01',
-
-            'job_order_id'     => 'nullable|array',
-            'job_order_id.*'   => 'nullable|exists:job_orders,id',
+            
+            'rate'              => 'required|array|min:1',
+            'rate.*'            => 'required|numeric|min:0.01',
 
             'remarks'          => 'nullable|array',
             'remarks.*'        => 'nullable|string|max:1000',
@@ -224,47 +227,32 @@ class PurchaseQuotationController extends Controller
             $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
 
             // Update purchase request fields (do NOT update purchase_quotation_no)
-            $PurchaseQuotation->update([
-                'purchase_date' => $request->purchase_date,
-                'location_id' => $request->location_id,
-                'company_id' => $request->company_id,
-                'reference_no' => $request->reference_no,
-                'description' => $request->description,
-            ]);
-
+           
             // Delete existing related purchase_quotation_data and their job orders to avoid duplicates
-            foreach ($PurchaseQuotation->PurchaseData as $existingData) {
-                PurchaseAgainstJobOrder::where('purchase_quotation_data_id', $existingData->id)->delete();
-                $existingData->delete();
-            }
+            $data = PurchaseQuotationData::find($request->data_id)->delete();
 
             // Insert new purchase_quotation_data and job orders
             foreach ($request->item_id as $index => $itemId) {
-
+                // Save purchase_quotation_data
                 $requestData = PurchaseQuotationData::create([
                     'purchase_quotation_id' => $PurchaseQuotation->id,
+                    'purchase_request_data_id' => $request->purchase_request_data_id[$index],
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
+                    'rate' => $request->rate[$index],
+                    'total' => $request->total[$index],
+                    'supplier_id' => $request->supplier_id[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
-                if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                    foreach ($request->job_order_id[$index] as $jobOrderId) {
-                        PurchaseAgainstJobOrder::create([
-                            'purchase_quotation_id' => $PurchaseQuotation->id,
-                            'purchase_quotation_data_id' => $requestData->id,
-                            'job_order_id' => $jobOrderId,
-                        ]);
-                    }
-                }
             }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Purchase request updated successfully.',
+                'message' => 'Purchase Quotation updated successfully.',
                 'data' => $PurchaseQuotation,
             ], 200);
 
@@ -286,6 +274,7 @@ class PurchaseQuotationController extends Controller
     public function destroy($id)
     {
         // $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
+        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id',$id)->delete();
         $PurchaseQuotationData = PurchaseQuotationData::where('id',$id)->delete();
         // $PurchaseQuotation->delete();
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);

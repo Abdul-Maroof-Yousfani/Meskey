@@ -309,7 +309,7 @@ function get_locations()
 
 function get_supplier()
 {
-    $Supplier = Supplier::all();
+    $Supplier = Supplier::whereType('store_supplier')->get();
 
     return $Supplier;
 }
