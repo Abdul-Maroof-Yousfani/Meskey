@@ -110,6 +110,8 @@ class FreightController extends Controller
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
 
             $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
+            $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+
             $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
             $qcProduct = $ticket->purchaseOrder->qcProduct->name ?? $ticket->purchaseOrder->product->name ?? 'N/A';
             $loadingWeight = $ticket->arrived_net_weight;
@@ -187,22 +189,8 @@ class FreightController extends Controller
                     );
                 }
             } else {
-                // createTransaction(
-                //     $amount,
-                //     $ticket->qcProduct->account_id,
-                //     1,
-                //     $arrivalApprove->unique_no,
-                //     'debit',
-                //     'no',
-                //     [
-                //         'purpose' => "arrival-slip",
-                //         'payment_against' => "pohanch-purchase",
-                //         'against_reference_no' => "$truckNo/$biltyNo",
-                //         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
-                //     ]
-                // );
                 createTransaction(
-                    $amount,
+                    $inventoryAmount,
                     $stockInTransitAccount->id,
                     1,
                     $contractNo,
@@ -218,7 +206,7 @@ class FreightController extends Controller
             }
 
             createTransaction(
-                $paymentDetails['calculations']['net_amount'] ?? 0,
+                $inventoryAmount,
                 $ticket->qcProduct->account_id,
                 1,
                 $arrivalApprove->unique_no,

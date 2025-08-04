@@ -121,44 +121,78 @@ class TicketContractController extends Controller
                 ]);
             }
 
-            $existingTransaction = Transaction::where('purpose', 'stock-in-transit')
-                ->where('voucher_no', $arrivalTicket->arrivalSlip->unique_no ?? '')
-                ->where('against_reference_no', "$truckNo/$biltyNo")
-                ->exists();
+            $uniqueNo = $arrivalTicket->arrivalSlip->unique_no ?? '';
+            $referenceNo = "$truckNo/$biltyNo";
 
-            if (!$existingTransaction) {
-                $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
-                $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
+            $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
+            $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
+            $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+            $supplierNetAmount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
+            $qcAccountId = $arrivalTicket->qcProduct->account_id;
+            $arrivedWeight = $arrivalTicket['arrived_net_weight'];
+            $rate = $purchaseOrder->rate_per_kg;
+            $totalAmount = $inventoryAmount;
 
-                if ($arrivalTicket->saudaType->name == 'Pohanch') {
+            if ($arrivalTicket->saudaType->name == 'Pohanch') {
+                $txn = Transaction::where('voucher_no', $uniqueNo)
+                    ->where('purpose', 'supplier-payable')
+                    ->where('against_reference_no', $referenceNo)
+                    ->first();
+
+                $supplierData = [
+                    'amount' => $supplierNetAmount,
+                    'account_id' => $qcAccountId,
+                    'type' => 'credit',
+                    'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                ];
+
+                if ($txn) {
+                    $txn->update($supplierData);
+                } else {
                     createTransaction(
-                        $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
-                        $arrivalTicket->qcProduct->account_id,
+                        $supplierNetAmount,
+                        $qcAccountId,
                         1,
-                        $arrivalTicket->arrivalSlip->unique_no ?? '',
+                        $uniqueNo,
                         'credit',
                         'no',
                         [
                             'purpose' => "supplier-payable",
                             'payment_against' => "pohanch-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                            'against_reference_no' => $referenceNo,
+                            'remarks' => $supplierData['remarks'],
                         ]
                     );
                 }
+            }
 
+            $txnInv = Transaction::where('voucher_no', $uniqueNo)
+                ->where('purpose', 'arrival-slip')
+                ->where('against_reference_no', $referenceNo)
+                ->first();
+
+            $invData = [
+                'amount' => $inventoryAmount,
+                'account_id' => $qcAccountId,
+                'type' => 'debit',
+                'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $arrivedWeight kg) at rate $rate/kg. Total amount: $totalAmount to be paid to supplier."
+            ];
+
+            if ($txnInv) {
+                $txnInv->update($invData);
+            } else {
                 createTransaction(
-                    $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
-                    $arrivalTicket->qcProduct->account_id,
+                    $inventoryAmount,
+                    $qcAccountId,
                     1,
-                    $arrivalTicket->arrivalSlip->unique_no,
+                    $uniqueNo,
                     'debit',
                     'no',
                     [
                         'purpose' => "arrival-slip",
                         'payment_against' => "pohanch-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $arrivalTicket['arrived_net_weight'] . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg. Total amount: ' . $amount . ' to be paid to supplier.'
+                        'against_reference_no' => $referenceNo,
+                        'remarks' => $invData['remarks']
                     ]
                 );
             }

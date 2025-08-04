@@ -215,6 +215,7 @@ class TicketPaymentRequestController extends Controller
         $biltyNo = $ticket->bilty_no ?? 'N/A';
 
         $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
+        $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
         $supplierTxn = Transaction::where('voucher_no', $arrivalSlipNo)
             ->where('purpose', 'supplier-payable')
@@ -253,8 +254,8 @@ class TicketPaymentRequestController extends Controller
             ->first();
 
         $transitData = [
-            'amount' => $amount,
-            'account_id' => $stockInTransitAccount->id,
+            'amount' => $inventoryAmount,
+            'account_id' => $ticket->qcProduct->account_id,
             'type' => 'debit',
             'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $ticket->arrived_net_weight . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
         ];
@@ -264,7 +265,7 @@ class TicketPaymentRequestController extends Controller
         } else {
             createTransaction(
                 $amount,
-                $stockInTransitAccount->id,
+                $ticket->qcProduct->account_id,
                 1,
                 $contractNo,
                 'debit',
@@ -335,6 +336,53 @@ class TicketPaymentRequestController extends Controller
                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
                 ]
             );
+        }
+
+        if (
+            isset($requestData['brokery_amount'], $requestData['broker_id']) &&
+            $requestData['brokery_amount'] < 0
+        ) {
+            $existingTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'supplier-brokery')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->exists();
+
+            if (!$existingTxn) {
+                $broker = Broker::find($requestData['broker_id']);
+                if ($broker && $broker->account_id) {
+                    $brokeryAmount = abs($requestData['brokery_amount']);
+
+                    createTransaction(
+                        $brokeryAmount,
+                        $purchaseOrder->supplier->account_id,
+                        1,
+                        $contractNo,
+                        'debit',
+                        'no',
+                        [
+                            'purpose' => "supplier-brokery",
+                            'payment_against' => "thadda-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
+                        ]
+                    );
+
+                    createTransaction(
+                        $brokeryAmount,
+                        $broker->account_id,
+                        1,
+                        $contractNo,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "supplier-brokery",
+                            'payment_against' => "thadda-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Brokery amount adjustment received from supplier for contract ($contractNo)."
+                        ]
+                    );
+                }
+            }
         }
     }
 

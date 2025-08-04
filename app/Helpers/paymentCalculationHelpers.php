@@ -90,6 +90,16 @@ function calculatePohaunchPayment($ticketId)
 
     $supplierAmount = $loadingInfo['loading_weight'] * $purchaseOrder->supplier_commission;
 
+    $supplierValue = $purchaseOrder->supplier_commission < 0
+        ? $amounts['total_amount']
+        : $amounts['total_amount'] + abs($supplierAmount);
+
+    $finalAmount = $supplierValue;
+
+    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
+    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
+    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
+
     return   [
         'ticket_type' => 'pohanch',
         'ticket_id' => $ticketId,
@@ -103,9 +113,8 @@ function calculatePohaunchPayment($ticketId)
             'gross_amount' => $ratePerKg * $loadingWeight,
             'total_deductions' => $deductions['total_deductions'],
             'net_amount' => $amounts['total_amount'],
-            'supplier_net_amount' => $purchaseOrder->supplier_commission < 0
-                ? $amounts['total_amount'] - abs($supplierAmount)
-                : $amounts['total_amount'] + abs($supplierAmount),
+            'inventory_amount' => $finalAmount,
+            'supplier_net_amount' => $supplierValue,
             'remaining_amount' => $amounts['remaining_amount'],
         ]
     ];
@@ -176,6 +185,16 @@ function calculateThaddaPayment($ticketId)
 
     $supplierAmount = $loadingInfo['loading_weight'] * $purchaseOrder->supplier_commission;
 
+    $supplierValue = $purchaseOrder->supplier_commission < 0
+        ? $amounts['total_amount']
+        : $amounts['total_amount'] + abs($supplierAmount);
+
+    $finalAmount = $supplierValue;
+
+    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
+    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
+    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
+
     return   [
         'ticket_type' => 'thadda',
         'ticket_id' => $ticketId,
@@ -190,9 +209,8 @@ function calculateThaddaPayment($ticketId)
             'gross_amount' => $ratePerKg * $loadingWeight,
             'total_deductions' => $deductions['total_deductions'],
             'net_amount' => $amounts['total_amount'],
-            'supplier_net_amount' => $purchaseOrder->supplier_commission < 0
-                ? $amounts['total_amount'] - abs($supplierAmount)
-                : $amounts['total_amount'] + abs($supplierAmount),
+            'inventory_amount' => $finalAmount,
+            'supplier_net_amount' => $supplierValue,
             'remaining_amount' => $amounts['remaining_amount'],
         ]
     ];

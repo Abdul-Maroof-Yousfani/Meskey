@@ -228,8 +228,10 @@ class PaymentRequestController extends Controller
         $qcProduct = $purchaseOrder->qcProduct->name;
         $truckNo = $ticket->purchaseFreight->truck_no ?? 'N/A';
         $biltyNo = $ticket->purchaseFreight->bilty_no ?? 'N/A';
+        $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
 
         $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
+        $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
         $supplierTxn = Transaction::where('voucher_no', $contractNo)
             ->where('purpose', 'supplier-payable')
@@ -237,7 +239,7 @@ class PaymentRequestController extends Controller
             ->first();
 
         $supplierData = [
-            'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+            'amount' => $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
             'account_id' => $purchaseOrder->supplier->account_id,
             'type' => 'credit',
             'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
@@ -268,7 +270,7 @@ class PaymentRequestController extends Controller
             ->first();
 
         $transitData = [
-            'amount' => $amount,
+            'amount' => $inventoryAmount,
             'account_id' => $stockInTransitAccount->id,
             'type' => 'debit',
             'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$requestData['loading_weight']} kg at rate {$purchaseOrder->rate_per_kg}/kg."
@@ -278,7 +280,7 @@ class PaymentRequestController extends Controller
             $transitTxn->update($transitData);
         } else {
             createTransaction(
-                $amount,
+                $inventoryAmount,
                 $stockInTransitAccount->id,
                 1,
                 $contractNo,
@@ -293,7 +295,6 @@ class PaymentRequestController extends Controller
             );
         }
 
-        $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
 
         if (!$existingApprovals && $purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
             $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
@@ -350,6 +351,54 @@ class PaymentRequestController extends Controller
                     'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to broker.'
                 ]
             );
+        }
+
+
+        if (
+            isset($requestData['brokery_amount'], $requestData['broker_id']) &&
+            $requestData['brokery_amount'] < 0
+        ) {
+            $existingTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'supplier-brokery')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->exists();
+
+            if (!$existingTxn) {
+                $broker = Broker::find($requestData['broker_id']);
+                if ($broker && $broker->account_id) {
+                    $brokeryAmount = abs($requestData['brokery_amount']);
+
+                    createTransaction(
+                        $brokeryAmount,
+                        $purchaseOrder->supplier->account_id,
+                        1,
+                        $contractNo,
+                        'debit',
+                        'no',
+                        [
+                            'purpose' => "supplier-brokery",
+                            'payment_against' => "thadda-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
+                        ]
+                    );
+
+                    createTransaction(
+                        $brokeryAmount,
+                        $broker->account_id,
+                        1,
+                        $contractNo,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "supplier-brokery",
+                            'payment_against' => "thadda-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Brokery amount adjustment received from supplier for contract ($contractNo)."
+                        ]
+                    );
+                }
+            }
         }
     }
 

@@ -627,7 +627,7 @@
                                     value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
                             </td>
                         </tr>
-                        @if ($purchaseOrder->supplier_commission * $loadingWeight < 0)
+                        @if ($purchaseOrder->supplier_commission < 0)
                             <tr>
                                 <td><strong>Broker</strong></td>
                                 <td>N/A</td>

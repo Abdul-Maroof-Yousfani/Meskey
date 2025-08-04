@@ -16,6 +16,7 @@ use App\Models\Procurement\PaymentRequestSamplingResult;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\Broker;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\PurchaseSamplingRequest;
@@ -95,29 +96,6 @@ class PaymentRequestApprovalController extends Controller
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
 
-            // if ($request->status === 'approved') {
-            //     createTransaction(
-            //         (float) ($request->payment_request_amount),
-            //         $purchaseOrder->supplier->account_id,
-            //         1, // for Purchase Order
-            //         $purchaseOrder->contract_no,
-            //         // $moduleType === 'ticket' ? $ticket->id : $paymentRequestData->purchase_order_id,
-            //         // $moduleType === 'ticket' ? $ticket->unique_no : $purchaseOrder->contract_no,
-            //         'credit',
-            //         'no',
-            //         [
-            //             'purpose' => "supplier",
-            //             'payment_against' => "$saudaType-purchase",
-            //             'against_reference_no' => "$truckNo/$biltyNo",
-            //             'remarks' => 'Recording accounts payable for ' . ucwords($saudaType) . ' purchase. Amount to be paid to supplier.'
-            //         ]
-            //     );
-            // }
-
-
-
-
-
             if ($request->has('total_amount') || $request->has('bag_weight')) {
                 $this->updatePaymentRequestData($paymentRequestData, $request);
             }
@@ -187,6 +165,7 @@ class PaymentRequestApprovalController extends Controller
             $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no;
             $qcProduct = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
             $loadingWeight = $paymentRequestData->arrivalTicket->arrived_net_weight ?? $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight ?? 0;
+            $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
             $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
 
@@ -199,7 +178,7 @@ class PaymentRequestApprovalController extends Controller
                 'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                 'account_id' => $purchaseOrder->supplier->account_id,
                 'type' => 'credit',
-                // 'remarks' => "Accounts payable recorded against the contract ($purchaseOrder->contract_no) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                'remarks' => "Accounts payable recorded against the contract ($purchaseOrder->contract_no) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
             ];
 
             if ($supplierTxn) {
@@ -228,7 +207,7 @@ class PaymentRequestApprovalController extends Controller
                     ->first();
 
                 $transitData = [
-                    'amount' => $amount,
+                    'amount' => $inventoryAmount,
                     'account_id' => $stockInTransitAccount->id,
                     'type' => 'debit',
                     'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseOrder->rate_per_kg}/kg."
@@ -238,7 +217,7 @@ class PaymentRequestApprovalController extends Controller
                     $transitTxn->update($transitData);
                 } else {
                     createTransaction(
-                        $amount,
+                        $inventoryAmount,
                         $stockInTransitAccount->id,
                         1,
                         $contractNo,
@@ -251,6 +230,84 @@ class PaymentRequestApprovalController extends Controller
                             'remarks' => $transitData['remarks']
                         ]
                     );
+                }
+            }
+
+            $transitTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'arrival-slip')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            $transitData = [
+                'amount' => $inventoryAmount,
+                'account_id' =>  $ticket->qcProduct->account_id,
+                'type' => 'debit',
+                'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
+            ];
+
+            if ($transitTxn) {
+                $transitTxn->update($transitData);
+            } else {
+                createTransaction(
+                    $amount,
+                    $ticket->qcProduct->account_id,
+                    1,
+                    $contractNo,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "arrival-slip",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => $transitData['remarks']
+                    ]
+                );
+            }
+
+            if (
+                isset($requestData['brokery_amount'], $requestData['broker_id']) &&
+                $requestData['brokery_amount'] < 0
+            ) {
+                $existingTxn = Transaction::where('voucher_no', $contractNo)
+                    ->where('purpose', 'supplier-brokery')
+                    ->where('against_reference_no', "$truckNo/$biltyNo")
+                    ->exists();
+
+                if (!$existingTxn) {
+                    $broker = Broker::find($requestData['broker_id']);
+                    if ($broker && $broker->account_id) {
+                        $brokeryAmount = abs($requestData['brokery_amount']);
+
+                        createTransaction(
+                            $brokeryAmount,
+                            $purchaseOrder->supplier->account_id,
+                            1,
+                            $contractNo,
+                            'debit',
+                            'no',
+                            [
+                                'purpose' => "supplier-brokery",
+                                'payment_against' => "thadda-purchase",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
+                            ]
+                        );
+
+                        createTransaction(
+                            $brokeryAmount,
+                            $broker->account_id,
+                            1,
+                            $contractNo,
+                            'credit',
+                            'no',
+                            [
+                                'purpose' => "supplier-brokery",
+                                'payment_against' => "thadda-purchase",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => "Brokery amount adjustment received from supplier for contract ($contractNo)."
+                            ]
+                        );
+                    }
                 }
             }
 
@@ -386,6 +443,9 @@ class PaymentRequestApprovalController extends Controller
         $samplingRequestCompulsuryResults = collect();
         $samplingRequestResults = collect();
         $otherDeduction = null;
+        // $paymentRequestData = PaymentRequestData::where('ticket_id', $ticket->id)->where('module_type', 'purchase_order')->orderByDesc('id')->first();
+        $paymentRequestData = $paymentRequest->paymentRequestData;
+        $brokers = Broker::all();
 
         if ($moduleType == 'ticket') {
             if ($ticket) {
@@ -431,6 +491,7 @@ class PaymentRequestApprovalController extends Controller
             $requestPurchaseForm = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
                 'arrivalTicket' => $ticket,
                 'ticket' => $ticket,
+                'brokers' => $brokers,
                 'purchaseOrder' => $purchaseOrder,
                 'samplingRequest' => $samplingRequest,
                 'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
@@ -438,6 +499,7 @@ class PaymentRequestApprovalController extends Controller
                 'requestedAmount' => $requestedAmount,
                 'approvedAmount' => $approvedAmount,
                 'pRsSumForFreight' => $pRsSumForFreight,
+                'paymentRequestData' => $paymentRequestData,
                 'otherDeduction' => $otherDeduction,
                 'isRequestApprovalPage' => true,
                 'paymentRequest' => $paymentRequest
@@ -492,6 +554,8 @@ class PaymentRequestApprovalController extends Controller
             $requestPurchaseForm = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
                 'ticket' => $ticket,
                 'purchaseOrder' => $purchaseOrder,
+                'brokers' => $brokers,
+                'paymentRequestData' => $paymentRequestData,
                 'samplingRequest' => $samplingRequest,
                 'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
                 'samplingRequestResults' => $samplingRequestResults,
