@@ -55,7 +55,7 @@
                     {{ (($row->min_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') . ' - ' . (($row->max_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') }}
                 </td>
                 <td>{{ $row->stockInTransitTickets->count() }}</td>
-                {{-- <td>{{ $row->rejectedTickets->count() }}</td> --}}
+                <td>{{ $row->rejectedArrivalTickets->count() }}</td>
                 <td>
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">
