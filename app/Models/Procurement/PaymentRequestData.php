@@ -26,6 +26,8 @@ class PaymentRequestData extends Model
         'truck_no',
         'loading_date',
         'bilty_no',
+        'brokery_amount',
+        'broker_id',
         'station',
         'no_of_bags',
         'loading_weight',
