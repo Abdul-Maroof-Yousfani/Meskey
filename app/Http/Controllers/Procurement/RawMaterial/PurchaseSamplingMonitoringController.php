@@ -365,9 +365,9 @@ class PurchaseSamplingMonitoringController extends Controller
                 PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['freight_status' => 'pending']);
             }
 
-            if ($request->stage_status == 'rejected') {
-                PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['first_qc_status' => 'rejected']);
-            }
+            // if ($request->stage_status == 'rejected') {
+            //     PurchaseTicket::where('id', $ArrivalSamplingRequest->purchase_ticket_id)->update(['first_qc_status' => 'rejected']);
+            // }
 
             return response()->json([
                 'success' => 'Data stored successfully',
