@@ -1,9 +1,8 @@
-<form action="{{ route('store.purchase-quotation.update', optional($data->purchase_quotation)->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-order.update', optional($data->purchase_quotation)->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
     <input type="hidden" name="data_id" value="{{$data->id}}">
-    <input type="hidden" name="purchase_request_data_id" value="{{$data->purchase_request_data_id}}">
     <div class="row form-mar"> 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -70,7 +69,7 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="purchaseRequestBody">
+                <tbody id="purchaseOrderBody">
                      <tr id="row_0">
                             <td style="width: 25%">
                                 <select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)" class="form-control item-select" data-index="0">
@@ -164,7 +163,7 @@
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
-        $('#purchaseRequestBody').append(row);        
+        $('#purchaseOrderBody').append(row);        
     }
 
     function remove(id) {
@@ -213,11 +212,11 @@
             if (!purchaseRequestId) return;
 
             $.ajax({
-                url: "{{ route('store.purchase-quotation.approve-item') }}",
+                url: "{{ route('store.purchase-order.approve-item') }}",
                 type: "GET",
                 data: { id: purchaseRequestId },
                 beforeSend: function () {
-                    $('#purchaseRequestBody').html('<p>Loading...</p>');
+                    $('#purchaseOrderBody').html('<p>Loading...</p>');
                 },
                 success: function (response) {
                     let html = response.html;
@@ -231,14 +230,14 @@
                     $('#reference_no').val(master.reference_no);
                     $('#description').val(master.description);
                     $('#company_location_id').val(master.location_id).trigger('change');
-                    $('#purchaseRequestBody').html('').html(html);
+                    $('#purchaseOrderBody').html('').html(html);
                     $('.select2').select2({
                         placeholder: 'Please Select', // or 'resolve', '300px', etc.
                         width: '100%' // or 'resolve', '300px', etc.
                     });
                 },
                 error: function () {
-                    $('#purchaseRequestBody').html('<p>Error loading data.</p>');
+                    $('#purchaseOrderBody').html('<p>Error loading data.</p>');
                 }
             });
         }

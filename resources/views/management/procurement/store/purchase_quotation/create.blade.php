@@ -114,7 +114,7 @@
                 </td>
                 <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                  <td style="width: 20%">
-                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                    <select name="supplier_id[]" id="supplier_id_${index}" class="form-control item-select" data-index="0">
                         <option value="">Select Vendor</option>
                         @foreach (get_supplier() as $supplier)
                             <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>

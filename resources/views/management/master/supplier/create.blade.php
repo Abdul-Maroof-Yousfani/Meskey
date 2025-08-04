@@ -9,6 +9,16 @@
             </h6>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Supplier Type</label>
+                <select class="form-control" name="type">
+                    <option value="">Select Supplier Type</option>
+                    <option value="raw_material" selected>Raw Material Supplier</option>
+                    <option value="store_supplier">Store Supplier</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Company Name:</label>
                 <input type="text" name="company_name" placeholder="Company Name" class="form-control"

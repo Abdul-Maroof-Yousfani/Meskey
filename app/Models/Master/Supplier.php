@@ -16,6 +16,7 @@ class Supplier extends Model
     // Define fillable attributes
     protected $fillable = [
         'company_id',
+        'type',
         'unique_no',
         'name',
         'account_id',

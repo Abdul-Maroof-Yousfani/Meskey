@@ -8,13 +8,13 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Purchase Quotation </h2>
+                    <h2 class="page-title">Purchase Order </h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('store.purchase-quotation.create') }}','Add Purchase Quotation',false,'90%')"
+                        onclick="openModal(this,'{{ route('store.purchase-order.create') }}','Add Purchase Order',false,'90%')"
                         type="button" class="btn btn-primary position-relative">
-                        Create Purchase Quotation
+                        Create Purchase Order
                     </button>
                 </div>
             </div>
@@ -45,8 +45,8 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Purchase Quotation No </th>
-                                            <th class="col-sm-2">Purchase Quotation Date</th>
+                                            <th class="col-sm-2">Purchase Order No </th>
+                                            <th class="col-sm-2">Purchase Order Date</th>
                                             <th class="col-sm-2">Location</th>
                                             <th class="col-sm-2">Category</th>
                                             <th class="col-sm-2">Item</th>
@@ -73,7 +73,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('store.get.purchase-quotation') }}`)
+            filterationCommon(`{{ route('store.get.purchase-order') }}`)
         });
     </script>
 @endsection

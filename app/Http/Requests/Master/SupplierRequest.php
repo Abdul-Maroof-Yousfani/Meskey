@@ -16,6 +16,7 @@ class SupplierRequest extends FormRequest
     {
         return [
             'company_id' => 'required|exists:companies,id',
+            'type' => 'required|in:raw_material,store_supplier',
             'unique_no' => 'nullable|string|max:255|unique:suppliers,unique_no',
             'company_name' => [
                 'required',
