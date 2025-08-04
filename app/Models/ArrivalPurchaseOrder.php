@@ -225,9 +225,9 @@ class ArrivalPurchaseOrder extends Model
             });
     }
 
-    public function rejectedTickets()
-    {
-        return $this->hasMany(PurchaseTicket::class, 'purchase_order_id')
-            ->where('first_qc_status', 'rejected');
-    }
+    // public function rejectedTickets()
+    // {
+    //     return $this->hasMany(PurchaseTicket::class, 'purchase_order_id')
+    //         ->where('first_qc_status', 'rejected');
+    // }
 }
