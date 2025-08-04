@@ -26,12 +26,20 @@ class InnersampleRequestController extends Controller
      */
     public function getList(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $ArrivalSamplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_re_sampling', 'no')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
+                    $query->where('arrival_location_id', $authUser->arrival_location_id);
+                });
+            })
             ->where('company_id', $request->company_id)
             ->latest()
             ->paginate(request('per_page', 25));
@@ -44,6 +52,8 @@ class InnersampleRequestController extends Controller
      */
     public function create()
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
         $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
 
         $data['ArrivalTickets'] = ArrivalTicket::where('first_weighbridge_status', 'completed')
@@ -56,6 +66,11 @@ class InnersampleRequestController extends Controller
                 $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
                     ->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
+            })
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+                    $query->where('arrival_location_id', $authUser->arrival_location_id);
+                });
             })
             ->whereNull('arrival_sampling_requests.id')
             ->select('arrival_tickets.*')
