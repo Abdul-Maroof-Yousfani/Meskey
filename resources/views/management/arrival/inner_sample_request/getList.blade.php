@@ -14,7 +14,8 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            #{{ optional($row->arrivalTicket)->unique_no }} <br>
+                            #{{ optional($row->arrivalTicket)->unique_no }} <span
+                                class="d-none arrivalLocationName">{{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name ?? 'N/A' }}</span>
                         </p>
                     </td>
                     <td>
