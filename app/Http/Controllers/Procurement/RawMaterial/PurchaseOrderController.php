@@ -34,7 +34,10 @@ class PurchaseOrderController extends Controller
      */
     public function getList(Request $request)
     {
-        $arrivalPurchaseOrder = ArrivalPurchaseOrder::when($request->filled('search'), function ($q) use ($request) {
+        $arrivalPurchaseOrder = ArrivalPurchaseOrder::with([
+            'stockInTransitTickets',
+            'rejectedTickets',
+        ])->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->orWhereHas('supplier', function ($supplierQ) use ($searchTerm) {
@@ -73,6 +76,7 @@ class PurchaseOrderController extends Controller
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
                 $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })

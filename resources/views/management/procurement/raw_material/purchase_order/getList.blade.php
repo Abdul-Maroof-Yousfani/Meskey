@@ -15,6 +15,8 @@
         <th>Arrived QTY</th>
         <th>Balance Trucks</th>
         <th>Balance Quantity</th>
+        <th>Stock in Transit Trucks</th>
+        <th>Rejected Trucks</th>
         <th>Action</th>
     @endslot
 
@@ -52,19 +54,17 @@
                 <td>
                     {{ (($row->min_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') . ' - ' . (($row->max_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') }}
                 </td>
+                <td>{{ $row->stockInTransitTickets->count() }}</td>
+                <td>{{ $row->rejectedTickets->count() }}</td>
                 <td>
-                    {{-- @can('role-edit') --}}
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">
                         <i class="ft-edit font-medium-3"></i>
                     </a>
-                    {{-- @endcan
-                    @can('role-delete') --}}
                     <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}','{{ route('raw-material.get.purchase-order') }}')"
                         class="danger p-1 text-center mr-2 position-relative">
                         <i class="ft-x font-medium-3"></i>
                     </a>
-                    {{-- @endcan --}}
                 </td>
             </tr>
         @endforeach

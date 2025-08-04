@@ -11,6 +11,7 @@ use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class ArrivalPurchaseOrder extends Model
 {
@@ -188,5 +189,45 @@ class ArrivalPurchaseOrder extends Model
             ->selectRaw('arrival_purchase_order_id, count(*) as count')
             ->whereHas('arrivalSlip')
             ->groupBy('arrival_purchase_order_id');
+    }
+
+    public function stockInTransitTickets()
+    {
+        return $this->hasMany(PurchaseTicket::class, 'purchase_order_id')
+            ->where('freight_status', 'completed')
+            ->whereHas('purchaseFreight', function ($query) {
+                $query->whereNotNull('truck_no')
+                    ->whereNotNull('bilty_no');
+            })
+            ->where(function ($query) {
+                $query->whereNotExists(function ($subQuery) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('arrival_tickets')
+                        ->join('purchase_freights', function ($join) {
+                            $join->on('arrival_tickets.truck_no', '=', 'purchase_freights.truck_no')
+                                ->on('arrival_tickets.bilty_no', '=', 'purchase_freights.bilty_no');
+                        })
+                        ->whereColumn('purchase_freights.purchase_ticket_id', 'purchase_tickets.id');
+                })
+                    ->orWhereExists(function ($subQuery) {
+                        $subQuery->select(DB::raw(1))
+                            ->from('arrival_tickets')
+                            ->join('purchase_freights', function ($join) {
+                                $join->on('arrival_tickets.truck_no', '=', 'purchase_freights.truck_no')
+                                    ->on('arrival_tickets.bilty_no', '=', 'purchase_freights.bilty_no');
+                            })
+                            ->whereColumn('purchase_freights.purchase_ticket_id', 'purchase_tickets.id')
+                            ->where(function ($statusQuery) {
+                                $statusQuery->whereNull('arrival_tickets.arrival_slip_status')
+                                    ->orWhere('arrival_tickets.arrival_slip_status', '!=', 'generated');
+                            });
+                    });
+            });
+    }
+
+    public function rejectedTickets()
+    {
+        return $this->hasMany(PurchaseTicket::class, 'purchase_order_id')
+            ->where('first_qc_status', 'rejected');
     }
 }
