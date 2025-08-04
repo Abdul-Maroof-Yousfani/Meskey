@@ -629,8 +629,8 @@
                     `input[name="selected_contract"][value="${contractId}"]`).closest(
                     '.contract-row');
 
-                const remainingQty = parseFloat(contractRow.find('td:eq(7)').text().split(' - ')[1] ||
-                        contractRow.find('td:eq(7)').text().split(' - ')[0]) ||
+                const remainingQty = parseFloat(contractRow.find('td:eq(6)').text().split(' - ')[1] ||
+                        contractRow.find('td:eq(6)').text().split(' - ')[0]) ||
                     0; // Get max remaining quantity
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
                 const remainingTrucks = parseInt(contractRow.find('td:eq(9)').text()) || 0;
