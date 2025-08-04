@@ -7,6 +7,7 @@
         <th>Decision Of</th>
         <th>Rate</th>
         <th>Expiry Date</th>
+        <th>Sauda Type</th>
         <th>Replacement</th>
         <th>Remarks</th>
         <th>Ordered No of Trucks</th>
@@ -33,7 +34,9 @@
                 }
             @endphp
             <tr>
-                <td>#{{ $row->contract_no }}</td>
+                <td>
+                    #{{ $row->contract_no }}
+                </td>
                 <td>{{ $row->product->name ?? 'N/A' }}</td>
                 <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
                 </td>
@@ -50,6 +53,13 @@
                     </div>
                 </td>
                 <td>{{ $row->delivery_date ? \Carbon\Carbon::parse($row->delivery_date)->format('Y-m-d') : 'N/A' }}</td>
+                <td>
+                    @if (isset($row->saudaType->name) && $row->saudaType->name == 'Thadda')
+                        <span class="badge badge-primary">{{ $row->saudaType->name }}</span>
+                    @else
+                        <span class="badge badge-secondary">{{ $row->saudaType->name ?? '' }}</span>
+                    @endif
+                </td>
                 <td>
                     <span class="badge badge-{{ $row->is_replacement == 1 ? 'success' : 'warning' }}">
                         {{ $row->is_replacement == 1 ? 'Yes' : 'No' }}
