@@ -39,7 +39,6 @@ class AppServiceProvider extends ServiceProvider
         ArrivalTicket::observe(ArrivalTicketObserver::class);
         Account::observe(AccountsObserver::class);
 
-        // Register custom Blade directive
         Blade::directive('canAccess', function ($expression) {
             return "<?php if (canAccess($expression)): ?>";
         });
@@ -47,7 +46,6 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('endcanAccess', function () {
             return "<?php endif; ?>";
         });
-
 
         Blade::directive('routerLink', function ($routeUrl) {
             return "<?php echo 'href=\"' . $routeUrl . '\" onclick=\"loadPageContent(\\\".'. $routeUrl .'.\\\")\"'; ?>";

@@ -495,6 +495,14 @@
                                         data-i18n="Extended">Truck Type</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('truck-size-range')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('truck-size-ranges.index') }}"
+                                    onclick="loadPageContent('{{ route('truck-size-ranges.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Truck Size Range</span></a>
+                            </li>
+                            @endcanAccess
                             @canAccess('station')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('station.index') }}"
@@ -523,15 +531,6 @@
                         </a>
                     </li>
                     @endcanAccess
-                    {{-- @canAccess('raw-material-supplier') --}}
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('division.index') }}"
-                            onclick="loadPageContent('{{ route('division.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Divisions</span>
-                        </a>
-                    </li>
-                    {{-- @endcanAccess --}}
                     @canAccess('raw-material-broker')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('broker.index') }}"
@@ -541,6 +540,15 @@
                         </a>
                     </li>
                     @endcanAccess
+                    {{-- @canAccess('raw-material-supplier') --}}
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('division.index') }}"
+                            onclick="loadPageContent('{{ route('division.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Divisions</span>
+                        </a>
+                    </li>
+                    {{-- @endcanAccess --}}
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('company-location.index') }}"
                             onclick="loadPageContent('{{ route('company-location.index') }}')"

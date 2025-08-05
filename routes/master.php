@@ -18,7 +18,8 @@ use App\Http\Controllers\Master\{
     StationController,
     CompanyLocationController,
     DivisionController,
-    QcReliefController
+    QcReliefController,
+    TruckSizeRangeController
 };
 
 
@@ -34,6 +35,9 @@ Route::get('/get-categories', [CategoryController::class, 'getCategories'])->nam
 
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
+
+Route::resource('truck-size-ranges', TruckSizeRangeController::class);
+Route::post('get-truck-size-ranges', [TruckSizeRangeController::class, 'getList'])->name('get.truck_size_ranges');
 
 Route::resource('approval-modules', ApprovalModuleController::class);
 Route::post('/get-approval-modules', [ApprovalModuleController::class, 'getList'])->name('get.approval-modules');
