@@ -41,6 +41,7 @@ class TicketPaymentRequestRequest extends FormRequest
             'compulsory_results.*.qc_param_id' => 'nullable|exists:arrival_compulsory_qc_params,id',
             'compulsory_results.*.applied_deduction' => 'required|numeric',
             'compulsory_results.*.deduction_amount' => 'required|numeric',
+            'supplier_commission' => 'numeric',
         ];
 
         // Add conditional rules based on loading_type
@@ -70,6 +71,10 @@ class TicketPaymentRequestRequest extends FormRequest
                 'bag_rate_amount' => 'nullable|numeric|min:0',
                 'loading_weighbridge_amount' => 'nullable|numeric|min:0',
             ]);
+        }
+
+        if ($this->input('supplier_commission', 0) < 0) {
+            $rules['broker_id'] = 'required|exists:brokers,id';
         }
 
         return $rules;
@@ -107,6 +112,9 @@ class TicketPaymentRequestRequest extends FormRequest
             'contract_no.string' => 'Contract number must be a string.',
             'contract_no.max' => 'Contract number cannot exceed 255 characters.',
             'contract_rate.required' => 'Contract rate is required.',
+            'supplier_commission.numeric' => 'Supplier commission must be a number.',
+            'broker_id.required' => 'Broker is required when supplier commission is negative.',
+            'broker_id.exists' => 'Selected broker does not exist.',
             'contract_rate.numeric' => 'Contract rate must be a number.',
             'contract_rate.min' => 'Contract rate must be at least 0.',
             'truck_no.string' => 'Truck number must be a string.',

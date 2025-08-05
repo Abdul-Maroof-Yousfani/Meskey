@@ -110,7 +110,7 @@
                                         </a>
                                     @else
                                         <button type="button" class="btn btn-primary" id="confirm_submit_btn"
-                                            {{ !$arrivalTicket->arrival_purchase_order_id || ($arrivalTicket->purchaseOrder->status ?? '') === 'completed' ? 'disabled' : '' }}>
+                                            {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}>
                                             <i class="fa fa-check"></i> Submit
                                         </button>
                                         <button type="submit" class="btn btn-primary d-none" id="real_submit_btn">
@@ -611,7 +611,10 @@
             $(document).on('change', 'input[name="selected_contract"]', function() {
                 const contractId = $(this).val();
                 $('#selected_contract_id').val(contractId);
-                $('#confirm_submit_btn').prop('disabled', false);
+
+                $('#confirm_submit_btn').prop('disabled',
+                    {{ $arrivalTicket->is_ticket_verified == 1 ? 'true' : 'false' }});
+                // $('#confirm_submit_btn').prop('disabled', false);
 
                 $('.contract-row').removeClass('table-active');
                 $(this).closest('.contract-row').addClass('table-active');
@@ -642,6 +645,8 @@
                 //     '<label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>' +
                 //     '</div>'
                 // }
+                const isTicketVerified = @json($arrivalTicket->is_ticket_verified == 1);
+
                 Swal.fire({
                     title: 'Confirm Submission',
                     html: `
@@ -651,7 +656,7 @@
                                 <small class="text-muted">Max allowed: ${remainingTrucks}</small>
                             </div>
                             <div class="form-check text-left mt-3">
-                                <input type="checkbox" class="form-check-input" id="swal-verify-ticket">
+                                <input type="checkbox" class="form-check-input" id="swal-verify-ticket" ${isTicketVerified ? 'checked' : ''}>
                                 <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
                             </div> 
                             <div class="form-check text-left mt-3">

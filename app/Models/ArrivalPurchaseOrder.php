@@ -176,9 +176,16 @@ class ArrivalPurchaseOrder extends Model
             ->groupBy('arrival_purchase_order_id');
     }
 
+    // public function totalClosingTrucksQty()
+    // {
+    //     return $this->hasOne(ArrivalTicket::class, 'arrival_purchase_order_id')
+    //         ->selectRaw('arrival_purchase_order_id, SUM(closing_trucks_qty) as total_closing_trucks_qty')
+    //         ->groupBy('arrival_purchase_order_id');
+    // }
+
     public function totalClosingTrucksQty()
     {
-        return $this->hasOne(ArrivalTicket::class, 'arrival_purchase_order_id')
+        return $this->arrivalTickets()
             ->selectRaw('arrival_purchase_order_id, SUM(closing_trucks_qty) as total_closing_trucks_qty')
             ->groupBy('arrival_purchase_order_id');
     }

@@ -353,7 +353,6 @@ class PaymentRequestController extends Controller
             );
         }
 
-
         if (
             isset($requestData['brokery_amount'], $requestData['broker_id']) &&
             $requestData['brokery_amount'] < 0

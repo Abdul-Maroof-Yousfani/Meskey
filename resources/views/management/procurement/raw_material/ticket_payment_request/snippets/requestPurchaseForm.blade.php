@@ -633,15 +633,22 @@
                                 <td>N/A</td>
                                 <td>
                                     <div class="form-group mb-0 my-1 w-100">
+                                        @php
+                                            $isBrokerDisabled = ($paymentRequestData->broker_id ?? null) !== null;
+                                            $selectedBrokerId = $paymentRequestData->broker_id ?? '';
+                                        @endphp
                                         <select name="broker_id" id="broker_id" class="form-control select_b"
-                                            @disabled(($paymentRequestData->broker_id ?? null) !== null) data-commission="#broker_commission">
+                                            @disabled($isBrokerDisabled) data-commission="#broker_commission">
                                             <option value="">N/A
                                             </option>
                                             @foreach ($brokers as $broker)
-                                                <option value="{{ $broker->id }}" @selected($broker->id == ($paymentRequestData->broker_id ?? null))>
+                                                <option value="{{ $broker->id }}" @selected($broker->id == $selectedBrokerId)>
                                                     {{ $broker->name }}</option>
                                             @endforeach
                                         </select>
+                                        @if ($isBrokerDisabled)
+                                            <input type="hidden" name="broker_id" value="{{ $selectedBrokerId }}">
+                                        @endif
                                     </div>
                                 </td>
                                 <td>

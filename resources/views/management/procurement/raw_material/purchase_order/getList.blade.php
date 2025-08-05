@@ -24,7 +24,9 @@
     @slot('body')
         @foreach ($arrivalPurchaseOrder as $row)
             @php
-                $arrivedTrucks = $row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0;
+                // $arrivedTrucks = $row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0;
+                $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
+
                 $rejectedTrucks = $row->rejectedArrivalTickets->count();
                 $orderedTrucks = $row->no_of_trucks ?? 0;
                 if ($row->is_replacement == 0) {
