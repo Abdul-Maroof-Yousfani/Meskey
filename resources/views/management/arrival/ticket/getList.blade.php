@@ -4,6 +4,7 @@
             <th class="col-sm-2">Ticket No. </th>
             <th class="col-sm-3">Commodity</th>
             <th class="col-sm-3">Miller</th>
+            <th class="col-sm-3">Acc Of.</th>
             <th class="col-sm-1">Truck No</th>
             <th class="col-sm-1">Bilty No</th>
             <th class="col-sm-1">First QC</th>
@@ -12,8 +13,8 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($UnitOfMeasures) != 0)
-            @foreach ($UnitOfMeasures as $key => $row)
+        @if (count($tickets) != 0)
+            @foreach ($tickets as $key => $row)
                 <tr class="@if ($row->first_qc_status == 'rejected') bg-red @endif">
                     <td>
                         <p class="m-0">
@@ -29,6 +30,12 @@
                         <p class="m-0">
                             {{ $row->miller->name ?? 'N/A' }} <br>
                         </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->accounts_of_name ?? 'N/A' }} <br>
+                        </p>
+                    </td>
                     <td>
                         <p class="m-0">
                             {{ $row->truck_no }}
@@ -100,7 +107,7 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $UnitOfMeasures->links() }}
+        {{ $tickets->links() }}
     </div>
 </div>
 

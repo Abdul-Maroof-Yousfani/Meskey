@@ -35,8 +35,8 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
-                                                    <select name="company_location_id" id="company_location"
-                                                        class="form-control select2">
+                                                    <select name="company_location_id_f" id="company_location"
+                                                        class="form-control ">
                                                         <option value="">Location</option>
                                                     </select>
                                                 </div>
@@ -55,8 +55,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Suppliers:</label>
-                                                    <select name="supplier_id" id="supplier_id_f"
-                                                        class="form-control select2">
+                                                    <select name="supplier_id_f" id="supplier_id_f" class="form-control ">
                                                         <option value="">Supplier</option>
                                                     </select>
                                                 </div>
@@ -64,8 +63,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Sauda Type:</label>
-                                                    <select name="sauda_type_id" id="sauda_type"
-                                                        class="form-control select2">
+                                                    <select name="sauda_type_id_f" id="sauda_type" class="form-control ">
                                                         <option value="">Sauda Type Name</option>
                                                     </select>
                                                 </div>

@@ -28,33 +28,45 @@
 
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-left">
-                                            <div class="col-md-2 ">
-                                                <label for="from_date" class="form-label">From Date</label>
-                                                <input type="date" class="form-control" id="from_date" name="from_date"
-                                                    value="{{ request('from_date', $oneMonthAgo) }}">
+                                        <div class="row justify-content-start text-left">
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id" id="company_location"
+                                                        class="form-control select22">
+                                                        <option value="">Location</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div class="col-md-2">
-                                                <label for="to_date" class="form-label">To Date</label>
-                                                <input type="date" class="form-control" id="to_date" name="to_date"
-                                                    value="{{ request('to_date', $today) }}">
+                                                <div class="form-group mb-0">
+                                                    <label>Date:</label>
+                                                    <input type="text" name="daterange" class="form-control"
+                                                        value="{{ \Carbon\Carbon::now()->subMonth()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Accounts Of:</label>
+                                                    <select name="supplier_id" id="supplier_id_f"
+                                                        class="form-control select2">
+                                                        <option value="">Accounts Of</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div class="col-md-2">
-                                                <label for="search" class="form-label">Search</label>
+                                                <label for="search" class="form-label">Ticket/Truck/Bilty (No).</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
-                                                    placeholder="Type Ticket No, Supplier Name " name="search"
+                                                    placeholder="Search By Ticket/Truck/Bilty (No)." name="search"
                                                     value="{{ request('search') }}">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
                             </form>
-
-
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
@@ -83,7 +95,23 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('get.ticket') }}`)
+            filterationCommon(`{{ route('get.ticket') }}`);
+            // initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true,
+            //     true);
+            initializeDynamicDependentSelect2(
+                '#company_location',
+                '#supplier_id_f',
+                'company_locations',
+                'name',
+                'id',
+                'suppliers',
+                'company_location_ids',
+                'name',
+                true,
+                false,
+                true,
+                true,
+            );
         });
     </script>
 @endsection

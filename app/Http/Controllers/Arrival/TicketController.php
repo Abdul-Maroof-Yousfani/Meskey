@@ -41,11 +41,11 @@ class TicketController extends Controller
      */
     public function getList(Request $request)
     {
-        $UnitOfMeasures = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
+        $tickets = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('unique_no', 'like', $searchTerm)
-                    ->orWhere('supplier_name', 'like', $searchTerm)
+                    // ->orWhere('supplier_name', 'like', $searchTerm)
                     ->orWhere('truck_no', 'like', $searchTerm)
                     ->orWhere('bilty_no', 'like', $searchTerm);
             });
@@ -56,10 +56,24 @@ class TicketController extends Controller
             ->when($request->filled('to_date'), function ($q) use ($request) {
                 $q->whereDate('created_at', '<=', $request->to_date);
             })
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->where('location_id', $request->company_location_id);
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->where('accounts_of_id', $request->supplier_id);
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
             ->latest()
             ->paginate($request->get('per_page', 25));
 
-        return view('management.arrival.ticket.getList', compact('UnitOfMeasures'));
+        return view('management.arrival.ticket.getList', compact('tickets'));
     }
 
 

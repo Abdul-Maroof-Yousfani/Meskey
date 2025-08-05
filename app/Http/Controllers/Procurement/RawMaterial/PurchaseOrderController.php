@@ -63,14 +63,14 @@ class PurchaseOrderController extends Controller
                     ->orWhere('rate_per_kg', 'like', $searchTerm);
             });
         })
-            ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
-                return $q->where('sauda_type_id', $request->sauda_type_id);
+            ->when($request->filled('sauda_type_id_f'), function ($q) use ($request) {
+                return $q->where('sauda_type_id', $request->sauda_type_id_f);
             })
-            ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->where('company_location_id', $request->company_location_id);
+            ->when($request->filled('company_location_id_f'), function ($q) use ($request) {
+                return $q->where('company_location_id', $request->company_location_id_f);
             })
-            ->when($request->filled('supplier_id'), function ($q) use ($request) {
-                return $q->where('supplier_id', $request->supplier_id);
+            ->when($request->filled('supplier_id_f'), function ($q) use ($request) {
+                return $q->where('supplier_id', $request->supplier_id_f);
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
