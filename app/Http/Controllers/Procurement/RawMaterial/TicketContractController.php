@@ -40,12 +40,15 @@ class TicketContractController extends Controller
      */
     public function getList(Request $request)
     {
+        $isOnlyVerified = str()->contains($request->route()->getName(), 'verified');
+
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
             ->leftJoin('grn_numbers', function ($join) {
                 $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
+            ->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
             ->where(function ($query) {
                 $query->where('arrival_tickets.freight_status', 'completed')
                     ->orWhere('arrival_tickets.first_qc_status', 'rejected');

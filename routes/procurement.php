@@ -59,6 +59,9 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('ticket-contracts', TicketContractController::class);
     Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');
 
+    Route::resource('verified-contracts', TicketContractController::class);
+    Route::post('/get-verified-contracts', [TicketContractController::class, 'getList'])->name('get.verified-contracts');
+
     Route::resource('payment-request', PaymentRequestController::class);
     Route::post('/get-payment-request', [PaymentRequestController::class, 'getList'])->name('get.payment-request');
 
@@ -91,10 +94,9 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-quotation/approve-item', [PurchaseQuotationController::class, 'approve_item'])->name('purchase-quotation.approve-item');
 
     // purchase order route
-     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
+    Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('purchase-order/approve-item', [StorePurchaseOrderController::class, 'approve_item'])->name('purchase-order.approve-item');
-
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

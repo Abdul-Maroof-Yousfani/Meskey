@@ -247,10 +247,26 @@
                     </li>
                     @endcanAccess
                     @canAccess('procurement-raw-material-contract-selection')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('raw-material.ticket-contracts.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Contract Selection
-                            </span></a>
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Bootstrap Tables">Contract Linking</span></a>
+                        <ul class="dropdown-menu">
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.ticket-contracts.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.ticket-contracts.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Pending Tickets</span>
+                                </a>
+                            </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.verified-contracts.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.verified-contracts.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Verified Tickets</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     @endcanAccess
                     @canAccess('procurement-raw-material-inicative-price')
@@ -279,12 +295,12 @@
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
                             </span></a>
                     </li>
-                      <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-order.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
                             </span></a>
                     </li>
-                   
+
 
                 </ul>
             </li>

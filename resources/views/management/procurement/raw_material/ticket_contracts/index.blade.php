@@ -8,7 +8,9 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Ticket Selection </h2>
+                    <h2 class="page-title">
+                        {{ str()->contains(request()->route()->getName(), 'verified') ? 'Verified Tickets' : 'Ticket Selection' }}
+                    </h2>
                 </div>
             </div>
             <div class="row">
@@ -117,10 +119,7 @@
                                                 </div>
                                             </div>
                                         </div>
-
                                         <div class="row justify-content-nd text mt-2">
-
-
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                         </div>
@@ -154,7 +153,9 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('raw-material.get.ticket-contracts') }}`)
+            filterationCommon(
+                `{{ route(str()->contains(request()->route()->getName(), 'verified') ? 'raw-material.get.verified-contracts' : 'raw-material.get.ticket-contracts') }}`
+            )
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
 
