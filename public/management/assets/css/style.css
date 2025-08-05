@@ -993,3 +993,18 @@ tr.editing {
 .sticky-table thead tr {
   background-color: #d6ddec;
 }
+.select2-container--default .select2-selection--single .select2-selection__clear {
+    cursor: pointer;
+    float: right;
+    font-weight: bold;
+    border-radius: 22px;
+    height: 30px;
+    width: 30px;
+    font-size: 19px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3px;
+    color: #000000;
+    background: #6d6d6d57;
+}
