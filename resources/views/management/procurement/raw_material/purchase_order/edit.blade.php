@@ -64,9 +64,9 @@
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Commission:</label>
-                 <input type="number" name="supplier_commission"
-                     value="{{ $arrivalPurchaseOrder->supplier_commission }}" placeholder="Commission"
-                     class="form-control" />
+                 <input type="number" name="supplier_commission" placeholder="Commission (per KG)"
+                     value="{{ $arrivalPurchaseOrder->supplier_commission }}" class="form-control" step="any"
+                     min="-999999" max="999999" />
              </div>
          </div>
      </div>
