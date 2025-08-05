@@ -14,7 +14,7 @@ class TruckSizeRangeController extends Controller
     }
     public function index(Request $request)
     {
-        return view('management.master.truck-size-ranges.index',);
+        return view('management.master.truck-size-ranges.index');
     }
 
     public function create()

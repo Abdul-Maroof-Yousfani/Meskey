@@ -353,6 +353,36 @@ class PaymentRequestController extends Controller
             );
         }
 
+        $existingFreightTrx = Transaction::where('voucher_no', $contractNo)
+            ->where('purpose', 'thadda-freight')
+            ->where('against_reference_no', "$truckNo/$biltyNo")
+            ->first();
+        $advanceFreight = (int)($requestData['advance_freight_display']);
+
+        if ($existingFreightTrx) {
+            $existingFreightTrx->update([
+                'amount' => $advanceFreight,
+                'account_id' => $purchaseOrder->supplier->account_id,
+                'type' => 'credit',
+                'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
+            ]);
+        } else {
+            createTransaction(
+                $advanceFreight,
+                $purchaseOrder->supplier->account_id,
+                1,
+                $contractNo,
+                'credit',
+                'no',
+                [
+                    'purpose' => "thadda-freight",
+                    'payment_against' => "thadda-purchase",
+                    'against_reference_no' => "$truckNo/$biltyNo",
+                    'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                ]
+            );
+        }
+
         if (
             isset($requestData['brokery_amount'], $requestData['broker_id']) &&
             $requestData['brokery_amount'] < 0
@@ -366,6 +396,21 @@ class PaymentRequestController extends Controller
                 $broker = Broker::find($requestData['broker_id']);
                 if ($broker && $broker->account_id) {
                     $brokeryAmount = abs($requestData['brokery_amount']);
+
+                    createTransaction(
+                        $advanceFreight,
+                        $purchaseOrder->supplier->account_id,
+                        1,
+                        $contractNo,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "thadda-freight",
+                            'payment_against' => "thadda-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                        ]
+                    );
 
                     createTransaction(
                         $brokeryAmount,
