@@ -1,63 +1,99 @@
 <x-sticky-table :items="$contracts" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'">
     @slot('head')
-        {{-- <th>Select</th> --}}
-        <th>Contract No</th>
-        <th>Product</th>
-        <th>Sauda Calc Type</th>
-        <th>Supplier</th>
-        <th>Ordered Qty</th>
-        <th>Arrived Qty</th>
-        <th>Remaining Qty</th>
-        <th>Truck Ordered</th>
-        <th>Trucks Arrived</th>
-        <th>Remaining Truck</th>
+        <th>Contract #</th>
+        <th>Commodity</th>
+        <th>Supplier Name</th>
+        <th>Broker</th>
+        <th>Decision Of</th>
+        <th>Rate</th>
+        <th>Expiry Date</th>
+        <th>Sauda Type</th>
+        <th>Replacement</th>
         <th>Remarks</th>
-        <th>Is Replacement</th>
+        <th>Ordered No of Trucks</th>
+        <th>Ordered QTY</th>
+        <th>Arrived No Of Trucks</th>
+        <th>Arrived QTY</th>
+        <th>Balance Trucks</th>
+        <th>Balance Quantity</th>
+        <th>Stock in Transit Trucks</th>
+        <th>Rejected Trucks</th>
+        <th>Sauda Calc Type</th>
         <th>Status</th>
     @endslot
 
     @slot('body')
         @foreach ($contracts as $contract)
+            @php
+                $arrivedTrucks = $contract['closed_arrivals'] ?? 0;
+                $orderedTrucks = $contract['no_of_trucks'] ?? 0;
+                $rejectedTrucks = $contract['rejected_trucks'] ?? 0;
+                $isReplacement = $contract['is_replacement'] ?? 'No';
+
+                if ($isReplacement == 'Yes') {
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks;
+                } else {
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
+                }
+
+                $arrivedQty = $contract['total_loading_weight'] ?? 0;
+                $minQty = $contract['min_quantity'] ?? 0;
+                $maxQty = $contract['max_quantity'] ?? 0;
+            @endphp
             <tr class="contract-row" data-id="{{ $contract['id'] }}">
-                {{-- <td class="text-center">
-                </td> --}}
                 <td>
                     <input type="radio" name="selected_contract" value="{{ $contract['id'] }}"
                         {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
                         {{ $contract['id'] == ($arrivalTicket->arrival_purchase_order_id ?? '') ? 'checked' : '' }}>
                     {{ $contract['contract_no'] ?? '-' }}
                 </td>
-                <td>{{ $contract['qc_product_name'] ?? '-' }}</td>
-                <td class="text-capitalize">{{ $contract['calculation_type'] ?? '-' }}</td>
-                <td>{{ $contract['supplier']['name'] ?? '-' }}</td>
+                <td>{{ $contract['qc_product_name'] ?? 'N/A' }}</td>
+                <td>{{ $contract['supplier']['name'] ?? 'N/A' }}</td>
+                <td>{{ $contract['broker_one_name'] ?? ($contract['broker_two_name'] ?? ($contract['broker_three_name'] ?? 'N/A')) }}
+                </td>
+                <td>{{ $contract['created_by_user']['name'] ?? 'N/A' }}</td>
+                <td>
+                    {{ $contract['rate_per_100kg'] ?? 'N/A' }}
+                    <div class="d-none div-box-b">
+                        <small>
+                            <strong>KG:</strong> {{ $contract['rate_per_kg'] ?? 0 }}<br>
+                            <strong>Mound:</strong> {{ $contract['rate_per_mound'] ?? 0 }}<br>
+                            <strong>100KG:</strong> {{ $contract['rate_per_100kg'] ?? 0 }}
+                        </small>
+                    </div>
+                </td>
+                <td>{{ isset($contract['delivery_date']) ? \Carbon\Carbon::parse($contract['delivery_date'])->format('Y-m-d') : 'N/A' }}
+                </td>
+                <td>
+                    @if (isset($contract['sauda_type']['name']) && $contract['sauda_type']['name'] == 'Thadda')
+                        <span class="badge badge-primary">{{ $contract['sauda_type']['name'] }}</span>
+                    @else
+                        <span class="badge badge-secondary">{{ $contract['sauda_type']['name'] ?? '' }}</span>
+                    @endif
+                </td>
+                <td>
+                    <span class="badge badge-{{ $isReplacement == 'Yes' ? 'success' : 'warning' }}">
+                        {{ $isReplacement }}
+                    </span>
+                </td>
+                <td>{{ $contract['remarks'] ?? 'N/A' }}</td>
+                <td>{{ $contract['no_of_trucks'] ?? 0 }}</td>
                 <td>{{ ($contract['min_quantity'] ?? '-') . ' - ' . ($contract['max_quantity'] ?? '-') }}</td>
-                <td>{{ $contract['total_loading_weight'] ?? '-' }}</td>
+                <td>{{ $arrivedTrucks }}</td>
+                <td>{{ $arrivedQty }}</td>
+                <td>{{ $balanceTrucks }}</td>
                 <td>
-                    @if (isset($contract['total_loading_weight']) && $contract['total_loading_weight'] !== null)
-                        {{ isset($contract['min_quantity']) && $contract['min_quantity'] !== null ? $contract['min_quantity'] - $contract['total_loading_weight'] : '-' }}
-                        -
-                        {{ isset($contract['max_quantity']) && $contract['max_quantity'] !== null ? $contract['max_quantity'] - $contract['total_loading_weight'] : '-' }}
-                    @else
-                        {{ ($contract['min_quantity'] ?? '-') . ' - ' . ($contract['max_quantity'] ?? '-') }}
-                    @endif
+                    {{ ($minQty ?? 0) - ($arrivedQty ?? 0) . ' - ' . (($maxQty ?? 0) - ($arrivedQty ?? 0)) }}
                 </td>
-                <td>{{ $contract['no_of_trucks'] ?? '-' }}</td>
-                {{-- <!-- <td>{{ $arrivalTicket->closing_trucks_qty == 0 ? 'N/A' : $arrivalTicket->closing_trucks_qty }}</td> --> --}}
-                <td>{{ $contract['closed_arrivals'] ?? 0 }}</td>
-                <td>{{ $contract['remaining_trucks'] ?? 0 }}</td>
-                <td>{{ $contract['remarks'] ?? '' }}</td>
-                <td>
-                    @if (isset($contract['is_replacement']) && $contract['is_replacement'] == 'Yes')
-                        <span class="badge badge-success">Yes</span>
-                    @else
-                        <span class="badge badge-warning">No</span>
-                    @endif
-                </td>
+                <td>{{ $contract['stock_in_transit_trucks'] ?? 0 }}</td>
+                <td>{{ $rejectedTrucks }}</td>
+                <td class="text-capitalize">{{ $contract['calculation_type'] ?? '-' }}</td>
                 <td>
                     @if (isset($contract['status']) && $contract['status'] == 'completed')
                         <span class="badge badge-success">Completed</span>
                     @else
-                        <span class="badge badge-warning">{{ $contract['status'] ?? 'Pending' }}</span>
+                        <span
+                            class="badge badge-warning">{{ $contract['status'] == 'draft' ? 'Pending' : $contract['status'] }}</span>
                     @endif
                 </td>
             </tr>

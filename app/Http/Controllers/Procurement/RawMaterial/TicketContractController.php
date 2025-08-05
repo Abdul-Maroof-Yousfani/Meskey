@@ -267,7 +267,11 @@ class TicketContractController extends Controller
             'product',
             'totalLoadingWeight',
             'totalArrivedNetWeight',
-            'totalClosingTrucksQty'
+            'totalClosingTrucksQty',
+            'saudaType',
+            'createdByUser',
+            'rejectedArrivalTickets',
+            'stockInTransitTickets'
         ])
             ->where('status', 'draft')
             ->where('supplier_id', $arrivalTicket->accounts_of_id)
@@ -296,59 +300,89 @@ class TicketContractController extends Controller
 
         $contracts = $query->orderBy('created_at', 'desc')->get()->map(function ($c) {
             $totalClosingTrucks = $c->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            $rejectedTrucks = $c->rejectedArrivalTickets->count();
+            $stockInTransitTrucks = $c->stockInTransitTickets->count();
 
             return [
                 'id' => $c->id,
                 'contract_no' => $c->contract_no,
                 'qc_product_name' => $c->product->name,
                 'supplier' => $c->supplier,
-                'total_quantity' => $c->total_quantity,
+                'broker_one_name' => $c->broker_one_name,
+                'broker_two_name' => $c->broker_two_name,
+                'broker_three_name' => $c->broker_three_name,
+                'created_by_user' => $c->createdByUser,
+                'rate_per_kg' => $c->rate_per_kg,
+                'rate_per_mound' => $c->rate_per_mound,
+                'rate_per_100kg' => $c->rate_per_100kg,
+                'delivery_date' => $c->delivery_date,
+                'sauda_type' => $c->saudaType,
+                'is_replacement' => $c->is_replacement ? 'Yes' : 'No',
+                'remarks' => $c->remarks,
+                'no_of_trucks' => $c->no_of_trucks,
                 'min_quantity' => $c->min_quantity,
                 'max_quantity' => $c->max_quantity,
+                'total_quantity' => $c->total_quantity,
                 'remaining_quantity' => $c->remaining_quantity,
                 'calculation_type' => $c->calculation_type,
                 'arrived_quantity' => $c->arrived_quantity,
                 'truck_no' => $c->truck_no,
                 'trucks_arrived' => $c->trucks_arrived,
-                'no_of_trucks' => $c->no_of_trucks,
-                'is_replacement' => $c->is_replacement ? 'Yes' : 'No',
-                'remaining_trucks' => $c->no_of_trucks - $totalClosingTrucks,
-                'status' => $c->status ?: 'N/A',
+                'status' => $c->status,
                 'contract_date_formatted' => $c->created_at->format('d-M-Y'),
-                'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? null,
+                'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
                 'closed_arrivals' => $totalClosingTrucks,
-                'remarks' => $c->remarks ?? 'N/A',
+                'rejected_trucks' => $rejectedTrucks,
+                'stock_in_transit_trucks' => $stockInTransitTrucks,
+                'purchase_type' => $c->purchase_type,
             ];
         })->toArray();
 
         if ($linkedPurchaseOrder) {
             if (!$linkedPurchaseOrder->relationLoaded('totalClosingTrucksQty')) {
-                $linkedPurchaseOrder->load('totalClosingTrucksQty');
+                $linkedPurchaseOrder->load([
+                    'totalClosingTrucksQty',
+                    'rejectedArrivalTickets',
+                    'stockInTransitTickets'
+                ]);
             }
 
             $linkedClosingTrucks = $linkedPurchaseOrder->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            $linkedRejectedTrucks = $linkedPurchaseOrder->rejectedArrivalTickets->count();
+            $linkedStockInTransitTrucks = $linkedPurchaseOrder->stockInTransitTickets->count();
 
             $linkedContract = [
                 'id' => $linkedPurchaseOrder->id,
                 'contract_no' => $linkedPurchaseOrder->contract_no,
                 'qc_product_name' => $linkedPurchaseOrder->product->name,
                 'supplier' => $linkedPurchaseOrder->supplier,
-                'total_quantity' => $linkedPurchaseOrder->total_quantity,
+                'broker_one_name' => $linkedPurchaseOrder->broker_one_name,
+                'broker_two_name' => $linkedPurchaseOrder->broker_two_name,
+                'broker_three_name' => $linkedPurchaseOrder->broker_three_name,
+                'created_by_user' => $linkedPurchaseOrder->createdByUser,
+                'rate_per_kg' => $linkedPurchaseOrder->rate_per_kg,
+                'rate_per_mound' => $linkedPurchaseOrder->rate_per_mound,
+                'rate_per_100kg' => $linkedPurchaseOrder->rate_per_100kg,
+                'delivery_date' => $linkedPurchaseOrder->delivery_date,
+                'sauda_type' => $linkedPurchaseOrder->saudaType,
+                'is_replacement' => $linkedPurchaseOrder->is_replacement ? 'Yes' : 'No',
+                'remarks' => $linkedPurchaseOrder->remarks,
+                'no_of_trucks' => $linkedPurchaseOrder->no_of_trucks,
                 'min_quantity' => $linkedPurchaseOrder->min_quantity,
                 'max_quantity' => $linkedPurchaseOrder->max_quantity,
+                'total_quantity' => $linkedPurchaseOrder->total_quantity,
                 'remaining_quantity' => $linkedPurchaseOrder->remaining_quantity,
                 'calculation_type' => $linkedPurchaseOrder->calculation_type,
                 'arrived_quantity' => $linkedPurchaseOrder->arrived_quantity,
                 'truck_no' => $linkedPurchaseOrder->truck_no,
                 'trucks_arrived' => $linkedPurchaseOrder->trucks_arrived,
-                'no_of_trucks' => $linkedPurchaseOrder->no_of_trucks,
-                'is_replacement' => $linkedPurchaseOrder->is_replacement ? 'Yes' : 'No',
-                'remaining_trucks' => $linkedPurchaseOrder->no_of_trucks - $linkedClosingTrucks,
-                'status' => $linkedPurchaseOrder->status ?: 'N/A',
+                'status' => $linkedPurchaseOrder->status,
                 'contract_date_formatted' => $linkedPurchaseOrder->created_at->format('d-M-Y'),
-                'total_loading_weight' => $linkedPurchaseOrder->totalArrivedNetWeight->total_arrived_net_weight ?? null,
+                'total_loading_weight' => $linkedPurchaseOrder->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
                 'closed_arrivals' => $linkedClosingTrucks,
-                'remarks' => $linkedPurchaseOrder->remarks ?? 'N/A',
+                'rejected_trucks' => $linkedRejectedTrucks,
+                'stock_in_transit_trucks' => $linkedStockInTransitTrucks,
+                'purchase_type' => $linkedPurchaseOrder->purchase_type,
                 'is_linked' => true,
             ];
 
