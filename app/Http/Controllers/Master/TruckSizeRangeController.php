@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 
 class TruckSizeRangeController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('check.company:truck-size-range', ['only' => ['index', 'edit', 'getList', 'store', 'update']]);
+    }
     public function index(Request $request)
     {
         return view('management.master.truck-size-ranges.index',);
