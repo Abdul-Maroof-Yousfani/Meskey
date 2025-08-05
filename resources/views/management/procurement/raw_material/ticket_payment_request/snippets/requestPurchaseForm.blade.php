@@ -654,12 +654,11 @@
                                 <td>
                                     <input type="text" class="form-control" name="brokery_amount_display"
                                         id="brokery_amount_display"
-                                        value="{{ $paymentRequestData->brokery_amount ?? number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                        value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
                                         readonly>
                                     <input type="hidden" class="form-control" name="brokery_amount"
                                         id="brokery_amount"
-                                        value="{{ $paymentRequestData->brokery_amount ?? $purchaseOrder->supplier_commission * $loadingWeight }}"
-                                        readonly>
+                                        value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
                                 </td>
                             </tr>
                         @endif
