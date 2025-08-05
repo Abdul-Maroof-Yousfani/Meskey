@@ -7,6 +7,7 @@
         <th>A/c Of</th>
         <th>Commodity</th>
         <th>Truck #</th>
+        <th>Bilty #</th>
         <th>Status</th>
         <th>Station</th>
         <th>Tabaar Remarks</th>
@@ -49,6 +50,7 @@
                 <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
                 <td>{{ $row->qcProduct->name ?? ($row->product->name ?? 'N/A') }}</td>
                 <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
+                <td>{{ $row->bilty_no ?? ($row->purchaseOrder->bilty_no ?? 'N/A') }}</td>
                 <td>
                     @php
                         $status = 'RF';

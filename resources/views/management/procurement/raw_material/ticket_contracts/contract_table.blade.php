@@ -53,7 +53,7 @@
                 </td>
                 <td>{{ $contract['created_by_user']['name'] ?? 'N/A' }}</td>
                 <td>
-                    {{ $contract['rate_per_100kg'] ?? 'N/A' }}
+                    {{ $contract['rate_per_kg'] ?? 'N/A' }}
                     <div class="d-none div-box-b">
                         <small>
                             <strong>KG:</strong> {{ $contract['rate_per_kg'] ?? 0 }}<br>
@@ -62,7 +62,7 @@
                         </small>
                     </div>
                 </td>
-                <td>{{ isset($contract['delivery_date']) ? \Carbon\Carbon::parse($contract['delivery_date'])->format('Y-m-d') : 'N/A' }}
+                <td>{{ isset($contract['delivery_date']) ? \Carbon\Carbon::parse($contract['delivery_date'])->format('d-m-Y') : 'N/A' }}
                 </td>
                 <td>
                     @if (isset($contract['sauda_type']['name']) && $contract['sauda_type']['name'] == 'Thadda')

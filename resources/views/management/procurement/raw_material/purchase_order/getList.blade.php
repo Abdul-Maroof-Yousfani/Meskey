@@ -45,7 +45,7 @@
                 <td>{{ $row->broker_one_name ?? ($row->broker_two_name ?? ($row->broker_three_name ?? 'N/A')) }}</td>
                 <td>{{ $row->createdByUser->name ?? 'N/A' }}</td>
                 <td>
-                    {{ $row->rate_per_100kg ?? 'N/A' }}
+                    {{ $row->rate_per_kg ?? 'N/A' }}
                     <div class="d-none div-box-b">
                         <small>
                             <strong>KG:</strong> {{ $row->rate_per_kg ?? 0 }}<br>
@@ -54,7 +54,7 @@
                         </small>
                     </div>
                 </td>
-                <td>{{ $row->delivery_date ? \Carbon\Carbon::parse($row->delivery_date)->format('Y-m-d') : 'N/A' }}</td>
+                <td>{{ $row->delivery_date ? \Carbon\Carbon::parse($row->delivery_date)->format('d-m-Y') : 'N/A' }}</td>
                 <td>
                     @if (isset($row->saudaType->name) && $row->saudaType->name == 'Thadda')
                         <span class="badge badge-primary">{{ $row->saudaType->name }}</span>
