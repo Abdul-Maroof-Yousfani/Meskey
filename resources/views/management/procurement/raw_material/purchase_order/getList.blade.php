@@ -10,9 +10,9 @@
         <th>Sauda Type</th>
         <th>Replacement</th>
         <th>Remarks</th>
-        <th>Ordered No of Trucks</th>
+        <th>No of Trucks</th>
         <th>Ordered QTY</th>
-        <th>Arrived No Of Trucks</th>
+        <th>Arrived Trucks</th>
         <th>Arrived QTY</th>
         <th>Balance Trucks</th>
         <th>Balance Quantity</th>
@@ -69,7 +69,8 @@
                 </td>
                 <td>{{ $row->remarks ?? 'N/A' }}</td>
                 <td>{{ $row->no_of_trucks ?? 0 }}</td>
-                <td>{{ ($row->min_quantity ?? '-') . ' - ' . ($row->max_quantity ?? '-') }}</td>
+                <td>{{ (isset($row->min_quantity) ? intval($row->min_quantity) : '-') . ' - ' . (isset($row->max_quantity) ? intval($row->max_quantity) : '-') }}
+                </td>
                 <td>{{ $arrivedTrucks }}</td>
                 <td>{{ $row->totalArrivedNetWeight->total_arrived_net_weight ?? 0 }}</td>
                 <td>{{ $balanceTrucks }}</td>

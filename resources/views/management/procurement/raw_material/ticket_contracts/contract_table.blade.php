@@ -10,9 +10,9 @@
         <th>Sauda Type</th>
         <th>Replacement</th>
         <th>Remarks</th>
-        <th>Ordered No of Trucks</th>
+        <th>No of Trucks</th>
         <th>Ordered QTY</th>
-        <th>Arrived No Of Trucks</th>
+        <th>Arrived Trucks</th>
         <th>Arrived QTY</th>
         <th>Balance Trucks</th>
         <th>Balance Quantity</th>
@@ -78,7 +78,11 @@
                 </td>
                 <td>{{ $contract['remarks'] ?? 'N/A' }}</td>
                 <td>{{ $contract['no_of_trucks'] ?? 0 }}</td>
-                <td>{{ ($contract['min_quantity'] ?? '-') . ' - ' . ($contract['max_quantity'] ?? '-') }}</td>
+                <td>
+                    {{ (isset($contract['min_quantity']) ? intval($contract['min_quantity']) : '-') .
+                        ' - ' .
+                        (isset($contract['max_quantity']) ? intval($contract['max_quantity']) : '-') }}
+                </td>
                 <td>{{ $arrivedTrucks }}</td>
                 <td>{{ $arrivedQty }}</td>
                 <td>{{ $balanceTrucks }}</td>
