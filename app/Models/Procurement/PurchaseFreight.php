@@ -55,6 +55,11 @@ class PurchaseFreight extends Model
         return $this->belongsTo(PurchaseTicket::class, 'ticket_id');
     }
 
+    public function purchaseTicket()
+    {
+        return $this->belongsTo(PurchaseTicket::class, 'purchase_ticket_id');
+    }
+
     public function station()
     {
         return $this->belongsTo(Station::class, 'station_id');

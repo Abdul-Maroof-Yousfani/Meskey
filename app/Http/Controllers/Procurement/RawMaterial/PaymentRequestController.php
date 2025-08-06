@@ -359,28 +359,30 @@ class PaymentRequestController extends Controller
             ->first();
         $advanceFreight = (int)($requestData['advance_freight']);
 
-        if ($existingFreightTrx) {
-            $existingFreightTrx->update([
-                'amount' => $advanceFreight,
-                'account_id' => $purchaseOrder->supplier->account_id,
-                'type' => 'credit',
-                'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
-            ]);
-        } else {
-            createTransaction(
-                $advanceFreight,
-                $purchaseOrder->supplier->account_id,
-                1,
-                $contractNo,
-                'credit',
-                'no',
-                [
-                    'purpose' => "thadda-freight",
-                    'payment_against' => "thadda-purchase",
-                    'against_reference_no' => "$truckNo/$biltyNo",
-                    'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
-                ]
-            );
+        if ($advanceFreight > 0) {
+            if ($existingFreightTrx) {
+                $existingFreightTrx->update([
+                    'amount' => $advanceFreight,
+                    'account_id' => $purchaseOrder->supplier->account_id,
+                    'type' => 'credit',
+                    'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
+                ]);
+            } else {
+                createTransaction(
+                    $advanceFreight,
+                    $purchaseOrder->supplier->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "thadda-freight",
+                        'payment_against' => "thadda-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                    ]
+                );
+            }
         }
 
         if (
@@ -397,20 +399,22 @@ class PaymentRequestController extends Controller
                 if ($broker && $broker->account_id) {
                     $brokeryAmount = abs($requestData['brokery_amount']);
 
-                    createTransaction(
-                        $advanceFreight,
-                        $purchaseOrder->supplier->account_id,
-                        1,
-                        $contractNo,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "thadda-freight",
-                            'payment_against' => "thadda-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
-                        ]
-                    );
+                    if ($advanceFreight > 0) {
+                        createTransaction(
+                            $advanceFreight,
+                            $purchaseOrder->supplier->account_id,
+                            1,
+                            $contractNo,
+                            'credit',
+                            'no',
+                            [
+                                'purpose' => "thadda-freight",
+                                'payment_against' => "thadda-purchase",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                            ]
+                        );
+                    }
 
                     createTransaction(
                         $brokeryAmount,

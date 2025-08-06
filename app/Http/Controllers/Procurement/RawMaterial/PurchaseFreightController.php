@@ -23,13 +23,7 @@ class PurchaseFreightController extends Controller
 
     public function getList(Request $request)
     {
-        // $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('freight_status', 'pending')->where('company_id', $request->company_id)
-        //     ->latest()
-        //     ->paginate(request('per_page', 25));
-
-        // return view('management.procurement.raw_material.freight.getList', compact('arrivalPurchaseOrders'));
-
-        $purchaseTickets = PurchaseTicket::where('freight_status', 'pending')
+        $purchaseTickets = PurchaseTicket::when('purchaseOrderLoadedQuantity')->where('freight_status', 'pending')
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->whereHas('purchaseOrder', function ($query) use ($request) {
                     $query->where('company_location_id', $request->company_location_id);
@@ -67,12 +61,6 @@ class PurchaseFreightController extends Controller
         if (!$ticket) {
             return response()->json(['success' => false, 'message' => 'Purchase order not found'], 404);
         }
-
-        // $html = view('management.procurement.raw_material.freight.partials.freight_form', [
-        //     'purchaseOrder' => $ticket,
-        //     'stations' => $stations,
-        //     'bagTypes' => $bagTypes
-        // ])->render();
 
         return view('management.procurement.raw_material.freight.create', compact('stations', 'bagTypes', 'ticket', 'bagTypes'));
     }
