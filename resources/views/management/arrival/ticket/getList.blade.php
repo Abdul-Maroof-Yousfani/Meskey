@@ -2,8 +2,8 @@
     @slot('head')
         <th>Ticket No. </th>
         <th>Commodity</th>
-        <th>Miller</th>
         <th>Acc Of.</th>
+        <th>Miller</th>
         <th>Truck No</th>
         <th>Bilty No</th>
         <th>First QC</th>
@@ -26,12 +26,12 @@
                 </td>
                 <td>
                     <p class="m-0">
-                        {{ $row->miller->name ?? 'N/A' }} <br>
+                        {{ $row->accounts_of_name ?? 'N/A' }} <br>
                     </p>
                 </td>
                 <td>
                     <p class="m-0">
-                        {{ $row->accounts_of_name ?? 'N/A' }} <br>
+                        {{ $row->miller->name ?? 'N/A' }} <br>
                     </p>
                 </td>
                 <td>
