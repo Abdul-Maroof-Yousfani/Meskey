@@ -373,6 +373,7 @@ class PaymentRequestController extends Controller
                 1,
                 $contractNo,
                 'credit',
+
                 'no',
                 [
                     'purpose' => "thadda-freight",
