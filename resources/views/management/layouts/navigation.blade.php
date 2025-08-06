@@ -320,7 +320,7 @@
                         </a>
                     </li>
                     @endcanAccess
-                    @canAccess('finance-payment-voucher')
+                    @canAccess('payment-voucher')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('payment-voucher.index') }}"
                             onclick="loadPageContent('{{ route('payment-voucher.index') }}')"
