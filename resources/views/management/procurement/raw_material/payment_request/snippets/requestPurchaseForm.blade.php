@@ -312,7 +312,7 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Avg Rate</label>
+                    <label>Average Bag Weight</label>
                     <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}"
                         readonly>
                 </div>

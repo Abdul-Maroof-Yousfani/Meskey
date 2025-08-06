@@ -166,9 +166,10 @@ class PurchaseSamplingController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
         $PurchaseSamplingRequest = PurchaseSamplingRequest::findOrFail($id);
+        $authUserCompany = $request->company_id;
 
         if ($PurchaseSamplingRequest->is_done == 'no') {
             $isResampling = request()->route()->getName() === 'raw-material.purchase-resampling.edit';
@@ -177,7 +178,14 @@ class PurchaseSamplingController extends Controller
 
             $samplingRequest = $query->latest()->first();
             $arrivalCustomSampling = ArrivalCustomSampling::all();
-            $sampleTakenByUsers = User::all();
+           // $sampleTakenByUsers = User::all();
+
+
+                    $sampleTakenByUsers = User::role('QC')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
             $products = Product::all();
             $slabs = null;
             $results = [];
@@ -226,8 +234,12 @@ class PurchaseSamplingController extends Controller
         $compulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $id)->get();
 
         $arrivalCustomSampling = ArrivalCustomSampling::all();
-        $sampleTakenByUsers = User::all();
-
+      //  $sampleTakenByUsers = User::all();
+        $sampleTakenByUsers = User::role('QC')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
         return view('management.procurement.raw_material.purchase_sampling.edit', compact('PurchaseSamplingRequest', 'arrivalCustomSampling', 'compulsuryResults', 'sampleTakenByUsers', 'results', 'PurchaseSamplingRequest'));
     }
 
