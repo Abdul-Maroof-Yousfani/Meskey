@@ -140,7 +140,7 @@
 
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Avg Rate</label>
+                        <label>Average Bag Weight</label>
                         <input type="text" class="form-control" name="avg_rate"
                             value="{{ $paymentRequest->avg_rate ?? ($purchaseOrder->purchaseFreight->loading_weight ?? 0) / ($purchaseOrder->purchaseFreight->no_of_bags ?? 1) }}"
                             readonly>
