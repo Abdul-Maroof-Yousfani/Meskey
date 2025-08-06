@@ -30,6 +30,7 @@
 <form action="{{ route('arrival-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-slip') }}" />
+    <input type="text" class="d-none" value="{{ $arrivalTicket->arrivalSlip->unique_no ?? 'N/A' }}" />
     <div class="row form-mar">
         <div class="pri" id="printSection">
             <!-- header -->

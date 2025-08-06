@@ -192,7 +192,7 @@ class TicketContractController extends Controller
 
                 $supplierData = [
                     'amount' => $supplierNetAmount,
-                    'account_id' => $qcAccountId,
+                    'account_id' => $purchaseOrder->supplier->account_id,
                     'type' => 'credit',
                     'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
                 ];
@@ -202,7 +202,7 @@ class TicketContractController extends Controller
                 } else {
                     createTransaction(
                         $supplierNetAmount,
-                        $qcAccountId,
+                        $purchaseOrder->supplier->account_id,
                         1,
                         $uniqueNo,
                         'credit',
