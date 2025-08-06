@@ -25,8 +25,12 @@
                                         <label for="voucher_type">Voucher Type</label>
                                         <select name="voucher_type" id="voucher_type" class="form-control select2" required>
                                             <option value="">Select Type</option>
+                                            @canAccess('bank-payment-voucher')
                                             <option value="bank_payment_voucher">Bank Payment Voucher</option>
+                                            @endcanAccess
+                                            @canAccess('cash-payment-voucher')
                                             <option value="cash_payment_voucher">Cash Payment Voucher</option>
+                                            @endcanAccess
                                         </select>
                                     </div>
                                 </div>
@@ -51,9 +55,9 @@
                                         <select name="account_id" id="account_id" class="form-control select2" required>
                                             <option value="">Select Account</option>
                                             {{-- @foreach ($accounts as $account)
-                                                <option value="{{ $account->id }}">{{ $account->name }}
-                                                    ({{ $account->unique_no }})
-                                                </option>
+                                            <option value="{{ $account->id }}">{{ $account->name }}
+                                                ({{ $account->unique_no }})
+                                            </option>
                                             @endforeach --}}
                                         </select>
                                     </div>
@@ -97,10 +101,10 @@
                                         <select name="module_id" id="module_id" class="form-control select2" required>
                                             <option value="">Select Purchase Order</option>
                                             @foreach ($purchaseOrders as $order)
-                                                <option value="{{ $order->id }}">{{ $order->contract_no }} -
-                                                    {{ $order->product->name ?? 'N/A' }}
-                                                    ({{ $order->supplier_name ?? ($order->supplier->name ?? 'N/A') }})
-                                                </option>
+                                            <option value="{{ $order->id }}">{{ $order->contract_no }} -
+                                                {{ $order->product->name ?? 'N/A' }}
+                                                ({{ $order->supplier_name ?? ($order->supplier->name ?? 'N/A') }})
+                                            </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -202,8 +206,8 @@
 
 @section('script')
     <script>
-        $(document).ready(function() {
-            $('#voucher_type, #pv_date').change(function() {
+        $(document).ready(function () {
+            $('#voucher_type, #pv_date').change(function () {
                 if ($('#voucher_type').val()) {
                     $.ajax({
                         url: '{{ route('payment-voucher.generate-pv-number') }}',
@@ -213,7 +217,7 @@
                             voucher_type: $('#voucher_type').val(),
                             pv_date: $('#pv_date').val() || null
                         },
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 if ($('#pv_date').val()) {
                                     $('#unique_no').val(response.pv_number);
@@ -223,7 +227,7 @@
                                     $accountSelect.append(
                                         '<option value="">Select Account</option>');
 
-                                    response.accounts.forEach(function(account) {
+                                    response.accounts.forEach(function (account) {
                                         $accountSelect.append(
                                             `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
                                         );
@@ -237,7 +241,7 @@
                 }
             });
 
-            $('#bank_account_id').change(function() {
+            $('#bank_account_id').change(function () {
                 const selectedOption = $(this).find('option:selected');
                 if (selectedOption.val()) {
                     const accountNo = selectedOption.data('account-no') || '';
@@ -251,7 +255,7 @@
                 }
             });
 
-            $('#voucher_type').change(function() {
+            $('#voucher_type').change(function () {
                 if ($(this).val() === 'bank_payment_voucher') {
                     $('.bank-fields, .bank-account-section').show();
                     // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
@@ -291,10 +295,10 @@
 
                 const $container = $(
                     `<div class="bank-account-option">
-                        <strong>${type} - ${title}</strong>
-                        <div class="text-muted small">${accountTitle} - (${accountNo})</div>
-                        <div class="text-muted small">${bankName} - ${branchName}</div>
-                    </div>`
+                            <strong>${type} - ${title}</strong>
+                            <div class="text-muted small">${accountTitle} - (${accountNo})</div>
+                            <div class="text-muted small">${bankName} - ${branchName}</div>
+                        </div>`
                 );
                 return $container;
             }
@@ -314,70 +318,70 @@
                 return `${type} - ${title} (${accountNo})`;
             }
 
-            $('#supplier_id').change(function() {
+            $('#supplier_id').change(function () {
                 const supplierId = $(this).val();
                 const tbody = $('#paymentRequestsTable tbody');
 
                 if (supplierId) {
                     tbody.html(`
-            <tr>
-                <td colspan="11" class="text-center">
-                    <div class="d-flex justify-content-center align-items-center">
-                        <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-                        Loading payment requests...
-                    </div>
-                </td>
-            </tr>
-        `);
+                <tr>
+                    <td colspan="11" class="text-center">
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                            Loading payment requests...
+                        </div>
+                    </td>
+                </tr>
+            `);
 
                     $.ajax({
                         url: `/finance/payment-voucher/payment-requests/${supplierId}`,
                         type: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 tbody.empty();
 
                                 if (response.payment_requests.length > 0) {
-                                    $.each(response.payment_requests, function(index, request) {
+                                    $.each(response.payment_requests, function (index, request) {
                                         tbody.append(`
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" class="request-checkbox" 
-                                            value="${request.id}" 
-                                            data-supplier-id="${request.supplier_id || ''}" 
-                                            data-amount="${request.amount}" 
-                                            data-purpose="${request.purpose}" 
-                                            data-request-no="${request.contract_no}" 
-                                            data-truck-no="${request.truck_no}"
-                                            data-bilty-no="${request.bilty_no}"
-                                            data-module-type="${request.module_type =='purchase_order' ? 'Contract' : 'Ticket'} "
-                                            data-loading-date="${request.loading_date}"
-                                            data-loading-weight="${request.loading_weight}">
-                                    </td>
-                                    <td>${request.contract_no}</td>
-                                    <td>${request.purpose}</td> 
-                                    <td>${request.saudaType}</td> 
-                                    <td>${request.request_date}</td>
-                                    <td>
-                                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                                            <span
-                                            class="badge badge-${request.module_type =='purchase_order' ? 'primary' : 'info'}"
-                                                style="border-radius: 3px 0 0 3px;">
-                                                ${request.module_type =='purchase_order' ? 'Contract' : 'Ticket'} 
-                                            </span>
-                                            <span class="badge badge-${request.type =='payment' ? 'success' : 'warning'}"
-                                                style="border-radius: 0 3px 3px 0;">
-                                                ${request.type =='payment' ? 'Payment' : 'Freight Payment'}
-                                            </span>
-                                        </span>
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="request-checkbox" 
+                                                value="${request.id}" 
+                                                data-supplier-id="${request.supplier_id || ''}" 
+                                                data-amount="${request.amount}" 
+                                                data-purpose="${request.purpose}" 
+                                                data-request-no="${request.contract_no}" 
+                                                data-truck-no="${request.truck_no}"
+                                                data-bilty-no="${request.bilty_no}"
+                                                data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : 'Ticket'} "
+                                                data-loading-date="${request.loading_date}"
+                                                data-loading-weight="${request.loading_weight}">
                                         </td>
-                                        <td>${request.truck_no}</td>
-                                        <td>${request.bilty_no}</td>
-                                        <td>${request.loading_date}</td>
-                                        <td>${request.loading_weight}</td>
-                                        <td>${request.amount}</td>
-                                </tr>
-                            `);
+                                        <td>${request.contract_no}</td>
+                                        <td>${request.purpose}</td> 
+                                        <td>${request.saudaType}</td> 
+                                        <td>${request.request_date}</td>
+                                        <td>
+                                            <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                                <span
+                                                class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+                                                    style="border-radius: 3px 0 0 3px;">
+                                                    ${request.module_type == 'purchase_order' ? 'Contract' : 'Ticket'} 
+                                                </span>
+                                                <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+                                                    style="border-radius: 0 3px 3px 0;">
+                                                    ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+                                                </span>
+                                            </span>
+                                            </td>
+                                            <td>${request.truck_no}</td>
+                                            <td>${request.bilty_no}</td>
+                                            <td>${request.loading_date}</td>
+                                            <td>${request.loading_weight}</td>
+                                            <td>${request.amount}</td>
+                                    </tr>
+                                `);
                                     });
                                 } else {
                                     tbody.append(
@@ -389,7 +393,7 @@
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
-                                    $.each(response.bank_accounts, function(index, account) {
+                                    $.each(response.bank_accounts, function (index, account) {
                                         const option = new Option(
                                             `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
                                             account.id,
@@ -421,40 +425,40 @@
                                 $('#supplier_id_d').val(supplierId);
                             }
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             tbody.html(`
-                    <tr>
-                        <td colspan="11" class="text-center text-danger">
-                            Error loading payment requests. Please try again.
-                        </td>
-                    </tr>
-                `);
+                        <tr>
+                            <td colspan="11" class="text-center text-danger">
+                                Error loading payment requests. Please try again.
+                            </td>
+                        </tr>
+                    `);
                             console.error('Error:', xhr.responseText);
                         }
                     });
                 } else {
                     tbody.html(`
-            <tr>
-                <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
-            </tr>
-        `);
+                <tr>
+                    <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
+                </tr>
+            `);
                 }
             });
 
-            $('#module_id').change(function() {
+            $('#module_id').change(function () {
                 const poId = $(this).val();
 
                 if (poId) {
                     $.ajax({
                         url: `/finance/payment-voucher/payment-requests/${poId}`,
                         type: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 const tbody = $('#paymentRequestsTable tbody');
                                 tbody.empty();
 
                                 if (response.payment_requests.length > 0) {
-                                    $.each(response.payment_requests, function(index, request) {
+                                    $.each(response.payment_requests, function (index, request) {
                                         let {
                                             id,
                                             amount,
@@ -472,21 +476,21 @@
                                         } = purchaseOrder;
 
                                         tbody.append(`
-                                            <tr>
-                                                <td>
-                                                    <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
-                                                </td>
-                                                <td>${request_no}</td>
-                                                <td>${request_date}</td>
-                                                <td>${amount}</td>
-                                                <td>${purpose}</td>
-                                                <td>
-                                                    <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
-                                                        ${type}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        `);
+                                                <tr>
+                                                    <td>
+                                                        <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
+                                                    </td>
+                                                    <td>${request_no}</td>
+                                                    <td>${request_date}</td>
+                                                    <td>${amount}</td>
+                                                    <td>${purpose}</td>
+                                                    <td>
+                                                        <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
+                                                            ${type}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `);
                                     });
                                 } else {
                                     tbody.append(
@@ -497,7 +501,7 @@
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
-                                    $.each(response.bank_accounts, function(index, account) {
+                                    $.each(response.bank_accounts, function (index, account) {
                                         const option = new Option(
                                             `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
                                             account.id,
@@ -530,7 +534,7 @@
                 }
             });
 
-            $(document).on('change', '.request-checkbox', function() {
+            $(document).on('change', '.request-checkbox', function () {
                 updateSelectedRequestsList();
             });
 
@@ -538,7 +542,7 @@
                 const selectedRequests = [];
                 let totalAmount = 0;
 
-                $('.request-checkbox:checked').each(function() {
+                $('.request-checkbox:checked').each(function () {
                     selectedRequests.push({
                         id: $(this).val(),
                         amount: $(this).data('amount'),
@@ -556,29 +560,29 @@
                     listContainer.empty();
                     emptyMessage.hide();
 
-                    $.each(selectedRequests, function(index, request) {
+                    $.each(selectedRequests, function (index, request) {
                         $('#supplier_id').val(request.supplierId);
 
                         listContainer.append(`
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span>#${request.requestNo}</span>
-                        <span class="badge badge-primary badge-pill">${request.amount}</span>
-                    </div>
-                    <div class="small text-muted">
-                        Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
-                    </div>
-                    <input type="hidden" name="payment_requests[]" value="${request.id}">
-                </li>
-            `);
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>#${request.requestNo}</span>
+                            <span class="badge badge-primary badge-pill">${request.amount}</span>
+                        </div>
+                        <div class="small text-muted">
+                            Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
+                        </div>
+                        <input type="hidden" name="payment_requests[]" value="${request.id}">
+                    </li>
+                `);
                     });
 
                     listContainer.append(`
-            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                <strong>Total Amount</strong>
-                <strong>${totalAmount.toFixed(2)}</strong>
-            </li>
-        `);
+                <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
+                    <strong>Total Amount</strong>
+                    <strong>${totalAmount.toFixed(2)}</strong>
+                </li>
+            `);
 
                     listContainer.show();
                 } else {
