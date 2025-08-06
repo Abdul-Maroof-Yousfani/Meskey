@@ -63,4 +63,41 @@ class PurchaseTicket extends Model
     {
         return $this->hasMany(PurchaseSamplingRequest::class, 'purchase_ticket_id');
     }
+
+    public function purchaseOrderLoadedQuantity()
+    {
+        return $this->hasOneThrough(
+            PurchaseFreight::class,
+            ArrivalPurchaseOrder::class,
+            'id',
+            'arrival_purchase_order_id',
+            'purchase_order_id',
+            'id'
+        )
+            ->selectRaw('arrival_purchase_order_id, SUM(loading_weight) as total_loaded_quantity')
+            ->groupBy('arrival_purchase_order_id');
+    }
+
+    public function purchaseOrderFreights()
+    {
+        return $this->hasManyThrough(
+            PurchaseFreight::class,
+            ArrivalPurchaseOrder::class,
+            'id',
+            'arrival_purchase_order_id',
+            'purchase_order_id',
+            'id'
+        );
+    }
+
+    public function getLoadedQuantityAttribute()
+    {
+        $loadingWeightSum = $this->purchaseOrderFreights()->sum('loading_weight');
+
+        return [
+            'loading_weight_sum' => $loadingWeightSum,
+            'max_quantity' => $this->purchaseOrder->max_quantity ?? null,
+            'remaining_quantity' => ($this->purchaseOrder->max_quantity ?? 0) - $loadingWeightSum
+        ];
+    }
 }

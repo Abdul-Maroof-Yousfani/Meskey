@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Procurement;
 
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,14 @@ class PurchaseFreightRequest extends FormRequest
             'no_of_bags' => 'required|integer|min:1',
             'bag_condition_id' => 'required|exists:bag_conditions,id',
             'commodity' => 'required|string|max:255',
-            'loading_weight' => 'required|numeric|min:0',
+            'loading_weight' => [
+                'required',
+                'numeric',
+                'min:0',
+                function ($attribute, $value, $fail) {
+                    $this->validateLoadingWeight($attribute, $value, $fail);
+                }
+            ],
             'kanta_charges' => 'nullable|numeric|min:0',
             'freight_on_bilty' => 'required|numeric|min:0',
             'advance_freight' => 'nullable|numeric|min:0',
@@ -67,6 +75,28 @@ class PurchaseFreightRequest extends FormRequest
 
         if ($truckFormat === 1 && !preg_match('/^[A-Z]+-\d+$/', $truckNo)) {
             $fail('Truck number must contain alphabets followed by a dash and then numbers (e.g., ABC-123)');
+        }
+    }
+
+    protected function validateLoadingWeight($attribute, $value, $fail)
+    {
+        $purchaseOrder = ArrivalPurchaseOrder::find($this->arrival_purchase_order_id);
+
+        if (!$purchaseOrder) {
+            $fail('Invalid purchase order');
+            return;
+        }
+
+        $totalLoaded = PurchaseFreight::where('arrival_purchase_order_id', $purchaseOrder->id)
+            ->sum('loading_weight');
+        // if ($this->loading_weight) {
+        //     // $totalLoaded -= $this->loading_weight;
+        // }
+
+        $remainingQuantity = $purchaseOrder->max_quantity - $totalLoaded;
+
+        if ($value > $remainingQuantity) {
+            $fail("Loading weight cannot exceed remaining quantity of {$remainingQuantity}");
         }
     }
 

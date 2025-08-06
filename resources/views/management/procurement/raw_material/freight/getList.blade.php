@@ -13,6 +13,11 @@
          @if (count($purchaseTickets) != 0)
              @foreach ($purchaseTickets as $ticket)
                  <tr class="bg-orange">
+                     <td class="d-none">
+                         {{ $ticket->loaded_quantity['loading_weight_sum'] }} <br>
+                         {{ $ticket->loaded_quantity['max_quantity'] }} <br>
+                         {{ $ticket->loaded_quantity['remaining_quantity'] }} <br>
+                     </td>
                      <td>#{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }} <br>#{{ $ticket->unique_no ?? 'N/A' }}</td>
                      <td> {{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
                      <td> {{ $ticket->purchaseOrder->broker_one_name ?? ($ticket->purchaseOrder->broker_two_name ?? ($ticket->purchaseOrder->broker_three_name ?? 'N/A')) }}

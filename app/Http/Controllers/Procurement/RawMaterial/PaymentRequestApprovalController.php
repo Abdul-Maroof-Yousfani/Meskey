@@ -238,28 +238,30 @@ class PaymentRequestApprovalController extends Controller
                     ->first();
                 $advanceFreight = (int)($request->advance_freight);
 
-                if ($existingFreightTrx) {
-                    $existingFreightTrx->update([
-                        'amount' => $advanceFreight,
-                        'account_id' => $purchaseOrder->supplier->account_id,
-                        'type' => 'credit',
-                        'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
-                    ]);
-                } else {
-                    createTransaction(
-                        $advanceFreight,
-                        $purchaseOrder->supplier->account_id,
-                        1,
-                        $contractNo,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "thadda-freight",
-                            'payment_against' => "thadda-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
-                        ]
-                    );
+                if ($advanceFreight > 0) {
+                    if ($existingFreightTrx) {
+                        $existingFreightTrx->update([
+                            'amount' => $advanceFreight,
+                            'account_id' => $purchaseOrder->supplier->account_id,
+                            'type' => 'credit',
+                            'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
+                        ]);
+                    } else {
+                        createTransaction(
+                            $advanceFreight,
+                            $purchaseOrder->supplier->account_id,
+                            1,
+                            $contractNo,
+                            'credit',
+                            'no',
+                            [
+                                'purpose' => "thadda-freight",
+                                'payment_against' => "thadda-purchase",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                            ]
+                        );
+                    }
                 }
             } else {
                 $transitTxn = Transaction::where('voucher_no', $contractNo)
