@@ -178,7 +178,14 @@ class PurchaseSamplingController extends Controller
 
             $samplingRequest = $query->latest()->first();
             $arrivalCustomSampling = ArrivalCustomSampling::all();
-            $sampleTakenByUsers = User::all();
+           // $sampleTakenByUsers = User::all();
+
+
+                    $sampleTakenByUsers = User::role('QC')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
             $products = Product::all();
             $slabs = null;
             $results = [];
