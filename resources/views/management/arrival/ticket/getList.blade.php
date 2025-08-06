@@ -4,6 +4,7 @@
         <th>Commodity</th>
         <th>Acc Of.</th>
         <th>Miller</th>
+        <th>Net Weight</th>
         <th>Truck No</th>
         <th>Bilty No</th>
         <th>First QC</th>
@@ -32,6 +33,11 @@
                 <td>
                     <p class="m-0">
                         {{ $row->miller->name ?? 'N/A' }} <br>
+                    </p>
+                </td>
+                <td>
+                    <p class="m-0">
+                        {{ $row->net_weight ?? 'N/A' }} <br>
                     </p>
                 </td>
                 <td>
