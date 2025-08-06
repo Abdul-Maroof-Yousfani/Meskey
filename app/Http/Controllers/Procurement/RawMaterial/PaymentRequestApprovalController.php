@@ -236,7 +236,7 @@ class PaymentRequestApprovalController extends Controller
                     ->where('purpose', 'thadda-freight')
                     ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
-                $advanceFreight = (int)($request->advance_freight_display);
+                $advanceFreight = (int)($request->advance_freight);
 
                 if ($existingFreightTrx) {
                     $existingFreightTrx->update([
