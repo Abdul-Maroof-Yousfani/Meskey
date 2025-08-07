@@ -9,6 +9,7 @@
         <th>Truck #</th>
         <th>Bilty #</th>
         <th>Status</th>
+        <th>Sauda Type</th>
         <th>Station</th>
         <th>Tabaar Remarks</th>
         <th>Loaded Weight</th>
@@ -79,7 +80,7 @@
                         }
                     @endphp
                     @if ($row->first_qc_status == 'rejected')
-                        <span class="badge bg-danger">RH</span>
+                        <span class="badge bg-danger">RF</span>
                     @else
                         @if ($status == 'OK')
                             <span class="badge bg-success">OK</span>
@@ -92,6 +93,13 @@
                         @else
                             <span class="badge bg-info">RF</span>
                         @endif
+                    @endif
+                </td>
+                <td>
+                    @if ($row->saudaType->name == 'Thadda')
+                        <span class="badge bg-warning">Thadda</span>
+                    @else
+                        <span class="badge bg-success">Pohanch</span>
                     @endif
                 </td>
                 <td>{{ $row->station->name ?? 'N/A' }}</td>
