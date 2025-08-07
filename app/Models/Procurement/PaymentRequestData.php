@@ -22,6 +22,7 @@ class PaymentRequestData extends Model
         'contract_rate',
         'min_contract_range',
         'max_contract_range',
+        'is_advance_payment',
         'is_loading',
         'truck_no',
         'loading_date',

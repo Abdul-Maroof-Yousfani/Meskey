@@ -1,4 +1,6 @@
-<form action="{{ route('raw-material.payment-request-approval.store') }}" method="POST" id="ajaxSubmit">
+<form
+    action="{{ route($paymentRequest->is_advance_payment == 0 ? 'raw-material.payment-request-approval.store' : 'raw-material.advance-payment-request-approval.store') }}"
+    method="POST" id="ajaxSubmit">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
     <input type="hidden" name="payment_request_id" value="{{ $paymentRequest->id }}">
@@ -14,20 +16,22 @@
     </div>
 
     <div class="row">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Ticket No</label>
-                <input type="text" class="form-control" value="#{{ $ticket->unique_no ?? 'N/A' }}" readonly>
+        @if ($paymentRequest->is_advance_payment == 0)
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Ticket No</label>
+                    <input type="text" class="form-control" value="#{{ $ticket->unique_no ?? 'N/A' }}" readonly>
+                </div>
             </div>
-        </div>
-        <div class="col-md-4">
+        @endif
+        <div class="{{ $paymentRequest->is_advance_payment == 0 ? 'col-md-4' : 'col-md-6' }}">
             <div class="form-group">
                 <label>Contract No</label>
-                <input type="text" class="form-control" value="#{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}"
-                    readonly>
+                <input type="text" class="form-control"
+                    value="#{{ $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}" readonly>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="{{ $paymentRequest->is_advance_payment == 0 ? 'col-md-4' : 'col-md-6' }}">
             <div class="form-group">
                 <label>Supplier</label>
                 <input type="text" class="form-control"

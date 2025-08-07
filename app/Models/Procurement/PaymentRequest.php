@@ -13,6 +13,7 @@ class PaymentRequest extends Model
     protected $fillable = [
         'payment_request_data_id',
         'other_deduction_value',
+        'is_advance_payment',
         'other_deduction_kg',
         'request_type',
         'module_type',

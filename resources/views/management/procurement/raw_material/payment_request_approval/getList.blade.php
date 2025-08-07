@@ -15,16 +15,16 @@
             @foreach ($paymentRequests as $request)
                 <tr>
                     <td>
-                        #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') }}<br>
-                        #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? ($request->paymentRequestData->arrivalTicket->purchaseOrder->contract_no ?? 'N/A') }}
+                        @if ($request->is_advance_payment == 0)
+                            #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') }}<br>
+                            #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? ($request->paymentRequestData->arrivalTicket->purchaseOrder->contract_no ?? 'N/A') }}
+                        @else
+                            #{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}
+                            <span class="badge badge-info ml-1 d-none">Advance Payment</span>
+                        @endif
                     </td>
                     <td>{{ $request->paymentRequestData->supplier_name ?? 'N/A' }}</td>
                     <td>
-                        {{-- <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}">
-                            {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }} -
-                            {{ formatEnumValue($request->request_type) }}
-                        </span> --}}
-
                         <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
                             <span
                                 class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
@@ -49,12 +49,10 @@
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
-                        {{-- @can('role-edit') --}}
-                        <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
+                        <a onclick="openModal(this,'{{ route($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
-                        {{-- @endcan --}}
                     </td>
                 </tr>
             @endforeach

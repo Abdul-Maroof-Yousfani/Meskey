@@ -217,7 +217,7 @@ class TicketPaymentRequestController extends Controller
         $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
         $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
-        $supplierTxn = Transaction::where('voucher_no', $arrivalSlipNo)
+        $supplierTxn = Transaction::where('voucher_no', $contractNo)
             ->where('purpose', 'supplier-payable')
             ->where('against_reference_no', "$truckNo/$biltyNo")
             ->first();
@@ -248,7 +248,7 @@ class TicketPaymentRequestController extends Controller
             );
         }
 
-        $transitTxn = Transaction::where('voucher_no', $arrivalSlipNo)
+        $transitTxn = Transaction::where('voucher_no', $contractNo)
             ->where('purpose', 'arrival-slip')
             ->where('against_reference_no', "$truckNo/$biltyNo")
             ->first();
@@ -281,61 +281,106 @@ class TicketPaymentRequestController extends Controller
 
         $loadingWeight = $ticket->arrived_net_weight;
 
-        if (!$existingApprovals && $purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
+        if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
             $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
 
-            createTransaction(
-                $amount,
-                $purchaseOrder->broker->account_id,
-                1,
-                $purchaseOrder->contract_no,
-                'credit',
-                'no',
-                [
-                    'purpose' => "broker",
-                    'payment_against' => "pohanch-purchase",
-                    'against_reference_no' => "$truckNo/$biltyNo",
-                    'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
-                ]
-            );
+            $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                ->where('payment_against',   'pohanch-purchase')
+                ->where('account_id', $purchaseOrder->broker->account_id)
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            if ($existingBrokerTrx) {
+                $existingBrokerTrx->update([
+                    'amount' => $amount,
+                    'account_id' => $purchaseOrder->broker->account_id,
+                    'type' => 'credit',
+                ]);
+            } else {
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->broker->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                    ]
+                );
+            }
         }
 
-        if (!$existingApprovals && $purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
+        if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
             $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
 
-            createTransaction(
-                $amount,
-                $purchaseOrder->brokerTwo->account_id,
-                1,
-                $purchaseOrder->contract_no,
-                'credit',
-                'no',
-                [
-                    'purpose' => "broker",
-                    'payment_against' => "pohanch-purchase",
-                    'against_reference_no' => "$truckNo/$biltyNo",
-                    'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
-                ]
-            );
+
+
+            $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                ->where('payment_against',   'pohanch-purchase')
+                ->where('account_id', $purchaseOrder->brokerTwo->account_id)
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            if ($existingBrokerTrx) {
+                $existingBrokerTrx->update([
+                    'amount' => $amount,
+                    'account_id' => $purchaseOrder->brokerTwo->account_id,
+                    'type' => 'credit',
+                ]);
+            } else {
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->brokerTwo->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                    ]
+                );
+            }
         }
 
-        if (!$existingApprovals && $purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
+        if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
             $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
 
-            createTransaction(
-                $amount,
-                $purchaseOrder->brokerThree->account_id,
-                1,
-                $purchaseOrder->contract_no,
-                'credit',
-                'no',
-                [
-                    'purpose' => "broker",
-                    'payment_against' => "pohanch-purchase",
-                    'against_reference_no' => "$truckNo/$biltyNo",
-                    'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
-                ]
-            );
+
+            $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                ->where('payment_against',   'pohanch-purchase')
+                ->where('account_id', $purchaseOrder->brokerThree->account_id)
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            if ($existingBrokerTrx) {
+                $existingBrokerTrx->update([
+                    'amount' => $amount,
+                    'account_id' => $purchaseOrder->brokerThree->account_id,
+                    'type' => 'credit',
+                ]);
+            } else {
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->brokerThree->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                    ]
+                );
+            }
         }
 
         if (

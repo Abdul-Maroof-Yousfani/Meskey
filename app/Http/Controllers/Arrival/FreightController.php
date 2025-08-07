@@ -213,8 +213,8 @@ class FreightController extends Controller
                         $purchaseFreight = PurchaseFreight::whereRaw('LOWER(truck_no) = ?', [strtolower($truckNo)])
                             ->whereRaw('LOWER(bilty_no) = ?', [strtolower($biltyNo)])
                             ->first();
-
                         if ($purchaseFreight && isset($purchaseFreight->purchaseTicket)) {
+                            $loadingWeight = $purchaseFreight->loading_weight;
                             $purchaseTicket = $purchaseFreight->purchaseTicket;
 
                             $purchasePaymentDetail = calculatePaymentDetails($purchaseTicket->id, 2);
@@ -231,7 +231,7 @@ class FreightController extends Controller
                                 'no',
                                 [
                                     'purpose' => "stock-in-transit",
-                                    'payment_against' => "pohanch-purchase",
+                                    'payment_against' => "thadda-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                                 ]
@@ -246,9 +246,9 @@ class FreightController extends Controller
                                 'no',
                                 [
                                     'purpose' => "arrival-slip",
-                                    'payment_against' => "pohanch-purchase",
+                                    'payment_against' => "thadda-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
-                                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $purchaseFreight->loading_weight . ' kg) at rate ' . $purchaseTicket->purchaseOrder->rate_per_kg . '/kg.'
+                                    'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseTicket->purchaseOrder->rate_per_kg . '/kg.'
                                 ]
                             );
                         }

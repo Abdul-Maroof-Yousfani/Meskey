@@ -3,6 +3,8 @@
 use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
+    AdvancePaymentRequestApprovalController,
+    AdvancePaymentRequestController,
     GateBuyingController,
     PaymentRequestApprovalController,
     PaymentRequestController,
@@ -65,7 +67,11 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('payment-request', PaymentRequestController::class);
     Route::post('/get-payment-request', [PaymentRequestController::class, 'getList'])->name('get.payment-request');
 
+    Route::resource('advance-payment-request', AdvancePaymentRequestController::class);
+    Route::post('/get-advance-payment-request', [AdvancePaymentRequestController::class, 'getList'])->name('get.advance-payment-request');
+
     Route::resource('payment-request-approval', PaymentRequestApprovalController::class);
+    Route::resource('advance-payment-request-approval', AdvancePaymentRequestApprovalController::class);
     Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('get.payment-request-approval');
     Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('payment-request-approval.approve');
 
