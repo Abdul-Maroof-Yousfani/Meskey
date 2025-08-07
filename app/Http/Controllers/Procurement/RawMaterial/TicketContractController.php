@@ -265,7 +265,7 @@ class TicketContractController extends Controller
 
                     $amount = $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0;
                     $inventoryAmount = $purchasePaymentDetail['calculations']['inventory_amount'] ?? 0;
-
+                    $productName = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
 
                     $stockTrx = Transaction::where('voucher_no', $contractNo)
                         ->where('purpose', 'stock-in-transit')
@@ -277,7 +277,7 @@ class TicketContractController extends Controller
                         $stockTrx->update([
                             'amount' => $inventoryAmount,
                             'account_id' => $stockInTransitAccount->id,
-                            'remarks' => "Stock-in-transit recorded for arrival of {$purchaseOrder->qcProduct->name} under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
+                            'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                         ]);
                     } else {
                         createTransaction(
@@ -291,7 +291,7 @@ class TicketContractController extends Controller
                                 'purpose' => "stock-in-transit",
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
-                                'remarks' => "Stock-in-transit recorded for arrival of {$purchaseOrder->qcProduct->name} under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
+                                'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                             ]
                         );
                     }
@@ -523,12 +523,17 @@ class TicketContractController extends Controller
     public function searchContracts(Request $request)
     {
         $arrivalTicket = ArrivalTicket::find($request->ticket_id);
+        $ticketId = $request->ticket_id;
+
         $query = ArrivalPurchaseOrder::with([
             'supplier',
             'product',
             'totalLoadingWeight',
             'totalArrivedNetWeight',
             'totalClosingTrucksQty',
+            'totalClosingTrucksQtyWithoutOwnTicket' => function ($query) use ($request) {
+                $query->where('id', '!=', $request->ticket_id);
+            },
             'saudaType',
             'createdByUser',
             'rejectedArrivalTickets',
@@ -561,6 +566,7 @@ class TicketContractController extends Controller
 
         $contracts = $query->orderBy('created_at', 'desc')->get()->map(function ($c) {
             $totalClosingTrucks = $c->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            $totalClosingTrucksWithoutTicket = $c->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $rejectedTrucks = $c->rejectedArrivalTickets->count();
             $stockInTransitTrucks = $c->stockInTransitTickets->count();
 
@@ -593,6 +599,7 @@ class TicketContractController extends Controller
                 'contract_date_formatted' => $c->created_at->format('d-M-Y'),
                 'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
                 'closed_arrivals' => $totalClosingTrucks,
+                'closed_arrivals_without_own' => $totalClosingTrucksWithoutTicket,
                 'rejected_trucks' => $rejectedTrucks,
                 'stock_in_transit_trucks' => $stockInTransitTrucks,
                 'purchase_type' => $c->purchase_type,
@@ -608,7 +615,18 @@ class TicketContractController extends Controller
                 ]);
             }
 
+            if (!$linkedPurchaseOrder->relationLoaded('totalClosingTrucksQtyWithoutOwnTicket')) {
+                $linkedPurchaseOrder->load([
+                    'totalClosingTrucksQtyWithoutOwnTicket' => function ($query) use ($ticketId) {
+                        $query->where('id', '!=', $ticketId);
+                    },
+                    'rejectedArrivalTickets',
+                    'stockInTransitTickets'
+                ]);
+            }
+
             $linkedClosingTrucks = $linkedPurchaseOrder->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            $linkedClosingTrucksWithoutOwn = $linkedPurchaseOrder->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $linkedRejectedTrucks = $linkedPurchaseOrder->rejectedArrivalTickets->count();
             $linkedStockInTransitTrucks = $linkedPurchaseOrder->stockInTransitTickets->count();
 
@@ -641,6 +659,7 @@ class TicketContractController extends Controller
                 'contract_date_formatted' => $linkedPurchaseOrder->created_at->format('d-M-Y'),
                 'total_loading_weight' => $linkedPurchaseOrder->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
                 'closed_arrivals' => $linkedClosingTrucks,
+                'closed_arrivals_without_own' => $linkedClosingTrucksWithoutOwn,
                 'rejected_trucks' => $linkedRejectedTrucks,
                 'stock_in_transit_trucks' => $linkedStockInTransitTrucks,
                 'purchase_type' => $linkedPurchaseOrder->purchase_type,

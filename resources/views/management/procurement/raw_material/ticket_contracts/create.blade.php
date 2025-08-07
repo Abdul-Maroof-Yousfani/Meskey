@@ -634,12 +634,14 @@
                     `input[name="selected_contract"][value="${contractId}"]`).closest(
                     '.contract-row');
 
-                const remainingQty = parseFloat(contractRow.find(`td:eq(${remainingQtyRow})`).text().split(
+                const remainingQty = parseFloat(contractRow.find(`td:eq(${remainingQtyRow})`).text()
+                        .split(
                             ' - ')[1] ||
                         contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) ||
                     0;
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
-                const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow})`).text()) ||
+                const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow}) span`)
+                        .text()) ||
                     0;
 
                 const isTicketVerified = @json($arrivalTicket->is_ticket_verified == 1);

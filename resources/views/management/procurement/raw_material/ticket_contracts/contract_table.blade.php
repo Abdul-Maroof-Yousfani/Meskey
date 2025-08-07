@@ -26,14 +26,17 @@
         @foreach ($contracts as $contract)
             @php
                 $arrivedTrucks = $contract['closed_arrivals'] ?? 0;
+                $arrivedTrucksWithoutOwn = $contract['closed_arrivals_without_own'] ?? 0;
                 $orderedTrucks = $contract['no_of_trucks'] ?? 0;
                 $rejectedTrucks = $contract['rejected_trucks'] ?? 0;
                 $isReplacement = $contract['is_replacement'] ?? 'No';
 
                 if ($isReplacement == 'Yes') {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks;
+                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn;
                 } else {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
+                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn - $rejectedTrucks;
                 }
 
                 $arrivedQty = $contract['total_loading_weight'] ?? 0;
@@ -85,7 +88,7 @@
                 </td>
                 <td>{{ $arrivedTrucks }}</td>
                 <td>{{ $arrivedQty }}</td>
-                <td>{{ $balanceTrucks }}</td>
+                <td>{{ $balanceTrucks }} <span class="d-none">{{ $balanceTrucksWithoutOwn }}</span></td>
                 <td>
                     {{ ($minQty ?? 0) - ($arrivedQty ?? 0) . ' - ' . (($maxQty ?? 0) - ($arrivedQty ?? 0)) }}
                 </td>
