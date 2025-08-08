@@ -43,7 +43,8 @@ class DoubtTruckController extends Controller
             ->where('arrival_purchase_order_id', '=', NULL)
             ->where(function ($query) {
                 $query->where('arrival_tickets.freight_status', 'completed')
-                    ->orWhere('arrival_tickets.first_qc_status', 'rejected');
+                    // ->orWhere('arrival_tickets.first_qc_status', 'rejected')
+                ;
             })
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
