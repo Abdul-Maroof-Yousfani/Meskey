@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     AdvancePaymentRequestApprovalController,
     AdvancePaymentRequestController,
+    DoubtTruckController,
     GateBuyingController,
     PaymentRequestApprovalController,
     PaymentRequestController,
@@ -60,6 +61,9 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::get('/ticket-contracts/search-contracts', [TicketContractController::class, 'searchContracts'])->name('ticket-contracts.search-contracts');
     Route::resource('ticket-contracts', TicketContractController::class);
     Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');
+
+    Route::resource('doubt-trucks', DoubtTruckController::class);
+    Route::post('/get-doubt-trucks', [DoubtTruckController::class, 'getList'])->name('get.doubt-trucks');
 
     Route::resource('verified-contracts', TicketContractController::class);
     Route::post('/get-verified-contracts', [TicketContractController::class, 'getList'])->name('get.verified-contracts');

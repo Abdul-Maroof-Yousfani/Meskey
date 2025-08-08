@@ -30,7 +30,6 @@
                 $orderedTrucks = $contract['no_of_trucks'] ?? 0;
                 $rejectedTrucks = $contract['rejected_trucks'] ?? 0;
                 $isReplacement = $contract['is_replacement'] ?? 'No';
-
                 if ($isReplacement == 'Yes') {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks;
                     $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn;
@@ -38,17 +37,23 @@
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
                     $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn - $rejectedTrucks;
                 }
-
                 $arrivedQty = $contract['total_loading_weight'] ?? 0;
                 $minQty = $contract['min_quantity'] ?? 0;
                 $maxQty = $contract['max_quantity'] ?? 0;
+                $isLinked = $contract['is_linked'] ?? false;
+
+                $hasSelectedFreight = collect($contract['purchase_freights'] ?? [])->contains('is_selected', true);
+
             @endphp
-            <tr class="contract-row" data-id="{{ $contract['id'] }}">
+            <tr class="contract-row {{ $isLinked ? 'table-info' : '' }}" data-id="{{ $contract['id'] }}">
                 <td>
                     <input type="radio" name="selected_contract" value="{{ $contract['id'] }}"
                         {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
-                        {{ $contract['id'] == ($arrivalTicket->arrival_purchase_order_id ?? '') ? 'checked' : '' }}>
+                        {{ $hasSelectedFreight || $contract['id'] == ($arrivalTicket->arrival_purchase_order_id ?? '') ? 'checked' : '' }}>
                     {{ $contract['contract_no'] ?? '-' }}
+                    @if ($isLinked)
+                        {{-- <span class="badge badge-info ml-1">Linked</span> --}}
+                    @endif
                 </td>
                 <td>{{ $contract['qc_product_name'] ?? 'N/A' }}</td>
                 <td>{{ $contract['supplier']['name'] ?? 'N/A' }}</td>
@@ -104,6 +109,106 @@
                     @endif
                 </td>
             </tr>
+
+            @if (count($contract['purchase_freights'] ?? []) > 0)
+                <tr class="freight-row" data-contract-id="{{ $contract['id'] }}" style="display: none;">
+                    <td colspan="20">
+                        <div class="freight-container p-3 bg-light border-left border-primary">
+                            <h6 class="mb-3">
+                                <i class="fa fa-truck text-primary"></i>
+                                Purchase Freights for Contract: {{ $contract['contract_no'] }}
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="thead-light normal">
+                                        <tr class="normal">
+                                            <th width="5%" class="normal">Select</th>
+                                            <th width="15%" class="normal">Truck No</th>
+                                            <th width="15%" class="normal">Bilty No</th>
+                                            <th width="12%" class="normal">Loading Weight</th>
+                                            <th width="12%" class="normal">Loading Date</th>
+                                            <th width="15%" class="normal">Station</th>
+                                            <th width="10%" class="normal">No of Bags</th>
+                                            <th width="16%" class="normal">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="normal">
+                                        @foreach ($contract['purchase_freights'] as $freight)
+                                            <tr
+                                                class="normal freight-item {{ $freight['is_selected'] ? 'table-success' : '' }}">
+                                                <td class="normal">
+                                                    <input type="radio" name="selected_freight_{{ $contract['id'] }}"
+                                                        value="{{ $freight['id'] }}" class="freight"
+                                                        data-contract-id="{{ $contract['id'] }}"
+                                                        data-truck-no="{{ $freight['truck_no'] }}"
+                                                        data-bilty-no="{{ $freight['bilty_no'] }}"
+                                                        {{ $freight['is_selected'] ? 'checked' : '' }}
+                                                        {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}>
+
+                                                </td>
+                                                <td class="normal">{{ $freight['truck_no'] ?? 'N/A' }}</td>
+                                                <td class="normal">{{ $freight['bilty_no'] ?? 'N/A' }}</td>
+                                                <td class="normal">{{ $freight['loading_weight'] ?? 'N/A' }}</td>
+                                                <td class="normal">{{ $freight['loading_date'] ?? 'N/A' }}</td>
+                                                <td class="normal">{{ $freight['station_name'] ?? 'N/A' }}</td>
+                                                <td class="normal">{{ $freight['no_of_bags'] ?? 'N/A' }}</td>
+                                                <td class="normal">
+                                                    @if ($freight['arrival_ticket_id'])
+                                                        <span class="badge badge-success">Linked</span>
+                                                    @elseif($freight['is_selected'])
+                                                        <span class="badge badge-warning">Auto-Selected</span>
+                                                    @else
+                                                        <span class="badge badge-secondary">Available</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            @endif
         @endforeach
     @endslot
 </x-sticky-table>
+
+<style>
+    .freight-container {
+        margin: 5px 0;
+        border-radius: 5px;
+    }
+
+    .freight-item.table-success {
+        background-color: #d4edda !important;
+    }
+
+    .toggle-freights {
+        transition: all 0.3s ease;
+    }
+
+    .toggle-freights.expanded i {
+        transform: rotate(180deg);
+    }
+
+    .contract-row.table-info {
+        background-color: #d1ecf1 !important;
+    }
+
+    .freight-shimmer {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+</style>

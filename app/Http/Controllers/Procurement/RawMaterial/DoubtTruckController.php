@@ -3,28 +3,21 @@
 namespace App\Http\Controllers\Procurement\RawMaterial;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Procurement\TicketContractRequest;
-use App\Models\Arrival\ArrivalCustomSampling;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
-use App\Models\Arrival\PurchaseSamplingResult;
-use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\Miller;
-use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
-use App\Models\Master\QcReliefParameter;
 use App\Models\Procurement\PurchaseFreight;
 use App\Models\Product;
 use App\Models\PurchaseSamplingRequest;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-class TicketContractController extends Controller
+class DoubtTruckController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -32,8 +25,8 @@ class TicketContractController extends Controller
     public function index()
     {
         $commodities = Product::all();
-        $millers = Miller::all();
-        return view('management.procurement.raw_material.ticket_contracts.index', compact('commodities', 'millers'));
+
+        return view('management.procurement.raw_material.doubt_trucks.index', compact('commodities'));
     }
 
     /**
@@ -41,29 +34,16 @@ class TicketContractController extends Controller
      */
     public function getList(Request $request)
     {
-        $isOnlyVerified = str()->contains($request->route()->getName(), 'verified');
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
             ->leftJoin('grn_numbers', function ($join) {
                 $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
-            ->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
+            ->where('arrival_purchase_order_id', '=', NULL)
             ->where(function ($query) {
                 $query->where('arrival_tickets.freight_status', 'completed')
                     ->orWhere('arrival_tickets.first_qc_status', 'rejected');
-            })
-            ->when($request->filled('grn_no'), function ($q) use ($request) {
-                return $q->where('grn_numbers.unique_no', 'like', '%' . $request->grn_no . '%');
-            })
-            ->when($request->filled('truck_no'), function ($q) use ($request) {
-                return $q->where('arrival_tickets.truck_no', 'like', '%' . $request->truck_no . '%');
-            })
-            ->when($request->filled('bilty_no'), function ($q) use ($request) {
-                return $q->where('arrival_tickets.bilty_no', 'like', '%' . $request->bilty_no . '%');
-            })
-            ->when($request->filled('arrival_ticket_no'), function ($q) use ($request) {
-                return $q->where('arrival_tickets.unique_no', 'like', '%' . $request->arrival_ticket_no . '%');
             })
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
@@ -75,19 +55,8 @@ class TicketContractController extends Controller
                         });
                 });
             })
-            ->when($request->filled('miller_id'), function ($q) use ($request) {
-                return $q->whereHas('miller', function ($query) use ($request) {
-                    $query->where('id', $request->miller_id);
-                });
-            })
-            ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
-                return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
-            })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.location_id', $request->company_location_id);
-            })
-            ->when($request->filled('supplier_id'), function ($q) use ($request) {
-                return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
@@ -97,9 +66,9 @@ class TicketContractController extends Controller
                     ->whereDate('arrival_tickets.created_at', '<=', $endDate);
             })
             ->orderBy('arrival_tickets.created_at', 'desc')
-            ->paginate(request('per_page', 25));
+            ->get();
 
-        return view('management.procurement.raw_material.ticket_contracts.getList', compact('tickets'));
+        return view('management.procurement.raw_material.doubt_trucks.getList', compact('tickets'));
     }
 
     /**

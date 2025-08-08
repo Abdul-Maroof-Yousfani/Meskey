@@ -1,13 +1,14 @@
 @extends('management.layouts.master')
+
 @section('title')
     Arrival Ticket Summary
 @endsection
+
 @section('content')
     @php
         $isSlabs = false;
         $isCompulsury = false;
         $showLumpSum = false;
-
         if (
             isset($samplingRequest->is_lumpsum_deduction) &&
             $samplingRequest->is_lumpsum_deduction &&
@@ -15,22 +16,20 @@
         ) {
             $showLumpSum = true;
         }
-
         foreach ($samplingRequestCompulsuryResults as $slab) {
             if (!$slab->applied_deduction) {
                 continue;
             }
             $isCompulsury = true;
         }
-
         foreach ($samplingRequestResults as $slab) {
             if (!$slab->applied_deduction) {
                 continue;
             }
             $isSlabs = true;
         }
-
     @endphp
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -51,6 +50,7 @@
                             <input type="hidden" id="url"
                                 value="{{ route('raw-material.ticket-contracts.index') }}" />
                             <input type="hidden" name="arrival_ticket_id" value="{{ $arrivalTicket->id }}">
+                            <input type="hidden" name="selected_freight" id="selected_freight_input">
 
                             <div class="row">
                                 <div class="col-12">
@@ -70,37 +70,12 @@
                                                 </div>
                                             </div>
                                             <div class="contract-results mt-3" id="contracts_table"
-                                                style="display: none; max-height: 400px; overflow-y: auto;">
+                                                style="display: none; max-height: 600px; overflow-y: auto;">
                                             </div>
-
-                                            {{-- <div class="contract-results mt-3"
-                                                style="display: none; max-height: 400px; overflow-y: auto;">
-                                                <table class="table table-sm table-bordered table-hover">
-                                                    <thead class="thead-light">
-                                                        <tr>
-                                                            <th style="width: 6%;">Select</th>
-                                                            <th style="width: 13%;">Contract No</th>
-                                                            <th style="width: 13%;">Product</th>
-                                                            <th style="width: 7%;">Sauda Calc Type</th>
-                                                            <th style="width: 13%;">Supplier</th>
-                                                            <th style="width: 10%;">Ordered Qty</th>
-                                                            <th style="width: 8%;">Arrived Qty</th>
-                                                            <th style="width: 10%;">Remaining Qty</th>
-                                                            <th style="width: 7%;">Truck Ordered</th>
-                                                            <th style="width: 7%;">Trucks Arrived</th>
-                                                            <th style="width: 7%;">Remaining Truck</th>
-                                                            <th style="width: 9%;">Remarks</th>
-                                                            <th style="width: 9%;">Is Replacement</th>
-                                                            <th style="width: 9%;">Status</th> 
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="contract_results_body"></tbody>
-                                                </table>
-                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
-                                {{-- <div class="row mt-3"> --}}
+
                                 <div class="col-md-12 text-right">
                                     @if (
                                         ($arrivalTicket->arrival_purchase_order_id ?? false) &&
@@ -117,7 +92,6 @@
                                             <i class="fa fa-check"></i> Submit
                                         </button>
                                     @endif
-                                    {{-- </div> --}}
                                 </div>
                             </div>
 
@@ -129,14 +103,6 @@
                                         </div>
                                         <div class="card-body">
                                             <div class="row">
-                                                {{-- <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label>Closing Trucks Quantity</label>
-                                                        <input type="number" class="form-control" name="closing_trucks_qty"
-                                                            value="{{ old('closing_trucks_qty', 1) }}" min="1">
-                                                    </div>
-                                                </div> --}}
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Ticket Number</label>
@@ -144,7 +110,6 @@
                                                             value="{{ $arrivalTicket->unique_no }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Date</label>
@@ -152,7 +117,6 @@
                                                             value="{{ now()->format('d-M-Y') }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Status</label>
@@ -161,7 +125,6 @@
                                                             readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Product</label>
@@ -169,7 +132,6 @@
                                                             value="{{ $arrivalTicket->product->name }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>QC Product</label>
@@ -177,7 +139,6 @@
                                                             value="{{ $arrivalTicket->qcProduct->name }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group"
                                                         style="background-color: #ffff99; padding: 10px; border-radius: 5px;">
@@ -195,7 +156,6 @@
                                                     <h5 class="section-title">Party Information</h5>
                                                     <hr>
                                                 </div>
-
                                                 <div class="col-md-4">
                                                     <div class="form-group">
                                                         <label>Miller</label>
@@ -203,7 +163,6 @@
                                                             value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-4">
                                                     <div class="form-group">
                                                         <label>Broker</label>
@@ -211,7 +170,6 @@
                                                             value="{{ $arrivalTicket->broker_name ?? 'N/A' }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-4">
                                                     <div class="form-group">
                                                         <label>On Account Of</label>
@@ -227,7 +185,6 @@
                                                     <h5 class="section-title">Transport Information</h5>
                                                     <hr>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Truck No</label>
@@ -235,7 +192,6 @@
                                                             value="{{ $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Truck Type</label>
@@ -244,7 +200,6 @@
                                                             readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Bilty No</label>
@@ -252,7 +207,6 @@
                                                             value="{{ $arrivalTicket->bilty_no }}" readonly>
                                                     </div>
                                                 </div>
-
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Station</label>
@@ -268,7 +222,6 @@
                                                         <h5 class="section-title">Weight Information</h5>
                                                         <hr>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>First Weight</label>
@@ -277,7 +230,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Second Weight</label>
@@ -286,7 +238,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Net Weight</label>
@@ -295,7 +246,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Arrival Weight</label>
@@ -304,7 +254,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>No. of Bags</label>
@@ -313,7 +262,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Avg. Weight per Bag</label>
@@ -322,7 +270,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Packing</label>
@@ -331,7 +278,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Gala No</label>
@@ -347,7 +293,6 @@
                                                         <h5 class="section-title">Freight Information</h5>
                                                         <hr>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Filling Bags</label>
@@ -356,7 +301,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Freight (Rs.)</label>
@@ -365,7 +309,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Freight per Ton</label>
@@ -374,7 +317,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Arrived Kanta Charges</label>
@@ -383,7 +325,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Kanta Loading Charges</label>
@@ -392,7 +333,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Other/Labour Charges</label>
@@ -401,7 +341,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Other/Labour Charges (in words)</label>
@@ -410,7 +349,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Other Deduction</label>
@@ -419,7 +357,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Other Deduction (in words)</label>
@@ -428,7 +365,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Total Freight Payable</label>
@@ -437,7 +373,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Total Freight Payable (in words)</label>
@@ -446,7 +381,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Unpaid Labour Charge</label>
@@ -455,7 +389,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Unpaid Labour Charge (in words)</label>
@@ -464,7 +397,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Final Figure</label>
@@ -473,7 +405,6 @@
                                                                 readonly>
                                                         </div>
                                                     </div>
-
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Final Figure (in words)</label>
@@ -491,7 +422,6 @@
                                                         <h5 class="section-title">Sampling Results</h5>
                                                         <hr>
                                                     </div>
-
                                                     <div class="col-md-12">
                                                         <div class="table-responsive">
                                                             <table class="table table-bordered">
@@ -507,16 +437,14 @@
                                                                             <td>Lumpsum Deduction Rupees</td>
                                                                             <td class="text-center">
                                                                                 {{ $samplingRequest->lumpsum_deduction ?? 0 }}
-                                                                                (Applied as
-                                                                                Lumpsum)
+                                                                                (Applied as Lumpsum)
                                                                             </td>
                                                                         </tr>
                                                                         <tr>
                                                                             <td>Lumpsum Deduction KG's</td>
                                                                             <td class="text-center">
                                                                                 {{ $samplingRequest->lumpsum_deduction_kgs ?? 0 }}
-                                                                                (Applied as
-                                                                                Lumpsum)
+                                                                                (Applied as Lumpsum)
                                                                             </td>
                                                                         </tr>
                                                                     @else
@@ -528,8 +456,7 @@
                                                                                     }
                                                                                 @endphp
                                                                                 <tr>
-                                                                                    <td>{{ $slab->slabType->name }}
-                                                                                    </td>
+                                                                                    <td>{{ $slab->slabType->name }}</td>
                                                                                     <td class="text-center">
                                                                                         {{ $slab->applied_deduction }}
                                                                                         <span
@@ -545,7 +472,6 @@
                                                                                 </td>
                                                                             </tr>
                                                                         @endif
-
                                                                         @if ($isCompulsury)
                                                                             @if (count($samplingRequestCompulsuryResults) != 0)
                                                                                 @foreach ($samplingRequestCompulsuryResults as $slab)
@@ -555,8 +481,7 @@
                                                                                         }
                                                                                     @endphp
                                                                                     <tr>
-                                                                                        <td>{{ $slab->qcParam->name }}
-                                                                                        </td>
+                                                                                        <td>{{ $slab->qcParam->name }}</td>
                                                                                         <td class="text-center">
                                                                                             {{ $slab->applied_deduction }}
                                                                                             <span
@@ -595,6 +520,9 @@
 @section('scripts')
     <script>
         $(document).ready(function() {
+            let currentSelectedContract = null;
+            let currentSelectedFreight = null;
+
             loadInitialContracts();
 
             const remainingTruckRow = 14;
@@ -602,67 +530,163 @@
 
             $('#contract_search, #search_contract_btn').on('input click', function() {
                 const searchTerm = $('#contract_search').val().trim();
-
                 if (searchTerm.length < 2) {
                     loadInitialContracts();
                     return;
                 }
-
                 searchContracts(searchTerm);
             });
 
             $(document).on('change', 'input[name="selected_contract"]', function() {
                 const contractId = $(this).val();
+                currentSelectedContract = contractId;
                 $('#selected_contract_id').val(contractId);
-
                 $('#confirm_submit_btn').prop('disabled',
                     {{ $arrivalTicket->is_ticket_verified == 1 ? 'true' : 'false' }});
 
                 $('.contract-row').removeClass('table-active');
                 $(this).closest('.contract-row').addClass('table-active');
+
+                $('.freight-row').hide();
+                $(`.freight-row[data-contract-id="${contractId}"]`).show();
+
+                currentSelectedFreight = null;
+                $('#selected_freight_input').val('');
+
+                const selectedFreightRadio = $(`input[name="selected_freight_${contractId}"]:checked`);
+                if (selectedFreightRadio.length > 0) {
+                    currentSelectedFreight = selectedFreightRadio.val();
+                    $('#selected_freight_input').val(currentSelectedFreight);
+                }
             });
 
+            $(document).on('change', 'input[name^="selected_freight_"]', function() {
+                const freightId = $(this).val();
+                const contractId = $(this).data('contract-id');
+
+                if (currentSelectedContract == contractId) {
+                    currentSelectedFreight = freightId;
+                    $('#selected_freight_input').val(freightId);
+
+                    $(`.freight-item`).removeClass('table-success');
+                    $(this).closest('.freight-item').addClass('table-success');
+                }
+            });
+
+            // $(document).on('click', '.toggle-freights', function() {
+            //     const contractId = $(this).data('contract-id');
+            //     const freightDetails = $(this).closest('.freight-container').find('.freight-details');
+            //     const icon = $(this).find('i');
+
+            //     if (freightDetails.is(':visible')) {
+            //         freightDetails.slideUp();
+            //         icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            //         $(this).removeClass('expanded');
+            //         $(this).html('<i class="fa fa-chevron-down"></i> Show Freights');
+            //     } else {
+            //         // freightDetails.html('<div class="freight-shimmer p-3">Loading freights...</div>');
+            //         freightDetails.slideDown();
+
+            //         // setTimeout(() => {
+            //         loadFreightDetails(contractId);
+            //         icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            //         $(this).addClass('expanded');
+            //         $(this).html('<i class="fa fa-chevron-up"></i> Hide Freights');
+            //         // }, 500);
+            //     }
+            // });
+
             $(document).on('click', '#confirm_submit_btn', function() {
-                const contractId = $(this).closest('#ajaxSubmit').find(
-                    'input[name="selected_contract"]:checked').val();
-                if (!contractId) {
+                if (!currentSelectedContract) {
                     Swal.fire('Error', 'Please select a contract first', 'error');
                     return;
                 }
 
-                const contractRow = $(this).closest('#ajaxSubmit').find(
-                    `input[name="selected_contract"][value="${contractId}"]`).closest(
-                    '.contract-row');
-
-                const remainingQty = parseFloat(contractRow.find(`td:eq(${remainingQtyRow})`).text()
-                        .split(
-                            ' - ')[1] ||
-                        contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) ||
-                    0;
+                const contractRow = $(`.contract-row[data-id="${currentSelectedContract}"]`);
+                const remainingQty = parseFloat(contractRow.find(`td:eq(${remainingQtyRow})`).text().split(
+                        ' - ')[1] ||
+                    contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) || 0;
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
                 const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow}) span`)
-                        .text()) ||
-                    0;
-
+                    .text()) || 0;
                 const isTicketVerified = @json($arrivalTicket->is_ticket_verified == 1);
+
+                let requiresFreightConfirmation = false;
+                let freightDetails = {};
+
+                if (currentSelectedFreight) {
+                    // const selectedFreightRadio = $(`input[value="${currentSelectedFreight}"]`);
+                    const secondInput = $(`input[value="${currentSelectedFreight}"].freight`);
+
+                    const freightTruckNo = secondInput.data('truck-no');
+                    const freightBiltyNo = secondInput.data('bilty-no');
+                    const ticketTruckNo = '{{ $arrivalTicket->truck_no }}';
+                    const ticketBiltyNo = '{{ $arrivalTicket->bilty_no }}';
+
+                    console.log({
+                        freightTruckNo,
+                        freightBiltyNo,
+                        secondInput
+                    });
+
+                    if (freightTruckNo?.toString()?.toLowerCase() !== ticketTruckNo.toLowerCase() ||
+                        freightBiltyNo?.toString()?.toLowerCase() !== ticketBiltyNo.toLowerCase()) {
+                        requiresFreightConfirmation = true;
+                        freightDetails = {
+                            freight_truck: freightTruckNo,
+                            freight_bilty: freightBiltyNo,
+                            ticket_truck: ticketTruckNo,
+                            ticket_bilty: ticketBiltyNo
+                        };
+                    }
+                }
+
+                let confirmationHtml = `
+                    <div class="form-group text-left">
+                        <label>Closing Trucks Quantity</label>
+                        <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" max="${remainingTrucks}" required>
+                        <small class="text-muted">Max allowed: ${remainingTrucks}</small>
+                    </div>
+                    <div class="form-check text-left mt-3">
+                        <input type="checkbox" class="form-check-input" id="swal-verify-ticket" ${isTicketVerified ? 'checked' : ''}>
+                        <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
+                    </div>
+                    <div class="form-check text-left mt-3">
+                        <input type="checkbox" class="form-check-input" id="swal-mark-completed">
+                        <label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>
+                    </div>
+                `;
+
+                //  if (requiresFreightConfirmation) {
+                //     confirmationHtml += `
+            //         <div class="alert alert-warning mt-3">
+            //             <h6><i class="fa fa-exclamation-triangle"></i> Freight Mismatch Warning</h6>
+            //             <p><strong>Ticket Details:</strong> Truck: ${freightDetails.ticket_truck}, Bilty: ${freightDetails.ticket_bilty}</p>
+            //             <p><strong>Selected Freight:</strong> Truck: ${freightDetails.freight_truck}, Bilty: ${freightDetails.freight_bilty}</p>
+            //             <div class="form-check">
+            //                 <input type="checkbox" class="form-check-input" id="swal-confirm-different-freight" required>
+            //                 <label class="form-check-label" for="swal-confirm-different-freight">
+            //                     I confirm linking this freight despite the mismatch
+            //                 </label>
+            //             </div>
+            //         </div>
+            //     `;
+                // }
+
+                if (requiresFreightConfirmation) {
+                    confirmationHtml += `
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="fa fa-exclamation-triangle"></i> Freight Mismatch Warning</h6>
+                            <p><strong>Ticket Details:</strong> Truck: ${freightDetails.ticket_truck}, Bilty: ${freightDetails.ticket_bilty}</p>
+                            <p><strong>Selected Freight:</strong> Truck: ${freightDetails.freight_truck}, Bilty: ${freightDetails.freight_bilty}</p>
+                            
+                        </div>
+                    `;
+                }
 
                 Swal.fire({
                     title: 'Confirm Submission',
-                    html: `
-                            <div class="form-group text-left">
-                                <label>Closing Trucks Quantity</label>
-                                <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" max="${remainingTrucks}" required>
-                                <small class="text-muted">Max allowed: ${remainingTrucks}</small>
-                            </div>
-                            <div class="form-check text-left mt-3">
-                                <input type="checkbox" class="form-check-input" id="swal-verify-ticket" ${isTicketVerified ? 'checked' : ''}>
-                                <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
-                            </div> 
-                            <div class="form-check text-left mt-3">
-                                <input type="checkbox" class="form-check-input" id="swal-mark-completed"> 
-                                <label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label> 
-                            </div>
-                        `,
+                    html: confirmationHtml,
                     showCancelButton: true,
                     confirmButtonText: 'Submit',
                     cancelButtonText: 'Cancel',
@@ -685,12 +709,21 @@
                             return false;
                         }
 
+                        // if (requiresFreightConfirmation && !$('#swal-confirm-different-freight')
+                        //     .is(':checked')) {
+                        //     Swal.showValidationMessage(
+                        //         'Please confirm the freight mismatch to proceed');
+                        //     return false;
+                        // }
+
                         const markCompleted = remainingQty - ticketWeight <= 0 || $(
                             '#swal-mark-completed').is(':checked');
+
                         return {
                             trucksQty,
                             markCompleted,
-                            verifyTicket
+                            verifyTicket,
+                            // confirmDifferentFreight: requiresFreightConfirmation
                         };
                     }
                 }).then((result) => {
@@ -698,7 +731,8 @@
                         const {
                             trucksQty,
                             markCompleted,
-                            verifyTicket
+                            verifyTicket,
+                            confirmDifferentFreight
                         } = result.value;
 
                         $('<input>').attr({
@@ -722,6 +756,14 @@
                                 value: '1'
                             }).appendTo('#ajaxSubmit');
                         }
+
+                        // if (confirmDifferentFreight) {
+                        //     $('<input>').attr({
+                        //         type: 'hidden',
+                        //         name: 'confirm_different_freight',
+                        //         value: '1'
+                        //     }).appendTo('#ajaxSubmit');
+                        // }
 
                         $('#real_submit_btn').click();
                     }
@@ -751,26 +793,17 @@
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    Swal.fire(
-                                        'Completed!',
+                                    Swal.fire('Completed!',
                                         'Contract has been marked as completed.',
-                                        'success'
-                                    );
+                                        'success');
                                     loadInitialContracts();
                                 } else {
-                                    Swal.fire(
-                                        'Error!',
-                                        response.message || 'Something went wrong.',
-                                        'error'
-                                    );
+                                    Swal.fire('Error!', response.message ||
+                                        'Something went wrong.', 'error');
                                 }
                             },
                             error: function(xhr) {
-                                Swal.fire(
-                                    'Error!',
-                                    'Something went wrong.',
-                                    'error'
-                                );
+                                Swal.fire('Error!', 'Something went wrong.', 'error');
                             }
                         });
                     }
@@ -778,12 +811,15 @@
             });
 
             @if ($arrivalTicket->arrival_purchase_order_id ?? false)
-                $('input[name="selected_contract"][value="{{ $arrivalTicket->arrival_purchase_order_id }}"]')
-                    .prop('checked', true)
-                    .closest('.contract-row').addClass('table-active');
+                setTimeout(() => {
+                    $('input[name="selected_contract"][value="{{ $arrivalTicket->arrival_purchase_order_id }}"]')
+                        .prop('checked', true)
+                        .trigger('change');
+                }, 1000);
             @endif
 
             function loadInitialContracts() {
+                showLoadingShimmer();
                 $.ajax({
                     url: '{{ route('raw-material.ticket-contracts.search-contracts') }}',
                     method: 'GET',
@@ -796,11 +832,13 @@
                     },
                     error: function(xhr) {
                         console.error(xhr);
+                        hideLoadingShimmer();
                     }
                 });
             }
 
             function searchContracts(searchTerm) {
+                showLoadingShimmer();
                 $.ajax({
                     url: '{{ route('raw-material.ticket-contracts.search-contracts') }}',
                     method: 'GET',
@@ -813,29 +851,53 @@
                     },
                     error: function(xhr) {
                         console.error(xhr);
+                        hideLoadingShimmer();
                     }
                 });
             }
 
             function populateContractResults(response) {
-                const resultsBody = $('#contract_results_body');
                 $('#contracts_table').empty();
 
                 if (response.success && response.html) {
                     $('.contract-results').show();
                     $('#contracts_table').html(response.html);
-                    $('input[name="selected_contract"]').trigger('change');
+
+                    $('input[name="selected_contract"]:checked').trigger('change');
                 } else {
-                    resultsBody.html(`
-                        <tr>
-                            <td colspan="14" class="text-center text-muted">
-                                No contracts found
-                            </td>
-                        </tr>
+                    $('#contracts_table').html(`
+                        <div class="text-center text-muted p-4">
+                            <i class="fa fa-search fa-3x mb-3"></i>
+                            <p>No contracts found</p>
+                        </div>
                     `);
                     $('.contract-results').show();
                 }
+
+                hideLoadingShimmer();
             }
+
+            function loadFreightDetails(contractId) {
+                const freightContainer = $(`.freight-row[data-contract-id="${contractId}"] .freight-details`);
+                freightContainer.html(freightContainer.html());
+            }
+
+            function showLoadingShimmer() {
+                $('#contracts_table').html(`
+                    <div class="freight-shimmer p-4">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="bg-light rounded p-3 mb-2"></div>
+                                <div class="bg-light rounded p-3 mb-2"></div>
+                                <div class="bg-light rounded p-3 mb-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $('.contract-results').show();
+            }
+
+            function hideLoadingShimmer() {}
         });
     </script>
 
@@ -859,6 +921,40 @@
 
         .table-active {
             background-color: #e7f5ff !important;
+        }
+
+        .freight-container {
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .freight-item.table-success {
+            background-color: #d4edda !important;
+        }
+
+        .contract-row.table-info {
+            background-color: #d1ecf1 !important;
+        }
+
+        .freight-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .section-title {
+            color: #495057;
+            font-weight: 600;
         }
     </style>
 @endsection

@@ -20,6 +20,7 @@ use App\Models\Master\{
 };
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
+use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -34,7 +35,6 @@ class ArrivalTicket extends Model
         'product_id',
         'qc_product',
         'location_id',
-        // 'supplier_name',
         'broker_name',
         'bag_weight',
         'decision_id',
@@ -214,5 +214,10 @@ class ArrivalTicket extends Model
     public function freight()
     {
         return $this->hasOne(Freight::class, 'arrival_ticket_id');
+    }
+
+    public function purchaseFreights()
+    {
+        return $this->hasMany(PurchaseFreight::class, 'arrival_ticket_id');
     }
 }

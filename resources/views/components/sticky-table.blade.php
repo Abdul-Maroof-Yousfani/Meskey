@@ -57,8 +57,8 @@
             const table = container.querySelector('.sticky-table');
             if (!table) return;
 
-            const headers = table.querySelectorAll('thead th');
-            const headerRow = table.querySelector('thead tr');
+            const headers = table.querySelectorAll('thead th:not(.normal)');
+            const headerRow = table.querySelector('thead tr:not(.normal)');
 
             headers.forEach((th, index) => {
                 if (index < leftSticky) {
@@ -74,9 +74,9 @@
                 }
             });
 
-            const rows = table.querySelectorAll('tbody tr');
+            const rows = table.querySelectorAll('tbody tr:not(.normal)');
             rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
+                const cells = row.querySelectorAll('td:not(.normal)');
                 cells.forEach((td, index) => {
                     if (index < leftSticky) {
                         td.classList.add('sticky-col-left');
@@ -96,7 +96,7 @@
                 let leftPositions = [];
                 let cumulativeWidth = 0;
 
-                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td') : [];
+                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td:not(.normal)') : [];
 
                 for (let i = 0; i < leftSticky; i++) {
                     if (firstRowCells[i]) {
@@ -120,7 +120,7 @@
                 let rightPositions = [];
                 let cumulativeWidth = 0;
 
-                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td') : [];
+                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td:not(.normal)') : [];
                 const totalCells = firstRowCells.length;
 
                 for (let i = totalCells - 1; i >= totalCells - rightSticky; i--) {

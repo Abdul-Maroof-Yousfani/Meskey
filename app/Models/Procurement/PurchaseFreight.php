@@ -2,6 +2,7 @@
 
 namespace App\Models\Procurement;
 
+use App\Models\Arrival\ArrivalTicket;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\BagCondition;
 use App\Models\Master\Station;
@@ -20,9 +21,9 @@ class PurchaseFreight extends Model
         'company_id',
         'arrival_purchase_order_id',
         'purchase_ticket_id',
+        'arrival_ticket_id',
         'loading_date',
         'supplier_name',
-        // 'broker',
         'truck_no',
         'bilty_no',
         'station_id',
@@ -58,6 +59,11 @@ class PurchaseFreight extends Model
     public function purchaseTicket()
     {
         return $this->belongsTo(PurchaseTicket::class, 'purchase_ticket_id');
+    }
+
+    public function arrivalTicket()
+    {
+        return $this->belongsTo(ArrivalTicket::class, 'arrival_ticket_id');
     }
 
     public function station()
