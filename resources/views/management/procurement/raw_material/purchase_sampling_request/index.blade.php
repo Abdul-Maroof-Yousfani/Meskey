@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Raw Material Purchase Request
+    Sampling Request (Purchase)
 @endsection
 @section('content')
     <div class="content-wrapper">
