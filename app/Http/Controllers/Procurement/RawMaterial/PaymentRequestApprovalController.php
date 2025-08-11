@@ -382,7 +382,7 @@ class PaymentRequestApprovalController extends Controller
                 if ($transitTxn) {
                     $transitTxn->update([
                         'amount' => $inventoryAmount,
-                        'account_id' => $ticket->purchaseOrder->qcProduct->account_id,
+                        'account_id' => $ticket->purchaseOrder->qcProduct->account_id ?? $ticket->purchaseOrder->product->account_id,
                         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
                     ]);
                 }
@@ -395,14 +395,15 @@ class PaymentRequestApprovalController extends Controller
                 if ($transitTxn) {
                     $transitTxn->update([
                         'amount' => $inventoryAmount,
-                        'account_id' =>    $ticket->purchaseOrder->qcProduct->account_id,
+                        // 'account_id' =>    $ticket->purchaseOrder->qcProduct->account_id,
+                        'account_id' => $ticket->purchaseOrder->qcProduct->account_id ?? $ticket->purchaseOrder->product->account_id,
                         'type' => 'debit',
                         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
                     ]);
                 } else {
                     createTransaction(
                         $amount,
-                        $ticket->purchaseOrder->qcProduct->account_id,
+                        $ticket->purchaseOrder->qcProduct->account_id ?? $ticket->purchaseOrder->product->account_id,
                         1,
                         $contractNo,
                         'debit',
