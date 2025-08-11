@@ -108,6 +108,23 @@
             </select>
         </div>
     </div>
+
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="form-group">
+            <label>Parent User (Optional):</label>
+            <select name="parent_user_id" id="parent_user_id" class="form-control">
+                <option value="">Select Parent User</option>
+                @foreach ($users as $parentUser)
+                    @if ($parentUser->id != $user->id)
+                        <option value="{{ $parentUser->id }}"
+                            {{ $user->parent_user_id == $parentUser->id ? 'selected' : '' }}>
+                            {{ $parentUser->name }} ({{ $parentUser->username }})
+                        </option>
+                    @endif
+                @endforeach
+            </select>
+        </div>
+    </div>
 </div>
 
 <div id="card-container" class="mb-4">

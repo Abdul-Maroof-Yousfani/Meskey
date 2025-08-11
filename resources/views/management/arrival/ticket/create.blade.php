@@ -3,14 +3,6 @@
      <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
      <div class="row form-mar">
 
-         {{-- <?php
-         $authUser = auth()->user();
-         $companyLocation = $authUser->companyLocation ?? null;
-         $code = $companyLocation->code ?? 'KHI';
-         
-         $unique_no = generateTicketNoWithDateFormat('arrival_tickets', $code);
-         ?> --}}
-
          <?php
          $authUser = auth()->user();
          $isRegularUser = $authUser->user_type === 'user';
@@ -24,7 +16,8 @@
                  <div class="form-group">
                      <label>Location:</label>
                      <input type="text" class="form-control" value="{{ $userLocation->name ?? 'N/A' }}" disabled>
-                     <input type="hidden" name="company_location_id" value="{{ $userLocation->id ?? null }}">
+                     <input type="hidden" name="company_location_id" value="{{ $userLocation->id ?? null }}"
+                         id="">
                  </div>
              </div>
          @else
@@ -57,19 +50,6 @@
                  <label class="d-block">Contract Detail:</label>
                  <select name="arrival_purchase_order_id" id="arrival_purchase_order_id" class="form-control select2">
                      <option value="">N/A</option>
-                     @foreach ($arrivalPurchaseOrders as $order)
-                         <option value="{{ $order->id }}" data-product-id="{{ $order->product->id ?? '' }}"
-                             data-product-name="{{ $order->product->name ?? '' }}"
-                             data-supplier-id="{{ $order->supplier->name ?? '' }}"
-                             data-supplier-name="{{ $order->supplier->name ?? '' }}"
-                             data-created-by-id="{{ $order->created_by ?? '' }}"
-                             data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
-                             data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
-                             data-sauda-type-id="{{ $order->saudaType->id ?? '' }}"
-                             data-created-at="{{ $order->created_at ?? '' }}">
-                             #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }}
-                         </option>
-                     @endforeach
                  </select>
              </div>
          </div>
@@ -106,13 +86,11 @@
                  <label>Broker:</label>
                  <select name="broker_name" id="broker_name" class="form-control select2">
                      <option value="">Broker Name</option>
-                     @foreach ($suppliers as $supplier)
-                         <option value="{{ $supplier->name }}">{{ $supplier->name }}</option>
-                     @endforeach
                  </select>
-                 {{-- <input type="hidden" name="broker_name" id="broker_name_submit"> --}}
              </div>
          </div>
+
+
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group ">
                  <label>Decision Of:</label>
@@ -129,9 +107,6 @@
                  <label>Accounts Of:</label>
                  <select name="accounts_of_display" id="accounts_of" class="form-control select2">
                      <option value="" hidden>Accounts Of</option>
-                     @foreach ($suppliers as $supplier)
-                         <option value="{{ $supplier->name }}">{{ $supplier->name }}</option>
-                     @endforeach
                  </select>
                  <input type="hidden" name="accounts_of" id="accounts_of_hidden">
              </div>
@@ -288,6 +263,7 @@
      }
 
      $(document).ready(function() {
+         $('.select2').select2();
 
          if (IS_LOCAL) {
              function populateRandomValues() {
@@ -532,15 +508,69 @@
              }
          });
 
-         @if (auth()->user()->user_type === 'super-admin')
-             $('#company_location_id').on('change', function() {
-                 const locationId = $(this).val();
-                 if (locationId) {
-                     $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
-                         $('input[name="unique_no"]').val(data.ticket_no);
-                     });
-                 }
+
+         function loadLocationData(locationId) {
+             if (!locationId) {
+                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
+                 $('#broker_name').empty().append('<option value="">Broker Name</option>');
+                 $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
+                 return;
+             }
+
+             $.get(`/arrival/get-contracts/${locationId}`, function(data) {
+                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
+                 $.each(data.contracts, function(index, contract) {
+                     $('#arrival_purchase_order_id').append(
+                         `<option value="${contract.id}"
+                        data-product-id="${contract.product_id}"
+                        data-supplier-id="${contract.supplier.name}"
+                        data-sauda-type-id="${contract.sauda_type_id}">
+                        #${contract.contract_no} - Type: ${contract.sauda_type.name}
+                    </option>`
+                     );
+                 });
              });
+
+             $.get(`/arrival/get-suppliers/${locationId}`, function(data) {
+                 $('#broker_name').empty().append('<option value="">Broker Name</option>');
+                 $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
+
+                 $.each(data.suppliers, function(index, supplier) {
+                     $('#broker_name').append(
+                         `<option value="${supplier.name}">${supplier.name}</option>`
+                     );
+                     $('#accounts_of').append(
+                         `<option value="${supplier.name}">${supplier.name}</option>`
+                     );
+                 });
+             });
+         }
+
+         $('#company_location_id').on('change', function() {
+             const locationId = $(this).val();
+
+             if (locationId) {
+                 $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
+                     $('input[name="unique_no"]').val(data.ticket_no);
+                 });
+             }
+
+             loadLocationData(locationId);
+         });
+
+         @if ($isRegularUser)
+             loadLocationData('{{ $userLocation->id ?? null }}');
+         @endif
+
+         @if (auth()->user()->user_type === 'super-admin')
+             //      $('#company_location_id').on('change', function() {
+             //          const locationId = $(this).val();
+             //          if (locationId) {
+             //              $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
+             //                  $('input[name="unique_no"]').val(data.ticket_no);
+             //              });
+             //          }
+             //      });
          @endif
      });
  </script>

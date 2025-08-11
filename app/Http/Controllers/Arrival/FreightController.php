@@ -57,6 +57,7 @@ class FreightController extends Controller
 
         $tickets = ArrivalTicket::where('freight_status', 'pending')
             ->whereNotNull('qc_product')
+            // where('arrival_purchase_order_id', '!=', Null)
             ->when(!$isSuperAdmin, function ($query) use ($authUser) {
                 // return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
                 return $query->where('location_id', $authUser->company_location_id);
@@ -90,7 +91,8 @@ class FreightController extends Controller
                 $freight = Freight::create($data);
 
                 $datePrefix = date('m-d-Y') . '-';
-                $data['unique_no'] = generateUniqueNumberByDate('arrival_slips', $datePrefix, null, 'unique_no');
+                // $data['unique_no'] = generateUniqueNumberByDate('arrival_slips', $datePrefix, null, 'unique_no');
+                $data['unique_no'] = $grnNo = generateLocationBasedCode('grn_numbers', $ticket->location?->code ?? 'KHI');
                 $data['creator_id'] = auth()->user()->id;
                 $data['remark'] = $request->note ?? '';
 
@@ -101,7 +103,7 @@ class FreightController extends Controller
                     'model_type' => 'arrival-slip',
                     'location_id' => $ticket->location_id,
                     'product_id' => $ticket->qc_product ?? $ticket->product_id ?? null,
-                    'unique_no' => generateLocationBasedCode('grn_numbers', $ticket->location?->code ?? 'KHI')
+                    'unique_no' => $grnNo
                 ]);
 
                 $truckNo = $ticket->truck_no ?? 'N/A';
@@ -127,10 +129,11 @@ class FreightController extends Controller
                             $amount,
                             $ticket->accountsOf->account_id,
                             1,
-                            $arrivalApprove->unique_no,
+                            $contractNo,
                             'credit',
                             'no',
                             [
+                                'grn_no' => $grnNo,
                                 'purpose' => "supplier-payable",
                                 'payment_against' => "pohanch-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -149,6 +152,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
+                                    'grn_no' => $grnNo,
                                     'purpose' => "broker",
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
@@ -168,6 +172,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
+                                    'grn_no' => $grnNo,
                                     'purpose' => "broker",
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
@@ -187,6 +192,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
+                                    'grn_no' => $grnNo,
                                     'purpose' => "broker",
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
@@ -199,10 +205,11 @@ class FreightController extends Controller
                             $inventoryAmount,
                             $ticket->qcProduct->account_id,
                             1,
-                            $arrivalApprove->unique_no,
+                            $contractNo,
                             'debit',
                             'no',
                             [
+                                'grn_no' => $grnNo,
                                 'purpose' => "arrival-slip",
                                 'payment_against' => "pohanch-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -230,6 +237,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
+                                    'grn_no' => $grnNo,
                                     'purpose' => "stock-in-transit",
                                     'payment_against' => "thadda-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
@@ -241,10 +249,11 @@ class FreightController extends Controller
                                 $inventoryAmount,
                                 $purchaseOrder->qcProduct->account_id,
                                 1,
-                                $arrivalApprove->unique_no,
+                                $contractNo,
                                 'debit',
                                 'no',
                                 [
+                                    'grn_no' => $grnNo,
                                     'purpose' => "arrival-slip",
                                     'payment_against' => "thadda-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",

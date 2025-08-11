@@ -130,6 +130,29 @@ class TicketController extends Controller
         ]);
     }
 
+    public function getContractsByLocation($locationId)
+    {
+        $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where('company_location_id', $locationId)
+            ->where('purchase_type', 'regular')
+            ->get();
+
+        return response()->json([
+            'contracts' => $contracts
+        ]);
+    }
+
+    public function getSuppliersByLocation($locationId)
+    {
+        $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)
+            // ->where('status', 'active')
+            ->get();
+
+        return response()->json([
+            'suppliers' => $suppliers
+        ]);
+    }
+
     /**
      * Store a newly created resource in storage.
      */

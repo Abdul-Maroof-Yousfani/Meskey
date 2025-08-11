@@ -1011,3 +1011,16 @@ tr.editing {
   color: #000000;
   background: #6d6d6d57;
 }
+
+.badge-yellow {
+  background-color: #ffe066 !important;
+  color: #7a5c00;
+  /* border-radius: 12px; */
+  /* padding: 2px 10px; */
+  /* font-weight: 600;
+  font-size: 90%; */
+  /* box-shadow: 0 1px 4px 0 rgba(255, 224, 102, 0.25); */
+  /* border: 1px solid #ffe066; */
+  /* letter-spacing: 0.5px; */
+  /* display: inline-block; */
+}

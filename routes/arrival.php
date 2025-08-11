@@ -27,7 +27,8 @@ Route::post('/get-initialsampling', [InitialSamplingController::class, 'getList'
 Route::post('/get-initial-resampling', [InitialSamplingController::class, 'getList'])->name('get.initial-resampling');
 Route::post('/initial-sampling/update-status', [InitialSamplingController::class, 'updateStatus'])->name('initialsampling.updateStatus');
 
-
+Route::get('/get-contracts/{locationId}', [TicketController::class, 'getContractsByLocation']);
+Route::get('/get-suppliers/{locationId}', [TicketController::class, 'getSuppliersByLocation']);
 
 Route::resource('sampling-monitoring', SamplingMonitoringController::class);
 Route::post('/get-sampling-monitoring', [SamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');

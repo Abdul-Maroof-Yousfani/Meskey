@@ -22,6 +22,7 @@ class Transaction extends Model
         'account_unique_no',
         'type',
         'is_opening_balance',
+        'grn_no',
         'action',
         'amount',
         'purpose',

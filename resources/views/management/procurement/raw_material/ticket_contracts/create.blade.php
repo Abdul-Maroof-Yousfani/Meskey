@@ -77,21 +77,19 @@
                                 </div>
 
                                 <div class="col-md-12 text-right">
-                                    @if (
-                                        ($arrivalTicket->arrival_purchase_order_id ?? false) &&
-                                            ($arrivalTicket->purchaseOrder->status === 'completed' ?? false))
+                                    {{-- @if (($arrivalTicket->arrival_purchase_order_id ?? false) && ($arrivalTicket->purchaseOrder->status === 'completed' ?? false))
                                         <a href="{{ route('raw-material.ticket-contracts.index') }}" class="btn btn-danger">
                                             Close
                                         </a>
-                                    @else
-                                        <button type="button" class="btn btn-primary" id="confirm_submit_btn"
-                                            {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}>
-                                            <i class="fa fa-check"></i> Submit
-                                        </button>
-                                        <button type="submit" class="btn btn-primary d-none" id="real_submit_btn">
-                                            <i class="fa fa-check"></i> Submit
-                                        </button>
-                                    @endif
+                                    @else --}}
+                                    <button type="button" class="btn btn-primary" id="confirm_submit_btn"
+                                        {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}>
+                                        <i class="fa fa-check"></i> Submit
+                                    </button>
+                                    <button type="submit" class="btn btn-primary d-none" id="real_submit_btn">
+                                        <i class="fa fa-check"></i> Submit
+                                    </button>
+                                    {{-- @endif --}}
                                 </div>
                             </div>
 
@@ -610,6 +608,7 @@
                 const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow}) span`)
                     .text()) || 0;
                 const isTicketVerified = @json($arrivalTicket->is_ticket_verified == 1);
+                const isTicketCompleted = @json($arrivalTicket->purchaseOrder->status === 'completed');
 
                 let requiresFreightConfirmation = false;
                 let freightDetails = {};
@@ -644,7 +643,7 @@
                 let confirmationHtml = `
                     <div class="form-group text-left">
                         <label>Closing Trucks Quantity</label>
-                        <input type="number" id="swal-closing-trucks" class="form-control" value="1" min="1" max="${remainingTrucks}" required>
+                        <input type="number" step="0.01" min="0.01" id="swal-closing-trucks" class="form-control" value="1" max="${remainingTrucks}" required>
                         <small class="text-muted">Max allowed: ${remainingTrucks}</small>
                     </div>
                     <div class="form-check text-left mt-3">
@@ -652,7 +651,7 @@
                         <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
                     </div>
                     <div class="form-check text-left mt-3">
-                        <input type="checkbox" class="form-check-input" id="swal-mark-completed">
+                        <input type="checkbox" class="form-check-input" id="swal-mark-completed" ${isTicketCompleted ? 'checked' : ''}>
                         <label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>
                     </div>
                 `;
@@ -679,7 +678,6 @@
                             <h6><i class="fa fa-exclamation-triangle"></i> Freight Mismatch Warning</h6>
                             <p><strong>Ticket Details:</strong> Truck: ${freightDetails.ticket_truck}, Bilty: ${freightDetails.ticket_bilty}</p>
                             <p><strong>Selected Freight:</strong> Truck: ${freightDetails.freight_truck}, Bilty: ${freightDetails.freight_bilty}</p>
-                            
                         </div>
                     `;
                 }
@@ -692,12 +690,12 @@
                     cancelButtonText: 'Cancel',
                     focusConfirm: false,
                     preConfirm: () => {
-                        const trucksQty = parseInt($('#swal-closing-trucks').val());
+                        const trucksQty = parseFloat($('#swal-closing-trucks').val());
                         const verifyTicket = $('#swal-verify-ticket').is(':checked');
 
-                        if (!trucksQty || trucksQty < 1) {
+                        if (!trucksQty || trucksQty <= 0) {
                             Swal.showValidationMessage(
-                                'Closing trucks quantity is required and must be at least 1'
+                                'Closing trucks quantity is required and must be greater than 0'
                             );
                             return false;
                         }

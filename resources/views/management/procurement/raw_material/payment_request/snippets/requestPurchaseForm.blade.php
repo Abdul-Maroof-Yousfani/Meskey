@@ -250,7 +250,7 @@
             Loading Information
         </h6>
     </div>
-    <div class="col-md-12 mb-3">
+    <div class="col-md-12 mb-3 d-none">
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="loading_type" id="loading" value="loading"
                 {{ $hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>

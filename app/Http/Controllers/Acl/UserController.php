@@ -48,7 +48,13 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $locations = CompanyLocation::all();
-        return view('management.acl.users.create', compact('roles', 'locations'));
+        $users = User::
+            // where('id', '!=', auth()->id())
+            //     // ->where('user_type', '!=', 'super-admin')  
+            //     ->
+            get();
+
+        return view('management.acl.users.create', compact('roles', 'locations', 'users'));
     }
     /**
      * Store a newly created resource in storage.
@@ -130,9 +136,13 @@ class UserController extends Controller
         $user = User::with(['companies', 'roles', 'companyLocation.arrivalLocations'])->findOrFail($id);
         $roles = Role::all();
         $locations = CompanyLocation::all();
+        $users = User::where('id', '!=', $id)
+            // ->where('id', '!=', auth()->id())
+            // ->where('user_type', '!=', 'super-admin') 
+            ->get();
         $userRole = $user->roles->pluck('id', 'name')->all();
 
-        return view('management.acl.users.edit', compact('user', 'roles', 'userRole', 'locations'));
+        return view('management.acl.users.edit', compact('user', 'roles', 'userRole', 'locations', 'users'));
     }
 
     /**

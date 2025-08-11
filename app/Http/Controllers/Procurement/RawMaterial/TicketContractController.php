@@ -126,7 +126,7 @@ class TicketContractController extends Controller
         $request->validate([
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'selected_contract' => 'required|exists:arrival_purchase_orders,id',
-            'closing_trucks_qty' => 'required|integer|min:1',
+            'closing_trucks_qty' => 'required|numeric|min:0.01',
             'selected_freight' => 'nullable|exists:purchase_freights,id'
         ]);
 

@@ -5,6 +5,7 @@
             <th class="col-sm-2">Name</th>
             <th class="col-sm-2">Username</th>
             <th class="col-sm-3">Role</th>
+            <th class="col-sm-3">Parent</th>
             <th class="col-sm-3">Companies Assign</th>
             <th class="col-sm-2">Action</th>
         </tr>
@@ -24,7 +25,6 @@
                     <td>
                         <p class="m-0">
                             {{ $user->username }}
-
                         </p>
                     </td>
                     <td>
@@ -34,8 +34,8 @@
                             @endforeach
                         @endif
                     </td>
+                    <td>{{ $user->parent ? $user->parent->name : 'N/A' }}</td>
                     <td>
-
                         @if (!empty(getUserAllCompanies(auth()->user()->id)))
                             @foreach (getUserAllCompanies($user->id) as $v)
                                 <label class="badge gradient-pomegranate">{{ $v->name }}</label>

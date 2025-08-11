@@ -36,6 +36,10 @@
                                 {{ formatEnumValue($request->request_type) }}
                             </span>
                         </span>
+                        <br>
+                        @if ($request->is_advance_payment !== 0)
+                            <span class="badge badge-yellow mt-1">Advance Payment</span>
+                        @endif
                     </td>
                     <td>{{ number_format($request->amount, 2) }}</td>
                     <td>

@@ -35,6 +35,7 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
+        'parent_user_id',
         'status',
         'current_company_id',
         'company_location_id',
@@ -79,6 +80,16 @@ class User extends Authenticatable
     public function getAuthIdentifierName()
     {
         return 'username';
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'parent_user_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(User::class, 'parent_user_id');
     }
 
     public function getAuthIdentifier()

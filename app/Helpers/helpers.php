@@ -6,6 +6,7 @@ use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Stock;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
@@ -456,9 +457,6 @@ if (!function_exists('checkIfNameExists')) {
     }
 }
 
-
-
-
 if (!function_exists('createTransaction')) {
     /**
      * Create a new transaction
@@ -482,22 +480,17 @@ if (!function_exists('createTransaction')) {
         array $additionalData = []
     ) {
         try {
-            // Validate type
             if (!in_array(strtolower($type), ['debit', 'credit'])) {
                 throw new \InvalidArgumentException("Transaction type must be either 'debit' or 'credit'");
             }
 
-            // Validate is_opening_balance
             if (!in_array(strtolower($isOpening), ['yes', 'no'])) {
                 throw new \InvalidArgumentException("is_opening_balance must be either 'yes' or 'no'");
             }
 
-
             $account = Account::findOrFail($accountId);
-            $accountUniqueNo = $account->unique_no; // Assuming the column is named 'unique_no'
+            $accountUniqueNo = $account->unique_no;
 
-
-            // Merge additional data with default values
             $transactionData = array_merge([
                 'company_id' => auth()->user()->current_company_id ?? null,
                 'voucher_date' => now()->format('Y-m-d'),
@@ -519,6 +512,69 @@ if (!function_exists('createTransaction')) {
         } catch (\Exception $e) {
             // Log the error
             Log::error('Failed to create transaction: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+}
+
+if (!function_exists('createStockTransaction')) {
+    /**
+     * Create a new stock transaction
+     *
+     * @param int $productId
+     * @param string $voucherType (grn/gdn/sale_return/purchase_return)
+     * @param string $voucherNo
+     * @param float $qty
+     * @param string $type (stock-in/stock-out)
+     * @param float|null $price [optional]
+     * @param float|null $avgPricePerKg [optional]
+     * @param string|null $narration [optional]
+     * @param array $additionalData [optional] Additional data for the stock transaction
+     * @throws \Exception
+     */
+    function createStockTransaction(
+        int $productId,
+        string $voucherType,
+        string $voucherNo,
+        float $qty,
+        string $type = 'stock-in',
+        ?float $price = null,
+        ?float $avgPricePerKg = null,
+        ?string $narration = null,
+        array $additionalData = []
+    ) {
+        try {
+            $validVoucherTypes = ['grn', 'gdn', 'sale_return', 'purchase_return'];
+            if (!in_array(strtolower($voucherType), $validVoucherTypes)) {
+                throw new \InvalidArgumentException(
+                    "Voucher type must be one of: " . implode(', ', $validVoucherTypes)
+                );
+            }
+
+            if (!in_array(strtolower($type), ['stock-in', 'stock-out'])) {
+                throw new \InvalidArgumentException("Stock type must be either 'stock-in' or 'stock-out'");
+            }
+
+            if ($qty <= 0) {
+                throw new \InvalidArgumentException("Quantity must be greater than 0");
+            }
+
+            $stockData = array_merge([
+                'product_id' => $productId,
+                'voucher_type' => $voucherType,
+                'voucher_no' => $voucherNo,
+                'qty' => $qty,
+                'type' => $type,
+                'price' => $price,
+                'avg_price_per_kg' => $avgPricePerKg,
+                'narration' => $narration,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], $additionalData);
+
+            return Stock::create($stockData);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to create stock transaction: ' . $e->getMessage());
             throw $e;
         }
     }
