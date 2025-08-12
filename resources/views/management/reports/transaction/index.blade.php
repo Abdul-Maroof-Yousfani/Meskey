@@ -22,7 +22,8 @@
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                             <label>Account</label>
-                                            <select class="form-control select2" name="account_id" id="account_id">
+                                            <select class="form-control selectWithoutAjax" name="account_id"
+                                                id="account_id">
                                                 <option value="">All Accounts</option>
                                                 @foreach ($accounts as $account)
                                                     <option value="{{ $account->id }}"
@@ -33,18 +34,11 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>From Date</label>
-                                            <input type="date" name="start_date" class="form-control"
-                                                value="{{ request('start_date') ?? date('Y-m-01') }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>To Date</label>
-                                            <input type="date" name="end_date" class="form-control"
-                                                value="{{ request('end_date') ?? date('Y-m-d') }}">
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-0">
+                                            <label>Date:</label>
+                                            <input type="text" name="daterange" class="form-control" id="daterange"
+                                                value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                         </div>
                                     </div>
                                 </div>

@@ -29,10 +29,10 @@
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
-                                                        value="{{ \Carbon\Carbon::now()->subMonth()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
+                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
-                                              <div class="col-md-2">
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id" id="company_location"
@@ -51,7 +51,7 @@
                                                     placeholder="Search here" name="search"
                                                     value="{{ request('search', '') }}">
                                             </div>
-                                          
+
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Accounts Of:</label>
@@ -100,7 +100,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
 
             initializeDynamicDependentSelect2(

@@ -24,17 +24,18 @@
     @slot('body')
         @foreach ($arrivalPurchaseOrder as $row)
             @php
-                // $arrivedTrucks = $row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0;
                 $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
-
                 $rejectedTrucks = $row->rejectedArrivalTickets->count();
+                $inTransitTrucks = $row->stockInTransitTickets->count();
                 $orderedTrucks = $row->no_of_trucks ?? 0;
-                if ($row->is_replacement == 0) {
-                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
+
+                if ($row->is_replacement == 1) {
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
                 } else {
-                    $balanceTrucks = $orderedTrucks - $arrivedTrucks;
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $rejectedTrucks;
                 }
             @endphp
+
             <tr>
                 <td>
                     #{{ $row->contract_no }}

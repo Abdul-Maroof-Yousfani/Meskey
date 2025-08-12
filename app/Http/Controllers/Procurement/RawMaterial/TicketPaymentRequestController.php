@@ -213,6 +213,7 @@ class TicketPaymentRequestController extends Controller
         $arrivalSlipNo = $ticket->arrivalSlip->unique_no;
         $truckNo = $ticket->truck_no ?? 'N/A';
         $biltyNo = $ticket->bilty_no ?? 'N/A';
+        $grnNo = $ticket->arrivalSlip->unique_no;
 
         $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
         $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
@@ -226,6 +227,7 @@ class TicketPaymentRequestController extends Controller
             'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
             'account_id' => $purchaseOrder->supplier->account_id,
             'type' => 'credit',
+            'grn_no' => $grnNo,
             'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
         ];
 
@@ -241,6 +243,7 @@ class TicketPaymentRequestController extends Controller
                 'no',
                 [
                     'purpose' => "supplier-payable",
+                    'grn_no' => $grnNo,
                     'payment_against' => "pohanch-purchase",
                     'against_reference_no' => "$truckNo/$biltyNo",
                     'remarks' => $supplierData['remarks']
@@ -257,6 +260,7 @@ class TicketPaymentRequestController extends Controller
             'amount' => $inventoryAmount,
             'account_id' => $ticket->qcProduct->account_id,
             'type' => 'debit',
+            'grn_no' => $grnNo,
             'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $ticket->arrived_net_weight . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
         ];
 
@@ -273,6 +277,7 @@ class TicketPaymentRequestController extends Controller
                 [
                     'purpose' => "arrival-slip",
                     'payment_against' => "pohanch-purchase",
+                    'grn_no' => $grnNo,
                     'against_reference_no' => "$truckNo/$biltyNo",
                     'remarks' => $transitData['remarks']
                 ]
@@ -295,6 +300,7 @@ class TicketPaymentRequestController extends Controller
                     'amount' => $amount,
                     'account_id' => $purchaseOrder->broker->account_id,
                     'type' => 'credit',
+                    'grn_no' => $grnNo,
                 ]);
             } else {
                 createTransaction(
@@ -306,6 +312,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "broker",
+                        'grn_no' => $grnNo,
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -316,8 +323,6 @@ class TicketPaymentRequestController extends Controller
 
         if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
             $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
-
-
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                 ->where('payment_against',   'pohanch-purchase')
@@ -330,6 +335,7 @@ class TicketPaymentRequestController extends Controller
                     'amount' => $amount,
                     'account_id' => $purchaseOrder->brokerTwo->account_id,
                     'type' => 'credit',
+                    'grn_no' => $grnNo,
                 ]);
             } else {
                 createTransaction(
@@ -341,6 +347,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "broker",
+                        'grn_no' => $grnNo,
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -362,6 +369,7 @@ class TicketPaymentRequestController extends Controller
             if ($existingBrokerTrx) {
                 $existingBrokerTrx->update([
                     'amount' => $amount,
+                    'grn_no' => $grnNo,
                     'account_id' => $purchaseOrder->brokerThree->account_id,
                     'type' => 'credit',
                 ]);
@@ -375,6 +383,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "broker",
+                        'grn_no' => $grnNo,
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -406,6 +415,7 @@ class TicketPaymentRequestController extends Controller
                         'no',
                         [
                             'purpose' => "supplier-brokery",
+                            'grn_no' => $grnNo,
                             'payment_against' => "thadda-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
@@ -422,6 +432,7 @@ class TicketPaymentRequestController extends Controller
                         [
                             'purpose' => "supplier-brokery",
                             'payment_against' => "thadda-purchase",
+                            'grn_no' => $grnNo,
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Brokery amount adjustment received from supplier for contract ($contractNo)."
                         ]

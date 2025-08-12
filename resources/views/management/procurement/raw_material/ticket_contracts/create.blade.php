@@ -643,7 +643,12 @@
                 let confirmationHtml = `
                     <div class="form-group text-left">
                         <label>Closing Trucks Quantity</label>
-                        <input type="number" step="0.01" min="0.01" id="swal-closing-trucks" class="form-control" value="1" max="${remainingTrucks}" required>
+                        <select id="swal-closing-trucks" class="form-control select2" required>
+                            <option value="0.5">0.5</option>
+                            <option value="1" selected>1</option>
+                            <option value="1.5">1.5</option>
+                            <option value="2">2</option>
+                        </select>
                         <small class="text-muted">Max allowed: ${remainingTrucks}</small>
                     </div>
                     <div class="form-check text-left mt-3">

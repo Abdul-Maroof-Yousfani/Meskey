@@ -19,6 +19,7 @@ class Transaction extends Model
         'payment_against',
         'against_reference_no',
         'account_id',
+        'counter_account_id',
         'account_unique_no',
         'type',
         'is_opening_balance',

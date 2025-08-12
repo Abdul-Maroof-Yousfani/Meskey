@@ -2,34 +2,25 @@
 
 namespace App\Http\Controllers\Procurement\RawMaterial;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Procurement\PaymentRequestRequest;
-use App\Models\Arrival\ArrivalSamplingRequest;
-use App\Models\Arrival\ArrivalSamplingResult;
-use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
-use App\Models\Arrival\ArrivalTicket;
-use App\Models\Arrival\PurchaseSamplingResult;
-use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
-use App\Models\ArrivalPurchaseOrder;
-use App\Models\Master\Account\Account;
-use App\Models\Master\Account\Transaction;
-use App\Models\Master\ArrivalCompulsoryQcParam;
-use App\Models\Master\Broker;
-use App\Models\Master\ProductSlab;
-use App\Models\Master\ProductSlabForRmPo;
-use App\Models\Master\ProductSlabType;
-use App\Models\Master\Supplier;
-use App\Models\Procurement\PaymentRequest;
-use App\Models\Procurement\PaymentRequestApproval;
-use App\Models\Procurement\PaymentRequestData;
-use App\Models\Procurement\PaymentRequestSamplingResult;
-use App\Models\Procurement\PurchaseFreight;
 use App\Models\Product;
-use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
-use App\Models\PurchaseSamplingRequest;
+use App\Models\Master\Broker;
 use App\Models\TruckSizeRange;
+use App\Models\PurchaseTicket;
+use App\Models\Master\ProductSlab;
 use Illuminate\Support\Facades\DB;
+use App\Models\ArrivalPurchaseOrder;
+use App\Http\Controllers\Controller;
+use App\Models\Master\Account\Account;
+use App\Models\PurchaseSamplingRequest;
+use App\Models\Master\ProductSlabForRmPo;
+use App\Models\Master\Account\Transaction;
+use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestData;
+use App\Models\Arrival\PurchaseSamplingResult;
+use App\Models\Procurement\PaymentRequestSamplingResult;
+use App\Http\Requests\Procurement\PaymentRequestRequest;
+use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 
 class PaymentRequestController extends Controller
 {
@@ -399,6 +390,13 @@ class PaymentRequestController extends Controller
             ->where('purpose', 'thadda-freight')
             ->where('against_reference_no', "$truckNo/$biltyNo")
             ->first();
+
+        $existingSiTFreightTrx = Transaction::where('voucher_no', $contractNo)
+            ->where('purpose', 'stock-in-transit')
+            ->where('payment_against', 'thadda-freight')
+            ->where('against_reference_no', "$truckNo/$biltyNo")
+            ->first();
+
         $advanceFreight = (int)($requestData['advance_freight']);
 
         if ($advanceFreight > 0) {
@@ -425,6 +423,30 @@ class PaymentRequestController extends Controller
                     ]
                 );
             }
+
+            if ($existingSiTFreightTrx) {
+                $existingSiTFreightTrx->update([
+                    'amount' => $advanceFreight,
+                    'account_id' => $purchaseOrder->supplier->account_id,
+                    'type' => 'credit',
+                    'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
+                ]);
+            } else {
+                createTransaction(
+                    $advanceFreight,
+                    $purchaseOrder->supplier->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "stock-in-transit",
+                        'payment_against' => "thadda-freight",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                    ]
+                );
+            }
         }
 
         if (
@@ -440,23 +462,6 @@ class PaymentRequestController extends Controller
                 $broker = Broker::find($requestData['broker_id']);
                 if ($broker && $broker->account_id) {
                     $brokeryAmount = abs($requestData['brokery_amount']);
-
-                    if ($advanceFreight > 0) {
-                        createTransaction(
-                            $advanceFreight,
-                            $purchaseOrder->supplier->account_id,
-                            1,
-                            $contractNo,
-                            'credit',
-                            'no',
-                            [
-                                'purpose' => "thadda-freight",
-                                'payment_against' => "thadda-purchase",
-                                'against_reference_no' => "$truckNo/$biltyNo",
-                                'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
-                            ]
-                        );
-                    }
 
                     createTransaction(
                         $brokeryAmount,

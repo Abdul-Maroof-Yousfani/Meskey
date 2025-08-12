@@ -75,8 +75,6 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
         var formData = $("#filterForm").serialize();
         updateUrlParams(formData);
         fetch_data(formData);
-            
-
       }, 300)
     );
 
@@ -106,7 +104,7 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
       data: formData,
       success: function (data) {
         $("#" + appenddiv).html(data);
-    $('.selectwithoutAjax').select2();
+        $(".selectWithoutAjax").select2();
         // Reinitialize Daterangepicker after AJAX content is loaded
         initializeDaterangepicker();
       },

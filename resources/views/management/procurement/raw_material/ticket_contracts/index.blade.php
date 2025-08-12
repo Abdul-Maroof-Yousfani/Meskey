@@ -34,7 +34,7 @@
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
-                                                        value="{{ \Carbon\Carbon::now()->subMonth()->format('m/d/Y') }} - {{ \Carbon\Carbon::now()->format('m/d/Y') }}" />
+                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
 
@@ -60,7 +60,7 @@
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
                                                     <select name="commodity_id" id="commodity_id"
-                                                        class="form-control select2">
+                                                        class="form-control selectWithoutAjax">
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
                                                             <option value="{{ $commodity->id }}"
@@ -83,7 +83,8 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Miller:</label>
-                                                    <select name="miller_id" id="miller_id" class="form-control select2">
+                                                    <select name="miller_id" id="miller_id"
+                                                        class="form-control selectWithoutAjax">
                                                         <option value="">Select Miller</option>
                                                         @foreach ($millers as $miller)
                                                             <option value="{{ $miller->id }}"

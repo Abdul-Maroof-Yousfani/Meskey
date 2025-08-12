@@ -169,6 +169,15 @@
                         </div>
                     </td>
                 </tr>
+            @else
+                <tr class="freight-row" data-contract-id="{{ $contract['id'] }}" style="display: none;">
+                    <td colspan="15">
+                        <div class="alert alert-warning m-0">
+                            <i class="fa fa-exclamation-triangle"></i>
+                            There is no freights available against this contract.
+                        </div>
+                    </td>
+                </tr>
             @endif
         @endforeach
     @endslot
@@ -194,21 +203,5 @@
 
     .contract-row.table-info {
         background-color: #d1ecf1 !important;
-    }
-
-    .freight-shimmer {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-    }
-
-    @keyframes shimmer {
-        0% {
-            background-position: -200% 0;
-        }
-
-        100% {
-            background-position: 200% 0;
-        }
     }
 </style>
