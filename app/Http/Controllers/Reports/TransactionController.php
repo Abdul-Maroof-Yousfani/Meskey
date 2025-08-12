@@ -42,14 +42,14 @@ class TransactionController extends Controller
             $accountName = $account ? $account->name : null;
         }
 
-        $query->when($request->filled('daterange'), function ($q) use ($request) {
-            $dates = explode(' - ', $request->daterange);
-            $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-            $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+        // $query->when($request->filled('daterange'), function ($q) use ($request) {
+        //     $dates = explode(' - ', $request->daterange);
+        //     $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+        //     $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
 
-            return $q->whereDate('voucher_date', '>=', $startDate)
-                ->whereDate('voucher_date', '<=', $endDate);
-        });
+        //     return $q->whereDate('voucher_date', '>=', $startDate)
+        //         ->whereDate('voucher_date', '<=', $endDate);
+        // });
 
         $transactions = $query->paginate(50);
 
