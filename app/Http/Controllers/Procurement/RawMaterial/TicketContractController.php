@@ -185,11 +185,11 @@ class TicketContractController extends Controller
             $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
             $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
             $supplierNetAmount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
-            $qcAccountId = $arrivalTicket->qcProduct->account_id;
+            $type = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohanch' : 'thadda';
+            $qcAccountId = $type  == 'Pohanch' ? $arrivalTicket->qcProduct->account_id : $purchaseOrder->qcProduct->account_id;
             $arrivedWeight = $arrivalTicket['arrived_net_weight'];
             $rate = $purchaseOrder->rate_per_kg;
             $totalAmount = $inventoryAmount;
-            $type = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohanch' : 'thadda';
             $loadingWeight = null;
 
             if ($arrivalTicket->saudaType->name == 'Pohanch') {
@@ -203,6 +203,7 @@ class TicketContractController extends Controller
                     'amount' => $supplierNetAmount,
                     'account_id' => $purchaseOrder->supplier->account_id,
                     'type' => 'credit',
+                    'counter_account_id' => $qcAccountId,
                     'grn_no' => $grnNo,
                     'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
                 ];
@@ -219,6 +220,7 @@ class TicketContractController extends Controller
                         'no',
                         [
                             'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
                             'purpose' => "supplier-payable",
                             'payment_against' => $type . "-purchase",
                             'against_reference_no' => $referenceNo,
@@ -271,6 +273,7 @@ class TicketContractController extends Controller
                     $amount = $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0;
                     $inventoryAmount = $purchasePaymentDetail['calculations']['inventory_amount'] ?? 0;
                     $productName = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
+                    $qcAccountId = $purchaseOrder->qcProduct->account_id;
 
                     $stockTrx = Transaction::where('voucher_no', $contractNo)
                         ->where('purpose', 'stock-in-transit')
@@ -282,6 +285,7 @@ class TicketContractController extends Controller
                         $stockTrx->update([
                             'amount' => $inventoryAmount,
                             'account_id' => $stockInTransitAccount->id,
+                            'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
                             'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                         ]);
@@ -295,6 +299,7 @@ class TicketContractController extends Controller
                             'no',
                             [
                                 'purpose' => "stock-in-transit",
+                                'counter_account_id' => $qcAccountId,
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
                                 'grn_no' => $grnNo,
@@ -343,6 +348,7 @@ class TicketContractController extends Controller
                         $supplierTxn->update([
                             'amount' => $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0,
                             'account_id' => $purchaseOrder->supplier->account_id,
+                            'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
                             'type' => 'credit',
                             'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
@@ -357,6 +363,7 @@ class TicketContractController extends Controller
                             'no',
                             [
                                 'purpose' => "supplier-payable",
+                                'counter_account_id' => $qcAccountId,
                                 'grn_no' => $grnNo,
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -379,6 +386,7 @@ class TicketContractController extends Controller
                     $existingBrokerTrx->update([
                         'amount' => $amount,
                         'account_id' => $arrivalTicket->purchaseOrder->broker->account_id,
+                        'counter_account_id' => $qcAccountId,
                         'type' => 'credit',
                         'grn_no' => $grnNo,
                         'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
@@ -393,6 +401,7 @@ class TicketContractController extends Controller
                         'no',
                         [
                             'purpose' => "broker",
+                            'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
                             'payment_against' => $type . "-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
@@ -414,6 +423,7 @@ class TicketContractController extends Controller
                     $existingBrokerTrx->update([
                         'amount' => $amount,
                         'account_id' => $arrivalTicket->purchaseOrder->brokerTwo->account_id,
+                        'counter_account_id' => $qcAccountId,
                         'type' => 'credit',
                         'grn_no' => $grnNo,
                         'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
@@ -428,6 +438,7 @@ class TicketContractController extends Controller
                         'no',
                         [
                             'purpose' => "broker",
+                            'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
                             'payment_against' => $type . "-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
@@ -449,6 +460,7 @@ class TicketContractController extends Controller
                     $existingBrokerTrx->update([
                         'amount' => $amount,
                         'account_id' => $arrivalTicket->purchaseOrder->brokerThree->account_id,
+                        'counter_account_id' => $qcAccountId,
                         'type' => 'credit',
                         'grn_no' => $grnNo,
                         'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
@@ -463,6 +475,7 @@ class TicketContractController extends Controller
                         'no',
                         [
                             'purpose' => "broker",
+                            'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
                             'payment_against' => $type . "-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",

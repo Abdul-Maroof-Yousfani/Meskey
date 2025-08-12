@@ -123,7 +123,6 @@ class FreightController extends Controller
                     $qcProduct = $ticket->purchaseOrder->qcProduct->name ?? $ticket->purchaseOrder->product->name ?? 'N/A';
                     $loadingWeight = $ticket->arrived_net_weight;
 
-
                     if ($ticket->saudaType->name == 'Pohanch') {
                         createTransaction(
                             $amount,
@@ -134,6 +133,7 @@ class FreightController extends Controller
                             'no',
                             [
                                 'grn_no' => $grnNo,
+                                'counter_account_id' =>  $ticket->qcProduct->account_id,
                                 'purpose' => "supplier-payable",
                                 'payment_against' => "pohanch-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -154,6 +154,7 @@ class FreightController extends Controller
                                 [
                                     'grn_no' => $grnNo,
                                     'purpose' => "broker",
+                                    'counter_account_id' =>  $ticket->qcProduct->account_id,
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -174,6 +175,7 @@ class FreightController extends Controller
                                 [
                                     'grn_no' => $grnNo,
                                     'purpose' => "broker",
+                                    'counter_account_id' =>  $ticket->qcProduct->account_id,
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -194,6 +196,7 @@ class FreightController extends Controller
                                 [
                                     'grn_no' => $grnNo,
                                     'purpose' => "broker",
+                                    'counter_account_id' =>  $ticket->qcProduct->account_id,
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -237,6 +240,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
+                                    'counter_account_id' =>  $purchaseOrder->qcProduct->account_id,
                                     'grn_no' => $grnNo,
                                     'purpose' => "stock-in-transit",
                                     'payment_against' => "thadda-purchase",
@@ -253,6 +257,7 @@ class FreightController extends Controller
                                 'debit',
                                 'no',
                                 [
+                                    'counter_account_id' =>    $stockInTransitAccount->id,
                                     'grn_no' => $grnNo,
                                     'purpose' => "arrival-slip",
                                     'payment_against' => "thadda-purchase",

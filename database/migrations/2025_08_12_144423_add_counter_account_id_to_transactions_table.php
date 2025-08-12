@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('transactions', function (Blueprint $table) {
             $table->unsignedBigInteger('counter_account_id')->nullable()->after('account_id');
+            $table->unsignedBigInteger('counter_account_ref')->nullable()->after('counter_account_id');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->dropColumn('counter_account_id');
+            $table->dropColumn(['counter_account_id', 'counter_account_ref']);
         });
     }
 };

@@ -48,7 +48,24 @@
                   @endphp
                   <tr>
                       <td class="text-center">{{ $transaction->voucher_date->format('d-m-Y') }}</td>
-                      <td>{{ $transaction->voucher_no }}</td>
+                      <td>
+                          {{ $transaction->voucher_no }} <br>
+                          @if ($transaction->counter_account_id)
+                              @php
+                                  $startDate = $transaction->voucher_date->format('m/d/Y');
+
+                                  $endDate = \Carbon\Carbon::now()->format('m/d/Y');
+                                  $daterange = urlencode($startDate . ' - ' . $endDate);
+                              @endphp
+                              <a href="{{ url('transactions/report') }}?account_id={{ $transaction->counterAccount->id }}&daterange={{ $daterange }}&_f"
+                                  target="_blank" data-toggle="tooltip" data-placement="top"
+                                  title="Counter Account: {{ $transaction->counterAccount->name }}">
+                                  <small>{{ $transaction->counterAccount->name }}</small>
+                              </a>
+                          @else
+                              <span title="Counter Account"><small>N/A</small></span>
+                          @endif
+                      </td>
                       <td>
                           {{ $transaction->remarks }}
                           @if ($transaction->payment_against)
@@ -92,3 +109,11 @@
           @endif
       </tbody>
   </table>
+
+  @section('scripts')
+      <script>
+          $(function() {
+              $('[data-toggle="tooltip"]').tooltip();
+          });
+      </script>
+  @endsection

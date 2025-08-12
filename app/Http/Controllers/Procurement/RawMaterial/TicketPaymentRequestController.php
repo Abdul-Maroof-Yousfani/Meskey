@@ -214,7 +214,7 @@ class TicketPaymentRequestController extends Controller
         $truckNo = $ticket->truck_no ?? 'N/A';
         $biltyNo = $ticket->bilty_no ?? 'N/A';
         $grnNo = $ticket->arrivalSlip->unique_no;
-
+        $qcAccountId = $ticket->qcProduct->account_id;
         $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
         $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
@@ -227,6 +227,7 @@ class TicketPaymentRequestController extends Controller
             'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
             'account_id' => $purchaseOrder->supplier->account_id,
             'type' => 'credit',
+            'counter_account_id' => $qcAccountId,
             'grn_no' => $grnNo,
             'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
         ];
@@ -243,6 +244,7 @@ class TicketPaymentRequestController extends Controller
                 'no',
                 [
                     'purpose' => "supplier-payable",
+                    'counter_account_id' => $qcAccountId,
                     'grn_no' => $grnNo,
                     'payment_against' => "pohanch-purchase",
                     'against_reference_no' => "$truckNo/$biltyNo",
@@ -299,6 +301,7 @@ class TicketPaymentRequestController extends Controller
                 $existingBrokerTrx->update([
                     'amount' => $amount,
                     'account_id' => $purchaseOrder->broker->account_id,
+                    'counter_account_id' => $qcAccountId,
                     'type' => 'credit',
                     'grn_no' => $grnNo,
                 ]);
@@ -312,6 +315,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
                         'grn_no' => $grnNo,
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
@@ -334,6 +338,7 @@ class TicketPaymentRequestController extends Controller
                 $existingBrokerTrx->update([
                     'amount' => $amount,
                     'account_id' => $purchaseOrder->brokerTwo->account_id,
+                    'counter_account_id' => $qcAccountId,
                     'type' => 'credit',
                     'grn_no' => $grnNo,
                 ]);
@@ -347,6 +352,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
                         'grn_no' => $grnNo,
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
@@ -359,7 +365,6 @@ class TicketPaymentRequestController extends Controller
         if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
             $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
 
-
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                 ->where('payment_against',   'pohanch-purchase')
                 ->where('account_id', $purchaseOrder->brokerThree->account_id)
@@ -368,6 +373,7 @@ class TicketPaymentRequestController extends Controller
 
             if ($existingBrokerTrx) {
                 $existingBrokerTrx->update([
+                    'counter_account_id' => $qcAccountId,
                     'amount' => $amount,
                     'grn_no' => $grnNo,
                     'account_id' => $purchaseOrder->brokerThree->account_id,
@@ -383,6 +389,7 @@ class TicketPaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
                         'grn_no' => $grnNo,
                         'payment_against' => "pohanch-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
@@ -431,6 +438,7 @@ class TicketPaymentRequestController extends Controller
                         'no',
                         [
                             'purpose' => "supplier-brokery",
+                            'counter_account_id' => $qcAccountId,
                             'payment_against' => "thadda-purchase",
                             'grn_no' => $grnNo,
                             'against_reference_no' => "$truckNo/$biltyNo",
@@ -710,44 +718,6 @@ class TicketPaymentRequestController extends Controller
         ])->render();
 
         return view('management.procurement.raw_material.ticket_payment_request.create', $data);
-    }
-
-    public function editOld($id)
-    {
-        $paymentRequestData = PaymentRequestData::with([
-            'purchaseOrder',
-            'samplingResults.slabType',
-            'paymentRequests'
-        ])->findOrFail($id);
-
-        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
-            ->where('request_type', 'payment')->sum('amount');
-
-        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('purchase_order_id', $purchaseOrder->id))
-            ->where('request_type', 'payment')->where('status', 'approved')->sum('amount');
-
-        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($paymentRequestData) {
-            $query->where('purchase_order_id', $paymentRequestData->purchase_order_id);
-        })
-            ->where('request_type', 'freight_payment')
-            ->sum('amount');
-
-        $paymentRequest = $paymentRequestData->paymentRequests->where('request_type', 'payment')->first();
-        $freightRequest = $paymentRequestData->paymentRequests->where('request_type', 'freight_payment')->first();
-
-        // Get other deduction
-        // $otherDeduction = $paymentRequestData->samplingResults->where('is_other_deduction', true)->first();
-
-        return view('management.procurement.raw_material.ticket_payment_request.edit', [
-            'paymentRequestData' => $paymentRequestData,
-            'paymentRequest' => $paymentRequest,
-            'freightRequest' => $freightRequest,
-            'requestedAmount' => $requestedAmount,
-            'approvedAmount' => $approvedAmount,
-            'pRsSumForFreight' => $pRsSumForFreight,
-            'samplingResults' => $paymentRequestData->samplingResults,
-            // 'otherDeduction' => $otherDeduction
-        ]);
     }
 
     public function updateStatus(Request $request)
