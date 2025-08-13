@@ -129,7 +129,7 @@ class TicketContractController extends Controller
             'closing_trucks_qty' => 'required|numeric|min:0.01',
             'selected_freight' => 'nullable|exists:purchase_freights,id'
         ]);
-        dd($request->all());
+
         try {
             DB::beginTransaction();
 
