@@ -190,9 +190,8 @@ class TicketContractController extends Controller
             $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
             $supplierNetAmount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
             $type = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohanch' : 'thadda';
-            dd($arrivalTicket->qcProduct, $purchaseOrder->supplier, $type);
 
-            $qcAccountId = $type  == 'Pohanch' ? $arrivalTicket->qcProduct->account_id : $purchaseOrder->qcProduct->account_id;
+            $qcAccountId = $type == 'pohanch' ? $arrivalTicket->qcProduct->account_id : $purchaseOrder->qcProduct->account_id;
             $arrivedWeight = $arrivalTicket['arrived_net_weight'];
             $rate = $purchaseOrder->rate_per_kg;
             $totalAmount = $inventoryAmount;
