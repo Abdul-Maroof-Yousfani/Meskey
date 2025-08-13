@@ -411,7 +411,6 @@ class PaymentRequestController extends Controller
         $advanceFreight = (int)($requestData['advance_freight']);
 
         if ($advanceFreight > 0) {
-
             if ($existingSiTFreightTrx) {
                 $existingSiTFreightTrx->update([
                     'amount' => $advanceFreight,
