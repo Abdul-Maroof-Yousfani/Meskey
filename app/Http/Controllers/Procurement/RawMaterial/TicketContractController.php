@@ -268,7 +268,7 @@ class TicketContractController extends Controller
                     ->whereRaw('LOWER(bilty_no) = ?', [strtolower($freightBiltyMatches)])
                     ->first();
 
-                dd($freightBiltyMatches, $freightTruckMatches, $purchaseFreight, ($purchaseFreight->purchaseTicket));
+                dd($freightBiltyMatches, $freightTruckMatches, $purchaseFreight);
                 if ($freightBiltyMatches && $freightTruckMatches && $purchaseFreight && isset($purchaseFreight->purchaseTicket)) {
                     $purchaseTicket = $purchaseFreight->purchaseTicket;
                     $loadingWeight = $purchaseFreight->loading_weight ?? 0;
