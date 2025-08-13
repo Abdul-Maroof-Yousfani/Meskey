@@ -223,10 +223,12 @@ class FreightController extends Controller
                         $purchaseFreight = PurchaseFreight::whereRaw('LOWER(truck_no) = ?', [strtolower($truckNo)])
                             ->whereRaw('LOWER(bilty_no) = ?', [strtolower($biltyNo)])
                             ->first();
+
                         if ($purchaseFreight && isset($purchaseFreight->purchaseTicket)) {
                             $loadingWeight = $purchaseFreight->loading_weight;
                             $purchaseTicket = $purchaseFreight->purchaseTicket;
 
+                            $purchaseFreight->update(['arrival_ticket_id' => $request->arrival_ticket_id]);
                             $purchasePaymentDetail = calculatePaymentDetails($purchaseTicket->id, 2);
 
                             $amount = $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0;

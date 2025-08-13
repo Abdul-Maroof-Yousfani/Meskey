@@ -25,6 +25,7 @@ class SITVehicleController extends Controller
         $purchaseTickets = PurchaseTicket::where('freight_status', 'completed')
             ->whereHas('purchaseFreight', function ($query) {
                 $query->whereNotNull('truck_no')
+                    ->where('arrival_ticket_id', null)
                     ->whereNotNull('bilty_no');
             })
             ->where(function ($query) {
