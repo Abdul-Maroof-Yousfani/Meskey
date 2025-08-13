@@ -439,8 +439,8 @@ class PaymentRequestApprovalController extends Controller
             }
 
             if (
-                isset($requestData['brokery_amount'], $requestData['broker_id']) &&
-                $requestData['brokery_amount'] < 0
+                isset($request->brokery_amount, $request->broker_id) &&
+                $request->brokery_amount < 0
             ) {
                 $existingTxn = Transaction::where('voucher_no', $contractNo)
                     ->where('purpose', 'supplier-brokery')
@@ -448,9 +448,9 @@ class PaymentRequestApprovalController extends Controller
                     ->exists();
 
                 if (!$existingTxn) {
-                    $broker = Broker::find($requestData['broker_id']);
+                    $broker = Broker::find($request->broker_id);
                     if ($broker && $broker->account_id) {
-                        $brokeryAmount = abs($requestData['brokery_amount']);
+                        $brokeryAmount = abs($request->brokery_amount);
 
                         createTransaction(
                             $brokeryAmount,
