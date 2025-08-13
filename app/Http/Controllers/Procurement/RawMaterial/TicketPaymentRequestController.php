@@ -423,6 +423,7 @@ class TicketPaymentRequestController extends Controller
                         [
                             'purpose' => "supplier-brokery",
                             'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
                             'payment_against' => "thadda-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
@@ -438,7 +439,7 @@ class TicketPaymentRequestController extends Controller
                         'no',
                         [
                             'purpose' => "supplier-brokery",
-                            'counter_account_id' => $qcAccountId,
+                            'counter_account_id' => $purchaseOrder->supplier->account_id,
                             'payment_against' => "thadda-purchase",
                             'grn_no' => $grnNo,
                             'against_reference_no' => "$truckNo/$biltyNo",
