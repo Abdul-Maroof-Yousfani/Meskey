@@ -195,7 +195,7 @@ class TicketContractController extends Controller
             $rate = $purchaseOrder->rate_per_kg;
             $totalAmount = $inventoryAmount;
             $loadingWeight = null;
-
+            dd($qcAccountId, $purchaseOrder->supplier);
             if ($arrivalTicket->saudaType->name == 'Pohanch') {
                 $loadingWeight = $arrivedWeight;
                 $txn = Transaction::where('voucher_no', $purchaseOrder->contract_no)
