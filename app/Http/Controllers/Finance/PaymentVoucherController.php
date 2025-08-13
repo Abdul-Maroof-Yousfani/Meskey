@@ -298,6 +298,7 @@ class PaymentVoucherController extends Controller
                     [
                         'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
                         'payment_against' => "$ticketNo-$paymentRequestDataId",
+                        'counter_account_id' => $request->account_id,
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $remarks
                     ]
@@ -314,6 +315,7 @@ class PaymentVoucherController extends Controller
                         'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
                         'payment_against' => "$ticketNo-$paymentRequestDataId",
                         'against_reference_no' => "$truckNo/$biltyNo",
+                        'counter_account_id' => $paymentVoucher->supplier->account_id,
                         'remarks' => $remarks
                     ]
                 );
