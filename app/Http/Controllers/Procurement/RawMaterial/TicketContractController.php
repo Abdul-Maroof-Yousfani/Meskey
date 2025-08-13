@@ -278,6 +278,8 @@ class TicketContractController extends Controller
                     $inventoryAmount = $purchasePaymentDetail['calculations']['inventory_amount'] ?? 0;
                     $productName = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
                     $qcAccountId = $purchaseOrder->qcProduct->account_id;
+                    $truckNo = $freightTruckMatches;
+                    $biltyNo = $freightBiltyMatches;
 
                     $stockTrx = Transaction::where('voucher_no', $contractNo)
                         ->where('purpose', 'stock-in-transit')
