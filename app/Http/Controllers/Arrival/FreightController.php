@@ -213,6 +213,7 @@ class FreightController extends Controller
                             'no',
                             [
                                 'grn_no' => $grnNo,
+                                'counter_account_id' =>  $ticket->purchaseOrder->supplier->account_id,
                                 'purpose' => "arrival-slip",
                                 'payment_against' => "pohanch-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
