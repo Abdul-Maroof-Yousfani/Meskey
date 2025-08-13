@@ -14,7 +14,8 @@
           <tr>
               <th class="text-center">Date</th>
               <th>Voucher No</th>
-              <th>Counter Account No.</th>
+              <th>Account</th>
+              <th>Counter Acc.</th>
               <th>Description</th>
               <th class="text-right">Debit</th>
               <th class="text-right">Credit</th>
@@ -67,6 +68,22 @@
                           @else
                               <span title="Counter Account"><small>N/A</small></span>
                           @endif --}}
+                      </td>
+                      <td class="text-center">
+                          @if ($transaction->account_id)
+                              @php
+                                  $startDate = $transaction->voucher_date->format('m/d/Y');
+
+                                  $endDate = \Carbon\Carbon::now()->format('m/d/Y');
+                                  $daterange = urlencode($startDate . ' - ' . $endDate);
+                              @endphp
+                              <a href="{{ url('transactions/report') }}?account_id={{ $transaction->account_id }}&daterange={{ $daterange }}&_f"
+                                  target="_blank">
+                                  {{ $transaction->account->name }}
+                              </a>
+                          @else
+                              <span> N/A </span>
+                          @endif
                       </td>
                       <td class="text-center">
                           @if ($transaction->counter_account_id)
