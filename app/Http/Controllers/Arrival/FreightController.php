@@ -257,7 +257,7 @@ class FreightController extends Controller
                                 'debit',
                                 'no',
                                 [
-                                    'counter_account_id' =>    $stockInTransitAccount->id,
+                                    'counter_account_id' => $purchaseOrder->supplier->account_id,
                                     'grn_no' => $grnNo,
                                     'purpose' => "arrival-slip",
                                     'payment_against' => "thadda-purchase",
