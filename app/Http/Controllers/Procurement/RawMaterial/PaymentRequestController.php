@@ -266,6 +266,7 @@ class PaymentRequestController extends Controller
         $transitData = [
             'amount' => $inventoryAmount,
             'account_id' => $stockInTransitAccount->id,
+            'counter_account_id' => $purchaseOrder->supplier->account_id,
             'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$requestData['loading_weight']} kg at rate {$purchaseOrder->rate_per_kg}/kg."
         ];
 
@@ -281,6 +282,7 @@ class PaymentRequestController extends Controller
                 'no',
                 [
                     'purpose' => "stock-in-transit",
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
                     'payment_against' => "thadda-purchase",
                     'against_reference_no' => "$truckNo/$biltyNo",
                     'remarks' => $transitData['remarks']
@@ -409,6 +411,32 @@ class PaymentRequestController extends Controller
         $advanceFreight = (int)($requestData['advance_freight']);
 
         if ($advanceFreight > 0) {
+
+            if ($existingSiTFreightTrx) {
+                $existingSiTFreightTrx->update([
+                    'amount' => $advanceFreight,
+                    'account_id' => $stockInTransitAccount->id,
+                    'type' => 'debit',
+                    'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
+                ]);
+            } else {
+                createTransaction(
+                    $advanceFreight,
+                    $stockInTransitAccount->id,
+                    1,
+                    $contractNo,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "stock-in-transit",
+                        'payment_against' => "thadda-freight",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
+                    ]
+                );
+            }
+
+
             if ($existingFreightTrx) {
                 $existingFreightTrx->update([
                     'amount' => $advanceFreight,
@@ -431,30 +459,6 @@ class PaymentRequestController extends Controller
                         'counter_account_id' => $stockInTransitAccount->id,
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
-                    ]
-                );
-            }
-
-            if ($existingSiTFreightTrx) {
-                $existingSiTFreightTrx->update([
-                    'amount' => $advanceFreight,
-                    'account_id' => $stockInTransitAccount->id,
-                    'type' => 'credit',
-                    'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
-                ]);
-            } else {
-                createTransaction(
-                    $advanceFreight,
-                    $stockInTransitAccount->id,
-                    1,
-                    $contractNo,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "stock-in-transit",
-                        'payment_against' => "thadda-freight",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
                     ]
                 );
             }

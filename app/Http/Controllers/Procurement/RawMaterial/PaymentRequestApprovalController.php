@@ -219,6 +219,7 @@ class PaymentRequestApprovalController extends Controller
 
                 $transitData = [
                     'amount' => $inventoryAmount,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
                     'account_id' => $stockInTransitAccount->id,
                     'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseOrder->rate_per_kg}/kg."
                 ];
@@ -239,6 +240,7 @@ class PaymentRequestApprovalController extends Controller
                         'no',
                         [
                             'purpose' => "stock-in-transit",
+                            'counter_account_id' => $purchaseOrder->supplier->account_id,
                             'payment_against' => "pohanch-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => $transitData['remarks']

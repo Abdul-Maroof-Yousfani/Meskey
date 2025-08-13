@@ -57,7 +57,7 @@
                                   $endDate = \Carbon\Carbon::now()->format('m/d/Y');
                                   $daterange = urlencode($startDate . ' - ' . $endDate);
                               @endphp
-                              <a href="{{ url('transactions/report') }}?account_id={{ $transaction->counterAccount->id }}&daterange={{ $daterange }}&_f"
+                              <a href="{{ url('transactions/report') }}?account_id={{ $transaction->counter_account_id }}&daterange={{ $daterange }}&_f"
                                   target="_blank" data-toggle="tooltip" data-placement="top"
                                   title="Counter Account: {{ $transaction->counterAccount->name }}">
                                   <small>{{ $transaction->counterAccount->name }}</small>
