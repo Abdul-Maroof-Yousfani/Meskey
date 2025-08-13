@@ -14,6 +14,7 @@
           <tr>
               <th class="text-center">Date</th>
               <th>Voucher No</th>
+              <th>Counter Account No.</th>
               <th>Description</th>
               <th class="text-right">Debit</th>
               <th class="text-right">Credit</th>
@@ -33,6 +34,7 @@
                       {{ date('d-m-Y', strtotime(request('start_date') ?? date('Y-m-01'))) }}</td>
                   <td></td>
                   <td></td>
+                  <td></td>
                   <td class="text-right">{{ $openingBalance >= 0 ? number_format($openingBalance, 2) : '-' }}</td>
                   <td class="text-right">{{ $openingBalance < 0 ? number_format(abs($openingBalance), 2) : '-' }}</td>
                   <td class="text-right">{{ number_format($balance, 2) }}</td>
@@ -50,7 +52,7 @@
                       <td class="text-center">{{ $transaction->voucher_date->format('d-m-Y') }}</td>
                       <td>
                           {{ $transaction->voucher_no }} <br>
-                          @if ($transaction->counter_account_id)
+                          {{-- @if ($transaction->counter_account_id)
                               @php
                                   $startDate = $transaction->voucher_date->format('m/d/Y');
 
@@ -64,6 +66,22 @@
                               </a>
                           @else
                               <span title="Counter Account"><small>N/A</small></span>
+                          @endif --}}
+                      </td>
+                      <td class="text-center">
+                          @if ($transaction->counter_account_id)
+                              @php
+                                  $startDate = $transaction->voucher_date->format('m/d/Y');
+
+                                  $endDate = \Carbon\Carbon::now()->format('m/d/Y');
+                                  $daterange = urlencode($startDate . ' - ' . $endDate);
+                              @endphp
+                              <a href="{{ url('transactions/report') }}?account_id={{ $transaction->counter_account_id }}&daterange={{ $daterange }}&_f"
+                                  target="_blank">
+                                  {{ $transaction->counterAccount->name }}
+                              </a>
+                          @else
+                              <span title="Counter Account"> N/A </span>
                           @endif
                       </td>
                       <td>
