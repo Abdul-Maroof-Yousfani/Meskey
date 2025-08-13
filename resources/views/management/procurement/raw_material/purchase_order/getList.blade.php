@@ -18,6 +18,7 @@
         <th>Balance Quantity</th>
         <th>Stock in Transit Trucks</th>
         <th>Rejected Trucks</th>
+        <th>Status</th>
         <th>Action</th>
     @endslot
 
@@ -80,6 +81,13 @@
                 </td>
                 <td>{{ $row->stockInTransitTickets->count() }}</td>
                 <td>{{ $rejectedTrucks }}</td>
+                <td>
+                    @if ($row->status == 'completed')
+                        <span class="badge badge-success">Closed</span>
+                    @else
+                        <span class="badge badge-warning">Pending</span>
+                    @endif
+                </td>
                 <td>
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">

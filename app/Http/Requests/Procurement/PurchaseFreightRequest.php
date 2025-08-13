@@ -87,6 +87,11 @@ class PurchaseFreightRequest extends FormRequest
             return;
         }
 
+        if ($purchaseOrder->status == 'completed') {
+            $fail('The contract is closed. You cannot create more loadings.');
+            return;
+        }
+
         $totalLoaded = PurchaseFreight::where('arrival_purchase_order_id', $purchaseOrder->id)
             ->sum('loading_weight');
 
