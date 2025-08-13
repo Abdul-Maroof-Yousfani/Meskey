@@ -162,7 +162,9 @@ class PaymentRequestApprovalController extends Controller
             // ----------------------
 
             $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
-            $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no;
+            // $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no; 
+            $grnNo = $ticket->arrivalSlip->unique_no;
+            $contractNo = $purchaseOrder->contract_no;
             $qcProduct = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
             $loadingWeight = ($moduleType === 'ticket' ? $paymentRequestData->arrivalTicket->arrived_net_weight : $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight) ?? 0;
             $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
@@ -179,6 +181,7 @@ class PaymentRequestApprovalController extends Controller
                 'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                 'account_id' => $purchaseOrder->supplier->account_id,
                 'payment_against' => $moduleType === 'ticket' ? "pohanch-purchase" : "thadda-purchase",
+                'grn_no' => $grnNo,
                 'type' => 'credit',
                 'counter_account_id' => $accId,
                 'remarks' => "Accounts payable recorded against the contract ($purchaseOrder->contract_no) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
@@ -196,6 +199,7 @@ class PaymentRequestApprovalController extends Controller
                     'no',
                     [
                         'counter_account_id' => $accId,
+                        'grn_no' => $grnNo,
                         'purpose' => "supplier-payable",
                         'payment_against' => $moduleType === 'ticket' ? "pohanch-purchase" : "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
@@ -411,6 +415,7 @@ class PaymentRequestApprovalController extends Controller
                         'amount' => $inventoryAmount,
                         // 'account_id' =>    $ticket->purchaseOrder->qcProduct->account_id,
                         'account_id' => $ticket->qcProduct->account_id ?? $ticket->product->account_id,
+                        'grn_no' => $grnNo,
                         'type' => 'debit',
                         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
                     ]);
@@ -424,6 +429,7 @@ class PaymentRequestApprovalController extends Controller
                         'no',
                         [
                             'purpose' => "arrival-slip",
+                            'grn_no' => $grnNo,
                             'payment_against' => "pohanch-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
