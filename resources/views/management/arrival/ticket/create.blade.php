@@ -524,7 +524,9 @@
                          `<option value="${contract.id}"
                         data-product-id="${contract.product_id}"
                         data-supplier-id="${contract.supplier.name}"
-                        data-sauda-type-id="${contract.sauda_type_id}">
+                        data-sauda-type-id="${contract.sauda_type_id}"
+                        data-sauda-type-name="${contract.saudaType.name}"
+                        >
                         #${contract.contract_no} - Type: ${contract.sauda_type.name}
                     </option>`
                      );
