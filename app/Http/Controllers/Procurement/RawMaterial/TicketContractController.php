@@ -148,8 +148,10 @@ class TicketContractController extends Controller
 
                 $selectedFreight = PurchaseFreight::findOrFail($request->selected_freight);
 
-                $freightTruckMatches = strtolower($selectedFreight->truck_no) === strtolower($truckNo);
-                $freightBiltyMatches = strtolower($selectedFreight->bilty_no) === strtolower($biltyNo);
+                // $freightTruckMatches = strtolower($selectedFreight->truck_no) === strtolower($truckNo);
+                // $freightBiltyMatches = strtolower($selectedFreight->bilty_no) === strtolower($biltyNo);
+                $freightTruckMatches = strtolower($selectedFreight->truck_no);
+                $freightBiltyMatches = strtolower($selectedFreight->bilty_no);
 
                 $selectedFreight->update(['arrival_ticket_id' => $arrivalTicket->id]);
             }
