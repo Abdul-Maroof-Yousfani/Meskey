@@ -242,6 +242,7 @@ class TicketContractController extends Controller
                     $txnInv->update([
                         'amount' => $inventoryAmount,
                         'account_id' => $qcAccountId,
+                        'counter_account_id' => $purchaseOrder->supplier->account_id,
                         'type' => 'debit',
                         'grn_no' => $grnNo,
                         'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total amount: $totalAmount to be paid to supplier."
@@ -256,6 +257,7 @@ class TicketContractController extends Controller
                         'no',
                         [
                             'grn_no' => $grnNo,
+                            'counter_account_id' => $purchaseOrder->supplier->account_id,
                             'purpose' => "arrival-slip",
                             'payment_against' => $type . "-purchase",
                             'against_reference_no' => $referenceNo,

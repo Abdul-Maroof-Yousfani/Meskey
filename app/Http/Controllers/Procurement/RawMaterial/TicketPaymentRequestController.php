@@ -262,6 +262,7 @@ class TicketPaymentRequestController extends Controller
             'amount' => $inventoryAmount,
             'account_id' => $ticket->qcProduct->account_id,
             'type' => 'debit',
+            'counter_account_id' => $purchaseOrder->supplier->account_id,
             'grn_no' => $grnNo,
             'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $ticket->arrived_net_weight . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
         ];
@@ -280,6 +281,7 @@ class TicketPaymentRequestController extends Controller
                     'purpose' => "arrival-slip",
                     'payment_against' => "pohanch-purchase",
                     'grn_no' => $grnNo,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
                     'against_reference_no' => "$truckNo/$biltyNo",
                     'remarks' => $transitData['remarks']
                 ]
