@@ -442,6 +442,10 @@
                  $('#decision_id').val(createdById).trigger('change');
              }
 
+             console.log({
+                 saudaTypeName
+             });
+
              // Set Sauda Type
              if (saudaTypeName) {
                  $('#sauda_type').val(saudaTypeName);
