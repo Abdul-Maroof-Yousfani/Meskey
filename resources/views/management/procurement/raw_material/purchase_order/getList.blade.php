@@ -93,7 +93,7 @@
                         class="info p-1 text-center mr-2 position-relative">
                         <i class="ft-edit font-medium-3"></i>
                     </a>
-                    <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}','{{ route('raw-material.get.purchase-order') }}')"
+                    <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}', '{{ route('raw-material.get.purchase-order') }}')"
                         class="danger p-1 text-center mr-2 position-relative">
                         <i class="ft-x font-medium-3"></i>
                     </a>
