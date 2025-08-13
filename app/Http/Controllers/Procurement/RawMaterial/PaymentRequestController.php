@@ -404,7 +404,7 @@ class PaymentRequestController extends Controller
         $existingSiTFreightTrx = Transaction::where('voucher_no', $contractNo)
             ->where('purpose', 'stock-in-transit')
             ->where('payment_against', 'thadda-freight')
-            ->where('type', 'credit')
+            ->where('type', 'debit')
             ->where('against_reference_no', "$truckNo/$biltyNo")
             ->first();
 

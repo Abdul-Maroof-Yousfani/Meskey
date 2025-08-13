@@ -313,6 +313,7 @@ class TicketContractController extends Controller
 
                     $txnInv = Transaction::where('voucher_no', $contractNo)
                         ->where('purpose', 'arrival-slip')
+                        ->where('type', 'debit')
                         ->where('against_reference_no', $referenceNo)
                         ->first();
 
