@@ -139,6 +139,8 @@ class TicketContractController extends Controller
             $truckNo = $arrivalTicket->truck_no ?? 'N/A';
             $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
             $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+            $freightTruckMatches = null;
+            $freightBiltyMatches = null;
 
             if ($request->selected_freight) {
                 PurchaseFreight::where('arrival_ticket_id', $arrivalTicket->id)
@@ -262,11 +264,12 @@ class TicketContractController extends Controller
             }
 
             if ($arrivalTicket->saudaType->name == 'Thadda') {
-                $purchaseFreight = PurchaseFreight::whereRaw('LOWER(truck_no) = ?', [strtolower($truckNo)])
-                    ->whereRaw('LOWER(bilty_no) = ?', [strtolower($biltyNo)])
+                $purchaseFreight = PurchaseFreight::whereRaw('LOWER(truck_no) = ?', [strtolower($freightTruckMatches)])
+                    ->whereRaw('LOWER(bilty_no) = ?', [strtolower($freightBiltyMatches)])
                     ->first();
 
-                if ($purchaseFreight && isset($purchaseFreight->purchaseTicket)) {
+
+                if ($freightBiltyMatches && $freightTruckMatches && $purchaseFreight && isset($purchaseFreight->purchaseTicket)) {
                     $purchaseTicket = $purchaseFreight->purchaseTicket;
                     $loadingWeight = $purchaseFreight->loading_weight ?? 0;
                     $purchasePaymentDetail = calculatePaymentDetails($purchaseTicket->id, 2);
@@ -278,7 +281,7 @@ class TicketContractController extends Controller
                     $stockTrx = Transaction::where('voucher_no', $contractNo)
                         ->where('purpose', 'stock-in-transit')
                         ->where('type', 'credit')
-                        ->where('against_reference_no', "$truckNo/$biltyNo")
+                        ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
 
                     if ($stockTrx) {
@@ -287,7 +290,7 @@ class TicketContractController extends Controller
                             'account_id' => $stockInTransitAccount->id,
                             'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
-                            'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
+                            'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $freightBiltyMatches - Truck No: $freightTruckMatches. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                         ]);
                     } else {
                         createTransaction(
@@ -301,9 +304,9 @@ class TicketContractController extends Controller
                                 'purpose' => "stock-in-transit",
                                 'counter_account_id' => $qcAccountId,
                                 'payment_against' => "thadda-purchase",
-                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'against_reference_no' => "$freightTruckMatches/$freightBiltyMatches",
                                 'grn_no' => $grnNo,
-                                'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
+                                'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $freightBiltyMatches - Truck No: $freightTruckMatches. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                             ]
                         );
                     }
@@ -341,7 +344,7 @@ class TicketContractController extends Controller
 
                     $supplierTxn = Transaction::where('voucher_no', $contractNo)
                         ->where('purpose', 'supplier-payable')
-                        ->where('against_reference_no', "$truckNo/$biltyNo")
+                        ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
 
                     if ($supplierTxn) {
@@ -351,7 +354,7 @@ class TicketContractController extends Controller
                             'counter_account_id' => $qcAccountId,
                             'grn_no' => $grnNo,
                             'type' => 'credit',
-                            'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                            'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $freightBiltyMatches - Truck No: $freightTruckMatches. Amount payable to the supplier.",
                         ]);
                     } else {
                         createTransaction(
@@ -366,8 +369,8 @@ class TicketContractController extends Controller
                                 'counter_account_id' => $qcAccountId,
                                 'grn_no' => $grnNo,
                                 'payment_against' => "thadda-purchase",
-                                'against_reference_no' => "$truckNo/$biltyNo",
-                                'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                                'against_reference_no' => "$freightTruckMatches/$freightBiltyMatches",
+                                'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $freightBiltyMatches - Truck No: $freightTruckMatches. Amount payable to the supplier.",
                             ]
                         );
                     }
