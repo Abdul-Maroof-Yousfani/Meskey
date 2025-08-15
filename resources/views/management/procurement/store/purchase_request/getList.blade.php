@@ -18,44 +18,43 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchase_request->purchase_request_no }} <br>
+                            {{ $row->purchase_request->purchase_request_no ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                          <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('h:i A') }} <br>
-
+                            @if(isset($row->purchase_request->created_at))
+                                {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('Y-m-d') }} /
+                                {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('h:i A') }}
+                            @else
+                                N/A
+                            @endif
+                            <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ optional($row->purchase_request->location)->name}} 
+                            {{ optional($row->purchase_request->location)->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->category->name}} 
+                            {{ $row->category->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->item->name}} 
+                            {{ $row->item->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->item->unitOfMeasure->name}} 
+                            {{ optional($row->item->unitOfMeasure)->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->qty}} 
+                            {{ $row->qty ?? 'N/A' }} 
                         </p>
                     </td>
                     
@@ -116,6 +115,12 @@
         @endif
     </tbody>
 </table>
+
+<div class="row d-flex" id="paginationLinks">
+    <div class="col-md-12 text-right">
+        {{ $PurchaseRequests->links() }}
+    </div>
+</div>
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}
