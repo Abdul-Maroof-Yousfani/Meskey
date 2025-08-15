@@ -8,13 +8,14 @@ use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use Illuminate\Http\Request;
 use DB;
+
 class TransactionController extends Controller
 {
     public function index()
     {
-    $accounts = Account::getTree();
+        $accounts = Account::getTree();
 
-        return view('management.reports.transaction.index',compact('accounts'));
+        return view('management.reports.transaction.index', compact('accounts'));
     }
 
     /**
@@ -22,36 +23,40 @@ class TransactionController extends Controller
      */
     public function getTransactionsReport(Request $request)
     {
-       // Calculate opening balance (balance before start date)
-    $openingBalance = 0;
-    if ($request->filled('account_id') && $request->filled('start_date')) {
-        $openingBalance = Transaction::where('account_id', $request->account_id)
-            ->where('voucher_date', '<', $request->start_date)
-            ->sum(DB::raw("CASE WHEN type = 'debit' THEN amount ELSE -amount END"));
-    }
-    
-    $query = Transaction::with(['account'])
-        ->orderBy('voucher_date', 'asc')
-        ->orderBy('created_at', 'asc');
-        
-    if ($request->filled('account_id')) {
-        $query->where('account_id', $request->account_id);
-    }
-    
-    if ($request->filled('start_date')) {
-        $query->where('voucher_date', '>=', $request->start_date);
-    }
-    
-    if ($request->filled('end_date')) {
-        $query->where('voucher_date', '<=', $request->end_date);
-    }
-    
-    $transactions = $query->paginate(50);
-    
-    return view('management.reports.transaction.getList', compact('transactions', 'openingBalance'));
+        $openingBalance = 0;
+        if ($request->filled('account_id') && $request->filled('start_date')) {
+            $openingBalance = Transaction::where('account_id', $request->account_id)
+                ->where('voucher_date', '<', $request->start_date)
+                ->sum(DB::raw("CASE WHEN type = 'debit' THEN amount ELSE -amount END"));
+        }
 
-    }
+        $query = Transaction::with(['account'])
+            ->orderBy('voucher_date', 'asc')
+            ->orderBy('created_at', 'asc');
 
+        $accountName = null;
+        if ($request->filled('account_id')) {
+            $query->where('account_id', $request->account_id);
+
+            $account = Account::find($request->account_id);
+            $accountName = $account ? $account->name : null;
+        }
+
+        $query->when($request->filled('daterange'), function ($q) use ($request) {
+            $dates = explode(' - ', $request->daterange);
+            $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+            $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+            return $q->whereDate('voucher_date', '>=', $startDate)
+                ->whereDate('voucher_date', '<=', $endDate);
+        });
+
+        $transactions = $query->get();
+
+        $daterange = $request->daterange;
+
+        return view('management.reports.transaction.getList', compact('transactions', 'openingBalance', 'daterange', 'accountName'));
+    }
 
     /**
      * Show the form for creating a new resource.

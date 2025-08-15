@@ -18,23 +18,25 @@
         <th>Balance Quantity</th>
         <th>Stock in Transit Trucks</th>
         <th>Rejected Trucks</th>
+        <th>Status</th>
         <th>Action</th>
     @endslot
 
     @slot('body')
         @foreach ($arrivalPurchaseOrder as $row)
             @php
-                // $arrivedTrucks = $row->totalClosingTrucksQty->total_closing_trucks_qty ?? 0;
                 $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
-
                 $rejectedTrucks = $row->rejectedArrivalTickets->count();
+                $inTransitTrucks = $row->stockInTransitTickets->count();
                 $orderedTrucks = $row->no_of_trucks ?? 0;
-                if ($row->is_replacement == 0) {
-                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
+
+                if ($row->is_replacement == 1) {
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
                 } else {
-                    $balanceTrucks = $orderedTrucks - $arrivedTrucks;
+                    $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $rejectedTrucks;
                 }
             @endphp
+
             <tr>
                 <td>
                     #{{ $row->contract_no }}
@@ -80,11 +82,18 @@
                 <td>{{ $row->stockInTransitTickets->count() }}</td>
                 <td>{{ $rejectedTrucks }}</td>
                 <td>
+                    @if ($row->status == 'completed')
+                        <span class="badge badge-success">Closed</span>
+                    @else
+                        <span class="badge badge-warning">Pending</span>
+                    @endif
+                </td>
+                <td>
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">
                         <i class="ft-edit font-medium-3"></i>
                     </a>
-                    <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}','{{ route('raw-material.get.purchase-order') }}')"
+                    <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}', '{{ route('raw-material.get.purchase-order') }}')"
                         class="danger p-1 text-center mr-2 position-relative">
                         <i class="ft-x font-medium-3"></i>
                     </a>

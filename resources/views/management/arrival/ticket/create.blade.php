@@ -442,6 +442,10 @@
                  $('#decision_id').val(createdById).trigger('change');
              }
 
+             console.log({
+                 saudaTypeName
+             });
+
              // Set Sauda Type
              if (saudaTypeName) {
                  $('#sauda_type').val(saudaTypeName);
@@ -524,7 +528,9 @@
                          `<option value="${contract.id}"
                         data-product-id="${contract.product_id}"
                         data-supplier-id="${contract.supplier.name}"
-                        data-sauda-type-id="${contract.sauda_type_id}">
+                        data-sauda-type-id="${contract.sauda_type_id}"
+                        data-sauda-type-name="${contract.sauda_type.name}"
+                        >
                         #${contract.contract_no} - Type: ${contract.sauda_type.name}
                     </option>`
                      );

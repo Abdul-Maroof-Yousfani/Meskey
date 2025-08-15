@@ -290,21 +290,6 @@ class PaymentVoucherController extends Controller
 
                 createTransaction(
                     $paymentRequest->amount,
-                    $paymentVoucher->supplier->account_id,
-                    1,
-                    $uniqueNo,
-                    'debit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ticketNo-$paymentRequestDataId",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => $remarks
-                    ]
-                );
-
-                createTransaction(
-                    $paymentRequest->amount,
                     $request->account_id,
                     1,
                     $uniqueNo,
@@ -313,6 +298,23 @@ class PaymentVoucherController extends Controller
                     [
                         'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
                         'payment_against' => "$ticketNo-$paymentRequestDataId",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'counter_account_id' => $paymentVoucher->supplier->account_id,
+                        'remarks' => $remarks
+                    ]
+                );
+
+                createTransaction(
+                    $paymentRequest->amount,
+                    $paymentVoucher->supplier->account_id,
+                    1,
+                    $uniqueNo,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
+                        'payment_against' => "$ticketNo-$paymentRequestDataId",
+                        'counter_account_id' => $request->account_id,
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $remarks
                     ]

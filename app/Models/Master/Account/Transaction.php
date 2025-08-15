@@ -19,6 +19,8 @@ class Transaction extends Model
         'payment_against',
         'against_reference_no',
         'account_id',
+        'counter_account_id',
+        'counter_account_ref',
         'account_unique_no',
         'type',
         'is_opening_balance',
@@ -54,6 +56,11 @@ class Transaction extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function counterAccount()
+    {
+        return $this->belongsTo(Account::class, 'counter_account_id');
     }
 
     public function updater()

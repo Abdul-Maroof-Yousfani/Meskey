@@ -32,8 +32,10 @@ Route::fallback(function () {
     return view('404');
 });
 
-Route::resource('transactions/report', TransactionController::class);
-Route::post('/get-transactions-report', [TransactionController::class, 'getTransactionsReport'])->name('get.transactions-report');
+Route::group(['middleware' => ['auth']], function () {
+    Route::resource('transactions/report', TransactionController::class);
+    Route::post('/get-transactions-report', [TransactionController::class, 'getTransactionsReport'])->name('get.transactions-report');
+});
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::prefix('approval')->group(function () {

@@ -87,11 +87,20 @@ class PurchaseFreightRequest extends FormRequest
             return;
         }
 
+        if ($purchaseOrder->status == 'completed') {
+            $fail('The contract is closed. You cannot create more loadings.');
+            return;
+        }
+
         $totalLoaded = PurchaseFreight::where('arrival_purchase_order_id', $purchaseOrder->id)
             ->sum('loading_weight');
-        // if ($this->loading_weight) {
-        //     // $totalLoaded -= $this->loading_weight;
-        // }
+
+        $totalLoadings = PurchaseFreight::where('arrival_purchase_order_id', $purchaseOrder->id)
+            ->count();
+
+        if ($purchaseOrder->calculation_type == 'trucks' && $totalLoadings == $purchaseOrder->no_of_trucks) {
+            $fail("The contract was for {$purchaseOrder->no_of_trucks} trucks. You cannot order more trucks than the contract allows.");
+        }
 
         $remainingQuantity = $purchaseOrder->max_quantity - $totalLoaded;
 

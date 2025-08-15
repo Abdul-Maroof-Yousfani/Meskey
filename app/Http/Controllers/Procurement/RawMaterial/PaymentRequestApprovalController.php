@@ -162,10 +162,13 @@ class PaymentRequestApprovalController extends Controller
             // ----------------------
 
             $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
-            $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no;
+            // $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no; 
+            $grnNo = $ticket->arrivalSlip->unique_no ?? null;
+            $contractNo = $purchaseOrder->contract_no;
             $qcProduct = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
             $loadingWeight = ($moduleType === 'ticket' ? $paymentRequestData->arrivalTicket->arrived_net_weight : $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight) ?? 0;
             $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+            $accId = $moduleType === 'ticket' ? $ticket->qcProduct->account_id : $stockInTransitAccount->id;
 
             $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
 
@@ -177,7 +180,10 @@ class PaymentRequestApprovalController extends Controller
             $supplierData = [
                 'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
                 'account_id' => $purchaseOrder->supplier->account_id,
+                'payment_against' => $moduleType === 'ticket' ? "pohanch-purchase" : "thadda-purchase",
+                'grn_no' => $grnNo,
                 'type' => 'credit',
+                'counter_account_id' => $accId,
                 'remarks' => "Accounts payable recorded against the contract ($purchaseOrder->contract_no) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
             ];
 
@@ -192,8 +198,10 @@ class PaymentRequestApprovalController extends Controller
                     'credit',
                     'no',
                     [
+                        'counter_account_id' => $accId,
+                        'grn_no' => $grnNo,
                         'purpose' => "supplier-payable",
-                        'payment_against' => "thadda-purchase",
+                        'payment_against' => $moduleType === 'ticket' ? "pohanch-purchase" : "thadda-purchase",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => $supplierData['remarks']
                     ]
@@ -215,6 +223,7 @@ class PaymentRequestApprovalController extends Controller
 
                 $transitData = [
                     'amount' => $inventoryAmount,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
                     'account_id' => $stockInTransitAccount->id,
                     'remarks' => "Stock-in-transit recorded for arrival of $qcProduct under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseOrder->rate_per_kg}/kg."
                 ];
@@ -235,6 +244,7 @@ class PaymentRequestApprovalController extends Controller
                         'no',
                         [
                             'purpose' => "stock-in-transit",
+                            'counter_account_id' => $purchaseOrder->supplier->account_id,
                             'payment_against' => "pohanch-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => $transitData['remarks']
@@ -253,6 +263,7 @@ class PaymentRequestApprovalController extends Controller
                         $existingFreightTrx->update([
                             'amount' => $advanceFreight,
                             'account_id' => $purchaseOrder->supplier->account_id,
+                            'counter_account_id' => $stockInTransitAccount->id,
                             'type' => 'credit',
                             'remarks' => "Freight payable for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
                         ]);
@@ -265,6 +276,7 @@ class PaymentRequestApprovalController extends Controller
                             'credit',
                             'no',
                             [
+                                'counter_account_id' => $stockInTransitAccount->id,
                                 'purpose' => "thadda-freight",
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -288,6 +300,7 @@ class PaymentRequestApprovalController extends Controller
                             'amount' => $amount,
                             'account_id' => $purchaseOrder->broker->account_id,
                             'type' => 'credit',
+                            'counter_account_id' => $stockInTransitAccount->id,
                         ]);
                     } else {
                         createTransaction(
@@ -298,6 +311,7 @@ class PaymentRequestApprovalController extends Controller
                             'credit',
                             'no',
                             [
+                                'counter_account_id' => $stockInTransitAccount->id,
                                 'purpose' => "broker",
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -321,6 +335,7 @@ class PaymentRequestApprovalController extends Controller
                         $existingBrokerTrx->update([
                             'amount' => $amount,
                             'account_id' => $purchaseOrder->brokerTwo->account_id,
+                            'counter_account_id' => $stockInTransitAccount->id,
                             'type' => 'credit',
                         ]);
                     } else {
@@ -334,6 +349,7 @@ class PaymentRequestApprovalController extends Controller
                             [
                                 'purpose' => "broker",
                                 'payment_against' => "thadda-purchase",
+                                'counter_account_id' => $stockInTransitAccount->id,
                                 'against_reference_no' => "$truckNo/$biltyNo",
                                 'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to broker.'
                             ]
@@ -354,6 +370,7 @@ class PaymentRequestApprovalController extends Controller
                         $existingBrokerTrx->update([
                             'amount' => $amount,
                             'account_id' => $purchaseOrder->brokerThree->account_id,
+                            'counter_account_id' => $stockInTransitAccount->id,
                             'type' => 'credit',
                         ]);
                     } else {
@@ -366,6 +383,7 @@ class PaymentRequestApprovalController extends Controller
                             'no',
                             [
                                 'purpose' => "broker",
+                                'counter_account_id' => $stockInTransitAccount->id,
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
                                 'remarks' => 'Recording accounts payable for "Thadda" purchase. Amount to be paid to broker.'
@@ -397,6 +415,7 @@ class PaymentRequestApprovalController extends Controller
                         'amount' => $inventoryAmount,
                         // 'account_id' =>    $ticket->purchaseOrder->qcProduct->account_id,
                         'account_id' => $ticket->qcProduct->account_id ?? $ticket->product->account_id,
+                        'grn_no' => $grnNo,
                         'type' => 'debit',
                         'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
                     ]);
@@ -410,6 +429,7 @@ class PaymentRequestApprovalController extends Controller
                         'no',
                         [
                             'purpose' => "arrival-slip",
+                            'grn_no' => $grnNo,
                             'payment_against' => "pohanch-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $loadingWeight . ' kg) at rate ' . $purchaseOrder->rate_per_kg . '/kg.'
@@ -419,8 +439,8 @@ class PaymentRequestApprovalController extends Controller
             }
 
             if (
-                isset($requestData['brokery_amount'], $requestData['broker_id']) &&
-                $requestData['brokery_amount'] < 0
+                isset($request->brokery_amount, $request->broker_id) &&
+                $request->brokery_amount < 0
             ) {
                 $existingTxn = Transaction::where('voucher_no', $contractNo)
                     ->where('purpose', 'supplier-brokery')
@@ -428,9 +448,9 @@ class PaymentRequestApprovalController extends Controller
                     ->exists();
 
                 if (!$existingTxn) {
-                    $broker = Broker::find($requestData['broker_id']);
+                    $broker = Broker::find($request->broker_id);
                     if ($broker && $broker->account_id) {
-                        $brokeryAmount = abs($requestData['brokery_amount']);
+                        $brokeryAmount = abs($request->brokery_amount);
 
                         createTransaction(
                             $brokeryAmount,
@@ -455,6 +475,7 @@ class PaymentRequestApprovalController extends Controller
                             'credit',
                             'no',
                             [
+                                'counter_account_id' => $purchaseOrder->supplier->account_id,
                                 'purpose' => "supplier-brokery",
                                 'payment_against' => "thadda-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
