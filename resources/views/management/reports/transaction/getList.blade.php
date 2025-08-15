@@ -36,6 +36,7 @@
                   <td></td>
                   <td></td>
                   <td></td>
+                  <td></td>
                   <td class="text-right">{{ $openingBalance >= 0 ? number_format($openingBalance, 2) : '-' }}</td>
                   <td class="text-right">{{ $openingBalance < 0 ? number_format(abs($openingBalance), 2) : '-' }}</td>
                   <td class="text-right">{{ number_format($balance, 2) }}</td>

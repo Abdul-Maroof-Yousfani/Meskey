@@ -1,12 +1,12 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Contract No</th>
+            <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Commodity</th>
+            <th class="col-sm-1">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-1">Tot. Req. Amt.</th>
+            <th class="col-sm-2">Total Requested Amount</th>
             <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -15,60 +15,65 @@
         @if (count($tickets) != 0)
             @foreach ($tickets as $ticket)
                 <tr>
-                    <td>#{{ $ticket->unique_no }} <br>
-                        #{{ $ticket->purchaseOrder->contract_no }}
-                    </td>
-                    {{-- @dd($ticket->purchaseFreights) --}}
-                    <td>{{ $ticket->broker_name ?? 'N/A' }} <br>{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}
-                    </td>
-                    <td>{{ $ticket->qcProduct->name ?? 'N/A' }}
-                        {{-- <br>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }} --}}
-                    </td>
                     <td>
-                        {{ $ticket ? \Carbon\Carbon::parse($ticket->loading_date)->format('Y-m-d') : 'N/A' }}
+                        <strong>Ticket:</strong> #{{ $ticket['unique_no'] ?? 'N/A' }}<br>
+                        <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}<br>
+                        @if ($ticket['type'] == 'thadda')
+                            <span class="badge badge-primary">Thadda</span>
+                        @else
+                            <span class="badge badge-info">Pohanch</span>
+                        @endif
+                    </td>
+                    <td>{{ $ticket['purchaseOrder']->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket['purchaseOrder']->qcProduct->name ?? ($ticket['qcProduct']->name ?? 'N/A') }}</td>
+                    <td>
+                        @if ($ticket['type'] == 'thadda')
+                            {{ $ticket['purchaseFreight'] ? \Carbon\Carbon::parse($ticket['purchaseFreight']->loading_date)->format('Y-m-d') : 'N/A' }}
+                        @else
+                            {{ $ticket['freight'] ? \Carbon\Carbon::parse($ticket['freight']->first()->loading_date ?? '')->format('Y-m-d') : 'N/A' }}
+                        @endif
                     </td>
                     <td>
                         <div class="div-box-b">
-                            @if ($ticket->calculated_values['total_payment_sum'] == 0 && $ticket->calculated_values['total_freight_sum'] == 0)
+                            @if ($ticket['calculated_values']['total_payment_sum'] == 0 && $ticket['calculated_values']['total_freight_sum'] == 0)
                                 <span class="text-muted"> No requests generated yet</span>
                             @else
                                 <small>
-                                    <strong>Total Amount:</strong> {{ $ticket->calculated_values['total_amount'] ?? 0 }}
+                                    <strong>Total Amount:</strong>
+                                    {{ $ticket['calculated_values']['total_amount'] ?? 0 }}
                                     <br>
-                                    {{-- <strong>Paid Amount:</strong> {{ $ticket->calculated_values['paid_amount'] ?? 0 }} <br>
-                                    --}}
                                     <strong>Approved Payment:</strong>
-                                    {{ $ticket->calculated_values['approved_payment_sum'] ?? 0 }}<br>
+                                    {{ $ticket['calculated_values']['approved_payment_sum'] ?? 0 }}<br>
                                     <strong>Approved Freight:</strong>
-                                    {{ $ticket->calculated_values['approved_freight_sum'] ?? 0 }}<br>
+                                    {{ $ticket['calculated_values']['approved_freight_sum'] ?? 0 }}<br>
                                     <strong>Remaining Amount:</strong>
-                                    {{ $ticket->calculated_values['remaining_amount'] ?? 0 }}<br>
+                                    {{ $ticket['calculated_values']['remaining_amount'] ?? 0 }}<br>
                                 </small>
                             @endif
                         </div>
                     </td>
                     <td>
-                        @if ($ticket->calculated_values['total_payment_sum'] == 0 && $ticket->calculated_values['total_freight_sum'] == 0)
+                        @if ($ticket['calculated_values']['total_payment_sum'] == 0 && $ticket['calculated_values']['total_freight_sum'] == 0)
                             <span class="text-muted"> N/A </span>
                         @else
-                            @if ($ticket->calculated_values['total_payment_sum'] > 0)
+                            @if ($ticket['calculated_values']['total_payment_sum'] > 0)
                                 <span class="badge badge-success mb-1">
-                                    Payment: {{ number_format($ticket->calculated_values['total_payment_sum'], 2) }}
+                                    Payment: {{ number_format($ticket['calculated_values']['total_payment_sum'], 2) }}
                                 </span><br>
                             @endif
-                            @if ($ticket->calculated_values['total_freight_sum'] > 0)
+                            @if ($ticket['calculated_values']['total_freight_sum'] > 0)
                                 <span class="badge badge-warning">
-                                    Freight: {{ number_format($ticket->calculated_values['total_freight_sum'], 2) }}
+                                    Freight: {{ number_format($ticket['calculated_values']['total_freight_sum'], 2) }}
                                 </span>
                             @endif
                         @endif
                     </td>
                     <td>
-                        {{ \Carbon\Carbon::parse($ticket->calculated_values['created_at'])->format('Y-m-d') }} <br>
-                        {{ \Carbon\Carbon::parse($ticket->calculated_values['created_at'])->format('H:i A') }}
+                        {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('Y-m-d') }} <br>
+                        {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        <a onclick="openModal(this,'{{ route('raw-material.ticket.payment-request.edit', $ticket->id) }}','Manage Payment Request')"
+                        <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Payment Request', false, '70%')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
@@ -77,7 +82,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="7" class="ant-table-cell text-center">
+                <td colspan="9" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -101,9 +106,8 @@
     </tbody>
 </table>
 
-
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $tickets->links() }}
+        {!! $tickets->appends(request()->query())->links() !!}
     </div>
 </div>

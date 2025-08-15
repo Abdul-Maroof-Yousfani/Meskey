@@ -157,8 +157,6 @@ class PaymentRequestApprovalController extends Controller
 
             $paymentRequest->update(['status' => $request->status]);
 
-
-
             // ----------------------
 
             $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
