@@ -1,7 +1,7 @@
 @extends('management.layouts.master')
 
 @section('title')
-    Payment Request
+    Freight Payment Request
 @endsection
 
 @section('content')
