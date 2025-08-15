@@ -8,7 +8,6 @@
             <th class="col-sm-2">Item</th>
             <th class="col-sm-2">Item UOM</th>
             <th class="col-sm-2">Qty</th>
-            {{-- <th class="col-sm-2">Item Status</th> --}}
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -18,12 +17,12 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchase_request->purchase_request_no ?? 'N/A' }} <br>
+                            {{ optional($row->purchase_request)->purchase_request_no ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
                          <p class="m-0">
-                            @if(isset($row->purchase_request->created_at))
+                            @if(optional($row->purchase_request)->created_at)
                                 {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('Y-m-d') }} /
                                 {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('h:i A') }}
                             @else
@@ -34,22 +33,22 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchase_request->location)->name ?? 'N/A' }} 
+                            {{ optional(optional($row->purchase_request)->location)->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->category->name ?? 'N/A' }} 
+                            {{ optional($row)->category->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->item->name ?? 'N/A' }} 
+                            {{ optional($row)->item->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->item->unitOfMeasure)->name ?? 'N/A' }} 
+                            {{ optional(optional($row->item)->unitOfMeasure)->name ?? 'N/A' }} 
                         </p>
                     </td>
                     <td>
@@ -58,7 +57,6 @@
                         </p>
                     </td>
                     
-                   
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
@@ -69,13 +67,12 @@
                         @can('role-delete')
                             <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
-
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
                         @php
-                            $currentUserRoleId = Auth::user()->role_id; // adjust if many-to-many
+                            $currentUserRoleId = Auth::user()->role_id;
                             $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
                         @endphp
                             @if(!$alreadyApproved)
