@@ -235,6 +235,15 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('p-r-m-payment-request-pohouch')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('raw-material.freight-request.index') }}"
+                                    onclick="loadPageContent('{{ route('raw-material.freight-request.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Freight Payment</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                             @canAccess('p-r-m-payment-request-approvals')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.payment-request-approval.index') }}"
@@ -279,11 +288,6 @@
                         </ul>
                     </li>
                     @endcanAccess
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('raw-material.freight-request.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Freight Payment
-                            </span></a>
-                    </li>
                     @canAccess('procurement-raw-material-inicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.index') }}" data-toggle="dropdown"><i

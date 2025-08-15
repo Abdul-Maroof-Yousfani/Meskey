@@ -9,7 +9,7 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Payment Request </h2>
+                    <h2 class="page-title">Freight Payment Request</h2>
                 </div>
             </div>
             <div class="row">
@@ -72,10 +72,10 @@
                                         <tr>
                                             <th class="col-sm-2">Ticket No / Contract No</th>
                                             <th class="col-sm-2">Supplier</th>
-                                            <th class="col-sm-2">Commodity</th>
+                                            <th class="col-sm-1">Commodity</th>
                                             <th class="col-sm-1">Loading date</th>
                                             <th class="col-sm-2">Amounts</th>
-                                            <th class="col-sm-1">Tot. Req. Amt.</th>
+                                            <th class="col-sm-2">Total Requested Amount</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>

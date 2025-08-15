@@ -73,7 +73,7 @@
                         {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Payment Request', false, '70%')"
+                        <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '70%')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
