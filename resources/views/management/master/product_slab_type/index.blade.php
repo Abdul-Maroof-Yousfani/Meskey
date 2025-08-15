@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Product Slabs
+    Product Slab Types
 @endsection
 @section('content')
     <div class="content-wrapper">

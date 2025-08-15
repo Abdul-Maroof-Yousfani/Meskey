@@ -1,18 +1,17 @@
 @extends('management.layouts.master')
 @section('title')
-    Sampling Request (Purchase)
+    Purchase Sampling Request
 @endsection
 @section('content')
     <div class="content-wrapper">
-
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Sampling Request (Purchase)</h2>
+                    <h2 class="page-title">Purchase Sampling Request</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('raw-material.purchase-sampling-request.create') }}','Create Sampling Request (Purchase)')"
+                        onclick="openModal(this,'{{ route('raw-material.purchase-sampling-request.create') }}','Create Purchase Sampling Request')"
                         type="button" class="btn btn-primary position-relative">
                         Create Request (Without Contract)
                     </button>

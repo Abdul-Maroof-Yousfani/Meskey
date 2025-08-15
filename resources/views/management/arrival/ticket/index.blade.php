@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Ticket
+    Arrival Ticket
 @endsection
 @section('content')
     <div class="content-wrapper ">

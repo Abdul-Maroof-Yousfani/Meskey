@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Purchaser's Approval
+    Purchaser Approval
 @endsection
 @section('content')
     <div class="content-wrapper">

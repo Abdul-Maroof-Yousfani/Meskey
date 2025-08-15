@@ -4,19 +4,11 @@
 @endsection
 @section('content')
     <div class="content-wrapper">
-
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title"> {{ $isResampling ? 'Purchase Re-Sampling' : 'Purchase Sampling' }} </h2>
                 </div>
-                {{-- <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button
-                        onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}','{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}')"
-                        type="button" class="btn btn-primary position-relative ">
-                        {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
-                    </button>
-                </div> --}}
             </div>
             <div class="row">
                 <div class="col-12">

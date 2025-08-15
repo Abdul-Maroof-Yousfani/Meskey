@@ -4,7 +4,6 @@
 @endsection
 @section('content')
     <div class="content-wrapper">
-
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">

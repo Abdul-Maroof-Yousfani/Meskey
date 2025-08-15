@@ -1,14 +1,13 @@
 @extends('management.layouts.master')
 @section('title')
-    Accounts Ledger
+    Accounts Ledgers
 @endsection
 @section('content')
     <div class="content-wrapper">
-
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Accounts Ledger</h2>
+                    <h2 class="page-title">Accounts Ledgers</h2>
                 </div>
             </div>
             <div class="row">

@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Arrival Locations
+    QC Relief
 @endsection
 @section('content')
     <div class="content-wrapper">

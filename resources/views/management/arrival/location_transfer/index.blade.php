@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Arrival Locations Transfer
+    Locations Transfer
 @endsection
 @section('content')
     <div class="content-wrapper">

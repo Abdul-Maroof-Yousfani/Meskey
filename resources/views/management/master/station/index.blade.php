@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Arrival Station
+    Station
 @endsection
 @section('content')
     <div class="content-wrapper">

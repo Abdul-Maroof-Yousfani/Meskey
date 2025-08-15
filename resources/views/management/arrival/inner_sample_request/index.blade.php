@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Request For Sampling Requests
+    Request For Inner Sampling
 @endsection
 @section('content')
     <div class="content-wrapper">
