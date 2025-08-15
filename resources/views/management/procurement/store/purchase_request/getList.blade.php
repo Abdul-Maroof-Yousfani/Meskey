@@ -118,17 +118,7 @@
         {{ $PurchaseRequests->links() }}
     </div>
 </div>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
 
-
-
-<div class="row d-flex" id="paginationLinks">
-    <div class="col-md-12 text-right">
-        {{ $PurchaseRequests->links() }}
-    </div>
-</div>
 <script>
     function approveItem(url) {
         Swal.fire({
