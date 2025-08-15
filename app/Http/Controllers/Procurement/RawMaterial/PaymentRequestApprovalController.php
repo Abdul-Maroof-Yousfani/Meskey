@@ -163,7 +163,7 @@ class PaymentRequestApprovalController extends Controller
 
             $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
             // $contractNo = $moduleType === 'ticket' ? $ticket->arrivalSlip->unique_no : $purchaseOrder->contract_no; 
-            $grnNo = $ticket->arrivalSlip->unique_no;
+            $grnNo = $ticket->arrivalSlip->unique_no ?? null;
             $contractNo = $purchaseOrder->contract_no;
             $qcProduct = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
             $loadingWeight = ($moduleType === 'ticket' ? $paymentRequestData->arrivalTicket->arrived_net_weight : $paymentRequestData->purchaseTicket->purchaseFreight->loading_weight) ?? 0;
