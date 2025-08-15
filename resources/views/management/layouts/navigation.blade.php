@@ -279,11 +279,11 @@
                         </ul>
                     </li>
                     @endcanAccess
-                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.freight-request.index') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Freight Payment
                             </span></a>
-                    </li> --}}
+                    </li>
                     @canAccess('procurement-raw-material-inicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.index') }}" data-toggle="dropdown"><i
