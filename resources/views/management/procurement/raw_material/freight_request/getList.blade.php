@@ -18,11 +18,7 @@
                     <td>
                         <strong>Ticket:</strong> #{{ $ticket['unique_no'] ?? 'N/A' }}<br>
                         <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}<br>
-                        @if ($ticket['type'] == 'thadda')
-                            <span class="badge badge-primary">Thadda</span>
-                        @else
-                            <span class="badge badge-info">Pohanch</span>
-                        @endif
+
                     </td>
                     <td>{{ $ticket['purchaseOrder']->supplier->name ?? 'N/A' }}</td>
                     <td>{{ $ticket['purchaseOrder']->qcProduct->name ?? ($ticket['qcProduct']->name ?? 'N/A') }}</td>
@@ -42,12 +38,26 @@
                                     <strong>Total Amount:</strong>
                                     {{ $ticket['calculated_values']['total_amount'] ?? 0 }}
                                     <br>
-                                    <strong>Approved Payment:</strong>
+                                    <strong>Approval Status:</strong>
+                                    @if ($ticket['requestStatus'] == 'approved')
+                                        <span class="badge badge-success">Approved</span>
+                                    @else
+                                        <span class="badge badge-warning">Pending</span>
+                                    @endif
+                                    <br>
+                                    <strong>Type:</strong>
+                                    @if ($ticket['type'] == 'thadda')
+                                        <span class="badge badge-primary">Thadda</span>
+                                    @else
+                                        <span class="badge badge-info">Pohanch</span>
+                                    @endif
+                                    <br>
+                                    {{-- <strong>Approved Payment:</strong>
                                     {{ $ticket['calculated_values']['approved_payment_sum'] ?? 0 }}<br>
                                     <strong>Approved Freight:</strong>
                                     {{ $ticket['calculated_values']['approved_freight_sum'] ?? 0 }}<br>
-                                    <strong>Remaining Amount:</strong>
-                                    {{ $ticket['calculated_values']['remaining_amount'] ?? 0 }}<br>
+                                    <strong>Remaining Amount: </strong>
+                                    {{ $ticket['calculated_values']['remaining_amount'] ?? 0 }}<br> --}}
                                 </small>
                             @endif
                         </div>
@@ -73,10 +83,17 @@
                         {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '70%')"
-                            class="info p-1 text-center mr-2 position-relative">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
+                        @if ($ticket['total_requests_count'] > 0)
+                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.view', $ticket['model']->id) }}','Manage Freight Payment Request', true, '70%')"
+                                class="info p-1 text-center mr-2 position-relative">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                        @else
+                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '70%')"
+                                class="info p-1 text-center mr-2 position-relative">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
+                        @endif
                     </td>
                 </tr>
             @endforeach

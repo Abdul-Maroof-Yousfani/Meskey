@@ -546,7 +546,7 @@
                             href="{{ route('supplier.index') }}"
                             onclick="loadPageContent('{{ route('supplier.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Supplier</span>
+                            <span data-i18n="Task Board">Manage Suppliers</span>
                         </a>
                     </li>
                     @endcanAccess
@@ -555,7 +555,16 @@
                             href="{{ route('broker.index') }}"
                             onclick="loadPageContent('{{ route('broker.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Broker</span>
+                            <span data-i18n="Task Board">Manage Brokers</span>
+                        </a>
+                    </li>
+                    @endcanAccess
+                    @canAccess('raw-material-supplier')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('vendor.index') }}"
+                            onclick="loadPageContent('{{ route('vendor.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Vendors</span>
                         </a>
                     </li>
                     @endcanAccess
@@ -579,7 +588,7 @@
                             href="{{ route('company-location.index') }}"
                             onclick="loadPageContent('{{ route('company-location.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Company Location </span>
+                            <span data-i18n="Task Board">Company Locations</span>
                         </a>
                     </li>
                 </ul>

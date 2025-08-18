@@ -17,6 +17,7 @@ class PaymentRequestData extends Model
     protected $fillable = [
         'purchase_order_id',
         'ticket_id',
+        'freight_payment_id',
         'request_type',
         'supplier_name',
         'contract_rate',

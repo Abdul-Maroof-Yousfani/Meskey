@@ -14,7 +14,7 @@ class CreateFreightRequestsTable extends Migration
             $table->string('arrival_slip_id')->nullable();
             $table->string('arrival_slip_no')->nullable();
 
-            $table->unsignedBigInteger('party_id');
+            $table->unsignedBigInteger('vendor_id');
             $table->decimal('contract_rate', 10, 2)->default(0);
 
             $table->decimal('exempt', 10, 2)->default(0);
@@ -45,7 +45,7 @@ class CreateFreightRequestsTable extends Migration
 
             $table->foreign('arrival_ticket_id')
                 ->references('id')
-                ->on('tickets')
+                ->on('arrival_tickets')
                 ->onDelete('cascade');
         });
     }

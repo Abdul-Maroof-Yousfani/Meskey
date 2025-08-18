@@ -1,6 +1,6 @@
-<form action="{{ route('supplier.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('vendor.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.supplier') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.vendor') }}" />
 
     <div class="row ">
         <div class="col-12">
@@ -8,8 +8,8 @@
                 Company Detail
             </h6>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
+        <div class="col-xs-12 col-sm-12 col-md-12 d-none">
+            <div class="form-group ">
                 <label>Supplier Type</label>
                 <select class="form-control" name="type">
                     <option value="">Select Supplier Type</option>
@@ -230,19 +230,6 @@
             @endforeach
         </div>
     </div>
-    <div class="row form-mar mb-2">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Broker Option
-            </h6>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="checkbox">
-                <input name="create_as_broker" type="checkbox" id="create_as_broker" value="1">
-                <label for="create_as_broker"><span>Create this supplier as a broker too</span></label>
-            </div>
-        </div>
-    </div>
     <div class="row ">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -261,7 +248,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Address:</label>
-                <textarea name="address" rows="2" class="form-control" placeholder="Supplier Address"></textarea>
+                <textarea name="address" rows="2" class="form-control" placeholder="Vendor Address"></textarea>
             </div>
         </div>
 

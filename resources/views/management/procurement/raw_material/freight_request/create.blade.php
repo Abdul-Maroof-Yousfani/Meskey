@@ -1,10 +1,27 @@
-<form action="{{ route('raw-material.freight-request.store') }}" method="POST" id="paymentRequestForm"
-    class="needs-validation" novalidate>
+@php
+    $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
+    $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
+    $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
+    $isUpdated = isset($isUpdated) ? $isUpdated : null;
+    $approval = isset($approval) ? $approval : null;
+@endphp
+<form
+    action="{{ route(isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id) ? 'raw-material.advance-payment-request-approval.store' : 'raw-material.freight-request.store') }}"
+    method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
     @csrf
     <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
     <input type="hidden" name="arrival_slip_id" value="{{ $ticket->arrivalSlip->id ?? '' }}">
+    <input type="hidden" name="purchase_order_id" value="{{ $ticket->arrival_purchase_order_id ?? '' }}">
     <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
+    <input type="hidden" name="arrival_ticket_id" value="{{ $ticket->id ?? '' }}">
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
+    <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
+
+    @if (isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id))
+        <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
+    @else
+        <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
+    @endif
 
     <div class="row">
         <div class="col-12">
@@ -83,9 +100,18 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="font-weight-bold">Freight Party Name</label>
-                <input type="text" class="form-control editable-field" name="freight_party_name"
-                    value="{{ $ticket->freight->freight_party_name ?? '' }}" placeholder="Freight Party Name">
+                <label class="font-weight-bold">Freight Party</label>
+                <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
+                    <option value="">Select Freight Party</option>
+                    @foreach ($vendors as $vendor)
+                        <option value="{{ $vendor->id }}" @selected(isset($freightPaymentRequest) && $freightPaymentRequest->vendor_id == $vendor->id)>
+                            {{ $vendor->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @if (isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id))
+                    <input type="hidden" name="vendor_id" value="{{ $freightPaymentRequest->vendor_id }}" readonly>
+                @endif
             </div>
         </div>
     </div>
@@ -133,7 +159,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Contract Rate</label>
                 <input type="text" class="form-control editable-field" name="contract_rate"
-                    value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate">
+                    value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate" readonly>
             </div>
         </div>
     </div>
@@ -171,7 +197,8 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempt</label>
                 <input type="text" class="form-control editable-field" name="exempt"
-                    value="{{ $ticket->freight->exempted_weight ?? '0' }}" placeholder="Exempt">
+                    value="{{ $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0') }}"
+                    {{ $param }} placeholder="Exempt">
             </div>
         </div>
     </div>
@@ -186,30 +213,32 @@
             <div class="form-group">
                 <label class="font-weight-bold">Freight (Rs)</label>
                 <input type="text" class="form-control editable-field" name="freight_amount"
-                    value="{{ $ticket->freight->net_freight ?? ($ticket->purchaseFreight->freight_amount ?? '0') }}"
-                    placeholder="Freight (Rs)">
+                    value="{{ $freightPaymentRequest?->freight_amount ?? ($ticket->freight->net_freight ?? '0') }}"
+                    {{ $param }} placeholder="Freight (Rs)">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Freight Per Ton</label>
                 <input type="text" class="form-control editable-field" name="freight_per_ton"
-                    value="{{ $ticket->freight->freight_per_ton ?? ($ticket->purchaseFreight->freight_per_ton ?? '0') }}"
-                    placeholder="Freight Per Ton">
+                    value="{{ $freightPaymentRequest?->freight_per_ton ?? ($ticket->freight->freight_per_ton ?? '0') }}"
+                    {{ $param }} placeholder="Freight Per Ton">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Loading Kanta</label>
                 <input type="text" class="form-control editable-field" name="loading_kanta"
-                    value="{{ $ticket->freight->kanta_golarchi_charges ?? '0' }}" placeholder="Loading Kanta">
+                    value="{{ $freightPaymentRequest?->loading_kanta ?? ($ticket->freight->kanta_golarchi_charges ?? '0') }}"
+                    {{ $param }} placeholder="Loading Kanta">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Arrived Kanta</label>
                 <input type="text" class="form-control editable-field" name="arrived_kanta"
-                    value="{{ $ticket->freight->karachi_kanta_charges ?? '0' }}" placeholder="Arrived Kanta">
+                    value="{{ $freightPaymentRequest?->arrived_kanta ?? ($ticket->freight->karachi_kanta_charges ?? '0') }}"
+                    {{ $param }} placeholder="Arrived Kanta">
             </div>
         </div>
     </div>
@@ -224,20 +253,23 @@
             <div class="form-group">
                 <label class="font-weight-bold">Other(+)/Labour</label>
                 <input type="text" class="form-control editable-field" name="other_labour_positive"
-                    value="{{ $ticket->freight->other_labour_charges ?? '0' }}" placeholder="Other(+)/Labour">
+                    value="{{ $freightPaymentRequest?->other_labour_positive ?? ($ticket->freight->other_labour_charges ?? '0') }}"
+                    {{ $param }} placeholder="Other(+)/Labour">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Dehari(+)/Extra</label>
                 <input type="text" class="form-control editable-field" name="dehari_extra"
-                    value="{{ $ticket->freight->other_labour_charges ?? '0' }}" placeholder="Dehari(+)/Extra">
+                    value="{{ $freightPaymentRequest?->dehari_extra ?? ($ticket->freight->other_labour_charges ?? '0') }}"
+                    {{ $param }} placeholder="Dehari(+)/Extra">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Market Comm</label>
-                <input type="text" class="form-control editable-field" name="market_comm" value="0"
+                <input type="text" class="form-control editable-field" name="market_comm"
+                    value="{{ $freightPaymentRequest?->market_comm ?? 0 }}" {{ $param }}
                     placeholder="Market Comm">
             </div>
         </div>
@@ -252,14 +284,16 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Over Weight Ded</label>
-                <input type="text" class="form-control editable-field" name="over_weight_ded" value="0"
+                <input type="text" class="form-control editable-field" name="over_weight_ded"
+                    value="{{ $freightPaymentRequest?->over_weight_ded ?? 0 }}" {{ $param }}
                     placeholder="Over Weight Ded">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Godown Penalty</label>
-                <input type="text" class="form-control editable-field" name="godown_penalty" value="0"
+                <input type="text" class="form-control editable-field" name="godown_penalty"
+                    value="{{ $freightPaymentRequest?->godown_penalty ?? 0 }}" {{ $param }}
                     placeholder="Godown Penalty">
             </div>
         </div>
@@ -267,22 +301,26 @@
             <div class="form-group">
                 <label class="font-weight-bold">Other(-)/Labour</label>
                 <input type="text" class="form-control editable-field" name="other_labour_negative"
-                    value="{{ $ticket->freight->other_labour_charges ?? '0' }}" placeholder="Other(-)/Labour">
+                    value="{{ $freightPaymentRequest?->other_labour_negative ?? ($ticket->freight->other_labour_charges ?? '0') }}"
+                    {{ $param }} placeholder="Other(-)/Labour">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Extra(-) Ded</label>
-                <input type="text" class="form-control editable-field" name="extra_ded" value="0"
+                <input type="text" class="form-control editable-field" name="extra_ded"
+                    value="{{ $freightPaymentRequest?->extra_ded ?? 0 }}" {{ $param }}
                     placeholder="Extra(-) Ded">
             </div>
         </div>
     </div>
+
     <div class="row">
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Commission % Ded</label>
-                <input type="text" class="form-control editable-field" name="commission_ded" value="0"
+                <input type="text" class="form-control editable-field" name="commission_ded"
+                    value="{{ $freightPaymentRequest?->commission_ded ?? 0 }}" {{ $param }}
                     placeholder="Commission % Ded">
             </div>
         </div>
@@ -309,7 +347,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Net Amount</label>
-                <input type="text" class="form-control bg-light font-weight-bold text-success" name="net_amount"
+                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount"
                     value="0" readonly>
             </div>
         </div>
@@ -317,10 +355,100 @@
             <div class="form-group">
                 <label class="font-weight-bold">Request Amount</label>
                 <input type="number" step="0.01" class="form-control" name="request_amount" value="0"
-                    min="0" required>
+                    min="0" required readonly>
             </div>
         </div>
     </div>
+
+    <div class="row d-none">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Paid Amount</label>
+                <input type="number" step="0.01" class="form-control bg-light" name="paid_amount"
+                    value="{{ $approvedAmount ?? 0 }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Remaining Amount</label>
+                <input type="number" step="0.01" class="form-control bg-light" name="remaining_amount"
+                    value="0" readonly>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Percentage</label>
+                <input type="number" min="0" max="100" step="0.01"
+                    class="form-control percentage-input" value="0" placeholder="Enter percentage">
+            </div>
+        </div>
+    </div>
+
+    @if (isset($isRequestApprovalPage) && $isRequestApprovalPage)
+        <div class="row">
+            <div class="col-12">
+                <h6 class="header-heading-sepration">
+                    Payment Request Approval
+                </h6>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="{{ 'col-md-6' }}">
+                <div class="form-group">
+                    <label>Contract No</label>
+                    <input type="text" class="form-control"
+                        value="#{{ $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}"
+                        readonly>
+                </div>
+            </div>
+            <div class="{{ 'col-md-6' }}">
+                <div class="form-group">
+                    <label>Supplier</label>
+                    <input type="text" class="form-control"
+                        value="{{ $paymentRequest->paymentRequestData->supplier_name ?? 'N/A' }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Request Type</label>
+                    <input type="text" class="form-control"
+                        value="{{ isset($paymentRequest) ? formatEnumValue($paymentRequest->request_type) : '' }}"
+                        readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Original Amount</label>
+                    <input type="text" class="form-control" name="payment_request_amount" readonly
+                        value="{{ isset($paymentRequest) ? $paymentRequest->amount : '' }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select name="status" id="approvalStatus" class="form-control select2"
+                        {{ $isUpdated ? 'disabled' : '' }}>
+                        <option value="">Select Status</option>
+                        <option value="approved" {{ $approval && $approval->status == 'approved' ? 'selected' : '' }}>
+                            Approved</option>
+                        <option value="rejected" {{ $approval && $approval->status == 'rejected' ? 'selected' : '' }}>
+                            Rejected</option>
+                    </select>
+                    @if ($isUpdated)
+                        <input type="hidden" name="status" value="{{ $approval->status ?? '' }}">
+                    @endif
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <textarea id="approvalRemarks" name="remarks" class="form-control" rows="3"
+                        {{ $isUpdated ? 'readonly' : '' }}>{{ $approval->remarks ?? '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="row bottom-button-bar">
         <div class="col-12">
@@ -331,20 +459,6 @@
 </form>
 <script>
     $(document).ready(function() {
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                var form = document.getElementById('paymentRequestForm');
-                form.addEventListener('submit', function(event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            }, false);
-        })();
-
         $('.editable-field').on('input', calculatePaymentSummary);
 
         function calculatePaymentSummary() {
@@ -370,18 +484,46 @@
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
             $('[name="net_amount"]').val(netAmount.toFixed(2));
 
+            // Calculate remaining amount
+            let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+            let requestAmount = parseFloat($('[name="request_amount"]').val()) || 0;
+            let remainingAmount = netAmount - paidAmount - requestAmount;
+            $('[name="remaining_amount"]').val(remainingAmount.toFixed(2));
+
             $('[name="request_amount"]').attr('max', netAmount.toFixed(2));
+            $('[name="request_amount"]').val(netAmount.toFixed(2));
         }
 
-        $('[name="request_amount"]').on('change', function() {
-            let requestAmount = parseFloat($(this).val()) || 0;
-            let netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+        // $('.percentage-input').on('input', function() {
+        //     let percentage = parseFloat($(this).val()) || 0;
+        //     if (percentage > 100) {
+        //         percentage = 100;
+        //         $(this).val(100);
+        //     }
+        //     let netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+        //     let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+        //     let remainingAmount = netAmount - paidAmount;
+        //     let amount = (remainingAmount * percentage) / 100;
+        //     $('[name="request_amount"]').val(amount.toFixed(2));
+        //     calculatePaymentSummary();
+        // });
 
-            if (requestAmount > netAmount) {
-                alert('Request amount cannot exceed net amount of ' + netAmount.toFixed(2));
-                $(this).val(netAmount.toFixed(2));
-            }
-        });
+        // $('[name="request_amount"]').on('input', function() {
+        //     let netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+        //     let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+        //     let remainingAmount = netAmount - paidAmount;
+        //     let requestAmount = parseFloat($(this).val()) || 0;
+
+        //     if (requestAmount > remainingAmount) {
+        //         requestAmount = remainingAmount;
+        //         $(this).val(remainingAmount.toFixed(2));
+        //     }
+
+        //     let percentage = remainingAmount > 0 ? (requestAmount / remainingAmount) * 100 : 0;
+        //     $('.percentage-input').val(percentage.toFixed(2));
+
+        //     calculatePaymentSummary();
+        // });
 
         calculatePaymentSummary();
     });

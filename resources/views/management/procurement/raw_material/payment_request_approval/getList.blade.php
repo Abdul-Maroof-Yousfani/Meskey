@@ -40,6 +40,10 @@
                         @if ($request->is_advance_payment !== 0)
                             <span class="badge badge-yellow mt-1">Advance Payment</span>
                         @endif
+
+                        @if ($request->module_type == 'freight_payment')
+                            <span class="badge badge-yellow mt-1">Arrival Freight</span>
+                        @endif
                     </td>
                     <td>{{ number_format($request->amount, 2) }}</td>
                     <td>

@@ -19,7 +19,8 @@ use App\Http\Controllers\Master\{
     CompanyLocationController,
     DivisionController,
     QcReliefController,
-    TruckSizeRangeController
+    TruckSizeRangeController,
+    VendorsController
 };
 
 
@@ -48,6 +49,9 @@ Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.item
 
 Route::resource('supplier', SupplierController::class);
 Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
+
+Route::resource('vendor', VendorsController::class);
+Route::post('/get-vendor', [VendorsController::class, 'getList'])->name('get.vendor');
 
 Route::resource('division', DivisionController::class);
 Route::post('/get-division', [DivisionController::class, 'getList'])->name('get.division');

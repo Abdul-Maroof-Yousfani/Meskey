@@ -74,6 +74,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('freight-request', FreightRequestController::class);
     Route::post('/get-freight-request', [FreightRequestController::class, 'getList'])->name('get.freight-request');
+    Route::get('freight-request/view/{id}', [FreightRequestController::class, 'view'])->name('freight-request.view');
 
     Route::resource('advance-payment-request', AdvancePaymentRequestController::class);
     Route::post('/get-advance-payment-request', [AdvancePaymentRequestController::class, 'getList'])->name('get.advance-payment-request');
