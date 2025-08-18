@@ -1,6 +1,8 @@
-<form action="{{ route('raw-material.payment-request.store') }}" method="POST" id="paymentRequestForm"
+<form action="{{ route('raw-material.freight-request.store') }}" method="POST" id="paymentRequestForm"
     class="needs-validation" novalidate>
     @csrf
+    <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
+    <input type="hidden" name="arrival_slip_id" value="{{ $ticket->arrivalSlip->id ?? '' }}">
     <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
 
@@ -145,15 +147,15 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Loading Weight</label>
-                <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->purchaseFreight->loading_weight ?? ($ticket->loading_weight ?? '0') }}"
+                <input type="text" class="form-control bg-light" value="{{ $ticket->net_weight ?? '0' }}"
                     readonly placeholder="Loading Weight">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Arrival Weight</label>
-                <input type="text" class="form-control bg-light" value="{{ $ticket->arrived_net_weight ?? '0' }}"
+                <input type="text" class="form-control bg-light"
+                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
                     readonly placeholder="Arrival Weight">
             </div>
         </div>
@@ -169,7 +171,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempt</label>
                 <input type="text" class="form-control editable-field" name="exempt"
-                    value="{{ $ticket->exempt ?? '0' }}" placeholder="Exempt">
+                    value="{{ $ticket->freight->exempted_weight ?? '0' }}" placeholder="Exempt">
             </div>
         </div>
     </div>
@@ -184,7 +186,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Freight (Rs)</label>
                 <input type="text" class="form-control editable-field" name="freight_amount"
-                    value="{{ $ticket->freight->freight_amount ?? ($ticket->purchaseFreight->freight_amount ?? '0') }}"
+                    value="{{ $ticket->freight->net_freight ?? ($ticket->purchaseFreight->freight_amount ?? '0') }}"
                     placeholder="Freight (Rs)">
             </div>
         </div>
@@ -200,7 +202,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Loading Kanta</label>
                 <input type="text" class="form-control editable-field" name="loading_kanta"
-                    value="{{ $ticket->purchaseFreight->kanta_charges ?? '0' }}" placeholder="Loading Kanta">
+                    value="{{ $ticket->freight->kanta_golarchi_charges ?? '0' }}" placeholder="Loading Kanta">
             </div>
         </div>
         <div class="col-md-3">
@@ -235,8 +237,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Market Comm</label>
-                <input type="text" class="form-control editable-field" name="market_comm"
-                    value="{{ $ticket->freight->market_comm ?? '0' }}" placeholder="Market Comm">
+                <input type="text" class="form-control editable-field" name="market_comm" value="0"
+                    placeholder="Market Comm">
             </div>
         </div>
     </div>
@@ -250,15 +252,15 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Over Weight Ded</label>
-                <input type="text" class="form-control editable-field" name="over_weight_ded"
-                    value="{{ $ticket->freight->over_weight_ded ?? '0' }}" placeholder="Over Weight Ded">
+                <input type="text" class="form-control editable-field" name="over_weight_ded" value="0"
+                    placeholder="Over Weight Ded">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Godown Penalty</label>
-                <input type="text" class="form-control editable-field" name="godown_penalty"
-                    value="{{ $ticket->freight->godown_penalty ?? '0' }}" placeholder="Godown Penalty">
+                <input type="text" class="form-control editable-field" name="godown_penalty" value="0"
+                    placeholder="Godown Penalty">
             </div>
         </div>
         <div class="col-md-3">
@@ -271,8 +273,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Extra(-) Ded</label>
-                <input type="text" class="form-control editable-field" name="extra_ded"
-                    value="{{ $ticket->freight->extra_ded ?? '0' }}" placeholder="Extra(-) Ded">
+                <input type="text" class="form-control editable-field" name="extra_ded" value="0"
+                    placeholder="Extra(-) Ded">
             </div>
         </div>
     </div>
@@ -280,8 +282,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Commission % Ded</label>
-                <input type="text" class="form-control editable-field" name="commission_ded"
-                    value="{{ $ticket->freight->commission_ded ?? '0' }}" placeholder="Commission % Ded">
+                <input type="text" class="form-control editable-field" name="commission_ded" value="0"
+                    placeholder="Commission % Ded">
             </div>
         </div>
     </div>
@@ -294,16 +296,28 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="font-weight-bold">Final Figure</label>
-                <input type="text" class="form-control bg-light font-weight-bold text-success"
-                    value="{{ $finalFigure ?? '0' }}" readonly placeholder="Final Figure">
+                <label class="font-weight-bold">Gross Amount</label>
+                <input type="text" class="form-control bg-light" name="gross_amount" value="0" readonly>
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="font-weight-bold">Freight Paid</label>
-                <input type="text" class="form-control bg-light font-weight-bold text-success"
-                    value="{{ $freightPaid ?? '0' }}" readonly placeholder="Freight Paid">
+                <label class="font-weight-bold">Total Deductions</label>
+                <input type="text" class="form-control bg-light" name="total_deductions" value="0" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Net Amount</label>
+                <input type="text" class="form-control bg-light font-weight-bold text-success" name="net_amount"
+                    value="0" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Request Amount</label>
+                <input type="number" step="0.01" class="form-control" name="request_amount" value="0"
+                    min="0" required>
             </div>
         </div>
     </div>
@@ -315,7 +329,7 @@
         </div>
     </div>
 </form>
-{{-- <script>
+<script>
     $(document).ready(function() {
         (function() {
             'use strict';
@@ -331,11 +345,9 @@
             }, false);
         })();
 
-        $('.editable-field').on('change keyup', function() {
-            calculateFinalFigures();
-        });
+        $('.editable-field').on('input', calculatePaymentSummary);
 
-        function calculateFinalFigures() {
+        function calculatePaymentSummary() {
             let freightAmount = parseFloat($('[name="freight_amount"]').val()) || 0;
             let loadingKanta = parseFloat($('[name="loading_kanta"]').val()) || 0;
             let arrivedKanta = parseFloat($('[name="arrived_kanta"]').val()) || 0;
@@ -349,15 +361,28 @@
             let extraDed = parseFloat($('[name="extra_ded"]').val()) || 0;
             let commissionDed = parseFloat($('[name="commission_ded"]').val()) || 0;
 
-            let totalPositive = freightAmount + loadingKanta + arrivedKanta + otherPositive + dehariExtra +
+            let grossAmount = freightAmount + loadingKanta + arrivedKanta + otherPositive + dehariExtra +
                 marketComm;
-            let totalNegative = overWeightDed + godownPenalty + otherNegative + extraDed + commissionDed;
-            let finalFigure = totalPositive - totalNegative;
+            let totalDeductions = overWeightDed + godownPenalty + otherNegative + extraDed + commissionDed;
+            let netAmount = grossAmount - totalDeductions;
 
-            $('[value="final_figure"]').val(finalFigure.toFixed(2));
-            $('[value="freight_paid"]').val(finalFigure.toFixed(2));
+            $('[name="gross_amount"]').val(grossAmount.toFixed(2));
+            $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
+            $('[name="net_amount"]').val(netAmount.toFixed(2));
+
+            $('[name="request_amount"]').attr('max', netAmount.toFixed(2));
         }
 
-        calculateFinalFigures();
+        $('[name="request_amount"]').on('change', function() {
+            let requestAmount = parseFloat($(this).val()) || 0;
+            let netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+
+            if (requestAmount > netAmount) {
+                alert('Request amount cannot exceed net amount of ' + netAmount.toFixed(2));
+                $(this).val(netAmount.toFixed(2));
+            }
+        });
+
+        calculatePaymentSummary();
     });
-</script> --}}
+</script>
