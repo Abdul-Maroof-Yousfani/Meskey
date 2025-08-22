@@ -206,8 +206,8 @@
 
 @section('script')
     <script>
-        $(document).ready(function () {
-            $('#voucher_type, #pv_date').change(function () {
+        $(document).ready(function() {
+            $('#voucher_type, #pv_date').change(function() {
                 if ($('#voucher_type').val()) {
                     $.ajax({
                         url: '{{ route('payment-voucher.generate-pv-number') }}',
@@ -217,7 +217,7 @@
                             voucher_type: $('#voucher_type').val(),
                             pv_date: $('#pv_date').val() || null
                         },
-                        success: function (response) {
+                        success: function(response) {
                             if (response.success) {
                                 if ($('#pv_date').val()) {
                                     $('#unique_no').val(response.pv_number);
@@ -227,7 +227,7 @@
                                     $accountSelect.append(
                                         '<option value="">Select Account</option>');
 
-                                    response.accounts.forEach(function (account) {
+                                    response.accounts.forEach(function(account) {
                                         $accountSelect.append(
                                             `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
                                         );
@@ -241,7 +241,7 @@
                 }
             });
 
-            $('#bank_account_id').change(function () {
+            $('#bank_account_id').change(function() {
                 const selectedOption = $(this).find('option:selected');
                 if (selectedOption.val()) {
                     const accountNo = selectedOption.data('account-no') || '';
@@ -255,7 +255,7 @@
                 }
             });
 
-            $('#voucher_type').change(function () {
+            $('#voucher_type').change(function() {
                 if ($(this).val() === 'bank_payment_voucher') {
                     $('.bank-fields, .bank-account-section').show();
                     // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
@@ -318,7 +318,7 @@
                 return `${type} - ${title} (${accountNo})`;
             }
 
-            $('#supplier_id').change(function () {
+            $('#supplier_id').change(function() {
                 const supplierId = $(this).val();
                 const tbody = $('#paymentRequestsTable tbody');
 
@@ -337,12 +337,12 @@
                     $.ajax({
                         url: `/finance/payment-voucher/payment-requests/${supplierId}`,
                         type: 'GET',
-                        success: function (response) {
+                        success: function(response) {
                             if (response.success) {
                                 tbody.empty();
 
                                 if (response.payment_requests.length > 0) {
-                                    $.each(response.payment_requests, function (index, request) {
+                                    $.each(response.payment_requests, function(index, request) {
                                         tbody.append(`
                                     <tr>
                                         <td>
@@ -354,7 +354,7 @@
                                                 data-request-no="${request.contract_no}" 
                                                 data-truck-no="${request.truck_no}"
                                                 data-bilty-no="${request.bilty_no}"
-                                                data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : 'Ticket'} "
+                                                data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
                                                 data-loading-date="${request.loading_date}"
                                                 data-loading-weight="${request.loading_weight}">
                                         </td>
@@ -367,7 +367,7 @@
                                                 <span
                                                 class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
                                                     style="border-radius: 3px 0 0 3px;">
-                                                    ${request.module_type == 'purchase_order' ? 'Contract' : 'Ticket'} 
+                                                    ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
                                                 </span>
                                                 <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
                                                     style="border-radius: 0 3px 3px 0;">
@@ -393,7 +393,7 @@
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
-                                    $.each(response.bank_accounts, function (index, account) {
+                                    $.each(response.bank_accounts, function(index, account) {
                                         const option = new Option(
                                             `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
                                             account.id,
@@ -425,7 +425,7 @@
                                 $('#supplier_id_d').val(supplierId);
                             }
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             tbody.html(`
                         <tr>
                             <td colspan="11" class="text-center text-danger">
@@ -445,20 +445,20 @@
                 }
             });
 
-            $('#module_id').change(function () {
+            $('#module_id').change(function() {
                 const poId = $(this).val();
 
                 if (poId) {
                     $.ajax({
                         url: `/finance/payment-voucher/payment-requests/${poId}`,
                         type: 'GET',
-                        success: function (response) {
+                        success: function(response) {
                             if (response.success) {
                                 const tbody = $('#paymentRequestsTable tbody');
                                 tbody.empty();
 
                                 if (response.payment_requests.length > 0) {
-                                    $.each(response.payment_requests, function (index, request) {
+                                    $.each(response.payment_requests, function(index, request) {
                                         let {
                                             id,
                                             amount,
@@ -501,7 +501,7 @@
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
-                                    $.each(response.bank_accounts, function (index, account) {
+                                    $.each(response.bank_accounts, function(index, account) {
                                         const option = new Option(
                                             `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
                                             account.id,
@@ -534,7 +534,7 @@
                 }
             });
 
-            $(document).on('change', '.request-checkbox', function () {
+            $(document).on('change', '.request-checkbox', function() {
                 updateSelectedRequestsList();
             });
 
@@ -542,7 +542,7 @@
                 const selectedRequests = [];
                 let totalAmount = 0;
 
-                $('.request-checkbox:checked').each(function () {
+                $('.request-checkbox:checked').each(function() {
                     selectedRequests.push({
                         id: $(this).val(),
                         amount: $(this).data('amount'),
@@ -560,7 +560,7 @@
                     listContainer.empty();
                     emptyMessage.hide();
 
-                    $.each(selectedRequests, function (index, request) {
+                    $.each(selectedRequests, function(index, request) {
                         $('#supplier_id').val(request.supplierId);
 
                         listContainer.append(`

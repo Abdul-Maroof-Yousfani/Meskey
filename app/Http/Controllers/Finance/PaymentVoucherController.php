@@ -173,11 +173,13 @@ class PaymentVoucherController extends Controller
             ->map(function ($request) {
                 return [
                     'id' => $request->id,
-                    'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? null,
+                    'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
                     'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                    'truck_no' => $request->paymentRequestData->truck_no,
-                    'bilty_no' => $request->paymentRequestData->bilty_no,
-                    'loading_date' => $request->paymentRequestData->loading_date->format('Y-m-d'),
+                    'truck_no' => $request->paymentRequestData->truck_no ?? '-',
+                    'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
+                    'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
+                        ? $request->paymentRequestData->loading_date->format('Y-m-d')
+                        : '-',
                     'no_of_bags' => $request->paymentRequestData->no_of_bags,
                     'loading_weight' => $request->paymentRequestData->loading_weight,
                     'module_type' => $request->paymentRequestData->module_type,
@@ -185,9 +187,11 @@ class PaymentVoucherController extends Controller
                     'amount' => $request->amount,
                     'purpose' => $request->paymentRequestData->notes ?? 'No description',
                     'status' => $request->approval_status,
-                    'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name,
+                    'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
                     'type' => ($request->request_type),
-                    'request_date' => $request->created_at->format('Y-m-d')
+                    'request_date' => $request->created_at
+                        ? $request->created_at->format('Y-m-d')
+                        : ''
                 ];
             });
 
@@ -266,10 +270,10 @@ class PaymentVoucherController extends Controller
 
             foreach ($request->payment_requests as $requestId) {
                 $paymentRequest = PaymentRequest::findOrFail($requestId);
-                $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
+
+                $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' || $paymentRequest->paymentRequestData->module_type == 'freight_payment' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
                 $truckNo = $paymentRequest->paymentRequestData->truck_no;
                 $biltyNo = $paymentRequest->paymentRequestData->bilty_no;
-
                 $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
                 $amount = number_format($paymentRequest->amount, 2);
 
@@ -329,6 +333,7 @@ class PaymentVoucherController extends Controller
 
                 $totalAmount += $paymentRequest->amount;
             }
+            // dd($ticketNo);
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
