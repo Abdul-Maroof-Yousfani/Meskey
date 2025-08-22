@@ -11,7 +11,25 @@ class PurchaseRequestData extends Model
 {
     use HasFactory;
 
-     protected $guarded = [];
+    protected $fillable = [
+        'purchase_request_id',
+        'category_id',
+        'item_id',
+        'qty',
+        'remarks',
+        'quotation_status',
+        'po_status',
+        'status',
+    ];
+
+    protected $casts = [
+        'qty' => 'decimal:2',
+        'quotation_status' => 'integer',
+        'po_status' => 'integer',
+        'status' => 'boolean',
+    ];
+
+    protected $guarded = [];
 
     public function JobOrder()
     {
@@ -25,22 +43,21 @@ class PurchaseRequestData extends Model
 
     public function category()
     {
-        return $this->belongsTo(Category::class,'category_id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function item()
     {
-        return $this->belongsTo(Product::class,'item_id');
+        return $this->belongsTo(Product::class, 'item_id');
     }
 
-     public function purchase_quotation_data()
+    public function purchase_quotation_data()
     {
-        return $this->hasOne(PurchaseQuotationData::class,'purchase_request_data_id');
+        return $this->hasOne(PurchaseQuotationData::class, 'purchase_request_data_id');
     }
 
     public function approval()
     {
         return $this->hasMany(PurchaseItemApprove::class, 'purchase_request_data_id');
     }
-
 }

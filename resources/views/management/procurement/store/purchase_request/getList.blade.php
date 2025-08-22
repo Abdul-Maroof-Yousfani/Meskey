@@ -17,12 +17,12 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ optional($row->purchase_request)->purchase_request_no ?? 'N/A' }} <br>
+                            #{{ optional($row->purchase_request)->purchase_request_no ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
-                         <p class="m-0">
-                            @if(optional($row->purchase_request)->created_at)
+                        <p class="m-0">
+                            @if (optional($row->purchase_request)->created_at)
                                 {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('Y-m-d') }} /
                                 {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('h:i A') }}
                             @else
@@ -33,30 +33,29 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->purchase_request)->location)->name ?? 'N/A' }} 
+                            {{ optional(optional($row->purchase_request)->location)->name ?? 'N/A' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row)->category->name ?? 'N/A' }} 
+                            {{ optional($row)->category->name ?? 'N/A' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional($row)->item->name ?? 'N/A' }} 
+                            {{ optional($row)->item->name ?? 'N/A' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ optional(optional($row->item)->unitOfMeasure)->name ?? 'N/A' }} 
+                            {{ optional(optional($row->item)->unitOfMeasure)->name ?? 'N/A' }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->qty ?? 'N/A' }} 
+                            {{ $row->qty ?? 'N/A' }}
                         </p>
                     </td>
-                    
                     <td>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
@@ -64,18 +63,22 @@
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
-                        @can('role-delete')
+                        {{-- @can('role-delete')
                             <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                        @php
-                            $currentUserRoleId = Auth::user()->role_id;
-                            $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
-                        @endphp
-                            @if(!$alreadyApproved)
+                            @php
+                                $currentUserRoleId = Auth::user()->role_id;
+                                $alreadyApproved = $row
+                                    ->approval()
+                                    ->where('role_id', $currentUserRoleId)
+                                    ->where('status_id', 2)
+                                    ->exists();
+                            @endphp
+                            @if (!$alreadyApproved)
                                 <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
                                     class="success p-1 text-center position-relative" title="Approve">
                                     <i class="ft-check font-medium-3"></i>
@@ -83,7 +86,7 @@
                             @else
                                 <span class="badge badge-success">Approved</span>
                             @endif
-                        @endcan
+                        @endcan --}}
                     </td>
                 </tr>
             @endforeach
@@ -134,7 +137,7 @@
                 $.ajax({
                     url: url,
                     type: 'GET',
-                   
+
                     success: function(res) {
                         Swal.fire({
                             title: 'Approved!',
@@ -153,5 +156,4 @@
             }
         });
     }
-
 </script>

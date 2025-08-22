@@ -69,19 +69,12 @@ class InitialSamplingController extends Controller
 
         $samplingRequests = $query->get();
         $arrivalCustomSampling = ArrivalCustomSampling::all();
-      //  $sampleTakenByUsers = User::all();
-
-
 
         $sampleTakenByUsers = User::role('QC')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
                 $q->where('companies.id', $authUserCompany);
             })
             ->get();
-
-
-
-
 
         $products = Product::all();
 

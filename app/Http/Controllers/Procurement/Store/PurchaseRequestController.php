@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Procurement\PurchaseRequest as ProcurementPurchaseRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseAgainstJobOrder;
@@ -25,26 +26,27 @@ class PurchaseRequestController extends Controller
         return view('management.procurement.store.purchase_request.index');
     }
 
-     /**
+    /**
      * Get list of categories.
      */
     public function getList(Request $request)
     {
-        $PurchaseRequests = PurchaseRequestData::with('purchase_request','category','item','approval')
-        // ->when($request->filled('search'), function ($q) use ($request) {
-        //     $searchTerm = '%' . $request->search . '%';
-        //     return $q->where(function ($sq) use ($searchTerm) {
-        //         $sq->where('purchase_request_no', 'like', $searchTerm);
-        //     });
-        // })
-        ->whereStatus(true)->latest()
-        ->paginate(request('per_page', 25));
+        $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
+            // ->when($request->filled('search'), function ($q) use ($request) {
+            //     $searchTerm = '%' . $request->search . '%';
+            //     return $q->where(function ($sq) use ($searchTerm) {
+            //         $sq->where('purchase_request_no', 'like', $searchTerm);
+            //     });
+            // })
+            ->whereStatus(true)->latest()
+            ->paginate(request('per_page', 25));
 
         return view('management.procurement.store.purchase_request.getList', compact('PurchaseRequests'));
     }
 
-    public function approve($id){
-        
+    public function approve($id)
+    {
+
         PurchaseItemApprove::create([
             'status_id' => 2,
             'role_id' => Auth::id(),
@@ -57,46 +59,19 @@ class PurchaseRequestController extends Controller
      */
     public function create()
     {
-        $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-        return view('management.procurement.store.purchase_request.create',compact('categories','job_orders'));
+        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ProcurementPurchaseRequest $request)
     {
-        $validated = $request->validate([
-            'purchase_date'    => 'required|date',
-            'company_location_id'      => 'required|exists:company_locations,id',
-            'reference_no'     => 'nullable|string|max:255',
-            'description'      => 'nullable|string',
-
-            'category_id'      => 'required|array|min:1',
-            'category_id.*'    => 'required|exists:categories,id',
-
-            'item_id'          => 'required|array|min:1',
-            'item_id.*'        => 'required|exists:products,id',
-
-            'uom'              => 'nullable|array',
-            'uom.*'            => 'nullable|string|max:255',
-
-            'qty'              => 'required|array|min:1',
-            'qty.*'            => 'required|numeric|min:0.01',
-
-            'job_order_id'     => 'nullable|array',
-            'job_order_id.*'   => 'nullable|exists:job_orders,id',
-
-            'remarks'          => 'nullable|array',
-            'remarks.*'        => 'nullable|string|max:1000',
-        ]);
-
-
         DB::beginTransaction();
-        try {
 
-            $datePrefix = date('m-d-Y') . '-';
+        try {
             $purchaseRequest = PurchaseRequest::create([
                 'purchase_request_no' => self::getNumber($request, $request->company_location_id, $request->purchase_date),
                 'purchase_date' => $request->purchase_date,
@@ -107,7 +82,6 @@ class PurchaseRequestController extends Controller
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_request_data
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
                     'category_id' => $request->category_id[$index],
@@ -116,7 +90,6 @@ class PurchaseRequestController extends Controller
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
-                // Insert related job orders if any
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
                         PurchaseAgainstJobOrder::create([
@@ -131,11 +104,9 @@ class PurchaseRequestController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Purchase request created successfully.',
+                'success' => 'Purchase request created successfully.',
                 'data' => $purchaseRequest,
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -147,59 +118,24 @@ class PurchaseRequestController extends Controller
         }
     }
 
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
-        $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
-        $locations = CompanyLocation::select('id', 'name')->get();
+        $purchaseRequestData = PurchaseRequestData::findOrFail($id);
+        $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-        $data = PurchaseRequestData::with('purchase_request','category','item')
-            ->findOrFail($id);
-        return view('management.procurement.store.purchase_request.edit',compact('data','categories','locations','job_orders'));
+        $locations = CompanyLocation::all();
+
+        return view('management.procurement.store.purchase_request.edit', compact('purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
+    public function update(ProcurementPurchaseRequest $request, $id)
     {
-        $validated = $request->validate([
-            'purchase_date'    => 'required|date',
-            'company_location_id' => 'required|exists:company_locations,id',
-            'reference_no'     => 'nullable|string|max:255',
-            'description'      => 'nullable|string',
-
-            'category_id'      => 'required|array|min:1',
-            'category_id.*'    => 'required|exists:categories,id',
-
-            'item_id'          => 'required|array|min:1',
-            'item_id.*'        => 'required|exists:products,id',
-
-            'uom'              => 'nullable|array',
-            'uom.*'            => 'nullable|string|max:255',
-
-            'qty'              => 'required|array|min:1',
-            'qty.*'            => 'required|numeric|min:0.01',
-
-            'job_order_id'     => 'nullable|array',
-            'job_order_id.*'   => 'nullable|exists:job_orders,id',
-
-            'remarks'          => 'nullable|array',
-            'remarks.*'        => 'nullable|string|max:1000',
-        ]);
-
-
-
-        
         DB::beginTransaction();
+
         try {
-            // Find existing purchase request by ID
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
-            // Update purchase request fields (do NOT update purchase_request_no)
             $purchaseRequest->update([
                 'purchase_date' => $request->purchase_date,
                 'location_id' => $request->company_location_id,
@@ -208,39 +144,69 @@ class PurchaseRequestController extends Controller
                 'description' => $request->description,
             ]);
 
-            $data = PurchaseRequestData::find($request->data_id)->delete();
-            // Delete existing related purchase_request_data and their job orders to avoid duplicates
-            PurchaseAgainstJobOrder::where('purchase_request_data_id', $request->id)->delete();
-            // Insert new purchase_request_data and job orders
+            $existingItems = $purchaseRequest->PurchaseData->pluck('id')->toArray();
+            $submittedItems = [];
+
             foreach ($request->item_id as $index => $itemId) {
-
-                $requestData = PurchaseRequestData::create([
-                    'purchase_request_id' => $purchaseRequest->id,
-                    'category_id' => $request->category_id[$index],
-                    'item_id' => $itemId,
-                    'qty' => $request->qty[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
-                ]);
-
-                if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                    foreach ($request->job_order_id[$index] as $jobOrderId) {
-                        PurchaseAgainstJobOrder::create([
-                            'purchase_request_id' => $purchaseRequest->id,
-                            'purchase_request_data_id' => $requestData->id,
-                            'job_order_id' => $jobOrderId,
+                if (!empty($request->item_row_id[$index])) {
+                    $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
+                    if ($requestData) {
+                        $requestData->update([
+                            'category_id' => $request->category_id[$index],
+                            'item_id' => $itemId,
+                            'qty' => $request->qty[$index],
+                            'remarks' => $request->remarks[$index] ?? null,
                         ]);
+
+                        $submittedItems[] = $requestData->id;
+
+                        PurchaseAgainstJobOrder::where('purchase_request_data_id', $requestData->id)->delete();
+
+                        if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
+                            foreach ($request->job_order_id[$index] as $jobOrderId) {
+                                PurchaseAgainstJobOrder::create([
+                                    'purchase_request_id' => $purchaseRequest->id,
+                                    'purchase_request_data_id' => $requestData->id,
+                                    'job_order_id' => $jobOrderId,
+                                ]);
+                            }
+                        }
+                    }
+                } else {
+                    $requestData = PurchaseRequestData::create([
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'category_id' => $request->category_id[$index],
+                        'item_id' => $itemId,
+                        'qty' => $request->qty[$index],
+                        'remarks' => $request->remarks[$index] ?? null,
+                    ]);
+
+                    $submittedItems[] = $requestData->id;
+
+                    if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
+                        foreach ($request->job_order_id[$index] as $jobOrderId) {
+                            PurchaseAgainstJobOrder::create([
+                                'purchase_request_id' => $purchaseRequest->id,
+                                'purchase_request_data_id' => $requestData->id,
+                                'job_order_id' => $jobOrderId,
+                            ]);
+                        }
                     }
                 }
+            }
+
+            $itemsToDelete = array_diff($existingItems, $submittedItems);
+            if (!empty($itemsToDelete)) {
+                PurchaseRequestData::whereIn('id', $itemsToDelete)->delete();
+                PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)->delete();
             }
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Purchase request updated successfully.',
+                'success' => 'Purchase request updated successfully.',
                 'data' => $purchaseRequest,
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -252,15 +218,11 @@ class PurchaseRequestController extends Controller
         }
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id',$id)->delete();
-        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id',$id)->delete();
-        $PurchaseRequestData = PurchaseRequestData::where('id',$id)->update(['status' => 0]);
+        $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
+        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
+        $PurchaseRequestData = PurchaseRequestData::where('id', $id)->update(['status' => 0]);
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
@@ -297,5 +259,4 @@ class PurchaseRequestController extends Controller
 
         return $purchase_request_no;
     }
-
 }

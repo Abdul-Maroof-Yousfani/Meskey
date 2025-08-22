@@ -48,32 +48,20 @@
     <link rel="stylesheet" href="{{ asset('management/app-assets/css/plugins/switchery.css') }}">
     <link rel="stylesheet" href="{{ asset('management/app-assets/vendors/css/select2.min.css') }}">
 
-    <!-- END APEX CSS-->
-    <!-- BEGIN Page Level CSS-->
     <link rel="stylesheet" type="text/css"
         href="{{ asset('management/app-assets/css/core/menu/horizontal-menu.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/pages/dashboard1.css') }}">
-    <!-- END Page Level CSS-->
-    <!-- BEGIN: Custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/style.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
     <script src="{{ asset('assets/js/custom.js') }}"></script>
-    <!-- END: Custom CSS-->
-
-    {{-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css"> --}}
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     <script>
         const SUBMISSION_ON_ENTER = @json(env('SUBMISSION_ON_ENTER', false));
         const IS_LOCAL = @json(env('IS_LOCAL', false));
+        let purchaseRequestRowIndex = 1;
     </script>
-
 </head>
-<!-- END : Head-->
-
-<!-- BEGIN : Body-->
-
-
 
 <body
     class="horizontal-layout horizontal-menu horizontal-menu-padding 2-columns  navbar-sticky {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
@@ -136,7 +124,6 @@
                 </div>
             </div>
 
-            <!-- BEGIN : Activities Bar-->
             <div class="navbar-container">
                 <div class="collapse navbar-collapse d-block" id="navbarSupportedContent">
                     <ul class="navbar-nav">
