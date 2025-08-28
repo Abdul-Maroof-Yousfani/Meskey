@@ -56,7 +56,7 @@ class PaymentRequestApprovalRequest extends FormRequest
             'compulsory_results.*.applied_deduction' => 'nullable|numeric',
             'compulsory_results.*.deduction_amount' => 'nullable|numeric',
             'other_deduction' => 'nullable|array',
-            'other_deduction.kg_value' => 'nullable|numeric|min:0',
+            'other_deduction.kg_value' => 'nullable|numeric',
             'other_deduction.kg_amount' => 'nullable|numeric',
             'other_deduction.deduction_amount' => 'nullable|numeric',
         ];
@@ -97,7 +97,7 @@ class PaymentRequestApprovalRequest extends FormRequest
             $query->where('ticket_id', $ticket->id);
         })
             ->where('request_type', 'payment')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->where('module_type', $moduleType)
             ->where('id', '!=', $paymentRequest->id)
             ->sum('amount');
@@ -110,6 +110,9 @@ class PaymentRequestApprovalRequest extends FormRequest
         $maxAllowedAmount = $this->total_amount ?? $paymentRequestData->total_amount;
         $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
 
+        $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
+
+        // dd($maxAllowedAmount, $totalAmountAfterApproval, bccomp((string)$totalAmountAfterApproval, (string)$maxAllowedAmount, 2), $remainingAmount);
         // dd($maxAllowedAmount, $totalAmountAfterApproval);
         // $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
         // dd($totalApprovedPayments, $value, $maxAllowedAmount, bccomp((string)$totalAmountAfterApproval, (string)$maxAllowedAmount, 2), $remainingAmount, bccomp((string)$remainingAmount, '0.00', 2));
