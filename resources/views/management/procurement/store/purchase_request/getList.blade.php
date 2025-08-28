@@ -59,7 +59,7 @@
                     <td>
                         <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $row->id) }}', 'Approval Voucher', false, '80%')"
                             class="info p-1 text-center mr-2 position-relative" title="Approval">
-                            <i class="ft-check-square font-medium-3"></i>
+                            <i class="ft-eye font-medium-3"></i>
                         </a>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"

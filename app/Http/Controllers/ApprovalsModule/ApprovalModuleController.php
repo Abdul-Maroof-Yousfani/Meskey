@@ -128,20 +128,20 @@ class ApprovalModuleController extends Controller
     public function update(Request $request, ApprovalModule $approvalModule)
     {
         $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('approval_modules')->ignore($approvalModule->id),
-            ],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('approval_modules')->ignore($approvalModule->id),
-            ],
-            'model_class' => 'nullable|string',
-            'requires_sequential_approval' => 'boolean',
+            // 'name' => [
+            //     'required',
+            //     'string',
+            //     'max:255',
+            //     Rule::unique('approval_modules')->ignore($approvalModule->id),
+            // ],
+            // 'slug' => [
+            //     'required',
+            //     'string',
+            //     'max:255',
+            //     Rule::unique('approval_modules')->ignore($approvalModule->id),
+            // ],
+            // 'model_class' => 'nullable|string',
+            // 'requires_sequential_approval' => 'boolean',
             'roles' => 'required|array',
         ]);
 
@@ -171,25 +171,22 @@ class ApprovalModuleController extends Controller
         }
 
         DB::transaction(function () use ($request, $approvalModule) {
-            $approvalModule->update([
-                'name' => $request->name,
-                'slug' => $request->slug,
-                'model_class' => $request->model_class,
-                'requires_sequential_approval' => $request->requires_sequential_approval ?? false,
-            ]);
+            // $approvalModule->update([
+            // 'name' => $request->name,
+            // 'slug' => $request->slug,
+            // 'model_class' => $request->model_class,
+            // 'requires_sequential_approval' => $request->requires_sequential_approval ?? false,
+            // ]);
 
-            // Filter only checked roles (those with id and count)
             $checkedRoles = array_filter($request->roles, function ($role) {
                 return isset($role['id']) && isset($role['count']);
             });
 
-            // Delete existing roles not in the new list
             $newRoleIds = collect($checkedRoles)->pluck('id')->toArray();
             ApprovalModuleRole::where('module_id', $approvalModule->id)
                 ->whereNotIn('role_id', $newRoleIds)
                 ->delete();
 
-            // Update or create roles
             foreach ($checkedRoles as $role) {
                 ApprovalModuleRole::updateOrCreate(
                     [

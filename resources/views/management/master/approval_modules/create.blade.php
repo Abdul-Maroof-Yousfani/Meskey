@@ -13,6 +13,7 @@
                     <div class="card-body">
                         <form action="{{ route('approval-modules.store') }}" method="POST" id="ajaxSubmit">
                             @csrf
+                            <input type="hidden" id="url" value="{{ route('approval-modules.index') }}">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">

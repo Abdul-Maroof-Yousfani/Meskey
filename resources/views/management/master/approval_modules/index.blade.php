@@ -49,10 +49,10 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                {{-- <a href="{{ route('approval-modules.edit', $module->id) }}"
+                                                <a href="{{ route('approval-modules.edit', $module->id) }}"
                                                     class="btn btn-sm btn-primary">
                                                     <i class="fa fa-edit"></i>
-                                                </a> --}}
+                                                </a>
                                                 <form action="{{ route('approval-modules.destroy', $module->id) }}"
                                                     method="POST" style="display: inline-block;">
                                                     @csrf

@@ -232,12 +232,11 @@
             margin-bottom: 20px;
         }
 
-        /* Added styles for approval cycle sections */
         .approval-cycle-section {
-            border: 1px solid #e9ecef;
+            /* border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 15px;
-            background-color: #f8f9fa;
+            background-color: #f8f9fa; */
         }
 
         .cycle-header {

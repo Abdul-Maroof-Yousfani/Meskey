@@ -15,31 +15,52 @@
                             id="ajaxSubmit">
                             @csrf
                             @method('PUT')
+                            <input type="hidden" id="url" value="{{ route('approval-modules.index') }}">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="name">Module Name</label>
-                                        <input type="text" class="form-control" id="name" name="name"
+                                        <input type="text" class="form-control" id="name" name="name" disabled
                                             value="{{ $approvalModule->name }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="slug">Slug</label>
-                                        <input type="text" class="form-control" id="slug" name="slug"
+                                        <input type="text" class="form-control" id="slug" name="slug" disabled
                                             value="{{ $approvalModule->slug }}" required>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="form-group">
-                                <label for="model_class">Model Class (optional)</label>
-                                <input type="text" class="form-control" id="model_class" name="model_class"
-                                    value="{{ $approvalModule->model_class }}">
+                                <label for="model_class">Model Class</label>
+                                <select class="form-control" id="model_class" name="model_class" disabled>
+                                    <option value="">Select Model Class</option>
+                                    @php
+                                        $allModels = [
+                                            [
+                                                'value' => 'App\Models\PaymentVoucher',
+                                                'label' => 'Payment Voucher',
+                                            ],
+                                            [
+                                                'value' => 'App\Models\Procurement\Store\PurchaseRequest',
+                                                'label' => 'Purchase Request',
+                                            ],
+                                        ];
+                                    @endphp
+                                    @foreach ($allModels as $class)
+                                        <option value="{{ $class['value'] }}"
+                                            {{ $approvalModule->model_class == $class['value'] ? 'selected' : '' }}>
+                                            {{ $class['label'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                 <small class="text-muted">Fully qualified class name if applicable</small>
                             </div>
 
                             <div class="form-group form-check">
-                                <input type="checkbox" class="form-check-input" id="requires_sequential_approval"
+                                <input type="checkbox" class="form-check-input" id="requires_sequential_approval" disabled
                                     name="requires_sequential_approval" value="1"
                                     {{ $approvalModule->requires_sequential_approval ? 'checked' : '' }}>
                                 <label class="form-check-label" for="requires_sequential_approval">
@@ -58,19 +79,51 @@
                                 </div>
                                 <div class="card-body">
                                     <div id="roles-container" class="sortable-roles">
-                                        @foreach ($roles as $role)
-                                            @php
+                                        @php
+                                            $selectedRoles = [];
+                                            $unselectedRoles = [];
+                                            $selectedModuleRoles = [];
+
+                                            foreach ($roles as $role) {
                                                 $moduleRole = $approvalModule->roles
                                                     ->where('role_id', $role->id)
                                                     ->first();
                                                 $isChecked = $moduleRole ? true : false;
+
+                                                if ($isChecked) {
+                                                    $selectedRoles[] = [
+                                                        'role' => $role,
+                                                        'moduleRole' => $moduleRole,
+                                                        'isChecked' => $isChecked,
+                                                        'approvalOrder' => $moduleRole->approval_order,
+                                                    ];
+                                                } else {
+                                                    $unselectedRoles[] = [
+                                                        'role' => $role,
+                                                        'moduleRole' => null,
+                                                        'isChecked' => false,
+                                                    ];
+                                                }
+                                            }
+
+                                            $selectedModuleRoles = collect($selectedRoles)
+                                                ->sortBy('approvalOrder')
+                                                ->values()
+                                                ->all();
+                                        @endphp
+
+                                        @foreach ($selectedModuleRoles as $index => $roleData)
+                                            @php
+                                                $role = $roleData['role'];
+                                                $moduleRole = $roleData['moduleRole'];
+                                                $isChecked = $roleData['isChecked'];
                                             @endphp
                                             <div class="form-row mb-2 role-row" data-role-id="{{ $role->id }}">
                                                 <div class="col-md-1 handle" style="cursor: move;">
-                                                    <i class="fas fa-arrows-alt"></i>
+                                                    <i class="fa fa-arrows-alt"></i>
                                                     <input type="hidden" class="role-order"
                                                         name="roles[{{ $role->id }}][order]"
-                                                        value="{{ $isChecked ? $moduleRole->approval_order : $loop->index }}">
+                                                        value="{{ $isChecked ? $moduleRole->approval_order : $index }}">
                                                 </div>
                                                 <div class="col-md-4">
                                                     <div class="form-check">
@@ -104,6 +157,43 @@
                                                 </div>
                                             </div>
                                         @endforeach
+
+                                        @foreach ($unselectedRoles as $index => $roleData)
+                                            @php
+                                                $role = $roleData['role'];
+                                                $isChecked = $roleData['isChecked'];
+                                            @endphp
+                                            <div class="form-row mb-2 role-row" data-role-id="{{ $role->id }}">
+                                                <div class="col-md-1 handle" style="cursor: move;">
+                                                    <i class="fa fa-arrows-alt"></i>
+                                                    <input type="hidden" class="role-order"
+                                                        name="roles[{{ $role->id }}][order]"
+                                                        value="{{ $index + count($selectedRoles) }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input role-checkbox" type="checkbox"
+                                                            name="roles[{{ $role->id }}][id]"
+                                                            value="{{ $role->id }}" id="role_{{ $role->id }}"
+                                                            {{ $isChecked ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="role_{{ $role->id }}">
+                                                            {{ $role->name }}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="number" class="form-control approval-count"
+                                                        name="roles[{{ $role->id }}][count]" min="1"
+                                                        value="1" disabled>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="approval-progress">
+                                                        <small class="text-muted">Will be assigned order when
+                                                            checked</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
@@ -124,34 +214,50 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Enable/disable approval count based on checkbox
             $('.role-checkbox').change(function() {
                 const approvalCountInput = $(this).closest('.role-row').find('.approval-count');
                 approvalCountInput.prop('disabled', !this.checked);
                 if (!this.checked) {
                     approvalCountInput.val('1');
+
+                    const roleRow = $(this).closest('.role-row');
+                    $('#roles-container').append(roleRow);
+
+                    updateRoleOrders();
+                } else {
+                    const roleRow = $(this).closest('.role-row');
+                    const firstUnchecked = $('.role-checkbox:not(:checked)').first().closest('.role-row');
+
+                    if (firstUnchecked.length) {
+                        roleRow.insertBefore(firstUnchecked);
+                    } else {
+                        $('#roles-container').append(roleRow);
+                    }
+
+                    updateRoleOrders();
                 }
             });
 
-            // Initialize sortable
             new Sortable(document.getElementById('roles-container'), {
                 handle: '.handle',
                 animation: 150,
                 onEnd: function() {
-                    // Update order values when items are rearranged
-                    $('.role-row').each(function(index) {
-                        const checkbox = $(this).find('.role-checkbox');
-                        if (checkbox.prop('checked')) {
-                            $(this).find('.role-order').val(index);
-                            $(this).find('.approval-progress').html(
-                                `<small class="text-muted">Current order: ${index + 1}</small>`
-                            );
-                        }
-                    });
+                    updateRoleOrders();
                 }
             });
 
+            function updateRoleOrders() {
+                $('.role-row').each(function(index) {
+                    const checkbox = $(this).find('.role-checkbox');
+                    $(this).find('.role-order').val(index);
 
+                    if (checkbox.prop('checked')) {
+                        $(this).find('.approval-progress').html(
+                            `<small class="text-muted">Current order: ${index + 1}</small>`
+                        );
+                    }
+                });
+            }
         });
     </script>
 @endsection
@@ -187,6 +293,11 @@
 
         .approval-progress {
             padding-top: 8px;
+        }
+
+        /* Visual indicator for selected roles */
+        .role-checkbox:checked~.form-check-label {
+            font-weight: bold;
         }
     </style>
 @endsection
