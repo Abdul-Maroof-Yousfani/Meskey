@@ -83,7 +83,9 @@ class ApprovalModuleController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($request, $columnName, $changeColumnName) {
+        try {
+            // DB::beginTransaction();
+
             $module = ApprovalModule::create([
                 'name' => $request->name,
                 'slug' => $request->slug,
@@ -118,12 +120,22 @@ class ApprovalModuleController extends Controller
                     ]);
                 }
             }
-        });
 
-        return redirect()->route('approval-modules.index')
-            ->with('success', 'Approval module created successfully.');
+            // DB::commit();
+
+            return redirect()->route('approval-modules.index')
+                ->with('success', 'Approval module created successfully.');
+        } catch (\Exception $e) {
+            // DB::rollBack();
+
+            \Log::error('Approval module creation failed: ' . $e->getMessage());
+
+            return redirect()
+                ->back()
+                ->with('error', 'Failed to create approval module: ' . $e->getMessage())
+                ->withInput();
+        }
     }
-
 
     public function update(Request $request, ApprovalModule $approvalModule)
     {
