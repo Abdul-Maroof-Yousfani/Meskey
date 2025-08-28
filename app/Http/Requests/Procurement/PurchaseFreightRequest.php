@@ -56,7 +56,7 @@ class PurchaseFreightRequest extends FormRequest
                     $this->validateLoadingWeight($attribute, $value, $fail);
                 }
             ],
-            'kanta_charges' => 'nullable|numeric|min:0',
+            'kanta_charges' => 'required|numeric|min:0',
             'freight_on_bilty' => 'required|numeric|min:0',
             'advance_freight' => 'nullable|numeric|min:0',
             'bilty_slip' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
