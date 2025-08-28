@@ -10,20 +10,24 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckApprovalPermission
 {
-    public function handle(Request $request, Closure $next, $model)
+    public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
+
         if (!$user) {
             abort(403);
         }
 
-        $modelClass = "App\\Models\\" . str_replace('_', '', ucwords($model, '_'));
+        $approvalModule = ApprovalModule::findOrFail($request->mc);
+        $id = $request->id ?? '';
+        $modelClass = $approvalModule->model_class ?? '';
 
         if (!class_exists($modelClass)) {
             abort(404);
         }
 
         $module = ApprovalModule::where('model_class', $modelClass)->first();
+
         if (!$module) {
             abort(403, 'No approval module configured for this model');
         }

@@ -14,28 +14,40 @@
                         <form action="{{ route('approval-modules.store') }}" method="POST" id="ajaxSubmit">
                             @csrf
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="name">Module Name</label>
                                         <input type="text" class="form-control" id="name" name="name" required>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="slug">Slug</label>
                                         <input type="text" class="form-control" id="slug" name="slug" required>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="model_class">Model Class (optional)</label>
-                                <input type="text" class="form-control" id="model_class" name="model_class">
-                                <small class="text-muted">Fully qualified class name if applicable</small>
+                                <div class="col-md-4 d-none">
+                                    <div class="form-group">
+                                        <label for="approval_column">Approval Column</label>
+                                        <input type="text" class="form-control" id="approval_column"
+                                            name="approval_column" required value="approval_status">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="model_class">Model Class</label>
+                                    <select class="form-control" id="model_class" name="model_class">
+                                        <option value="">Select Model Class</option>
+                                        @foreach ($availableModels as $class)
+                                            <option value="{{ $class['value'] }}">{{ $class['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted">Fully qualified class name if applicable</small>
+                                </div>
                             </div>
 
-                            <div class="form-group form-check">
+                            <div class="form-group form-check d-none">
                                 <input type="checkbox" class="form-check-input" id="requires_sequential_approval"
-                                    name="requires_sequential_approval" value="1">
+                                    name="requires_sequential_approval" value="1" checked>
                                 <label class="form-check-label" for="requires_sequential_approval">
                                     Requires sequential approval
                                 </label>
@@ -55,7 +67,7 @@
                                         @foreach ($roles as $role)
                                             <div class="form-row mb-2 role-row" data-role-id="{{ $role->id }}">
                                                 <div class="col-md-1 handle" style="cursor: move;">
-                                                    <i class="fas fa-arrows-alt"></i>
+                                                    <i class="fa fa-arrows-alt"></i>
                                                     <input type="hidden" class="role-order"
                                                         name="roles[{{ $role->id }}][order]"
                                                         value="{{ $loop->index }}">
@@ -103,7 +115,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Enable/disable approval count based on checkbox
             $('.role-checkbox').change(function() {
                 const approvalCountInput = $(this).closest('.role-row').find('.approval-count');
                 approvalCountInput.prop('disabled', !this.checked);
@@ -112,7 +123,6 @@
                 }
             });
 
-            // Initialize sortable
             new Sortable(document.getElementById('roles-container'), {
                 handle: '.handle',
                 animation: 150,

@@ -129,6 +129,24 @@ class PurchaseRequestController extends Controller
         return view('management.procurement.store.purchase_request.edit', compact('purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
     }
 
+    public function manageApprovals($id)
+    {
+        $purchaseRequestData = PurchaseRequestData::findOrFail($id);
+        $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+        $locations = CompanyLocation::all();
+
+        return view('management.procurement.store.purchase_request.approvalCanvas', [
+            'purchaseRequest' => $purchaseRequest,
+            'data' => $purchaseRequest,
+            'purchaseRequestData' => $purchaseRequestData,
+            'categories' => $categories,
+            'job_orders' => $job_orders,
+            'locations' => $locations,
+        ]);
+    }
+
     public function update(ProcurementPurchaseRequest $request, $id)
     {
         DB::beginTransaction();

@@ -11,7 +11,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h4 class="mb-0">Approval Modules</h4>
                             <a href="{{ route('approval-modules.create') }}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Add New
+                                <i class="fa fa-plus"></i> Add New
                             </a>
                         </div>
                     </div>
@@ -49,17 +49,17 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="{{ route('approval-modules.edit', $module->id) }}"
+                                                {{-- <a href="{{ route('approval-modules.edit', $module->id) }}"
                                                     class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
+                                                    <i class="fa fa-edit"></i>
+                                                </a> --}}
                                                 <form action="{{ route('approval-modules.destroy', $module->id) }}"
                                                     method="POST" style="display: inline-block;">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-danger"
                                                         onclick="return confirm('Are you sure?')">
-                                                        <i class="fas fa-trash"></i>
+                                                        <i class="fa fa-trash"></i>
                                                     </button>
                                                 </form>
                                             </td>

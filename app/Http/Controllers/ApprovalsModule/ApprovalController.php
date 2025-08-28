@@ -4,18 +4,41 @@ namespace App\Http\Controllers\ApprovalsModule;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\ApprovalsModule\ApprovalModule;
+use Illuminate\Support\Str;
 
 class ApprovalController extends Controller
 {
-    public function approve(Request $request, $model, $id)
+    public function approve(Request $request, $modelType, $id)
     {
-        $modelClass = "App\\Models\\" . str_replace('_', '', ucwords($model, '_'));
+        $approvalModule = ApprovalModule::findOrFail($request->mc);
+
+        $reqType = $request->type ?? '';
+        $modelClass = $approvalModule->model_class ?? '';
 
         if (!class_exists($modelClass)) {
             abort(404, 'Model not found');
         }
 
         $record = $modelClass::findOrFail($id);
+
+        if ($reqType == 'reject') {
+            $record->am_change_made = 0;
+            $record->save();
+
+            $rejected = $record->reject($request->comments);
+
+            if ($rejected) {
+                return response()->json([
+                    'success' =>  'Rejected successfully. All approvals have been reset.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => 'Rejection failed'
+            ]);
+        }
+
 
         if (!$record->canApprove()) {
             abort(403, 'You cannot approve this record');
@@ -24,28 +47,46 @@ class ApprovalController extends Controller
         $approved = $record->approve($request->comments);
 
         if ($approved) {
-            return redirect()->back()->with('success', 'Approved successfully');
+            return response()->json([
+                'success' =>  'Approved successfully'
+            ]);
         }
 
-        return redirect()->back()->with('error', 'Approval failed');
+        return response()->json([
+            'success' =>  'Approval failed'
+        ]);
     }
 
-    public function reject(Request $request, $model, $id)
-    {
-        $modelClass = "App\\Models\\" . str_replace('_', '', ucwords($model, '_'));
+    // public function reject(Request $request, $modelType, $id)
+    // {
 
-        if (!class_exists($modelClass)) {
-            abort(404, 'Model not found');
-        }
+    //     // return response()->json([
+    //     //     'success' =>  'Approval failed'
+    //     // ]);
 
-        $record = $modelClass::findOrFail($id);
+    //     $approvalModule = ApprovalModule::findOrFail($request->mc);
 
-        $rejected = $record->reject($request->comments);
+    //     $modelClass = $approvalModule->model_class ?? '';
 
-        if ($rejected) {
-            return redirect()->back()->with('success', 'Rejected successfully');
-        }
+    //     if (!class_exists($modelClass)) {
+    //         abort(404, 'Model not found');
+    //     }
 
-        return redirect()->back()->with('error', 'Rejection failed');
-    }
+    //     $record = $modelClass::findOrFail($id);
+
+    //     $record->am_change_made = 0;
+    //     $record->save();
+
+    //     $rejected = $record->reject($request->comments);
+
+    //     if ($rejected) {
+    //         return response()->json([
+    //             'success' =>  'Rejected successfully. All approvals have been reset.'
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'success' => 'Rejection failed'
+    //     ]);
+    // }
 }

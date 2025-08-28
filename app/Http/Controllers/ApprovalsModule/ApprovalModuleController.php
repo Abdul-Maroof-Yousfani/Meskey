@@ -6,7 +6,9 @@ use App\Models\ApprovalsModule\ApprovalModule;
 use App\Models\ApprovalsModule\ApprovalModuleRole;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Validator;
@@ -22,7 +24,25 @@ class ApprovalModuleController extends Controller
     public function create()
     {
         $roles = Role::all();
-        return view('management.master.approval_modules.create', compact('roles'));
+
+        $usedModels = ApprovalModule::pluck('model_class')->toArray();
+
+        $allModels = [
+            [
+                'value' => 'App\Models\PaymentVoucher',
+                'label' => 'Payment Voucher',
+            ],
+            [
+                'value' => 'App\Models\Procurement\Store\PurchaseRequest',
+                'label' => 'Purchase Request',
+            ],
+        ];
+
+        $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {
+            return in_array($model['value'], $usedModels);
+        })->values()->all();
+
+        return view('management.master.approval_modules.create', compact('roles', 'availableModels'));
     }
 
     public function store(Request $request)
@@ -30,14 +50,16 @@ class ApprovalModuleController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:approval_modules',
             'slug' => 'required|string|max:255|unique:approval_modules',
-            'model_class' => 'nullable|string',
+            'approval_column' => 'required|string|max:255',
+            'model_class' => 'required|string',
             'requires_sequential_approval' => 'boolean',
             'roles' => 'required|array',
         ]);
 
-        // Custom validation for roles
-        $validator = Validator::make($request->all(), []);
+        $columnName = 'am_' . $request->approval_column;
+        $changeColumnName = 'am_change_made';
 
+        $validator = Validator::make($request->all(), []);
         foreach ($request->roles as $roleId => $roleData) {
             if (isset($roleData['id'])) {
                 $validator->sometimes("roles.$roleId.count", 'required|integer|min:1', function () use ($roleData) {
@@ -61,15 +83,31 @@ class ApprovalModuleController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $columnName, $changeColumnName) {
             $module = ApprovalModule::create([
                 'name' => $request->name,
                 'slug' => $request->slug,
                 'model_class' => $request->model_class,
                 'requires_sequential_approval' => $request->requires_sequential_approval ?? false,
+                'approval_column' => $columnName,
             ]);
 
-            // Only process checked roles
+            $modelClass = $request->model_class;
+            if (class_exists($modelClass)) {
+                $table = (new $modelClass)->getTable();
+                if (!Schema::hasColumn($table, $columnName)) {
+                    Schema::table($table, function (Blueprint $table) use ($columnName) {
+                        $table->string($columnName)->default('pending')->nullable();
+                    });
+                }
+
+                if (!Schema::hasColumn($table, $changeColumnName)) {
+                    Schema::table($table, function (Blueprint $table) use ($changeColumnName) {
+                        $table->tinyInteger($changeColumnName)->default(1)->nullable();
+                    });
+                }
+            }
+
             foreach ($request->roles as $role) {
                 if (isset($role['id']) && isset($role['count'])) {
                     ApprovalModuleRole::create([
@@ -85,6 +123,7 @@ class ApprovalModuleController extends Controller
         return redirect()->route('approval-modules.index')
             ->with('success', 'Approval module created successfully.');
     }
+
 
     public function update(Request $request, ApprovalModule $approvalModule)
     {

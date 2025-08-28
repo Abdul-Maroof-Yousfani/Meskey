@@ -22,6 +22,7 @@ class PaymentVoucher extends Model
         'cheque_date',
         'account_id',
         'supplier_id',
+        'am_approval_status',
         'bank_account_type',
         'bank_account_id',
         'module_id',
@@ -37,6 +38,32 @@ class PaymentVoucher extends Model
         'cheque_date' => 'date',
     ];
 
+    protected static function booted()
+    {
+        static::updating(
+            function ($model) {
+                $changes = $model->getDirty();
+                $changedColumns = [];
+
+                foreach ($changes as $key => $newValue) {
+                    if ($key !== "am_change_made") {
+                        $oldValue = $model->getOriginal($key);
+                        $changedColumns[$key] = [
+                            'old' => $oldValue,
+                            'new' => $newValue,
+                        ];
+                    }
+                }
+
+                if (!empty($changedColumns)) {
+                    if ($model->getAttribute('am_change_made') !== null) {
+                        $model->am_change_made = 1;
+                    }
+                }
+            }
+        );
+    }
+
     public function account()
     {
         return $this->belongsTo(Account::class, 'account_id');
@@ -50,15 +77,5 @@ class PaymentVoucher extends Model
     public function paymentVoucherData()
     {
         return $this->hasMany(PaymentVoucherData::class, 'payment_voucher_id');
-    }
-
-    protected function onApprovalComplete()
-    {
-        $this->update(['approval_status' => 'approved']);
-    }
-
-    protected function onApprovalRejected()
-    {
-        $this->update(['approval_status' => 'rejected']);
     }
 }

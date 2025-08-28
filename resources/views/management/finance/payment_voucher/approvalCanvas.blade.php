@@ -215,17 +215,8 @@
 
     <div class="voucher-footer mt-4 pt-3 border-top">
         <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
-                <p class="mb-1">_________________________</p>
-                <p class="mb-0">Prepared By</p>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
-                <p class="mb-1">_________________________</p>
-                <p class="mb-0">Checked By</p>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
-                <p class="mb-1">_________________________</p>
-                <p class="mb-0">Approved By</p>
+            <div class="col-12">
+                <x-approval-status :model="$data" />
             </div>
         </div>
     </div>
@@ -303,7 +294,11 @@
         $('.printHide').hide();
 
         var printContents = document.getElementById(param1).innerHTML;
+
+        // Open new print window
         var printWindow = window.open('', '', 'height=600,width=800');
+
+        // Define print styles
         var printStyles = `
         <style>
             @media print{
@@ -361,6 +356,7 @@
         }, 500);
     }
 
+    // Bind the function to the button
     document.getElementById("printButton").addEventListener("click", function() {
         printView('printSection', 'print-section', 0);
     });

@@ -93,6 +93,33 @@ class PaymentVoucherController extends Controller
         ]);
     }
 
+    public function manageApprovals($id)
+    {
+        $paymentVoucher = PaymentVoucher::with([
+            'paymentVoucherData',
+            'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
+            'account',
+            'supplier'
+        ])->findOrFail($id);
+
+        $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
+            ->get();
+
+        $bankAccount = null;
+        if ($paymentVoucher->bank_account_type === 'company') {
+            $bankAccount =  SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        } elseif ($paymentVoucher->bank_account_type === 'owner') {
+            $bankAccount =  SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+        }
+
+        return view('management.finance.payment_voucher.approvalCanvas', [
+            'paymentVoucher' => $paymentVoucher,
+            'data' => $paymentVoucher,
+            'transactions' => $transactions,
+            'bankAccount' => $bankAccount
+        ]);
+    }
+
     /**
      * Generate PV number
      */
@@ -438,7 +465,7 @@ class PaymentVoucherController extends Controller
 
         $request->validate([
             'pv_date' => 'required|date',
-            'account_id' => 'required|exists:accounts,account_id',
+            'account_id' => 'required|exists:accounts,id',
             'module_id' => 'required|exists:arrival_purchase_orders,id',
             'payment_requests' => 'required|array',
             'payment_requests.*' => 'exists:payment_requests,id',
@@ -478,7 +505,7 @@ class PaymentVoucherController extends Controller
                 $totalAmount += $paymentRequest->amount;
             }
 
-            $paymentVoucher->update(['total_amount' => $totalAmount]);
+            $paymentVoucher->update(['total_amount' => number_format($totalAmount, 2, '.', '')]);
         });
 
         return response()->json([

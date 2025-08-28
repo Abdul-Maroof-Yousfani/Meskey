@@ -3,32 +3,25 @@
 namespace App\Models\ApprovalsModule;
 
 use App\Models\ApprovalsModule\ApprovalModule;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Models\Role;
 
-class ApprovalLog extends Model
+class ApprovalRow extends Model
 {
     protected $fillable = [
         'module_id',
         'record_id',
-        'user_id',
         'role_id',
-        'action',
-        'status',
+        'required_count',
+        'current_count',
         'approval_cycle',
-        'comments'
+        'status'
     ];
 
     public function module(): BelongsTo
     {
         return $this->belongsTo(ApprovalModule::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function role(): BelongsTo

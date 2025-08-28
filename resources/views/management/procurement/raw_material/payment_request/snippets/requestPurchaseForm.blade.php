@@ -151,7 +151,7 @@
 
 <input type="hidden" name="purchase_order_id" value="{{ $ticket->purchase_order_id ?? '' }}">
 <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
-<input type="hidden" id="looooooooooooo" value="{{ $paymentRequestData->bag_rate }}">
+{{-- <input type="hidden" id="looooooooooooo" value="{{ $paymentRequestData->bag_rate }}"> --}}
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
 <input type="hidden" id="original_bag_rate" value="{{ $bagRate }}">
 <input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">

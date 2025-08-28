@@ -39,12 +39,12 @@ Route::group(['middleware' => ['auth']], function () {
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::prefix('approval')->group(function () {
-        Route::post('/approve/{model}/{id}', [ApprovalController::class, 'approve'])
-            ->middleware(['auth', 'approval.permission:PaymentVoucher'])
+        Route::post('/approve/{modelType}/{id}', [ApprovalController::class, 'approve'])
+            ->middleware(['auth', 'approval.permission'])
             ->name('approval.approve');
 
-        Route::post('/reject/{model}/{id}', [ApprovalController::class, 'reject'])
-            ->middleware(['auth', 'approval.permission:PaymentVoucher'])
+        Route::post('/reject/{modelType}/{id}', [ApprovalController::class, 'reject'])
+            ->middleware(['auth', 'approval.permission'])
             ->name('approval.reject');
     });
 

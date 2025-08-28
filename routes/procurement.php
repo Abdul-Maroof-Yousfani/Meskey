@@ -101,6 +101,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-request', StorePurchaseRequestController::class);
     Route::post('get-purchase-request', [StorePurchaseRequestController::class, 'getList'])->name('get.purchase-request');
+    Route::get('purchase-request-approvals/{id}', [StorePurchaseRequestController::class, 'manageApprovals'])->name('purchase-request.approvals');
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
     Route::get('purchase-request-approve/{id}', [StorePurchaseRequestController::class, 'approve'])->name('purchase-request.approve');
 

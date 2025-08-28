@@ -11,6 +11,7 @@ class ApprovalModule extends Model
         'name',
         'slug',
         'model_class',
+        'approval_column',
         'is_active',
         'requires_sequential_approval'
     ];
