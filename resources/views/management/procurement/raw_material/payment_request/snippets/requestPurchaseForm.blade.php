@@ -18,10 +18,10 @@
     }
     $totalDeductions = 0;
     $loadingWeight = $ticket->purchaseFreight->loading_weight ?? 0;
-    $bagWeight = $ticket->bag_weight ?? 0;
+    $bagWeight = $paymentRequestData->bag_weight ?? ($ticket->bag_weight ?? 0);
     $noOfBags = $ticket->purchaseFreight->no_of_bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
-    $bagRate = $ticket->bag_rate ?? 0;
+    $bagRate = $paymentRequestData->bag_rate ?? ($ticket->bag_rate ?? 0);
     $kantaCharges = $ticket->purchaseFreight->kanta_charges ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
@@ -61,9 +61,11 @@
     }
 
     $avgRate = 0;
+
     if ($noOfBags > 0) {
         $avgRate = $loadingWeight / $noOfBags;
     }
+
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
     $loadingWeighbridgeSum = $kantaCharges / 2;
     $bagsRateSum = $bagRate * $noOfBags;
@@ -149,6 +151,7 @@
 
 <input type="hidden" name="purchase_order_id" value="{{ $ticket->purchase_order_id ?? '' }}">
 <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
+<input type="hidden" id="looooooooooooo" value="{{ $paymentRequestData->bag_rate }}">
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
 <input type="hidden" id="original_bag_rate" value="{{ $bagRate }}">
 <input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">
