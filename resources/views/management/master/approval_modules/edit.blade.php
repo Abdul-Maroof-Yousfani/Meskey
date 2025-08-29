@@ -44,8 +44,8 @@
                                                 'label' => 'Payment Voucher',
                                             ],
                                             [
-                                                'value' => 'App\Models\Procurement\Store\PurchaseRequest',
-                                                'label' => 'Purchase Request',
+                                                'value' => 'App\Models\Procurement\Store\PurchaseRequestData',
+                                                'label' => 'Purchase Request Item',
                                             ],
                                         ];
                                     @endphp

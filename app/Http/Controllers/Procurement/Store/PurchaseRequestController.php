@@ -139,7 +139,7 @@ class PurchaseRequestController extends Controller
 
         return view('management.procurement.store.purchase_request.approvalCanvas', [
             'purchaseRequest' => $purchaseRequest,
-            'data' => $purchaseRequest,
+            'data' => $purchaseRequestData,
             'purchaseRequestData' => $purchaseRequestData,
             'categories' => $categories,
             'job_orders' => $job_orders,
