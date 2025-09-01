@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('reference_no')->nullable();
             $table->text('description')->nullable();
             $table->enum('status', ['1', '0'])->default('1')->comment('1 = active, 0 = inactive');
-            $table->softDeletes(); // Adds `deleted_at` column for soft deletes
+            $table->softDeletes();
             $table->timestamps();
         });
     }

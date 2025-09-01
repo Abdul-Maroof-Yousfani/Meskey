@@ -25,71 +25,69 @@
                         </p>
                     </td>
                     <td>
-                         <p class="m-0">
+                        <p class="m-0">
                             {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('Y-m-d') }} /
                             {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('h:i A') }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
 
+                            {{ optional($row->purchase_quotation->location)->name }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ optional($row->purchase_quotation->location)->name}} 
+
+                            {{ optional($row->category)->name }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ optional($row->category)->name}} 
+
+                            {{ optional($row->item)->name }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ optional($row->item)->name}} 
+                            {{ optional($row->item->unitOfMeasure)->name }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ optional($row->item->unitOfMeasure)->name}} 
-                        </p>
-                    </td>
-                     <td>
-                        <p class="m-0">
-                            
-                            {{ optional($row->supplier)->name}} 
+
+                            {{ optional($row->supplier)->name }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->qty}} 
+
+                            {{ $row->qty }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->rate}} 
+
+                            {{ $row->rate }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            
-                            {{ $row->total}} 
+
+                            {{ $row->total }}
                         </p>
                     </td>
-                    
-                   
+
+
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $row->id) }}','Edit Purchase Quotation',false,'80%')"
+                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $row->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $row->id) }}','{{ route('store.get.purchase-quotation') }}')"
+                            <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $row->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
@@ -100,7 +98,7 @@
                             $currentUserRoleId = Auth::user()->role_id; // adjust if many-to-many
                             $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
                         @endphp
-                            @if(!$alreadyApproved)
+                            @if (!$alreadyApproved)
                                 <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
                                     class="success p-1 text-center position-relative" title="Approve">
                                     <i class="ft-check font-medium-3"></i>
@@ -137,12 +135,6 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
-
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         {{ $PurchaseQuotation->links() }}
@@ -163,7 +155,7 @@
                 $.ajax({
                     url: url,
                     type: 'GET',
-                   
+
                     success: function(res) {
                         Swal.fire({
                             title: 'Approved!',
@@ -182,5 +174,4 @@
             }
         });
     }
-
 </script>

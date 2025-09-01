@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Procurement\Store;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
@@ -17,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+
 class PurchaseQuotationController extends Controller
 {
     public function index()
@@ -24,41 +26,35 @@ class PurchaseQuotationController extends Controller
         return view('management.procurement.store.purchase_quotation.index');
     }
 
-     /**
+    /**
      * Get list of categories.
      */
     public function getList(Request $request)
     {
-        $PurchaseQuotation = PurchaseQuotationData::with('purchase_quotation','category','item','approval')
-        // ->when($request->filled('search'), function ($q) use ($request) {
-        //     $searchTerm = '%' . $request->search . '%';
-        //     return $q->where(function ($sq) use ($searchTerm) {
-        //         $sq->where('purchase_quotation_no', 'like', $searchTerm);
-        //     });
-        // })
-        ->whereStatus(true)->latest()
-        ->paginate(request('per_page', 25));
+        $PurchaseQuotation = PurchaseQuotationData::with('purchase_quotation', 'category', 'item', 'approval')
+            ->whereStatus(true)->latest()
+            ->paginate(request('per_page', 25));
 
         return view('management.procurement.store.purchase_quotation.getList', compact('PurchaseQuotation'));
     }
 
-    public function approve_item(Request $request){
-        
+    public function approve_item(Request $request)
+    {
+
         $requestId = $request->id;
 
         $master = PurchaseRequest::find($requestId);
-        $dataItems = PurchaseRequestData::with(['approval', 'purchase_request', 'item', 'category'])
-        ->where('purchase_request_id', $requestId)
-        ->where('status', 1)
-        ->where('quotation_status',1)
-        ->whereHas('approval') // sirf existence check
-        ->get();
-        
-        $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
+        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+            ->where('purchase_request_id', $requestId)
+            ->where('am_approval_status', 'approved')
+            ->where('quotation_status', 1)
+            ->get();
+
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
 
 
-        $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems','categories','job_orders'))->render();
+        $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
         return response()->json(
             ['html' => $html, 'master' => $master]
@@ -70,20 +66,15 @@ class PurchaseQuotationController extends Controller
      */
     public function create()
     {
+        $approvedRequests = PurchaseRequest::with('PurchaseData')->whereHas('PurchaseData', function ($q) {
+            $q->where('am_approval_status', 'approved')
+                ->where('quotation_status', 1);
+        })
+            ->get();
 
-        $approvedRequests = PurchaseRequestData::with(['approval','purchase_request'])
-        ->where('status', 1)
-        ->where('quotation_status',1)
-        ->whereHas('approval') // sirf existence check
-        ->select('purchase_request_id')
-        ->groupBy('purchase_request_id')
-        ->get();
-        
-        $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
 
-
-
-        return view('management.procurement.store.purchase_quotation.create',compact('categories','approvedRequests'));
+        return view('management.procurement.store.purchase_quotation.create', compact('categories', 'approvedRequests'));
     }
 
     /**
@@ -110,7 +101,7 @@ class PurchaseQuotationController extends Controller
 
             'qty'              => 'required|array|min:1',
             'qty.*'            => 'required|numeric|min:0.01',
-            
+
             'rate'              => 'required|array|min:1',
             'rate.*'            => 'required|numeric|min:0.01',
 
@@ -133,7 +124,6 @@ class PurchaseQuotationController extends Controller
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_quotation_data
                 $requestData = PurchaseQuotationData::create([
                     'purchase_quotation_id' => $PurchaseQuotation->id,
                     'purchase_request_data_id' => $request->data_id[$index],
@@ -146,22 +136,19 @@ class PurchaseQuotationController extends Controller
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
-                if($request->data_id[$index] != 0){
-                   $data =  PurchaseRequestData::find($request->data_id[$index])->update([
-                      'quotation_status' => 2,
-                   ]);
+                if ($request->data_id[$index] != 0) {
+                    $data =  PurchaseRequestData::find($request->data_id[$index])->update([
+                        'quotation_status' => 2,
+                    ]);
                 }
-                
             }
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Purchase request created successfully.',
+                'success' => 'Purchase request created successfully.',
                 'data' => $PurchaseQuotation,
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -173,18 +160,19 @@ class PurchaseQuotationController extends Controller
         }
     }
 
-
     /**
      * Show the form for editing the specified resource.
      */
     public function edit($id)
     {
-        $categories = Category::select('id', 'name')->where('category_type','general_items')->get();
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-        $data = PurchaseQuotationData::with('purchase_quotation','category','item')
+
+        $purchaseQuotation = PurchaseQuotation::with('quotation_data', 'quotation_data.category', 'quotation_data.item')
             ->findOrFail($id);
-        return view('management.procurement.store.purchase_quotation.edit',compact('data','categories','locations','job_orders'));
+
+        return view('management.procurement.store.purchase_quotation.edit', compact('purchaseQuotation', 'categories', 'locations', 'job_orders'));
     }
 
     /**
@@ -210,7 +198,7 @@ class PurchaseQuotationController extends Controller
 
             'qty'              => 'required|array|min:1',
             'qty.*'            => 'required|numeric|min:0.01',
-            
+
             'rate'              => 'required|array|min:1',
             'rate.*'            => 'required|numeric|min:0.01',
 
@@ -218,25 +206,16 @@ class PurchaseQuotationController extends Controller
             'remarks.*'        => 'nullable|string|max:1000',
         ]);
 
-
-
-        
         DB::beginTransaction();
         try {
-            // Find existing purchase request by ID
             $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
 
-            // Update purchase request fields (do NOT update purchase_quotation_no)
-           
-            // Delete existing related purchase_quotation_data and their job orders to avoid duplicates
-            $data = PurchaseQuotationData::find($request->data_id)->delete();
+            PurchaseQuotationData::whereIn('id', (array) $request->data_id)->delete();
 
-            // Insert new purchase_quotation_data and job orders
             foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_quotation_data
                 $requestData = PurchaseQuotationData::create([
                     'purchase_quotation_id' => $PurchaseQuotation->id,
-                    'purchase_request_data_id' => $request->purchase_request_data_id[$index],
+                    'purchase_request_data_id' => $request->data_id[$index],
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
@@ -245,17 +224,14 @@ class PurchaseQuotationController extends Controller
                     'supplier_id' => $request->supplier_id[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
-
             }
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Purchase Quotation updated successfully.',
+                'success' => 'Purchase Quotation updated successfully.',
                 'data' => $PurchaseQuotation,
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -267,16 +243,14 @@ class PurchaseQuotationController extends Controller
         }
     }
 
-
     /**
      * Remove the specified resource from storage.
      */
     public function destroy($id)
     {
-        // $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
-        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id',$id)->delete();
-        $PurchaseQuotationData = PurchaseQuotationData::where('id',$id)->delete();
-        // $PurchaseQuotation->delete();
+        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
+        $PurchaseQuotationData = PurchaseQuotationData::where('id', $id)->delete();
+
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
@@ -313,5 +287,4 @@ class PurchaseQuotationController extends Controller
 
         return $purchase_quotation_no;
     }
-
 }
