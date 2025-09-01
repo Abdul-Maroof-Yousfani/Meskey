@@ -608,7 +608,7 @@
                 const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow}) span`)
                     .text()) || 0;
                 const isTicketVerified = @json($arrivalTicket->is_ticket_verified == 1);
-                const isTicketCompleted = @json($arrivalTicket->purchaseOrder->status === 'completed');
+                const isTicketCompleted = @json($arrivalTicket->purchaseOrder?->status ?? '' === 'completed');
 
                 let requiresFreightConfirmation = false;
                 let freightDetails = {};
