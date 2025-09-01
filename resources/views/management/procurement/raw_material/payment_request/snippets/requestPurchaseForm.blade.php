@@ -780,8 +780,7 @@
         </div>
     @endif
     @php
-        // $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
-        $totalSupplierCommission = 0;
+        $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
 
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
         $totalwithCommision = $totalAmount + $totalSupplierCommission;
