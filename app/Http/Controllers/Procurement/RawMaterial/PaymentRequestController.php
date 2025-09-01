@@ -29,6 +29,7 @@ class PaymentRequestController extends Controller
      */
     public function index()
     {
+
         return view('management.procurement.raw_material.payment_request.index');
     }
 
@@ -167,6 +168,8 @@ class PaymentRequestController extends Controller
      */
     public function create()
     {
+        $paymentDetails = calculatePaymentDetails(12, 2);
+        dd($paymentDetails);
         $data['tickets'] = PurchaseTicket::where('freight_status', 'completed')
             ->with(['purchaseOrder', 'purchaseFreight'])
             ->get();
