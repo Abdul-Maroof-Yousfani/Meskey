@@ -99,7 +99,7 @@ class PaymentRequestApprovalController extends Controller
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
 
             if ($request->has('total_amount') || $request->has('bag_weight')) {
-                $this->updatePaymentRequestData($paymentRequestData, $request, $ticket);
+                $this->updatePaymentRequestData($paymentRequestData, $request, $ticket, ($moduleType === 'ticket' || $moduleType === 'freight_payment') ? false : true);
             }
 
             if (($request->has('sampling_results') || $request->has('compulsory_results') || $request->has('other_deduction'))) {
@@ -496,7 +496,7 @@ class PaymentRequestApprovalController extends Controller
         });
     }
 
-    private function updatePaymentRequestData($paymentRequestData, $request, $ticket)
+    private function updatePaymentRequestData($paymentRequestData, $request, $ticket, $isTicket = false)
     {
         $updateData = [];
 
@@ -530,7 +530,9 @@ class PaymentRequestApprovalController extends Controller
 
         if (!empty($updateData)) {
             $paymentRequestData->update($updateData);
-            // $ticket->update($updateData);
+            if ($isTicket) {
+                $ticket->update($updateData);
+            }
         }
     }
 
