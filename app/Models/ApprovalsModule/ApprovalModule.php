@@ -16,6 +16,19 @@ class ApprovalModule extends Model
         'requires_sequential_approval'
     ];
 
+    protected $appends = ['model_label'];
+
+    public function getModelLabelAttribute()
+    {
+        $map = [
+            'App\Models\PaymentVoucher' => 'Payment Voucher',
+            'App\Models\Procurement\Store\PurchaseRequestData' => 'Purchase Request Item',
+            'App\Models\Procurement\Store\PurchaseQuotationData' => 'Purchase Quotation Item',
+        ];
+
+        return $map[$this->model_class] ?? $this->model_class;
+    }
+
     public function roles(): HasMany
     {
         return $this->hasMany(ApprovalModuleRole::class, 'module_id')

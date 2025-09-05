@@ -35,7 +35,7 @@
                                             <td>{{ $module->id }}</td>
                                             <td>{{ $module->name }}</td>
                                             <td>{{ $module->slug }}</td>
-                                            <td>{{ $module->model_class ?? 'N/A' }}</td>
+                                            <td>{{ $module->model_label ?? 'N/A' }}</td>
                                             <td>
                                                 @foreach ($module->roles as $role)
                                                     <span class="badge badge-primary">
