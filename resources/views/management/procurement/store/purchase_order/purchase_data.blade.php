@@ -82,7 +82,6 @@
                 @endforeach
             </select>
 
-            <!-- Hidden field that will always contain the actual supplier ID to be submitted -->
             <input type="hidden" name="supplier_id[]" id="supplier_id_hidden_{{ $key }}"
                 value="{{ $currentSupplierId }}">
         </td>
@@ -153,46 +152,37 @@
         const quotedTotal = document.getElementById('quoted_total_' + key).value;
 
         if (isChecked) {
-            // Use quotation values - restore original data
             supplierDropdown.value = quotedSupplierId;
             supplierHidden.value = quotedSupplierId;
             qtyInput.value = quotedQty;
             rateInput.value = quotedRate;
             totalInput.value = quotedTotal;
 
-            // Set disabled/readonly
             supplierDropdown.disabled = true;
             qtyInput.readOnly = true;
             rateInput.readOnly = true;
 
-            // Show input field, hide dropdown
             vendorDropdownContainer.style.display = 'none';
             vendorInputContainer.style.display = 'table-cell';
 
-            // Update input fields
             supplierInput.value = quotedSupplierName;
 
         } else {
-            // Don't use quotation - enable fields
             supplierDropdown.disabled = false;
             qtyInput.readOnly = false;
             rateInput.readOnly = false;
 
-            // Show dropdown, hide input field
             vendorDropdownContainer.style.display = 'table-cell';
             vendorInputContainer.style.display = 'none';
 
-            // Update hidden field with current dropdown value
             supplierHidden.value = supplierDropdown.value;
         }
 
-        // Reinitialize Select2 if you're using it
         if (typeof $(supplierDropdown).select2 !== 'undefined') {
             $(supplierDropdown).select2();
         }
     }
 
-    // Function to update hidden input when dropdown changes
     function updateVendorInput(key) {
         const supplierDropdown = document.getElementById('supplier_id_' + key);
         const supplierHidden = document.getElementById('supplier_id_hidden_' + key);
@@ -206,24 +196,19 @@
         supplierInput.value = supplierName;
     }
 
-    // Initialize fields on page load
     document.addEventListener('DOMContentLoaded', function() {
         @foreach ($dataItems ?? [] as $key => $data)
             @if (!empty($data?->approved_purchase_quotation))
-                // For rows with approved quotation, show input field initially
                 document.getElementById('vendor_dropdown_{{ $key }}').style.display = 'none';
                 document.getElementById('vendor_input_{{ $key }}').style.display = 'table-cell';
 
-                // Set the initial values for input field
                 const quotedSupplierName = document.getElementById('quoted_supplier_name_{{ $key }}')
                     .value;
                 document.getElementById('supplier_input_{{ $key }}').value = quotedSupplierName;
             @else
-                // For rows without approved quotation, ensure dropdown is enabled
                 document.getElementById('supplier_id_{{ $key }}').disabled = false;
             @endif
 
-            // Initialize the hidden field value
             const supplierDropdown = document.getElementById('supplier_id_{{ $key }}');
             const supplierHidden = document.getElementById('supplier_id_hidden_{{ $key }}');
             supplierHidden.value = supplierDropdown.value;
