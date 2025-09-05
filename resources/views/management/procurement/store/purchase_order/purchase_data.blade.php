@@ -98,12 +98,12 @@
                 max="{{ $remainingQty }}" {{ $hasApprovedQuotation ? 'readonly' : '' }}>
 
             <div class="d-flex align-items-center">
-                Total Qty:
-                <input style="width: 50px" value="{{ $data->qty }}" class="form-control" disabled>
+                Total Qty: {{ $data->qty }}
+                <input style="width: 50px" value="" class="form-control d-none" disabled>
             </div>
             <div class="d-flex align-items-center">
-                Ordered Qty:
-                <input style="width: 50px" value="{{ $totalOrdered }}" class="form-control" disabled>
+                Ordered Qty: {{ $totalOrdered }}
+                <input style="width: 50px" value="{{ $totalOrdered }}" class="form-control d-none" disabled>
             </div>
         </td>
 
