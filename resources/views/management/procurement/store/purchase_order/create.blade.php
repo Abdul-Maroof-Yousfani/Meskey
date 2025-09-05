@@ -5,8 +5,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Purchase Request:</label>
-                <select readonly class="form-control select2" onchange="get_purchase(this.value)"
-                    name="purchase_request_id">
+                <select class="form-control select2" onchange="get_purchase(this.value)" name="purchase_request_id">
                     <option value="">Select Purchase Request</option>
                     @foreach ($approvedRequests ?? [] as $value)
                         <option value="{{ $value->id }}">
@@ -74,6 +73,8 @@
 
 
 <script>
+    $(".select2").select2();
+
     let rowIndex = 1;
 
     function addRow() {
