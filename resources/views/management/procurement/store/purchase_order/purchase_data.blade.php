@@ -97,8 +97,15 @@
                 onblur="calc({{ $key }})" name="qty[]" value="{{ $remainingQty }}"
                 id="qty_{{ $key }}" class="form-control" step="0.01" min="0"
                 max="{{ $remainingQty }}" {{ $hasApprovedQuotation ? 'readonly' : '' }}>
-            Total Qty: {{ $data->qty }}
-            Ordered Qty: {{ $totalOrdered }}
+
+            <div class="d-flex align-items-center">
+                Total Qty:
+                <input style="width: 50px" value="{{ $data->qty }}" class="form-control" disabled>
+            </div>
+            <div class="d-flex align-items-center">
+                Ordered Qty:
+                <input style="width: 50px" value="{{ $totalOrdered }}" class="form-control" disabled>
+            </div>
         </td>
 
         <td style="width: 20%">
