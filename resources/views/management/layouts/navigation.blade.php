@@ -314,24 +314,37 @@
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
                             </span></a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('store.purchase-order.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
-                            </span></a>
-                    </li>
-                    <li data-menu="">
-                        <a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('store.purchase-order-receiving.index') }}" data-toggle="dropdown">
-                            <i class="ft-arrow-right submenu-icon"></i>
-                            <span>
-                                Purchase Order Receiving
-                            </span>
-                        </a>
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Bootstrap Tables">Purchase Order</span></a>
+                        <ul class="dropdown-menu">
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('store.purchase-order.index') }}"
+                                    onclick="loadPageContent('{{ route('store.purchase-order.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Purchase Order</span>
+                                </a>
+                            </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('store.purchase-order-receiving.index') }}"
+                                    onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Receiving</span>
+                                </a>
+                            </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('store.purchase-order-payment-request.index') }}"
+                                    onclick="loadPageContent('{{ route('store.purchase-order-payment-request.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Payment Request</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </li>
             @endcanAccess
-
             @canAccess('finance')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
@@ -388,12 +401,6 @@
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manage
                                 Users</span></a>
                     </li>
-                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Menu</span>
-                        </a>
-                    </li> --}}
                 </ul>
             </li>
             @endcanAccess

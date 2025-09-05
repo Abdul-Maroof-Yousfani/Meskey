@@ -146,7 +146,7 @@
     <div class="row bottom-button-bar mt-3">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save Receiving</button>
+            <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
