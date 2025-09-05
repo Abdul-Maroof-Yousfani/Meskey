@@ -82,7 +82,7 @@
 
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-order.edit', $row->id) }}','Edit Purchase Order',false,'80%')"
+                            <a onclick="openModal(this,'{{ route('store.purchase-order.edit', $row->id) }}','Edit Purchase Order',true,'80%')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
