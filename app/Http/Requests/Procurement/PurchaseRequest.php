@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Procurement;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PurchaseRequest extends FormRequest
 {
@@ -14,28 +15,52 @@ class PurchaseRequest extends FormRequest
     public function rules()
     {
         return [
-            'purchase_date'    => 'required|date',
-            'company_location_id'      => 'required|exists:company_locations,id',
-            'reference_no'     => 'nullable|string|max:255',
-            'description'      => 'nullable|string',
+            'purchase_date'         => 'required|date',
+            'company_location_id'   => 'required|exists:company_locations,id',
+            'reference_no'          => 'nullable|string|max:255',
+            'description'           => 'nullable|string',
 
-            'category_id'      => 'required|array|min:1',
-            'category_id.*'    => 'required|exists:categories,id',
+            'category_id'           => 'required|array|min:1',
+            'category_id.*'         => 'required|exists:categories,id',
 
-            'item_id'          => 'required|array|min:1',
-            'item_id.*'        => 'required|exists:products,id',
+            'item_id'               => 'required|array|min:1',
+            'item_id.*'             => [
+                'required',
+                'exists:products,id',
+                // Custom rule to prevent duplicate items within same category
+                function ($attribute, $value, $fail) {
+                    $index = explode('.', $attribute)[1]; // Get the current index
+                    $currentCategoryId = $this->input("category_id.{$index}");
 
-            'uom'              => 'nullable|array',
-            'uom.*'            => 'nullable|string|max:255',
+                    // Get all category-item pairs
+                    $categoryItemPairs = [];
+                    foreach ($this->input('category_id', []) as $i => $categoryId) {
+                        if (isset($this->input('item_id')[$i])) {
+                            $categoryItemPairs[] = $categoryId . '-' . $this->input('item_id')[$i];
+                        }
+                    }
 
-            'qty'              => 'required|array|min:1',
-            'qty.*'            => 'required|numeric|min:0.01',
+                    // Check for duplicates
+                    $currentPair = $currentCategoryId . '-' . $value;
+                    $occurrences = array_count_values($categoryItemPairs);
 
-            'job_order_id'     => 'nullable|array',
-            'job_order_id.*'   => 'nullable|exists:job_orders,id',
+                    if (isset($occurrences[$currentPair]) && $occurrences[$currentPair] > 1) {
+                        $fail('The same item cannot be added multiple times for the same category.');
+                    }
+                }
+            ],
 
-            'remarks'          => 'nullable|array',
-            'remarks.*'        => 'nullable|string|max:1000',
+            'uom'                   => 'nullable|array',
+            'uom.*'                 => 'nullable|string|max:255',
+
+            'qty'                   => 'required|array|min:1',
+            'qty.*'                 => 'required|numeric|min:0.01',
+
+            'job_order_id'          => 'nullable|array',
+            'job_order_id.*'        => 'nullable|exists:job_orders,id',
+
+            'remarks'               => 'nullable|array',
+            'remarks.*'             => 'nullable|string|max:1000',
         ];
     }
 
@@ -83,5 +108,31 @@ class PurchaseRequest extends FormRequest
             'remarks.*.string' => 'Each remark must be a string.',
             'remarks.*.max' => 'Each remark may not be greater than 1000 characters.',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $categoryItemPairs = [];
+            $duplicates = [];
+            foreach ($this->input('category_id', []) as $i => $categoryId) {
+                if (isset($this->input('item_id')[$i])) {
+                    $pair = $categoryId . '-' . $this->input('item_id')[$i];
+
+                    if (in_array($pair, $categoryItemPairs)) {
+                        $duplicates[] = $i;
+                    } else {
+                        $categoryItemPairs[] = $pair;
+                    }
+                }
+            }
+
+            foreach ($duplicates as $index) {
+                $validator->errors()->add(
+                    "item_id.{$index}",
+                    'The same item cannot be added multiple times for the same category.'
+                );
+            }
+        });
     }
 }

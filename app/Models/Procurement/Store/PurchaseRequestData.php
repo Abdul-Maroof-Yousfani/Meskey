@@ -81,7 +81,18 @@ class PurchaseRequestData extends Model
 
     public function purchase_quotation_data()
     {
-        return $this->hasOne(PurchaseQuotationData::class, 'purchase_request_data_id');
+        return $this->hasMany(PurchaseQuotationData::class, 'purchase_request_data_id');
+    }
+
+    public function purchase_order_data()
+    {
+        return $this->hasMany(PurchaseOrderData::class, 'purchase_request_data_id');
+    }
+
+    public function approved_purchase_quotation()
+    {
+        return $this->hasOne(PurchaseQuotationData::class, 'purchase_request_data_id')
+            ->where('am_approval_status', 'approved');
     }
 
     public function approval()

@@ -32,13 +32,6 @@
                 <input readonly type="date" id="purchase_date" name="purchase_date" class="form-control">
             </div>
         </div>
-        {{-- <div class="col-md-6">
-            <div class="form-group">
-                <label>Reference No:</label>
-                <input readonly type="text" name="reference_no" id="reference_no" class="form-control">
-            </div>
-        </div> --}}
-
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>

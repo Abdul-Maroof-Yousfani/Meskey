@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Procurement\Store\PurchaseOrderReceivingRequest;
 use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
 use App\Models\Category;
+use App\Models\Master\Account\Stock;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\GrnNumber;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseQuotationData;
@@ -16,11 +19,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class PurchaseOrderController extends Controller
+class PurchaseOrderReceivingController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_order.index');
+        return view('management.procurement.store.purchase_order_recieving.index');
     }
 
     /**
@@ -32,7 +35,7 @@ class PurchaseOrderController extends Controller
             ->whereStatus(true)->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.store.purchase_order.getList', compact('PurchaseOrder'));
+        return view('management.procurement.store.purchase_order_recieving.getList', compact('PurchaseOrder'));
     }
 
     public function approve_item(Request $request)
@@ -48,7 +51,7 @@ class PurchaseOrderController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
 
-        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
+        $html = view('management.procurement.store.purchase_order_recieving.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
         return response()->json(
             ['html' => $html, 'master' => $master]
@@ -71,59 +74,42 @@ class PurchaseOrderController extends Controller
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
 
-        return view('management.procurement.store.purchase_order.create', compact('categories', 'approvedRequests'));
+        return view('management.procurement.store.purchase_order_recieving.create', compact('categories', 'approvedRequests'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(PurchaseOrderRequest $request)
+    public function store(PurchaseOrderReceivingRequest $request)
     {
         DB::beginTransaction();
 
         try {
-            $PurchaseOrder = PurchaseOrder::create([
-                'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
-                'purchase_request_id' => $request->purchase_request_id,
-                'order_date' => $request->purchase_date,
+            $grnNo = generateLocationBasedCode('grn_numbers', $request->location_code ?? 'KHI');
+
+            $grnNumber = GrnNumber::create([
+                'model_id' => $request->data_id,
+                'model_type' => 'purchase-order-data',
+                'unique_no' => $grnNo,
                 'location_id' => $request->location_id,
-                'company_id' => $request->company_id,
-                'reference_no' => $request->reference_no,
-                'description' => $request->description,
+                'product_id' => $request->item_id,
             ]);
 
-            foreach ($request->item_id as $index => $itemId) {
-                $requestData = PurchaseOrderData::create([
-                    'purchase_order_id' => $PurchaseOrder->id,
-                    'category_id' => $request->category_id[$index],
-                    'purchase_request_data_id' => $request->purchase_request_data_id[$index] ?? null,
-                    'purchase_quotation_data_id' => isset($request->purchase_quotation_data_id[$index]) ? $request->purchase_quotation_data_id[$index] : null,
-                    'item_id' => $itemId,
-                    'qty' => $request->qty[$index],
-                    'rate' => $request->rate[$index],
-                    'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
-                ]);
-
-                if ($request->purchase_request_data_id[$index] != 0) {
-                    $data =  PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
-                        'po_status' => 2,
-                    ]);
-                }
-
-                if ($request->purchase_quotation_data_id[$index] != 0) {
-                    $data =  PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
-                        'quotation_status' => 2,
-                    ]);
-                }
-            }
+            $stock = Stock::create([
+                'avg_price_per_kg' => $request->total_amount / $request->receiving_qty,
+                'price' => $request->total_amount,
+                'qty' => $request->receiving_qty,
+                'voucher_no' => $grnNo,
+                'type' => 'stock-in',
+                'voucher_type' => 'grn',
+                'product_id' => $request->item_id,
+            ]);
 
             DB::commit();
 
             return response()->json([
-                'success' => 'Purchase order created successfully.',
-                'data' => $PurchaseOrder,
+                'success' => 'Grn created successfully.',
+                'data' => $grnNumber,
             ], 201);
         } catch (\Exception $e) {
             DB::rollback();
@@ -147,7 +133,8 @@ class PurchaseOrderController extends Controller
         $job_orders = JobOrder::select('id', 'name')->get();
         $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
             ->findOrFail($id);
-        return view('management.procurement.store.purchase_order.edit', compact('data', 'categories', 'locations', 'job_orders'));
+
+        return view('management.procurement.store.purchase_order_recieving.edit', compact('data', 'categories', 'locations', 'job_orders'));
     }
 
     /**

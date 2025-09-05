@@ -36,6 +36,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Procurement\Store\PurchaseRequestData',
                 'label' => 'Purchase Request Item',
             ],
+            [
+                'value' => 'App\Models\Procurement\Store\PurchaseQuotationData',
+                'label' => 'Purchase Quotation Item',
+            ],
         ];
 
         $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {

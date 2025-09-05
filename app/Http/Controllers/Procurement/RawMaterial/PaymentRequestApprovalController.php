@@ -159,9 +159,7 @@ class PaymentRequestApprovalController extends Controller
 
             $paymentRequest->update(['status' => $request->status]);
 
-
             // ---------------------- 
-
             if ($moduleType !== 'freight_payment') {
                 $paymentDetails = calculatePaymentDetails($ticket->id, $moduleType === 'ticket' ? 1 : 2);
                 $grnNo = $ticket->arrivalSlip->unique_no ?? null;
@@ -488,7 +486,6 @@ class PaymentRequestApprovalController extends Controller
                 }
             }
             // ----------------------
-
 
             return response()->json([
                 'success' => 'Payment request ' . $request->status . ' successfully!'

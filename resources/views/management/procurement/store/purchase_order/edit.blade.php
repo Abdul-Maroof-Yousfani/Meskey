@@ -1,61 +1,36 @@
-<form action="{{ route('store.purchase-order.update', optional($data->purchase_quotation)->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-order.update', $data->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
-    <input type="hidden" name="data_id" value="{{$data->id}}">
-    <div class="row form-mar"> 
-        <div class="col-xs-12 col-sm-12 col-md-12">
+    <input type="hidden" name="data_id" value="{{ $data->id }}">
+    <div class="row form-mar">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Purchase Request:</label>
-                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                     <option value="{{optional($data->purchase_quotation->purchase_request)->id}}<">{{optional($data->purchase_quotation->purchase_request)->purchase_request_no}}</option>
+                <select disabled class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
+                    <option value="{{ optional($data->purchase_request_data->purchase_request)->id }}<">
+                        {{ optional($data->purchase_request_data->purchase_request)->purchase_request_no }}</option>
                 </select>
-            </div>
-        </div>       
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
-                    <option value="">Select Location</option>
-                    @foreach (get_locations() as $loc)
-                       <option {{optional($data->purchase_quotation)->location_id == $loc->id ? 'selected' : ''}} value="{{$loc->id}}">{{$loc->name}}</option>
-                    @endforeach
-                    <input type="hidden" name="location_id" value="{{optional($data->purchase_quotation)->location_id}}" id="location_id">
-                </select>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label>Purchase Date:</label>
-                <input readonly type="date" id="purchase_date" value="{{optional($data->purchase_quotation)->quotation_date}}" name="purchase_date" class="form-control">
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Reference No:</label>
-                <input readonly type="text" name="reference_no" id="reference_no" value="{{optional($data->purchase_quotation)->reference_no}}" class="form-control">
+                <input readonly type="text" name="reference_no" id="reference_no"
+                    value="{{ optional($data->purchase_request_data->purchase_request)->purchase_request_no }}"
+                    class="form-control">
             </div>
         </div>
-
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{optional($data->purchase_quotation)->description}}</textarea>
+                <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ optional($data->purchase_quotation)->description }}</textarea>
             </div>
         </div>
-       
     </div>
-    <!-- Purchase Request Detail Section -->
     <div class="row form-mar">
         <div class="col-md-12">
             <table class="table table-bordered" id="purchaseRequestTable">
-                <thead>
-                    <tr>
-                        <th colspan="7"></th>
-                        <th colspan="2"><button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">Add New Row</button></th>
-                    </tr>
-                </thead>
                 <thead>
                     <tr>
                         <th>Category</th>
@@ -70,43 +45,56 @@
                     </tr>
                 </thead>
                 <tbody id="purchaseOrderBody">
-                     <tr id="row_0">
-                            <td style="width: 25%">
-                                <select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)" class="form-control item-select" data-index="0">
-                                    <option value="">Select Category</option>
-                                    @foreach ($categories ?? [] as $category)
-                                        <option {{$category->id == $data->category_id ? 'selected' : ''}} value="{{$category->id}}">{{$category->name}}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="width: 25%">
-                               <select name="item_id[]" id="item_id_0" onchange="get_uom(0)" class="form-control item-select" data-index="0">
-                                    @foreach (get_product_by_category($data->category_id) as $item)
-                                        <option 
-                                            data-uom="{{ $item->unit_of_measure->name ?? '' }}" 
-                                            value="{{ $item->id }}"
-                                            {{ $item->id == $data->item_id ? 'selected' : '' }}
-                                        >
-                                            {{ $item->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="width: 10%"><input type="text" name="uom[]" value="{{get_uom($data->item_id)}}" id="uom_0" class="form-control uom" readonly></td>
-                            <td style="width: 20%">
-                                <select name="supplier_id[]" id="supplier_id_0" class="form-control item-select" data-index="0">
-                                    <option value="">Select Vendor</option>
-                                    @foreach (get_supplier() as $supplier)
-                                        <option {{$data->supplier_id == $supplier->id ? 'selected' : ''}} value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="width: 10%"><input  onkeyup="calc(0)" onblur="calc(0)" style="width: 100px" type="number" name="qty[]" id="qty_0" value="{{$data->qty}}" class="form-control" step="0.01" min="0"></td>
-                            <td style="width: 20%"><input  onkeyup="calc(0)" onblur="calc(0)" style="width: 100px" type="number" name="rate[]" id="rate_0" class="form-control" value="{{$data->rate}}" step="0.01" min="0"></td>
-                            <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_0" class="form-control" value="{{$data->total}}" step="0.01" min="0"></td>
-                            <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_0" value="{{$data->remarks}}" class="form-control"></td>
-                            <td><button type="button" disabled class="btn btn-danger btn-sm removeRowBtn" data-id="0">Remove</button></td>
-                        </tr>
+                    <tr id="row_0">
+                        <td style="width: 25%">
+                            <select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)"
+                                class="form-control item-select" data-index="0">
+                                <option value="">Select Category</option>
+                                @foreach ($categories ?? [] as $category)
+                                    <option {{ $category->id == $data->category_id ? 'selected' : '' }}
+                                        value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td style="width: 25%">
+                            <select name="item_id[]" id="item_id_0" onchange="get_uom(0)"
+                                class="form-control item-select" data-index="0">
+                                @foreach (get_product_by_category($data->category_id) as $item)
+                                    <option data-uom="{{ $item->unit_of_measure->name ?? '' }}"
+                                        value="{{ $item->id }}"
+                                        {{ $item->id == $data->item_id ? 'selected' : '' }}>
+                                        {{ $item->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td style="width: 10%"><input type="text" name="uom[]"
+                                value="{{ get_uom($data->item_id) }}" id="uom_0" class="form-control uom" readonly>
+                        </td>
+                        <td style="width: 20%">
+                            <select name="supplier_id[]" id="supplier_id_0" class="form-control item-select"
+                                data-index="0">
+                                <option value="">Select Vendor</option>
+                                @foreach (get_supplier() as $supplier)
+                                    <option {{ $data->supplier_id == $supplier->id ? 'selected' : '' }}
+                                        value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td style="width: 10%"><input onkeyup="calc(0)" onblur="calc(0)" style="width: 100px"
+                                type="number" name="qty[]" id="qty_0" value="{{ $data->qty }}"
+                                class="form-control" step="0.01" min="0"></td>
+                        <td style="width: 20%"><input onkeyup="calc(0)" onblur="calc(0)" style="width: 100px"
+                                type="number" name="rate[]" id="rate_0" class="form-control"
+                                value="{{ $data->rate }}" step="0.01" min="0"></td>
+                        <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]"
+                                id="total_0" class="form-control" value="{{ $data->total }}" step="0.01"
+                                min="0"></td>
+                        <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]"
+                                id="remark_0" value="{{ $data->remarks }}" class="form-control"></td>
+                        <td><button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
+                                data-id="0">Remove</button></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -129,6 +117,7 @@
 
 <script>
     let rowIndex = 1;
+
     function addRow() {
         let index = rowIndex++;
         let row = `
@@ -137,7 +126,7 @@
                     <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select" data-index="0">
                         <option value="">Select Category</option>
                         @foreach ($categories ?? [] as $category)
-                            <option value="{{$category->id}}">{{$category->name}}</option>
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </td>
@@ -163,93 +152,96 @@
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
-        $('#purchaseOrderBody').append(row);        
+        $('#purchaseOrderBody').append(row);
     }
 
     function remove(id) {
-        $('#row_'+id).remove();
+        $('#row_' + id).remove();
     }
 
-     function filter_items(category_id,count) {
-            $.ajax({
-                url: '{{route('get.items')}}', // Replace with your actual API endpoint
-                type: 'GET',
-                data: { category_id: category_id },
-                dataType: 'json',
-                success: function(response) {
-                    // Assuming response contains an array of categories
-                    if (response.success && response.products) {
-                        // Clear existing options
-                        $('#item_id_'+count).empty();
-                        
-                        // Add default option
-                         $('#item_id_'+count).append('<option value="">Select a Item</option>');
-                        
-                        // Append new category options to the select element
-                        $.each(response.products, function(index, product) {
-                             $('#item_id_'+count).append(
-                                `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
-                            );
-                        });
-                    } else {
-                        console.error('No products found or request failed');
-                         $('#item_id_'+count).html('<option value="">No products available</option>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX Error:', status, error);
-                     $('#item_id_'+count).html('<option value="">Error loading products</option>');
-                }
-            });
-        }
+    function filter_items(category_id, count) {
+        $.ajax({
+            url: '{{ route('get.items') }}', // Replace with your actual API endpoint
+            type: 'GET',
+            data: {
+                category_id: category_id
+            },
+            dataType: 'json',
+            success: function(response) {
+                // Assuming response contains an array of categories
+                if (response.success && response.products) {
+                    // Clear existing options
+                    $('#item_id_' + count).empty();
 
-        function get_uom(index) {
-            let uom = $('#item_id_'+index).find(':selected').data('uom');
-            $('#uom_'+index).val(uom);
-        }
+                    // Add default option
+                    $('#item_id_' + count).append('<option value="">Select a Item</option>');
 
-        function get_purchase(purchaseRequestId) {
-            if (!purchaseRequestId) return;
-
-            $.ajax({
-                url: "{{ route('store.purchase-order.approve-item') }}",
-                type: "GET",
-                data: { id: purchaseRequestId },
-                beforeSend: function () {
-                    $('#purchaseOrderBody').html('<p>Loading...</p>');
-                },
-                success: function (response) {
-                    let html = response.html;
-                    let master = response.master;
-                    console.log(master);
-
-                   
-                    $('#company_location_id').val(master.location_id);
-                    $('#location_id').val(master.location_id);
-                    $('#purchase_date').val(master.purchase_date);
-                    $('#reference_no').val(master.reference_no);
-                    $('#description').val(master.description);
-                    $('#company_location_id').val(master.location_id).trigger('change');
-                    $('#purchaseOrderBody').html('').html(html);
-                    $('.select2').select2({
-                        placeholder: 'Please Select', // or 'resolve', '300px', etc.
-                        width: '100%' // or 'resolve', '300px', etc.
+                    // Append new category options to the select element
+                    $.each(response.products, function(index, product) {
+                        $('#item_id_' + count).append(
+                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
+                        );
                     });
-                },
-                error: function () {
-                    $('#purchaseOrderBody').html('<p>Error loading data.</p>');
+                } else {
+                    console.error('No products found or request failed');
+                    $('#item_id_' + count).html('<option value="">No products available</option>');
                 }
-            });
-        }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', status, error);
+                $('#item_id_' + count).html('<option value="">Error loading products</option>');
+            }
+        });
+    }
 
-         function calc(num)
-        {
-            var qty=parseFloat($('#qty_'+num).val());
-            var rate=parseFloat($('#rate_'+num).val());
+    function get_uom(index) {
+        let uom = $('#item_id_' + index).find(':selected').data('uom');
+        $('#uom_' + index).val(uom);
+    }
 
-            var total=qty*rate;
+    function get_purchase(purchaseRequestId) {
+        if (!purchaseRequestId) return;
 
-            $('#total_'+num).val(total);
+        $.ajax({
+            url: "{{ route('store.purchase-order.approve-item') }}",
+            type: "GET",
+            data: {
+                id: purchaseRequestId
+            },
+            beforeSend: function() {
+                $('#purchaseOrderBody').html('<p>Loading...</p>');
+            },
+            success: function(response) {
+                let html = response.html;
+                let master = response.master;
+                console.log(master);
 
-        }
-    </script>
+
+                $('#company_location_id').val(master.location_id);
+                $('#location_id').val(master.location_id);
+                $('#purchase_date').val(master.purchase_date);
+                $('#reference_no').val(master.reference_no);
+                $('#description').val(master.description);
+                $('#company_location_id').val(master.location_id).trigger('change');
+                $('#purchaseOrderBody').html('').html(html);
+                $('.select2').select2({
+                    placeholder: 'Please Select', // or 'resolve', '300px', etc.
+                    width: '100%' // or 'resolve', '300px', etc.
+                });
+            },
+            error: function() {
+                $('#purchaseOrderBody').html('<p>Error loading data.</p>');
+            }
+        });
+    }
+
+    function calc(num) {
+        var qty = parseFloat($('#qty_' + num).val());
+        var rate = parseFloat($('#rate_' + num).val());
+
+        var total = qty * rate;
+
+        $('#total_' + num).val(total);
+
+    }
+</script>

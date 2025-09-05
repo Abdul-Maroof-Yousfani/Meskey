@@ -1,118 +1,136 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Purchase Quotation No </th>
-            <th class="col-sm-2">Purchase Quotation Date</th>
-            <th class="col-sm-2">Location</th>
-            <th class="col-sm-2">Category</th>
-            <th class="col-sm-2">Item</th>
-            <th class="col-sm-2">Item UOM</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Qty</th>
-            <th class="col-sm-2">Rate</th>
-            <th class="col-sm-2">Total Amount</th>
-            {{-- <th class="col-sm-2">Item Status</th> --}}
-            <th class="col-sm-1">Action</th>
+            <th class="col-2">Purchase Request No</th>
+            <th class="col-3">Category</th>
+            <th class="col-3">Supplier</th>
+            <th class="col-1 text-right">Qty</th>
+            <th class="col-1 text-right">Rate</th>
+            <th class="col-1 text-right">Amount</th>
+            <th class="col-1">Status</th>
+            <th class="col-2">PQ Date</th>
+            <th class="col-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($PurchaseQuotation) != 0)
-            @foreach ($PurchaseQuotation as $key => $row)
-                <tr>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->purchase_quotation->purchase_quotation_no }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->purchase_quotation->created_at)->format('h:i A') }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->purchase_quotation->location)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->category)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->item)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional($row->item->unitOfMeasure)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->supplier)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->qty }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->rate }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->total }}
-                        </p>
-                    </td>
-
-
-                    <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $row->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $row->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
-                        {{-- @can('role-delete') --}}
-                        {{-- @php
-                            $currentUserRoleId = Auth::user()->role_id; // adjust if many-to-many
-                            $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
-                        @endphp
-                            @if (!$alreadyApproved)
-                                <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
-                                    class="success p-1 text-center position-relative" title="Approve">
-                                    <i class="ft-check font-medium-3"></i>
-                                </a>
-                            @else
-                                <span class="badge badge-success">Approved</span>
+        @if (count($GroupedPurchaseQuotation) != 0)
+            @foreach ($GroupedPurchaseQuotation as $requestGroup)
+                @php $isFirstRequestRow = true; @endphp
+                @foreach ($requestGroup['items'] as $itemGroup)
+                    @php $isFirstItemRow = true; @endphp
+                    @foreach ($itemGroup['suppliers'] as $supplierRow)
+                        <tr>
+                            @if ($isFirstRequestRow)
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}"
+                                    style="background-color: #e3f2fd; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        #{{ $requestGroup['request_no'] }}
+                                    </p>
+                                </td>
+                                @php $isFirstRequestRow = false; @endphp
                             @endif
-                        @endcan --}}
-                    </td>
-                </tr>
+
+                            @if ($isFirstItemRow)
+                                <td rowspan="{{ $itemGroup['item_rowspan'] }}"
+                                    style="background-color: #e8f5e8; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        {{ optional($supplierRow['data']->category)->name }} -
+                                        {{ optional($supplierRow['data']->item)->name }}
+                                    </p>
+                                </td>
+                                @php $isFirstItemRow = false; @endphp
+                            @endif
+
+                            <td style="background-color: #fff3e0; vertical-align: middle;">
+                                <p class="m-0 font-weight-bold">
+                                    {{ optional($supplierRow['data']->supplier)->name }}
+                                </p>
+                            </td>
+                            <td>
+                                <p class="m-0 text-right">
+                                    {{ $supplierRow['data']->qty }}
+                                    {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
+                                </p>
+                            </td>
+                            <td>
+                                <p class="m-0 text-right">
+                                    {{ $supplierRow['data']->rate }}
+                                </p>
+                            </td>
+                            <td>
+                                <p class="m-0 text-right">
+                                    {{ $supplierRow['data']->total }}
+                                </p>
+                            </td>
+                            <td>
+                                @php
+                                    $approvalStatus = ucwords(
+                                        $supplierRow['data']
+                                            ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                                'am_approval_status'},
+                                    );
+                                    $badgeClass = 'badge-secondary';
+                                    if (strtolower($approvalStatus) === 'approved') {
+                                        $badgeClass = 'badge-success';
+                                    } elseif (strtolower($approvalStatus) === 'rejected') {
+                                        $badgeClass = 'badge-danger';
+                                    } elseif (strtolower($approvalStatus) === 'pending') {
+                                        $badgeClass = 'badge-warning';
+                                    }
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">
+                                    {{ $approvalStatus }}
+                                </span>
+                            </td>
+                            <td>
+                                <p class="m-0 white-nowrap">
+                                    {{ \Carbon\Carbon::parse($supplierRow['data']->created_at)->format('Y-m-d') }}
+                                    /
+                                    {{ \Carbon\Carbon::parse($supplierRow['data']->created_at)->format('h:i A') }}
+                                </p>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    @php
+                                        $currentApprovalStatus =
+                                            $supplierRow['data']
+                                                ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                                    'am_approval_status'};
+                                        $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
+                                        $shouldDisableApproval =
+                                            $requestGroup['has_approved_item'] && !$isCurrentApproved;
+                                    @endphp
+
+                                    @if ($shouldDisableApproval)
+                                        <span class="info p-1 text-center mr-2 position-relative"
+                                            style="opacity: 0.5; cursor: not-allowed;"
+                                            title="Approval disabled - Another item in this request is already approved">
+                                            <i class="ft-eye font-medium-3"></i>
+                                        </span>
+                                    @else
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.approvals', $supplierRow['data']->id) }}', 'Approval Voucher', false, '80%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-eye font-medium-3"></i>
+                                        </a>
+                                    @endif
+
+                                    <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
+                                        class="info p-1 text-center mr-2 position-relative">
+                                        <i class="ft-edit font-medium-3"></i>
+                                    </a>
+                                    <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $supplierRow['data']->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
+                                        class="danger p-1 text-center mr-2 position-relative">
+                                        <i class="ft-x font-medium-3"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                @endforeach
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="10" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -135,11 +153,13 @@
         @endif
     </tbody>
 </table>
+
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         {{ $PurchaseQuotation->links() }}
     </div>
 </div>
+
 <script>
     function approveItem(url) {
         Swal.fire({
@@ -155,7 +175,6 @@
                 $.ajax({
                     url: url,
                     type: 'GET',
-
                     success: function(res) {
                         Swal.fire({
                             title: 'Approved!',

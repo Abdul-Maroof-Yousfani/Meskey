@@ -1,113 +1,61 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Purchase Order No </th>
-            <th class="col-sm-2">Purchase Order Date</th>
-            <th class="col-sm-2">Location</th>
+            <th class="col-sm-2">Purchase Order No</th>
             <th class="col-sm-2">Category</th>
-            <th class="col-sm-2">Item</th>
-            <th class="col-sm-2">Item UOM</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Qty</th>
-            <th class="col-sm-2">Rate</th>
-            <th class="col-sm-2">Total Amount</th>
-            {{-- <th class="col-sm-2">Item Status</th> --}}
+            <th class="col-sm-2">Ordered Qty</th>
+            <th class="col-sm-2">Received Qty</th>
+            <th class="col-sm-2">Remaining Qty</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
         @if (count($PurchaseOrder) != 0)
             @foreach ($PurchaseOrder as $key => $row)
+                @php
+                    $receivedQty = $row->stocks()->get()->sum('qty');
+                @endphp
                 <tr>
                     <td>
                         <p class="m-0">
-                            {{ $row->purchase_order->purchase_order_no }} <br>
+                            #{{ $row->purchase_order->purchase_order_no }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->purchase_order->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->purchase_order->created_at)->format('h:i A') }} <br>
-
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->purchase_order->location)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->category)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
+                            {{ optional($row->category)->name }} -
                             {{ optional($row->item)->name }}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
+                            {{ $row->qty }} {{ optional($row->item->unitOfMeasure)->name }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $receivedQty }} {{ optional($row->item->unitOfMeasure)->name }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->qty - $receivedQty }}
                             {{ optional($row->item->unitOfMeasure)->name }}
                         </p>
                     </td>
                     <td>
-                        <p class="m-0">
-
-                            {{ optional($row->supplier)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->qty }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->rate }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->total }}
-                        </p>
-                    </td>
-
-
-                    <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-order.edit', $row->id) }}','Edit Purchase Order',false,'80%')"
-                                class="info p-1 text-center mr-2 position-relative ">
+                            <a onclick="openModal(this,'{{ route('store.purchase-order-receiving.edit', $row->id) }}','Edit Purchase Order',false,'80%')"
+                                class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $row->id) }}','{{ route('store.get.purchase-order') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
+                            <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', $row->id) }}','{{ route('store.get.purchase-order-receiving') }}')"
+                                class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
-                        {{-- @can('role-delete') --}}
-                        {{-- @php
-                            $currentUserRoleId = Auth::user()->role_id; // adjust if many-to-many
-                            $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
-                        @endphp
-                            @if (!$alreadyApproved)
-                                <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
-                                    class="success p-1 text-center position-relative" title="Approve">
-                                    <i class="ft-check font-medium-3"></i>
-                                </a>
-                            @else
-                                <span class="badge badge-success">Approved</span>
-                            @endif
-                        @endcan --}}
                     </td>
                 </tr>
             @endforeach

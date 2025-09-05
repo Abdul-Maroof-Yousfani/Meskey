@@ -22,6 +22,7 @@ use App\Http\Controllers\Procurement\RawMaterial\{
 };
 use App\Http\Controllers\Procurement\Store\{
     PurchaseOrderController as StorePurchaseOrderController,
+    PurchaseOrderReceivingController,
     PurchaseQuotationController,
     PurchaseRequestController as StorePurchaseRequestController,
 };
@@ -105,15 +106,17 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
     Route::get('purchase-request-approve/{id}', [StorePurchaseRequestController::class, 'approve'])->name('purchase-request.approve');
 
-    // purchase quotation routes
     Route::resource('purchase-quotation', PurchaseQuotationController::class)->except(['show']);
     Route::post('get-purchase-quotation', [PurchaseQuotationController::class, 'getList'])->name('get.purchase-quotation');
     Route::get('purchase-quotation/approve-item', [PurchaseQuotationController::class, 'approve_item'])->name('purchase-quotation.approve-item');
+    Route::get('purchase-quotation-approvals/{id}', [PurchaseQuotationController::class, 'manageApprovals'])->name('purchase-quotation.approvals');
 
-    // purchase order route
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('purchase-order/approve-item', [StorePurchaseOrderController::class, 'approve_item'])->name('purchase-order.approve-item');
+
+    Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class);
+    Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

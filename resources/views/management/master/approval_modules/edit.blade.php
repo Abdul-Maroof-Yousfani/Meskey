@@ -47,6 +47,10 @@
                                                 'value' => 'App\Models\Procurement\Store\PurchaseRequestData',
                                                 'label' => 'Purchase Request Item',
                                             ],
+                                            [
+                                                'value' => 'App\Models\Procurement\Store\PurchaseQuotationData',
+                                                'label' => 'Purchase Quotation Item',
+                                            ],
                                         ];
                                     @endphp
                                     @foreach ($allModels as $class)
