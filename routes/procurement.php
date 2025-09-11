@@ -22,6 +22,7 @@ use App\Http\Controllers\Procurement\RawMaterial\{
 };
 use App\Http\Controllers\Procurement\Store\{
     PurchaseOrderController as StorePurchaseOrderController,
+    PurchaseOrderPaymentRequestController,
     PurchaseOrderReceivingController,
     PurchaseQuotationController,
     PurchaseRequestController as StorePurchaseRequestController,
@@ -115,9 +116,9 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('purchase-order/approve-item', [StorePurchaseOrderController::class, 'approve_item'])->name('purchase-order.approve-item');
 
-    Route::resource('purchase-order-payment-request', StorePurchaseOrderController::class)->except(['show']);
-    Route::post('get-purchase-order-payment-request', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order-payment-request');
-    Route::get('purchase-order-payment-request/approve-item', [StorePurchaseOrderController::class, 'approve_item'])->name('purchase-order-payment-request.approve-item');
+    Route::resource('purchase-order-payment-request', PurchaseOrderPaymentRequestController::class)->except(['show']);
+    Route::post('get-purchase-order-payment-request', [PurchaseOrderPaymentRequestController::class, 'getList'])->name('get.purchase-order-payment-request');
+    Route::get('purchase-order-payment-request/approve-item', [PurchaseOrderPaymentRequestController::class, 'approve_item'])->name('purchase-order-payment-request.approve-item');
 
     Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class);
     Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');
