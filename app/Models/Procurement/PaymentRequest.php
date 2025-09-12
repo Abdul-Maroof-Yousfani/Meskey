@@ -2,7 +2,11 @@
 
 namespace App\Models\Procurement;
 
+use App\Models\Master\Account\GoodReceiveNote;
+use App\Models\Master\Supplier;
 use App\Models\PaymentVoucherData;
+use App\Models\Procurement\Store\PurchaseOrder;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,7 +20,17 @@ class PaymentRequest extends Model
         'is_advance_payment',
         'other_deduction_kg',
         'request_type',
+        'request_no',
+        'supplier_id',
+        'purchase_order_id',
+        'grn_id',
+        'requested_by',
+        'request_date',
+        'approved_by',
+        'approved_at',
+        'description',
         'module_type',
+        'payment_type',
         'status',
         'amount'
     ];
@@ -47,5 +61,30 @@ class PaymentRequest extends Model
     public function canBeApproved()
     {
         return $this->approval_status === 'pending';
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
+    }
+
+    public function grn()
+    {
+        return $this->belongsTo(GoodReceiveNote::class, 'grn_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function requestedBy()
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

@@ -3,17 +3,14 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
-use App\Models\Category;
-use App\Models\Master\CompanyLocation;
+use App\Http\Requests\Procurement\StoreItemPaymentRequestRequest;
+use App\Models\Master\Account\GoodReceiveNote;
+use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
-use App\Models\Procurement\Store\PurchaseQuotationData;
-use App\Models\Procurement\Store\PurchaseRequest;
-use App\Models\Procurement\Store\PurchaseRequestData;
-use App\Models\Sales\JobOrder;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderPaymentRequestController extends Controller
@@ -23,189 +20,207 @@ class PurchaseOrderPaymentRequestController extends Controller
         return view('management.procurement.store.purchase_order_payment_request.index');
     }
 
-    /**
-     * Get list of categories.
-     */
     public function getList(Request $request)
     {
-        $PurchaseOrder = PurchaseOrderData::with('purchase_order', 'category', 'item')
-            ->whereStatus(true)->latest()
+        $paymentRequests = PaymentRequest::with(['purchaseOrder', 'grn', 'supplier'])
+            ->where('payment_type', '!=', null)
+            ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.store.purchase_order_payment_request.getList', compact('PurchaseOrder'));
+        return view('management.procurement.store.purchase_order_payment_request.getList', compact('paymentRequests'));
     }
 
-    public function approve_item(Request $request)
-    {
-        $requestId = $request->id;
-
-        $master = PurchaseRequest::find($requestId);
-        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'approved_purchase_quotation'])
-            ->where('purchase_request_id', $requestId)
-            ->where('am_approval_status', 'approved')
-            ->get();
-
-        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
-
-        $html = view('management.procurement.store.purchase_order_payment_request.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
-
-        return response()->json(
-            ['html' => $html, 'master' => $master]
-        );
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::with(['PurchaseData' => function ($query) {
-            $query->where('am_approval_status', 'approved');
-        }])
-            ->whereHas('PurchaseData', function ($q) {
-                $q->where('am_approval_status', 'approved')
-                    ->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
-            })
-            ->get();
-
-        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-
-        return view('management.procurement.store.purchase_order_payment_request.create', compact('categories', 'approvedRequests'));
+        return view('management.procurement.store.purchase_order_payment_request.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(PurchaseOrderRequest $request)
+    public function getSources(Request $request)
+    {
+        $isAdvance = $request->is_advance == 'true';
+
+        if ($isAdvance) {
+            $purchaseOrders = PurchaseOrder::with(['items', 'items.supplier'])
+                // ->where('status', 'approved')
+                ->get()
+                ->map(function ($purchaseOrder) {
+                    $purchaseOrder->total_amount = $purchaseOrder->items->sum('total');
+                    $purchaseOrder->supplier_id = $purchaseOrder->items->first()->supplier_id ?? null;
+                    $purchaseOrder->supplier_name = $purchaseOrder->items->first()->supplier->name ?? null;
+                    $purchaseOrder->total_paid = $purchaseOrder->paymentRequests()->where('status', 'approved')->sum('amount');
+                    $purchaseOrder->remaining_amount = max(0, $purchaseOrder->total_amount - $purchaseOrder->total_paid);
+
+                    return $purchaseOrder;
+                })
+                ->filter(function ($purchaseOrder) {
+                    return $purchaseOrder->remaining_amount > 0;
+                });
+
+            return response()->json([
+                'purchase_orders' => $purchaseOrders,
+                'grns' => []
+            ]);
+        } else {
+            $grns = GoodReceiveNote::with(['purchaseOrder', 'product', 'supplier'])
+                ->where('status', 'received')
+                ->get()
+                ->map(function ($grn) {
+                    $grn->total_paid = $grn->paymentRequests()->where('status', 'approved')->sum('amount');
+                    // $grn->supplier_id = $grn->supplier_id;
+                    $grn->remaining_amount = max(0, $grn->price - $grn->total_paid);
+
+                    return $grn;
+                })
+                ->filter(function ($grn) {
+                    return $grn->remaining_amount > 0;
+                });
+
+            return response()->json([
+                'purchase_orders' => [],
+                'grns' => $grns
+            ]);
+        }
+    }
+
+    public function getPaidAmount(Request $request)
+    {
+        $paidAmount = 0;
+
+        if ($request->has('purchase_order_id')) {
+            $paidAmount = PaymentRequest::where('purchase_order_id', $request->purchase_order_id)
+                // ->where('status', 'approved')
+                ->sum('amount');
+        } elseif ($request->has('grn_id')) {
+            $paidAmount = PaymentRequest::where('grn_id', $request->grn_id)
+                // ->where('status', 'approved')
+                ->sum('amount');
+        }
+
+        return response()->json([
+            'paid_amount' => $paidAmount
+        ]);
+    }
+
+    public function store(StoreItemPaymentRequestRequest $request)
     {
         DB::beginTransaction();
 
         try {
-            $PurchaseOrder = PurchaseOrder::create([
-                'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
-                'purchase_request_id' => $request->purchase_request_id,
-                'order_date' => $request->purchase_date,
-                'location_id' => $request->location_id,
-                'company_id' => $request->company_id,
-                'reference_no' => $request->reference_no,
+            $paymentRequestData = PaymentRequestData::create([
+                'store_purchase_order_id' => $request->purchase_order_id,
+                'grn_id' => $request->grn_id,
+                'supplier_id' => $request->supplier_id,
+                'remaining_amount' => $request->remaining_amount,
+                'total_amount' => $request->amount,
                 'description' => $request->description,
+                'payment_type' => $request->is_advance ? 'advance' : 'against_receiving',
+                'is_advance_payment' => $request->is_advance ? 1 : 0,
             ]);
 
-            foreach ($request->item_id as $index => $itemId) {
-                $requestData = PurchaseOrderData::create([
-                    'purchase_order_id' => $PurchaseOrder->id,
-                    'category_id' => $request->category_id[$index],
-                    'purchase_request_data_id' => $request->purchase_request_data_id[$index] ?? null,
-                    'purchase_quotation_data_id' => isset($request->purchase_quotation_data_id[$index]) ? $request->purchase_quotation_data_id[$index] : null,
-                    'item_id' => $itemId,
-                    'qty' => $request->qty[$index],
-                    'rate' => $request->rate[$index],
-                    'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
-                ]);
-
-                if ($request->purchase_request_data_id[$index] != 0) {
-                    $data =  PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
-                        'po_status' => 2,
-                    ]);
-                }
-
-                if ($request->purchase_quotation_data_id[$index] != 0) {
-                    $data =  PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
-                        'quotation_status' => 2,
-                    ]);
-                }
-            }
+            $paymentRequest = PaymentRequest::create([
+                'request_no' => $this->generatePaymentRequestNumber(),
+                'payment_request_data_id' => $paymentRequestData->id,
+                'supplier_id' => $request->supplier_id,
+                'purchase_order_id' => $request->purchase_order_id,
+                'grn_id' => $request->grn_id,
+                'requested_by' => Auth::user()->id,
+                'request_date' => now(),
+                'amount' => $request->amount,
+                'description' => $request->description,
+                'payment_type' => $request->is_advance ? 'advance' : 'against_receiving',
+                'is_advance_payment' => $request->is_advance ? 1 : 0,
+                'status' => 'pending',
+            ]);
 
             DB::commit();
 
             return response()->json([
-                'success' => 'Purchase order created successfully.',
-                'data' => $PurchaseOrder,
+                'success' => 'Payment request created successfully.',
+                'data' => $paymentRequest,
             ], 201);
         } catch (\Exception $e) {
             DB::rollback();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create purchase request.',
+                'message' => 'Failed to create payment request.',
                 'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    private function generatePaymentRequestNumber()
     {
-        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
-        $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
-            ->findOrFail($id);
-        return view('management.procurement.store.purchase_order_payment_request.edit', compact('data', 'categories', 'locations', 'job_orders'));
+        $prefix = 'PR-';
+        $year = date('Y');
+        $month = date('m');
+
+        $latest = PaymentRequest::where('request_no', 'like', $prefix . $year . $month . '%')
+            ->orderBy('request_no', 'desc')
+            ->first();
+
+        if ($latest) {
+            $number = intval(substr($latest->request_no, -4)) + 1;
+        } else {
+            $number = 1;
+        }
+
+        return $prefix . $year . $month . str_pad($number, 4, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
+    public function approve($id)
     {
-        $validated = $request->validate([
-            'purchase_date'    => 'required|date',
-            'purchase_request_id'      => 'required|exists:purchase_requests,id',
-            'location_id'      => 'required|exists:company_locations,id',
-            'reference_no'     => 'nullable|string|max:255',
-            'description'      => 'nullable|string',
-
-            'category_id'      => 'required|array|min:1',
-            'category_id.*'    => 'required|exists:categories,id',
-
-            'item_id'          => 'required|array|min:1',
-            'item_id.*'        => 'required|exists:products,id',
-
-            'uom'              => 'nullable|array',
-            'uom.*'            => 'nullable|string|max:255',
-
-            'qty'              => 'required|array|min:1',
-            'qty.*'            => 'required|numeric|min:0.01',
-
-            'rate'              => 'required|array|min:1',
-            'rate.*'            => 'required|numeric|min:0.01',
-
-            'remarks'          => 'nullable|array',
-            'remarks.*'        => 'nullable|string|max:1000',
-        ]);
-
-
-
-
         DB::beginTransaction();
+
         try {
-            // Find existing purchase request by ID
-            $PurchaseOrder = PurchaseOrder::findOrFail($id);
+            $paymentRequest = PaymentRequest::findOrFail($id);
+            $paymentRequest->update([
+                'status' => 'approved',
+                'approved_by' => Auth::user()->id,
+                'approved_at' => now()
+            ]);
 
-            // Update purchase request fields (do NOT update purchase_order_no)
+            DB::commit();
 
-            // Delete existing related purchase_order_data and their job orders to avoid duplicates
-            $data = PurchaseOrderData::find($request->data_id)->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment request approved successfully.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
 
-            // Insert new purchase_order_data and job orders
-            foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_order_data
-                $requestData = PurchaseOrderData::create([
-                    'purchase_order_id' => $PurchaseOrder->id,
-                    'category_id' => $request->category_id[$index],
-                    'item_id' => $itemId,
-                    'qty' => $request->qty[$index],
-                    'rate' => $request->rate[$index],
-                    'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve payment request.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function edit($id)
+    {
+        $paymentRequest = PaymentRequest::with(['purchaseOrder', 'grn', 'supplier'])
+            ->findOrFail($id);
+
+        return view('management.procurement.store.purchase_order_payment_request.edit', compact('paymentRequest'));
+    }
+
+    public function update(StoreItemPaymentRequestRequest $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $paymentRequest = PaymentRequest::findOrFail($id);
+
+            $paymentRequest->update([
+                'amount' => $request->amount,
+                'description' => $request->description,
+            ]);
+
+            if ($paymentRequest->paymentRequestData) {
+                $paymentRequest->paymentRequestData->update([
+                    'total_amount' => $request->amount,
+                    'description' => $request->description,
                 ]);
             }
 
@@ -213,61 +228,44 @@ class PurchaseOrderPaymentRequestController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Purchase Quotation updated successfully.',
-                'data' => $PurchaseOrder,
+                'message' => 'Payment request updated successfully.',
+                'data' => $paymentRequest,
             ], 200);
         } catch (\Exception $e) {
             DB::rollback();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update purchase request.',
+                'message' => 'Failed to update payment request.',
                 'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $PurchaseOrderData = PurchaseOrderData::where('id', $id)->delete();
-        return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
-    }
+        DB::beginTransaction();
 
-    public function getNumber(Request $request, $locationId = null, $contractDate = null)
-    {
-        $location = CompanyLocation::find($locationId ?? $request->location_id);
-        $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        try {
+            $paymentRequest = PaymentRequest::findOrFail($id);
 
-        $prefix = $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+            if ($paymentRequest->paymentRequestData) {
+                $paymentRequest->paymentRequestData->delete();
+            }
 
-        $latestContract = PurchaseOrder::where('purchase_order_no', 'like', "$prefix-%")
-            ->latest()
-            ->first();
+            $paymentRequest->delete();
 
-        $locationCode = $location->code ?? 'LOC';
-        $datePart = Carbon::parse($date)->format('Y-m-d');
+            DB::commit();
 
-        if ($latestContract) {
-            $parts = explode('-', $latestContract->contract_no);
-            $lastNumber = (int) end($parts);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
+            return response()->json(['success' => 'Payment request deleted successfully.'], 200);
+        } catch (\Exception $e) {
+            DB::rollback();
 
-        $purchase_order_no = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-
-        if (!$locationId && !$contractDate) {
             return response()->json([
-                'success' => true,
-                'purchase_order_no' => $purchase_order_no
-            ]);
+                'success' => false,
+                'message' => 'Failed to delete payment request.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return $purchase_order_no;
     }
 }

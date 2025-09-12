@@ -1,119 +1,65 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Purchase Order No </th>
-            <th class="col-sm-2">Purchase Order Date</th>
-            <th class="col-sm-2">Location</th>
-            <th class="col-sm-2">Category</th>
-            <th class="col-sm-2">Item</th>
-            <th class="col-sm-2">Item UOM</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Qty</th>
-            <th class="col-sm-2">Rate</th>
-            <th class="col-sm-2">Total Amount</th>
-            {{-- <th class="col-sm-2">Item Status</th> --}}
-            <th class="col-sm-1">Action</th>
+            <th>Request No</th>
+            <th>Request Date</th>
+            <th>Type</th>
+            <th>Supplier</th>
+            <th>PO Number</th>
+            <th>GRN Number</th>
+            <th>Amount</th>
+            <th>Status</th>
+            {{-- <th>Actions</th> --}}
         </tr>
     </thead>
     <tbody>
-        @if (count($PurchaseOrder) != 0)
-            @foreach ($PurchaseOrder as $key => $row)
+        @if (count($paymentRequests) != 0)
+            @foreach ($paymentRequests as $paymentRequest)
                 <tr>
+                    <td>{{ $paymentRequest->request_no }}</td>
+                    <td>{{ \Carbon\Carbon::parse($paymentRequest->request_date)->format('Y-m-d') }}</td>
                     <td>
-                        <p class="m-0">
-                            {{ $row->purchase_order->purchase_order_no }} <br>
-                        </p>
+                        <span class="badge badge-{{ $paymentRequest->payment_type == 'advance' ? 'warning' : 'info' }}">
+                            {{ ucfirst(formatEnumValue($paymentRequest->payment_type)) }}
+                        </span>
                     </td>
+                    <td>{{ optional($paymentRequest->supplier)->name }}</td>
+                    <td>{{ optional($paymentRequest->purchaseOrder)->purchase_order_no ?? 'N/A' }}</td>
+                    <td>{{ optional($paymentRequest->grn)->grn_number ?? 'N/A' }}</td>
+                    <td>{{ number_format($paymentRequest->amount, 2) }}</td>
                     <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->purchase_order->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->purchase_order->created_at)->format('h:i A') }} <br>
-
-                        </p>
+                        <span
+                            class="badge badge-{{ $paymentRequest->status == 'approved' ? 'success' : ($paymentRequest->status == 'pending' ? 'warning' : 'danger') }}">
+                            {{ ucfirst($paymentRequest->status) }}
+                        </span>
                     </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->purchase_order->location)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->category)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->item)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional($row->item->unitOfMeasure)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ optional($row->supplier)->name }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->qty }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->rate }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-
-                            {{ $row->total }}
-                        </p>
-                    </td>
-
-
-                    <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-order.edit', $row->id) }}','Edit Purchase Order',true,'80%')"
-                                class="info p-1 text-center mr-2 position-relative ">
+                    {{-- <td>
+                        @can('payment-request-edit')
+                            <a onclick="openModal(this,'{{ route('store.purchase-order-payment-request.edit', $paymentRequest->id) }}','Edit Payment Request',true,'70%')"
+                                class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $row->id) }}','{{ route('store.get.purchase-order') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
+                        @can('payment-request-delete')
+                            <a onclick="deletemodal('{{ route('store.purchase-order-payment-request.destroy', $paymentRequest->id) }}','{{ route('store.get.purchase-order-payment-request') }}')"
+                                class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
                         @endcan
-                        {{-- @can('role-delete') --}}
-                        {{-- @php
-                            $currentUserRoleId = Auth::user()->role_id; // adjust if many-to-many
-                            $alreadyApproved = $row->approval()->where('role_id', $currentUserRoleId)->where('status_id', 2)->exists();
-                        @endphp
-                            @if (!$alreadyApproved)
-                                <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
+                        @can('payment-request-approve')
+                            @if ($paymentRequest->status == 'pending')
+                                <a onclick="approvePaymentRequest('{{ route('store.purchase-order-payment-request.approve', $paymentRequest->id) }}')"
                                     class="success p-1 text-center position-relative" title="Approve">
                                     <i class="ft-check font-medium-3"></i>
                                 </a>
-                            @else
-                                <span class="badge badge-success">Approved</span>
                             @endif
-                        @endcan --}}
-                    </td>
+                        @endcan
+                    </td> --}}
                 </tr>
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="9" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -136,49 +82,9 @@
         @endif
     </tbody>
 </table>
-{{-- <div id="paginationLinks">
-    {{ $roles->links() }}
-</div> --}}
-
-
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $PurchaseOrder->links() }}
+        {{ $paymentRequests->links() }}
     </div>
 </div>
-<script>
-    function approveItem(url) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You are about to approve this item.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, approve it!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-
-                    success: function(res) {
-                        Swal.fire({
-                            title: 'Approved!',
-                            text: res.message,
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function() {
-                        Swal.fire('Error', 'Error occurred while approving item.', 'error');
-                    }
-                });
-            }
-        });
-    }
-</script>

@@ -4,12 +4,14 @@ namespace App\Models\Master\Account;
 
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
+use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GoodReceiveNote extends Model
 {
@@ -95,5 +97,25 @@ class GoodReceiveNote extends Model
     public function model()
     {
         return $this->morphTo();
+    }
+
+    public function paymentRequests(): HasMany
+    {
+        return $this->hasMany(PaymentRequest::class, 'grn_id');
+    }
+
+    public function getTotalPaidAttribute()
+    {
+        return $this->paymentRequests()->where('status', 'approved')->sum('amount');
+    }
+
+    public function getRemainingAmountAttribute()
+    {
+        return max(0, $this->price - $this->total_paid);
+    }
+
+    public function getIsFullyPaidAttribute()
+    {
+        return $this->remaining_amount <= 0;
     }
 }

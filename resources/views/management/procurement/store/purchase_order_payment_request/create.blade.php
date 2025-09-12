@@ -1,206 +1,348 @@
-<form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-order-payment-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-payment-request') }}" />
+
     <div class="row form-mar">
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="form-group">
-                <label>Purchase Request:</label>
-                <select class="form-control select2" onchange="get_purchase(this.value)" name="purchase_request_id">
-                    <option value="">Select Purchase Request</option>
-                    @foreach ($approvedRequests ?? [] as $value)
-                        <option value="{{ $value->id }}">
-                            {{ $value->purchase_request_no }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
-                    <option value="">Select Location</option>
-                    @foreach (get_locations() as $value)
-                        <option value="{{ $value->id }}">{{ $value->name }}</option>
-                    @endforeach
-                    <input type="hidden" name="location_id" id="location_id">
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Purchase Date:</label>
-                <input readonly type="date" id="purchase_date" name="purchase_date" class="form-control">
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control"></textarea>
+                <label>Payment Type:</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_advance" name="is_advance" value="1">
+                    <label class="form-check-label" for="is_advance">
+                        Advance Payment
+                    </label>
+                </div>
             </div>
         </div>
     </div>
+
+    <div id="advanceSection" style="display: none;">
+        <div class="row form-mar">
+            <div class="col-md-6">
+                <div class="form-group d-flex flex-column mb-1">
+                    <label>Select Purchase Order:</label>
+                    <select class="form-control select2 w-100 d-block" id="purchase_order_id" name="purchase_order_id">
+                        <option value="">Select Purchase Order</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row form-mar">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>PO Total Amount:</label>
+                    <input type="text" class="form-control" id="po_total_amount" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Already Paid:</label>
+                    <input type="text" class="form-control" id="po_paid_amount" readonly>
+                </div>
+            </div>
+            <div class="col-md-6 d-none">
+                <div class="form-group">
+                    <label>Payment Amount:</label>
+                    <input type="number" class="form-control" id="po_payment_amount" step="0.01" min="0"
+                        value="0">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Remaining Amount:</label>
+                    <input type="text" class="form-control" id="po_remaining_amount" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" class="form-control" id="remaining_amount" name="remaining_amount" readonly>
+
+    <div id="receivingSection">
+        <div class="row form-mar">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Select GRN:</label>
+                    <select class="form-control select2" id="grn_id" name="grn_id">
+                        <option value="">Select GRN</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row form-mar">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>GRN Total Amount:</label>
+                    <input type="text" class="form-control" id="grn_total_amount" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Already Paid:</label>
+                    <input type="text" class="form-control" id="grn_paid_amount" readonly>
+                </div>
+            </div>
+            <div class="col-md-6 d-none">
+                <div class="form-group">
+                    <label>Payment Amount:</label>
+                    <input type="number" class="form-control" id="grn_payment_amount" step="0.01" min="0"
+                        value="0">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Remaining Amount:</label>
+                    <input type="text" class="form-control" id="grn_remaining_amount" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row form-mar">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Supplier:</label>
+                <input type="hidden" class="form-control" id="supplier_id" name="supplier_id" readonly>
+                <input type="text" class="form-control" id="supplier_name" name="supplier_name" readonly>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Amount:</label>
+                <input type="number" class="form-control" id="amount" name="amount" step="0.01"
+                    min="0" required readonly>
+            </div>
+        </div>
+    </div>
+
     <div class="row form-mar">
         <div class="col-md-12">
-            <table class="table table-bordered" id="purchaseRequestTable">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Category</th>
-                        <th>Item</th>
-                        <th>Item UOM</th>
-                        <th>Vendor</th>
-                        <th>Qty</th>
-                        <th>Rate</th>
-                        <th>Amount</th>
-                        <th>Remarks</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="purchaseOrderBody"></tbody>
-            </table>
+            <div class="form-group">
+                <label>Description:</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+            </div>
         </div>
     </div>
-    <input type="hidden" id="rowCount" value="0">
+
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <button type="submit" class="btn btn-primary submitbutton">Create Payment Request</button>
         </div>
     </div>
 </form>
 
-
-
-
 <script>
-    $(".select2").select2();
+    $(document).ready(function() {
+        $('.select2').select2();
 
-    let rowIndex = 1;
+        // Store amounts for calculations
+        let poTotalAmount = 0;
+        let poPaidAmount = 0;
+        let grnTotalAmount = 0;
+        let grnPaidAmount = 0;
 
-    function addRow() {
-        let index = rowIndex++;
-        let row = `
-            <tr id="row_${index}">
-                <td style="width: 25%">
-                    <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select" data-index="0">
-                        <option value="">Select Category</option>
-                        @foreach ($categories ?? [] as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                </td>
-                <td style="width: 25%">
-                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
-                        
-                    </select>
-                    <input type="hidden" name="data_id[]" value="0">
-                </td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                 <td style="width: 20%">
-                    <select name="supplier_id[]" id="supplier_id_${index}" class="form-control item-select" data-index="0">
-                        <option value="">Select Vendor</option>
-                        @foreach (get_supplier() as $supplier)
-                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                        @endforeach
-                    </select>
-                </td>
-                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
-                
-                <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
-            </tr>`;
-        $('#purchaseOrderBody').append(row);
-    }
+        $('#is_advance').change(function() {
+            if ($(this).is(':checked')) {
+                $('#advanceSection').show();
+                $('#receivingSection').hide();
+                loadPurchaseOrders();
+                $('#grn_id').val('').trigger('change');
+            } else {
+                $('#advanceSection').hide();
+                $('#receivingSection').show();
+                loadGRNs();
+                $('#purchase_order_id').val('').trigger('change');
+            }
+        });
 
-    function remove(id) {
-        $('#row_' + id).remove();
-    }
+        loadGRNs();
 
-    function filter_items(category_id, count) {
-        $.ajax({
-            url: '{{ route('get.items') }}', // Replace with your actual API endpoint
-            type: 'GET',
-            data: {
-                category_id: category_id
-            },
-            dataType: 'json',
-            success: function(response) {
-                // Assuming response contains an array of categories
-                if (response.success && response.products) {
-                    // Clear existing options
-                    $('#item_id_' + count).empty();
-
-                    // Add default option
-                    $('#item_id_' + count).append('<option value="">Select a Item</option>');
-
-                    // Append new category options to the select element
-                    $.each(response.products, function(index, product) {
-                        $('#item_id_' + count).append(
-                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
-                        );
+        function loadPurchaseOrders() {
+            $.ajax({
+                url: '{{ route('store.purchase-order-payment-request.get-sources') }}',
+                type: 'GET',
+                data: {
+                    is_advance: true
+                },
+                success: function(response) {
+                    $('#purchase_order_id').empty().append(
+                        '<option value="">Select Purchase Order</option>');
+                    response.purchase_orders.forEach(function(po) {
+                        $('#purchase_order_id').append('<option value="' + po.id +
+                            '" data-supplier-id="' + po.supplier_id +
+                            '" data-supplier-name="' + po.supplier_name +
+                            '" data-total="' + po.total_amount + '">' + po
+                            .purchase_order_no + (po.supplier?.name || '') +
+                            '</option>');
                     });
-                } else {
-                    console.error('No products found or request failed');
-                    $('#item_id_' + count).html('<option value="">No products available</option>');
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX Error:', status, error);
-                $('#item_id_' + count).html('<option value="">Error loading products</option>');
+            });
+        }
+
+        function loadGRNs() {
+            $.ajax({
+                url: '{{ route('store.purchase-order-payment-request.get-sources') }}',
+                type: 'GET',
+                data: {
+                    is_advance: false
+                },
+                success: function(response) {
+                    $('#grn_id').empty().append('<option value="">Select GRN</option>');
+                    response.grns.forEach(function(grn) {
+                        $('#grn_id').append('<option value="' + grn.id +
+                            '" data-supplier-id="' + grn.supplier.id +
+                            '" data-supplier-name="' + grn.supplier.name +
+                            '" data-total="' + grn.price + '">' + grn
+                            .grn_number + (grn.product?.name || '') +
+                            '</option>');
+                    });
+                }
+            });
+        }
+
+        $('#purchase_order_id').change(function() {
+            var purchaseOrderId = $(this).val();
+            var supplierId = $(this).find(':selected').data('supplier-id');
+            var supplierName = $(this).find(':selected').data('supplier-name');
+            poTotalAmount = $(this).find(':selected').data('total');
+
+            if (supplierId && supplierName) {
+                $('#supplier_id').val(supplierId);
+                $('#supplier_name').val(supplierName);
             }
-        });
-    }
 
-    function get_uom(index) {
-        let uom = $('#item_id_' + index).find(':selected').data('uom');
-        $('#uom_' + index).val(uom);
-    }
+            if (purchaseOrderId) {
+                $.ajax({
+                    url: '{{ route('store.purchase-order-payment-request.get-paid-amount') }}',
+                    type: 'GET',
+                    data: {
+                        purchase_order_id: purchaseOrderId
+                    },
+                    success: function(response) {
+                        poPaidAmount = response.paid_amount || 0;
 
-    function get_purchase(purchaseRequestId) {
-        if (!purchaseRequestId) return;
+                        $('#po_total_amount').val(formatCurrency(poTotalAmount));
+                        $('#po_paid_amount').val(formatCurrency(poPaidAmount));
 
-        $.ajax({
-            url: "{{ route('store.purchase-order.approve-item') }}",
-            type: "GET",
-            data: {
-                id: purchaseRequestId
-            },
-            beforeSend: function() {
-                $('#purchaseOrderBody').html('<p>Loading...</p>');
-            },
-            success: function(response) {
-                let html = response.html;
-                let master = response.master;
-                console.log(master);
+                        updatePORemainingAmount();
 
-
-                $('#company_location_id').val(master.location_id);
-                $('#location_id').val(master.location_id);
-                $('#purchase_date').val(master.purchase_date);
-                $('#reference_no').val(master.reference_no);
-                $('#description').val(master.description);
-                $('#company_location_id').val(master.location_id).trigger('change');
-                $('#purchaseOrderBody').html('').html(html);
-                $('.select2').select2({
-                    placeholder: 'Please Select',
-                    width: '100%'
+                        $('#amount').val((poTotalAmount - poPaidAmount).toFixed(2));
+                    }
                 });
-            },
-            error: function() {
-                $('#purchaseOrderBody').html('<p>Error loading data.</p>');
+            } else {
+                resetPOFields();
             }
         });
-    }
 
-    function calc(num) {
-        var qty = parseFloat($('#qty_' + num).val());
-        var rate = parseFloat($('#rate_' + num).val());
+        $('#grn_id').change(function() {
+            var grnId = $(this).val();
+            var supplierId = $(this).find(':selected').data('supplier-id');
+            var supplierName = $(this).find(':selected').data('supplier-name');
+            grnTotalAmount = $(this).find(':selected').data('total');
 
-        var total = qty * rate;
+            if (supplierId && supplierName) {
+                $('#supplier_id').val(supplierId);
+                $('#supplier_name').val(supplierName);
+            }
 
-        $('#total_' + num).val(total);
+            if (grnId) {
+                $.ajax({
+                    url: '{{ route('store.purchase-order-payment-request.get-paid-amount') }}',
+                    type: 'GET',
+                    data: {
+                        grn_id: grnId
+                    },
+                    success: function(response) {
+                        grnPaidAmount = response.paid_amount || 0;
 
-    }
+                        $('#grn_total_amount').val(formatCurrency(grnTotalAmount));
+                        $('#grn_paid_amount').val(formatCurrency(grnPaidAmount));
+
+                        updateGRNRemainingAmount();
+
+                        $('#amount').val((grnTotalAmount - grnPaidAmount).toFixed(2));
+                    }
+                });
+            } else {
+                resetGRNFields();
+            }
+        });
+
+        $('#po_payment_amount').on('input', function() {
+            updatePORemainingAmount();
+            $('#amount').val($(this).val());
+        });
+
+        $('#grn_payment_amount').on('input', function() {
+            updateGRNRemainingAmount();
+            $('#amount').val($(this).val());
+        });
+
+        $('#amount').on('input', function() {
+            if ($('#is_advance').is(':checked')) {
+                $('#po_payment_amount').val($(this).val());
+                updatePORemainingAmount();
+            } else {
+                $('#grn_payment_amount').val($(this).val());
+                updateGRNRemainingAmount();
+            }
+        });
+
+        function updatePORemainingAmount() {
+            let paymentAmount = parseFloat($('#po_payment_amount').val()) || 0;
+            let remainingAmount = poTotalAmount - poPaidAmount - paymentAmount;
+
+            $('#po_remaining_amount').val(formatCurrency(remainingAmount));
+            $('#remaining_amount').val((remainingAmount));
+
+            if (paymentAmount > (poTotalAmount - poPaidAmount)) {
+                $('#po_payment_amount').addClass('is-invalid');
+            } else {
+                $('#po_payment_amount').removeClass('is-invalid');
+            }
+        }
+
+        function updateGRNRemainingAmount() {
+            let paymentAmount = parseFloat($('#grn_payment_amount').val()) || 0;
+            let remainingAmount = grnTotalAmount - grnPaidAmount - paymentAmount;
+
+            $('#grn_remaining_amount').val(formatCurrency(remainingAmount));
+            $('#remaining_amount').val((remainingAmount));
+
+            if (paymentAmount > (grnTotalAmount - grnPaidAmount)) {
+                $('#grn_payment_amount').addClass('is-invalid');
+            } else {
+                $('#grn_payment_amount').removeClass('is-invalid');
+            }
+        }
+
+        function resetPOFields() {
+            poTotalAmount = 0;
+            poPaidAmount = 0;
+            $('#po_total_amount').val('');
+            $('#po_paid_amount').val('');
+            $('#po_payment_amount').val('0');
+            $('#po_remaining_amount').val('');
+            $('#remaining_amount').val('');
+            $('#amount').val('0');
+        }
+
+        function resetGRNFields() {
+            grnTotalAmount = 0;
+            grnPaidAmount = 0;
+            $('#grn_total_amount').val('');
+            $('#grn_paid_amount').val('');
+            $('#grn_payment_amount').val('0');
+            $('#remaining_amount').val('');
+            $('#grn_remaining_amount').val('');
+            $('#amount').val('0');
+        }
+
+        function formatCurrency(amount) {
+            return 'Rs. ' + parseFloat(amount).toLocaleString('en-PK', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+    });
 </script>

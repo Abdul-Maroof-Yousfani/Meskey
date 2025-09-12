@@ -61,6 +61,7 @@ class PaymentRequestApprovalController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            ->where('payment_type', null)
             ->orderBy('created_at', 'desc')
             ->paginate(25);
 

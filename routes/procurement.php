@@ -119,6 +119,10 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-order-payment-request', PurchaseOrderPaymentRequestController::class)->except(['show']);
     Route::post('get-purchase-order-payment-request', [PurchaseOrderPaymentRequestController::class, 'getList'])->name('get.purchase-order-payment-request');
     Route::get('purchase-order-payment-request/approve-item', [PurchaseOrderPaymentRequestController::class, 'approve_item'])->name('purchase-order-payment-request.approve-item');
+    Route::get('purchase-order-payment-request/get-paid-amount', [PurchaseOrderPaymentRequestController::class, 'getPaidAmount'])->name('purchase-order-payment-request.get-paid-amount');
+
+    Route::get('purchase-order-payment-request/get-sources', [PurchaseOrderPaymentRequestController::class, 'getSources'])->name('purchase-order-payment-request.get-sources');
+    Route::post('purchase-order-payment-request/{id}/approve', [PurchaseOrderPaymentRequestController::class, 'approve'])->name('purchase-order-payment-request.approve');
 
     Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class);
     Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');
