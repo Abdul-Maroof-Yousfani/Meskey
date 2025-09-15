@@ -1,13 +1,31 @@
-<form action="{{ route('store.purchase-order-payment-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+@php
+    $paymentType = isset($paymentType)
+        ? $paymentType
+        : old('payment_type') ?? ($paymentRequest->payment_type ?? 'against_receiving');
+    $selectedPurchaseOrderId = old('purchase_order_id') ?? ($paymentRequest->purchaseOrder->id ?? null);
+    $selectedGrnId = old('grn_id') ?? ($paymentRequest->grn->id ?? null);
+    $amount = old('amount') ?? ($paymentRequest->amount ?? null);
+    $description = old('description') ?? ($paymentRequest->description ?? null);
+    $supplierId = old('supplier_id') ?? ($paymentRequest->supplier_id ?? null);
+    $supplierName = old('supplier_name') ?? ($paymentRequest->supplier->name ?? null);
+    $approvedAmount = $approvedAmount ?? null;
+    $total = $model->purchaseOrderData[0]->total ?? $model->price;
+@endphp
+
+<form action="{{ route('raw-material.purchase-order-payment-request-approval.store') }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-payment-request') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
+    <input type="hidden" name="total_amount" value="{{ $total }}" />
+    <input type="hidden" name="payment_request_id" value="{{ $paymentRequest->id }}" />
 
     <div class="row form-mar">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Payment Type:</label>
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="is_advance" name="is_advance" value="1">
+                    <input class="form-check-input" type="checkbox" id="is_advance" name="is_advance" value="1"
+                        {{ $paymentType == 'advance' ? 'checked' : '' }} disabled>
                     <label class="form-check-label" for="is_advance">
                         Advance Payment
                     </label>
@@ -16,13 +34,14 @@
         </div>
     </div>
 
-    <div id="advanceSection" style="display: none;">
+    <div id="advanceSection" style="{{ $paymentType == 'advance' ? '' : 'display: none;' }}">
         <div class="row form-mar">
             <div class="col-md-6">
                 <div class="form-group d-flex flex-column mb-1">
                     <label>Select Purchase Order:</label>
-                    <select class="form-control select2 w-100 d-block" id="purchase_order_id" name="purchase_order_id">
-                        <option value="">Select Purchase Order</option>
+                    <select class="form-control select2 w-100 d-block" id="purchase_order_id" name="purchase_order_id"
+                        disabled>
+                        <option value="{{ $model->id }}">{{ $model->purchase_order_no }}</option>
                     </select>
                 </div>
             </div>
@@ -31,39 +50,42 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>PO Total Amount:</label>
-                    <input type="text" class="form-control" id="po_total_amount" readonly>
+                    <input type="text" class="form-control" id="po_total_amount" readonly
+                        value="{{ $total }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Total Requested:</label>
+                    <input type="text" class="form-control" id="po_paid_amount" readonly
+                        value="{{ $requestedAmount }}">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Already Paid:</label>
-                    <input type="text" class="form-control" id="po_paid_amount" readonly>
-                </div>
-            </div>
-            <div class="col-md-6 d-none">
-                <div class="form-group">
-                    <label>Payment Amount:</label>
-                    <input type="number" class="form-control" id="po_payment_amount" step="0.01" min="0"
-                        value="0">
+                    <input type="text" class="form-control" id="po_paid_amount" readonly
+                        value="{{ $approvedAmount }}">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Remaining Amount:</label>
-                    <input type="text" class="form-control" id="po_remaining_amount" readonly>
+                    <input type="text" class="form-control" id="po_remaining_amount" readonly
+                        value="{{ $total - $requestedAmount }}">
                 </div>
             </div>
         </div>
     </div>
     <input type="hidden" class="form-control" id="remaining_amount" name="remaining_amount" readonly>
 
-    <div id="receivingSection">
+    <div id="receivingSection" style="{{ $paymentType == 'advance' ? 'display: none;' : '' }}">
         <div class="row form-mar">
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Select GRN:</label>
-                    <select class="form-control select2" id="grn_id" name="grn_id">
-                        <option value="">Select GRN</option>
+                    <select class="form-control select2" id="grn_id" name="grn_id" disabled>
+                        <option value="{{ $model->id }}">{{ $model->grn_number }}</option>
                     </select>
                 </div>
             </div>
@@ -72,26 +94,29 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>GRN Total Amount:</label>
-                    <input type="text" class="form-control" id="grn_total_amount" readonly>
+                    <input type="text" class="form-control" value="{{ $total }}" id="grn_total_amount"
+                        readonly>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Already Paid:</label>
-                    <input type="text" class="form-control" id="grn_paid_amount" readonly>
+                    <input type="text" class="form-control" value="{{ $requestedAmount }}" id="grn_paid_amount"
+                        readonly>
                 </div>
             </div>
-            <div class="col-md-6 d-none">
+            <div class="col-md-6">
                 <div class="form-group">
-                    <label>Payment Amount:</label>
-                    <input type="number" class="form-control" id="grn_payment_amount" step="0.01" min="0"
-                        value="0">
+                    <label>Total Requested:</label>
+                    <input type="text" class="form-control" id="po_paid_amount" readonly
+                        value="{{ $requestedAmount }}">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Remaining Amount:</label>
-                    <input type="text" class="form-control" id="grn_remaining_amount" readonly>
+                    <input type="text" class="form-control" value="{{ $total - $requestedAmount }}"
+                        id="grn_remaining_amount" readonly>
                 </div>
             </div>
         </div>
@@ -101,24 +126,43 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Supplier:</label>
-                <input type="hidden" class="form-control" id="supplier_id" name="supplier_id" readonly>
-                <input type="text" class="form-control" id="supplier_name" name="supplier_name" readonly>
+                <input type="hidden" class="form-control" id="supplier_id" name="supplier_id"
+                    value="{{ $supplierId }}" readonly>
+                <input type="text" class="form-control" id="supplier_name" name="supplier_name"
+                    value="{{ $supplierName }}" readonly>
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount:</label>
                 <input type="number" class="form-control" id="amount" name="amount" step="0.01"
-                    min="0" required>
+                    min="0" required value="{{ $amount }}">
             </div>
         </div>
     </div>
+
 
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="form-group">
                 <label>Description:</label>
-                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                <textarea class="form-control" id="description" disabled name="description" rows="3">{{ $description }}</textarea>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-group">
+                <label>Status:</label>
+                <select name="status" id="approvalStatus" class="form-control select2"
+                    {{ $isUpdated ? 'disabled' : '' }}>
+                    <option value="">Select Status</option>
+                    <option value="approved" {{ $approval && $approval->status == 'approved' ? 'selected' : '' }}>
+                        Approved</option>
+                    <option value="rejected" {{ $approval && $approval->status == 'rejected' ? 'selected' : '' }}>
+                        Rejected</option>
+                </select>
+                @if ($isUpdated)
+                    <input type="hidden" name="status" value="{{ $approval->status ?? '' }}">
+                @endif
             </div>
         </div>
     </div>
@@ -126,7 +170,7 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Create Payment Request</button>
+            <button type="submit" class="btn btn-primary submitbutton">Approve Payment Request</button>
         </div>
     </div>
 </form>
@@ -141,65 +185,93 @@
         let grnTotalAmount = 0;
         let grnPaidAmount = 0;
 
-        $('#is_advance').change(function() {
-            if ($(this).is(':checked')) {
+        // Set initial section visibility based on paymentType
+        function toggleSections() {
+            if ($('#is_advance').is(':checked')) {
                 $('#advanceSection').show();
                 $('#receivingSection').hide();
-                loadPurchaseOrders();
-                $('#grn_id').val('').trigger('change');
             } else {
                 $('#advanceSection').hide();
                 $('#receivingSection').show();
-                loadGRNs();
-                $('#purchase_order_id').val('').trigger('change');
             }
+        }
+        toggleSections();
+
+        $('#is_advance').change(function() {
+            toggleSections();
         });
 
-        loadGRNs();
+        // Load options if not already loaded from backend
+        @if (!isset($purchaseOrders))
+            // function loadPurchaseOrders(selectedId = null) {
+            //     $.ajax({
+            //         url: '{{ route('store.purchase-order-payment-request.get-sources') }}',
+            //         type: 'GET',
+            //         data: {
+            //             is_advance: true
+            //         },
+            //         success: function(response) {
+            //             $('#purchase_order_id').empty().append(
+            //                 '<option value="">Select Purchase Order</option>');
+            //             response.purchase_orders.forEach(function(po) {
+            //                 $('#purchase_order_id').append('<option value="' + po.id +
+            //                     '" data-supplier-id="' + po.supplier_id +
+            //                     '" data-supplier-name="' + po.supplier_name +
+            //                     '" data-total="' + po.total_amount + '"' +
+            //                     (selectedId && selectedId == po.id ? ' selected' : '') +
+            //                     '>' + po.purchase_order_no + (po.supplier?.name || '') +
+            //                     '</option>');
+            //             });
+            //             if (selectedId) {
+            //                 $('#purchase_order_id').val(selectedId).trigger('change');
+            //             }
+            //         }
+            //     });
+            // }
+        @endif
 
-        function loadPurchaseOrders() {
-            $.ajax({
-                url: '{{ route('store.purchase-order-payment-request.get-sources') }}',
-                type: 'GET',
-                data: {
-                    is_advance: true
-                },
-                success: function(response) {
-                    $('#purchase_order_id').empty().append(
-                        '<option value="">Select Purchase Order</option>');
-                    response.purchase_orders.forEach(function(po) {
-                        $('#purchase_order_id').append('<option value="' + po.id +
-                            '" data-supplier-id="' + po.supplier_id +
-                            '" data-supplier-name="' + po.supplier_name +
-                            '" data-total="' + po.total_amount + '">' + po
-                            .purchase_order_no + (po.supplier?.name || '') +
-                            '</option>');
-                    });
-                }
-            });
-        }
+        @if (!isset($grns))
+            // function loadGRNs(selectedId = null) {
+            //     $.ajax({
+            //         url: '{{ route('store.purchase-order-payment-request.get-sources') }}',
+            //         type: 'GET',
+            //         data: {
+            //             is_advance: false
+            //         },
+            //         success: function(response) {
+            //             $('#grn_id').empty().append('<option value="">Select GRN</option>');
+            //             response.grns.forEach(function(grn) {
+            //                 $('#grn_id').append('<option value="' + grn.id +
+            //                     '" data-supplier-id="' + grn.supplier.id +
+            //                     '" data-supplier-name="' + grn.supplier.name +
+            //                     '" data-total="' + grn.price + '"' +
+            //                     (selectedId && selectedId == grn.id ? ' selected' :
+            //                         '') +
+            //                     '>' + grn.grn_number + (grn.product?.name || '') +
+            //                     '</option>');
+            //             });
+            //             if (selectedId) {
+            //                 $('#grn_id').val(selectedId).trigger('change');
+            //             }
+            //         }
+            //     });
+            // }
+        @endif
 
-        function loadGRNs() {
-            $.ajax({
-                url: '{{ route('store.purchase-order-payment-request.get-sources') }}',
-                type: 'GET',
-                data: {
-                    is_advance: false
-                },
-                success: function(response) {
-                    $('#grn_id').empty().append('<option value="">Select GRN</option>');
-                    response.grns.forEach(function(grn) {
-                        $('#grn_id').append('<option value="' + grn.id +
-                            '" data-supplier-id="' + grn.supplier.id +
-                            '" data-supplier-name="' + grn.supplier.name +
-                            '" data-total="' + grn.price + '">' + grn
-                            .grn_number + (grn.product?.name ? ' - ' + grn.product
-                                .name : '') +
-                            '</option>');
-                    });
-                }
-            });
-        }
+        // Default select for edit/view
+        @if ($paymentType == 'advance')
+            @if (!isset($purchaseOrders))
+                loadPurchaseOrders({{ $selectedPurchaseOrderId ?? 'null' }});
+            @else
+                $('#purchase_order_id').val('{{ $selectedPurchaseOrderId }}').trigger('change');
+            @endif
+        @else
+            @if (!isset($grns))
+                loadGRNs({{ $selectedGrnId ?? 'null' }});
+            @else
+                $('#grn_id').val('{{ $selectedGrnId }}').trigger('change');
+            @endif
+        @endif
 
         $('#purchase_order_id').change(function() {
             var purchaseOrderId = $(this).val();

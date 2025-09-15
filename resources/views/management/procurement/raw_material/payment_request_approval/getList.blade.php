@@ -15,34 +15,48 @@
             @foreach ($paymentRequests as $request)
                 <tr>
                     <td>
-                        @if ($request->is_advance_payment == 0)
-                            #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') }}<br>
-                            #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? ($request->paymentRequestData->arrivalTicket->purchaseOrder->contract_no ?? 'N/A') }}
+                        @if ($request->payment_type !== null)
+                            #{{ $request->purchaseOrder->purchase_order_no ?? ($request->grn->grn_number ?? 'N/A') }}
                         @else
-                            #{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}
-                            <span class="badge badge-info ml-1 d-none">Advance Payment</span>
+                            @if ($request->is_advance_payment == 0)
+                                #{{ $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') }}<br>
+                                #{{ $request->paymentRequestData->purchaseTicket->purchaseOrder->contract_no ?? ($request->paymentRequestData->arrivalTicket->purchaseOrder->contract_no ?? 'N/A') }}
+                            @else
+                                #{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}
+                                <span class="badge badge-info ml-1 d-none">Advance Payment</span>
+                            @endif
                         @endif
                     </td>
-                    <td>{{ $request->paymentRequestData->supplier_name ?? 'N/A' }}</td>
+                    <td>{{ $request->paymentRequestData->supplier_name ?? ($request->purchaseOrder->purchaseOrderData[0]->supplier->name ?? 'N/A') }}
+                    </td>
                     <td>
-                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                            <span
-                                class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
-                                style="border-radius: 3px 0 0 3px;">
-                                {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }}
+                        @if ($request->payment_type !== null)
+                            @if ($request->payment_type == 'advance')
+                                <span class="badge badge-info mt-1">Advance</span>
+                            @else
+                                <span class="badge badge-success mt-1">GRN</span>
+                            @endif
+                        @else
+                            <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                <span
+                                    class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
+                                    style="border-radius: 3px 0 0 3px;">
+                                    {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }}
+                                </span>
+                                <span
+                                    class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}"
+                                    style="border-radius: 0 3px 3px 0;">
+                                    {{ formatEnumValue($request->request_type) }}
+                                </span>
                             </span>
-                            <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}"
-                                style="border-radius: 0 3px 3px 0;">
-                                {{ formatEnumValue($request->request_type) }}
-                            </span>
-                        </span>
-                        <br>
-                        @if ($request->is_advance_payment !== 0)
-                            <span class="badge badge-yellow mt-1">Advance Payment</span>
-                        @endif
+                            <br>
+                            @if ($request->is_advance_payment !== 0)
+                                <span class="badge badge-yellow mt-1">Advance Payment</span>
+                            @endif
 
-                        @if ($request->module_type == 'freight_payment')
-                            <span class="badge badge-yellow mt-1">Arrival Freight</span>
+                            @if ($request->module_type == 'freight_payment')
+                                <span class="badge badge-yellow mt-1">Arrival Freight</span>
+                            @endif
                         @endif
                     </td>
                     <td>{{ number_format($request->amount, 2) }}</td>
@@ -57,7 +71,7 @@
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
-                        <a onclick="openModal(this,'{{ route($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit', $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
+                        <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>

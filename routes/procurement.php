@@ -83,6 +83,15 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('payment-request-approval', PaymentRequestApprovalController::class);
     Route::resource('advance-payment-request-approval', AdvancePaymentRequestApprovalController::class);
+
+    Route::get('purchase-order-payment-request-approval', [PurchaseOrderPaymentRequestController::class, 'index'])->name('purchase-order-payment-request-approval.index');
+    Route::get('purchase-order-payment-request-approval/create', [PurchaseOrderPaymentRequestController::class, 'create'])->name('purchase-order-payment-request-approval.create');
+    Route::post('purchase-order-payment-request-approval', [PurchaseOrderPaymentRequestController::class, 'requestStore'])->name('purchase-order-payment-request-approval.store');
+    Route::get('purchase-order-payment-request-approval/{id}', [PurchaseOrderPaymentRequestController::class, 'show'])->name('purchase-order-payment-request-approval.show');
+    Route::get('purchase-order-payment-request-approval/{id}/edit', [PurchaseOrderPaymentRequestController::class, 'getApprovalView'])->name('purchase-order-payment-request-approval.edit');
+    Route::put('purchase-order-payment-request-approval/{id}', [PurchaseOrderPaymentRequestController::class, 'update'])->name('purchase-order-payment-request-approval.update');
+    Route::delete('purchase-order-payment-request-approval/{id}', [PurchaseOrderPaymentRequestController::class, 'destroy'])->name('purchase-order-payment-request-approval.destroy');
+
     Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('get.payment-request-approval');
     Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('payment-request-approval.approve');
 

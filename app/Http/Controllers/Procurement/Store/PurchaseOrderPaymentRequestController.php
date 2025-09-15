@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Procurement\PurchaseOrderPaymentRequestApprovalRequest;
 use App\Http\Requests\Procurement\StoreItemPaymentRequestRequest;
 use App\Models\Master\Account\GoodReceiveNote;
 use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestApproval;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
@@ -66,9 +68,7 @@ class PurchaseOrderPaymentRequestController extends Controller
                 ->get()
                 ->map(function ($grn) {
                     $grn->total_paid = $grn->paymentRequests()->where('status', 'approved')->sum('amount');
-                    // $grn->supplier_id = $grn->supplier_id;
                     $grn->remaining_amount = max(0, $grn->price - $grn->total_paid);
-
                     return $grn;
                 })
                 ->filter(function ($grn) {
@@ -88,11 +88,11 @@ class PurchaseOrderPaymentRequestController extends Controller
 
         if ($request->has('purchase_order_id')) {
             $paidAmount = PaymentRequest::where('purchase_order_id', $request->purchase_order_id)
-                // ->where('status', 'approved')
+                ->where('status', 'approved')
                 ->sum('amount');
         } elseif ($request->has('grn_id')) {
             $paidAmount = PaymentRequest::where('grn_id', $request->grn_id)
-                // ->where('status', 'approved')
+                ->where('status', 'approved')
                 ->sum('amount');
         }
 
@@ -203,6 +203,133 @@ class PurchaseOrderPaymentRequestController extends Controller
             ->findOrFail($id);
 
         return view('management.procurement.store.purchase_order_payment_request.edit', compact('paymentRequest'));
+    }
+
+    public function getApprovalView($paymentRequestId)
+    {
+        $paymentRequest = PaymentRequest::with([
+            'paymentRequestData.purchaseOrder',
+        ])->findOrFail($paymentRequestId);
+
+        $isUpdated = 0;
+        $approval = null;
+
+        if (!$paymentRequest->canBeApproved()) {
+            $approval = PaymentRequestApproval::where('payment_request_id', $paymentRequestId)
+                ->latest()
+                ->first();
+            $isUpdated = 1;
+        }
+
+        $moduleType = $paymentRequest->paymentRequestData->module_type;
+        $paymentType = $paymentRequest->payment_type;
+
+        $id =  $paymentRequest->purchase_order_id ?? $paymentRequest->grn_id;
+        $model =  $paymentRequest->purchaseOrder ?? $paymentRequest->grn;
+
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($paymentRequest, $id) {
+            $q->where(function ($query) use ($id) {
+                $query->where(function ($subQuery) use ($id) {
+                    $subQuery->where('store_purchase_order_id', $id)
+                        ->whereNull('grn_id');
+                })->orWhere(function ($subQuery) use ($id) {
+                    $subQuery->where('grn_id', $id)
+                        ->whereNull('store_purchase_order_id');
+                });
+            });
+        })
+            ->where('payment_type', $paymentType)
+            ->where('module_type', $moduleType)
+            ->sum('amount');
+
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($paymentRequest, $id) {
+            $q->where(function ($query) use ($id) {
+                $query->where(function ($subQuery) use ($id) {
+                    $subQuery->where('store_purchase_order_id', $id)
+                        ->whereNull('grn_id');
+                })->orWhere(function ($subQuery) use ($id) {
+                    $subQuery->where('grn_id', $id)
+                        ->whereNull('store_purchase_order_id');
+                });
+            });
+        })
+            ->where('payment_type', $paymentType)
+            ->where('module_type', $moduleType)
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        $paymentRequestData = $paymentRequest->paymentRequestData;
+
+        // $requestPurchaseForm = view('management.procurement.raw_material.advance_payment_request.snippets.requestPurchaseForm', [
+        //     'purchaseOrder' => $purchaseOrder,
+        //     'paymentRequestData' => $paymentRequestData,
+        //     'requestedAmount' => $requestedAmount,
+        //     'approvedAmount' => $approvedAmount,
+        //     'isRequestApprovalPage' => true,
+        //     'paymentRequest' => $paymentRequest
+        // ])->render();
+
+        return view('management.procurement.store.purchase_order_payment_request.requestForm', [
+            'paymentRequest' => $paymentRequest,
+            'isUpdated' => $isUpdated,
+            'model' => $model,
+            'approvedAmount' => $approvedAmount,
+            'paymentType' => $paymentType,
+            'paymentRequestData' => $paymentRequestData,
+            'approval' => $approval,
+            'requestedAmount' => $requestedAmount
+        ]);
+    }
+
+    public function requestStore(PurchaseOrderPaymentRequestApprovalRequest $request)
+    {
+        return DB::transaction(function () use ($request) {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $paymentRequestData = $paymentRequest->paymentRequestData;
+
+            $poId =  $paymentRequest->purchase_order_id ?? null;
+            $grnId =  $paymentRequest->grn_id ?? null;
+
+            if ($request->has('total_amount')) {
+                $this->updatePaymentRequestData($paymentRequestData, $request);
+            }
+
+            if ($request->has('amount')) {
+                $paymentRequest->update(['amount' => $request->amount]);
+            }
+
+            PaymentRequestApproval::create([
+                'payment_request_id' => $request->payment_request_id,
+                'payment_request_data_id' => $paymentRequest->payment_request_data_id,
+                'ticket_id' => Null,
+                'store_purchase_order_id' => $poId,
+                'grn_id' => $grnId,
+                'approver_id' => auth()->user()->id,
+                'status' => $request->status,
+                'remarks' => $request->remarks,
+                'amount' => $request->amount,
+                'request_type' => $paymentRequest->request_type
+            ]);
+
+            $paymentRequest->update(['status' => $request->status]);
+
+            return response()->json([
+                'success' => 'Payment request ' . $request->status . ' successfully!'
+            ]);
+        });
+    }
+
+    private function updatePaymentRequestData($paymentRequestData, $request)
+    {
+        $updateData = [];
+
+        if ($request->has('total_amount')) {
+            $updateData['total_amount'] = $request->total_amount;
+        }
+
+        if (!empty($updateData)) {
+            $paymentRequestData->update($updateData);
+        }
     }
 
     public function update(StoreItemPaymentRequestRequest $request, $id)

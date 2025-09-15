@@ -24,7 +24,7 @@ class PurchaseOrder extends Model
         return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
     }
 
-    public function po_data()
+    public function purchaseOrderData()
     {
         return $this->hasMany(PurchaseOrderData::class);
     }
