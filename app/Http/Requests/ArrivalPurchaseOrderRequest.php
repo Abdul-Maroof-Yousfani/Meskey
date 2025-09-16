@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class ArrivalPurchaseOrderRequest extends FormRequest
 {
@@ -65,6 +66,49 @@ class ArrivalPurchaseOrderRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function (Validator $validator) {
+            $data = $this->all();
+
+            // Broker 1
+            if (
+                (!empty($data['broker_one_commission']) && (empty($data['broker_one_id']) || $data['broker_one_id'] == null))
+            ) {
+                $validator->errors()->add('broker_one_id', 'Broker 1 is required if commission is entered.');
+            }
+            if (
+                (!empty($data['broker_one_id']) && (empty($data['broker_one_commission']) && $data['broker_one_commission'] !== "0" && $data['broker_one_commission'] !== 0))
+            ) {
+                $validator->errors()->add('broker_one_commission', 'Broker 1 commission is required if broker is selected.');
+            }
+
+            // Broker 2
+            if (
+                (!empty($data['broker_two_commission']) && (empty($data['broker_two_id']) || $data['broker_two_id'] == null))
+            ) {
+                $validator->errors()->add('broker_two_id', 'Broker 2 is required if commission is entered.');
+            }
+            if (
+                (!empty($data['broker_two_id']) && (empty($data['broker_two_commission']) && $data['broker_two_commission'] !== "0" && $data['broker_two_commission'] !== 0))
+            ) {
+                $validator->errors()->add('broker_two_commission', 'Broker 2 commission is required if broker is selected.');
+            }
+
+            // Broker 3
+            if (
+                (!empty($data['broker_three_commission']) && (empty($data['broker_three_id']) || $data['broker_three_id'] == null))
+            ) {
+                $validator->errors()->add('broker_three_id', 'Broker 3 is required if commission is entered.');
+            }
+            if (
+                (!empty($data['broker_three_id']) && (empty($data['broker_three_commission']) && $data['broker_three_commission'] !== "0" && $data['broker_three_commission'] !== 0))
+            ) {
+                $validator->errors()->add('broker_three_commission', 'Broker 3 commission is required if broker is selected.');
+            }
+        });
     }
 
     public function messages()
