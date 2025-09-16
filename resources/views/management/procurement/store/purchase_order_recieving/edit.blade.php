@@ -10,6 +10,7 @@
     <input type="hidden" name="item_id" value="{{ $data->item_id }}">
     <input type="hidden" name="total_amount" value="{{ $data->total }}">
     <input type="hidden" name="purchase_order_data_id" value="{{ $data->id }}">
+    <input type="hidden" name="purchase_order_id" value="{{ $data->purchase_order->id ?? null }}">
     <input type="hidden" name="supplier_id" value="{{ $data->supplier_id }}">
     <input type="hidden" name="location_id"
         value="{{ optional($data->purchase_request_data->purchase_request)->location_id }}">

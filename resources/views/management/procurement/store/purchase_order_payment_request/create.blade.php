@@ -36,7 +36,13 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Already Paid:</label>
+                    <label>Requested Amount:</label>
+                    <input type="text" class="form-control" id="po_requested_amount" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Approved Amount:</label>
                     <input type="text" class="form-control" id="po_paid_amount" readonly>
                 </div>
             </div>
@@ -77,7 +83,13 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Already Paid:</label>
+                    <label>Requested Paid:</label>
+                    <input type="text" class="form-control" id="grn_requested_amount" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Approved Paid:</label>
                     <input type="text" class="form-control" id="grn_paid_amount" readonly>
                 </div>
             </div>
@@ -140,6 +152,8 @@
         let poPaidAmount = 0;
         let grnTotalAmount = 0;
         let grnPaidAmount = 0;
+        let grnRequestedAmount = 0;
+        let poRequestedAmount = 0;
 
         $('#is_advance').change(function() {
             if ($(this).is(':checked')) {
@@ -171,8 +185,9 @@
                         $('#purchase_order_id').append('<option value="' + po.id +
                             '" data-supplier-id="' + po.supplier_id +
                             '" data-supplier-name="' + po.supplier_name +
-                            '" data-total="' + po.total_amount + '">' + po
-                            .purchase_order_no + (po.supplier?.name || '') +
+                            '" data-total="' + po.total_amount + '">' + '#' + po
+                            .purchase_order_no + (po.supplier_name ? ' - ' + po
+                                .supplier_name : '') +
                             '</option>');
                     });
                 }
@@ -188,11 +203,12 @@
                 },
                 success: function(response) {
                     $('#grn_id').empty().append('<option value="">Select GRN</option>');
+
                     response.grns.forEach(function(grn) {
                         $('#grn_id').append('<option value="' + grn.id +
                             '" data-supplier-id="' + grn.supplier.id +
                             '" data-supplier-name="' + grn.supplier.name +
-                            '" data-total="' + grn.price + '">' + grn
+                            '" data-total="' + grn.price + '">' + '#' + grn
                             .grn_number + (grn.product?.name ? ' - ' + grn.product
                                 .name : '') +
                             '</option>');
@@ -221,13 +237,15 @@
                     },
                     success: function(response) {
                         poPaidAmount = response.paid_amount || 0;
+                        poRequestedAmount = response.requested_amount || 0;
 
                         $('#po_total_amount').val(formatCurrency(poTotalAmount));
                         $('#po_paid_amount').val(formatCurrency(poPaidAmount));
+                        $('#po_requested_amount').val(formatCurrency(poRequestedAmount));
 
                         updatePORemainingAmount();
 
-                        $('#amount').val((poTotalAmount - poPaidAmount).toFixed(2));
+                        $('#amount').val((poTotalAmount - poRequestedAmount).toFixed(2));
                     }
                 });
             } else {
@@ -255,13 +273,15 @@
                     },
                     success: function(response) {
                         grnPaidAmount = response.paid_amount || 0;
+                        grnRequestedAmount = response.requested_amount || 0;
 
                         $('#grn_total_amount').val(formatCurrency(grnTotalAmount));
                         $('#grn_paid_amount').val(formatCurrency(grnPaidAmount));
+                        $('#grn_requested_amount').val(formatCurrency(grnRequestedAmount));
 
                         updateGRNRemainingAmount();
 
-                        $('#amount').val((grnTotalAmount - grnPaidAmount).toFixed(2));
+                        $('#amount').val((grnTotalAmount - grnRequestedAmount).toFixed(2));
                     }
                 });
             } else {
@@ -291,12 +311,12 @@
 
         function updatePORemainingAmount() {
             let paymentAmount = parseFloat($('#po_payment_amount').val()) || 0;
-            let remainingAmount = poTotalAmount - poPaidAmount - paymentAmount;
+            let remainingAmount = poTotalAmount - poRequestedAmount - paymentAmount;
 
             $('#po_remaining_amount').val(formatCurrency(remainingAmount));
             $('#remaining_amount').val((remainingAmount));
 
-            if (paymentAmount > (poTotalAmount - poPaidAmount)) {
+            if (paymentAmount > (poTotalAmount - poRequestedAmount)) {
                 $('#po_payment_amount').addClass('is-invalid');
             } else {
                 $('#po_payment_amount').removeClass('is-invalid');
@@ -305,12 +325,12 @@
 
         function updateGRNRemainingAmount() {
             let paymentAmount = parseFloat($('#grn_payment_amount').val()) || 0;
-            let remainingAmount = grnTotalAmount - grnPaidAmount - paymentAmount;
+            let remainingAmount = grnTotalAmount - grnRequestedAmount - paymentAmount;
 
             $('#grn_remaining_amount').val(formatCurrency(remainingAmount));
             $('#remaining_amount').val((remainingAmount));
 
-            if (paymentAmount > (grnTotalAmount - grnPaidAmount)) {
+            if (paymentAmount > (grnTotalAmount - grnRequestedAmount)) {
                 $('#grn_payment_amount').addClass('is-invalid');
             } else {
                 $('#grn_payment_amount').removeClass('is-invalid');
@@ -320,8 +340,10 @@
         function resetPOFields() {
             poTotalAmount = 0;
             poPaidAmount = 0;
+            poRequestedAmount = 0;
             $('#po_total_amount').val('');
             $('#po_paid_amount').val('');
+            $('#po_requested_amount').val('');
             $('#po_payment_amount').val('0');
             $('#po_remaining_amount').val('');
             $('#remaining_amount').val('');
@@ -331,8 +353,10 @@
         function resetGRNFields() {
             grnTotalAmount = 0;
             grnPaidAmount = 0;
+            grnRequestedAmount = 0;
             $('#grn_total_amount').val('');
             $('#grn_paid_amount').val('');
+            $('#grn_requested_amount').val('');
             $('#grn_payment_amount').val('0');
             $('#remaining_amount').val('');
             $('#grn_remaining_amount').val('');

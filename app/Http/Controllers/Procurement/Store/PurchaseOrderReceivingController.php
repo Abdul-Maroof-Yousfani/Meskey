@@ -33,7 +33,15 @@ class PurchaseOrderReceivingController extends Controller
      */
     public function getList(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $PurchaseOrder = PurchaseOrderData::with('purchase_order', 'category', 'item')
+            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                return $q->whereHas('purchase_order.location', function ($query) use ($authUser) {
+                    $query->where('location_id', $authUser->company_location_id);
+                });
+            })
             ->whereStatus(true)->latest()
             ->paginate(request('per_page', 25));
 

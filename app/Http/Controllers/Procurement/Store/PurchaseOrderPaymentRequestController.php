@@ -67,13 +67,18 @@ class PurchaseOrderPaymentRequestController extends Controller
                 ->where('status', 'received')
                 ->get()
                 ->map(function ($grn) {
-                    $grn->total_paid = $grn->paymentRequests()->where('status', 'approved')->sum('amount');
-                    $grn->remaining_amount = max(0, $grn->price - $grn->total_paid);
-                    return $grn;
+                    $total_paid = $grn->paymentRequests()->where('status', 'approved')->sum('amount');
+                    $remaining_amount = max(0, $grn->price - $total_paid);
+                    $grnArray = $grn->toArray();
+                    $grnArray['total_paid'] = $total_paid;
+                    $grnArray['remaining_amount'] = $remaining_amount;
+                    return $grnArray;
                 })
                 ->filter(function ($grn) {
-                    return $grn->remaining_amount > 0;
-                });
+                    return $grn['remaining_amount'] > 0;
+                })
+                ->values()
+                ->all();
 
             return response()->json([
                 'purchase_orders' => [],
@@ -85,19 +90,25 @@ class PurchaseOrderPaymentRequestController extends Controller
     public function getPaidAmount(Request $request)
     {
         $paidAmount = 0;
+        $requestedAmount = 0;
 
         if ($request->has('purchase_order_id')) {
             $paidAmount = PaymentRequest::where('purchase_order_id', $request->purchase_order_id)
                 ->where('status', 'approved')
                 ->sum('amount');
+            $requestedAmount = PaymentRequest::where('purchase_order_id', $request->purchase_order_id)
+                ->sum('amount');
         } elseif ($request->has('grn_id')) {
             $paidAmount = PaymentRequest::where('grn_id', $request->grn_id)
                 ->where('status', 'approved')
                 ->sum('amount');
+            $requestedAmount = PaymentRequest::where('grn_id', $request->grn_id)
+                ->sum('amount');
         }
 
         return response()->json([
-            'paid_amount' => $paidAmount
+            'paid_amount' => $paidAmount,
+            'requested_amount' => $requestedAmount
         ]);
     }
 
@@ -112,6 +123,7 @@ class PurchaseOrderPaymentRequestController extends Controller
                 'supplier_id' => $request->supplier_id,
                 'remaining_amount' => $request->remaining_amount,
                 'total_amount' => $request->amount,
+                'module_type' => 'purchase_order',
                 'description' => $request->description,
                 'payment_type' => $request->is_advance ? 'advance' : 'against_receiving',
                 'is_advance_payment' => $request->is_advance ? 1 : 0,
@@ -120,12 +132,13 @@ class PurchaseOrderPaymentRequestController extends Controller
             $paymentRequest = PaymentRequest::create([
                 'request_no' => $this->generatePaymentRequestNumber(),
                 'payment_request_data_id' => $paymentRequestData->id,
+                'module_type' => $paymentRequestData->id,
                 'supplier_id' => $request->supplier_id,
                 'purchase_order_id' => $request->purchase_order_id,
                 'grn_id' => $request->grn_id,
                 'requested_by' => Auth::user()->id,
                 'request_date' => now(),
-                'amount' => $request->amount,
+                'amount' => 'purchase_order',
                 'description' => $request->description,
                 'payment_type' => $request->is_advance ? 'advance' : 'against_receiving',
                 'is_advance_payment' => $request->is_advance ? 1 : 0,

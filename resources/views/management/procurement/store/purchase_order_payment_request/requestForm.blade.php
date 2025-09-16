@@ -56,14 +56,14 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Total Requested:</label>
+                    <label>Requested Amount:</label>
                     <input type="text" class="form-control" id="po_paid_amount" readonly
                         value="{{ $requestedAmount }}">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Already Paid:</label>
+                    <label>Paid Amount:</label>
                     <input type="text" class="form-control" id="po_paid_amount" readonly
                         value="{{ $approvedAmount }}">
                 </div>
@@ -72,7 +72,7 @@
                 <div class="form-group">
                     <label>Remaining Amount:</label>
                     <input type="text" class="form-control" id="po_remaining_amount" readonly
-                        value="{{ $total - $requestedAmount }}">
+                        value="{{ $total - $approvedAmount }}">
                 </div>
             </div>
         </div>
@@ -100,22 +100,22 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Already Paid:</label>
-                    <input type="text" class="form-control" value="{{ $requestedAmount }}" id="grn_paid_amount"
-                        readonly>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Total Requested:</label>
+                    <label>Requested Amount:</label>
                     <input type="text" class="form-control" id="po_paid_amount" readonly
                         value="{{ $requestedAmount }}">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
+                    <label>Approved Amount:</label>
+                    <input type="text" class="form-control" value="{{ $approvedAmount }}" id="grn_paid_amount"
+                        readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
                     <label>Remaining Amount:</label>
-                    <input type="text" class="form-control" value="{{ $total - $requestedAmount }}"
+                    <input type="text" class="form-control" value="{{ $total - $approvedAmount }}"
                         id="grn_remaining_amount" readonly>
                 </div>
             </div>

@@ -80,9 +80,9 @@ class PurchaseOrderPaymentRequestApprovalRequest extends FormRequest
             ->where('id', '!=', $paymentRequest->id)
             ->sum('amount');
 
+        // dd($totalApprovedPayments, $id, $moduleType);
         $value = number_format((float) $value, 2, '.', '');
         $totalAmountAfterApproval = bcadd((string)$totalApprovedPayments, (string)$value, 2);
-
         $maxAllowedAmount = $this->total_amount ?? $paymentRequestData->total_amount;
         $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
         // dd($maxAllowedAmount);
