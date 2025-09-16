@@ -462,6 +462,7 @@ class PaymentRequestApprovalController extends Controller
                                 [
                                     'purpose' => "supplier-brokery",
                                     'payment_against' => "thadda-purchase",
+                                    'counter_account_id' => $broker->account_id,
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
                                 ]

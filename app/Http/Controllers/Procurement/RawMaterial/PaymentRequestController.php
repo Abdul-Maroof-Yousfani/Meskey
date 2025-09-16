@@ -415,6 +415,7 @@ class PaymentRequestController extends Controller
             if ($existingSiTFreightTrx) {
                 $existingSiTFreightTrx->update([
                     'amount' => $advanceFreight,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
                     'account_id' => $stockInTransitAccount->id,
                     'type' => 'debit',
                     'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account.",
@@ -429,6 +430,7 @@ class PaymentRequestController extends Controller
                     'no',
                     [
                         'purpose' => "stock-in-transit",
+                        'counter_account_id' => $purchaseOrder->supplier->account_id,
                         'payment_against' => "thadda-freight",
                         'against_reference_no' => "$truckNo/$biltyNo",
                         'remarks' => "Freight payable (stock-in-transit) for truck no. $truckNo and bilty no. $biltyNo against contract ($contractNo). Amount adjusted from supplier account."
@@ -489,6 +491,7 @@ class PaymentRequestController extends Controller
                             'purpose' => "supplier-brokery",
                             'payment_against' => "thadda-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
+                            'counter_account_id' => $broker->account_id,
                             'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
                         ]
                     );

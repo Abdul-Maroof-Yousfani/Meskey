@@ -408,6 +408,7 @@ class AdvancePaymentRequestController extends Controller
                         [
                             'purpose' => "supplier-brokery",
                             'payment_against' => "thadda-purchase",
+                            'counter_account_id' => $broker->account_id,
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
                         ]
@@ -422,6 +423,7 @@ class AdvancePaymentRequestController extends Controller
                         'no',
                         [
                             'purpose' => "supplier-brokery",
+                            'counter_account_id' => $purchaseOrder->supplier->account_id,
                             'payment_against' => "thadda-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Brokery amount adjustment received from supplier for contract ($contractNo)."
