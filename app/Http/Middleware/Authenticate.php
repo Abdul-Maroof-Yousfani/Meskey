@@ -38,5 +38,4 @@ class Authenticate extends Middleware
         }
         return $next($request);
     }
-
 }

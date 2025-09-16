@@ -108,23 +108,6 @@ class User extends Authenticatable
             ->first();
     }
 
-    public function sendTwoFactorAuthenticationCode()
-    {
-        if ($this->security == 1) {
-            $randomCode = $this->twoFactorCode();
-            $this->update(['google2fa_secret' => Hash::make($randomCode)]);
-            $this->notify(new \App\Notifications\TwoFactorAuthenticationNotification($randomCode));
-        }
-    }
-    public function twoFactorCode()
-    {
-        // Generate or retrieve the two-factor authentication code for the user
-        // You can use any logic to generate or retrieve the code
-
-        // For example, generating a random 6-digit code:
-        return mt_rand(100000, 999999);
-    }
-
     public function resetTwoFactorAuthenticationCode()
     {
         $newCode = $this->twoFactorCode();

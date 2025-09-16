@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Helpers\ApiResponse;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
@@ -46,7 +48,17 @@ class Handler extends ExceptionHandler
         });
     }
 
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return ApiResponse::error('Unauthenticated', 401, [
+                'success' => false,
+                'message' => 'Unauthenticated. Please provide a valid token.'
+            ]);
+        }
 
+        return redirect()->guest(route('login'));
+    }
 
     /**
      * Handle exceptions and customize responses.
@@ -80,6 +92,27 @@ class Handler extends ExceptionHandler
             return response()->json([
                 'message' => $exception->getMessage() ?: 'An error occurred.',
             ], $this->isHttpException($exception) ? $exception->getStatusCode() : 500);
+        }
+
+        if ($request->is('api/*')) {
+            if ($exception instanceof AuthenticationException) {
+                return $this->unauthenticated($request, $exception);
+            }
+
+            return ApiResponse::error(
+                'Server Error',
+                500,
+                [
+                    'success' => false,
+                    'message' => $exception->getMessage(),
+                    'exception' => config('app.debug') ? [
+                        'message' => $exception->getMessage(),
+                        'file' => $exception->getFile(),
+                        'line' => $exception->getLine(),
+                        'trace' => $exception->getTrace()
+                    ] : null
+                ]
+            );
         }
 
         return parent::render($request, $exception);
