@@ -161,7 +161,8 @@
                         <tr>
                             {{-- <td class="text-center">{{ $transaction->voucher_date->format('d-m-Y') }}</td> --}}
                             <td>
-                                #{{ $purchaseOrder->contract_no ?? 'N/A' }}
+                                {{-- #{{ $purchaseOrder->contract_no ?? 'N/A' }} --}}
+                                {{ $transaction->account->name ?? 'N/A' }}
                             </td>
                             <td>
                                 {{ $transaction->remarks }}

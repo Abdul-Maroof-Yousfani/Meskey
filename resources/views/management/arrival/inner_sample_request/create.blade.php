@@ -8,7 +8,7 @@
                 <select class="form-control select2" name="ticket_id">
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        @if($arrivalTicket->second_qc_status != 'rejected')
+                        @if ($arrivalTicket->second_qc_status != 'rejected')
                             <option value="{{ $arrivalTicket->id }}">
                                 Ticket No: {{ $arrivalTicket->unique_no }} --
                                 Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
@@ -19,7 +19,6 @@
             </div>
         </div>
 
-        <!-- Description -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
@@ -38,7 +37,7 @@
 
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         $('.select2').select2();
     });
 </script>

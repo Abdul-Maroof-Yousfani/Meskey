@@ -14,12 +14,6 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    /**
-     * Handle an API login request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -80,12 +74,6 @@ class LoginController extends Controller
         return ApiResponse::success($responseData, 'Login successful');
     }
 
-    /**
-     * Logout user (Revoke the token)
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -98,12 +86,6 @@ class LoginController extends Controller
         return ApiResponse::success($responseData, 'Logout successful');
     }
 
-    /**
-     * Reset password
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -122,12 +104,6 @@ class LoginController extends Controller
         return ApiResponse::success($responseData, 'Password reset initiated');
     }
 
-    /**
-     * Validate token
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function validateToken(Request $request)
     {
         $user = $request->user();

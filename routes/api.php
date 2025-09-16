@@ -1,10 +1,11 @@
 <?php
 
-use App\Http\Controllers\API\Auth\LoginController;
-use App\Http\Controllers\Procurement\Store\PaymentCalculationController;
-use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Helpers\ApiResponse;
+use App\Http\Controllers\API\Arrival\InnerSampleRequestController;
+use App\Http\Controllers\API\Auth\LoginController;
+use App\Http\Controllers\Procurement\Store\PaymentCalculationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,30 +18,36 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('v1/auth')->middleware(['api', 'throttle:60,1'])->group(function () {
-    Route::put('login', [LoginController::class, 'login']);
-    Route::post('reset-password', [LoginController::class, 'resetPassword']);
-    Route::get('validate-token', [LoginController::class, 'validateToken'])->middleware('auth:sanctum');
-    Route::get('logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
-});
-
-Route::middleware(['auth:sanctum', 'api'])->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
+Route::prefix('v1')->middleware(['api', 'throttle:60,1'])->group(function () {
+    Route::prefix('auth')->controller(LoginController::class)->group(function () {
+        Route::put('login', 'login');
+        Route::post('reset-password', 'resetPassword');
     });
 
-    Route::prefix('v1/payment')->middleware('throttle:60,1')->group(function () {
-        Route::get('/calculate', [PaymentCalculationController::class, 'calculatePayment']);
-        Route::get('/ticket/{ticketId}/sauda/{saudaType}', [PaymentCalculationController::class, 'calculateTicketPaymentWithSauda']);
-        Route::get('/ticket/{ticketId}', [PaymentCalculationController::class, 'calculateTicketPayment']);
-        Route::get('/ticket/{ticketId}/summary', [PaymentCalculationController::class, 'getPaymentSummary']);
-        Route::post('/calculate-bulk', [PaymentCalculationController::class, 'calculateMultiplePayments']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::prefix('auth')->controller(LoginController::class)->group(function () {
+            Route::get('validate-token', 'validateToken');
+            Route::get('logout', 'logout');
+        });
+
+        Route::prefix('arrival')->controller(InnerSampleRequestController::class)->group(function () {
+            Route::post('inner-sampling-request', 'store');
+            Route::get('inner-sampling-request/available-tickets', 'getAvailableTickets');
+        });
+
+        Route::get('user', fn(Request $r) => $r->user());
+
+        Route::prefix('payment')->controller(PaymentCalculationController::class)->group(function () {
+            Route::get('calculate', 'calculatePayment');
+            Route::get('ticket/{ticketId}/sauda/{saudaType}', 'calculateTicketPaymentWithSauda');
+            Route::get('ticket/{ticketId}', 'calculateTicketPayment');
+            Route::get('ticket/{ticketId}/summary', 'getPaymentSummary');
+            Route::post('calculate-bulk', 'calculateMultiplePayments');
+        });
     });
 });
 
-Route::fallback(function () {
-    return ApiResponse::error('Endpoint not found', 404, [
-        'success' => false,
-        'message' => 'Endpoint not found'
-    ]);
-});
+Route::fallback(fn() => ApiResponse::error('Endpoint not found', 404, [
+    'success' => false,
+    'message' => 'Endpoint not found'
+]));
