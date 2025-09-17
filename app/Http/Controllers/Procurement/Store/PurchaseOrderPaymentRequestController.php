@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\PurchaseOrderPaymentRequestApprovalRequest;
 use App\Http\Requests\Procurement\StoreItemPaymentRequestRequest;
 use App\Models\Master\Account\GoodReceiveNote;
+use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestApproval;
 use App\Models\Procurement\PaymentRequestData;
@@ -117,12 +118,16 @@ class PurchaseOrderPaymentRequestController extends Controller
         DB::beginTransaction();
 
         try {
+            $supplier = Supplier::findOrFail($request->supplier_id);
+            $accountId = $supplier->account_id;
+
             $paymentRequestData = PaymentRequestData::create([
                 'store_purchase_order_id' => $request->purchase_order_id,
                 'grn_id' => $request->grn_id,
                 'supplier_id' => $request->supplier_id,
                 'remaining_amount' => $request->remaining_amount,
                 'total_amount' => $request->amount,
+                'account_id' => $accountId,
                 'module_type' => 'purchase_order',
                 'description' => $request->description,
                 'payment_type' => $request->is_advance ? 'advance' : 'against_receiving',
@@ -136,6 +141,7 @@ class PurchaseOrderPaymentRequestController extends Controller
                 'supplier_id' => $request->supplier_id,
                 'purchase_order_id' => $request->purchase_order_id,
                 'grn_id' => $request->grn_id,
+                'account_id' => $accountId,
                 'requested_by' => Auth::user()->id,
                 'request_date' => now(),
                 'amount' => 'purchase_order',

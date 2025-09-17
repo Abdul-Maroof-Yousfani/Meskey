@@ -502,7 +502,6 @@
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
             $('[name="net_amount"]').val(netAmount.toFixed(2));
 
-            // Calculate remaining amount
             let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
             let requestAmount = parseFloat($('[name="request_amount"]').val()) || 0;
             let remainingAmount = netAmount - paidAmount - requestAmount;

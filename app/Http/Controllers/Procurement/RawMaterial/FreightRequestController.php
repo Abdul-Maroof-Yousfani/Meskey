@@ -255,32 +255,20 @@ class FreightRequestController extends Controller
 
             $ticketID = $requestData['ticket_id'];
             $purchaseOrderID = $requestData['purchase_order_id'];
-            $arrivalSlipID = $requestData['arrival_slip_id'];
 
-            // $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
-            $ticket = ArrivalTicket::findOrFail($ticketID);
             $purchaseOrder = ArrivalPurchaseOrder::where('id', $purchaseOrderID)->first();
-            // $arrivalSlip = ArrivalSlip::where('id', $arrivalSlipID)->first();
-            $freightPaymentRequest = FreightPaymentRequest::create($requestData);
+            $accountId = $purchaseOrder->supplier->account_id ?? null;
 
+            $requestData['account_id'] = $accountId;
             $requestData['supplier_name'] = $purchaseOrder->supplier->name;
-            // $existingApprovals = PaymentRequestData::where('freight_payment_id', $freightPaymentRequest->id)
-            //     ->where('module_type', 'freight_request')
-            //     ->where('ticket_id', $ticket->id)
-            //     ->where('purchase_order_id', $purchaseOrderID)
-            //     ->first();
-            // dd($existingApprovals);
 
-            // dd($requestData, $purchaseOrder);
             $paymentRequestData = PaymentRequestData::create($requestData);
-            // dd($requestData, $paymentRequestData);
-            $this->createPaymentRequests($paymentRequestData, $request);
+
+            $this->createPaymentRequests($paymentRequestData, $request, $accountId);
 
             if (isset($request->sampling_results) || isset($request->compulsory_results)) {
                 $this->saveSamplingResults($paymentRequestData, $request);
             }
-
-            // $this->manageLedgerCalculations($requestData, $purchaseOrder, $ticket, $stockInTransitAccount, $existingApprovals);
 
             $message = $request->freight_pay_request_amount ?
                 'Payment and freight payment requests created successfully' :
@@ -650,7 +638,7 @@ class FreightRequestController extends Controller
         });
     }
 
-    protected function createPaymentRequests($paymentRequestData, $request)
+    protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
     {
         if ($request->request_amount && $request->request_amount > 0) {
             PaymentRequest::create([
@@ -659,6 +647,7 @@ class FreightRequestController extends Controller
                 'other_deduction_value' => 0,
                 'request_type' => 'payment',
                 'module_type' => 'freight_payment',
+                'account_id' => $accountId,
                 'amount' => $request->request_amount ?? 0
             ]);
         }

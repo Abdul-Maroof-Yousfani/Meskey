@@ -18,6 +18,7 @@ class PaymentRequest extends Model
         'payment_request_data_id',
         'other_deduction_value',
         'is_advance_payment',
+        'account_id',
         'other_deduction_kg',
         'request_type',
         'request_no',

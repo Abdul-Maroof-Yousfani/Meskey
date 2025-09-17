@@ -6,6 +6,7 @@ use App\Models\Acl\Company;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
+use App\Models\Master\Account\Account;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,7 +14,6 @@ class Supplier extends Model
 {
     use HasFactory;
 
-    // Define fillable attributes
     protected $fillable = [
         'company_id',
         'type',
@@ -37,7 +37,6 @@ class Supplier extends Model
         'attachment',
         'status',
         'company_location_ids'
-
     ];
 
     protected $casts = [
@@ -51,17 +50,22 @@ class Supplier extends Model
 
     public function companyBankDetails()
     {
-        return $this->hasMany(SupplierCompanyBankDetail::class,);
+        return $this->hasMany(SupplierCompanyBankDetail::class);
     }
 
     public function ownerBankDetails()
     {
-        return $this->hasMany(SupplierOwnerBankDetail::class,);
+        return $this->hasMany(SupplierOwnerBankDetail::class);
     }
 
     public function arrivalPurchaseOrders()
     {
         return $this->hasMany(ArrivalPurchaseOrder::class, 'supplier_id');
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(Account::class, 'account_id');
     }
 
     public function scopeForUserLocation($query, $user)

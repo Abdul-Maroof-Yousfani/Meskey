@@ -192,9 +192,13 @@ class TicketPaymentRequestController extends Controller
                 ->where('ticket_id', $ticket->id)
                 ->count();
 
+            $accountId = $purchaseOrder->supplier->account_id ?? null;
+
+            $requestData['account_id'] = $accountId;
+
             $paymentRequestData = PaymentRequestData::create($requestData);
 
-            $this->createPaymentRequests($paymentRequestData, $request);
+            $this->createPaymentRequests($paymentRequestData, $request, $accountId);
 
             if (isset($request->sampling_results) || isset($request->compulsory_results)) {
                 $this->saveSamplingResults($paymentRequestData, $request);
@@ -533,7 +537,7 @@ class TicketPaymentRequestController extends Controller
         });
     }
 
-    protected function createPaymentRequests($paymentRequestData, $request)
+    protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
     {
         // dd([
         //     'payment_request_data_id' => $paymentRequestData->id,
@@ -557,6 +561,7 @@ class TicketPaymentRequestController extends Controller
             'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
             'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
             'request_type' => 'payment',
+            'account_id' => $accountId,
             'module_type' => 'ticket',
             'amount' => $request->payment_request_amount ?? 0
         ]);

@@ -21,6 +21,7 @@ class PaymentRequestData extends Model
         'request_type',
         'supplier_name',
         'contract_rate',
+        'account_id',
         'min_contract_range',
         'max_contract_range',
         'supplier_id',

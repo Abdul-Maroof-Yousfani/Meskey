@@ -186,6 +186,9 @@ class AdvancePaymentRequestController extends Controller
 
             $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
             $purchaseOrder = ArrivalPurchaseOrder::where('id', $requestData['purchase_order_id'])->first();
+            $accountId = $purchaseOrder->supplier->account_id ?? null;
+
+            $requestData['account_id'] = $accountId;
 
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('is_advance_payment', 1)
@@ -193,7 +196,7 @@ class AdvancePaymentRequestController extends Controller
 
             $paymentRequestData = PaymentRequestData::create($requestData);
 
-            $this->createPaymentRequests($paymentRequestData, $request);
+            $this->createPaymentRequests($paymentRequestData, $request, $accountId);
 
             // $this->manageLedgerCalculations($requestData, $purchaseOrder, $ticket, $stockInTransitAccount, $existingApprovals);
 
@@ -499,7 +502,7 @@ class AdvancePaymentRequestController extends Controller
         });
     }
 
-    protected function createPaymentRequests($paymentRequestData, $request)
+    protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
     {
         if ($request->payment_request_amount && $request->payment_request_amount > 0) {
             PaymentRequest::create([
@@ -509,6 +512,7 @@ class AdvancePaymentRequestController extends Controller
                 'request_type' => 'payment',
                 'is_advance_payment' => 1,
                 'module_type' => 'purchase_order',
+                'account_id' => $accountId,
                 'amount' => $request->payment_request_amount ?? 0
             ]);
         }

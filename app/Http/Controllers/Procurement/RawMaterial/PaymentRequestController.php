@@ -190,14 +190,15 @@ class PaymentRequestController extends Controller
             $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
             $ticket = PurchaseTicket::where('id', $requestData['ticket_id'])->first();
             $purchaseOrder = ArrivalPurchaseOrder::where('id', $requestData['purchase_order_id'])->first();
-
+            $accountId = $purchaseOrder->supplier->account_id ?? null;
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('ticket_id', $ticket->id)
                 ->first();
 
+            $requestData['account_id'] = $accountId;
             $paymentRequestData = PaymentRequestData::create($requestData);
 
-            $this->createPaymentRequests($paymentRequestData, $request);
+            $this->createPaymentRequests($paymentRequestData, $request, $accountId);
 
             if (isset($request->sampling_results) || isset($request->compulsory_results)) {
                 $this->saveSamplingResults($paymentRequestData, $request);
@@ -566,14 +567,11 @@ class PaymentRequestController extends Controller
                 ($requestData['payment_request_amount'] ?? 0) -
                 ($requestData['freight_pay_request_amount'] ?? 0);
 
-            // Update main data
             $paymentRequestData->update($requestData);
 
-            // Delete existing payment requests and create new ones
             $paymentRequestData->paymentRequests()->delete();
             $this->createPaymentRequests($paymentRequestData, $request);
 
-            // Update sampling results if exists
             if (isset($request->sampling_results) || isset($request->compulsory_results) || isset($request->other_deduction)) {
                 $this->updateSamplingResults($paymentRequestData, $request);
             }
@@ -582,7 +580,7 @@ class PaymentRequestController extends Controller
         });
     }
 
-    protected function createPaymentRequests($paymentRequestData, $request)
+    protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
     {
         if (isset($request->ticket_id)) {
             $ticket = PurchaseTicket::find($request->ticket_id);
@@ -595,6 +593,7 @@ class PaymentRequestController extends Controller
         if ($request->payment_request_amount && $request->payment_request_amount > 0) {
             PaymentRequest::create([
                 'payment_request_data_id' => $paymentRequestData->id,
+                'account_id' => $accountId,
                 'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
                 'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
                 'request_type' => 'payment',
@@ -606,6 +605,7 @@ class PaymentRequestController extends Controller
         if ($request->freight_pay_request_amount && $request->freight_pay_request_amount > 0) {
             PaymentRequest::create([
                 'payment_request_data_id' => $paymentRequestData->id,
+                'account_id' => $accountId,
                 'request_type' => 'freight_payment',
                 'module_type' => 'purchase_order',
                 'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
