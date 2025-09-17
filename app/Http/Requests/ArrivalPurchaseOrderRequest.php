@@ -73,7 +73,6 @@ class ArrivalPurchaseOrderRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             $data = $this->all();
 
-            // Broker 1
             if (
                 (!empty($data['broker_one_commission']) && (empty($data['broker_one_id']) || $data['broker_one_id'] == null))
             ) {
@@ -85,7 +84,6 @@ class ArrivalPurchaseOrderRequest extends FormRequest
                 $validator->errors()->add('broker_one_commission', 'Broker 1 commission is required if broker is selected.');
             }
 
-            // Broker 2
             if (
                 (!empty($data['broker_two_commission']) && (empty($data['broker_two_id']) || $data['broker_two_id'] == null))
             ) {
@@ -97,7 +95,6 @@ class ArrivalPurchaseOrderRequest extends FormRequest
                 $validator->errors()->add('broker_two_commission', 'Broker 2 commission is required if broker is selected.');
             }
 
-            // Broker 3
             if (
                 (!empty($data['broker_three_commission']) && (empty($data['broker_three_id']) || $data['broker_three_id'] == null))
             ) {
