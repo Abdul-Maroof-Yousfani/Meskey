@@ -158,7 +158,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Contract Rate</label>
-                <input type="text" class="form-control editable-field" name="contract_rate"
+                <input type="text" class="form-control editable-field contract-rate" name="contract_rate"
                     value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate" readonly>
             </div>
         </div>
@@ -470,7 +470,7 @@
         function calculateNetShortage() {
             const differenceWeight = parseFloat(document.getElementById('differenceWeight').value) || 0;
             const exemptedWeight = parseFloat(document.getElementById('exemptedWeight').value) || 0;
-            const netShortage = differenceWeight + exemptedWeight;
+            const netShortage = differenceWeight - exemptedWeight;
             document.getElementById('netShortage').value = netShortage > 0 ? netShortage : 0;
         }
 
@@ -488,9 +488,14 @@
             let extraDed = parseFloat($('[name="extra_ded"]').val()) || 0;
             let commissionDed = parseFloat($('[name="commission_ded"]').val()) || 0;
 
+            let netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
+            let contractRate = parseFloat($('.contract-rate').val()) || 0;
+            let netShortageDeduction = netShortage * contractRate;
+
             let grossAmount = freightAmount + loadingKanta + arrivedKanta + otherPositive + dehariExtra +
                 marketComm;
-            let totalDeductions = overWeightDed + godownPenalty + otherNegative + extraDed + commissionDed;
+            let totalDeductions = overWeightDed + godownPenalty + otherNegative + extraDed + commissionDed +
+                netShortageDeduction;
             let netAmount = grossAmount - totalDeductions;
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
@@ -507,38 +512,10 @@
             $('[name="request_amount"]').val(netAmount.toFixed(2));
         }
 
-        // $('.percentage-input').on('input', function() {
-        //     let percentage = parseFloat($(this).val()) || 0;
-        //     if (percentage > 100) {
-        //         percentage = 100;
-        //         $(this).val(100);
-        //     }
-        //     let netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
-        //     let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
-        //     let remainingAmount = netAmount - paidAmount;
-        //     let amount = (remainingAmount * percentage) / 100;
-        //     $('[name="request_amount"]').val(amount.toFixed(2));
-        //     calculatePaymentSummary();
-        // });
-
-        // $('[name="request_amount"]').on('input', function() {
-        //     let netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
-        //     let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
-        //     let remainingAmount = netAmount - paidAmount;
-        //     let requestAmount = parseFloat($(this).val()) || 0;
-
-        //     if (requestAmount > remainingAmount) {
-        //         requestAmount = remainingAmount;
-        //         $(this).val(remainingAmount.toFixed(2));
-        //     }
-
-        //     let percentage = remainingAmount > 0 ? (requestAmount / remainingAmount) * 100 : 0;
-        //     $('.percentage-input').val(percentage.toFixed(2));
-
-        //     calculatePaymentSummary();
-        // });
-
-        document.getElementById('exemptedWeight').addEventListener('input', calculateNetShortage);
+        document.getElementById('exemptedWeight').addEventListener('input', function() {
+            calculateNetShortage();
+            calculatePaymentSummary();
+        });
 
         calculateNetShortage();
         calculatePaymentSummary();
