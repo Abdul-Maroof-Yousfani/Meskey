@@ -170,35 +170,41 @@
                 Weight Information
             </h6>
         </div>
-        <div class="col-md-3">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label class="font-weight-bold">Loading Weight</label>
                 <input type="text" class="form-control bg-light" value="{{ $ticket->net_weight ?? '0' }}"
                     readonly placeholder="Loading Weight">
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label class="font-weight-bold">Arrival Weight</label>
-                <input type="text" class="form-control bg-light"
-                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->secondWeighbridge->weight }}"
+                <input type="text" class="form-control bg-light" value="{{ $ticket->arrived_net_weight }}"
                     readonly placeholder="Arrival Weight">
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label class="font-weight-bold">Difference Weight</label>
-                <input type="text" class="form-control bg-light"
-                    value="{{ ($ticket->loading_weight ?? 0) - ($ticket->arrived_net_weight ?? 0) }}" readonly
+                <input type="text" class="form-control bg-light" id="differenceWeight"
+                    value="{{ ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0) }}" readonly
                     placeholder="Difference Weight">
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md col-6">
             <div class="form-group">
                 <label class="font-weight-bold">Exempt</label>
-                <input type="text" class="form-control editable-field" name="exempt"
+                <input type="text" class="form-control editable-field" name="exempt" id="exemptedWeight"
                     value="{{ $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0') }}"
                     {{ $param }} placeholder="Exempt">
+            </div>
+        </div>
+        <div class="col-md col-6">
+            <div class="form-group">
+                <label class="form-label">Net Shortage</label>
+                <input type="number" class="form-control bg-light" name="net_shortage" id="netShortage"
+                    value="150" readonly>
             </div>
         </div>
     </div>
@@ -461,6 +467,13 @@
     $(document).ready(function() {
         $('.editable-field').on('input', calculatePaymentSummary);
 
+        function calculateNetShortage() {
+            const differenceWeight = parseFloat(document.getElementById('differenceWeight').value) || 0;
+            const exemptedWeight = parseFloat(document.getElementById('exemptedWeight').value) || 0;
+            const netShortage = differenceWeight + exemptedWeight;
+            document.getElementById('netShortage').value = netShortage > 0 ? netShortage : 0;
+        }
+
         function calculatePaymentSummary() {
             let freightAmount = parseFloat($('[name="freight_amount"]').val()) || 0;
             let loadingKanta = parseFloat($('[name="loading_kanta"]').val()) || 0;
@@ -525,6 +538,9 @@
         //     calculatePaymentSummary();
         // });
 
+        document.getElementById('exemptedWeight').addEventListener('input', calculateNetShortage);
+
+        calculateNetShortage();
         calculatePaymentSummary();
     });
 </script>
