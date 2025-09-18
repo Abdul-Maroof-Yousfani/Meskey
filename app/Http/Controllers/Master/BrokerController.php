@@ -15,10 +15,10 @@ use Illuminate\Support\Facades\DB;
 class BrokerController extends Controller
 {
 
-        
+
     function __construct()
     {
-        $this->middleware('check.company:raw-material-broker', ['only' => ['index','edit','getList']]);
+        $this->middleware('check.company:raw-material-broker', ['only' => ['index', 'edit', 'getList']]);
     }
     /**
      * Display a listing of the resource.

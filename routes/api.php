@@ -3,7 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Helpers\ApiResponse;
+use App\Http\Controllers\API\Arrival\ArrivalApproveController;
 use App\Http\Controllers\API\Arrival\InnerSampleRequestController;
+use App\Http\Controllers\API\MasterController;
 use App\Http\Controllers\API\Auth\LoginController;
 use App\Http\Controllers\Procurement\Store\PaymentCalculationController;
 
@@ -30,12 +32,25 @@ Route::prefix('v1')->middleware(['api', 'throttle:60,1'])->group(function () {
             Route::get('logout', 'logout');
         });
 
-        Route::prefix('arrival')->controller(InnerSampleRequestController::class)->group(function () {
-            Route::post('inner-sampling-request', 'store');
-            Route::get('inner-sampling-request/available-tickets', 'getAvailableTickets');
+        Route::prefix('arrival')->group(function () {
+            Route::prefix('inner-sampling-request')->controller(InnerSampleRequestController::class)->group(function () {
+                Route::post('store', 'store');
+                Route::get('available-tickets', 'getAvailableTickets');
+            });
+
+            Route::prefix('approve')->controller(ArrivalApproveController::class)->group(function () {
+                Route::get('available-tickets', 'getAvailableTickets');
+                Route::post('store', 'store');
+            });
         });
 
-        Route::get('user', fn(Request $r) => $r->user());
+        Route::prefix('master')->controller(MasterController::class)->group(function () {
+            Route::get('bag-types', 'getBagTypes');
+            Route::get('bag-conditions', 'getBagConditions');
+            Route::get('bag-packings', 'getBagPackings');
+        });
+
+        // Route::get('user', fn(Request $r) => $r->user());
 
         Route::prefix('payment')->controller(PaymentCalculationController::class)->group(function () {
             Route::get('calculate', 'calculatePayment');

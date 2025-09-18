@@ -21,6 +21,9 @@ class Account extends Model
         'parent_unique_no',
         'hierarchy_path',
         'is_operational',
+        'table_name',
+        'request_account_id',
+        'model_id',
         'status',
         'created_by',
         'updated_by'
@@ -41,9 +44,6 @@ class Account extends Model
     {
         return $this->hasMany(Account::class, 'parent_id');
     }
-
-
-
 
     public static function getTree()
     {
@@ -73,11 +73,6 @@ class Account extends Model
 
         return $tree;
     }
-
-
-
-
-
 
     public function transactions()
     {

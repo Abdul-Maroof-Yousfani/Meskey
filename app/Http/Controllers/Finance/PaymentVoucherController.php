@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\Broker;
 use App\Models\Master\Supplier;
 use App\Models\PaymentVoucher;
 use App\Models\Procurement\PaymentRequest;
@@ -60,6 +61,22 @@ class PaymentVoucherController extends Controller
                     ->whereDoesntHave('paymentVoucherData');
             });
         })->latest()->get();
+
+        $data['accounts'] = Account::whereHas('parent', function ($query) {
+            $query->where('name', 'Liabilities');
+        })->where('is_operational', 'no')->get()->pluck('name');
+
+        $data['accounts'] = Account::where('is_operational', 'yes')
+            ->whereHas('parent', function ($q) {
+                $q->where('name', 'Liabilities')
+                    ->orWhereHas('parent', function ($q2) {
+                        $q2->where('name', 'Liabilities')
+                            ->orWhereHas('parent', function ($q3) {
+                                $q3->where('name', 'Liabilities');
+                            });
+                    });
+            })
+            ->get();
 
         return view('management.finance.payment_voucher.create', $data);
     }
@@ -230,6 +247,169 @@ class PaymentVoucherController extends Controller
     }
 
     /**
+     * Get payment requests for account
+     */
+    public function getAccountPaymentRequests($accountId)
+    {
+        $account = Account::findOrFail($accountId);
+
+        $tableName = $account->table_name;
+
+        $bankAccounts = collect();
+        $paymentRequests = collect();
+        $modelId = null;
+
+        if ($tableName === 'Supplier') {
+            $supplier = Supplier::with(['companyBankDetails', 'ownerBankDetails'])
+                ->where('account_id', $account->id)
+                ->first();
+
+            if ($supplier) {
+                $modelId = $supplier->id;
+                $companyBankAccounts = $supplier->companyBankDetails ?? collect();
+                $ownerBankAccounts = $supplier->ownerBankDetails ?? collect();
+
+                if ($companyBankAccounts) {
+                    foreach ($companyBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'company',
+                            'title' => $bank->supplier->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                if ($ownerBankAccounts) {
+                    foreach ($ownerBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'owner',
+                            'title' => $bank->supplier->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
+                    ->where('account_id', $accountId)
+                    ->whereDoesntHave('paymentVoucherData')
+                    ->where('status', 'approved')
+                    ->get()
+                    ->map(function ($request) {
+                        return [
+                            'id' => $request->id,
+                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
+                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
+                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
+                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
+                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
+                                : '-',
+                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
+                            'loading_weight' => $request->paymentRequestData->loading_weight,
+                            'module_type' => $request->paymentRequestData->module_type,
+                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                            'amount' => $request->amount,
+                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
+                            'status' => $request->approval_status,
+                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
+                            'type' => ($request->request_type),
+                            'request_date' => $request->created_at
+                                ? $request->created_at->format('Y-m-d')
+                                : ''
+                        ];
+                    });
+            }
+        } elseif ($tableName === 'Broker') {
+            $broker = Broker::with(['companyBankDetails', 'ownerBankDetails'])
+                ->where('account_id', $account->id)
+                ->first();
+
+            if ($broker) {
+                $modelId = $broker->id;
+                $companyBankAccounts = $broker->companyBankDetails ?? collect();
+                $ownerBankAccounts = $broker->ownerBankDetails ?? collect();
+
+                if ($companyBankAccounts) {
+                    foreach ($companyBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'company',
+                            'title' => $bank->broker->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                if ($ownerBankAccounts) {
+                    foreach ($ownerBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'owner',
+                            'title' => $bank->broker->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
+                    ->where('account_id', $accountId)
+                    ->whereDoesntHave('paymentVoucherData')
+                    ->where('status', 'approved')
+                    ->get()
+                    ->map(function ($request) {
+                        return [
+                            'id' => $request->id,
+                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
+                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
+                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
+                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
+                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
+                                : '-',
+                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
+                            'loading_weight' => $request->paymentRequestData->loading_weight,
+                            'module_type' => $request->paymentRequestData->module_type,
+                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                            'amount' => $request->amount,
+                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
+                            'status' => $request->approval_status,
+                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
+                            'type' => ($request->request_type),
+                            'request_date' => $request->created_at
+                                ? $request->created_at->format('Y-m-d')
+                                : ''
+                        ];
+                    });
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'payment_requests' => $paymentRequests,
+            'model_id' => $modelId,
+            'bank_accounts' => $bankAccounts->values()
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -239,12 +419,13 @@ class PaymentVoucherController extends Controller
             'pv_date' => 'required|date',
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
             'account_id' => 'required|exists:accounts,id',
-            'supplier_id' => 'required|exists:suppliers,id',
+            'request_account_id' => 'required|exists:accounts,id',
+            'model_id' => 'required',
             'payment_requests' => 'required|array',
             'payment_requests.*' => 'exists:payment_requests,id',
             'ref_bill_no' => 'nullable|string',
             'bill_date' => 'nullable|date',
-            'supplier_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'model_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
             'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
@@ -257,7 +438,7 @@ class PaymentVoucherController extends Controller
 
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
-
+            // dd($request->all());
             $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
                 ->find($request->payment_requests[0]);
 
@@ -284,7 +465,8 @@ class PaymentVoucherController extends Controller
                 'account_id' => $request->account_id,
                 'bank_account_id' => $request->bank_account_id,
                 'bank_account_type' => $request->bank_account_type,
-                'supplier_id' => $request->supplier_id,
+                'request_account_id' => $request->request_account_id,
+                'model_id' => $request->model_id,
                 'module_id' => $firstRequest->paymentRequestData->purchase_order_id ?? null,
                 // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
                 'module_type' => 'raw_material_purchase',
@@ -301,10 +483,10 @@ class PaymentVoucherController extends Controller
                 $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' || $paymentRequest->paymentRequestData->module_type == 'freight_payment' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
                 $truckNo = $paymentRequest->paymentRequestData->truck_no;
                 $biltyNo = $paymentRequest->paymentRequestData->bilty_no;
-                $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
+                // $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
                 $amount = number_format($paymentRequest->amount, 2);
 
-                $remarks = "A payment of Rs. {$amount} has been made to {$supplierName}";
+                $remarks = "A payment of Rs. {$amount} has been made.";
                 if ($bankName) {
                     $remarks .= " against bank '{$bankName}'";
                 }
@@ -330,14 +512,14 @@ class PaymentVoucherController extends Controller
                         'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
                         'payment_against' => "$ticketNo-$paymentRequestDataId",
                         'against_reference_no' => "$truckNo/$biltyNo",
-                        'counter_account_id' => $paymentVoucher->supplier->account_id,
+                        'counter_account_id' => $request->request_account_id,
                         'remarks' => $remarks
                     ]
                 );
 
                 createTransaction(
                     $paymentRequest->amount,
-                    $paymentVoucher->supplier->account_id,
+                    $request->request_account_id,
                     1,
                     $uniqueNo,
                     'debit',

@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Payment Voucher Edit
+    Edit Payment Voucher
 @endsection
 @section('content')
     <div class="container-fluid">
@@ -8,19 +8,18 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Edit Payment Voucher</h4>
+                        <h4 class="mb-0">Edit Payment Voucher #{{ $paymentVoucher->unique_no }}</h4>
                         <a href="{{ route('payment-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
                     </div>
                     <div class="card-body">
-                        <form id="ajaxSubmit" action="{{ route('payment-voucher.update', $paymentVoucher->id) }}" disabled>
+                        <form id="ajaxSubmit" action="{{ route('payment-voucher.update', $paymentVoucher->id) }}">
                             @csrf
                             @method('PUT')
 
-                            <input type="hidden" name="supplier_id" id="supplier_id"
-                                value="{{ $paymentVoucher->supplier_id }}">
+                            <input type="hidden" id="url" value="{{ route('payment-voucher.index') }}">
+                            <input type="hidden" name="supplier_id" id="supplier_id_d">
                             <input type="hidden" name="bank_account_number" id="bank_account_number">
-                            <input type="hidden" name="bank_account_type" id="bank_account_type"
-                                value="{{ $paymentVoucher->bank_account_type }}">
+                            <input type="hidden" name="bank_account_type" id="bank_account_type">
 
                             <div class="row">
                                 <div class="col-md-6">
@@ -29,13 +28,19 @@
                                         <select name="voucher_type" id="voucher_type" class="form-control select2" required
                                             disabled>
                                             <option value="">Select Type</option>
+                                            @canAccess('bank-payment-voucher')
                                             <option value="bank_payment_voucher"
                                                 {{ $paymentVoucher->voucher_type == 'bank_payment_voucher' ? 'selected' : '' }}>
                                                 Bank Payment Voucher</option>
+                                            @endcanAccess
+                                            @canAccess('cash-payment-voucher')
                                             <option value="cash_payment_voucher"
                                                 {{ $paymentVoucher->voucher_type == 'cash_payment_voucher' ? 'selected' : '' }}>
                                                 Cash Payment Voucher</option>
+                                            @endcanAccess
                                         </select>
+                                        <small class="form-text text-muted">Voucher type cannot be changed after
+                                            creation</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -63,7 +68,8 @@
                                             @foreach ($accounts as $account)
                                                 <option value="{{ $account->id }}"
                                                     {{ $paymentVoucher->account_id == $account->id ? 'selected' : '' }}>
-                                                    {{ $account->name }} ({{ $account->unique_no }})
+                                                    {{ $account->name }}
+                                                    ({{ $account->unique_no }})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -88,22 +94,20 @@
                                 </div>
                             </div>
 
-                            <div class=" bank-fields"
+                            <div class="row bank-fields"
                                 style="display: {{ $paymentVoucher->voucher_type == 'bank_payment_voucher' ? 'block' : 'none' }};">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="cheque_no">Cheque No.</label>
-                                            <input type="text" name="cheque_no" id="cheque_no" class="form-control"
-                                                value="{{ $paymentVoucher->cheque_no }}">
-                                        </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="cheque_no">Cheque No.</label>
+                                        <input type="text" name="cheque_no" id="cheque_no" class="form-control"
+                                            value="{{ $paymentVoucher->cheque_no }}">
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="cheque_date">Cheque Date</label>
-                                            <input type="date" name="cheque_date" id="cheque_date" class="form-control"
-                                                value="{{ $paymentVoucher->cheque_date ? $paymentVoucher->cheque_date->format('Y-m-d') : '' }}">
-                                        </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="cheque_date">Cheque Date</label>
+                                        <input type="date" name="cheque_date" id="cheque_date" class="form-control"
+                                            value="{{ $paymentVoucher->cheque_date ? $paymentVoucher->cheque_date->format('Y-m-d') : '' }}">
                                     </div>
                                 </div>
                             </div>
@@ -117,7 +121,8 @@
                                             @foreach ($purchaseOrders as $order)
                                                 <option value="{{ $order->id }}"
                                                     {{ $paymentVoucher->module_id == $order->id ? 'selected' : '' }}>
-                                                    {{ $order->contract_no }} - {{ $order->product->name ?? 'N/A' }}
+                                                    {{ $order->contract_no }} -
+                                                    {{ $order->product->name ?? 'N/A' }}
                                                     ({{ $order->supplier_name ?? ($order->supplier->name ?? 'N/A') }})
                                                 </option>
                                             @endforeach
@@ -135,82 +140,24 @@
                                                 <table class="table table-bordered" id="paymentRequestsTable">
                                                     <thead>
                                                         <tr>
-                                                            <th width="5%">Select</th>
-                                                            <th>Request No</th>
-                                                            <th>Date</th>
-                                                            <th>Amount</th>
+                                                            <th width="2%">*</th>
+                                                            <th>Contract No</th>
                                                             <th>Purpose</th>
+                                                            <th>Sauda Type</th>
+                                                            <th>Date</th>
                                                             <th>Type</th>
+                                                            <th>Truck No</th>
+                                                            <th>Bilty No</th>
+                                                            <th>Loading Date</th>
+                                                            <th>Weight</th>
+                                                            <th>Amount</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @if ($paymentVoucher->module_id)
-                                                            @php
-                                                                $paymentRequests = \App\Models\Procurement\PaymentRequest::with(
-                                                                    ['paymentRequestData', 'approvals'],
-                                                                )
-                                                                    ->whereHas('paymentRequestData', function ($q) use (
-                                                                        $paymentVoucher,
-                                                                    ) {
-                                                                        $q->where(
-                                                                            'purchase_order_id',
-                                                                            $paymentVoucher->module_id,
-                                                                        );
-                                                                    })
-                                                                    ->where('status', 'approved')
-                                                                    ->get();
-                                                            @endphp
-
-                                                            @if ($paymentRequests->count() > 0)
-                                                                @foreach ($paymentRequests as $request)
-                                                                    @php
-                                                                        $isChecked = $paymentVoucher->paymentVoucherData->contains(
-                                                                            'payment_request_id',
-                                                                            $request->id,
-                                                                        );
-                                                                        $purchaseOrder =
-                                                                            $request->paymentRequestData
-                                                                                ->purchaseOrder ?? null;
-                                                                    @endphp
-                                                                    <tr>
-                                                                        <td>
-                                                                            <input type="checkbox"
-                                                                                class="request-checkbox"
-                                                                                value="{{ $request->id }}"
-                                                                                data-supplier-id="{{ $request->paymentRequestData->purchaseOrder->supplier_id ?? '' }}"
-                                                                                data-amount="{{ $request->amount }}"
-                                                                                data-purpose="{{ $request->paymentRequestData->notes ?? 'No description' }}"
-                                                                                data-request-no="{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}"
-                                                                                data-truck-no="{{ $purchaseOrder->truck_no ?? '' }}"
-                                                                                {{ $isChecked ? 'checked' : '' }}>
-                                                                        </td>
-                                                                        <td>{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}
-                                                                        </td>
-                                                                        <td>{{ $request->created_at->format('Y-m-d') }}
-                                                                        </td>
-                                                                        <td>{{ $request->amount }}</td>
-                                                                        <td>{{ $request->paymentRequestData->notes ?? 'No description' }}
-                                                                        </td>
-                                                                        <td>
-                                                                            <span
-                                                                                class="badge badge-{{ $request->request_type == 'Payment' ? 'success' : 'warning' }}">
-                                                                                {{ formatEnumValue($request->request_type) }}
-                                                                            </span>
-                                                                        </td>
-                                                                    </tr>
-                                                                @endforeach
-                                                            @else
-                                                                <tr>
-                                                                    <td colspan="6" class="text-center">No payment
-                                                                        requests found for this purchase order</td>
-                                                                </tr>
-                                                            @endif
-                                                        @else
-                                                            <tr>
-                                                                <td colspan="6" class="text-center">Please select a
-                                                                    purchase order first</td>
-                                                            </tr>
-                                                        @endif
+                                                        <tr>
+                                                            <td colspan="11" class="text-center">No payment requests
+                                                                found please select supplier first.</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -224,36 +171,8 @@
                                     <div class="form-group">
                                         <label>Selected Payment Requests</label>
                                         <div class="selected-requests-container bg-light p-3">
-                                            @if ($paymentVoucher->paymentVoucherData->count() > 0)
-                                                <ul class="list-group selected-requests-list">
-                                                    @php $totalAmount = 0; @endphp
-                                                    @foreach ($paymentVoucher->paymentVoucherData as $voucherData)
-                                                        @php
-                                                            $request = $voucherData->paymentRequest;
-                                                            $purchaseOrder =
-                                                                $request->paymentRequestData->purchaseOrder ?? null;
-                                                            $totalAmount += $request->amount;
-                                                        @endphp
-                                                        <li
-                                                            class="list-group-item d-flex justify-content-between align-items-center">
-                                                            <span>#{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}
-                                                                {{ $purchaseOrder && $purchaseOrder->truck_no ? '- ' . $purchaseOrder->truck_no : '' }}</span>
-                                                            <span
-                                                                class="badge badge-primary badge-pill">{{ $request->amount }}</span>
-                                                            <input type="hidden" name="payment_requests[]"
-                                                                value="{{ $request->id }}">
-                                                        </li>
-                                                    @endforeach
-                                                    <li
-                                                        class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                                                        <strong>Total Amount</strong>
-                                                        <strong>{{ number_format($totalAmount, 2) }}</strong>
-                                                    </li>
-                                                </ul>
-                                            @else
-                                                <p class="text-muted">No payment requests selected yet</p>
-                                                <ul class="list-group selected-requests-list" style="display: none;"></ul>
-                                            @endif
+                                            <p class="text-muted">No payment requests selected yet</p>
+                                            <ul class="list-group selected-requests-list" style="display: none;"></ul>
                                         </div>
                                     </div>
                                 </div>
@@ -267,48 +186,6 @@
                                         <select name="bank_account_id" id="bank_account_id" class="form-control select2"
                                             style="width: 100%">
                                             <option value="">Select Bank Account</option>
-                                            @if ($paymentVoucher->supplier_id)
-                                                @php
-                                                    $supplier = \App\Models\Master\Supplier::with([
-                                                        'companyBankDetails',
-                                                        'ownerBankDetails',
-                                                    ])->find($paymentVoucher->supplier_id);
-                                                    $companyBankAccounts = $supplier
-                                                        ? $supplier->companyBankDetails
-                                                        : collect();
-                                                    $ownerBankAccounts = $supplier
-                                                        ? $supplier->ownerBankDetails
-                                                        : collect();
-                                                @endphp
-
-                                                @foreach ($companyBankAccounts as $bank)
-                                                    <option value="{{ $bank->id }}"
-                                                        data-title="{{ $bank->supplier->name ?? '' }}"
-                                                        data-account-title="{{ $bank->account_title ?? '' }}"
-                                                        data-account-no="{{ $bank->account_number ?? '' }}"
-                                                        data-bank-name="{{ $bank->bank_name ?? '' }}"
-                                                        data-branch-name="{{ $bank->branch_name ?? '' }}"
-                                                        data-type="company"
-                                                        {{ $paymentVoucher->bank_account_id == $bank->id ? 'selected' : '' }}>
-                                                        Company - {{ $bank->supplier->name ?? '' }}
-                                                        ({{ $bank->account_number ?? '' }})
-                                                    </option>
-                                                @endforeach
-
-                                                @foreach ($ownerBankAccounts as $bank)
-                                                    <option value="{{ $bank->id }}"
-                                                        data-title="{{ $bank->supplier->name ?? '' }}"
-                                                        data-account-title="{{ $bank->account_title ?? '' }}"
-                                                        data-account-no="{{ $bank->account_number ?? '' }}"
-                                                        data-bank-name="{{ $bank->bank_name ?? '' }}"
-                                                        data-branch-name="{{ $bank->branch_name ?? '' }}"
-                                                        data-type="owner"
-                                                        {{ $paymentVoucher->bank_account_id == $bank->id ? 'selected' : '' }}>
-                                                        Owner - {{ $bank->supplier->name ?? '' }}
-                                                        ({{ $bank->account_number ?? '' }})
-                                                    </option>
-                                                @endforeach
-                                            @endif
                                         </select>
                                     </div>
                                 </div>
@@ -337,12 +214,71 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            if ($('#voucher_type').val() === 'bank_payment_voucher') {
-                $('.bank-fields, .bank-account-section').show();
-                // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
-            }
+            // Initialize with existing selected requests
+            const selectedRequests = @json($selectedRequests);
+            updateSelectedRequestsList(selectedRequests);
 
+            // Set up event handlers
+            $('#voucher_type, #pv_date').change(function() {
+                if ($('#voucher_type').val()) {
+                    $.ajax({
+                        url: '{{ route('payment-voucher.generate-pv-number') }}',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            voucher_type: $('#voucher_type').val(),
+                            pv_date: $('#pv_date').val() || null
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                if ($('#pv_date').val()) {
+                                    $('#unique_no').val(response.pv_number);
+                                } else {
+                                    let $accountSelect = $('#account_id');
+                                    $accountSelect.empty();
+                                    $accountSelect.append(
+                                        '<option value="">Select Account</option>');
+
+                                    response.accounts.forEach(function(account) {
+                                        $accountSelect.append(
+                                            `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
+                                        );
+                                    });
+
+                                    $accountSelect.trigger('change');
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            $('#bank_account_id').change(function() {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const accountNo = selectedOption.data('account-no') || '';
+                    const accountType = selectedOption.data('type') || '';
+
+                    $('#bank_account_number').val(accountNo);
+                    $('#bank_account_type').val(accountType);
+                } else {
+                    $('#bank_account_number').val('');
+                    $('#bank_account_type').val('');
+                }
+            });
+
+            $('#voucher_type').change(function() {
+                if ($(this).val() === 'bank_payment_voucher') {
+                    $('.bank-fields, .bank-account-section').show();
+                } else {
+                    $('.bank-fields, .bank-account-section').hide();
+                }
+            });
+
+            const listContainer = $('.selected-requests-list');
+            const emptyMessage = $('.selected-requests-container p');
             const bankAccountSelect = $('#bank_account_id');
+
             bankAccountSelect.select2({
                 templateResult: formatBankAccount,
                 templateSelection: formatBankAccountSelection
@@ -369,10 +305,10 @@
 
                 const $container = $(
                     `<div class="bank-account-option">
-                        <strong>${type} - ${title}</strong>
-                        <div class="text-muted small">${accountTitle} - (${accountNo})</div>
-                        <div class="text-muted small">${bankName} - ${branchName}</div>
-                    </div>`
+                            <strong>${type} - ${title}</strong>
+                            <div class="text-muted small">${accountTitle} - (${accountNo})</div>
+                            <div class="text-muted small">${bankName} - ${branchName}</div>
+                        </div>`
                 );
                 return $container;
             }
@@ -394,67 +330,79 @@
 
             $('#module_id').change(function() {
                 const poId = $(this).val();
+                const tbody = $('#paymentRequestsTable tbody');
 
                 if (poId) {
+                    tbody.html(`
+                        <tr>
+                            <td colspan="11" class="text-center">
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                    Loading payment requests...
+                                </div>
+                            </td>
+                        </tr>
+                    `);
+
                     $.ajax({
                         url: `/finance/payment-voucher/payment-requests/${poId}`,
                         type: 'GET',
                         success: function(response) {
                             if (response.success) {
-                                const tbody = $('#paymentRequestsTable tbody');
                                 tbody.empty();
 
                                 if (response.payment_requests.length > 0) {
                                     $.each(response.payment_requests, function(index, request) {
-                                        let {
-                                            id,
-                                            amount,
-                                            purpose,
-                                            request_date,
-                                            status,
-                                            request_no,
-                                            supplier_id,
-                                            type,
-                                            purchaseOrder
-                                        } = request;
-
-                                        let {
-                                            truck_no
-                                        } = purchaseOrder;
-
-                                        const isChecked = $(
-                                            'input[name="payment_requests[]"][value="' +
-                                            id + '"]').length > 0;
-
+                                        const isChecked = selectedRequests.includes(
+                                            request.id.toString());
                                         tbody.append(`
                                             <tr>
                                                 <td>
-                                                    <input type="checkbox" class="request-checkbox" value="${id}" 
-                                                        data-supplier-id="${supplier_id || ''}" 
-                                                        data-amount="${amount}" 
-                                                        data-purpose="${purpose}" 
-                                                        data-request-no="${request_no}" 
-                                                        data-truck-no="${truck_no}"
+                                                    <input type="checkbox" class="request-checkbox" 
+                                                        value="${request.id}" 
+                                                        data-supplier-id="${request.supplier_id || ''}" 
+                                                        data-amount="${request.amount}" 
+                                                        data-purpose="${request.purpose}" 
+                                                        data-request-no="${request.contract_no}" 
+                                                        data-truck-no="${request.truck_no}"
+                                                        data-bilty-no="${request.bilty_no}"
+                                                        data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
+                                                        data-loading-date="${request.loading_date}"
+                                                        data-loading-weight="${request.loading_weight}"
                                                         ${isChecked ? 'checked' : ''}>
                                                 </td>
-                                                <td>${request_no}</td>
-                                                <td>${request_date}</td>
-                                                <td>${amount}</td>
-                                                <td>${purpose}</td>
+                                                <td>${request.contract_no}</td>
+                                                <td>${request.purpose}</td> 
+                                                <td>${request.saudaType}</td> 
+                                                <td>${request.request_date}</td>
                                                 <td>
-                                                    <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
-                                                        ${type}
+                                                    <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                                        <span
+                                                        class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+                                                            style="border-radius: 3px 0 0 3px;">
+                                                            ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
+                                                        </span>
+                                                        <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+                                                            style="border-radius: 0 3px 3px 0;">
+                                                            ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+                                                        </span>
                                                     </span>
                                                 </td>
+                                                <td>${request.truck_no}</td>
+                                                <td>${request.bilty_no}</td>
+                                                <td>${request.loading_date}</td>
+                                                <td>${request.loading_weight}</td>
+                                                <td>${request.amount}</td>
                                             </tr>
                                         `);
                                     });
                                 } else {
                                     tbody.append(
-                                        '<tr><td colspan="6" class="text-center">No payment requests found for this purchase order</td></tr>'
+                                        '<tr><td colspan="11" class="text-center">No payment requests found for this purchase order</td></tr>'
                                     );
                                 }
 
+                                // Update bank accounts dropdown
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
@@ -480,45 +428,65 @@
                                             'N/A');
 
                                         bankAccountSelect.append(option);
-
-                                        // Select the previously selected bank account
-                                        if (account.id ==
-                                            @json($paymentVoucher->bank_account_id)) {
-                                            bankAccountSelect.val(account.id).trigger(
-                                                'change');
-                                        }
                                     });
+                                    bankAccountSelect.trigger('change');
                                 }
 
+                                // Update selected requests list
                                 updateSelectedRequestsList();
                             }
+                        },
+                        error: function(xhr) {
+                            tbody.html(`
+                                <tr>
+                                    <td colspan="11" class="text-center text-danger">
+                                        Error loading payment requests. Please try again.
+                                    </td>
+                                </tr>
+                            `);
+                            console.error('Error:', xhr.responseText);
                         }
                     });
+                } else {
+                    tbody.html(`
+                        <tr>
+                            <td colspan="11" class="text-center">Please select a purchase order first.</td>
+                        </tr>
+                    `);
                 }
             });
+
+            // Trigger change event on page load to load payment requests
+            $('#module_id').trigger('change');
 
             $(document).on('change', '.request-checkbox', function() {
                 updateSelectedRequestsList();
             });
 
-            function updateSelectedRequestsList() {
-                const selectedRequests = [];
+            function updateSelectedRequestsList(initialRequests = null) {
+                const selectedRequests = initialRequests || [];
                 let totalAmount = 0;
 
-                $('.request-checkbox:checked').each(function() {
-                    selectedRequests.push({
-                        id: $(this).val(),
-                        amount: $(this).data('amount'),
-                        purpose: $(this).data('purpose'),
-                        supplierId: $(this).data('supplier-id'),
-                        requestNo: $(this).data('request-no'),
-                        truckNo: $(this).data('truck-no')
+                if (!initialRequests) {
+                    $('.request-checkbox:checked').each(function() {
+                        selectedRequests.push({
+                            id: $(this).val(),
+                            amount: $(this).data('amount'),
+                            purpose: $(this).data('purpose'),
+                            supplierId: $(this).data('supplier-id'),
+                            requestNo: $(this).data('request-no'),
+                            truckNo: $(this).data('truck-no'),
+                            biltyNo: $(this).data('bilty-no'),
+                            moduleType: $(this).data('module-type')
+                        });
+                        totalAmount += parseFloat($(this).data('amount'));
                     });
-                    totalAmount += parseFloat($(this).data('amount'));
-                });
-
-                const listContainer = $('.selected-requests-list');
-                const emptyMessage = $('.selected-requests-container p');
+                } else {
+                    // For initial load, we need to calculate total amount from the data
+                    $('.request-checkbox:checked').each(function() {
+                        totalAmount += parseFloat($(this).data('amount'));
+                    });
+                }
 
                 if (selectedRequests.length > 0) {
                     listContainer.empty();
@@ -528,9 +496,14 @@
                         $('#supplier_id').val(request.supplierId);
 
                         listContainer.append(`
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>#${request.requestNo} ${request.truckNo ? '- ' + request.truckNo : ''}</span>
-                                <span class="badge badge-primary badge-pill">${request.amount}</span>
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>#${request.requestNo || request.id}</span>
+                                    <span class="badge badge-primary badge-pill">${request.amount}</span>
+                                </div>
+                                <div class="small text-muted">
+                                    Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
+                                </div>
                                 <input type="hidden" name="payment_requests[]" value="${request.id}">
                             </li>
                         `);
@@ -549,7 +522,6 @@
                     emptyMessage.show();
                 }
             }
-
         });
     </script>
     <style>

@@ -7,6 +7,7 @@ Route::prefix('payment-voucher')->group(function () {
     Route::get('approvals/{id}', [PaymentVoucherController::class, 'manageApprovals'])->name('payment-voucher.approvals');
     Route::post('generate-pv-number', [PaymentVoucherController::class, 'generatePvNumber'])->name('payment-voucher.generate-pv-number');
     Route::get('payment-requests/{purchaseOrderId}', [PaymentVoucherController::class, 'getPaymentRequests'])->name('payment-voucher.payment-requests');
+    Route::get('account-payment-requests/{accountId}', [PaymentVoucherController::class, 'getAccountPaymentRequests'])->name('payment-voucher.account-payment-requests');
 });
 
 Route::resource('payment-voucher', PaymentVoucherController::class);

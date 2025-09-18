@@ -257,7 +257,9 @@ class FreightRequestController extends Controller
             $purchaseOrderID = $requestData['purchase_order_id'];
 
             $purchaseOrder = ArrivalPurchaseOrder::where('id', $purchaseOrderID)->first();
-            $accountId = $purchaseOrder->supplier->account_id ?? null;
+
+            $vendor = Vendor::where('id', $request->vendor_id)->first();
+            $accountId = $vendor->account_id ?? null;
 
             $requestData['account_id'] = $accountId;
             $requestData['supplier_name'] = $purchaseOrder->supplier->name;

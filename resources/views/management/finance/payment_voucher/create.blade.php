@@ -112,8 +112,20 @@
                             </div> --}}
 
                             <div class="row">
+                                <input type="hidden" name="model_id" id="model_id">
                                 <div class="col-md-12">
                                     <div class="form-group">
+                                        <label for="req_account_id">Account</label>
+                                        <select name="request_account_id" id="req_account_id" class="form-control select2">
+                                            <option value="">Select Account</option>
+                                            @foreach ($accounts as $account)
+                                                <option value="{{ $account->id }}">{{ $account->name }}
+                                                    ({{ $account->unique_no }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    {{-- <div class="form-group">
                                         <label for="supplier_id">Supplier</label>
                                         <select name="supplier_id" id="supplier_id" class="form-control select2" required>
                                             <option value="">Select Supplier</option>
@@ -121,7 +133,7 @@
                                                 <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                                             @endforeach
                                         </select>
-                                    </div>
+                                    </div> --}}
                                 </div>
                             </div>
 
@@ -318,74 +330,79 @@
                 return `${type} - ${title} (${accountNo})`;
             }
 
-            $('#supplier_id').change(function() {
-                const supplierId = $(this).val();
+            // Replace the supplier change event with account change event
+            $('#req_account_id').change(function() {
+                const accountId = $(this).val();
                 const tbody = $('#paymentRequestsTable tbody');
 
-                if (supplierId) {
+                if (accountId) {
                     tbody.html(`
-                <tr>
-                    <td colspan="11" class="text-center">
-                        <div class="d-flex justify-content-center align-items-center">
-                            <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-                            Loading payment requests...
-                        </div>
-                    </td>
-                </tr>
-            `);
+                                <tr>
+                                    <td colspan="11" class="text-center">
+                                        <div class="d-flex justify-content-center align-items-center">
+                                            <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                            Loading payment requests...
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
 
                     $.ajax({
-                        url: `/finance/payment-voucher/payment-requests/${supplierId}`,
+                        url: `/finance/payment-voucher/account-payment-requests/${accountId}`,
                         type: 'GET',
                         success: function(response) {
                             if (response.success) {
                                 tbody.empty();
 
+                                if (response.model_id) {
+                                    $('#model_id').val(response.model_id);
+                                }
+
                                 if (response.payment_requests.length > 0) {
                                     $.each(response.payment_requests, function(index, request) {
                                         tbody.append(`
-                                    <tr>
-                                        <td>
-                                            <input type="checkbox" class="request-checkbox" 
-                                                value="${request.id}" 
-                                                data-supplier-id="${request.supplier_id || ''}" 
-                                                data-amount="${request.amount}" 
-                                                data-purpose="${request.purpose}" 
-                                                data-request-no="${request.contract_no}" 
-                                                data-truck-no="${request.truck_no}"
-                                                data-bilty-no="${request.bilty_no}"
-                                                data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
-                                                data-loading-date="${request.loading_date}"
-                                                data-loading-weight="${request.loading_weight}">
-                                        </td>
-                                        <td>${request.contract_no}</td>
-                                        <td>${request.purpose}</td> 
-                                        <td>${request.saudaType}</td> 
-                                        <td>${request.request_date}</td>
-                                        <td>
-                                            <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                                                <span
-                                                class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
-                                                    style="border-radius: 3px 0 0 3px;">
-                                                    ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
-                                                </span>
-                                                <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
-                                                    style="border-radius: 0 3px 3px 0;">
-                                                    ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
-                                                </span>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="request-checkbox" 
+                                            value="${request.id}" 
+                                            data-supplier-id="${request.supplier_id || ''}" 
+                                            data-amount="${request.amount}" 
+                                            data-purpose="${request.purpose}" 
+                                            data-request-no="${request.contract_no}" 
+                                            data-truck-no="${request.truck_no}"
+                                            data-bilty-no="${request.bilty_no}"
+                                            data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
+                                            data-loading-date="${request.loading_date}"
+                                            data-loading-weight="${request.loading_weight}">
+                                    </td>
+                                    <td>${request.contract_no}</td>
+                                    <td>${request.purpose}</td> 
+                                    <td>${request.saudaType}</td> 
+                                    <td>${request.request_date}</td>
+                                    <td>
+                                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                            <span
+                                            class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+                                                style="border-radius: 3px 0 0 3px;">
+                                                ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
                                             </span>
-                                            </td>
-                                            <td>${request.truck_no}</td>
-                                            <td>${request.bilty_no}</td>
-                                            <td>${request.loading_date}</td>
-                                            <td>${request.loading_weight}</td>
-                                            <td>${request.amount}</td>
-                                    </tr>
-                                `);
+                                            <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+                                                style="border-radius: 0 3px 3px 0;">
+                                                ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+                                            </span>
+                                        </span>
+                                        </td>
+                                        <td>${request.truck_no}</td>
+                                        <td>${request.bilty_no}</td>
+                                        <td>${request.loading_date}</td>
+                                        <td>${request.loading_weight}</td>
+                                        <td>${request.amount}</td>
+                                </tr>
+                            `);
                                     });
                                 } else {
                                     tbody.append(
-                                        '<tr><td colspan="11" class="text-center">No payment requests found for this supplier</td></tr>'
+                                        '<tr><td colspan="11" class="text-center">No payment requests found for this account</td></tr>'
                                     );
                                 }
 
@@ -422,28 +439,154 @@
                                 // Reset selected requests
                                 listContainer.hide();
                                 emptyMessage.show();
-                                $('#supplier_id_d').val(supplierId);
                             }
                         },
                         error: function(xhr) {
                             tbody.html(`
-                        <tr>
-                            <td colspan="11" class="text-center text-danger">
-                                Error loading payment requests. Please try again.
-                            </td>
-                        </tr>
-                    `);
+                    <tr>
+                        <td colspan="11" class="text-center text-danger">
+                            Error loading payment requests. Please try again.
+                        </td>
+                    </tr>
+                `);
                             console.error('Error:', xhr.responseText);
                         }
                     });
                 } else {
                     tbody.html(`
-                <tr>
-                    <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="11" class="text-center">Please select an account first.</td>
+            </tr>
+        `);
                 }
             });
+
+            // $('#supplier_id').change(function() {
+            //     const supplierId = $(this).val();
+            //     const tbody = $('#paymentRequestsTable tbody');
+
+            //     if (supplierId) {
+            //         tbody.html(`
+        //                     <tr>
+        //                         <td colspan="11" class="text-center">
+        //                             <div class="d-flex justify-content-center align-items-center">
+        //                                 <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+        //                                 Loading payment requests...
+        //                             </div>
+        //                         </td>
+        //                     </tr>
+        //                 `);
+
+            //         $.ajax({
+            //             url: `/finance/payment-voucher/payment-requests/${supplierId}`,
+            //             type: 'GET',
+            //             success: function(response) {
+            //                 if (response.success) {
+            //                     tbody.empty();
+
+            //                     if (response.payment_requests.length > 0) {
+            //                         $.each(response.payment_requests, function(index, request) {
+            //                             tbody.append(`
+        //                         <tr>
+        //                             <td>
+        //                                 <input type="checkbox" class="request-checkbox" 
+        //                                     value="${request.id}" 
+        //                                     data-supplier-id="${request.supplier_id || ''}" 
+        //                                     data-amount="${request.amount}" 
+        //                                     data-purpose="${request.purpose}" 
+        //                                     data-request-no="${request.contract_no}" 
+        //                                     data-truck-no="${request.truck_no}"
+        //                                     data-bilty-no="${request.bilty_no}"
+        //                                     data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
+        //                                     data-loading-date="${request.loading_date}"
+        //                                     data-loading-weight="${request.loading_weight}">
+        //                             </td>
+        //                             <td>${request.contract_no}</td>
+        //                             <td>${request.purpose}</td> 
+        //                             <td>${request.saudaType}</td> 
+        //                             <td>${request.request_date}</td>
+        //                             <td>
+        //                                 <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+        //                                     <span
+        //                                     class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+        //                                         style="border-radius: 3px 0 0 3px;">
+        //                                         ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
+        //                                     </span>
+        //                                     <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+        //                                         style="border-radius: 0 3px 3px 0;">
+        //                                         ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+        //                                     </span>
+        //                                 </span>
+        //                                 </td>
+        //                                 <td>${request.truck_no}</td>
+        //                                 <td>${request.bilty_no}</td>
+        //                                 <td>${request.loading_date}</td>
+        //                                 <td>${request.loading_weight}</td>
+        //                                 <td>${request.amount}</td>
+        //                         </tr>
+        //                     `);
+            //                         });
+            //                     } else {
+            //                         tbody.append(
+            //                             '<tr><td colspan="11" class="text-center">No payment requests found for this supplier</td></tr>'
+            //                         );
+            //                     }
+
+            //                     // Update bank accounts dropdown
+            //                     bankAccountSelect.empty().append(
+            //                         '<option value="">Select Bank Account</option>');
+            //                     if (response.bank_accounts.length > 0) {
+            //                         $.each(response.bank_accounts, function(index, account) {
+            //                             const option = new Option(
+            //                                 `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
+            //                                 account.id,
+            //                                 false,
+            //                                 false
+            //                             );
+
+            //                             $(option).attr('data-title', account.title ||
+            //                                 'No Title');
+            //                             $(option).attr('data-account-title', account
+            //                                 .account_title || 'N/A');
+            //                             $(option).attr('data-account-no', account
+            //                                 .account_number || 'N/A');
+            //                             $(option).attr('data-bank-name', account
+            //                                 .bank_name || 'N/A');
+            //                             $(option).attr('data-branch-name', account
+            //                                 .branch_name || 'N/A');
+            //                             $(option).attr('data-type', account.type ||
+            //                                 'N/A');
+
+            //                             bankAccountSelect.append(option);
+            //                         });
+            //                         bankAccountSelect.trigger('change');
+            //                     }
+
+            //                     // Reset selected requests
+            //                     listContainer.hide();
+            //                     emptyMessage.show();
+            //                     $('#supplier_id_d').val(supplierId);
+            //                 }
+            //             },
+            //             error: function(xhr) {
+            //                 tbody.html(`
+        //             <tr>
+        //                 <td colspan="11" class="text-center text-danger">
+        //                     Error loading payment requests. Please try again.
+        //                 </td>
+        //             </tr>
+        //         `);
+            //                 console.error('Error:', xhr.responseText);
+            //             }
+            //         });
+            //     } else {
+            //         tbody.html(`
+        //     <tr>
+        //         <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
+        //     </tr>
+        // `);
+            //     }
+            // });
 
             $('#module_id').change(function() {
                 const poId = $(this).val();
