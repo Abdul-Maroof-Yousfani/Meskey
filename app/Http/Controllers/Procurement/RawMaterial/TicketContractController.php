@@ -609,7 +609,9 @@ class TicketContractController extends Controller
         }
 
         $contracts = $query->orderBy('created_at', 'desc')->get()->map(function ($c) use ($arrivalTicket) {
-            $totalClosingTrucks = $c->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+         
+            //$totalClosingTrucks = $c->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            $totalClosingTrucks = $c->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;
             $totalClosingTrucksWithoutTicket = $c->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $rejectedTrucks = $c->rejectedArrivalTickets->count();
             $stockInTransitTrucks = $c->stockInTransitTickets->count();
@@ -701,7 +703,8 @@ class TicketContractController extends Controller
                 ]);
             }
 
-            $linkedClosingTrucks = $linkedPurchaseOrder->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+           // $linkedClosingTrucks = $linkedPurchaseOrder->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            $linkedClosingTrucks = $linkedPurchaseOrder->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;
             $linkedClosingTrucksWithoutOwn = $linkedPurchaseOrder->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $linkedRejectedTrucks = $linkedPurchaseOrder->rejectedArrivalTickets->count();
             $linkedStockInTransitTrucks = $linkedPurchaseOrder->stockInTransitTickets->count();
