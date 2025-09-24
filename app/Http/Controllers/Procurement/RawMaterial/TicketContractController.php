@@ -138,7 +138,7 @@ class TicketContractController extends Controller
             $amount = $arrivalTicket->arrived_net_weight * $purchaseOrder->rate_per_kg;
             $truckNo = $arrivalTicket->truck_no ?? 'N/A';
             $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
-            $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+            //  $grnNo = $arrivalTicket->arrivalSlip->unique_no;
             $freightTruckMatches = null;
             $freightBiltyMatches = null;
 
@@ -183,6 +183,17 @@ class TicketContractController extends Controller
                 ]);
             }
 
+
+            if ($arrivalTicket->first_qc_status == 'rejected') {
+                DB::commit();
+
+                return response()->json([
+                    'success' => 'Ticket successfully linked to contract',
+                    'redirect' => route('raw-material.ticket-contracts.index')
+                ]);
+            }
+
+            $grnNo = $arrivalTicket->arrivalSlip->unique_no;
             $referenceNo = "$truckNo/$biltyNo";
             $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
             $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
@@ -198,8 +209,8 @@ class TicketContractController extends Controller
             $loadingWeight = null;
             if ($arrivalTicket->saudaType->name == 'Pohanch') {
                 $loadingWeight = $arrivedWeight;
-                $txn = Transaction::where('voucher_no', $purchaseOrder->contract_no)
-                    ->where('purpose', 'supplier-payable')
+                $txn = Transaction::where('purpose', 'supplier-payable')
+                    ->where('grn_no',$grnNo)
                     ->where('against_reference_no', $referenceNo)
                     ->first();
 
@@ -208,6 +219,7 @@ class TicketContractController extends Controller
                     'account_id' => $purchaseOrder->supplier->account_id,
                     'type' => 'credit',
                     'counter_account_id' => $qcAccountId,
+                    'voucher_no'=>  $purchaseOrder->contract_no,
                     'grn_no' => $grnNo,
                     'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
                 ];

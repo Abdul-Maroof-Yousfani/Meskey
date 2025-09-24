@@ -19,6 +19,8 @@ class StickyTable extends Component
         $emptyMessage = 'No data found',
         $pagination = null
     ) {
+
+        
         $this->items = $items;
         $this->leftSticky = $leftSticky;
         $this->rightSticky = $rightSticky;
