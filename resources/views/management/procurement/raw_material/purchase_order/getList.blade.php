@@ -25,7 +25,8 @@
     @slot('body')
         @foreach ($arrivalPurchaseOrder as $row)
             @php
-                $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
+              //  $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
+                $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
                 $rejectedTrucks = $row->rejectedArrivalTickets->count();
                 $inTransitTrucks = $row->stockInTransitTickets->count();
                 $orderedTrucks = $row->no_of_trucks ?? 0;

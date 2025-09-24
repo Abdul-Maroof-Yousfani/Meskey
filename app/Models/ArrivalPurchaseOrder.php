@@ -244,6 +244,11 @@ class ArrivalPurchaseOrder extends Model
         return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
             ->where('first_qc_status', 'rejected');
     }
+    public function approvedArrivalTickets()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->where('arrival_slip_status', 'generated');
+    }
     // public function rejectedTickets()
     // {
     //     return $this->hasMany(PurchaseTicket::class, 'purchase_order_id')
