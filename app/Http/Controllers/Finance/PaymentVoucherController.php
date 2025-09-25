@@ -259,7 +259,8 @@ class PaymentVoucherController extends Controller
         $paymentRequests = collect();
         $modelId = null;
 
-        if ($tableName === 'Supplier') {
+        if ($tableName === 'suppliers') {
+           
             $supplier = Supplier::with(['companyBankDetails', 'ownerBankDetails'])
                 ->where('account_id', $account->id)
                 ->first();
@@ -328,8 +329,10 @@ class PaymentVoucherController extends Controller
                                 : ''
                         ];
                     });
+
+          
             }
-        } elseif ($tableName === 'Broker') {
+        } elseif ($tableName === 'brokers') {
             $broker = Broker::with(['companyBankDetails', 'ownerBankDetails'])
                 ->where('account_id', $account->id)
                 ->first();

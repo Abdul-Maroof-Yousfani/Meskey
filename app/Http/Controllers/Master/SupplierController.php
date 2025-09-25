@@ -91,7 +91,7 @@ class SupplierController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
+                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'suppliers'));
                 $requestData['account_id'] = $account->id;
             }
 
@@ -207,7 +207,7 @@ class SupplierController extends Controller
                 $account = Account::create(getParamsForAccountCreation(
                     $request->company_id,
                     $request->company_name,
-                    'Supplier'
+                    'suppliers'
                 ));
                 $requestData['account_id'] = $account->id;
             }
