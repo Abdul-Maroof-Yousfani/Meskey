@@ -6,9 +6,10 @@
     <td class="dashed-indent position-relative" data-indent-w="{{ $indent * 0.7 }}px">
         <p class="m-0" style="padding-left: {{ $indent }}px">
             {{-- #{{ $account->unique_no }} --}}
-            <br><small>
+             #{{ $account->hierarchy_path }}
+            {{-- <br><small>
                 {{ $account->hierarchy_path }}
-            </small>
+            </small> --}}
         </p>
     </td>
     <td>
