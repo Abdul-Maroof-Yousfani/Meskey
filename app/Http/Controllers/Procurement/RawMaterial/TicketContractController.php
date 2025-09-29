@@ -245,7 +245,7 @@ class TicketContractController extends Controller
                     );
                 }
 
-                $txnInv = Transaction::where('voucher_no', $purchaseOrder->contract_no)
+                $txnInv = Transaction::where('grn_no',$grnNo)
                     ->where('purpose', 'arrival-slip')
                     ->where('against_reference_no', $referenceNo)
                     ->first();
@@ -295,10 +295,11 @@ class TicketContractController extends Controller
                     $truckNo = $freightTruckMatches;
                     $biltyNo = $freightBiltyMatches;
 
-                    $stockTrx = Transaction::where('voucher_no', $contractNo)
+                    $stockTrx = Transaction::where('grn_no',$grnNo)
+                    //where('voucher_no', $contractNo)
                         ->where('purpose', 'stock-in-transit')
                         ->where('type', 'credit')
-                        ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
+                      //  ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
 
                     if ($stockTrx) {
@@ -328,10 +329,11 @@ class TicketContractController extends Controller
                         );
                     }
 
-                    $txnInv = Transaction::where('voucher_no', $contractNo)
+                    $txnInv = Transaction::where('grn_no',$grnNo)
+                    //where('voucher_no', $contractNo)
                         ->where('purpose', 'arrival-slip')
                         ->where('type', 'debit')
-                        ->where('against_reference_no', $referenceNo)
+                        //->where('against_reference_no', $referenceNo)
                         ->first();
 
                     if ($txnInv) {
@@ -362,9 +364,10 @@ class TicketContractController extends Controller
                         );
                     }
 
-                    $supplierTxn = Transaction::where('voucher_no', $contractNo)
+                    $supplierTxn = Transaction::where('grn_no',$grnNo)
+                    //where('voucher_no', $contractNo)
                         ->where('purpose', 'supplier-payable')
-                        ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
+                       // ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
 
                     if ($supplierTxn) {
@@ -399,10 +402,11 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
-                $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                $existingBrokerTrx = Transaction::where('grn_no',$grnNo)
+                //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
                     ->where('account_id', $arrivalTicket->purchaseOrder->broker->account_id)
-                    ->where('against_reference_no', "$truckNo/$biltyNo")
+                   // ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
                 if ($existingBrokerTrx) {
@@ -436,10 +440,11 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
-                $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                $existingBrokerTrx = Transaction::where('grn_no',$grnNo)
+                //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
                     ->where('account_id', $arrivalTicket->purchaseOrder->brokerTwo->account_id)
-                    ->where('against_reference_no', "$truckNo/$biltyNo")
+                  //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
                 if ($existingBrokerTrx) {
@@ -473,10 +478,11 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
-                $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                $existingBrokerTrx = Transaction::where('grn_no',$grnNo)
+                //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
                     ->where('account_id', $arrivalTicket->purchaseOrder->brokerThree->account_id)
-                    ->where('against_reference_no', "$truckNo/$biltyNo")
+                  //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
                 if ($existingBrokerTrx) {
