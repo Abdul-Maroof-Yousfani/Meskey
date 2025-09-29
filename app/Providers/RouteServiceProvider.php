@@ -51,6 +51,10 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware(['auth', 'web', 'check.company'])
                 ->prefix('finance')
                 ->group(base_path('routes/finance.php'));
+            //reports
+            Route::middleware(['auth', 'web', 'check.company'])
+                ->prefix('reports')
+                ->group(base_path('routes/reports.php'));
             // Web routes
             Route::middleware('web')
                 ->group(function () {
@@ -64,7 +68,7 @@ class RouteServiceProvider extends ServiceProvider
                     //    require base_path('routes/acl.php');
                     // require base_path('routes/dashboard.php');
                     //    });
-
+    
                     // Route::middleware(['auth'])
                     //    ->group(function () {
                     // require base_path('routes/profile.php');
