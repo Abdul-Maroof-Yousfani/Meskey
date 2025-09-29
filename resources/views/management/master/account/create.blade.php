@@ -8,7 +8,7 @@
         $unique_no = generateUniqueNumber('accounts', $datePrefix, null, 'unique_no');
         ?>
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        {{-- <div class="col-xs-6 col-sm-6 col-md-6">
             <fieldset>
                 <div class="input-group">
                     <div class="input-group-prepend">
@@ -18,7 +18,7 @@
                         placeholder="Account Code">
                 </div>
             </fieldset>
-        </div>
+        </div> --}}
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">

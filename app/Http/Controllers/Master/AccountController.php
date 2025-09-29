@@ -52,6 +52,7 @@ class AccountController extends Controller
     {
         $validatedData = $request->validated();
         $validatedData['company_id'] = $request->company_id;
+        $validatedData['request_account_id'] = 0;
 
         $account = Account::create($validatedData);
 
@@ -76,10 +77,10 @@ class AccountController extends Controller
     public function update(AccountRequest $request, $id)
     {
         $data = $request->validated();
-        $broker = Station::findOrFail($id);
+        $broker = Account::findOrFail($id);
         $broker->update($data);
 
-        return response()->json(['success' => 'Station updated successfully.', 'data' => $broker], 200);
+        return response()->json(['success' => 'Account updated successfully.', 'data' => $broker], 200);
     }
 
     /**
@@ -87,9 +88,9 @@ class AccountController extends Controller
      */
     public function destroy($id)
     {
-        $broker = Station::findOrFail($id);
+        $broker = Account::findOrFail($id);
 
         $broker->delete();
-        return response()->json(['success' => 'Station deleted successfully.'], 200);
+        return response()->json(['success' => 'Account deleted successfully.'], 200);
     }
 }

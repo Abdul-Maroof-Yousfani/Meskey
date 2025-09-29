@@ -22,6 +22,7 @@ class AccountRequest extends FormRequest
             //     Rule::unique('accounts', 'unique_no')
             //         ->ignore($this->account)
             // ],
+            
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'account_type' => ['required', Rule::in(['debit', 'credit'])],
