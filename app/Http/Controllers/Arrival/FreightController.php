@@ -76,6 +76,11 @@ class FreightController extends Controller
 
                 $ticket = ArrivalTicket::where('id', $request->arrival_ticket_id)->first();
 
+                if ($ticket->freight_status !== 'pending') {
+                    return response('Freight has already been completed and cannot be performed again.', 422);
+                }
+
+
                 if ($ticket) {
                     $ticket->update([
                         'freight_status' => 'completed',
@@ -133,7 +138,7 @@ class FreightController extends Controller
                             'no',
                             [
                                 'grn_no' => $grnNo,
-                                'counter_account_id' =>  $ticket->qcProduct->account_id,
+                                'counter_account_id' => $ticket->qcProduct->account_id,
                                 'purpose' => "supplier-payable",
                                 'payment_against' => "pohanch-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -154,7 +159,7 @@ class FreightController extends Controller
                                 [
                                     'grn_no' => $grnNo,
                                     'purpose' => "broker",
-                                    'counter_account_id' =>  $ticket->qcProduct->account_id,
+                                    'counter_account_id' => $ticket->qcProduct->account_id,
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -175,7 +180,7 @@ class FreightController extends Controller
                                 [
                                     'grn_no' => $grnNo,
                                     'purpose' => "broker",
-                                    'counter_account_id' =>  $ticket->qcProduct->account_id,
+                                    'counter_account_id' => $ticket->qcProduct->account_id,
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -196,7 +201,7 @@ class FreightController extends Controller
                                 [
                                     'grn_no' => $grnNo,
                                     'purpose' => "broker",
-                                    'counter_account_id' =>  $ticket->qcProduct->account_id,
+                                    'counter_account_id' => $ticket->qcProduct->account_id,
                                     'payment_against' => "pohanch-purchase",
                                     'against_reference_no' => "$truckNo/$biltyNo",
                                     'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
@@ -213,7 +218,7 @@ class FreightController extends Controller
                             'no',
                             [
                                 'grn_no' => $grnNo,
-                                'counter_account_id' =>  $ticket->purchaseOrder->supplier->account_id,
+                                'counter_account_id' => $ticket->purchaseOrder->supplier->account_id,
                                 'purpose' => "arrival-slip",
                                 'payment_against' => "pohanch-purchase",
                                 'against_reference_no' => "$truckNo/$biltyNo",
@@ -243,7 +248,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
-                                    'counter_account_id' =>  $purchaseOrder->qcProduct->account_id,
+                                    'counter_account_id' => $purchaseOrder->qcProduct->account_id,
                                     'grn_no' => $grnNo,
                                     'purpose' => "stock-in-transit",
                                     'payment_against' => "thadda-purchase",
