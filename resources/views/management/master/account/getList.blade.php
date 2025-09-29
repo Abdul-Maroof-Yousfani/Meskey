@@ -2,7 +2,9 @@
     <thead>
         <tr>
             <th class="col-sm-2">Account No.</th>
-            <th class="col-sm-3">Account Name</th>
+                   <th class="col-sm-3">Account Name</th>
+            <th class="col-sm-3">Parent</th>
+     
             <th class="col-sm-2">Type</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>

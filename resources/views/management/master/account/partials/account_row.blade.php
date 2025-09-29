@@ -12,6 +12,7 @@
             </small> --}}
         </p>
     </td>
+
     <td>
         <p class="m-0" style="padding-left: {{ $indent }}px">
             {{ $account->name }}
@@ -19,6 +20,12 @@
                 <br>
                 <small class="text-muted">{{ $account->description }}</small>
             @endif
+        </p>
+    </td>
+        <td>
+        <p class="m-0" style="padding-left: {{ $indent }}px">
+            {{ $account->parent?->hierarchy_path }} <br>
+            <small>{{ $account->parent?->name }}</small>
         </p>
     </td>
     <td>
