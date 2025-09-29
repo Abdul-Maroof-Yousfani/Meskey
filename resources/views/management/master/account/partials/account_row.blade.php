@@ -45,7 +45,7 @@
         </p>
     </td>
     <td>
-        <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', true)"
+        <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', false)"
             class="info p-1 text-center mr-2 position-relative">
             <i class="ft-edit font-medium-3"></i>
         </a>

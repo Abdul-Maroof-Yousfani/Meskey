@@ -41,11 +41,11 @@ $(document).ready(function () {
   });
 
   // Perfect Scrollbar for the nav tab content
-  if ($(".modal-sidebar-content").length > 0) {
-    var modal_sidebar_content = new PerfectScrollbar(".modal-tab-content", {
-      wheelPropagation: false,
-    });
-  }
+  // if ($(".modal-sidebar-content").length > 0) {
+  //   var modal_sidebar_content = new PerfectScrollbar(".modal-tab-content", {
+  //     wheelPropagation: false,
+  //   });
+  // }
   // Click on main-content closes the notification drawer and ends pointer cursor
   // $(".main-content").on("click", function () {
   //   if ($(".modal-sidebar.open").length) {

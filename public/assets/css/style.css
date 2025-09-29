@@ -97,3 +97,11 @@ label.priority-badge.warning{color:#ffc107 !important;background-color:#ffc10736
 .head-add1 p{font-size:12px !important;margin-bottom:8px !important;}
 .add-main2{display:flex !important;align-items:center !important;justify-content:space-between !important;}
 }
+
+
+aside#modal-sidebar.open {
+    overflow: auto;
+}
+body.drawer-opened {
+    overflow: hidden;
+}
