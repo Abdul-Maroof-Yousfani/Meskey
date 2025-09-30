@@ -7,10 +7,8 @@
         <th>Broker</th>
         <th>A/c Of</th>
         <th>Truck #</th>
-     
-                <th>Commodity</th>
-
-        <th>Party Ref. No</th>
+        <th>Commodity</th>
+        <th>Party Ref.#</th>
         <th>Status</th>
         <th>Station</th>
         <th>Bilty #</th>
@@ -152,7 +150,7 @@
                                     {{ $deductionValueSlab[$slab->id]['unit'] ?? '' }} --}}
                                     {{ $deductionValueSlab[$slab->id]['checklist_value'] ?? '' }}{{$slab->qc_symbol ?? ''}}
                                 @else
-                                N/A
+                                0
                                 @endif
                                 
                             </td>
