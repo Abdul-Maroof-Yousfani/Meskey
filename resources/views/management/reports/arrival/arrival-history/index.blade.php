@@ -16,6 +16,14 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
+                          <div class="row">
+                             <div class="col-md-12 d-flex align-items-end justify-content-end">
+                                                <div class="form-group mb-0">
+                                                    <button class="btn btn-primary" onclick="exportToExcel('exportableTable','ArrivalReport')">Export to Excel</button>
+
+                                                </div>
+                                            </div>
+                            </div>
                             <form id="filterForm" class="form">
                                 <div class="row">
                                     <div class="col-md-12 my-1">
@@ -118,6 +126,7 @@
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
                                             </div>
+                                           
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -126,19 +135,54 @@
                                     </div>
                                 </div>
                             </form>
+                          
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                          
+                                <table class="table m-0" id="exportableTable">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Ticket No. </th>
-                                            <th class="col-sm-2">Commodity</th>
-                                            <th class="col-sm-2">Supplier</th>
-                                            <th class="col-sm-1">Truck No</th>
-                                            <th class="col-sm-1">Bilty No</th>
-                                            <th class="col-sm-2">Created</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th>Ticket #</th>
+                                            <th>Status</th>
+                                        
+                                            <th>Miller</th>
+                                            <th>Broker</th>
+                                            <th>A/c Of</th>
+                                            <th>Truck #</th>
+                                            <th>Commodity</th>
+                                            <th>Party Ref.#</th>
+                                            <th>Status</th>
+                                            <th>Station</th>
+                                            <th>Bilty #</th>
+                                            <th>Loading Weight</th>
+                                            <th>1st Weight</th>
+                                            <th>2nd Weight</th>
+                                            <th>Net Weight</th>
+                                            <th>Wt. Diff.</th>
+                                            {{-- <th>GRN #</th> --}}
+                                            {{-- <th>Sauda Type</th>
+                                            <th>Station</th> --}}
+                                            <th>Bag Type</th>
+                                            <th>Bag Condition</th>
+                                            <th>Bag Packing</th>
+                                            <th>No. Bag</th>
+                                            @foreach (getTableData('product_slab_types') as $slab)
+                                                <th>{{ $slab->name }}</th>
+                                            @endforeach
+                                            @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
+                                                <th>{{ $compulsory_slab_type->name }}</th>
+                                            @endforeach
+                                            <th>Warehouse</th>
+                                            <th>Gala</th>
+                                            {{-- <th>Tabaar Remarks</th> --}}
+
+                                            {{-- <th>Contract</th> --}}
+                                            <th>Final QC Report</th>
+                                            <th>Bilty</th>
+                                            <th>Loading Weight</th>
+                                            <th>Arrival Slip</th>
+                                            {{-- <th>Action</th> --}}
                                         </tr>
                                     </thead>
                                 </table>

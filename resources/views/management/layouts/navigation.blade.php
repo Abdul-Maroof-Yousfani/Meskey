@@ -409,6 +409,24 @@
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
                 <ul class="dropdown-menu">
+                    @canAccess('report-arrival-report')
+                       <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
+                        <a class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown">
+                            <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Arrival</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('arrival-history.index') }}"
+                                    onclick="loadPageContent('{{ route('arrival-history.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Arrival Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    @endcanAccess
                     @canAccess('report-ledger-report')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ url('transactions/report') }}"
@@ -425,6 +443,7 @@
                                 data-i18n="Email">Indicative Price Reports</span></a>
                     </li>
                     @endcanAccess
+              
                 </ul>
             </li>
             @endcanAccess

@@ -35,14 +35,13 @@
         <th>Warehouse</th>
         <th>Gala</th>
         {{-- <th>Tabaar Remarks</th> --}}
-        <th>Loaded Weight</th>
-        <th>Arrived Weight</th>
-        <th>Contract</th>
+
+        {{-- <th>Contract</th> --}}
         <th>Final QC Report</th>
         <th>Bilty</th>
         <th>Loading Weight</th>
         <th>Arrival Slip</th>
-        <th>Action</th>
+        {{-- <th>Action</th> --}}
     @endslot
 
     @slot('body')
@@ -147,26 +146,32 @@
                         <td>{{ $row->approvals->total_bags ?? 'N/A' }}</td>
                       
                         @foreach (getTableData('product_slab_types') as $slab)
-                            <th data-slaptypename="{{ $deductionValueSlab[$slab->id]['name'] ?? 'N/A' }}">
+                            <td data-slaptypename="{{ $deductionValueSlab[$slab->id]['name'] ?? 'N/A' }}">
                                 @if(isset($deductionValueSlab[$slab->id]['deduction']))
                                     {{-- {{ $deductionValueSlab[$slab->id]['deduction'] }}
                                     {{ $deductionValueSlab[$slab->id]['unit'] ?? '' }} --}}
-                                    {{ $deductionValueSlab[$slab->id]['checklist_value'] ?? '' }}
+                                    {{ $deductionValueSlab[$slab->id]['checklist_value'] ?? '' }}{{$slab->qc_symbol ?? ''}}
                                 @else
                                 N/A
                                 @endif
-                            </th>
+                                
+                            </td>
                         @endforeach
                         @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
-                            <th data-slaptypename="{{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['name'] ?? 'N/A' }}">
+                           @php
+    $options = json_decode($compulsory_slab_type->options, true);
+@endphp
+
+
+                            <td data-slaptypename="{{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['name'] ?? 'N/A' }}">
                                 @if(isset($compulsoryDeductionValueSlab[$compulsory_slab_type->id]['deduction']))
                                     {{-- {{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['deduction'] }}
                                     {{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['unit'] ?? '' }} --}}
                                     {{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['checklist_value'] ?? '' }} 
                                 @else
-                                N/A
+                                    {{ $compulsory_slab_type->default_options }}
                                 @endif
-                            </th>
+                            </td>
                         @endforeach
                             
                 
@@ -174,7 +179,7 @@
     
                         <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
                         <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
-                        <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td>
+                        {{-- <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td> --}}
                         <td>
                             <button class="info p-1 text-center mr-2 position-relative btn"
                                 onclick="openModal(this,'{{ route('ticket.show', ['ticket' => $row->id, 'source' => 'contract']) }}','Ticket: {{ $row->unique_no }}', true, '90%')">
@@ -211,7 +216,7 @@
                                 </a>
                             </button>
                         </td>
-                        <td>
+                        {{-- <td>
                             @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
                                 <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
                                     class="info p-1 text-center mr-2 position-relative">
@@ -223,7 +228,7 @@
                                     <i class="ft-eye font-medium-3"></i>
                                 </a>
                             @endif
-                        </td>
+                        </td> --}}
                     </tr>
         @endforeach
     @endslot

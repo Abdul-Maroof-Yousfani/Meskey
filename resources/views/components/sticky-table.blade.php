@@ -1,6 +1,6 @@
 <div class="sticky-table-container" data-left-sticky="{{ $leftSticky }}" data-right-sticky="{{ $rightSticky }}">
     <div class="sticky-table-scroller">
-        <table class="table sticky-table">
+        <table class="table sticky-table" id="exportableTable">
             <thead>
                 <tr>
                     {{ $head }}

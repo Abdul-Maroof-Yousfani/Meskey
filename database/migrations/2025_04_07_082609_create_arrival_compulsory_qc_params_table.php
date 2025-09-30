@@ -23,6 +23,7 @@ return new class extends Migration {
 
             $table->enum('type', ['dropdown', 'text']);
             $table->json('options')->nullable(); // only for dropdowns
+            $table->string('default_options')->nullable(); 
             $table->timestamps();
         });
     }
