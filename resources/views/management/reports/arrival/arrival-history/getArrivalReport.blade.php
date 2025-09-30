@@ -1,4 +1,4 @@
-<x-sticky-table :items="$tickets" :leftSticky="2" :rightSticky="1" :emptyMessage="'No tickets found'" :pagination="$tickets->links()">
+<x-sticky-table :items="$tickets" :leftSticky="2" :rightSticky="1" :emptyMessage="'No tickets found'" :pagination="false" >
     @slot('head')
         <th>Ticket #</th>
         <th>Status</th>
