@@ -31,11 +31,11 @@ class ArrivalReportController extends Controller
                 $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
-            ->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
-            ->where(function ($query) {
-                $query->where('arrival_tickets.freight_status', 'completed')
-                    ->orWhere('arrival_tickets.first_qc_status', 'rejected');
-            })
+            //->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
+           // ->where(function ($query) {
+              //  $query->where('arrival_tickets.freight_status', 'completed')
+           //         ->orWhere('arrival_tickets.first_qc_status', 'rejected');
+         //   })
             ->when($request->filled('grn_no'), function ($q) use ($request) {
                 return $q->where('grn_numbers.unique_no', 'like', '%' . $request->grn_no . '%');
             })

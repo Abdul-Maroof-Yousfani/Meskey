@@ -210,7 +210,7 @@ class TicketContractController extends Controller
             if ($arrivalTicket->saudaType->name == 'Pohanch') {
                 $loadingWeight = $arrivedWeight;
                 $txn = Transaction::where('purpose', 'supplier-payable')
-                    ->where('grn_no',$grnNo)
+                    ->where('grn_no', $grnNo)
                     ->where('against_reference_no', $referenceNo)
                     ->first();
 
@@ -219,7 +219,7 @@ class TicketContractController extends Controller
                     'account_id' => $purchaseOrder->supplier->account_id,
                     'type' => 'credit',
                     'counter_account_id' => $qcAccountId,
-                    'voucher_no'=>  $purchaseOrder->contract_no,
+                    'voucher_no' => $purchaseOrder->contract_no,
                     'grn_no' => $grnNo,
                     'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
                 ];
@@ -245,7 +245,7 @@ class TicketContractController extends Controller
                     );
                 }
 
-                $txnInv = Transaction::where('grn_no',$grnNo)
+                $txnInv = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'arrival-slip')
                     ->where('against_reference_no', $referenceNo)
                     ->first();
@@ -256,6 +256,7 @@ class TicketContractController extends Controller
                         'account_id' => $qcAccountId,
                         'counter_account_id' => $purchaseOrder->supplier->account_id,
                         'type' => 'debit',
+                        'voucher_no' => $purchaseOrder->contract_no,
                         'grn_no' => $grnNo,
                         'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total amount: $totalAmount to be paid to supplier."
                     ]);
@@ -295,11 +296,11 @@ class TicketContractController extends Controller
                     $truckNo = $freightTruckMatches;
                     $biltyNo = $freightBiltyMatches;
 
-                    $stockTrx = Transaction::where('grn_no',$grnNo)
-                    //where('voucher_no', $contractNo)
+                    $stockTrx = Transaction::where('grn_no', $grnNo)
+                        //where('voucher_no', $contractNo)
                         ->where('purpose', 'stock-in-transit')
                         ->where('type', 'credit')
-                      //  ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
+                        //  ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
 
                     if ($stockTrx) {
@@ -307,6 +308,7 @@ class TicketContractController extends Controller
                             'amount' => $inventoryAmount,
                             'account_id' => $stockInTransitAccount->id,
                             'counter_account_id' => $qcAccountId,
+                            'voucher_no' => $purchaseOrder->contract_no,
                             'grn_no' => $grnNo,
                             'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $freightBiltyMatches - Truck No: $freightTruckMatches. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg."
                         ]);
@@ -329,8 +331,8 @@ class TicketContractController extends Controller
                         );
                     }
 
-                    $txnInv = Transaction::where('grn_no',$grnNo)
-                    //where('voucher_no', $contractNo)
+                    $txnInv = Transaction::where('grn_no', $grnNo)
+                        //where('voucher_no', $contractNo)
                         ->where('purpose', 'arrival-slip')
                         ->where('type', 'debit')
                         //->where('against_reference_no', $referenceNo)
@@ -342,6 +344,7 @@ class TicketContractController extends Controller
                             'account_id' => $qcAccountId,
                             'counter_account_id' => $purchaseOrder->supplier->account_id,
                             'grn_no' => $grnNo,
+                            'voucher_no' => $purchaseOrder->contract_no,
                             'type' => 'debit',
                             'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total amount: $totalAmount to be paid to supplier."
                         ]);
@@ -364,10 +367,10 @@ class TicketContractController extends Controller
                         );
                     }
 
-                    $supplierTxn = Transaction::where('grn_no',$grnNo)
-                    //where('voucher_no', $contractNo)
+                    $supplierTxn = Transaction::where('grn_no', $grnNo)
+                        //where('voucher_no', $contractNo)
                         ->where('purpose', 'supplier-payable')
-                       // ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
+                        // ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
 
                     if ($supplierTxn) {
@@ -375,6 +378,7 @@ class TicketContractController extends Controller
                             'amount' => $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0,
                             'account_id' => $purchaseOrder->supplier->account_id,
                             'counter_account_id' => $qcAccountId,
+                            'voucher_no' => $purchaseOrder->contract_no,
                             'grn_no' => $grnNo,
                             'type' => 'credit',
                             'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $freightBiltyMatches - Truck No: $freightTruckMatches. Amount payable to the supplier.",
@@ -402,15 +406,16 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
-                $existingBrokerTrx = Transaction::where('grn_no',$grnNo)
-                //where('voucher_no', $contractNo)
+                $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
+                    //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
                     ->where('account_id', $arrivalTicket->purchaseOrder->broker->account_id)
-                   // ->where('against_reference_no', "$truckNo/$biltyNo")
+                    // ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
                 if ($existingBrokerTrx) {
                     $existingBrokerTrx->update([
+                        'voucher_no' => $purchaseOrder->contract_no,
                         'amount' => $amount,
                         'account_id' => $arrivalTicket->purchaseOrder->broker->account_id,
                         'counter_account_id' => $qcAccountId,
@@ -440,11 +445,11 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
-                $existingBrokerTrx = Transaction::where('grn_no',$grnNo)
-                //where('voucher_no', $contractNo)
+                $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
+                    //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
                     ->where('account_id', $arrivalTicket->purchaseOrder->brokerTwo->account_id)
-                  //  ->where('against_reference_no', "$truckNo/$biltyNo")
+                    //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
                 if ($existingBrokerTrx) {
@@ -452,6 +457,7 @@ class TicketContractController extends Controller
                         'amount' => $amount,
                         'account_id' => $arrivalTicket->purchaseOrder->brokerTwo->account_id,
                         'counter_account_id' => $qcAccountId,
+                        'voucher_no' => $purchaseOrder->contract_no,
                         'type' => 'credit',
                         'grn_no' => $grnNo,
                         'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
@@ -478,16 +484,17 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
-                $existingBrokerTrx = Transaction::where('grn_no',$grnNo)
-                //where('voucher_no', $contractNo)
+                $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
+                    //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
                     ->where('account_id', $arrivalTicket->purchaseOrder->brokerThree->account_id)
-                  //  ->where('against_reference_no', "$truckNo/$biltyNo")
+                    //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
                 if ($existingBrokerTrx) {
                     $existingBrokerTrx->update([
                         'amount' => $amount,
+                        'voucher_no' => $purchaseOrder->contract_no,
                         'account_id' => $arrivalTicket->purchaseOrder->brokerThree->account_id,
                         'counter_account_id' => $qcAccountId,
                         'type' => 'credit',
@@ -615,7 +622,7 @@ class TicketContractController extends Controller
         }
 
         $contracts = $query->orderBy('created_at', 'desc')->get()->map(function ($c) use ($arrivalTicket) {
-         
+
             //$totalClosingTrucks = $c->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
             $totalClosingTrucks = $c->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;
             $totalClosingTrucksWithoutTicket = $c->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
@@ -709,7 +716,7 @@ class TicketContractController extends Controller
                 ]);
             }
 
-           // $linkedClosingTrucks = $linkedPurchaseOrder->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
+            // $linkedClosingTrucks = $linkedPurchaseOrder->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
             $linkedClosingTrucks = $linkedPurchaseOrder->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;
             $linkedClosingTrucksWithoutOwn = $linkedPurchaseOrder->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $linkedRejectedTrucks = $linkedPurchaseOrder->rejectedArrivalTickets->count();

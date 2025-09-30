@@ -13,17 +13,28 @@
         <th>Party Ref. No</th>
         <th>Status</th>
         <th>Station</th>
-   <th>Bilty #</th>
-   <th>Loading Weight</th>
-   <th>1st Weight</th>
-   <th>2nd Weight</th>
-   <th>Net Weight</th>
-   <th>Wt. Diff.</th>
-            <th>GRN #</th>
-
-        <th>Sauda Type</th>
-        <th>Station</th>
-        <th>Tabaar Remarks</th>
+        <th>Bilty #</th>
+        <th>Loading Weight</th>
+        <th>1st Weight</th>
+        <th>2nd Weight</th>
+        <th>Net Weight</th>
+        <th>Wt. Diff.</th>
+        {{-- <th>GRN #</th> --}}
+        {{-- <th>Sauda Type</th>
+        <th>Station</th> --}}
+        <th>Bag Type</th>
+        <th>Bag Condition</th>
+        <th>Bag Packing</th>
+        <th>No. Bag</th>
+        @foreach (getTableData('product_slab_types') as $slab)
+            <th>{{ $slab->name }}</th>
+        @endforeach
+        @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
+            <th>{{ $compulsory_slab_type->name }}</th>
+        @endforeach
+        <th>Warehouse</th>
+        <th>Gala</th>
+        {{-- <th>Tabaar Remarks</th> --}}
         <th>Loaded Weight</th>
         <th>Arrived Weight</th>
         <th>Contract</th>
@@ -42,7 +53,10 @@
                     @php
             $tabaar = formatDeductionsAsString(getTicketDeductions($row));
             $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
+           $deductionValueSlab = SlabTypeWisegetTicketDeductions($row)['deductions'] ?? [];
+           $compulsoryDeductionValueSlab = SlabTypeWisegetTicketDeductions($row)['compulsory_deductions'] ?? [];
                     @endphp
+                    {{-- @dd($deductionValueSlab); --}}
                     <tr
                         class="{{ is_null($row->arrival_purchase_order_id) || ($row->arrival_purchase_order_id && $row->is_ticket_verified == 0) ? ' bg-success ' : '' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
                         <td>
@@ -52,8 +66,10 @@
                         <td>
                         @if ($row->first_qc_status == 'rejected')
                             <span class="badge bg-danger ml-1">Rejected</span>
-                        @else
+                        @elseif($row->arrival_slip_status == 'generated')
                             <span class="badge bg-success ml-1">Completed</span>
+                            @else
+                            <span class="badge bg-warning ml-1">Pending</span>
                         @endif
                         </td>
                       
@@ -116,7 +132,7 @@
                     <td>{{ $row->arrived_net_weight ?? 0 }}</td>
                     <td>{{ $row->arrived_net_weight - $row->net_weight ?? 0 }}</td>
 
-                        <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
+                        {{-- <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
                         <td>
                             @if ($row->saudaType->name == 'Thadda')
                                 <span class="badge bg-warning">Thadda</span>
@@ -124,9 +140,40 @@
                                 <span class="badge bg-success">Pohanch</span>
                             @endif
                         </td>
-                        <td>{{ $row->station->name ?? 'N/A' }}</td>
-                        <td>{{ $tabaar }}</td>
+                        <td>{{ $row->station->name ?? 'N/A' }}</td> --}}
+                        <td>{{ $row->approvals->bagType->name ?? 'N/A' }}</td>
+                        <td>{{ $row->approvals->bagCondition->name ?? 'N/A' }}</td>
+                        <td>{{ $row->approvals->bagPacking->name ?? 'N/A' }}</td>
+                        <td>{{ $row->approvals->total_bags ?? 'N/A' }}</td>
+                      
+                        @foreach (getTableData('product_slab_types') as $slab)
+                            <th data-slaptypename="{{ $deductionValueSlab[$slab->id]['name'] ?? 'N/A' }}">
+                                @if(isset($deductionValueSlab[$slab->id]['deduction']))
+                                    {{-- {{ $deductionValueSlab[$slab->id]['deduction'] }}
+                                    {{ $deductionValueSlab[$slab->id]['unit'] ?? '' }} --}}
+                                    {{ $deductionValueSlab[$slab->id]['checklist_value'] ?? '' }}
+                                @else
+                                N/A
+                                @endif
+                            </th>
+                        @endforeach
+                        @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
+                            <th data-slaptypename="{{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['name'] ?? 'N/A' }}">
+                                @if(isset($compulsoryDeductionValueSlab[$compulsory_slab_type->id]['deduction']))
+                                    {{-- {{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['deduction'] }}
+                                    {{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['unit'] ?? '' }} --}}
+                                    {{ $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['checklist_value'] ?? '' }} 
+                                @else
+                                N/A
+                                @endif
+                            </th>
+                        @endforeach
+                            
+                
+                        {{-- <td>{{ $tabaar }}</td> --}}
     
+                        <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
+                        <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
                         <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td>
                         <td>
                             <button class="info p-1 text-center mr-2 position-relative btn"
