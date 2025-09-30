@@ -11,19 +11,17 @@
                         Arrival Report
                     </h2>
                 </div>
+                <div class="col-md-6 d-flex align-items-end justify-content-end">
+                                                <div class="form-group mb-0">
+                                                    <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','ArrivalReport')"><i class="fa fa-file-excel-o mr-2"></i> Export to Excel</button>
+
+                                                </div>
+                                            </div>
             </div>
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                          <div class="row">
-                             <div class="col-md-12 d-flex align-items-end justify-content-end">
-                                                <div class="form-group mb-0">
-                                                    <button class="btn btn-primary" onclick="exportToExcel('exportableTable','ArrivalReport')">Export to Excel</button>
-
-                                                </div>
-                                            </div>
-                            </div>
                             <form id="filterForm" class="form">
                                 <div class="row">
                                     <div class="col-md-12 my-1">
