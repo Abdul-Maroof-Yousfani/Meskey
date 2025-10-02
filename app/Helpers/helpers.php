@@ -290,7 +290,7 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName, $isOperati
 {
     $account = Account::where('name', $pAccName)->first();
 
-    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL];
+    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL,'request_account_id'=>0];
 }
 
 

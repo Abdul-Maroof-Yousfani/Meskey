@@ -3,7 +3,19 @@
      @csrf
      @method('PUT')
      <input type="hidden" id="listRefresh" value="{{ route('get.supplier') }}" />
-
+ <div class="row form-mar mb-2">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Gate Buying Supplier
+            </h6>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="checkbox">
+                <input name="is_gate_buying_supplier" type="checkbox" {{ $supplier->is_gate_buying_supplier == 'Yes' ? 'checked' : '' }} id="is_gate_buying_supplier" value="Yes">
+                <label for="is_gate_buying_supplier"><span>Gate buying supplier</span></label>
+            </div>
+        </div>
+    </div>
      <div class="row">
          <div class="col-12">
              <h6 class="header-heading-sepration">

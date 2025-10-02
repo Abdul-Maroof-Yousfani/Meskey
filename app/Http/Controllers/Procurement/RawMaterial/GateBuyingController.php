@@ -5,14 +5,11 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GateBuyingRequest;
-use App\Models\ArrivalPurchaseOrder;
-use App\Models\Master\Broker;
-use App\Models\Master\CompanyLocation;
-use App\Models\Master\ProductSlab;
+use App\Models\{ArrivalPurchaseOrder,User, Product, TruckSizeRange};
+use App\Models\Master\{Broker, CompanyLocation, ProductSlab, Supplier,ProductSlabForRmPo};
+
 use App\Models\Procurement\PurchaseOrder;
-use App\Models\Product;
-use App\Models\Master\ProductSlabForRmPo;
-use App\Models\TruckSizeRange;
+
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,12 +45,17 @@ class GateBuyingController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
+        $authUserCompany = $request->company_id;
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
-
+        $data['accountsOf'] = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
         return view('management.procurement.raw_material.gate_buying.create', $data);
     }
 
@@ -71,6 +73,7 @@ class GateBuyingController extends Controller
             $data['broker_one_id'] = $broker ? $broker->id : null;
             $data['broker_one_name'] = $data['broker_one'] ?? null;
         }
+
 
         DB::transaction(function () use ($data) {
             $arrivalPOData = collect($data)->except(['slabs'])->toArray();
@@ -243,6 +246,21 @@ class GateBuyingController extends Controller
         return response()->json([
             'success' => true,
             'contract_no' => $contractNo
+        ]);
+    }
+
+        public function getSuppliersByLocation(Request $request)
+    {
+        $request->validate([
+            'location_id' => 'required|exists:company_locations,id'
+        ]);
+
+        $locationId = (string)$request->location_id;
+        $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->where('is_gate_buying_supplier', 'Yes')->get();
+
+        return response()->json([
+            'success' => true,
+            'suppliers' => $suppliers
         ]);
     }
 }

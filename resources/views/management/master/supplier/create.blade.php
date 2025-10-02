@@ -1,8 +1,22 @@
-<form action="{{ route('supplier.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('supplier.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.supplier') }}" />
-
+    <div class="row form-mar mb-2">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Gate Buying Supplier
+            </h6>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="checkbox">
+                <input name="is_gate_buying_supplier" type="checkbox" id="is_gate_buying_supplier" value="Yes">
+                <label for="is_gate_buying_supplier"><span>Gate buying supplier</span></label>
+            </div>
+        </div>
+    </div>
     <div class="row ">
+
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Company Detail
@@ -115,8 +129,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Owner Name:</label>
-                <input type="text" name="owner_name" placeholder="Owner Name" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="owner_name" placeholder="Owner Name" class="form-control" autocomplete="off" />
             </div>
         </div>
 
@@ -132,8 +145,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Owner CNIC:</label>
-                <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
-                    class="form-control cnic-input" autocomplete="off" maxlength="15" />
+                <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1" class="form-control cnic-input"
+                    autocomplete="off" maxlength="15" />
                 <small class="text-muted">Format: 12345-1234567-1</small>
             </div>
         </div>
@@ -146,8 +159,8 @@
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <div class="form-group">
                                 <label>Bank Name:</label>
-                                <input type="text" name="owner_bank_name[]" placeholder="Bank Name"
-                                    class="form-control" autocomplete="off" />
+                                <input type="text" name="owner_bank_name[]" placeholder="Bank Name" class="form-control"
+                                    autocomplete="off" />
                             </div>
                         </div>
                         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -201,8 +214,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="next_to_kin" placeholder="Name" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="next_to_kin" placeholder="Name" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -243,6 +255,7 @@
             </div>
         </div>
     </div>
+
     <div class="row ">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -285,7 +298,7 @@
         }
     }
 
-    $(document).on('input', '.cnic-input', function() {
+    $(document).on('input', '.cnic-input', function () {
         let value = $(this).val().replace(/\D/g, '');
         let formattedValue = '';
 
@@ -304,14 +317,14 @@
 
     toggleRemoveButton();
 
-    $('body').on('click', '.add-more', function() {
+    $('body').on('click', '.add-more', function () {
         var newCard = $('#card-container .clonecard:first').clone();
         newCard.find('input').val('');
         $('#card-container').append(newCard);
         toggleRemoveButton();
     });
 
-    $(document).on('click', '.remove-card', function() {
+    $(document).on('click', '.remove-card', function () {
         if ($('#card-container .clonecard').length > 1) {
             $(this).closest('.clonecard').remove();
             toggleRemoveButton();
@@ -329,14 +342,14 @@
 
     toggleRemoveButton2();
 
-    $('body').on('click', '.add-more2', function() {
+    $('body').on('click', '.add-more2', function () {
         var newCard = $('#card-container2 .clonecard2:first').clone();
         newCard.find('input').val('');
         $('#card-container2').append(newCard);
         toggleRemoveButton2();
     });
 
-    $(document).on('click', '.remove-card2', function() {
+    $(document).on('click', '.remove-card2', function () {
         if ($('#card-container2 .clonecard2').length > 1) {
             $(this).closest('.clonecard2').remove();
             toggleRemoveButton2();

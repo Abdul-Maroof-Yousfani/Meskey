@@ -15,8 +15,8 @@
             @foreach ($arrivalPurchaseOrder as $key => $row)
                 <tr>
                     <td>#{{ $row->contract_no }} <br> {{ $row->product->name ?? ' N/A' }} </td>
-                    <td>{{ $row->supplier_name ?? 'N/A' }}</td>
-                    <td>{{ $row->purchaser_name ?? 'N/A' }}</td>
+                    <td>{{ $row->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $row->decisionOfUser->name ?? 'N/A' }}</td>
                     <td>{{ $row->contact_person_name ?? 'N/A' }}</td>
                     <td>
                         <div class="div-box-b">

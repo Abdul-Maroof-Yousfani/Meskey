@@ -35,6 +35,8 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('gate-buying', GateBuyingController::class);
     Route::post('get-gate-buying', [GateBuyingController::class, 'getList'])->name('get.gate-buying');
     Route::get('/getGateBuyingMainSlabByProduct', [GateBuyingController::class, 'getMainSlabByProduct'])->name('getGateBuyingMainSlabByProduct');
+    Route::get('/get-suppliers-by-location-for-gate-buying', [GateBuyingController::class, 'getSuppliersByLocation'])->name('get.suppliers.by.location_for_gate_buying');
+
 
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::post('get-purchase-order', [PurchaseOrderController::class, 'getList'])->name('get.purchase-order');

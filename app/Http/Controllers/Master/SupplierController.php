@@ -87,6 +87,7 @@ class SupplierController extends Controller
             $requestData['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
             $requestData['name'] = $request->company_name;
             $requestData['company_location_ids'] = $request->company_location_ids;
+            $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
 
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
@@ -200,7 +201,7 @@ class SupplierController extends Controller
         try {
             $data = $request->validated();
             $requestData = $request->all();
-
+$requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($supplier->account_id)) {

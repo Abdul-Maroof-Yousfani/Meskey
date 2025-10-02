@@ -21,6 +21,7 @@ class ArrivalPurchaseOrder extends Model
         'company_id',
         'contract_no',
         'contract_date',
+        'decision_of_id',
         'company_location_id',
         'sauda_type_id',
         'truck_size_range_id',
@@ -130,6 +131,10 @@ class ArrivalPurchaseOrder extends Model
     public function createdByUser()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+    public function decisionOfUser()
+    {
+        return $this->belongsTo(User::class, 'decision_of_id');
     }
 
     public function brokerThree()

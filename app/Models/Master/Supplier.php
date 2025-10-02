@@ -36,7 +36,8 @@ class Supplier extends Model
         'stn',
         'attachment',
         'status',
-        'company_location_ids'
+        'company_location_ids',
+        'is_gate_buying_supplier'
     ];
 
     protected $casts = [

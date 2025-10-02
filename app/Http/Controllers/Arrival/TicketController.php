@@ -134,7 +134,7 @@ class TicketController extends Controller
     {
         $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
             ->where('company_location_id', $locationId)
-            ->where('purchase_type', 'regular')
+          //  ->where('purchase_type', 'regular')
             ->get();
 
         return response()->json([

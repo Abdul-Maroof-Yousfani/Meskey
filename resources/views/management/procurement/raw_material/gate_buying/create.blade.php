@@ -37,25 +37,50 @@
     </div>
 
     <div class="row form-mar">
+
         <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Supplier:</label>
+                <select name="supplier_id" id="supplier_id" class="form-control select22">
+                    <option value="">Supplier</option>
+                    {{-- @foreach ($suppliers as $supplier)
+                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                    @endforeach --}}
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Accounts of:</label>
+                <select name="decision_of_id" id="decision_of_id" class="form-control select22">
+                    <option value="">Accounts Of</option>
+                    @foreach ($accountsOf as $account)
+                    <option value="{{ $account->id }}">{{ $account->name }}</option>
+                    @endforeach
+                </select>
+                </select>
+            </div>
+        </div>
+
+
+        {{-- <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Supplier Name:</label>
                 <input type="text" name="supplier_name" placeholder="Supplier Name" class="form-control" />
             </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        </div> --}}
+        {{-- <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Purchaser Name:</label>
                 <input type="text" name="purchaser_name" placeholder="Purchaser Name" class="form-control" />
             </div>
-        </div>
+        </div> --}}
     </div>
     <div class="row form-mar">
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Contact Person Name:</label>
-                <input type="text" name="contact_person_name"placeholder="Contact Person Name"
-                    class="form-control" />
+                <input type="text" name="contact_person_name" placeholder="Contact Person Name" class="form-control" />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
@@ -89,8 +114,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Commission:</label>
-                <input type="number" name="broker_one_commission" step="0.01" value=""
-                    placeholder="Commission" class="form-control" />
+                <input type="number" name="broker_one_commission" step="0.01" value="" placeholder="Commission"
+                    class="form-control" />
             </div>
         </div>
     </div>
@@ -134,8 +159,7 @@
                 <select name="product_id" id="product_id" class="form-control select2">
                     <option value="">Select Commodity</option>
                     @foreach ($products as $product)
-                        <option value="{{ $product->id }}"
-                            data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
+                        <option value="{{ $product->id }}" data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
                             {{ $product->name }}
                         </option>
                     @endforeach
@@ -224,12 +248,62 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+
+
+
+
+
+    $(document).ready(function () {
         $('.select2').select2();
 
-        $('[name="company_location_id"], [name="contract_date"]').change(function() {
+        $('[name="company_location_id"], [name="contract_date"]').change(function () {
             generateContractNumber();
         });
+
+
+        $('#company_location_id').change(function () {
+            var locationId = $(this).val();
+
+            if (locationId) {
+                $.ajax({
+                    url: '{{ route('raw-material.get.suppliers.by.location_for_gate_buying') }}',
+                    type: 'GET',
+                    data: {
+                        location_id: locationId
+                    },
+                    beforeSend: function () {
+                        $('#supplier_id').html('<option value="">Loading...</option>');
+                    },
+                    success: function (response) {
+                        if (response.success && response.suppliers.length > 0) {
+                            var options = '';
+                            if (response.suppliers.length === 1) {
+                                // only one supplier → auto select
+                                var supplier = response.suppliers[0];
+                                options = '<option value="' + supplier.id + '" selected>' + supplier.name + '</option>';
+                            } else {
+                                // multiple suppliers
+                                options = '<option value="">Select Supplier</option>';
+                                $.each(response.suppliers, function (key, supplier) {
+                                    options += '<option value="' + supplier.id + '">' + supplier.name + '</option>';
+                                });
+                            }
+                            $('#supplier_id').html(options).trigger('change');
+                        } else {
+                            $('#supplier_id').html('<option value="">No suppliers found</option>');
+                        }
+                    },
+                    error: function () {
+                        $('#supplier_id').html('<option value="">Error loading suppliers</option>');
+                    }
+                });
+            } else {
+                $('#supplier_id').html('<option value="">Select Supplier</option>');
+            }
+        });
+        // Function to generate contract number
+
+
 
         function generateContractNumber() {
             const locationId = $('[name="company_location_id"]').val();
@@ -244,13 +318,13 @@
                         location_id: locationId,
                         contract_date: contractDate
                     },
-                    beforeSend: function() {},
-                    success: function(response) {
+                    beforeSend: function () { },
+                    success: function (response) {
                         if (response.success) {
                             $('[name="contract_no"]').val(response.contract_no);
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error(xhr.responseText);
                     }
                 });
@@ -283,15 +357,15 @@
             }
         }
 
-        $('[name="rate_per_kg"]').on('input', function() {
+        $('[name="rate_per_kg"]').on('input', function () {
             calculateRates('rate_per_kg');
         });
 
-        $('[name="rate_per_mound"]').on('input', function() {
+        $('[name="rate_per_mound"]').on('input', function () {
             calculateRates('rate_per_mound');
         });
 
-        $('[name="rate_per_100kg"]').on('input', function() {
+        $('[name="rate_per_100kg"]').on('input', function () {
             calculateRates('rate_per_100kg');
         });
 
