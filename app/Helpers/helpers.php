@@ -290,7 +290,7 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName, $isOperati
 {
     $account = Account::where('name', $pAccName)->first();
 
-    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL,'request_account_id'=>0];
+    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
 }
 
 
@@ -325,7 +325,8 @@ function get_uom($id)
 
 function getUserParams($param)
 {
-    if (!auth()->check()) return is_array($param) ? [] : null;
+    if (!auth()->check())
+        return is_array($param) ? [] : null;
 
     $user = auth()->user();
 
@@ -661,8 +662,9 @@ if (!function_exists('getTicketDeductions')) {
 
 
 if (!function_exists('SlabTypeWisegetTicketDeductions')) {
-    function SlabTypeWisegetTicketDeductions($ticket)
+    function SlabTypeWisegetTicketDeductions($ticket, $type = null)
     {
+      
         $result = [
             'is_lumpsum' => false,
             'lumpsum_deduction' => 0,
@@ -681,11 +683,20 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
 
             return $result;
         }
-
-        $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
-            ->whereIn('approved_status', ['approved', 'rejected'])
-            ->latest()
-            ->first();
+        
+        if ($type == null) {
+          
+            $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
+                ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+        } else {
+            $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
+                ->where('sampling_type', $type)
+             //   ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+        }
 
         if (!$samplingRequest) {
             return $result;
@@ -717,7 +728,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
         }
 
         $slabResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)
-            ->where('applied_deduction', '>', 0)
+           // ->where('applied_deduction', '>', 0)
             ->get();
 
         foreach ($slabResults as $slab) {

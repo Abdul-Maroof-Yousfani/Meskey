@@ -516,32 +516,21 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
                 $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
                 return;
             }
-            $.get(`/arrival/get-contracts/${locationId}`, function (data) {
-                $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
-                $.each(data.contracts, function (index, contract) {
-                    let saudaTypeId = contract.sauda_type_id ? `data-sauda-type-id="${contract.sauda_type_id}"` : '';
-                    let saudaTypeName = contract.sauda_type && contract.sauda_type.name ? `data-sauda-type-name="${contract.sauda_type.name}"` : '';
-
-                    // Display text logic
-                    let typeText = '';
-                    if (contract.type === 'gate_buying') {
-                        typeText = '- Type: Gate Buying';
-                    } else if (contract.sauda_type && contract.sauda_type.name) {
-                        typeText = `- Type: ${contract.sauda_type.name}`;
-                    }
-
-                    $('#arrival_purchase_order_id').append(
-                        `<option value="${contract.id}"
-                    data-product-id="${contract.product_id}"
-                    data-supplier-id="${contract.supplier.name}"
-                    ${saudaTypeId}
-                    ${saudaTypeName}
-                >
-                    #${contract.contract_no} ${typeText}
-                </option>`
-                    );
-                });
-
+             $.get(`/arrival/get-contracts/${locationId}`, function(data) {
+                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
+                 $.each(data.contracts, function(index, contract) {
+                     $('#arrival_purchase_order_id').append(
+                         `<option value="${contract.id}"
+                        data-product-id="${contract.product_id}"
+                        data-supplier-id="${contract.supplier.name}"
+                        data-sauda-type-id="${contract.sauda_type_id}"
+                        data-sauda-type-name="${contract.sauda_type.name}"
+                        >
+                        #${contract.contract_no} - Type: ${contract.sauda_type.name}
+                    </option>`
+                     );
+                 });
+             });
 
                 $.get(`/arrival/get-suppliers/${locationId}`, function (data) {
                     $('#broker_name').empty().append('<option value="">Broker Name</option>');

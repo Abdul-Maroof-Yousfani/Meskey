@@ -24,14 +24,16 @@
         <th>Bag Condition</th>
         <th>Bag Packing</th>
         <th>No. Bag</th>
+                <th>Warehouse</th>
+        <th>Gala</th>
         @foreach (getTableData('product_slab_types') as $slab)
             <th>{{ $slab->name }}</th>
+            <th>Inner {{ $slab->name }} </th>
         @endforeach
         @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
             <th>{{ $compulsory_slab_type->name }}</th>
         @endforeach
-        <th>Warehouse</th>
-        <th>Gala</th>
+
         {{-- <th>Tabaar Remarks</th> --}}
 
         {{-- <th>Contract</th> --}}
@@ -50,7 +52,8 @@
                     @php
             $tabaar = formatDeductionsAsString(getTicketDeductions($row));
             $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
-           $deductionValueSlab = SlabTypeWisegetTicketDeductions($row)['deductions'] ?? [];
+           $deductionValueSlabinitial = SlabTypeWisegetTicketDeductions($row,'initial')['deductions'] ?? [];
+           $deductionValueSlabInner = SlabTypeWisegetTicketDeductions($row,'inner')['deductions'] ?? [];
            $compulsoryDeductionValueSlab = SlabTypeWisegetTicketDeductions($row)['compulsory_deductions'] ?? [];
                     @endphp
                     {{-- @dd($deductionValueSlab); --}}
@@ -142,13 +145,24 @@
                         <td>{{ $row->approvals->bagCondition->name ?? 'N/A' }}</td>
                         <td>{{ $row->approvals->bagPacking->name ?? 'N/A' }}</td>
                         <td>{{ $row->approvals->total_bags ?? 'N/A' }}</td>
-                      
+                       <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
+                        <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
                         @foreach (getTableData('product_slab_types') as $slab)
-                            <td data-slaptypename="{{ $deductionValueSlab[$slab->id]['name'] ?? 'N/A' }}">
-                                @if(isset($deductionValueSlab[$slab->id]['deduction']))
+                            <td data-slaptypename="{{ $deductionValueSlabinitial[$slab->id]['name'] ?? 'N/A' }}">
+                                @if(isset($deductionValueSlabinitial[$slab->id]['checklist_value']) && $deductionValueSlabinitial[$slab->id]['checklist_value'] != 0)
                                     {{-- {{ $deductionValueSlab[$slab->id]['deduction'] }}
                                     {{ $deductionValueSlab[$slab->id]['unit'] ?? '' }} --}}
-                                    {{ $deductionValueSlab[$slab->id]['checklist_value'] ?? '' }}{{$slab->qc_symbol ?? ''}}
+                                    {{ $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? '' }}{{$slab->qc_symbol ?? ''}}
+                                @else
+                                0
+                                @endif
+                                
+                            </td>
+                            <td data-slaptypename="{{ $deductionValueSlabInner[$slab->id]['name'] ?? 'N/A' }}">
+                                @if(isset($deductionValueSlabInner[$slab->id]['checklist_value']) && $deductionValueSlabInner[$slab->id]['checklist_value'] != 0)
+                                    {{-- {{ $deductionValueSlab[$slab->id]['deduction'] }}
+                                    {{ $deductionValueSlab[$slab->id]['unit'] ?? '' }} --}}
+                                    {{ $deductionValueSlabInner[$slab->id]['checklist_value'] ?? '' }}{{$slab->qc_symbol ?? ''}}
                                 @else
                                 0
                                 @endif
@@ -175,8 +189,7 @@
                 
                         {{-- <td>{{ $tabaar }}</td> --}}
     
-                        <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
-                        <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
+                       
                         {{-- <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td> --}}
                         <td>
                             <button class="info p-1 text-center mr-2 position-relative btn"
