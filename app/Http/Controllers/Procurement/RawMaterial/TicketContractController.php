@@ -133,6 +133,7 @@ class TicketContractController extends Controller
         try {
             DB::beginTransaction();
 
+            $arrivalTicketbeforeUpdate = ArrivalTicket::findOrFail($request->arrival_ticket_id);
             $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
             $purchaseOrder = ArrivalPurchaseOrder::findOrFail($request->selected_contract);
             $amount = $arrivalTicket->arrived_net_weight * $purchaseOrder->rate_per_kg;
@@ -409,7 +410,7 @@ class TicketContractController extends Controller
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $arrivalTicket->purchaseOrder->broker->account_id)
+                    ->where('account_id', $arrivalTicketbeforeUpdate->purchaseOrder->broker->account_id)
                     // ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
@@ -448,7 +449,7 @@ class TicketContractController extends Controller
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $arrivalTicket->purchaseOrder->brokerTwo->account_id)
+                    ->where('account_id', $arrivalTicketbeforeUpdate->purchaseOrder->brokerTwo->account_id)
                     //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
@@ -487,7 +488,7 @@ class TicketContractController extends Controller
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $arrivalTicket->purchaseOrder->brokerThree->account_id)
+                    ->where('account_id', $arrivalTicketbeforeUpdate->purchaseOrder->brokerThree->account_id)
                     //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
