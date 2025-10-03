@@ -51,7 +51,7 @@
 
             @endphp
             <tr class="contract-row {{ $isLinked ? 'table-info' : '' }}" data-id="{{ $contract['id'] }}">
-                <td>
+                <td data-ajeeb="{{$owntruckminuable}}">
                     <input type="radio" name="selected_contract" value="{{ $contract['id'] }}"
                         {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
                         {{ $hasSelectedFreight || $contract['id'] == ($arrivalTicket->arrival_purchase_order_id ?? '') ? 'checked' : '' }}>
