@@ -204,7 +204,6 @@ class TicketContractController extends Controller
             $type = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohanch' : 'thadda';
 
             $qcAccountId = $type == 'pohanch' ? $arrivalTicket->qcProduct->account_id : $purchaseOrder->qcProduct->account_id;
-            dd($qcAccountId);
             $arrivedWeight = $arrivalTicket['arrived_net_weight'];
             $rate = $purchaseOrder->rate_per_kg;
             $totalAmount = $inventoryAmount;
