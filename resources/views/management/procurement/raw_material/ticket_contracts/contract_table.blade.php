@@ -30,12 +30,17 @@
                 $orderedTrucks = $contract['no_of_trucks'] ?? 0;
                 $rejectedTrucks = $contract['rejected_trucks'] ?? 0;
                 $isReplacement = $contract['is_replacement'] ?? 'No';
+                if($arrivalTicket->arrival_purchase_order_id == $contract['id']){
+    $owntruckminuable = $arrivalTicket->closing_trucks_qty ?? 0;
+}
                 if ($isReplacement == 'Yes') {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks;
-                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn;
+                   // $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn;
+                    $balanceTrucksWithoutOwn = $orderedTrucks - $owntruckminuable;
                 } else {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
-                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn - $rejectedTrucks;
+                 //   $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn - $rejectedTrucks;
+                    $balanceTrucksWithoutOwn = $orderedTrucks - $owntruckminuable - $rejectedTrucks;
                 }
                 $arrivedQty = $contract['total_loading_weight'] ?? 0;
                 $minQty = $contract['min_quantity'] ?? 0;
