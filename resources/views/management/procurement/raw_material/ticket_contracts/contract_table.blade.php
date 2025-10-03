@@ -32,6 +32,8 @@
                 $isReplacement = $contract['is_replacement'] ?? 'No';
                 if($arrivalTicket->arrival_purchase_order_id == $contract['id']){
     $owntruckminuable = $arrivalTicket->closing_trucks_qty ?? 0;
+}else{
+    $owntruckminuable = 0;
 }
                 if ($isReplacement == 'Yes') {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks;
