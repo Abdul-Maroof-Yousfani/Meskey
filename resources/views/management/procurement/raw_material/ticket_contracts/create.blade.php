@@ -744,7 +744,7 @@
                             value: trucksQty
                         }).appendTo('#ajaxSubmit');
 
-                        if (markCompleted) {
+                        if (markCompleted && verifyTicket) {
                             $('<input>').attr({
                                 type: 'hidden',
                                 name: 'mark_completed',
