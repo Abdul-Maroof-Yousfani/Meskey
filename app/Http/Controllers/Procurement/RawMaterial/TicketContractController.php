@@ -530,11 +530,17 @@ class TicketContractController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to link ticket to contract: ' . $e->getMessage()
+                'message' => 'Failed to link ticket to contract',
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
+
     }
 
     /**
