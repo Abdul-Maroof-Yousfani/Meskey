@@ -107,10 +107,7 @@ class PurchaseRequestController extends Controller
                 'success' => 'Purchase request created successfully.',
                 'data' => $purchaseRequest,
             ], 201);
-        } 
-    
-
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
@@ -252,6 +249,7 @@ class PurchaseRequestController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
+
         $location = CompanyLocation::find($locationId ?? $request->company_location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
@@ -265,7 +263,7 @@ class PurchaseRequestController extends Controller
         $datePart = Carbon::parse($date)->format('Y-m-d');
 
         if ($latestContract) {
-            $parts = explode('-', $latestContract->contract_no);
+            $parts = explode('-', $latestContract->purchase_request_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
