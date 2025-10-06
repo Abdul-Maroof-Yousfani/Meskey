@@ -343,7 +343,7 @@
 <script src="{{ asset('management/assets/js/scripts.js') }}"></script>
 <!-- END: Custom CSS-->
 <script>
-    function exportToExcel($tabletoexport, docname) {
+    function exportToExcelbk($tabletoexport, docname) {
         var table = document.getElementById($tabletoexport);
 
         // Check if table exists
@@ -353,9 +353,42 @@
             return;
         }
 
-        var wb = XLSX.utils.table_to_book(table);
+        //var wb = XLSX.utils.table_to_book(table);
+        var wb = XLSX.utils.table_to_book(table, { raw: false }); // 👈 raw false
+
         XLSX.writeFile(wb, docname + '.xlsx');
     }
+
+
+    function exportToExcel(tableId, docname) {
+        var table = document.getElementById(tableId);
+
+        if (!table) {
+            console.error('Table not found with ID:', tableId);
+            alert('Table not found!');
+            return;
+        }
+
+        // Pehle sheet banao
+        var ws = XLSX.utils.table_to_sheet(table, { raw: true });
+
+        // Har cell ko check karo aur agar "%" hai to usko text bana do
+        Object.keys(ws).forEach(function (cell) {
+            if (cell[0] === '!') return; // metadata skip
+
+            if (typeof ws[cell].v === 'number' && ws[cell].v < 1 && ws[cell].v > 0) {
+                // matlab yeh percentage type number hai
+                let percent = (ws[cell].v * 100).toFixed(2) + "%";
+                ws[cell].v = percent;  // value replace
+                ws[cell].t = 's';      // type string
+            }
+        });
+
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+        XLSX.writeFile(wb, docname + ".xlsx");
+    }
+
 
     var baseUrl = "{{ url('/') }}";
     var loginUrl = "{{ url('login') }}";

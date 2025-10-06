@@ -79,7 +79,7 @@ class ArrivalReportController extends Controller
                 return $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
                     ->whereDate('arrival_tickets.created_at', '<=', $endDate);
             })
-            ->orderBy('arrival_tickets.created_at', 'desc')
+            ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
 
         return view('management.reports.arrival.arrival-history.getArrivalReport', compact('tickets'));
