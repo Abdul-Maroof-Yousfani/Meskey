@@ -408,7 +408,7 @@ class TicketContractController extends Controller
 
 
 
-            $BrokerLedgerDelete  = Transaction::where('grn_no', $grnNo)
+            $BrokerLedgerDelete = Transaction::where('grn_no', $grnNo)
                 ->where('purpose', 'broker')
                 ->where('payment_against', $type . '-purchase')
                 ->delete();
@@ -417,68 +417,68 @@ class TicketContractController extends Controller
 
             if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
-              
-                    createTransaction(
-                        $amount,
-                        $arrivalTicket->purchaseOrder->broker->account_id,
-                        1,
-                        $contractNo,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "broker",
-                            'counter_account_id' => $qcAccountId,
-                            'grn_no' => $grnNo,
-                            'payment_against' => $type . "-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
-                        ]
-                    );
+
+                createTransaction(
+                    $amount,
+                    $arrivalTicket->purchaseOrder->broker->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
+                        'grn_no' => $grnNo,
+                        'payment_against' => $type . "-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
+                    ]
+                );
             }
 
 
             if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
-            
-                    createTransaction(
-                        $amount,
-                        $arrivalTicket->purchaseOrder->brokerTwo->account_id,
-                        1,
-                        $contractNo,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "broker",
-                            'counter_account_id' => $qcAccountId,
-                            'grn_no' => $grnNo,
-                            'payment_against' => $type . "-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
-                        ]
-                    );
-               
+
+                createTransaction(
+                    $amount,
+                    $arrivalTicket->purchaseOrder->brokerTwo->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
+                        'grn_no' => $grnNo,
+                        'payment_against' => $type . "-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
+                    ]
+                );
+
             }
 
             if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
 
-                    createTransaction(
-                        $amount,
-                        $arrivalTicket->purchaseOrder->brokerThree->account_id,
-                        1,
-                        $contractNo,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "broker",
-                            'counter_account_id' => $qcAccountId,
-                            'grn_no' => $grnNo,
-                            'payment_against' => $type . "-purchase",
-                            'against_reference_no' => "$truckNo/$biltyNo",
-                            'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
-                        ]
-                    );
-                
+                createTransaction(
+                    $amount,
+                    $arrivalTicket->purchaseOrder->brokerThree->account_id,
+                    1,
+                    $contractNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
+                        'grn_no' => $grnNo,
+                        'payment_against' => $type . "-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
+                    ]
+                );
+
             }
 
             DB::commit();
