@@ -404,28 +404,20 @@ class TicketContractController extends Controller
                     }
                 }
             }
-            $brokerOneAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->broker)->account_id;
 
-            if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight && $brokerOneAccountIdBefore) {
+
+
+
+            $BrokerLedgerDelete  = Transaction::where('grn_no', $grnNo)
+                ->where('purpose', 'broker')
+                ->where('payment_against', $type . '-purchase')
+                ->delete();
+
+
+
+            if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
-                $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
-                    //where('voucher_no', $contractNo)
-                    ->where('payment_against', $type . '-purchase')
-                    ->where('account_id',  $brokerOneAccountIdBefore)
-                    // ->where('against_reference_no', "$truckNo/$biltyNo")
-                    ->first();
-
-                if ($existingBrokerTrx) {
-                    $existingBrokerTrx->update([
-                        'voucher_no' => $purchaseOrder->contract_no,
-                        'amount' => $amount,
-                        'account_id' => $arrivalTicket->purchaseOrder->broker->account_id,
-                        'counter_account_id' => $qcAccountId,
-                        'type' => 'credit',
-                        'grn_no' => $grnNo,
-                        'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
-                    ]);
-                } else {
+              
                     createTransaction(
                         $amount,
                         $arrivalTicket->purchaseOrder->broker->account_id,
@@ -442,34 +434,12 @@ class TicketContractController extends Controller
                             'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
                         ]
                     );
-                }
             }
 
-            $brokerTwoAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->brokerTwo)->account_id;
 
-            if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight && $brokerTwoAccountIdBefore) {
-              dd($brokerTwoAccountIdBefore,'Hn hun');
+            if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
-                $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
-                    //where('voucher_no', $contractNo)
-                    ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $brokerTwoAccountIdBefore)
-                    //  ->where('against_reference_no', "$truckNo/$biltyNo")
-                    ->first();
-
-                if ($existingBrokerTrx) {
-                    $existingBrokerTrx->update([
-                        'amount' => $amount,
-                        'account_id' => $arrivalTicket->purchaseOrder->brokerTwo->account_id,
-                        'counter_account_id' => $qcAccountId,
-                        'voucher_no' => $purchaseOrder->contract_no,
-                        'type' => 'credit',
-                        'grn_no' => $grnNo,
-                        'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
-                    ]);
-                } else {
-                                  dd($brokerTwoAccountIdBefore,'Hn nh hun');
-
+            
                     createTransaction(
                         $amount,
                         $arrivalTicket->purchaseOrder->brokerTwo->account_id,
@@ -486,30 +456,12 @@ class TicketContractController extends Controller
                             'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
                         ]
                     );
-                }
+               
             }
-            $brokerThreeAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->brokerThree)->account_id;
 
-            if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight && $brokerThreeAccountIdBefore) {
+            if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
-                $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
-                    //where('voucher_no', $contractNo)
-                    ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $brokerThreeAccountIdBefore)
-                    //  ->where('against_reference_no', "$truckNo/$biltyNo")
-                    ->first();
 
-                if ($existingBrokerTrx) {
-                    $existingBrokerTrx->update([
-                        'amount' => $amount,
-                        'voucher_no' => $purchaseOrder->contract_no,
-                        'account_id' => $arrivalTicket->purchaseOrder->brokerThree->account_id,
-                        'counter_account_id' => $qcAccountId,
-                        'type' => 'credit',
-                        'grn_no' => $grnNo,
-                        'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
-                    ]);
-                } else {
                     createTransaction(
                         $amount,
                         $arrivalTicket->purchaseOrder->brokerThree->account_id,
@@ -526,7 +478,7 @@ class TicketContractController extends Controller
                             'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
                         ]
                     );
-                }
+                
             }
 
             DB::commit();
