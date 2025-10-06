@@ -404,13 +404,14 @@ class TicketContractController extends Controller
                     }
                 }
             }
+            $brokerOneAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->broker)->account_id;
 
-            if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight) {
+            if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight && $brokerOneAccountIdBefore) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $arrivalTicketbeforeUpdate->purchaseOrder->broker->account_id)
+                    ->where('account_id',  $brokerOneAccountIdBefore)
                     // ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
@@ -444,12 +445,14 @@ class TicketContractController extends Controller
                 }
             }
 
-            if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight) {
+            $brokerTwoAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->brokerTwo)->account_id;
+
+            if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight && $brokerTwoAccountIdBefore) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $arrivalTicketbeforeUpdate->purchaseOrder->brokerTwo->account_id)
+                    ->where('account_id', $brokerTwoAccountIdBefore)
                     //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
@@ -482,13 +485,14 @@ class TicketContractController extends Controller
                     );
                 }
             }
+            $brokerThreeAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->brokerThree)->account_id;
 
-            if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight) {
+            if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight && $brokerThreeAccountIdBefore) {
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
                     ->where('payment_against', $type . '-purchase')
-                    ->where('account_id', $arrivalTicketbeforeUpdate->purchaseOrder->brokerThree->account_id)
+                    ->where('account_id', $brokerThreeAccountIdBefore)
                     //  ->where('against_reference_no', "$truckNo/$biltyNo")
                     ->first();
 
