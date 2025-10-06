@@ -448,6 +448,7 @@ class TicketContractController extends Controller
             $brokerTwoAccountIdBefore = optional($arrivalTicketbeforeUpdate->purchaseOrder->brokerTwo)->account_id;
 
             if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight && $brokerTwoAccountIdBefore) {
+              dd($brokerTwoAccountIdBefore,'Hn hun');
                 $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
                 $existingBrokerTrx = Transaction::where('grn_no', $grnNo)
                     //where('voucher_no', $contractNo)
@@ -467,6 +468,8 @@ class TicketContractController extends Controller
                         'remarks' => 'Recording accounts payable for "' . $type . '" purchase. Amount to be paid to broker.'
                     ]);
                 } else {
+                                  dd($brokerTwoAccountIdBefore,'Hn nh hun');
+
                     createTransaction(
                         $amount,
                         $arrivalTicket->purchaseOrder->brokerTwo->account_id,
