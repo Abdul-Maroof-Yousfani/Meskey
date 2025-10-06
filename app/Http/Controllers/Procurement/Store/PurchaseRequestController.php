@@ -107,13 +107,19 @@ class PurchaseRequestController extends Controller
                 'success' => 'Purchase request created successfully.',
                 'data' => $purchaseRequest,
             ], 201);
-        } catch (\Exception $e) {
-            DB::rollback();
+        } 
+    
+
+        catch (\Exception $e) {
+            DB::rollBack();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create purchase request.',
+                'message' => 'Failed to create purchase request. ',
                 'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
