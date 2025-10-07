@@ -24,6 +24,7 @@ class ArrivalLocationRequest extends FormRequest
     {
         return [
             'company_id' => 'required|exists:companies,id',
+            'company_location_id' => 'required|exists:company_locations,id',
             'name' => [
                 'required',
                 'string',

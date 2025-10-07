@@ -24,12 +24,14 @@ class ArrivalSubLocationRequest extends FormRequest
     {
         return [
             'company_id' => 'required|exists:companies,id',
+            'company_location_id' => 'required|exists:company_locations,id',
+            'arrival_location_id' => 'required|exists:arrival_locations,id',
             'name' => [
                 'required',
                 'string',
                 'max:255',
 
-                Rule::unique('arrival_locations', 'name')
+                Rule::unique('arrival_sub_locations', 'name')
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->arrival_location)
             ],

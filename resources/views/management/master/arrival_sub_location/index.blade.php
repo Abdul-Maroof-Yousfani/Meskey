@@ -11,7 +11,8 @@
                     <h2 class="page-title">Arrival Sub Locations</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('arrival-sub-location.create') }}','Add Arrival Sub Locations')"
+                    <button
+                        onclick="openModal(this,'{{ route('arrival-sub-location.create') }}','Add Arrival Sub Locations')"
                         type="button" class="btn btn-primary position-relative ">
                         Create Arrival Sub Locations
                     </button>
@@ -44,13 +45,13 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Image </th>
                                             <th class="col-sm-3">Name </th>
-
-                                            <th class="col-sm-4">Description</th>
-                                            <th class="col-sm-1">Name </th>
+                                            <th class="col-sm-2">Company Loc </th>
+                                            <th class="col-sm-2">Arrival Loc </th>
+                                            {{-- <th class="col-sm-2">Description</th> --}}
+                                            <th class="col-sm-1">Status</th>
                                             <th class="col-sm-2">Created</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-sm-2">Action</th>
                                         </tr>
                                     </thead>
 
@@ -67,33 +68,34 @@
     </div>
 @endsection
 @section('script')
-<script>
-$(document).ready(function () {
-    // Initialize on page load if you need filtering
-    filterationCommon(`{{ route('get.arrival-sub-location') }}`);
+    <script>
+        $(document).ready(function () {
 
-    $(document).on('change', '#company_location_id', function () {
-        let locationId = $(this).val();
+          
+            filterationCommon(`{{ route('get.arrival-sub-location') }}`);
 
-        if (locationId && locationId > 0) {
-            initializeDynamicDependentCall1Select2(
-                '#company_location_id',   
-                '#arrival_location_id',   
-                'company_locations',      
-                'name',                   
-                'id',                     
-                'arrival_locations',      
-                'company_location_id',  
-                'name',               
-                true,                   
-                false,                  
-                true,                   
-                true                    
-            );
-        }
-    });
+            $(document).on('change', '#company_location_id', function () {
+                let locationId = $(this).val();
 
-    
-});
-</script>
+                if (locationId && locationId > 0) {
+                    initializeDynamicDependentCall1Select2(
+                        '#company_location_id',
+                        '#arrival_location_id',
+                        'company_locations',
+                        'name',
+                        'id',
+                        'arrival_locations',
+                        'company_location_id',
+                        'name',
+                        true,
+                        false,
+                        true,
+                        true
+                    );
+                }
+            });
+
+
+        });
+    </script>
 @endsection

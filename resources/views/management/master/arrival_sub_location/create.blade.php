@@ -19,9 +19,9 @@
                 <label>Arrival Location:</label>
                 <select id="arrival_location_id" name="arrival_location_id" class="form-control select2" required>
                     <option value="">Select Arrival Location</option>
-                    @foreach ($arrivalLocations as $arrival_location)
-                        <option value="{{ $arrival_location->id }}">{{ $arrival_location->name }}</option>
-                    @endforeach
+                    {{-- @foreach ($arrivalLocations as $arrival_location)
+                    <option value="{{ $arrival_location->id }}">{{ $arrival_location->name }}</option>
+                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -60,3 +60,9 @@
         </div>
     </div>
 </form>
+
+<script>
+    $(document).ready(function () {
+        $('.select2').select2();
+    });
+</script>
