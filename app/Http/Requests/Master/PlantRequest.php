@@ -31,7 +31,7 @@ class PlantRequest extends FormRequest
                 'string',
                 'max:255',
 
-                Rule::unique('arrival_sub_locations', 'name')
+                Rule::unique('plants', 'name')
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->arrival_location)
             ],
