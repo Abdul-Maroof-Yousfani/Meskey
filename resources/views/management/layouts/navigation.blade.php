@@ -581,6 +581,24 @@
                         </ul>
                     </li>
                     @endcanAccess
+                    @canAccess('manage-production')
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Bootstrap Tables">Manage Production</span></a>
+                        <ul class="dropdown-menu">
+
+                            @canAccess('plant')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('plant.index') }}"
+                                    onclick="loadPageContent('{{ route('plant.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Plants</span></a>
+                            </li>
+                            @endcanAccess
+                        </ul>
+                    </li>
+                    @endcanAccess
                     @canAccess('raw-material-supplier')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('supplier.index') }}"
