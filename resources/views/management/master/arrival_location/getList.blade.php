@@ -1,6 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
+            <th class="col-sm-4">Company Location </th>
             <th class="col-sm-4">Name </th>
             <th class="col-sm-4">Description</th>
             <th class="col-sm-1">Status</th>
@@ -12,6 +13,11 @@
         @if (count($arrival_locations) != 0)
             @foreach ($arrival_locations as $key => $row)
                 <tr>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->companyLocation->name }} <br>
+                        </p>
+                    </td>
                     <td>
                         <p class="m-0">
                             {{ $row->name }} <br>
