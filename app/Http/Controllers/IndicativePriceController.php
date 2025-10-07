@@ -26,6 +26,11 @@ class IndicativePriceController extends Controller
             ->when($request->filled('type_id'), function ($q) use ($request) {
                 $q->where('type_id', $request->type_id);
             })
+             ->when($request->filled('date'), function ($q) use ($request) {
+                $q->whereDate('created_at', $request->date);
+            }, function ($q) {
+                $q->whereDate('created_at', now()->format('Y-m-d'));
+            })
             ->where('company_id', $request->company_id)
             ->latest()
             ->paginate(request('per_page', 25));

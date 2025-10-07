@@ -801,7 +801,7 @@ if (!function_exists('dateFormatHtml')) {
 
         if ($type === 'datetime') {
             return '<p class="m-0">' . $dateOnly .
-                   ' / <small class="text-timestamp">' . $timeOnly . '</small></p>';
+                   '  <small class="text-timestamp"> / ' . $timeOnly . '</small></p>';
         }
 
         return null; // agar type match na kare

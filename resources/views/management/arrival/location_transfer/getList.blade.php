@@ -20,8 +20,8 @@
                     </td> --}}
                     <td>
                         <p class="m-0">
-                            <small>Ticket No: {{ $row->arrivalTicket->unique_no ?? '-' }} -- Truck No:
-                                {{ $row->arrivalTicket->truck_no ?? '-' }}</small>
+                            Ticket No: {{ $row->arrivalTicket->unique_no ?? '-' }} -- Truck No:
+                            {{ $row->arrivalTicket->truck_no ?? '-' }}
                         </p>
                     </td>
                     <td>
@@ -31,10 +31,9 @@
                         <p class="m-0"> {{ $row->createdBy->name ?? '-' }} </p>
                     </td>
                     <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-                        </p>
+                            {!! dateFormatHtml($row->created_at) !!}
+
+                      
                     </td>
                     <td>
                         <a onclick="openModal(this,'{{ route('location-transfer.edit', $row->id) }}','View Location Transfer', true)"
