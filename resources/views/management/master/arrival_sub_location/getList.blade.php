@@ -1,32 +1,20 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-3">Name </th>
-            <th class="col-sm-1">Code </th>
-            <th class="col-sm-2">City </th>
-            <th class="col-sm-3">Description</th>
+            <th class="col-sm-4">Name </th>
+            <th class="col-sm-4">Description</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($company_locations) != 0)
-            @foreach ($company_locations as $key => $row)
+        @if (count($arrival_locations) != 0)
+            @foreach ($arrival_locations as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
                             {{ $row->name }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->code }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->city->name ?? '-' }} <br>
                         </p>
                     </td>
                     <td>
@@ -47,18 +35,17 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('company-location.edit', $row->id) }}','Edit Company Location')"
-                                class="info p-1 text-center mr-2 position-relative ">
+                            <a onclick="openModal(this,'{{ route('arrival-sub-location.edit', $row->id) }}','Edit Arrival Location')"
+                                class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            @if ($row->is_protected == 0)
-                                <a onclick="deletemodal('{{ route('company-location.destroy', $row->id) }}','{{ route('get.company-location') }}')"
-                                    class="danger p-1 text-center mr-2 position-relative ">
-                                    <i class="ft-x font-medium-3"></i>
-                                </a>
-                            @endif
+                            <a onclick="deletemodal('{{ route('arrival-sub-location.destroy', $row->id) }}','{{ route('get.arrival-sub-location') }}')"
+                                class="danger p-1 text-center mr-2 position-relative ">
+
+                                <i class="ft-x font-medium-3"></i>
+                            </a>
                         @endcan
                     </td>
                 </tr>
@@ -96,6 +83,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $company_locations->links() }}
+        {{ $arrival_locations->links() }}
     </div>
 </div>

@@ -18,7 +18,7 @@
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Status:</label>
                 <select name="status" class="form-control">
@@ -28,10 +28,25 @@
                 </select>
             </div>
         </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label for="city_id">City:</label>
+                <select class="form-control select2" name="city_id" id="city_id">
+                    <option value="">-- Select City --</option>
+                    @foreach ($cities as $city)
+                        <option value="{{ $city->id }}" {{ $company_location->city_id == $city->id ? 'selected' : '' }}>
+                            {{ $city->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
-                <textarea name="description" placeholder="Description" class="form-control">{{ $company_location->description }}</textarea>
+                <textarea name="description" placeholder="Description"
+                    class="form-control">{{ $company_location->description }}</textarea>
             </div>
         </div>
         <div class="col-12" bis_skin_checked="1">
@@ -57,7 +72,7 @@
     </div>
 </form>
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 </script>

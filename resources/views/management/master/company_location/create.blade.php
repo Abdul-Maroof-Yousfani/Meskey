@@ -14,7 +14,7 @@
                 <input type="text" name="code" placeholder="Name" class="form-control" />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Status:</label>
                 <select class="form-control select2" name="status">
@@ -23,6 +23,18 @@
                 </select>
             </div>
         </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label for="city_id">City:</label>
+                <select class="form-control select2" name="city_id" id="city_id">
+                    <option value="">-- Select City --</option>
+                    @foreach ($cities as $city)
+                        <option value="{{ $city->id }}">{{ $city->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
@@ -51,7 +63,7 @@
     </div>
 </form>
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 </script>

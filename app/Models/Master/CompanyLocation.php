@@ -3,6 +3,7 @@
 namespace App\Models\Master;
 
 use App\Models\Acl\Company;
+use App\Models\City;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ class CompanyLocation extends Model
 
     protected $fillable = [
         'company_id',
+        'city_id',
         'name',
         'truck_no_format',
         'code',
@@ -74,5 +76,10 @@ class CompanyLocation extends Model
     public function deleter()
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 }

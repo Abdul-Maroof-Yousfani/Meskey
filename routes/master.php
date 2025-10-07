@@ -14,6 +14,7 @@ use App\Http\Controllers\Master\{
     BrokerController,
     ProductSlabTypeController,
     ArrivalLocationController,
+    ArrivalSubLocationController,
     TruckTypeController,
     StationController,
     CompanyLocationController,

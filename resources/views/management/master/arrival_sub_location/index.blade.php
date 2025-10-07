@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Company Location
+    Arrival Locations
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Company Location</h2>
+                    <h2 class="page-title">Arrival Sub Locations</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('company-location.create') }}','Add Company Location')"
+                    <button onclick="openModal(this,'{{ route('arrival-sub-location.create') }}','Add Arrival Sub Locations')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Company Location
+                        Create Arrival Sub Locations
                     </button>
                 </div>
             </div>
@@ -44,11 +44,11 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
+                                            <th class="col-sm-1">Image </th>
                                             <th class="col-sm-3">Name </th>
-                                            <th class="col-sm-1">Code </th>
-                                            <th class="col-sm-2">City </th>
-                                            <th class="col-sm-3">Description</th>
-                                            <th class="col-sm-1">Status</th>
+
+                                            <th class="col-sm-4">Description</th>
+                                            <th class="col-sm-1">Name </th>
                                             <th class="col-sm-2">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
@@ -63,12 +63,37 @@
         </section>
 
 
+
     </div>
 @endsection
 @section('script')
-    <script>
-        $(document).ready(function () {
-            filterationCommon(`{{ route('get.company-location') }}`)
-        });
-    </script>
+<script>
+$(document).ready(function () {
+    // Initialize on page load if you need filtering
+    filterationCommon(`{{ route('get.arrival-sub-location') }}`);
+
+    $(document).on('change', '#company_location_id', function () {
+        let locationId = $(this).val();
+
+        if (locationId && locationId > 0) {
+            initializeDynamicDependentCall1Select2(
+                '#company_location_id',   
+                '#arrival_location_id',   
+                'company_locations',      
+                'name',                   
+                'id',                     
+                'arrival_locations',      
+                'company_location_id',  
+                'name',               
+                true,                   
+                false,                  
+                true,                   
+                true                    
+            );
+        }
+    });
+
+    
+});
+</script>
 @endsection

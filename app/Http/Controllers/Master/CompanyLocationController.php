@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Models\City;
 use App\Models\Master\CompanyLocation;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\CompanyLocationRequest;
@@ -22,7 +23,8 @@ class CompanyLocationController extends Controller
      */
     public function getList(Request $request)
     {
-        $company_locations = CompanyLocation::when($request->filled('search'), function ($q) use ($request) {
+        $company_locations = CompanyLocation::with('city')
+        ->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm)
@@ -42,7 +44,8 @@ class CompanyLocationController extends Controller
      */
     public function create()
     {
-        return view('management.master.company_location.create');
+        $cities = City::all(); 
+        return view('management.master.company_location.create', compact('cities'));
     }
 
     /**
@@ -64,8 +67,9 @@ class CompanyLocationController extends Controller
      */
     public function edit($id)
     {
+        $cities = City::all(); 
         $company_location = CompanyLocation::findOrFail($id);
-        return view('management.master.company_location.edit', compact('company_location'));
+        return view('management.master.company_location.edit', compact('company_location', 'cities'));
     }
 
     /**
