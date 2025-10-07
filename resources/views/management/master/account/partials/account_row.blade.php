@@ -2,8 +2,8 @@
     $indent = $level * 20;
 @endphp
 
-<tr>
-    <td class="dashed-indent position-relative" data-indent-w="{{ $indent * 0.7 }}px">
+<tr class="{{$account->parent ?? 'parenthighlightrow'}}">
+    <td class="dashed-indent position-relative " data-indent-w="{{ $indent * 0.7 }}px">
         <p class="m-0" style="padding-left: {{ $indent }}px">
             {{-- #{{ $account->unique_no }} --}}
              #{{ $account->hierarchy_path }}
@@ -16,10 +16,10 @@
     <td>
         <p class="m-0" style="padding-left: {{ $indent }}px">
             {{ $account->name }}
-            {{-- @if ($account->description) --}}
+            @if ($account->description)
                 <br>
                 <small class="text-muted">{{ $account->description ?? 'No Description' }}</small>
-            {{-- @endif --}}
+            @endif
         </p>
     </td>
         <td>
