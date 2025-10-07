@@ -31,7 +31,13 @@ class AccountController extends Controller
                     $sq->where('name', 'like', $searchTerm);
                 });
             })
-            ->whereNull('parent_id')
+            ->when(!$request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->whereNull('parent_id');
+                });
+            })
+           // ->whereNull('parent_id')
             ->paginate(request('per_page', 25));
 
         return view('management.master.account.getList', compact('accounts'));

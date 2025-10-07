@@ -1033,3 +1033,8 @@ tr.editing {
   /* letter-spacing: 0.5px; */
   /* display: inline-block; */
 }
+
+
+.text-timestamp {
+    color: #8c8c8c !important;
+}

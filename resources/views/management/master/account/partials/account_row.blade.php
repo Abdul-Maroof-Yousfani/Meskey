@@ -23,9 +23,12 @@
         </p>
     </td>
         <td>
-        <p class="m-0" style="padding-left: {{ $indent }}px">
-            {{ $account->parent?->hierarchy_path }} <br>
-            <small>{{ $account->parent?->name }}</small>
+        <p class="m-0" style="">
+           
+            <small>{{ $account->parent?->name ?? 'N/A' }}</small>
+            @if($account->parent)
+             ( {{ $account->parent?->hierarchy_path }} )
+            @endif
         </p>
     </td>
     <td>
@@ -40,8 +43,8 @@
     </td>
     <td>
         <p class="m-0">
-            {{ \Carbon\Carbon::parse($account->created_at)->format('Y-m-d') }}<br>
-            {{ \Carbon\Carbon::parse($account->created_at)->format('H:i A') }}
+            {{ \Carbon\Carbon::parse($account->created_at)->format('Y-m-d') }}
+            / <small class="text-timestamp">{{ \Carbon\Carbon::parse($account->created_at)->format('H:i A') }}</small>
         </p>
     </td>
     <td>

@@ -21,15 +21,15 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                @php
-                                    $today = \Carbon\Carbon::today()->format('Y-m-d');
-                                    $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
-                                @endphp
+                                {{-- @php
+                                $today = \Carbon\Carbon::today()->format('Y-m-d');
+                                $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
+                                @endphp --}}
 
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-left">
-                                            <div class="col-md-2 ">
+                                            {{-- <div class="col-md-2 ">
                                                 <label for="from_date" class="form-label">From Date</label>
                                                 <input type="date" class="form-control" id="from_date" name="from_date"
                                                     value="{{ request('from_date', $oneMonthAgo) }}">
@@ -38,7 +38,7 @@
                                                 <label for="to_date" class="form-label">To Date</label>
                                                 <input type="date" class="form-control" id="to_date" name="to_date"
                                                     value="{{ request('to_date', $today) }}">
-                                            </div>
+                                            </div> --}}
                                             <div class="col-md-2">
                                                 <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -63,9 +63,10 @@
                                         <tr>
                                             <th class="col-sm-2">Account No.</th>
                                             <th class="col-sm-3">Account Name</th>
-                                            <th class="col-sm-2">Type</th>
+                                            <th class="col-sm-3">Parent</th>
+                                            <th class="col-sm-1">Type</th>
                                             <th class="col-sm-1">Status</th>
-                                            <th class="col-sm-2">Created</th>
+                                            <th class="col-sm-3">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
@@ -80,7 +81,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.account') }}`)
         });
     </script>
