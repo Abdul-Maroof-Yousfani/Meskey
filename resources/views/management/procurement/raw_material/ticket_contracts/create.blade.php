@@ -656,7 +656,7 @@
                         <label class="form-check-label" for="swal-verify-ticket">Verify Ticket Contract</label>
                     </div>
                     <div class="form-check text-left mt-3">
-                        <input type="checkbox" class="form-check-input" id="swal-mark-completed" ${isTicketCompleted ? 'checked' : ''}>
+                        <input type="checkbox" class="form-check-input" id="swal-mark-completed" ${isTicketCompleted ? '' : ''}>
                         <label class="form-check-label" for="swal-mark-completed">Mark contract as completed</label>
                     </div>
                 `;
