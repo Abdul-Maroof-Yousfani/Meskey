@@ -16,10 +16,10 @@
     <td>
         <p class="m-0" style="padding-left: {{ $indent }}px">
             {{ $account->name }}
-            @if ($account->description)
+            {{-- @if ($account->description) --}}
                 <br>
-                <small class="text-muted">{{ $account->description }}</small>
-            @endif
+                <small class="text-muted">{{ $account->description ?? 'No Description' }}</small>
+            {{-- @endif --}}
         </p>
     </td>
         <td>
@@ -42,10 +42,9 @@
         </label>
     </td>
     <td>
-        <p class="m-0">
-            {{ \Carbon\Carbon::parse($account->created_at)->format('Y-m-d') }}
-            / <small class="text-timestamp">{{ \Carbon\Carbon::parse($account->created_at)->format('H:i A') }}</small>
-        </p>
+   
+        {!! dateFormatHtml($account->created_at) !!}
+
     </td>
     <td>
         <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', false)"
