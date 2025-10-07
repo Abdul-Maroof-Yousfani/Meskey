@@ -1,17 +1,23 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Name </th>
-            <th class="col-sm-4">Description</th>
+            <th class="col-sm-2">Name </th>
+            <th class="col-sm-2">Company Location </th>
+            <th class="col-sm-3">Description</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-2">Action</th>
         </tr>
     </thead>
     <tbody>
         @if (count($arrival_locations) != 0)
             @foreach ($arrival_locations as $key => $row)
                 <tr>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->companyLocation->name }} <br>
+                        </p>
+                    </td>
                     <td>
                         <p class="m-0">
                             {{ $row->name }} <br>
@@ -28,10 +34,7 @@
                         </label>
                     </td>
                     <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-                        </p>
+                        {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
                         @can('role-edit')

@@ -33,7 +33,7 @@ class ArrivalSubLocation extends Model
         return $this->belongsTo(CompanyLocation::class);
     }
 
-    public function companyArrivalLocation()
+    public function arrivalLocation()
     {
         return $this->belongsTo(ArrivalLocation::class);
     }

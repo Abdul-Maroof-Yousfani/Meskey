@@ -28,7 +28,8 @@ class ArrivalLocationController extends Controller
      */
     public function getList(Request $request)
     {
-        $arrival_locations = ArrivalLocation::when($request->filled('search'), function ($q) use ($request) {
+        $arrival_locations = ArrivalLocation::with('companyLocation')
+        ->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
@@ -37,6 +38,7 @@ class ArrivalLocationController extends Controller
             ->where('company_id', $request->company_id)
 
             ->latest()
+            ->orderBy('company_location_id')
             ->paginate(request('per_page', 25));
 
         return view('management.master.arrival_location.getList', compact('arrival_locations'));
