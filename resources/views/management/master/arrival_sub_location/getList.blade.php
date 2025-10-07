@@ -1,9 +1,9 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-3">Name </th>
-            <th class="col-sm-2">Company Loc </th>
-            <th class="col-sm-2">Arrival Loc </th>
+            <th class="col-sm-2">Name </th>
+            <th class="col-sm-3">Company Location </th>
+            <th class="col-sm-2">Arrival Location </th>
             {{-- <th class="col-sm-2">Description</th> --}}
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
@@ -29,11 +29,11 @@
                             {{ $row->arrivalLocation->name }} <br>
                         </p>
                     </td>
-                    <td>
+                    {{-- <td>
                         <p class="m-0">
                             <small> {{ $row->description ?? '--' }}</small>
                         </p>
-                    </td>
+                    </td> --}}
                     <td>
                         <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
                             {{ $row->status }}

@@ -45,9 +45,9 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-3">Name </th>
-                                            <th class="col-sm-2">Company Loc </th>
-                                            <th class="col-sm-2">Arrival Loc </th>
+                                            <th class="col-sm-2">Name </th>
+                                            <th class="col-sm-3">Company Location </th>
+                                            <th class="col-sm-2">Arrival Location </th>
                                             {{-- <th class="col-sm-2">Description</th> --}}
                                             <th class="col-sm-1">Status</th>
                                             <th class="col-sm-2">Created</th>
@@ -71,7 +71,7 @@
     <script>
         $(document).ready(function () {
 
-          
+
             filterationCommon(`{{ route('get.arrival-sub-location') }}`);
 
             $(document).on('change', '#company_location_id', function () {
