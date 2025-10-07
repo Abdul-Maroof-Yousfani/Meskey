@@ -524,9 +524,9 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
                         data-product-id="${contract.product_id}"
                         data-supplier-id="${contract.supplier.name}"
                         data-sauda-type-id="${contract.sauda_type_id}"
-                        data-sauda-type-name="${contract.sauda_type.name}"
+                        data-sauda-type-name="${contract.sauda_type?.name ?? 'N/A'}"
                         >
-                        #${contract.contract_no} - Type: ${contract.sauda_type.name}
+                        #${contract.contract_no} - Sauda Type: ${contract.sauda_type?.name ?? 'N/A'} - Purchase Type: ${contract.purchase_type?.toUpperCase() ?? 'N/A'}
                     </option>`
                      );
                  });
