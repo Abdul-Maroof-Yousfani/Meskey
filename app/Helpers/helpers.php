@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Fluent;
-
+use Carbon\Carbon;
 const SLAB_TYPE_PERCENTAGE = 1;
 const SLAB_TYPE_KG = 2;
 const SLAB_TYPE_PRICE = 3;
@@ -769,4 +769,41 @@ function formatDeductionsAsString(array $deductionsData): string
     }
 
     return implode(', ', $result);
+}
+
+
+if (!function_exists('dateFormatHtml')) {
+    /**
+     * Return full HTML (p tag with date / date+time)
+     *
+     * @param  mixed  $date
+     * @param  string $type 'datetime' | 'dateonly'
+     * @return string|null
+     */
+    function dateFormatHtml($date, $type = 'datetime')
+    {
+        if (!$date) {
+            return null;
+        }
+
+        try {
+            $carbon = Carbon::parse($date);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        $dateOnly = $carbon->format('Y-m-d');
+        $timeOnly = $carbon->format('h:i A');
+
+        if ($type === 'dateonly') {
+            return '<p class="m-0">' . $dateOnly . '</p>';
+        }
+
+        if ($type === 'datetime') {
+            return '<p class="m-0">' . $dateOnly .
+                   ' / <small class="text-timestamp">' . $timeOnly . '</small></p>';
+        }
+
+        return null; // agar type match na kare
+    }
 }

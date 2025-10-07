@@ -2,8 +2,8 @@
     $indent = $level * 20;
 @endphp
 
-<tr>
-    <td class="dashed-indent position-relative" data-indent-w="{{ $indent * 0.7 }}px">
+<tr class="{{$account->parent ?? 'parenthighlightrow'}}">
+    <td class="dashed-indent position-relative " data-indent-w="{{ $indent * 0.7 }}px">
         <p class="m-0" style="padding-left: {{ $indent }}px">
             {{-- #{{ $account->unique_no }} --}}
              #{{ $account->hierarchy_path }}
@@ -18,14 +18,17 @@
             {{ $account->name }}
             @if ($account->description)
                 <br>
-                <small class="text-muted">{{ $account->description }}</small>
+                <small class="text-muted">{{ $account->description ?? 'No Description' }}</small>
             @endif
         </p>
     </td>
         <td>
-        <p class="m-0" style="padding-left: {{ $indent }}px">
-            {{ $account->parent?->hierarchy_path }} <br>
-            <small>{{ $account->parent?->name }}</small>
+        <p class="m-0" style="">
+           
+            <small>{{ $account->parent?->name ?? 'N/A' }}</small>
+            @if($account->parent)
+             ( {{ $account->parent?->hierarchy_path }} )
+            @endif
         </p>
     </td>
     <td>
@@ -39,10 +42,9 @@
         </label>
     </td>
     <td>
-        <p class="m-0">
-            {{ \Carbon\Carbon::parse($account->created_at)->format('Y-m-d') }}<br>
-            {{ \Carbon\Carbon::parse($account->created_at)->format('H:i A') }}
-        </p>
+   
+        {!! dateFormatHtml($account->created_at) !!}
+
     </td>
     <td>
         <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', false)"
