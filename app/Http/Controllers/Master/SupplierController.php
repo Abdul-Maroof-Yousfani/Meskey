@@ -100,7 +100,8 @@ class SupplierController extends Controller
 
             if (!empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
-                    if (empty($bankName)) continue;
+                    if (empty($bankName))
+                        continue;
 
                     SupplierCompanyBankDetail::create([
                         'bank_name' => $bankName,
@@ -115,7 +116,8 @@ class SupplierController extends Controller
 
             if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
-                    if (empty($bankName)) continue;
+                    if (empty($bankName))
+                        continue;
 
                     SupplierOwnerBankDetail::create([
                         'bank_name' => $bankName,
@@ -129,17 +131,14 @@ class SupplierController extends Controller
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
-                if ($request->account_id) {
-                    $brokerData['account_id'] = $request->account_id;
-                } else {
-                    $brokerData['account_id'] = $requestData['account_id'];
-                }
+
+                $Brokeraccount = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'brokers'));
 
                 $brokerData = [
                     'company_id' => $supplier->company_id ?? null,
                     'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
                     'name' => $supplier->company_name,
-                    'account_id' => $brokerData['account_id'],
+                    'account_id' => $Brokeraccount->id,
                     'email' => $supplier->email ?? null,
                     'phone' => $supplier->phone ?? null,
                     'address' => $supplier->address ?? null,
@@ -147,6 +146,8 @@ class SupplierController extends Controller
                     'stn' => $supplier->stn ?? null,
                     'status' => $supplier->status,
                 ];
+
+
 
                 $broker = Broker::create($brokerData);
             }
@@ -201,7 +202,7 @@ class SupplierController extends Controller
         try {
             $data = $request->validated();
             $requestData = $request->all();
-$requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
+            $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($supplier->account_id)) {
@@ -284,7 +285,8 @@ $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? '
         $updatedIds = [];
 
         foreach ($bankNames as $index => $bankName) {
-            if (empty($bankName)) continue;
+            if (empty($bankName))
+                continue;
 
             $bankData = [
                 'bank_name' => $bankName,
