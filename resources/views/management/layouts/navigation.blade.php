@@ -453,6 +453,39 @@
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
                         Control</span></a>
                 <ul class="dropdown-menu">
+                 @canAccess('product')
+                              <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Bootstrap Tables">Manage Locations</span></a>
+                        <ul class="dropdown-menu">
+                            @canAccess('company-locations')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('company-location.index') }}"
+                                    onclick="loadPageContent('{{ route('company-location.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Company Locations</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('arrival-locations')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('arrival-location.index') }}"
+                                    onclick="loadPageContent('{{ route('arrival-location.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Arrival Locations</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('arrival-sub-locations')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('arrival-sub-location.index') }}"
+                                    onclick="loadPageContent('{{ route('arrival-sub-location.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Arrival Sub Locations</span></a>
+                            </li>
+                            @endcanAccess
+                        </ul>
+                    </li>
+                 @endcanAccess
                     @canAccess('product')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
@@ -530,15 +563,7 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Manage Arrival</span></a>
                         <ul class="dropdown-menu">
-                            @canAccess('arrival-location')
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('broker.index') }}"
-                                    onclick="loadPageContent('{{ route('broker.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Arrival Location</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                           
                             @canAccess('truck-type')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('truck-type.index') }}"
@@ -617,13 +642,6 @@
                         </a>
                     </li>
                     {{-- @endcanAccess --}}
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('company-location.index') }}"
-                            onclick="loadPageContent('{{ route('company-location.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Company Locations</span>
-                        </a>
-                    </li>
                 </ul>
             </li>
             @endcanAccess
