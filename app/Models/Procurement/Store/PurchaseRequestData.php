@@ -17,6 +17,7 @@ class PurchaseRequestData extends Model
         'category_id',
         'item_id',
         'qty',
+        'approved_qty',
         'remarks',
         'quotation_status',
         'am_approval_status',

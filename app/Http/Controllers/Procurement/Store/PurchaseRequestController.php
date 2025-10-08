@@ -87,6 +87,7 @@ class PurchaseRequestController extends Controller
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
+                    'approved_qty' => 0,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 

@@ -52,7 +52,8 @@
                             <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
-                            <th>Qty</th>
+                            <th>Requested Qty</th>
+                            <th>Approved Qty</th>
                             <th>Job Orders</th>
                             <th>Remarks</th>
                             <th>Action</th>
@@ -109,6 +110,18 @@
                                         </div>
                                     </div>
                                 </td>
+    {{-- @if ($model->canApprove() && !$userAlreadyActed && !$changesRequired) --}}
+
+                                <td style="width: 10%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="number" name="approved_qty[]" id="approved_qty_{{ $index }}"
+                                                class="form-control bg-white" step="0.01" min="0"
+                                                placeholder="Approved Qty" value="{{ $item->approved_qty }}">
+                                        </div>
+                                    </div>
+                                </td>
+                                {{-- @endif --}}
                                 <td style="width: 20%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
@@ -214,6 +227,13 @@
                     <div class="loop-fields">
                         <div class="form-group mb-0">
                             <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01" min="0" placeholder="Qty">
+                        </div>
+                    </div>
+                </td>
+                <td style="width: 10%">
+                    <div class="loop-fields">
+                        <div class="form-group mb-0">
+                            <input type="number" name="approved_qty[]" id="approved_${index}" class="form-control bg-white" step="0.01" min="0" placeholder="Approved Qty">
                         </div>
                     </div>
                 </td>

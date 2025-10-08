@@ -49,9 +49,10 @@
                                             <th class="col-sm-2">Location</th>
                                             <th class="col-sm-2">Category</th>
                                             <th class="col-sm-2">Item</th>
-                                            <th class="col-sm-2">Item UOM</th>
-                                            <th class="col-sm-2">Qty</th>
-                                            {{-- <th class="col-sm-2">Item Status</th> --}}
+                                            <th class="col-sm-1">Item UOM</th>
+                                            <th class="col-sm-1">Requested Qty</th>
+                                            <th class="col-sm-1">Approved Qty</th>
+                                            <th class="col-sm-2">Status</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
@@ -68,7 +69,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('store.get.purchase-request') }}`)
         });
     </script>

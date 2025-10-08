@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\ApprovalsModule;
 
+use App\Models\Procurement\Store\PurchaseRequestData;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalsModule\ApprovalModule;
@@ -22,6 +23,26 @@ class ApprovalController extends Controller
 
         $record = $modelClass::findOrFail($id);
 
+        if ($request->filled('approved_qty_data')) {
+        $approvedQtys = json_decode($request->approved_qty_data, true);
+
+        if (!empty($approvedQtys)) {
+            // if approving PurchaseRequestData itself (single record)
+            if ($modelClass === PurchaseRequestData::class) {
+                $record->approved_qty = $approvedQtys[0] ?? 0;
+                $record->save();
+            }
+
+            // if approving a parent model that has child data
+            elseif (method_exists($record, 'details')) {
+                foreach ($record->details as $index => $detail) {
+                    $detail->approved_qty = $approvedQtys[$index] ?? 0;
+                    $detail->save();
+                }
+            }
+        }
+    }
+
         if ($reqType == 'reject') {
             $record->am_change_made = 0;
             $record->save();
@@ -30,7 +51,7 @@ class ApprovalController extends Controller
 
             if ($rejected) {
                 return response()->json([
-                    'success' =>  'Rejected successfully. All approvals have been reset.'
+                    'success' => 'Rejected successfully. All approvals have been reset.'
                 ]);
             }
 
@@ -48,12 +69,12 @@ class ApprovalController extends Controller
 
         if ($approved) {
             return response()->json([
-                'success' =>  'Approved successfully'
+                'success' => 'Approved successfully'
             ]);
         }
 
         return response()->json([
-            'success' =>  'Approval failed'
+            'success' => 'Approval failed'
         ]);
     }
 
