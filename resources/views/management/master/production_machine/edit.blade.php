@@ -37,6 +37,22 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
+                <label>Plant:</label>
+                <select id="plant_id" name="plant_id" class="form-control select2" required>
+                    <option value="">Select Plant</option>
+                    @foreach ($plants as $plant)
+                        <option 
+                            value="{{ $plant->id }}" 
+                            {{ $productionMachine->plant_id == $plant->id ? 'selected' : '' }}>
+                            {{ $plant->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
                 <label>Name:</label>
                 <input type="text" 
                     name="name" 

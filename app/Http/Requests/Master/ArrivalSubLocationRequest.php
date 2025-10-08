@@ -45,6 +45,10 @@ class ArrivalSubLocationRequest extends FormRequest
         return [
             'company_id.required' => 'The company ID is required.',
             'company_id.exists' => 'The selected company does not exist.',
+            'company_location_id.required' => 'The Company Location ID is required.',
+            'company_location_id.exists' => 'The selected Company Location does not exist.',
+            'arrival_location_id.required' => 'The Arrival Location ID is required.',
+            'arrival_location_id.exists' => 'The selected Arrival Location does not exist.',
             'unique_no.required' => 'The unique number is required.',
             'unique_no.unique' => 'The unique number has already been taken for the selected company.',
             'name.required' => 'The Arrival Location name is required.',

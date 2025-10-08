@@ -11,7 +11,7 @@ use App\Models\Master\ArrivalLocation;
 use App\Models\Master\Plant;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use Illuminate\Http\Request;
-use App\Http\Requests\Master\ArrivalSubLocationRequest;
+use App\Http\Requests\Master\ProductionMachineRequest;
 use App\Models\Master\CompanyLocation;
 use App\Models\User;
 
@@ -58,7 +58,7 @@ class ProductionMachineController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ArrivalSubLocationRequest $request)
+    public function store(ProductionMachineRequest $request)
     {
         $data = $request->validated();
         $arrival_locations = ProductionMachine::create($request->all());
@@ -81,7 +81,7 @@ class ProductionMachineController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ArrivalSubLocationRequest $request, ProductionMachine $production_machine)
+    public function update(ProductionMachineRequest $request, ProductionMachine $production_machine)
     {
         $data = $request->validated();
         $data = $request->all();

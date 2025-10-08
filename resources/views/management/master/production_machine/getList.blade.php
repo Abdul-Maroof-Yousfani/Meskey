@@ -51,7 +51,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('production-machine.edit', $row->id) }}','Edit Arrival Location')"
+                            <a onclick="openModal(this,'{{ route('production-machine.edit', $row->id) }}','Edit Production Machine')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
