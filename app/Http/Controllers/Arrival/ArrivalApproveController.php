@@ -105,7 +105,6 @@ class ArrivalApproveController extends Controller
         $validator = Validator::make($request->all(), [
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'gala_id' => 'required|exists:arrival_sub_locations,id',
-            'gala_name' => 'required|string',
             'truck_no' => 'required|string',
             'bag_type_id' => 'required|exists:bag_types,id',
             // 'filling_bags_no' => 'required|integer',
@@ -118,6 +117,8 @@ class ArrivalApproveController extends Controller
             'note' => 'nullable|string'
         ]);
 
+        $gala_name = ArrivalSubLocation::where('id', $request->gala_id)->value('name');
+        
         $validator->sometimes('total_rejection', 'required|integer|min:1', function ($input) {
             return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
         });
@@ -128,6 +129,7 @@ class ArrivalApproveController extends Controller
 
         $request['creator_id'] = auth()->user()->id;
         $request['remark'] = $request->note ?? '';
+        $request['gala_name'] = $gala_name;
 
         $arrivalApprove = ArrivalApprove::create($request->all());
 

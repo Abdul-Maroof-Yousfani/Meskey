@@ -27,7 +27,6 @@
                         <option value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
                     @endforeach
                 </select>
-                <input type="hidden" name="gala_name" id="gala_name" placeholder="Gala Name" class="form-control" />
 
             </div>
         </div>
@@ -232,9 +231,5 @@
             }
         });
 
-        $('#gala_id').on('change', function () {
-            let selectedName = $(this).find('option:selected').text();
-            $('#gala_name').val(selectedName);
-        });
     });
 </script>
