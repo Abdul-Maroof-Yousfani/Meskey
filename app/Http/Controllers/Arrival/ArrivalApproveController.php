@@ -8,6 +8,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\BagCondition;
 use App\Models\BagPacking;
 use App\Models\BagType;
+use App\Models\Master\ArrivalSubLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -73,6 +74,7 @@ class ArrivalApproveController extends Controller
         $data['bagTypes'] = BagType::all();
         $data['bagConditions'] = BagCondition::all();
         $data['bagPackings'] = BagPacking::all();
+        $data['arrivalSubLocations'] = ArrivalSubLocation::where('status', 'Active')->get();
 
         return view('management.arrival.approved_arrival.create', $data);
     }
@@ -102,6 +104,7 @@ class ArrivalApproveController extends Controller
 
         $validator = Validator::make($request->all(), [
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
+            'gala_id' => 'required|exists:arrival_sub_locations,id',
             'gala_name' => 'required|string',
             'truck_no' => 'required|string',
             'bag_type_id' => 'required|exists:bag_types,id',

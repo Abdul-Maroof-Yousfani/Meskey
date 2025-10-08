@@ -1,6 +1,6 @@
 <form action="{{ route('production-machine.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.plant') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.production-machine') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">

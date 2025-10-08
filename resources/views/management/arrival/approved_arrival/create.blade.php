@@ -21,8 +21,14 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Gala Name:</label>
-                <input type="text" name="gala_name" placeholder="Gala Name" class="form-control" autocomplete="off"
-                    required />
+                <select class="form-control select2" name="gala_id" id="gala_id">
+                    <option value="">Select Gala</option>
+                    @foreach ($arrivalSubLocations as $arrivalSubLocation)
+                        <option value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="gala_name" id="gala_name" placeholder="Gala Name" class="form-control" />
+
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -35,7 +41,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Bag type:</label>
-                <select class="form-control" name="bag_type_id" id="bag_type_id">
+                <select class="form-control select2" name="bag_type_id" id="bag_type_id">
                     <option value="">Select Bag type</option>
                     @foreach ($bagTypes as $bagType)
                         <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
@@ -53,7 +59,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group bag-condition-field">
                 <label>Bag Condition:</label>
-                <select class="form-control" name="bag_condition_id">
+                <select class="form-control select2" name="bag_condition_id">
                     <option value="">Select Condition</option>
                     @foreach ($bagConditions as $condition)
                         <option value="{{ $condition->id }}">{{ $condition->name }}</option>
@@ -147,7 +153,8 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
+        
         function toggleBagFields() {
             let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();
             if (selectedBagType.includes('bulk')) {
@@ -159,11 +166,11 @@
 
         toggleBagFields();
 
-        $('#bag_type_id').change(function() {
+        $('#bag_type_id').change(function () {
             toggleBagFields();
         });
 
-        $('input[name="bag_packing_approval"]').change(function() {
+        $('input[name="bag_packing_approval"]').change(function () {
             if ($(this).val() == "Half Approved") {
                 $('input[name="total_bags"]').removeAttr('readonly');
                 $(".total-rejection-section").slideDown();
@@ -174,7 +181,7 @@
 
         $('.select2').select2();
 
-        $('input[name="total_bags"]').on('change input', function() {
+        $('input[name="total_bags"]').on('change input', function () {
             let selectedTicket = $('select[name="arrival_ticket_id"]').find(':selected');
             let totalTicketBags = selectedTicket.data('bags') || 0;
             let enteredBags = parseInt($(this).val()) || 0;
@@ -184,7 +191,7 @@
             $('#total_rejection').val(totalRejection);
         });
 
-        $('select[name="arrival_ticket_id"]').on('change', function() {
+        $('select[name="arrival_ticket_id"]').on('change', function () {
             let selectedOption = $(this).find(':selected');
             let truckNo = selectedOption.data('trucknumber') || '';
             let qcStatus = selectedOption.data('secondqcstatus') || '';
@@ -223,6 +230,11 @@
                     value: 'Full Approved'
                 }).insertAfter($('input[name="bag_packing_approval"]').last());
             }
+        });
+
+        $('#gala_id').on('change', function () {
+            let selectedName = $(this).find('option:selected').text();
+            $('#gala_name').val(selectedName);
         });
     });
 </script>
