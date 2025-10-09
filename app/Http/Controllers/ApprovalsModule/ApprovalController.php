@@ -36,6 +36,12 @@ class ApprovalController extends Controller
                         ], 422);
                     }
 
+                    if ($approvedQty == 0) {
+                        return response()->json([
+                            'errors' => ['approved_qty' => ['Approved quantity cannot be 0.']]
+                        ], 422);
+                    }
+
                     $record->approved_qty = $approvedQty;
                     $record->save();
                 }
@@ -49,6 +55,16 @@ class ApprovalController extends Controller
                                 'errors' => [
                                     'approved_qty' => [
                                         "Row {$index}: Approved quantity ({$approvedQty}) cannot exceed requested quantity ({$detail->qty})."
+                                    ]
+                                ]
+                            ], 422);
+                        }
+
+                        if ($approvedQty == 0) {
+                            return response()->json([
+                                'errors' => [
+                                    'approved_qty' => [
+                                        "Row {$index}: Approved quantity ({$approvedQty}) cannot be 0."
                                     ]
                                 ]
                             ], 422);

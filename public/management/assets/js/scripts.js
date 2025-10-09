@@ -360,12 +360,10 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
     error: function (xhr, status, error) {
   Swal.close();
 
-  // 🟥 Handle Laravel validation errors (422)
   if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
     let errors = xhr.responseJSON.errors;
     let message = "";
 
-    // Collect all validation messages
     for (let field in errors) {
       message += errors[field].join("<br>") + "<br>";
     }
@@ -380,7 +378,6 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
     printErrorMsg(errors);
   }
 
-  // 🟨 Handle custom backend error messages
   else if (xhr.responseJSON && xhr.responseJSON.message) {
     Swal.fire({
       icon: "error",
@@ -390,7 +387,6 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
     });
   }
 
-  // 🟩 Fallback for unexpected responses
   else {
     Swal.fire({
       icon: "error",
