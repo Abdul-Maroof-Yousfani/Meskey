@@ -130,8 +130,8 @@ class FreightController extends Controller
 
                     // Gate buying transactions start
                     if ($ticket->purchaseOrder->purchase_type == 'gate_buying') {
-                       // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
-
+                        // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
+                      //  dd($amount);
                         createTransaction(
                             $amount,
                             $ticket->accountsOf->account_id,
@@ -188,6 +188,7 @@ class FreightController extends Controller
                             );
                         }
 
+                        return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
 
 
                     }

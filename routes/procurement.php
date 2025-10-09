@@ -3,6 +3,7 @@
 use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
+    GateBuyingPaymentRequestController,
     AdvancePaymentRequestApprovalController,
     AdvancePaymentRequestController,
     DoubtTruckController,
@@ -108,6 +109,16 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
         Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('ticket.payment-request-approval.approve');
 
         Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('ticket.freight.getFreightForm');
+    });
+    Route::prefix('gate-buy')->group(function () {
+        Route::resource('payment-request', GateBuyingPaymentRequestController::class)->names('gate-buy.payment-request');
+        Route::post('/get-payment-request', [GateBuyingPaymentRequestController::class, 'getList'])->name('gate-buy.get.payment-request');
+
+       // Route::resource('payment-request-approval', PaymentRequestApprovalController::class)->names('gate-buying.payment-request-approval');
+       // Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('gate-buying.get.payment-request-approval');
+       // Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('gate-buying.payment-request-approval.approve');
+
+       // Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('gate-buying.freight.getFreightForm');
     });
 });
 
