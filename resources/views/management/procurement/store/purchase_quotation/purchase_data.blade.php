@@ -48,9 +48,9 @@
          </td>
          <td style="width: 10%">
              <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
-                 onblur="calc({{ $key }})" value="{{ $data->qty }}" id="qty_{{ $key }}"
+                 onblur="calc({{ $key }})" value="{{ $data->approved_qty }}" id="qty_{{ $key }}"
                  class="form-control" step="0.01" min="0">
-             <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+             <input type="hidden" name="qty[]" value="{{ $data->approved_qty }}">
          </td>
          <td style="width: 20%">
              <div class="loop-fields">
