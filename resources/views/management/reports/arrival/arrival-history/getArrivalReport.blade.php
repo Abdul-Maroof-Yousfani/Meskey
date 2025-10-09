@@ -7,7 +7,8 @@
         <th>Broker</th>
         <th>A/c Of</th>
         <th>Truck #</th>
-        <th>Commodity</th>
+        <th>Ticket Commodity</th>
+        <th>QC Commodity</th>
         <th>Party Ref.#</th>
         <th>Status</th>
         <th>Station</th>
@@ -77,7 +78,8 @@
                         <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
                         <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
                          <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
-                        <td>{{ $row->qcProduct->name ?? ($row->product->name ?? 'N/A') }}</td>
+                        <td>{{ $row->product->name ?? 'N/A' }}</td>
+                        <td>{{ $row->qcProduct->name ?? 'N/A' }}</td>
                         <td>N/A</td>
                           <td>
                             @php
