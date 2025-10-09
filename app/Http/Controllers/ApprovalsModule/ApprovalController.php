@@ -24,24 +24,43 @@ class ApprovalController extends Controller
         $record = $modelClass::findOrFail($id);
 
         if ($request->filled('approved_qty_data')) {
-        $approvedQtys = json_decode($request->approved_qty_data, true);
+            $approvedQtys = json_decode($request->approved_qty_data, true);
 
-        if (!empty($approvedQtys)) {
-            // if approving PurchaseRequestData itself (single record)
-            if ($modelClass === PurchaseRequestData::class) {
-                $record->approved_qty = $approvedQtys[0] ?? 0;
-                $record->save();
-            }
+            if (!empty($approvedQtys)) {
+                if ($modelClass === PurchaseRequestData::class) {
+                    $approvedQty = (float) ($approvedQtys[0] ?? 0);
 
-            // if approving a parent model that has child data
-            elseif (method_exists($record, 'details')) {
-                foreach ($record->details as $index => $detail) {
-                    $detail->approved_qty = $approvedQtys[$index] ?? 0;
-                    $detail->save();
+                    if ($approvedQty > $record->qty) {
+                        return response()->json([
+                            'errors' => ['approved_qty' => ['Approved quantity cannot be greater than requested quantity (' . $record->qty . ').']]
+                        ], 422);
+                    }
+
+                    $record->approved_qty = $approvedQty;
+                    $record->save();
+                }
+
+                elseif (method_exists($record, 'details')) {
+                    foreach ($record->details as $index => $detail) {
+                        $approvedQty = (float) ($approvedQtys[$index] ?? 0);
+
+                        if ($approvedQty > $detail->qty) {
+                            return response()->json([
+                                'errors' => [
+                                    'approved_qty' => [
+                                        "Row {$index}: Approved quantity ({$approvedQty}) cannot exceed requested quantity ({$detail->qty})."
+                                    ]
+                                ]
+                            ], 422);
+                        }
+
+                        $detail->approved_qty = $approvedQty;
+                        $detail->save();
+                    }
                 }
             }
         }
-    }
+
 
         if ($reqType == 'reject') {
             $record->am_change_made = 0;

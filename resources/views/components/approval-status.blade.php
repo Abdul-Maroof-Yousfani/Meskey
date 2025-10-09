@@ -279,17 +279,14 @@ function confirmApproval(type) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            // 🟩 Collect approved qty values
             let approvedQtys = [];
             $('input[name="approved_qty[]"]').each(function () {
                 approvedQtys.push($(this).val());
             });
             $('#approved_qty_data').val(JSON.stringify(approvedQtys));
 
-            // 🟩 Set approval type
             $('#approvalTypeInput').val(type);
 
-            // 🟩 Submit form
             $('#ajaxSubmit').submit();
         }
     });
