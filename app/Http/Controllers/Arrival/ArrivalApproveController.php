@@ -8,6 +8,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\BagCondition;
 use App\Models\BagPacking;
 use App\Models\BagType;
+use App\Models\Master\ArrivalSubLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -73,6 +74,7 @@ class ArrivalApproveController extends Controller
         $data['bagTypes'] = BagType::all();
         $data['bagConditions'] = BagCondition::all();
         $data['bagPackings'] = BagPacking::all();
+        $data['arrivalSubLocations'] = ArrivalSubLocation::where('status', 'Active')->get();
 
         return view('management.arrival.approved_arrival.create', $data);
     }
@@ -102,7 +104,7 @@ class ArrivalApproveController extends Controller
 
         $validator = Validator::make($request->all(), [
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
-            'gala_name' => 'required|string',
+            'gala_id' => 'required|exists:arrival_sub_locations,id',
             'truck_no' => 'required|string',
             'bag_type_id' => 'required|exists:bag_types,id',
             // 'filling_bags_no' => 'required|integer',
@@ -115,6 +117,8 @@ class ArrivalApproveController extends Controller
             'note' => 'nullable|string'
         ]);
 
+        $gala_name = ArrivalSubLocation::where('id', $request->gala_id)->value('name');
+        
         $validator->sometimes('total_rejection', 'required|integer|min:1', function ($input) {
             return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
         });
@@ -125,6 +129,7 @@ class ArrivalApproveController extends Controller
 
         $request['creator_id'] = auth()->user()->id;
         $request['remark'] = $request->note ?? '';
+        $request['gala_name'] = $gala_name;
 
         $arrivalApprove = ArrivalApprove::create($request->all());
 

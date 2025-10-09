@@ -117,6 +117,7 @@
                         <input type="hidden" name="class" value="{{ class_basename($model) }}">
                         <input type="hidden" name="mc" value="{{ $module->id }}">
                         <input type="hidden" name="id" value="{{ $model->id }}">
+                        <input type="hidden" name="approved_qty_data" id="approved_qty_data">
                         <input type="hidden" name="type" id="approvalTypeInput" value="">
 
                         <div class="mb-3">
@@ -260,31 +261,34 @@
         }
     </style>
 @endif
+
 <script>
-    function confirmApproval(type) {
-        let msg = type === 'approve' ?
-            'Are you sure you want to grant approval?' :
-            'Are you sure you want to decline this request?';
+function confirmApproval(type) {
+    let msg = type === 'approve'
+        ? 'Are you sure you want to grant approval?'
+        : 'Are you sure you want to decline this request?';
 
-        Swal.fire({
-            title: 'Please Confirm',
-            text: msg,
-            icon: type === 'approve' ? 'question' : 'warning',
-            showCancelButton: true,
-            confirmButtonColor: type === 'approve' ? '#28a745' : '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: type === 'approve' ? 'Yes, Approve' : 'Yes, Decline',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('approvalTypeInput').value = type;
+    Swal.fire({
+        title: 'Please Confirm',
+        text: msg,
+        icon: type === 'approve' ? 'question' : 'warning',
+        showCancelButton: true,
+        confirmButtonColor: type === 'approve' ? '#28a745' : '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: type === 'approve' ? 'Yes, Approve' : 'Yes, Decline',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let approvedQtys = [];
+            $('input[name="approved_qty[]"]').each(function () {
+                approvedQtys.push($(this).val());
+            });
+            $('#approved_qty_data').val(JSON.stringify(approvedQtys));
 
-                if (type === 'approve') {
-                    document.getElementById('approveSubmitBtn').click();
-                } else {
-                    document.getElementById('rejectSubmitBtn').click();
-                }
-            }
-        });
-    }
+            $('#approvalTypeInput').val(type);
+
+            $('#ajaxSubmit').submit();
+        }
+    });
+}
 </script>

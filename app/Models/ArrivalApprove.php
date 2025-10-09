@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\ArrivalSubLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,6 +18,7 @@ class ArrivalApprove extends Model
      */
     protected $fillable = [
         'arrival_ticket_id',
+        'gala_id',
         'gala_name',
         'truck_no',
         'filling_bags_no',
@@ -70,5 +72,10 @@ class ArrivalApprove extends Model
     public function bagPacking()
     {
         return $this->belongsTo(BagPacking::class);
+    }
+
+    public function gala()
+    {
+        return $this->belongsTo(ArrivalSubLocation::class);
     }
 }

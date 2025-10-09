@@ -6,8 +6,10 @@
             <th class="col-sm-2">Location</th>
             <th class="col-sm-2">Category</th>
             <th class="col-sm-2">Item</th>
-            <th class="col-sm-2">Item UOM</th>
-            <th class="col-sm-2">Qty</th>
+            <th class="col-sm-1">Item UOM</th>
+            <th class="col-sm-1">Requested Qty</th>
+            <th class="col-sm-1">Approved Qty</th>
+            <th class="col-sm-2">Status</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -57,39 +59,60 @@
                         </p>
                     </td>
                     <td>
+                        <p class="m-0">
+                            {{ $row->approved_qty ?? 'N/A' }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            @if ($row->am_approval_status === 'pending')
+                                <span class="badge badge-warning">{{ $row->am_approval_status }}</span>
+                            @elseif ($row->am_approval_status === 'approved')
+                                <span class="badge badge-success">{{ $row->am_approval_status }}</span>
+                            @elseif ($row->am_approval_status === 'rejected')
+                                <span class="badge badge-danger">{{ $row->am_approval_status }}</span>
+                            @else
+                                <span class="badge badge-secondary">{{ $row->am_approval_status ?? 'N/A' }}</span>
+                            @endif
+                        </p>
+                    </td>
+
+                    <td>
                         <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $row->id) }}', 'Approval Voucher', false, '80%')"
                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                            @if($row->am_approval_status != 'approved')
+                                <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
+                                    class="info p-1 text-center mr-2 position-relative ">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @endif
                         @endcan
                         {{-- @can('role-delete')
-                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                        <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
                         @endcan
                         @can('role-delete')
-                            @php
-                                $currentUserRoleId = Auth::user()->role_id;
-                                $alreadyApproved = $row
-                                    ->approval()
-                                    ->where('role_id', $currentUserRoleId)
-                                    ->where('status_id', 2)
-                                    ->exists();
-                            @endphp
-                            @if (!$alreadyApproved)
-                                <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
-                                    class="success p-1 text-center position-relative" title="Approve">
-                                    <i class="ft-check font-medium-3"></i>
-                                </a>
-                            @else
-                                <span class="badge badge-success">Approved</span>
-                            @endif
+                        @php
+                        $currentUserRoleId = Auth::user()->role_id;
+                        $alreadyApproved = $row
+                        ->approval()
+                        ->where('role_id', $currentUserRoleId)
+                        ->where('status_id', 2)
+                        ->exists();
+                        @endphp
+                        @if (!$alreadyApproved)
+                        <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
+                            class="success p-1 text-center position-relative" title="Approve">
+                            <i class="ft-check font-medium-3"></i>
+                        </a>
+                        @else
+                        <span class="badge badge-success">Approved</span>
+                        @endif
                         @endcan --}}
                     </td>
                 </tr>
@@ -142,7 +165,7 @@
                     url: url,
                     type: 'GET',
 
-                    success: function(res) {
+                    success: function (res) {
                         Swal.fire({
                             title: 'Approved!',
                             text: res.message,
@@ -153,7 +176,7 @@
                             location.reload();
                         });
                     },
-                    error: function() {
+                    error: function () {
                         Swal.fire('Error', 'Error occurred while approving item.', 'error');
                     }
                 });

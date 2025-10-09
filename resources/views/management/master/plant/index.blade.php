@@ -1,19 +1,20 @@
 @extends('management.layouts.master')
 @section('title')
-    Purchase Request
+    Arrival Locations
 @endsection
 @section('content')
     <div class="content-wrapper">
+
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Purchase Request </h2>
+                    <h2 class="page-title">Plants</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('store.purchase-request.create') }}','Add Purchase Request',false,'80%')"
-                        type="button" class="btn btn-primary position-relative">
-                        Create Purchase Request
+                        onclick="openModal(this,'{{ route('plant.create') }}','Add Plants')"
+                        type="button" class="btn btn-primary position-relative ">
+                        Create Plants
                     </button>
                 </div>
             </div>
@@ -44,18 +45,16 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Purchase Request No </th>
-                                            <th class="col-sm-2">Purchase Request Date</th>
-                                            <th class="col-sm-2">Location</th>
-                                            <th class="col-sm-2">Category</th>
-                                            <th class="col-sm-2">Item</th>
-                                            <th class="col-sm-1">Item UOM</th>
-                                            <th class="col-sm-1">Requested Qty</th>
-                                            <th class="col-sm-1">Approved Qty</th>
-                                            <th class="col-sm-2">Status</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-sm-2">Name </th>
+                                            <th class="col-sm-3">Company Location </th>
+                                            <th class="col-sm-2">Arrival Location </th>
+                                            {{-- <th class="col-sm-2">Description</th> --}}
+                                            <th class="col-sm-1">Status</th>
+                                            <th class="col-sm-2">Created</th>
+                                            <th class="col-sm-2">Action</th>
                                         </tr>
                                     </thead>
+
                                 </table>
                             </div>
                         </div>
@@ -65,12 +64,38 @@
         </section>
 
 
+
     </div>
 @endsection
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('store.get.purchase-request') }}`)
+
+
+            filterationCommon(`{{ route('get.plant') }}`);
+
+            $(document).on('change', '#company_location_id', function () {
+                let locationId = $(this).val();
+
+                if (locationId && locationId > 0) {
+                    initializeDynamicDependentCall1Select2(
+                        '#company_location_id',
+                        '#arrival_location_id',
+                        'company_locations',
+                        'name',
+                        'id',
+                        'arrival_locations',
+                        'company_location_id',
+                        'name',
+                        true,
+                        false,
+                        true,
+                        true
+                    );
+                }
+            });
+
+
         });
     </script>
 @endsection

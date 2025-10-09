@@ -390,33 +390,44 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
     },
 
     error: function (xhr, status, error) {
-      Swal.close();
+  Swal.close();
 
-      if (xhr.responseJSON && xhr.responseJSON.errors) {
-        printErrorMsg(xhr.responseJSON.errors);
+  if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+    let errors = xhr.responseJSON.errors;
+    let message = "";
 
-        Swal.fire({
-          title: "Validation Errors",
-          text: "Some fields are mandatory. Please check and correct the errors.",
-          icon: "error",
-          confirmButtonColor: "#D95000",
-        });
-      } else if (xhr.responseJSON && xhr.responseJSON.message) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: xhr.responseJSON.message,
-          confirmButtonColor: "#D95000",
-        });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: xhr.responseText,
-          confirmButtonColor: "#D95000",
-        });
-      }
-    },
+    for (let field in errors) {
+      message += errors[field].join("<br>") + "<br>";
+    }
+
+    Swal.fire({
+      title: "Validation Error",
+      html: message,
+      icon: "warning",
+      confirmButtonColor: "#D95000",
+    });
+
+    printErrorMsg(errors);
+  }
+
+  else if (xhr.responseJSON && xhr.responseJSON.message) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: xhr.responseJSON.message,
+      confirmButtonColor: "#D95000",
+    });
+  }
+
+  else {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: xhr.responseText || "Something went wrong. Please try again.",
+      confirmButtonColor: "#D95000",
+    });
+  }
+},
   });
 });
 

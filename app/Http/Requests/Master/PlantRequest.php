@@ -5,7 +5,7 @@ namespace App\Http\Requests\Master;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class ArrivalSubLocationRequest extends FormRequest
+class PlantRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -31,7 +31,7 @@ class ArrivalSubLocationRequest extends FormRequest
                 'string',
                 'max:255',
 
-                Rule::unique('arrival_sub_locations', 'name')
+                Rule::unique('plants', 'name')
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($this->arrival_location)
             ],
@@ -51,7 +51,7 @@ class ArrivalSubLocationRequest extends FormRequest
             'arrival_location_id.exists' => 'The selected Arrival Location does not exist.',
             'unique_no.required' => 'The unique number is required.',
             'unique_no.unique' => 'The unique number has already been taken for the selected company.',
-            'name.required' => 'The Arrival Location name is required.',
+            'name.required' => 'The Plant name is required.',
             'name.unique' => 'The name has already been taken for the selected company.',
             'description.max' => 'The description must not exceed 500 characters.',
             'status.required' => 'The status is required.',

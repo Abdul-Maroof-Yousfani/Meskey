@@ -1,15 +1,27 @@
-<form action="{{ route('arrival-location.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('plant.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.arrival-location') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.plant') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Company Location:</label>
-                <select name="company_location_id" class="form-control select2">
+                <select id="company_location_id" name="company_location_id" class="form-control select2">
                     <option value="">Select Location</option>
                     @foreach ($companyLocations as $location)
                         <option value="{{ $location->id }}">{{ $location->name }}</option>
                     @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Arrival Location:</label>
+                <select id="arrival_location_id" name="arrival_location_id" class="form-control select2">
+                    <option value="">Select Arrival Location</option>
+                    {{-- @foreach ($arrivalLocations as $arrival_location)
+                    <option value="{{ $arrival_location->id }}">{{ $arrival_location->name }}</option>
+                    @endforeach --}}
                 </select>
             </div>
         </div>

@@ -2,8 +2,10 @@
     <thead>
         <tr>
             <th class="col-sm-2">Name </th>
-            <th class="col-sm-2">Company Location </th>
-            <th class="col-sm-3">Description</th>
+            <th class="col-sm-3">Company Location </th>
+            <th class="col-sm-2">Arrival Location </th>
+            <th class="col-sm-2">Plant </th>
+            {{-- <th class="col-sm-2">Description</th> --}}
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-2">Action</th>
@@ -13,22 +15,31 @@
         @if (count($arrival_locations) != 0)
             @foreach ($arrival_locations as $key => $row)
                 <tr>
-                   
                     <td>
                         <p class="m-0">
                             {{ $row->name }} <br>
                         </p>
                     </td>
-                     <td>
+                    <td>
                         <p class="m-0">
                             {{ $row->companyLocation->name }} <br>
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
+                            {{ $row->arrivalLocation->name }} <br>
                         </p>
                     </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->plant->name }} <br>
+                        </p>
+                    </td>
+                    {{-- <td>
+                        <p class="m-0">
+                            <small> {{ $row->description ?? '--' }}</small>
+                        </p>
+                    </td> --}}
                     <td>
                         <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
                             {{ $row->status }}
@@ -36,16 +47,17 @@
                     </td>
                     <td>
                         {!! dateFormatHtml($row->created_at) !!}
+
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('arrival-location.edit', $row->id) }}','Edit Arrival Location')"
+                            <a onclick="openModal(this,'{{ route('production-machine.edit', $row->id) }}','Edit Production Machine')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('arrival-location.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
+                            <a onclick="deletemodal('{{ route('production-machine.destroy', $row->id) }}','{{ route('get.production-machine') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
