@@ -27,6 +27,7 @@
         <th>No. Bag</th>
                 <th>Warehouse</th>
         <th>Gala</th>
+        <th>Tabaar Remarks</th>
         @foreach (getTableData('product_slab_types') as $slab)
             <th>{{ $slab->name }}</th>
             <th>Inner {{ $slab->name }} </th>
@@ -149,6 +150,7 @@
                         <td>{{ $row->approvals->total_bags ?? 'N/A' }}</td>
                        <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
                         <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
+                        <td>{{  $tabaar }}</td>
                         @foreach (getTableData('product_slab_types') as $slab)
                             <td data-slaptypename="{{ $deductionValueSlabinitial[$slab->id]['name'] ?? 'N/A' }}">
                                 @if(isset($deductionValueSlabinitial[$slab->id]['checklist_value']) && $deductionValueSlabinitial[$slab->id]['checklist_value'] != 0)
