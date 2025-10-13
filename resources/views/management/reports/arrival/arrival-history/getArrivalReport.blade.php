@@ -7,7 +7,8 @@
         <th>Broker</th>
         <th>A/c Of</th>
         <th>Truck #</th>
-        <th>Commodity</th>
+        <th>Ticket Commodity</th>
+        <th>QC Commodity</th>
         <th>Party Ref.#</th>
         <th>Status</th>
         <th>Station</th>
@@ -26,6 +27,7 @@
         <th>No. Bag</th>
                 <th>Warehouse</th>
         <th>Gala</th>
+        <th>Tabaar Remarks</th>
         @foreach (getTableData('product_slab_types') as $slab)
             <th>{{ $slab->name }}</th>
             <th>Inner {{ $slab->name }} </th>
@@ -77,7 +79,8 @@
                         <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
                         <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
                          <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
-                        <td>{{ $row->qcProduct->name ?? ($row->product->name ?? 'N/A') }}</td>
+                        <td>{{ $row->product->name ?? 'N/A' }}</td>
+                        <td>{{ $row->qcProduct->name ?? 'N/A' }}</td>
                         <td>N/A</td>
                           <td>
                             @php
@@ -147,6 +150,7 @@
                         <td>{{ $row->approvals->total_bags ?? 'N/A' }}</td>
                        <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
                         <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
+                        <td>{{  $tabaar }}</td>
                         @foreach (getTableData('product_slab_types') as $slab)
                             <td data-slaptypename="{{ $deductionValueSlabinitial[$slab->id]['name'] ?? 'N/A' }}">
                                 @if(isset($deductionValueSlabinitial[$slab->id]['checklist_value']) && $deductionValueSlabinitial[$slab->id]['checklist_value'] != 0)

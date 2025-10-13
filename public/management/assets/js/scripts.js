@@ -130,7 +130,7 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
   // }
 
   // Update URL parameters without duplicates
-  function updateUrlParams(formData) {
+  function updateUrlParamsbk(formData) {
     const urlParams = new URLSearchParams(window.location.search);
     const newParams = new URLSearchParams(formData); // Serialized data
 
@@ -147,6 +147,38 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
     window.history.pushState(null, "", newUrl);
   }
 
+
+
+function updateUrlParams(formData) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const newParams = new URLSearchParams(formData);
+
+        for (const [key, value] of newParams) {
+       
+                urlParams.delete(key);
+            
+        
+    }
+    // Handle array parameters like commodity_id[]
+    for (const [key, value] of newParams) {
+        if (key.endsWith('[]')) {
+            if (value) {
+                // Add new value to array parameter
+                urlParams.append(key, value);
+            }
+        } else {
+            if (value) {
+                urlParams.set(key, value);
+            } else {
+                urlParams.delete(key);
+            }
+        }
+    }
+    
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.pushState(null, "", newUrl);
+}
+  
   // // Load filter values from URL on page load
   // function loadFiltersFromUrl() {
   //   const urlParams = new URLSearchParams(window.location.search);

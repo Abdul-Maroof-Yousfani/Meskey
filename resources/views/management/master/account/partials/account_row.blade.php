@@ -2,9 +2,9 @@
     $indent = $level * 20;
 @endphp
 
-<tr class="{{$account->parent ?? 'parenthighlightrow'}}">
+<tr class="{{$account->parent ? '' : 'parenthighlightrow'}}">
     <td class="dashed-indent position-relative " data-indent-w="{{ $indent * 0.7 }}px">
-        <p class="m-0" style="padding-left: {{ $indent }}px">
+        <p class="m-0 {{$account->parent ? '' : 'font-weight-bold'}}" style="padding-left: {{ $indent }}px">
             {{-- #{{ $account->unique_no }} --}}
              #{{ $account->hierarchy_path }}
             {{-- <br><small>
@@ -14,7 +14,7 @@
     </td>
 
     <td>
-        <p class="m-0" style="padding-left: {{ $indent }}px">
+        <p class="m-0 {{$account->parent ?? 'font-weight-bold'}}" style="padding-left: {{ $indent }}px">
             {{ $account->name }}
             @if ($account->description)
                 <br>
@@ -66,3 +66,9 @@
         'level' => $level + 1,
     ])
 @endforeach
+
+<style>
+.parentboldhead {
+    font-weight: 700;
+}
+</style>

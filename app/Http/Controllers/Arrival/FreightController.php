@@ -128,6 +128,72 @@ class FreightController extends Controller
                     $qcProduct = $ticket->purchaseOrder->qcProduct->name ?? $ticket->purchaseOrder->product->name ?? 'N/A';
                     $loadingWeight = $ticket->arrived_net_weight;
 
+                    // Gate buying transactions start
+                    if ($ticket->purchaseOrder->purchase_type == 'gate_buying') {
+                        // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
+                      //  dd($amount);
+                        createTransaction(
+                            $amount,
+                            $ticket->accountsOf->account_id,
+                            1,
+                            $contractNo,
+                            'credit',
+                            'no',
+                            [
+                                'grn_no' => $grnNo,
+                                'counter_account_id' => $ticket->qcProduct->account_id,
+                                'purpose' => "supplier-payable",
+                                'payment_against' => "gate-buying-purchase",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+                            ]
+                        );
+
+                        createTransaction(
+                            $inventoryAmount,
+                            $ticket->qcProduct->account_id,
+                            1,
+                            $contractNo,
+                            'debit',
+                            'no',
+                            [
+                                'grn_no' => $grnNo,
+                                'counter_account_id' => $ticket->purchaseOrder->supplier->account_id,
+                                'purpose' => "arrival-slip",
+                                'payment_against' => "gate-buying-purchase",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $data['arrived_weight'] . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
+                            ]
+                        );
+
+
+                        if ($ticket->purchaseOrder->broker_one_id && $ticket->purchaseOrder->broker_one_commission && $loadingWeight) {
+                            $amount = ($loadingWeight * $ticket->purchaseOrder->broker_one_commission);
+
+                            createTransaction(
+                                $amount,
+                                $ticket->purchaseOrder->broker->account_id,
+                                1,
+                                $ticket->purchaseOrder->contract_no,
+                                'credit',
+                                'no',
+                                [
+                                    'grn_no' => $grnNo,
+                                    'purpose' => "broker",
+                                    'counter_account_id' => $ticket->qcProduct->account_id,
+                                    'payment_against' => "pohanch-purchase",
+                                    'against_reference_no' => "$truckNo/$biltyNo",
+                                    'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                                ]
+                            );
+                        }
+
+                        return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
+
+
+                    }
+                    // Gate buying transactions end
+
                     if ($ticket->saudaType->name == 'Pohanch') {
                         createTransaction(
                             $amount,

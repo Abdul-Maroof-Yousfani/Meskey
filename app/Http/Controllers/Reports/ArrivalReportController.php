@@ -51,11 +51,9 @@ class ArrivalReportController extends Controller
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
                     $subQuery->whereHas('qcProduct', function ($query) use ($request) {
-                        $query->where('id', $request->commodity_id);
-                    })
-                        ->orWhereHas('product', function ($query) use ($request) {
-                            $query->where('id', $request->commodity_id);
-                        });
+                        $query->whereIn('id', $request->commodity_id);
+                    });
+                        
                 });
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {

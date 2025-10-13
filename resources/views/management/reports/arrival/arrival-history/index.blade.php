@@ -64,16 +64,17 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
-                                                    <select name="commodity_id" id="commodity_id"
+                                                   <select name="commodity_id[]" id="commodity_id" multiple
                                                         class="form-control selectWithoutAjax">
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
                                                             <option value="{{ $commodity->id }}"
-                                                                {{ request('commodity_id') == $commodity->id ? 'selected' : '' }}>
+                                                                {{ is_array(request('commodity_id')) && in_array($commodity->id, request('commodity_id')) ? 'selected' : '' }}>
                                                                 {{ $commodity->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
+
                                                 </div>
                                             </div>
                                             <div class="col-md-2">
