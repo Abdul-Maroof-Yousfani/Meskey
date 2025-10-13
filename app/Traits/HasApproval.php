@@ -146,14 +146,12 @@ trait HasApproval
         if (!$module) {
             return false;
         }
-
         if (isset($this->am_change_made) && $this->am_change_made == 0) {
             return false;
         }
 
         $userRoleIds = $user->roles->pluck('id')->toArray();
         $requiredRoles = $module->roles->pluck('role_id')->toArray();
-
         if (empty(array_intersect($userRoleIds, $requiredRoles))) {
             return false;
         }
@@ -279,7 +277,6 @@ trait HasApproval
             ->where('approval_cycle', $currentCycle)
             ->update(['status' => 'rejected']);
 
-        // Create rejection log
         ApprovalLog::create([
             'module_id' => $module->id,
             'record_id' => $this->id,
@@ -297,6 +294,52 @@ trait HasApproval
 
         return true;
     }
+
+    public function revert($comments = null)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+
+        $module = $this->getApprovalModule();
+        if (!$module) {
+            return false;
+        }
+
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $userRoleId = $user->roles->first()->id;
+
+        $this->approvalLogs()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->where('status', 'active')
+            ->update(['status' => 'inactive']);
+
+        $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->update(['status' => 'reverted']);
+
+        // Create rejection log
+        ApprovalLog::create([
+            'module_id' => $module->id,
+            'record_id' => $this->id,
+            'user_id' => $user->id,
+            'role_id' => $userRoleId,
+            'action' => 'reverted',
+            'status' => 'active',
+            'approval_cycle' => $currentCycle,
+            'comments' => $comments,
+        ]);
+
+        $this->createNewApprovalCycle();
+
+        $this->onApprovalReverted();
+
+        return true;
+    }
+
 
     protected function createNewApprovalCycle()
     {
@@ -339,6 +382,19 @@ trait HasApproval
 
         if (isset($module->approval_column, $this->{$module->approval_column})) {
             $this->update([$module->approval_column => 'rejected']);
+        }
+
+        if (isset($this->am_change_made)) {
+            $this->update(['am_change_made' => 0]);
+        }
+    }
+
+    protected function onApprovalReverted()
+    {
+        $module = $this->getApprovalModule();
+
+        if (isset($module->approval_column, $this->{$module->approval_column})) {
+            $this->update([$module->approval_column => 'reverted']);
         }
 
         if (isset($this->am_change_made)) {

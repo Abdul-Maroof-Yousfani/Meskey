@@ -6,10 +6,12 @@ use App\Models\Master\CompanyLocation;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+
 
 class PurchaseRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $fillable = [
         'purchase_request_no',
@@ -20,8 +22,11 @@ class PurchaseRequest extends Model
         'description',
         'purchase_request_status',
         'approved_user_name',
+        'am_approval_status',
+        'am_change_made',
         'status',
         'po_status',
+        'created_by',
     ];
 
     public function location()
@@ -37,5 +42,10 @@ class PurchaseRequest extends Model
     public function quotation()
     {
         return $this->hasOne(PurchaseQuotation::class, 'purchase_request_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

@@ -1,125 +1,128 @@
 <table class="table m-0">
     <thead>
+
         <tr>
-            <th class="col-sm-2">Purchase Request No </th>
-            <th class="col-sm-2">Purchase Request Date</th>
-            <th class="col-sm-2">Location</th>
-            <th class="col-sm-2">Category</th>
-            <th class="col-sm-2">Item</th>
-            <th class="col-sm-1">Item UOM</th>
-            <th class="col-sm-1">Requested Qty</th>
-            <th class="col-sm-1">Approved Qty</th>
-            <th class="col-sm-2">Status</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-3">Purchase Request No</th>
+            {{-- <th class="col-2">Location</th> --}}
+            <th class="col-4">Category</th>
+            <th class="col-2 text-right">Requested Qty</th>
+            <th class="col-1 text-right">Approved Qty</th>
+            <th class="col-1">PR Date</th>
+            <th class="col-1">Status</th>
+            <th class="col-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($PurchaseRequests) != 0)
-            @foreach ($PurchaseRequests as $key => $row)
-                <tr>
-                    <td>
-                        <p class="m-0">
-                            #{{ optional($row->purchase_request)->purchase_request_no ?? 'N/A' }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            @if (optional($row->purchase_request)->created_at)
-                                {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('Y-m-d') }} /
-                                {{ \Carbon\Carbon::parse($row->purchase_request->created_at)->format('h:i A') }}
-                            @else
-                                N/A
-                            @endif
-                            <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional(optional($row->purchase_request)->location)->name ?? 'N/A' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional($row)->category->name ?? 'N/A' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional($row)->item->name ?? 'N/A' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ optional(optional($row->item)->unitOfMeasure)->name ?? 'N/A' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->qty ?? 'N/A' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->approved_qty ?? 'N/A' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            @if ($row->am_approval_status === 'pending')
-                                <span class="badge badge-warning">{{ $row->am_approval_status }}</span>
-                            @elseif ($row->am_approval_status === 'approved')
-                                <span class="badge badge-success">{{ $row->am_approval_status }}</span>
-                            @elseif ($row->am_approval_status === 'rejected')
-                                <span class="badge badge-danger">{{ $row->am_approval_status }}</span>
-                            @else
-                                <span class="badge badge-secondary">{{ $row->am_approval_status ?? 'N/A' }}</span>
-                            @endif
-                        </p>
-                    </td>
 
-                    <td>
-                        <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $row->id) }}', 'Approval Voucher', false, '80%')"
-                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                            <i class="ft-eye font-medium-3"></i>
-                        </a>
-                        @can('role-edit')
-                            @if($row->am_approval_status != 'approved')
-                                <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $row->id) }}','Edit Purchase Request',false,'80%')"
-                                    class="info p-1 text-center mr-2 position-relative ">
-                                    <i class="ft-edit font-medium-3"></i>
-                                </a>
-                            @endif
-                        @endcan
-                        {{-- @can('role-delete')
-                        <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $row->id) }}','{{ route('store.get.purchase-request') }}')"
-                            class="danger p-1 text-center mr-2 position-relative ">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
-                        @endcan
-                        @can('role-delete')
-                        @php
-                        $currentUserRoleId = Auth::user()->role_id;
-                        $alreadyApproved = $row
-                        ->approval()
-                        ->where('role_id', $currentUserRoleId)
-                        ->where('status_id', 2)
-                        ->exists();
-                        @endphp
-                        @if (!$alreadyApproved)
-                        <a onclick="approveItem('{{ route('store.purchase-request.approve', $row->id) }}')"
-                            class="success p-1 text-center position-relative" title="Approve">
-                            <i class="ft-check font-medium-3"></i>
-                        </a>
-                        @else
-                        <span class="badge badge-success">Approved</span>
+        @if (count($GroupedPurchaseRequests) > 0)
+            @foreach ($GroupedPurchaseRequests as $requestGroup)
+                @php $isFirstRequestRow = true; @endphp
+                @php $isFirstRequestRow = true; @endphp
+                @foreach ($requestGroup['items'] as $itemGroup)
+                    <tr>
+                        @if ($isFirstRequestRow)
+                            <td rowspan="{{ $requestGroup['request_rowspan'] }}"
+                                style="background-color: #e3f2fd; vertical-align: middle;">
+                                <p class="m-0 font-weight-bold">
+                                    #{{ $requestGroup['request_no'] }}
+                                </p>
+                            </td>
                         @endif
-                        @endcan --}}
-                    </td>
-                </tr>
+
+                        {{-- <td style="background-color: #f7f7f7ff; vertical-align: middle;">
+                            <p class="m-0 font-weight-bold">
+                                {{ optional($itemGroup['item_data']->purchase_request->location)->name ?? 'N/A' }}
+                            </p>
+                        </td> --}}
+
+                        <td style="background-color: #e8f5e8; vertical-align: middle;">
+                            <p class="m-0 font-weight-bold">
+                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }} -
+                                {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
+                            </p>
+                        </td>
+
+                        <td>
+                            <p class="m-0 text-right">
+                                {{ $itemGroup['item_data']->qty }}
+                                {{ optional($itemGroup['item_data']->item->unitOfMeasure)->name ?? 'N/A' }}
+                            </p>
+                        </td>
+
+                        <td>
+                            <p class="m-0 text-right">
+                                {{ $itemGroup['item_data']->qty }}
+                            </p>
+                        </td>
+                        <td>
+                            <p class="m-0 white-nowrap">
+                                {{ \Carbon\Carbon::parse($itemGroup['item_data']->created_at)->format('Y-m-d h:i A') }}
+                            </p>
+                        </td>
+
+                        @if ($isFirstRequestRow)
+
+                            <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                @php
+                                    $approvalStatus = ucwords($requestGroup['request_status']);
+                                    $badgeClass = match (strtolower($approvalStatus)) {
+                                        'approved' => 'badge-success',
+                                        'rejected' => 'badge-danger',
+                                        'pending' => 'badge-warning',
+                                        'returned' => 'badge-info',
+                                        default => 'badge-secondary',
+                                    };
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">
+                                    {{ $approvalStatus }}
+                                </span>
+                            </td>
+
+
+                            <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                <div class="d-flex gap-2">
+                                    @php
+                                        $currentApprovalStatus = $itemGroup['item_data']
+                                            ?->{$itemGroup['item_data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'pending';
+                                        $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
+                                        $shouldDisableApproval = $requestGroup['has_approved_item'] && !$isCurrentApproved;
+                                    @endphp
+
+                                    @if ($shouldDisableApproval)
+                                        <span class="info p-1 text-center mr-2 position-relative" style="opacity: 0.5; cursor: not-allowed;"
+                                            title="Approval disabled - Another item in this request is already approved">
+                                            <i class="ft-eye font-medium-3"></i>
+                                        </span>
+                                    @else
+                                        <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '80%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-eye font-medium-3"></i>
+                                        </a>
+                                    @endif
+                                    @if($requestGroup['created_by_id'] == auth()->user()->id)
+                                        @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
+                                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'80%')"
+                                                class="info p-1 text-center mr-2 position-relative">
+                                                <i class="ft-edit font-medium-3"></i>
+                                            </a>
+                                        @endif
+                                    @endif
+                                    <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $itemGroup['item_data']->id) }}','{{ route('store.get.purchase-request') }}')"
+                                        class="danger p-1 text-center mr-2 position-relative">
+                                        <i class="ft-x font-medium-3"></i>
+                                    </a>
+                                </div>
+                            </td>
+                            @php $isFirstRequestRow = false; @endphp
+
+                        @endif
+                    </tr>
+                @endforeach
             @endforeach
+
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="9" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -140,6 +143,8 @@
                 </td>
             </tr>
         @endif
+
+
     </tbody>
 </table>
 
