@@ -14,7 +14,7 @@
     id="ajaxSubmit">
     @csrf
     @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('raw-material.ticket.get.payment-request') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.gate-buy.get.payment-request') }}" />
     <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id ?? '' }}">
 
     <div class="row">

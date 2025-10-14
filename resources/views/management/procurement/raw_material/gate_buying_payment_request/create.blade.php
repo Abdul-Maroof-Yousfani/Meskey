@@ -1,7 +1,7 @@
 <form action="{{ route('raw-material.gate-buy.payment-request.store') }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('raw-material.ticket.get.payment-request') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.gate-buy.get.payment-request') }}" />
 
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
