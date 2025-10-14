@@ -766,8 +766,7 @@ class TicketContractController extends Controller
 
             array_unshift($contracts, $linkedContract);
         }
-        dd($contracts);
-
+        
         $html = view('management.procurement.raw_material.ticket_contracts.contract_table', compact('arrivalTicket', 'contracts'))->render();
 
         return response()->json(['success' => true, 'html' => $html, 'data' => $contracts]);

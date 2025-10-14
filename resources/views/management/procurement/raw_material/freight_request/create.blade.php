@@ -361,7 +361,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Request Amount</label>
                 <input type="number" step="0.01" class="form-control" name="request_amount" value="0"
-                    min="0" required readonly>
+                    min="0" required >
             </div>
         </div>
     </div>
