@@ -103,7 +103,7 @@
                 <td>{{ $balanceTrucks }} <span class="d-none">{{ $balanceTrucksWithoutOwn }}</span> </td>
                 <td>
                     {{ ($minQty ?? 0) - ($arrivedQty ?? 0) . ' - ' . (($maxQty ?? 0) - ($arrivedQty ?? 0)) }}
-                    <span class="d-none">{{ $contract['sauda_type']['name'] }}</span>
+                    <span class="d-none">{{ $contract['sauda_type']['name']??'' }}</span>
                 </td>
                 <td>{{ $contract['stock_in_transit_trucks'] ?? 0 }}</td>
                 <td>{{ $rejectedTrucks }}</td>
@@ -118,7 +118,7 @@
                 </td>
             </tr>
 
-            @if ($contract['sauda_type']['name'] == 'Thadda')
+            @if (($contract['sauda_type']['name'] ?? null) == 'Thadda')
                 @if (count($contract['purchase_freights'] ?? []) > 0)
                     <tr class="freight-row" data-contract-id="{{ $contract['id'] }}" style="display: none;">
                         <td colspan="20">
