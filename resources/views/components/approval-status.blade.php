@@ -12,7 +12,31 @@
         $approvalCycles = $model->approvalRows()->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
     @endphp
 
-    @if ($model->{$module->approval_column} === 'rejected' || $model->am_change_made == 0)
+
+    @if ($model->{$module->approval_column} === 'reverted' || $model->am_change_made == 0)
+        <div class="alert alert-primary border-start border-primary border-3 mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-exclamation-triangle me-3 text-primary"></i>
+                <div>
+                @php
+                    $latestLog = $model->approvalLogs()->latest()->first();
+                @endphp
+                    <strong>Approval Authority Comments</strong><br>
+                    @if ($model->am_change_made == 0)
+                    <div class="small mb-1">
+                        <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong> 
+                        <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                    </div>
+                        {{ $latestLog->comments ?? 'No comments available' }}
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+
+
+    @if ($model->{$module->approval_column} === 'rejected' && $model->am_change_made == 0)
         <div class="alert alert-warning border-start border-warning border-3 mb-4">
             <div class="d-flex align-items-center">
                 <i class="fa  fa-exclamation-triangle me-3 text-warning"></i>
@@ -136,13 +160,15 @@
                                 formaction="{{ route('approval.reject', ['modelType' => class_basename($model), 'id' => $model->id]) }}">
                             </button>
 
-                            <button type="button" class="btn btn-success w-50 fw-semibold"
-                                onclick="confirmApproval('approve')">
+                            <button type="button" class="btn btn-success w-50 fw-semibold" onclick="confirmApproval('approve')">
                                 <i class="fa fa-check me-2"></i>
                                 Grant Approval
                             </button>
-                            <button type="button" class="btn btn-danger w-50 fw-semibold"
-                                onclick="confirmApproval('reject')">
+                            <button type="button" class="btn btn-primary w-50 fw-semibold" onclick="confirmApproval('revert')">
+                                <i class="fa fa-return me-2"></i>
+                                Revert Request
+                            </button>
+                            <button type="button" class="btn btn-danger w-50 fw-semibold" onclick="confirmApproval('reject')">
                                 <i class="fa fa-times me-2"></i>
                                 Decline Request
                             </button>
@@ -235,9 +261,9 @@
 
         .approval-cycle-section {
             /* border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-            background-color: #f8f9fa; */
+                        border-radius: 8px;
+                        padding: 15px;
+                        background-color: #f8f9fa; */
         }
 
         .cycle-header {
@@ -263,32 +289,57 @@
 @endif
 
 <script>
-function confirmApproval(type) {
-    let msg = type === 'approve'
-        ? 'Are you sure you want to grant approval?'
-        : 'Are you sure you want to decline this request?';
+    function confirmApproval(type) {
+        let msg =
+            type === 'approve'
+                ? 'Are you sure you want to grant approval?'
+                : type === 'revert'
+                    ? 'Are you sure you want to revert this request?'
+                    : 'Are you sure you want to decline this request?';
 
-    Swal.fire({
-        title: 'Please Confirm',
-        text: msg,
-        icon: type === 'approve' ? 'question' : 'warning',
-        showCancelButton: true,
-        confirmButtonColor: type === 'approve' ? '#28a745' : '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: type === 'approve' ? 'Yes, Approve' : 'Yes, Decline',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            let approvedQtys = [];
-            $('input[name="approved_qty[]"]').each(function () {
-                approvedQtys.push($(this).val());
-            });
-            $('#approved_qty_data').val(JSON.stringify(approvedQtys));
+        let confirmButtonText =
+            type === 'approve'
+                ? 'Yes, Approve'
+                : type === 'revert'
+                    ? 'Yes, Revert'
+                    : 'Yes, Decline';
 
-            $('#approvalTypeInput').val(type);
+        let confirmButtonColor =
+            type === 'approve'
+                ? '#28a745'
+                : type === 'revert'
+                    ? '#27489a'
+                    : '#d33';
 
-            $('#ajaxSubmit').submit();
-        }
-    });
-}
+        let icon =
+            type === 'approve'
+                ? 'question'
+                : type === 'revert'
+                    ? 'primary'
+                    : 'warning';
+
+        return Swal.fire({
+            title: 'Please Confirm',
+            text: msg,
+            icon: icon,
+            showCancelButton: true,
+            confirmButtonColor: confirmButtonColor,
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: confirmButtonText,
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let approvedQtys = [];
+                $('input[name="approved_qty[]"]').each(function () {
+                    approvedQtys.push($(this).val());
+                });
+                $('#approved_qty_data').val(JSON.stringify(approvedQtys));
+
+                $('#approvalTypeInput').val(type);
+
+                $('#ajaxSubmit').submit();
+                location.reload();
+            }
+        });
+    }
 </script>

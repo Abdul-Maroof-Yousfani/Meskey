@@ -32,16 +32,65 @@ class PurchaseRequestController extends Controller
     public function getList(Request $request)
     {
         $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
-            // ->when($request->filled('search'), function ($q) use ($request) {
-            //     $searchTerm = '%' . $request->search . '%';
-            //     return $q->where(function ($sq) use ($searchTerm) {
-            //         $sq->where('purchase_request_no', 'like', $searchTerm);
-            //     });
-            // })
-            ->whereStatus(true)->latest()
+            ->whereStatus(true)
+            ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.store.purchase_request.getList', compact('PurchaseRequests'));
+        $groupedData = [];
+        $processedData = [];
+        foreach ($PurchaseRequests as $row) {
+            $requestNo = $row->purchase_request->purchase_request_no;
+            $created_by_id = $row->purchase_request->created_by;
+            $itemId = $row->item->id ?? 'unknown';
+
+            if (!isset($groupedData[$requestNo])) {
+                $groupedData[$requestNo] = [
+                    'request_data' => $row->purchase_request,
+                    'items' => []
+                ];
+            }
+
+            $groupedData[$requestNo]['items'][$itemId] = [
+                'item_data' => $row,
+            ];
+        }
+
+        foreach ($groupedData as $requestNo => $requestGroup) {
+            $requestItems = [];
+            $hasApprovedItem = false;
+
+            foreach ($requestGroup['items'] as $itemGroup) {
+                $approvalStatus = $itemGroup['item_data']
+                    ?->{$itemGroup['item_data']->getApprovalModule()->approval_column ?? 'am_approval_status'};
+                if (strtolower($approvalStatus) === 'approved') {
+                    $hasApprovedItem = true;
+                    break;
+                }
+            }
+
+            foreach ($requestGroup['items'] as $itemId => $itemGroup) {
+                $requestItems[] = [
+                    'item_data' => $itemGroup['item_data'],
+                    'item_rowspan' => 1
+                ];
+            }
+
+            $requestRowspan = count($requestItems);
+
+            $processedData[] = [
+                'request_data' => $requestGroup['request_data'],
+                'request_no' => $requestNo,
+                'created_by_id' => $requestGroup['request_data']->created_by,
+                'request_status' => $requestGroup['request_data']->am_approval_status,
+                'request_rowspan' => $requestRowspan,
+                'items' => $requestItems,
+                'has_approved_item' => $hasApprovedItem
+            ];
+        }
+        return view('management.procurement.store.purchase_request.getList', [
+            'PurchaseRequests' => $PurchaseRequests,
+            'GroupedPurchaseRequests' => $processedData
+        ]);
     }
 
     public function approve($id)
@@ -79,6 +128,7 @@ class PurchaseRequestController extends Controller
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
+                'created_by' => auth()->user()->id,
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
@@ -140,10 +190,10 @@ class PurchaseRequestController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
         $locations = CompanyLocation::all();
-
+        // dd($purchaseRequest);
         return view('management.procurement.store.purchase_request.approvalCanvas', [
             'purchaseRequest' => $purchaseRequest,
-            'data' => $purchaseRequestData,
+            'data' => $purchaseRequest,
             'purchaseRequestData' => $purchaseRequestData,
             'categories' => $categories,
             'job_orders' => $job_orders,
@@ -158,13 +208,21 @@ class PurchaseRequestController extends Controller
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
-            $purchaseRequest->update([
+            $updateData = [
                 'purchase_date' => $request->purchase_date,
                 'location_id' => $request->company_location_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
-            ]);
+                'am_change_made' => 1,
+            ];
+// echo $purchaseRequest->am_approval_status;
+
+            if ($purchaseRequest->am_approval_status == 'reverted') {
+                $updateData['am_approval_status'] = 'pending';
+            }
+
+            $purchaseRequest->update($updateData);
 
             $existingItems = $purchaseRequest->PurchaseData->pluck('id')->toArray();
             $submittedItems = [];

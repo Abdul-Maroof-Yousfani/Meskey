@@ -44,16 +44,14 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Purchase Request No </th>
-                                            <th class="col-sm-2">Purchase Request Date</th>
-                                            <th class="col-sm-2">Location</th>
-                                            <th class="col-sm-2">Category</th>
-                                            <th class="col-sm-2">Item</th>
-                                            <th class="col-sm-1">Item UOM</th>
-                                            <th class="col-sm-1">Requested Qty</th>
-                                            <th class="col-sm-1">Approved Qty</th>
-                                            <th class="col-sm-2">Status</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-3">Purchase Request No</th>
+                                            {{-- <th class="col-2">Location</th> --}}
+                                            <th class="col-4">Category</th>
+                                            <th class="col-2 text-right">Requested Qty</th>
+                                            {{-- <th class="col-1 text-right">Approved Qty</th> --}}
+                                            <th class="col-1">PR Date</th>
+                                            <th class="col-1">Status</th>
+                                            <th class="col-1">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
