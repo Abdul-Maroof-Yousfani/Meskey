@@ -1,20 +1,7 @@
 @php
     $isThadda = $arrivalTicket->sauda_type_id == 2;
 
-    $hasLoadingWeight = true;
-
-    // $hasLoadingWeight = false;
-
-    // if ($isThadda) {
-    //     if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
-    //         $hasLoadingWeight = true;
-    //     }
-    // } else {
-    //     if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->arrived_weight) {
-    //         $hasLoadingWeight = true;
-    //     }
-    // }
-
+    $hasLoadingWeight = true; 
     $isSlabs = false;
     $isCompulsury = false;
     $showLumpSum = false;
@@ -761,6 +748,7 @@
             const isCashPayment = $('#is_cash_payment').val() === '1';
             const hasBankCharges = bankChargesPercentage > 0 && isCashPayment;
             const paidAmount = parseFloat({{ $requestedAmount }});
+            const originalRequested = {{ $currentPaymentAmount }};
 
             function toggleSections() {
                 if ($loadingRadio.is(':checked')) {
@@ -886,6 +874,34 @@
                 }
             }
 
+            function updatePaymentRequestCalculations() {
+                const totalAmount = parseFloat($('#total_amount').val()) || 0;
+                const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                const paymentRequestInput = $('.payment-request-input');
+                const percentageInput = $('.percentage-input');
+                
+                const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
+                const remainingAmount = totalAmount - paidAmount;
+
+                // Update remaining amount
+                $('#remaining_amount').val(remainingAmount.toFixed(2));
+
+                // If payment request amount exists, update percentage
+                if (currentPaymentRequest > 0) {
+                    const percentage = remainingAmount > 0 ? (currentPaymentRequest / remainingAmount) * 100 : 0;
+                    percentageInput.val(percentage.toFixed(2));
+                } else {
+                    // If no payment request, reset percentage
+                    percentageInput.val('0');
+                }
+
+                // Ensure payment request doesn't exceed remaining amount
+                if (currentPaymentRequest > remainingAmount) {
+                    paymentRequestInput.val(remainingAmount.toFixed(2));
+                    percentageInput.val('100');
+                }
+            }
+
             function updateAllCalculations() {
                 updateBagWeightCalculations();
 
@@ -927,8 +943,8 @@
                 $('#total_amount').val(finalAmount);
                 $('#total_amount_display').val(finalAmount.toFixed(2));
 
-                const remainingAmount = finalAmount - paidAmount;
-                $('#remaining_amount').val(remainingAmount.toFixed(2));
+                // Update payment request calculations
+                updatePaymentRequestCalculations();
 
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
             }
@@ -948,21 +964,31 @@
                 updateAllCalculations();
             });
 
-            $('input[name="payment_request_amount"]').on('input', function() {
+            // Payment request input handler
+            $('.payment-request-input').on('input', function() {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
-                const originalRequested = {{ $currentPaymentAmount }};
                 const newRequested = parseFloat($(this).val()) || 0;
+                const remainingAmount = totalAmount - paidAmount;
 
-                const remaining = totalAmount - (paidAmount - originalRequested + newRequested);
+                // Ensure payment request doesn't exceed remaining amount
+                if (newRequested > remainingAmount) {
+                    $(this).val(remainingAmount.toFixed(2));
+                }
 
-                $('#remaining_amount').val(remaining.toFixed(2));
+                // Update percentage
+                const percentageInput = $('.percentage-input');
+                const finalRequested = parseFloat($(this).val()) || 0;
+                const percentage = remainingAmount > 0 ? (finalRequested / remainingAmount) * 100 : 0;
+                percentageInput.val(percentage.toFixed(2));
+
+                // Update remaining amount display
+                const finalRemaining = totalAmount - (paidAmount + finalRequested);
+                $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
 
-            const percentageInput = $('.percentage-input');
-            const paymentRequestInput = $('.payment-request-input');
-
-            percentageInput.on('input', function() {
+            // Percentage input handler
+            $('.percentage-input').on('input', function() {
                 let percentage = parseFloat($(this).val()) || 0;
                 if (percentage > 100) {
                     percentage = 100;
@@ -970,23 +996,14 @@
                 }
 
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
+                const paidAmount = parseFloat($('#paid_amount').val()) || 0;
                 const remainingAmount = totalAmount - paidAmount;
                 const amount = (remainingAmount * percentage) / 100;
-                paymentRequestInput.val(amount.toFixed(2));
-            });
-
-            paymentRequestInput.on('input', function() {
-                const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
-                let amount = parseFloat($(this).val()) || 0;
-
-                if (amount > remainingAmount) {
-                    amount = remainingAmount;
-                    $(this).val(remainingAmount.toFixed(2));
-                }
-
-                const percentage = remainingAmount > 0 ? (amount / remainingAmount) * 100 : 0;
-                percentageInput.val(percentage.toFixed(2));
+                
+                $('.payment-request-input').val(amount.toFixed(2));
+                
+                const finalRemaining = totalAmount - (paidAmount + amount);
+                $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
 
             $('input[name="freight_pay_request_amount"]').on('input', function() {
