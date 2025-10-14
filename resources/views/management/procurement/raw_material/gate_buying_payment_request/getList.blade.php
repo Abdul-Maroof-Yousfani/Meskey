@@ -39,8 +39,6 @@
                                     --}}
                                     <strong>Approved Payment:</strong>
                                     {{ $ticket->calculated_values['approved_payment_sum'] ?? 0 }}<br>
-                                    <strong>Approved Freight:</strong>
-                                    {{ $ticket->calculated_values['approved_freight_sum'] ?? 0 }}<br>
                                     <strong>Remaining Amount:</strong>
                                     {{ $ticket->calculated_values['remaining_amount'] ?? 0 }}<br>
                                 </small>
@@ -68,7 +66,7 @@
                         {{ \Carbon\Carbon::parse($ticket->calculated_values['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        <a onclick="openModal(this,'{{ route('raw-material.ticket.payment-request.edit', $ticket->id) }}','Generate Bill (Gate Buying)')"
+                        <a onclick="openModal(this,'{{ route('raw-material.gate-buy.payment-request.edit', $ticket->id) }}','Generate Bill (Gate Buying)')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>

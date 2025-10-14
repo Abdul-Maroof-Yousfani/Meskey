@@ -41,6 +41,12 @@
     $grossFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
+    // Bank charges calculation - only apply if payment term is "Cash Payment"
+    $bankChargesPercentage = $purchaseOrder->location->bank_charges_for_gate_buying ?? 0;
+    $isCashPayment = $purchaseOrder->payment_term === 'Cash Payment';
+    $hasBankCharges = $bankChargesPercentage > 0 && $isCashPayment;
+    $bankChargesAmount = 0;
+
     foreach ($samplingRequestCompulsuryResults as $slab) {
         if (!$slab->applied_deduction) {
             continue;
@@ -153,6 +159,8 @@
 <input type="hidden" id="bag_rate" value="{{ $bagRate }}">
 {{-- <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}"> --}}
 <input type="hidden" id="kanta_charges" value="0">
+<input type="hidden" id="bank_charges_percentage" value="{{ $bankChargesPercentage }}">
+<input type="hidden" id="is_cash_payment" value="{{ $isCashPayment ? '1' : '0' }}">
 
 <!-- Store sampling data for JS calculations -->
 <script type="text/javascript">
@@ -218,11 +226,32 @@
     </div>
     <div class="col-md-6 contract-range-field">
         <div class="form-group">
-            <label>Contract Range</label>
-            <input type="text" class="form-control" name="contract_range"
-                value="{{ $purchaseOrder->min_quantity }} - {{ $purchaseOrder->max_quantity }}" readonly>
-            <input type="hidden" name="min_contract_range" value="{{ $purchaseOrder->min_quantity }}">
-            <input type="hidden" name="max_contract_range" value="{{ $purchaseOrder->max_quantity }}">
+            <label>Payment Term</label>
+            <input type="text" class="form-control" name="payment_term"
+                value="{{ $purchaseOrder->payment_term }}" readonly> 
+        </div>
+    </div>
+    
+    <!-- Contact Person Information -->
+    <div class="col-md-4">
+        <div class="form-group">
+            <label>Contact Person Name</label>
+            <input type="text" class="form-control" name="contact_person_name"
+                value="{{ $purchaseOrder->contact_person_name ?? 'N/A' }}" readonly>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label>Mobile No</label>
+            <input type="text" class="form-control" name="mobile_no"
+                value="{{ $purchaseOrder->mobile_no ?? 'N/A' }}" readonly>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label>CNIC No</label>
+            <input type="text" class="form-control" name="cnic_no"
+                value="{{ $purchaseOrder->cnic_no ?? 'N/A' }}" readonly>
         </div>
     </div>
 </div>
@@ -604,63 +633,24 @@
                                     id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
                             </td>
                         </tr>
+                        @if ($hasBankCharges)
                         <tr>
-                            <td><strong>Supplier Commision</strong></td>
+                            <td><strong>Bank Charges</strong></td>
                             <td>N/A</td>
                             <td>
-                                <div class="input-group mb-0" bis_skin_checked="1">
-                                    <input type="text" class="form-control" name=""
-                                        value="{{ $purchaseOrder->supplier_commission }}"
-                                        placeholder="Suggested Deduction" readonly="">
-                                    <div class="input-group-append" bis_skin_checked="1">
-                                        <span class="input-group-text text-sm">Rs/KG's</span>
-                                    </div>
+                                <div class="input-group mb-0">
+                                    <input type="text" class="form-control" name="bank_charges_percentage_display"
+                                        value="{{ $bankChargesPercentage }}%" readonly>
+                                    <input type="hidden" name="bank_charges_percentage" value="{{ $bankChargesPercentage }}">
                                 </div>
                             </td>
                             <td>
-                                <input type="text" class="form-control" name="supplier_commission_display"
-                                    id="supplier_commission_display"
-                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
-                                    readonly>
-                                <input type="hidden" class="form-control" name="supplier_commission"
-                                    id="supplier_commission"
-                                    value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
+                                <input type="text" class="form-control" name="bank_charges_amount_display"
+                                    id="bank_charges_amount_display" value="0.00" readonly>
+                                <input type="hidden" class="form-control" name="bank_charges_amount"
+                                    id="bank_charges_amount" value="0" readonly>
                             </td>
                         </tr>
-                        @if ($purchaseOrder->supplier_commission < 0)
-                            <tr>
-                                <td><strong>Broker</strong></td>
-                                <td>N/A</td>
-                                <td>
-                                    <div class="form-group mb-0 my-1 w-100">
-                                        @php
-                                            $isBrokerDisabled = ($paymentRequestData->broker_id ?? null) !== null;
-                                            $selectedBrokerId = $paymentRequestData->broker_id ?? '';
-                                        @endphp
-                                        <select name="broker_id" id="broker_id" class="form-control select_b"
-                                            @disabled($isBrokerDisabled) data-commission="#broker_commission">
-                                            <option value="">N/A
-                                            </option>
-                                            @foreach ($brokers as $broker)
-                                                <option value="{{ $broker->id }}" @selected($broker->id == $selectedBrokerId)>
-                                                    {{ $broker->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @if ($isBrokerDisabled)
-                                            <input type="hidden" name="broker_id" value="{{ $selectedBrokerId }}">
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control" name="brokery_amount_display"
-                                        id="brokery_amount_display"
-                                        value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
-                                        readonly>
-                                    <input type="hidden" class="form-control" name="brokery_amount"
-                                        id="brokery_amount"
-                                        value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
-                                </td>
-                            </tr>
                         @endif
                     </tbody>
                 </table>
@@ -669,22 +659,43 @@
     @endif
 
     @php
-        $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
+        // Remove supplier commission from calculation
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
-        $totalwithCommision = $totalAmount + $totalSupplierCommission;
+        // Bank charges will be calculated in JavaScript
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
         <div class="row mx-auto ">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Amount</label>
-                    <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                        value="{{ number_format($totalwithCommision, 2) }}" readonly>
-                    <input type="hidden" class="form-control" name="total_amount" id="total_amount"
-                        value="{{ $totalwithCommision }}" readonly>
+                    <label>Gross Amount</label>
+                    <input type="text" class="form-control" name="gross_amount_display" id="gross_amount_display"
+                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                    <input type="hidden" class="form-control" name="gross_amount" id="gross_amount"
+                        value="{{ $totalAmount }}" readonly>
                 </div>
             </div>
+            @if ($hasBankCharges)
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Final Amount (After Bank Charges)</label>
+                    <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
+                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                    <input type="hidden" class="form-control" name="total_amount" id="total_amount"
+                        value="{{ $totalAmount }}" readonly>
+                </div>
+            </div>
+            @else
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
+                        value="{{ number_format($totalAmount, 2) }}" readonly>
+                    <input type="hidden" class="form-control" name="total_amount" id="total_amount"
+                        value="{{ $totalAmount }}" readonly>
+                </div>
+            </div>
+            @endif
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Requested Amount</label>
@@ -746,6 +757,9 @@
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
             const bagRate = parseFloat($('#bag_rate').val()) || 0;
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
+            const bankChargesPercentage = parseFloat($('#bank_charges_percentage').val()) || 0;
+            const isCashPayment = $('#is_cash_payment').val() === '1';
+            const hasBankCharges = bankChargesPercentage > 0 && isCashPayment;
             const paidAmount = parseFloat({{ $requestedAmount }});
 
             function toggleSections() {
@@ -891,13 +905,29 @@
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                
+                // Calculate gross amount without bank charges
+                let totalAmountBeforeBankCharges = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
+                    {{ $grossFreightAmount ?? 0 }});
 
-                $('#total_amount').val(totalAmount);
-                $('#total_amount_display').val(totalAmount.toFixed(2));
+                $('#gross_amount').val(totalAmountBeforeBankCharges);
+                $('#gross_amount_display').val(totalAmountBeforeBankCharges.toFixed(2));
 
-                const remainingAmount = totalAmount - paidAmount;
+                let finalAmount = totalAmountBeforeBankCharges;
+                let bankChargesAmount = 0;
+
+                if (hasBankCharges) {
+                    bankChargesAmount = (totalAmountBeforeBankCharges * bankChargesPercentage) / 100;
+                    finalAmount = totalAmountBeforeBankCharges - bankChargesAmount;
+
+                    $('#bank_charges_amount').val(bankChargesAmount);
+                    $('#bank_charges_amount_display').val(bankChargesAmount.toFixed(2));
+                }
+
+                $('#total_amount').val(finalAmount);
+                $('#total_amount_display').val(finalAmount.toFixed(2));
+
+                const remainingAmount = finalAmount - paidAmount;
                 $('#remaining_amount').val(remainingAmount.toFixed(2));
 
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
@@ -919,30 +949,12 @@
             });
 
             $('input[name="payment_request_amount"]').on('input', function() {
-                // const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                // const
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
-                // const paymentRequest = parseFloat($(this).val()) || 0;
-                // const remaining = (totalAmount - paidAmount) - paymentRequest;
-                // const totalAmount = 178890;  
-                // const paymentRequest = 3000;
-                // const paidAmount = 179282;
-                // const remaining = (totalAmount - paidAmount) - paymentRequest;
-
-
-                // const totalAmount = 178890;
-                // const paidAmount = 179282;
                 const originalRequested = {{ $currentPaymentAmount }};
                 const newRequested = parseFloat($(this).val()) || 0;
 
                 const remaining = totalAmount - (paidAmount - originalRequested + newRequested);
-
-                // console.log({
-                //     totalAmount,
-                //     paymentRequest,
-                //     paidAmount
-                // });
 
                 $('#remaining_amount').val(remaining.toFixed(2));
             });

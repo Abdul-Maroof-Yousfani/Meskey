@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Procurement\RawMaterial;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Procurement\GateBuyingPaymentRequestRequest;
 use Illuminate\Http\Request;
 
 
@@ -32,11 +33,9 @@ use App\Models\PurchaseTicket;
 use App\Models\TruckSizeRange;
 use Illuminate\Support\Facades\DB;
 
-
-
 class GateBuyingPaymentRequestController extends Controller
 {
-   public function index()
+    public function index()
     {
         return view('management.procurement.raw_material.gate_buying_payment_request.index');
     }
@@ -55,10 +54,12 @@ class GateBuyingPaymentRequestController extends Controller
             'qcProduct',
             'freight',
             'paymentRequestData' => function ($query) {
-                $query->with(['paymentRequests' => function ($q) {
-                    $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
-                        ->groupBy('payment_request_data_id', 'request_type', 'status');
-                }]);
+                $query->with([
+                    'paymentRequests' => function ($q) {
+                        $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                            ->groupBy('payment_request_data_id', 'request_type', 'status');
+                    }
+                ]);
             }
         ])
             ->where('is_ticket_verified', 1)
@@ -77,9 +78,9 @@ class GateBuyingPaymentRequestController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             })
             ->where('first_qc_status', '!=', 'rejected')
-             ->whereHas('purchaseOrder', function ($q) {
-        $q->where('purchase_type', 'gate_buying');
-    })
+            ->whereHas('purchaseOrder', function ($q) {
+                $q->where('purchase_type', 'gate_buying');
+            })
             ->whereHas('purchaseOrder')->where('sauda_type_id', 1)->orderByDesc(function ($query) {
                 $query->select('created_at')
                     ->from('arrival_freights')
@@ -177,4 +178,469 @@ class GateBuyingPaymentRequestController extends Controller
 
         return view('management.procurement.raw_material.ticket_payment_request.create', $data);
     }
+
+    public function edit($id)
+    {
+        $data['arrivalTicket'] = $arrivalTicket = ArrivalTicket::findOrFail($id);
+        $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
+        $data['products'] = Product::where('product_type', 'raw_material')->get();
+
+        $paymentRequestData = PaymentRequestData::where('ticket_id', $arrivalTicket->id)->where('module_type', 'ticket')->orderByDesc('id')->first();
+
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket, $id) {
+            $q->where('ticket_id', $id)
+                ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+        })
+            ->where('request_type', 'payment')
+            ->sum('amount');
+
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
+            $q->where('ticket_id', $arrivalTicket->id)
+                ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+        })
+            ->where('request_type', 'payment')
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        $pRsSumForFreight = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
+            $q->where('ticket_id', $arrivalTicket->id)
+                ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+        })
+            ->where('request_type', 'freight_payment')
+            ->sum('amount');
+
+        $samplingRequest = null;
+        $samplingRequestCompulsuryResults = collect();
+        $samplingRequestResults = collect();
+        $otherDeduction = null;
+
+        if ($arrivalTicket) {
+            $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $id)
+                ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+
+            if ($samplingRequest) {
+                $rmPoSlabs = collect();
+                if ($arrivalTicket && $samplingRequest->arrival_product_id) {
+                    // $rmPoSlabs = ProductSlabForRmPo::where('arrival_ticket_id', $arrivalTicket->id)
+                    //     ->where('product_id', $samplingRequest->arrival_product_id)
+                    //     ->get()
+                    //     ->groupBy('product_slab_type_id');
+                }
+
+                $samplingRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+                $samplingRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+
+                $productSlabCalculations = null;
+                if ($samplingRequest->arrival_product_id) {
+                    $productSlabCalculations = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)->get();
+                }
+
+                foreach ($samplingRequestResults as &$result) {
+                    $matchingSlabs = [];
+                    $result->rm_po_slabs = $rmPoSlabs->get($result->product_slab_type_id, []);
+
+                    if ($productSlabCalculations) {
+                        $matchingSlabs = $productSlabCalculations->where('product_slab_type_id', $result->product_slab_type_id)
+                            ->values()
+                            ->all();
+
+                        if (!empty($matchingSlabs)) {
+                            $result->deduction_type = $matchingSlabs[0]->deduction_type;
+                        }
+                    }
+
+                    $result->matching_slabs = $matchingSlabs;
+                }
+            }
+
+            $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
+                $query->where('ticket_id', $arrivalTicket->id);
+                $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+            })->select('other_deduction_kg', 'other_deduction_value')
+                ->latest()
+                ->first();
+        }
+
+        if (isset($request->is_debug)) {
+            $orignalsamplingRequestResults = $samplingRequestResults;
+            $samplingRequestResults = $samplingRequestResults->filter(function ($result) {
+                return $result->applied_deduction;
+            });
+        }
+
+        $brokers = Broker::all();
+        $data['purchaseOrder'] = $arrivalTicket->purchaseOrder;
+
+        $data['html'] = view('management.procurement.raw_material.gate_buying_payment_request.snippets.requestPurchaseForm', [
+            'purchaseOrder' => $arrivalTicket->purchaseOrder,
+            'brokers' => $brokers,
+            'arrivalTicket' => $arrivalTicket,
+            'paymentRequestData' => $paymentRequestData,
+            'samplingRequest' => $samplingRequest,
+            'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
+            'samplingRequestResults' => $samplingRequestResults,
+            'requestedAmount' => $requestedAmount,
+            'approvedAmount' => $approvedAmount,
+            'pRsSumForFreight' => $pRsSumForFreight,
+            'otherDeduction' => $otherDeduction,
+            'isRequestApprovalPage' => false,
+            'isTicketApprovalPage' => false,
+            'isTicketPage' => true,
+        ])->render();
+
+        return view('management.procurement.raw_material.gate_buying_payment_request.create', $data);
+    }
+
+    public function store(GateBuyingPaymentRequestRequest $request)
+    {
+        return DB::transaction(function () use ($request) {
+            $requestData = $request->all();
+            $requestData['is_loading'] = $request->loading_type === 'loading';
+            $requestData['module_type'] = 'ticket';
+
+            $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
+            $ticket = ArrivalTicket::where('id', $requestData['ticket_id'])->first();
+            $purchaseOrder = ArrivalPurchaseOrder::where('id', $requestData['purchase_order_id'])->first();
+
+            $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
+                ->where('ticket_id', $ticket->id)
+                ->count();
+
+            $accountId = $purchaseOrder->supplier->account_id ?? null;
+
+            $requestData['account_id'] = $accountId;
+
+            $paymentRequestData = PaymentRequestData::create($requestData);
+
+            $this->createPaymentRequests($paymentRequestData, $request, $accountId);
+
+            if (isset($request->sampling_results) || isset($request->compulsory_results)) {
+                $this->saveSamplingResults($paymentRequestData, $request);
+            }
+
+            $this->manageLedgerCalculations($requestData, $purchaseOrder, $ticket, $stockInTransitAccount, $existingApprovals);
+
+            return response()->json(['success' => 'Payment request created successfully']);
+        });
+    }
+
+    protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
+    {
+        if (isset($request->ticket_id)) {
+            $ticket = ArrivalTicket::find($request->ticket_id);
+
+            if ($ticket && $ticket->purchaseOrder) {
+                $ticket->update(['bag_weight' => $request->bag_weight]);
+            }
+        }
+
+        PaymentRequest::create([
+            'payment_request_data_id' => $paymentRequestData->id,
+            'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
+            'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+            'request_type' => 'payment',
+            'account_id' => $accountId,
+            'module_type' => 'ticket',
+            'amount' => $request->payment_request_amount ?? 0
+        ]);
+    }
+
+    public function manageLedgerCalculations($requestData, $purchaseOrder, $ticket, $stockInTransitAccount, $existingApprovals)
+    {
+        $paymentDetails = calculatePaymentDetails($requestData['ticket_id'], 1);
+        $contractNo = $purchaseOrder->contract_no;
+        $arrivalSlipNo = $ticket->arrivalSlip->unique_no;
+        $truckNo = $ticket->truck_no ?? 'N/A';
+        $biltyNo = $ticket->bilty_no ?? 'N/A';
+        $grnNo = $ticket->arrivalSlip->unique_no;
+        $qcAccountId = $ticket->qcProduct->account_id;
+        $amount = $paymentDetails['calculations']['net_amount'] ?? 0;
+        $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+
+        $supplierTxn = Transaction::where('voucher_no', $contractNo)
+            ->where('purpose', 'supplier-payable')
+            ->where('against_reference_no', "$truckNo/$biltyNo")
+            ->first();
+
+        $supplierData = [
+            'amount' => $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+            'account_id' => $purchaseOrder->supplier->account_id,
+            'type' => 'credit',
+            'counter_account_id' => $qcAccountId,
+            'grn_no' => $grnNo,
+            'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+        ];
+
+        if ($supplierTxn) {
+            $supplierTxn->update($supplierData);
+        } else {
+            createTransaction(
+                $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+                $purchaseOrder->supplier->account_id,
+                1,
+                $contractNo,
+                'credit',
+                'no',
+                [
+                    'purpose' => "supplier-payable",
+                    'counter_account_id' => $qcAccountId,
+                    'grn_no' => $grnNo,
+                    'payment_against' => "pohanch-purchase",
+                    'against_reference_no' => "$truckNo/$biltyNo",
+                    'remarks' => $supplierData['remarks']
+                ]
+            );
+        }
+
+        $transitTxn = Transaction::where('voucher_no', $contractNo)
+            ->where('purpose', 'arrival-slip')
+            ->where('against_reference_no', "$truckNo/$biltyNo")
+            ->first();
+
+        $transitData = [
+            'amount' => $inventoryAmount,
+            'account_id' => $ticket->qcProduct->account_id,
+            'type' => 'debit',
+            'counter_account_id' => $purchaseOrder->supplier->account_id,
+            'grn_no' => $grnNo,
+            'remarks' => 'Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: ' . $ticket->arrived_net_weight . ' kg) at rate ' . $ticket->purchaseOrder->rate_per_kg . '/kg.'
+        ];
+
+        if ($transitTxn) {
+            $transitTxn->update($transitData);
+        } else {
+            createTransaction(
+                $amount,
+                $ticket->qcProduct->account_id,
+                1,
+                $contractNo,
+                'debit',
+                'no',
+                [
+                    'purpose' => "arrival-slip",
+                    'payment_against' => "pohanch-purchase",
+                    'grn_no' => $grnNo,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
+                    'against_reference_no' => "$truckNo/$biltyNo",
+                    'remarks' => $transitData['remarks']
+                ]
+            );
+        }
+
+        $loadingWeight = $ticket->arrived_net_weight;
+
+        if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
+            $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+
+            $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                ->where('payment_against', 'pohanch-purchase')
+                ->where('account_id', $purchaseOrder->broker->account_id)
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            if ($existingBrokerTrx) {
+                $existingBrokerTrx->update([
+                    'amount' => $amount,
+                    'account_id' => $purchaseOrder->broker->account_id,
+                    'counter_account_id' => $qcAccountId,
+                    'type' => 'credit',
+                    'grn_no' => $grnNo,
+                ]);
+            } else {
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->broker->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
+                        'grn_no' => $grnNo,
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                    ]
+                );
+            }
+        }
+
+        if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
+            $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
+
+            $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                ->where('payment_against', 'pohanch-purchase')
+                ->where('account_id', $purchaseOrder->brokerTwo->account_id)
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            if ($existingBrokerTrx) {
+                $existingBrokerTrx->update([
+                    'amount' => $amount,
+                    'account_id' => $purchaseOrder->brokerTwo->account_id,
+                    'counter_account_id' => $qcAccountId,
+                    'type' => 'credit',
+                    'grn_no' => $grnNo,
+                ]);
+            } else {
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->brokerTwo->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
+                        'grn_no' => $grnNo,
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                    ]
+                );
+            }
+        }
+
+        if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
+            $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
+
+            $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
+                ->where('payment_against', 'pohanch-purchase')
+                ->where('account_id', $purchaseOrder->brokerThree->account_id)
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->first();
+
+            if ($existingBrokerTrx) {
+                $existingBrokerTrx->update([
+                    'counter_account_id' => $qcAccountId,
+                    'amount' => $amount,
+                    'grn_no' => $grnNo,
+                    'account_id' => $purchaseOrder->brokerThree->account_id,
+                    'type' => 'credit',
+                ]);
+            } else {
+                createTransaction(
+                    $amount,
+                    $purchaseOrder->brokerThree->account_id,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "broker",
+                        'counter_account_id' => $qcAccountId,
+                        'grn_no' => $grnNo,
+                        'payment_against' => "pohanch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => 'Recording accounts payable for "Pohanch" purchase. Amount to be paid to broker.'
+                    ]
+                );
+            }
+        }
+
+        if (
+            isset($requestData['brokery_amount'], $requestData['broker_id']) &&
+            $requestData['brokery_amount'] < 0
+        ) {
+            $existingTxn = Transaction::where('voucher_no', $contractNo)
+                ->where('purpose', 'supplier-brokery')
+                ->where('against_reference_no', "$truckNo/$biltyNo")
+                ->exists();
+
+            if (!$existingTxn) {
+                $broker = Broker::find($requestData['broker_id']);
+                if ($broker && $broker->account_id) {
+                    $brokeryAmount = abs($requestData['brokery_amount']);
+
+                    createTransaction(
+                        $brokeryAmount,
+                        $purchaseOrder->supplier->account_id,
+                        1,
+                        $contractNo,
+                        'debit',
+                        'no',
+                        [
+                            'purpose' => "supplier-brokery",
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
+                            'payment_against' => "thadda-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Brokery amount adjustment against contract ($contractNo). Transferred from supplier to broker."
+                        ]
+                    );
+
+                    createTransaction(
+                        $brokeryAmount,
+                        $broker->account_id,
+                        1,
+                        $contractNo,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "supplier-brokery",
+                            'counter_account_id' => $purchaseOrder->supplier->account_id,
+                            'payment_against' => "thadda-purchase",
+                            'grn_no' => $grnNo,
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Brokery amount adjustment received from supplier for contract ($contractNo)."
+                        ]
+                    );
+                }
+            }
+        }
+    }
+
+    private function saveSamplingResults($paymentRequest, $request)
+    {
+        if ($request->sampling_results) {
+            foreach ($request->sampling_results as $result) {
+                PaymentRequestSamplingResult::create([
+                    'payment_request_data_id' => $paymentRequest->id,
+                    'slab_type_id' => $result['slab_type_id'],
+                    'name' => $result['slab_name'],
+                    'checklist_value' => $result['checklist_value'],
+                    'suggested_deduction' => $result['suggested_deduction'],
+                    'applied_deduction' => $result['applied_deduction'],
+                    'deduction_type' => $result['suggested_deduction'] > 0 ? 'amount' : 'percentage',
+                    'deduction_amount' => $result['deduction_amount'],
+                ]);
+            }
+        }
+
+        // Save compulsory sampling results
+        if ($request->compulsory_results) {
+            foreach ($request->compulsory_results as $result) {
+                PaymentRequestSamplingResult::create([
+                    'payment_request_data_id' => $paymentRequest->id,
+                    'slab_type_id' => $result['qc_param_id'],
+                    'name' => $result['qc_name'],
+                    'checklist_value' => 0,
+                    'suggested_deduction' => 0,
+                    'applied_deduction' => $result['applied_deduction'],
+                    'deduction_type' => 'amount',
+                    'deduction_amount' => $result['deduction_amount'],
+                ]);
+            }
+        }
+
+        if ($request->other_deduction && isset($request->other_deduction['kg_value']) && $request->other_deduction['kg_value'] > 0) {
+            // PaymentRequestSamplingResult::create([
+            //     'payment_request_data_id' => $paymentRequest->id,
+            //     'slab_type_id' => null,
+            //     'name' => $request->other_deduction['slab_name'] ?? 'Other Deduction',
+            //     'checklist_value' => 0,
+            //     'suggested_deduction' => 0,
+            //     'applied_deduction' => $request->other_deduction['kg_value'],
+            //     'deduction_type' => 'kg',
+            //     'deduction_amount' => $request->other_deduction['deduction_amount'],
+            //     'is_other_deduction' => true,
+            //     'kg_value' => $request->other_deduction['kg_value']
+            // ]);
+        }
+    }
+
 }

@@ -538,20 +538,11 @@ class TicketPaymentRequestController extends Controller
     }
 
     protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
-    {
-        // dd([
-        //     'payment_request_data_id' => $paymentRequestData->id,
-        //     'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-        //     'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-        //     'request_type' => 'payment',
-        //     'amount' => $request->payment_request_amount ?? 0
-        // ]);
-
+    { 
         if (isset($request->ticket_id)) {
             $ticket = ArrivalTicket::find($request->ticket_id);
-            // dd($request->bag_weight);
+            
             if ($ticket && $ticket->purchaseOrder) {
-                // $ticket->purchaseOrder->update(['bag_weight' => $request->bag_weight]);
                 $ticket->update(['bag_weight' => $request->bag_weight]);
             }
         }
@@ -564,18 +555,7 @@ class TicketPaymentRequestController extends Controller
             'account_id' => $accountId,
             'module_type' => 'ticket',
             'amount' => $request->payment_request_amount ?? 0
-        ]);
-
-        // if ($request->freight_pay_request_amount && $request->freight_pay_request_amount > 0) {
-        //     PaymentRequest::create([
-        //         'payment_request_data_id' => $paymentRequestData->id,
-        //         'request_type' => 'freight_payment',
-        // 'module_type' => 'ticket',
-        //         'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-        //         'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-        //         'amount' => $request->freight_pay_request_amount
-        //     ]);
-        // }
+        ]); 
     }
 
     protected function updateSamplingResults($paymentRequestData, $request)

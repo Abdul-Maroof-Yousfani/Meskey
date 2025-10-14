@@ -10,7 +10,7 @@
     $isCompulsury = $paymentRequestData->samplingResults->whereNull('slab_type_id')->isNotEmpty();
     $showLumpSum = false;
 @endphp
-<form action="{{ route('raw-material.ticket.payment-request.update', $paymentRequestData->id) }}" method="POST"
+<form action="{{ route('raw-material.gate-buy.payment-request.update', $paymentRequestData->id) }}" method="POST"
     id="ajaxSubmit">
     @csrf
     @method('PUT')

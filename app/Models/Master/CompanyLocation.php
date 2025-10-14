@@ -19,6 +19,7 @@ class CompanyLocation extends Model
         'name',
         'truck_no_format',
         'code',
+        'bank_charges_for_gate_buying',
         'description',
         'is_protected',
         'status',

@@ -1,4 +1,5 @@
-<form action="{{ route('raw-material.ticket.payment-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('raw-material.gate-buy.payment-request.store') }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.ticket.get.payment-request') }}" />
 

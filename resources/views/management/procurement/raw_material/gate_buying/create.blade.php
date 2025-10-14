@@ -55,7 +55,7 @@
                 <select name="decision_of_id" id="decision_of_id" class="form-control select22">
                     <option value="">Accounts Of</option>
                     @foreach ($accountsOf as $account)
-                    <option value="{{ $account->id }}">{{ $account->name }}</option>
+                        <option value="{{ $account->id }}">{{ $account->name }}</option>
                     @endforeach
                 </select>
                 </select>
@@ -259,7 +259,6 @@
         $('[name="company_location_id"], [name="contract_date"]').change(function () {
             generateContractNumber();
         });
-
 
         $('#company_location_id').change(function () {
             var locationId = $(this).val();
