@@ -734,6 +734,7 @@
         $(document).ready(function() {
             $('[data-toggle="tooltip"]').tooltip();
             $('.select_b').select2();
+            
 
             const $loadingRadio = $('#loading');
             const $withoutLoadingRadio = $('#without_loading');
