@@ -45,91 +45,97 @@
                     @canAccess('arrival-ticket')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('ticket.index') }}" onclick="loadPageContent('{{ route('ticket.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Email">Ticket</span></a>
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span>Ticket</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-initial-sampling')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('initialsampling.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Initial
+                                class="ft-arrow-right submenu-icon"></i><span>Initial
                                 Sampling</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-initial-re-sampling')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('initial-resampling.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Initial
+                                class="ft-arrow-right submenu-icon"></i><span>Initial
                                 Re-Sampling</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-purchaser-approval')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sampling-monitoring.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchaser's
+                                class="ft-arrow-right submenu-icon"></i><span>Purchaser's
                                 Approval</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-location-transfer')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('location-transfer.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Location
+                                class="ft-arrow-right submenu-icon"></i><span>Location
                                 Transfer</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-first-weighbridge')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('first-weighbridge.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">First
+                                class="ft-arrow-right submenu-icon"></i><span>First
                                 Weighbridge</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-request-for-inner-sampling')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('inner-sampling-request.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Request For Inner
+                                class="ft-arrow-right submenu-icon"></i><span>Request For Inner
                                 Sampling</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-inner-sampling')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('inner-sampling.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Inner
+                                class="ft-arrow-right submenu-icon"></i><span>Inner
                                 Sampling</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-inner-re-sampling')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('inner-resampling.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Inner
+                                class="ft-arrow-right submenu-icon"></i><span>Inner
                                 Re-Sampling</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-half-full-approved')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('arrival-approve.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Half/Full
+                                class="ft-arrow-right submenu-icon"></i><span>Half/Full
                                 Approved</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-second-weighbridge')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('second-weighbridge.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Second
+                                class="ft-arrow-right submenu-icon"></i><span>Second
                                 Weighbridge</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-freight-management')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('freight.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Freight
+                                class="ft-arrow-right submenu-icon"></i><span>Freight
                                 Management</span></a>
                     </li>
                     @endcanAccess
                     @canAccess('arrival-slip')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('arrival-slip.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Arrival Slip
+                                class="ft-arrow-right submenu-icon"></i><span>Arrival Slip
+                            </span></a>
+                    </li>
+                    @endcanAccess
+                    @canAccess('arrival-slip')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('raw-material.gate-buy.payment-request.index') }}" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span>Generate Bill (Gate-Buy)
                             </span></a>
                     </li>
                     @endcanAccess
@@ -144,12 +150,12 @@
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.purchase-order.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Order
+                                class="ft-arrow-right submenu-icon"></i><span>Purchase Order
                             </span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.gate-buying.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Gate Buying
+                                class="ft-arrow-right submenu-icon"></i><span>Gate Buying
                             </span></a>
                     </li>
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
@@ -290,7 +296,7 @@
                     @canAccess('procurement-raw-material-inicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Indicative Prices
+                                class="ft-arrow-right submenu-icon"></i><span>Indicative Prices
                             </span></a>
                     </li>
                     @endcanAccess
@@ -305,12 +311,12 @@
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-request.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Request
+                                class="ft-arrow-right submenu-icon"></i><span>Purchase Request
                             </span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-quotation.index') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Purchase Quotation
+                                class="ft-arrow-right submenu-icon"></i><span>Purchase Quotation
                             </span></a>
                     </li>
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
@@ -384,14 +390,13 @@
                 <ul class="dropdown-menu">
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('roles.index') }}" onclick="loadPageContent('{{ route('roles.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Email">Manage Roles &
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span>Manage Roles &
                                 Permission</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('company.index') }}"
                             onclick="loadPageContent('{{ route('company.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Manage
+                                class="ft-arrow-right submenu-icon"></i><span>Manage
                                 Company</span></a>
                     </li>
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -431,7 +436,7 @@
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ url('transactions/report') }}"
                             onclick="loadPageContent('{{ url('transactions/report') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Email">Ledger
+                                class="ft-arrow-right submenu-icon"></i><span>Ledger
                                 Reports</span></a>
                     </li>
                     @endcanAccess
@@ -439,8 +444,8 @@
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.reports') }}"
                             onclick="loadPageContent('{{ route('indicative-prices.reports') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Email">Indicative Price Reports</span></a>
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span>Indicative Price
+                                Reports</span></a>
                     </li>
                     @endcanAccess
 
@@ -591,12 +596,12 @@
                             @canAccess('plant')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('plant.index') }}"
-                                    onclick="loadPageContent('{{ route('plant.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    onclick="loadPageContent('{{ route('plant.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Plants</span></a>
                             </li>
                             @endcanAccess
-                             @canAccess('production-machine')
+                            @canAccess('production-machine')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('production-machine.index') }}"
                                     onclick="loadPageContent('{{ route('production-machine.index') }}')"
