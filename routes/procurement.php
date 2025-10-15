@@ -134,6 +134,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-quotation/approve-item', [PurchaseQuotationController::class, 'approve_item'])->name('purchase-quotation.approve-item');
     Route::get('purchase-quotation/get_quotation_item', [PurchaseQuotationController::class, 'get_quotation_item'])->name('purchase-quotation.get_quotation_item');
     Route::get('purchase-quotation-approvals/{id}', [PurchaseQuotationController::class, 'manageApprovals'])->name('purchase-quotation.approvals');
+    Route::get('get-unique-number-quotation/{locationId}/{contractDate}', [PurchaseQuotationController::class, 'getNumber'])->name('get-unique-number-quotation');
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');

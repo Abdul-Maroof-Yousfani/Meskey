@@ -33,14 +33,14 @@
          <div class="form-group">
              <label>Purchase Date:</label>
              <input readonly type="date" id="purchase_date"
-                 value="{{ optional($purchaseQuotation->purchase_quotation)->quotation_date }}" name="purchase_date"
+                 value="" name="purchase_date"
                  class="form-control">
          </div>
      </div>
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>
-             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseQuotation->purchase_quotation)->description }}</textarea>
+             <textarea name="description" id="description" placeholder="Description" class="form-control"></textarea>
          </div>
      </div>
  </div>
@@ -130,7 +130,7 @@
 
             <td style="width: 25%">
                 <input style="width: 100px" type="text" value="{{ $data->remarks }}"
-                    id="remark_{{ $key }}" class="form-control" readonly>
+                    id="remark_{{ $key }}" class="form-control">
                 <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
             </td>
 

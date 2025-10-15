@@ -73,7 +73,7 @@
          </td> --}}
          <td style="width: 25%">
              <input style="width: 100px" type="text" value="{{ $data->remarks }}" id="remark_{{ $key }}"
-                 class="form-control" readonly>
+                 class="form-control">
              <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
          </td>
          <td>

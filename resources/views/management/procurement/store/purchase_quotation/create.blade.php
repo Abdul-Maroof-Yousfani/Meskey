@@ -2,7 +2,7 @@
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
     <div class="row form-mar">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Request:</label>
                 <select class="form-control select2" onchange="get_purchase(this.value)" name="purchase_request_id">
@@ -15,7 +15,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
                 <select disabled name="company_location" id="company_location_id" class="form-control select2">
@@ -27,17 +27,23 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Date:</label>
-                <input readonly type="date" id="purchase_date" name="purchase_date" class="form-control">
+                <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Reference No:</label>
+                <input type="text" name="reference_no" placeholder="Please select location and date." readonly
+                    id="reference_no" class="form-control">
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description"
-                    class="form-control"></textarea>
+                <textarea name="description" id="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
     </div>
@@ -83,7 +89,40 @@
             placeholder: 'Please Select',
             width: '100%'
         });
+
+        function fetchUniqueNumber() {
+            let locationId = $('#company_location_id').val();
+            let contractDate = $('#purchase_date').val();
+
+            if (locationId && contractDate) {
+                let url = '/procurement/store/get-unique-number-quotation/' + locationId + '/' + contractDate;
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function (response) {
+                        if (typeof response === 'string') {
+                            $('#reference_no').val(response);
+                        } else {
+                            $('#reference_no').val('');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#reference_no').val('');
+                    }
+                });
+            } else {
+                $('#reference_no').val('');
+            }
+        }
+
+        $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
+
     });
+
+
+
+
 
     window.rowIndex = 1;
 
@@ -242,20 +281,20 @@
             success: function (response) {
                 let html = response.html;
                 let master = response.master;
-let purchaseRequestDataCount = response.purchaseRequestDataCount ?? 1;
+                let purchaseRequestDataCount = response.purchaseRequestDataCount ?? 1;
                 allowedCategories = response.allowed_categories || [];
                 allowedItems = response.allowed_items || [];
 
                 // Fill in master data
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
-                $('#purchase_date').val(master.purchase_date);
-                $('#description').val(master.description);
+                // $('#purchase_date').val(master.purchase_date);
+                // $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
 
                 // Load table HTML
                 $('#purchaseRequestBody').html(html);
-window.rowIndex = purchaseRequestDataCount;
+                window.rowIndex = purchaseRequestDataCount;
                 // Reinitialize select2
                 $('.select2').select2({
                     placeholder: 'Please Select',
