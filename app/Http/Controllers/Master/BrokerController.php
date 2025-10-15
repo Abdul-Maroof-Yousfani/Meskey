@@ -90,7 +90,7 @@ class BrokerController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
 
                 $requestData['account_id'] = $account->id;
             }
@@ -183,7 +183,7 @@ class BrokerController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($broker->account_id)) {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
 
                 $requestData['account_id'] = $account->id;
             }

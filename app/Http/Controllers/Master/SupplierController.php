@@ -93,7 +93,7 @@ class SupplierController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
                 $requestData['account_id'] = $account->id;
             }
 
@@ -133,7 +133,7 @@ class SupplierController extends Controller
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
  
-                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3'));
+                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3',  'brokers'));
 
                 $brokerData = [
                     'company_id' => $supplier->company_id ?? null,
@@ -207,7 +207,7 @@ class SupplierController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($supplier->account_id)) { 
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
 
                 $requestData['account_id'] = $account->id;
             }

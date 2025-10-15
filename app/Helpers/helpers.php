@@ -293,11 +293,11 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName, $isOperati
     return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
 }
 
-function getParamsForAccountCreationByPath($companyId, $accName, $path, $isOperational = 'yes')
+function getParamsForAccountCreationByPath($companyId, $accName, $path, $referenceTableName , $isOperational = 'yes')
 {
     $account = Account::where('hierarchy_path', $path)->first();
 
-    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $account->table_name, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
+    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $referenceTableName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
 }
 
 
