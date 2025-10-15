@@ -98,9 +98,9 @@ class PaymentVoucherController extends Controller
 
         $bankAccount = null;
         if ($paymentVoucher->bank_account_type === 'company') {
-            $bankAccount =  SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
         } elseif ($paymentVoucher->bank_account_type === 'owner') {
-            $bankAccount =  SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
         }
 
         return view('management.finance.payment_voucher.show', [
@@ -124,9 +124,9 @@ class PaymentVoucherController extends Controller
 
         $bankAccount = null;
         if ($paymentVoucher->bank_account_type === 'company') {
-            $bankAccount =  SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
         } elseif ($paymentVoucher->bank_account_type === 'owner') {
-            $bankAccount =  SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
         }
 
         return view('management.finance.payment_voucher.approvalCanvas', [
@@ -260,7 +260,7 @@ class PaymentVoucherController extends Controller
         $modelId = null;
 
         if ($tableName === 'suppliers') {
-           
+
             $supplier = Supplier::with(['companyBankDetails', 'ownerBankDetails'])
                 ->where('account_id', $account->id)
                 ->first();
@@ -330,7 +330,7 @@ class PaymentVoucherController extends Controller
                         ];
                     });
 
-          
+
             }
         } elseif ($tableName === 'brokers') {
             $broker = Broker::with(['companyBankDetails', 'ownerBankDetails'])
@@ -449,9 +449,9 @@ class PaymentVoucherController extends Controller
             $bankName = '';
             $accountNumber = '';
             if ($request->bank_account_type === 'company') {
-                $bankAccount =  SupplierCompanyBankDetail::find($request->bank_account_id);
+                $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id);
             } elseif ($request->bank_account_type === 'owner') {
-                $bankAccount =  SupplierOwnerBankDetail::find($request->bank_account_id);
+                $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id);
             }
             if ($bankAccount) {
                 $bankName = $bankAccount->bank_name ?? '';
