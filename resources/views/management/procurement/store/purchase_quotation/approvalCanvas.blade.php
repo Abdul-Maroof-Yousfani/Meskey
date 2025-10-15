@@ -4,7 +4,7 @@
     value="{{ optional($purchaseQuotation->quotation_data->first())->purchase_request_data_id }}">
 
  <div class="row form-mar">
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Purchase Request:</label>
              <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
@@ -14,33 +14,54 @@
              </select>
          </div>
      </div>
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Location:</label>
              <select disabled name="company_location" id="company_location_id" class="form-control select2">
                  <option value="">Select Location</option>
                  @foreach (get_locations() as $loc)
                      <option
-                         {{ optional($purchaseQuotation->purchase_quotation)->location_id == $loc->id ? 'selected' : '' }}
+                         {{ optional($purchaseQuotation)->location_id == $loc->id ? 'selected' : '' }}
                          value="{{ $loc->id }}">{{ $loc->name }}</option>
                  @endforeach
                  <input type="hidden" name="location_id"
-                     value="{{ optional($purchaseQuotation->purchase_quotation)->location_id }}" id="location_id">
+                     value="{{ optional($purchaseQuotation)->location_id }}" id="location_id">
              </select>
          </div>
      </div>
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
-             <label>Purchase Date:</label>
+             <label>Quotation Date:</label>
              <input readonly type="date" id="purchase_date"
-                 value="" name="purchase_date"
+                 value="{{ $purchaseQuotation->quotation_date }}" name="purchase_date"
                  class="form-control">
          </div>
      </div>
+     <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Reference No:</label>
+                <input type="text" name="reference_no" value="{{ $purchaseQuotation->reference_no }}" placeholder="Please select location and date." readonly
+                    id="reference_no" class="form-control">
+            </div>
+        </div>
+     <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Supplier:</label>
+                <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
+                    <option value="">Select Vendor</option>
+                    @foreach (get_supplier() as $supplier)
+                        <option value="{{ $supplier->id }}"
+                        {{ $supplier->id == $purchaseQuotation->supplier_id ? 'selected' : '' }}>
+                            {{ $supplier->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>
-             <textarea name="description" id="description" placeholder="Description" class="form-control"></textarea>
+             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ $purchaseQuotation->description }}</textarea>
          </div>
      </div>
  </div>
@@ -129,14 +150,14 @@
             </td>
 
             <td style="width: 25%">
-                <input style="width: 100px" type="text" value="{{ $data->remarks }}"
+                <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
                     id="remark_{{ $key }}" class="form-control">
                 <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
             </td>
 
             <td>
                 <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                    onclick="remove({{ $key }})" data-id="{{ $key }}">Remove</button>
+                    onclick="remove({{ $key }})" disabled data-id="{{ $key }}">Remove</button>
             </td>
         </tr>
     @endforeach

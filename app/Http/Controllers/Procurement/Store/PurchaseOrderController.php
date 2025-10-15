@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
+use App\Models\Procurement\Store\PurchaseQuotation;
 use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
@@ -36,33 +37,73 @@ class PurchaseOrderController extends Controller
     }
 
     public function approve_item(Request $request)
-    {
-        $requestId = $request->id;
+{
+    $requestId = $request->id;
+    $supplierId = $request->supplier_id;
 
-        $master = PurchaseRequest::find($requestId);
-        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'approved_purchase_quotation'])
-            ->where('purchase_request_id', $requestId)
-            // ->where('am_approval_status', 'approved')
-            ->get();
+    $master = PurchaseRequest::find($requestId);
+    $quotation = null;
+    $dataItems = collect();
 
-        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+    // ✅ Check if quotation exists for this request + supplier
+    if ($supplierId && $requestId) {
+        $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
+            ->where('supplier_id', $supplierId)
+            ->first();
 
-        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
-
-        return response()->json(
-            ['html' => $html, 'master' => $master]
-        );
+        if ($quotation) {
+            // ✅ Load only quotation data for this supplier
+            $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
+                ->where('purchase_quotation_id', $quotation->id)
+                ->get();
+        }
     }
+
+    // ✅ If no quotation found for this supplier → load purchase request data
+    if (!$quotation || $dataItems->isEmpty()) {
+        // ✅ Find all quotation items for other suppliers of this same request
+        $quotationItemIds = PurchaseQuotationData::whereHas('purchase_quotation', function ($q) use ($requestId, $supplierId) {
+                $q->where('purchase_request_id', $requestId)
+                  ->where('supplier_id', '!=', $supplierId);
+            })
+            ->pluck('item_id')
+            ->toArray();
+
+        // ✅ Now load only request items NOT linked to another supplier’s quotation
+        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+            ->where('purchase_request_id', $requestId)
+            ->whereNotIn('item_id', $quotationItemIds)
+            ->get();
+    }
+
+    $categories = Category::select('id', 'name')
+        ->where('category_type', 'general_items')
+        ->get();
+
+    $job_orders = JobOrder::select('id', 'name')->get();
+
+    $html = view(
+        'management.procurement.store.purchase_order.purchase_data',
+        compact('dataItems', 'categories', 'job_orders', 'quotation')
+    )->render();
+
+    return response()->json([
+        'html' => $html,
+        'master' => $master,
+        'quotation' => $quotation
+    ]);
+}
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with(['PurchaseData' => function ($query) {
-            // $query->where('am_approval_status', 'approved');
-        }])
+        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with([
+            'PurchaseData' => function ($query) {
+                // $query->where('am_approval_status', 'approved');
+            }
+        ])
             ->whereHas('PurchaseData', function ($q) {
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
             })
@@ -106,13 +147,13 @@ class PurchaseOrderController extends Controller
                 ]);
 
                 if ($request->purchase_request_data_id[$index] != 0) {
-                    $data =  PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
+                    $data = PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
                         'po_status' => 2,
                     ]);
                 }
 
                 if ($request->purchase_quotation_data_id[$index] != 0) {
-                    $data =  PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
+                    $data = PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
                         'quotation_status' => 2,
                     ]);
                 }
@@ -155,29 +196,29 @@ class PurchaseOrderController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'purchase_date'    => 'required|date',
-            'purchase_request_id'      => 'required|exists:purchase_requests,id',
-            'location_id'      => 'required|exists:company_locations,id',
-            'reference_no'     => 'nullable|string|max:255',
-            'description'      => 'nullable|string',
+            'purchase_date' => 'required|date',
+            'purchase_request_id' => 'required|exists:purchase_requests,id',
+            'location_id' => 'required|exists:company_locations,id',
+            'reference_no' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
 
-            'category_id'      => 'required|array|min:1',
-            'category_id.*'    => 'required|exists:categories,id',
+            'category_id' => 'required|array|min:1',
+            'category_id.*' => 'required|exists:categories,id',
 
-            'item_id'          => 'required|array|min:1',
-            'item_id.*'        => 'required|exists:products,id',
+            'item_id' => 'required|array|min:1',
+            'item_id.*' => 'required|exists:products,id',
 
-            'uom'              => 'nullable|array',
-            'uom.*'            => 'nullable|string|max:255',
+            'uom' => 'nullable|array',
+            'uom.*' => 'nullable|string|max:255',
 
-            'qty'              => 'required|array|min:1',
-            'qty.*'            => 'required|numeric|min:0.01',
+            'qty' => 'required|array|min:1',
+            'qty.*' => 'required|numeric|min:0.01',
 
-            'rate'              => 'required|array|min:1',
-            'rate.*'            => 'required|numeric|min:0.01',
+            'rate' => 'required|array|min:1',
+            'rate.*' => 'required|numeric|min:0.01',
 
-            'remarks'          => 'nullable|array',
-            'remarks.*'        => 'nullable|string|max:1000',
+            'remarks' => 'nullable|array',
+            'remarks.*' => 'nullable|string|max:1000',
         ]);
 
 

@@ -10,16 +10,40 @@
         $quotedSupplierName = $quotedData->supplier->name ?? '';
         $currentRate = $quotedRate;
         $currentQty = $data->qty ?? $quotedQty;
-        $currentTotal = $currentRate && $currentQty ? $currentRate * $currentQty : '';
+        // $currentTotal = $currentRate && $currentQty ? $currentRate * $currentQty : '';
         $currentSupplierId = $quotedSupplierId;
         $currentSupplierName = $quotedSupplierName;
+         $dataRate = isset($data->rate) ? (float) $data->rate : 0;
+    $dataQty = isset($data->qty) ? (float) $data->qty : 0;
 
-        $totalOrdered = $data->purchase_order_data->sum('qty') ?? 0;
-        $remainingQty = $data->qty - $totalOrdered;
+    // ✅ Use quotation data if available, otherwise request data
+    $currentRate = $hasApprovedQuotation ? $quotedRate : $dataRate;
+    $currentQty = $hasApprovedQuotation ? $quotedQty : $dataQty;
+
+    // ✅ Safely calculate numeric total
+    $currentTotal = round($currentRate * $currentQty, 2);
     @endphp
 
+@if (isset($data->purchase_order_data))
+    @php
+        $totalOrdered = $data->purchase_order_data->sum('qty');
+    @endphp
+@else
+    @php
+        $totalOrdered = 0;
+    @endphp
+@endif
+
+@php
+    $remainingQty = $data->qty - $totalOrdered;
+    $isQuotationAvailable = ($data->rate) > 0 ? true : false;
+@endphp
+
+
+   
+
     <tr id="row_{{ $key }}">
-        <td style="width: 5%">
+        {{-- <td style="width: 5%">
             <input type="checkbox" name="use_quotation[]" id="use_quotation_{{ $key }}" value="{{ $key }}"
                 class="quotation-checkbox" {{ $hasApprovedQuotation ? 'checked' : '' }}
                 {{ !$hasApprovedQuotation ? 'disabled' : '' }} onchange="toggleQuotationFields({{ $key }})">
@@ -35,7 +59,7 @@
             @else
                 <input type="hidden" name="quotation_ids[]" value="">
             @endif
-        </td>
+        </td> --}}
 
         <td style="width: 20%">
             <select id="category_id_{{ $key }}" onchange="filter_items(this.value,{{ $key }})"
@@ -70,7 +94,7 @@
                 class="form-control uom" readonly>
         </td>
 
-        <td style="width: 15%" id="vendor_dropdown_{{ $key }}">
+        {{-- <td style="width: 15%" id="vendor_dropdown_{{ $key }}">
             <select name="supplier_id_dropdown[]" id="supplier_id_{{ $key }}"
                 class="form-control item-select select2" data-index="{{ $key }}"
                 {{ $hasApprovedQuotation ? 'disabled' : '' }} onchange="updateVendorInput({{ $key }})">
@@ -84,7 +108,7 @@
 
             <input type="hidden" name="supplier_id[]" id="supplier_id_hidden_{{ $key }}"
                 value="{{ $currentSupplierId }}">
-        </td>
+        </td> --}}
 
         <td style="width: 15%; display: none;" id="vendor_input_{{ $key }}">
             <input type="text" name="supplier_input[]" id="supplier_input_{{ $key }}"
@@ -92,27 +116,45 @@
         </td>
 
         <td style="width: 10%">
-            <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                onblur="calc({{ $key }})" name="qty[]" value="{{ $remainingQty }}"
-                id="qty_{{ $key }}" class="form-control" step="0.01" min="0"
-                max="{{ $remainingQty }}" {{ $hasApprovedQuotation ? 'readonly' : '' }}>
+    <input
+        style="width: 100px"
+        type="number"
+        onkeyup="calc({{ $key }})"
+        onblur="calc({{ $key }})"
+        name="qty[]"
+        value="{{ $remainingQty }}"
+        id="qty_{{ $key }}"
+        class="form-control"
+        step="0.01"
+        min="0"
+        max="{{ $remainingQty }}"
+        {{ $isQuotationAvailable ? 'readonly' : '' }}
+    >
 
-            <div class="d-flex align-items-center">
-                Total Qty: {{ $data->qty }}
-                <input style="width: 50px" value="" class="form-control d-none" disabled>
-            </div>
-            <div class="d-flex align-items-center">
-                Ordered Qty: {{ $totalOrdered }}
-                <input style="width: 50px" value="{{ $totalOrdered }}" class="form-control d-none" disabled>
-            </div>
-        </td>
+    <div class="d-flex align-items-center">
+        Total Qty: {{ $data->qty }}
+    </div>
 
-        <td style="width: 20%">
-            <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                onblur="calc({{ $key }})" name="rate[]" value="{{ $currentRate }}"
-                id="rate_{{ $key }}" class="form-control" step="0.01" min="0"
-                {{ $hasApprovedQuotation ? 'readonly' : '' }}>
-        </td>
+    <div class="d-flex align-items-center">
+        Ordered Qty: {{ $totalOrdered }}
+    </div>
+</td>
+
+      <td style="width: 20%">
+    <input 
+        style="width: 100px" 
+        type="number"
+        onkeyup="calc({{ $key }})"
+        onblur="calc({{ $key }})"
+        name="rate[]" 
+        value="{{ $data->rate }}"
+        id="rate_{{ $key }}" 
+        class="form-control" 
+        step="0.01" 
+        min="0"
+        {{ $isQuotationAvailable ? 'readonly' : '' }}>
+</td>
+
 
         <td style="width: 20%">
             <input style="width: 100px" type="number" readonly name="total[]" value="{{ $currentTotal }}"
@@ -125,7 +167,7 @@
         </td>
 
         <td>
-            <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove({{ $key }})"
+            <button type="button" class="btn btn-danger btn-sm removeRowBtn" {{ $isQuotationAvailable ? 'disabled' : '' }} onclick="remove({{ $key }})"
                 data-id="{{ $key }}">Remove</button>
         </td>
     </tr>

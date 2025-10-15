@@ -5,13 +5,47 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Purchase Request:</label>
-                <select class="form-control select2" onchange="get_purchase(this.value)" name="purchase_request_id">
+                <select class="form-control select2" name="purchase_request_id">
                     <option value="">Select Purchase Request</option>
                     @foreach ($approvedRequests ?? [] as $value)
                         <option value="{{ $value->id }}">
-                            {{ $value->purchase_request_no }}</option>
+                            {{ $value->purchase_request_no }}
+                        </option>
                     @endforeach
                 </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Supplier:</label>
+                <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
+                    <option value="">Select Vendor</option>
+                    @foreach (get_supplier() as $supplier)
+                        <option value="{{ $supplier->id }}">
+                            {{ $supplier->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Quotation</label>
+                <input type="text" name="quotation_no" id="quotation_no" class="form-control"
+                    placeholder="Quotation number will appear here" value="" readonly>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Purchase Order Date:</label>
+                <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Reference No:</label>
+                <input type="text" name="reference_no" placeholder="Please select location and date." readonly
+                    id="reference_no" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
@@ -26,16 +60,11 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Purchase Date:</label>
-                <input readonly type="date" id="purchase_date" name="purchase_date" class="form-control">
-            </div>
-        </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control"></textarea>
+                <textarea readonly name="description" id="description" placeholder="Description"
+                    class="form-control"></textarea>
             </div>
         </div>
     </div>
@@ -44,11 +73,11 @@
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
-                        <th></th>
+                        {{-- <th></th> --}}
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
-                        <th>Vendor</th>
+                        {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Amount</th>
@@ -126,7 +155,7 @@
                 category_id: category_id
             },
             dataType: 'json',
-            success: function(response) {
+            success: function (response) {
                 // Assuming response contains an array of categories
                 if (response.success && response.products) {
                     // Clear existing options
@@ -136,7 +165,7 @@
                     $('#item_id_' + count).append('<option value="">Select a Item</option>');
 
                     // Append new category options to the select element
-                    $.each(response.products, function(index, product) {
+                    $.each(response.products, function (index, product) {
                         $('#item_id_' + count).append(
                             `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
                         );
@@ -146,7 +175,7 @@
                     $('#item_id_' + count).html('<option value="">No products available</option>');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('AJAX Error:', status, error);
                 $('#item_id_' + count).html('<option value="">Error loading products</option>');
             }
@@ -158,41 +187,68 @@
         $('#uom_' + index).val(uom);
     }
 
-    function get_purchase(purchaseRequestId) {
-        if (!purchaseRequestId) return;
+    function get_purchase(purchaseRequestId = null) {
+        const supplierId = $('#supplier_id').val();
+
+        // If both are empty, don’t fetch
+        if (!purchaseRequestId && !supplierId) return;
+
+        // If supplier changed but no purchase request selected yet
+        if (!purchaseRequestId) {
+            purchaseRequestId = $('select[name="purchase_request_id"]').val();
+        }
 
         $.ajax({
             url: "{{ route('store.purchase-order.approve-item') }}",
             type: "GET",
             data: {
-                id: purchaseRequestId
+                id: purchaseRequestId,
+                supplier_id: supplierId // ✅ pass supplier_id too
             },
-            beforeSend: function() {
+            beforeSend: function () {
                 $('#purchaseOrderBody').html('<p>Loading...</p>');
             },
-            success: function(response) {
+            success: function (response) {
                 let html = response.html;
                 let master = response.master;
-                console.log(master);
+                let quotation = response.quotation; // ✅ quotation data from controller
 
-
+                // ✅ Update master fields
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
-                $('#purchase_date').val(master.purchase_date);
+              //  $('#purchase_date').val(master.purchase_date);
                 $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
-                $('#purchaseOrderBody').html('').html(html);
+
+                // ✅ 👉 Add this block here
+                if (quotation) {
+                    $('#quotation_no').val(quotation.purchase_quotation_no);
+                } else {
+                    $('#quotation_no').val('No quotation against this supplier');
+                }
+
+                $('#purchaseOrderBody').html(html);
+
                 $('.select2').select2({
                     placeholder: 'Please Select',
                     width: '100%'
                 });
             },
-            error: function() {
+            error: function () {
                 $('#purchaseOrderBody').html('<p>Error loading data.</p>');
             }
         });
     }
+
+    $('#supplier_id, select[name="purchase_request_id"]').on('change', function () {
+        const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+        $('input[name="qty[]"], input[name="rate[]"], input[name="total[]"]').each(function () {
+        $(this).val(''); // set to empty
+    });
+        get_purchase(purchaseRequestId);
+    });
+
 
     function calc(num) {
         var qty = parseFloat($('#qty_' + num).val());

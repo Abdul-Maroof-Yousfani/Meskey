@@ -32,7 +32,7 @@
                  value="{{ get_uom($data->item_id) }}" disabled readonly>
              <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
          </td>
-         <td style="width: 20%">
+         {{-- <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">
                      <select id="supplier_id_{{ $key }}" name="supplier_id[]"
@@ -47,13 +47,13 @@
             </select>
                  </div>
              </div>
-         </td>
-         {{-- <td style="width: 10%">
-             <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
-                 onblur="calc({{ $key }})" value="{{ $data->qty }}" id="qty_{{ $key }}"
-                 class="form-control" step="0.01" min="0">
-             <input type="hidden" name="qty[]" value="{{ $data->qty }}">
          </td> --}}
+         <td style="width: 10%">
+             <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                 onblur="calc({{ $key }})" value="{{ $data->qty }}" id="qty_{{ $key }}"
+                 class="form-control" step="0.01" min="0" max="{{ $data->qty }}">
+             <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+         </td>
          <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">
@@ -63,14 +63,14 @@
                  </div>
              </div>
          </td>
-         {{-- <td style="width: 20%">
+         <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">
                      <input style="width: 100px" type="number" readonly value="" id="total_{{ $key }}"
                          class="form-control" step="0.01" min="0" name="total[]">
                  </div>
              </div>
-         </td> --}}
+         </td>
          <td style="width: 25%">
              <input style="width: 100px" type="text" value="{{ $data->remarks }}" id="remark_{{ $key }}"
                  class="form-control">

@@ -237,6 +237,7 @@ class PurchaseQuotationController extends Controller
                 'purchase_request_id' => $request->purchase_request_id,
                 'quotation_date' => $request->purchase_date,
                 'location_id' => $request->location_id,
+                'supplier_id' => $request->supplier_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
@@ -249,10 +250,10 @@ class PurchaseQuotationController extends Controller
                     'purchase_request_data_id' => $request->data_id[$index],
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
-                    'qty' => 0,
+                    'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
-                    'total' => 0,
-                    'supplier_id' => $request->supplier_id[$index],
+                    'total' => $request->total[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 

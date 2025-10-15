@@ -27,6 +27,7 @@ class PurchaseQuotationRequest extends FormRequest
             'purchase_date'       => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id'         => 'required|exists:company_locations,id',
+            'supplier_id'         => 'required|exists:suppliers,id',
             'reference_no'        => 'nullable|string|max:255',
             'description'         => 'nullable|string',
 
@@ -48,35 +49,35 @@ class PurchaseQuotationRequest extends FormRequest
             // 'total'               => 'required|array|min:1',
             // 'total.*'             => 'required|numeric|min:0.01',
 
-            'supplier_id'         => 'required|array',
-            'supplier_id.*'       => [
-                'required',
-                'exists:suppliers,id',
-                function ($attribute, $value, $fail) {
-                    $parts = explode('.', $attribute);
-                    $index = $parts[1] ?? null;
+            // 'supplier_id'         => 'required|array',
+            // 'supplier_id.*'       => [
+            //     'required',
+            //     'exists:suppliers,id',
+            //     function ($attribute, $value, $fail) {
+            //         $parts = explode('.', $attribute);
+            //         $index = $parts[1] ?? null;
 
-                    if ($index !== null) {
-                        $itemIds = $this->input('item_id', []);
-                        $purchaseRequestId = $this->input('purchase_request_id');
+            //         if ($index !== null) {
+            //             $itemIds = $this->input('item_id', []);
+            //             $purchaseRequestId = $this->input('purchase_request_id');
 
-                        if (isset($itemIds[$index])) {
-                            $itemId = $itemIds[$index];
+            //             if (isset($itemIds[$index])) {
+            //                 $itemId = $itemIds[$index];
 
-                            $exists = PurchaseQuotationData::where('item_id', $itemId)
-                                ->where('supplier_id', $value)
-                                ->whereHas('purchase_quotation', function ($query) use ($purchaseRequestId) {
-                                    $query->where('purchase_request_id', $purchaseRequestId);
-                                })
-                                ->exists();
+            //                 $exists = PurchaseQuotationData::where('item_id', $itemId)
+            //                     ->where('supplier_id', $value)
+            //                     ->whereHas('purchase_quotation', function ($query) use ($purchaseRequestId) {
+            //                         $query->where('purchase_request_id', $purchaseRequestId);
+            //                     })
+            //                     ->exists();
 
-                            if ($exists) {
-                                $fail('The supplier for this item already exists in a purchase quotation for this purchase request.');
-                            }
-                        }
-                    }
-                }
-            ],
+            //                 if ($exists) {
+            //                     $fail('The supplier for this item already exists in a purchase quotation for this purchase request.');
+            //                 }
+            //             }
+            //         }
+            //     }
+            // ],
 
             'remarks'             => 'nullable|array',
             'remarks.*'           => 'nullable|string|max:1000',
