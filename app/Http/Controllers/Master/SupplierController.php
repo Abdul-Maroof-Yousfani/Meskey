@@ -88,11 +88,12 @@ class SupplierController extends Controller
             $requestData['name'] = $request->company_name;
             $requestData['company_location_ids'] = $request->company_location_ids;
             $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
+            $isSupplier = $requestData['is_gate_buying_supplier'] == 'Yes';
 
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'suppliers'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
                 $requestData['account_id'] = $account->id;
             }
 
@@ -131,8 +132,8 @@ class SupplierController extends Controller
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
-
-                $Brokeraccount = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'brokers'));
+ 
+                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3',  'brokers'));
 
                 $brokerData = [
                     'company_id' => $supplier->company_id ?? null,
@@ -205,12 +206,9 @@ class SupplierController extends Controller
             $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
-            } elseif (empty($supplier->account_id)) {
-                $account = Account::create(getParamsForAccountCreation(
-                    $request->company_id,
-                    $request->company_name,
-                    'suppliers'
-                ));
+            } elseif (empty($supplier->account_id)) { 
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
+
                 $requestData['account_id'] = $account->id;
             }
 

@@ -48,10 +48,25 @@ class PaymentRequestData extends Model
         'loading_weighbridge_amount',
         'total_amount',
         'module_type',
+        'exempt',
+        'freight_rs',
+        'freight_per_ton',
+        'loading_kanta',
+        'arrived_kanta',
+        'other_plus_labour',
+        'dehari_plus_extra',
+        'market_comm',
+        'over_weight_ded',
+        'godown_penalty',
+        'other_minus_labour',
+        'extra_minus_ded',
+        'commission_percent_ded',
+        'commission_amount',
         'paid_amount',
         'remaining_amount',
         'advance_freight',
-        'notes'
+        'notes',
+        'attachment',
     ];
 
     protected $casts = [

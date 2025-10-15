@@ -130,7 +130,7 @@
                                         <select name="supplier_id" id="supplier_id" class="form-control select2" required>
                                             <option value="">Select Supplier</option>
                                             @foreach ($suppliers as $supplier)
-                                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                                             @endforeach
                                         </select>
                                     </div> --}}
@@ -157,11 +157,12 @@
                                                             <th>Loading Date</th>
                                                             <th>Weight</th>
                                                             <th>Amount</th>
+                                                            <th>Attachment</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td colspan="11" class="text-center">No payment requests
+                                                            <td colspan="12" class="text-center">No payment requests
                                                                 found please select supplier first.</td>
                                                         </tr>
                                                     </tbody>
@@ -218,8 +219,8 @@
 
 @section('script')
     <script>
-        $(document).ready(function() {
-            $('#voucher_type, #pv_date').change(function() {
+        $(document).ready(function () {
+            $('#voucher_type, #pv_date').change(function () {
                 if ($('#voucher_type').val()) {
                     $.ajax({
                         url: '{{ route('payment-voucher.generate-pv-number') }}',
@@ -229,7 +230,7 @@
                             voucher_type: $('#voucher_type').val(),
                             pv_date: $('#pv_date').val() || null
                         },
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 if ($('#pv_date').val()) {
                                     $('#unique_no').val(response.pv_number);
@@ -239,7 +240,7 @@
                                     $accountSelect.append(
                                         '<option value="">Select Account</option>');
 
-                                    response.accounts.forEach(function(account) {
+                                    response.accounts.forEach(function (account) {
                                         $accountSelect.append(
                                             `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
                                         );
@@ -253,7 +254,7 @@
                 }
             });
 
-            $('#bank_account_id').change(function() {
+            $('#bank_account_id').change(function () {
                 const selectedOption = $(this).find('option:selected');
                 if (selectedOption.val()) {
                     const accountNo = selectedOption.data('account-no') || '';
@@ -267,7 +268,7 @@
                 }
             });
 
-            $('#voucher_type').change(function() {
+            $('#voucher_type').change(function () {
                 if ($(this).val() === 'bank_payment_voucher') {
                     $('.bank-fields, .bank-account-section').show();
                     // $('#cheque_no, #cheque_date, #bank_account_id').prop('required', true);
@@ -307,10 +308,10 @@
 
                 const $container = $(
                     `<div class="bank-account-option">
-                            <strong>${type} - ${title}</strong>
-                            <div class="text-muted small">${accountTitle} - (${accountNo})</div>
-                            <div class="text-muted small">${bankName} - ${branchName}</div>
-                        </div>`
+                                                <strong>${type} - ${title}</strong>
+                                                <div class="text-muted small">${accountTitle} - (${accountNo})</div>
+                                                <div class="text-muted small">${bankName} - ${branchName}</div>
+                                            </div>`
                 );
                 return $container;
             }
@@ -331,26 +332,26 @@
             }
 
             // Replace the supplier change event with account change event
-            $('#req_account_id').change(function() {
+            $('#req_account_id').change(function () {
                 const accountId = $(this).val();
                 const tbody = $('#paymentRequestsTable tbody');
 
                 if (accountId) {
                     tbody.html(`
-                                <tr>
-                                    <td colspan="11" class="text-center">
-                                        <div class="d-flex justify-content-center align-items-center">
-                                            <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-                                            Loading payment requests...
-                                        </div>
-                                    </td>
-                                </tr>
-                            `);
+                                                    <tr>
+                                                        <td colspan="12" class="text-center">
+                                                            <div class="d-flex justify-content-center align-items-center">
+                                                                <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                                                Loading payment requests...
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                `);
 
                     $.ajax({
                         url: `/finance/payment-voucher/account-payment-requests/${accountId}`,
                         type: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 tbody.empty();
 
@@ -359,50 +360,60 @@
                                 }
 
                                 if (response.payment_requests.length > 0) {
-                                    $.each(response.payment_requests, function(index, request) {
+                                    $.each(response.payment_requests, function (index, request) {
                                         tbody.append(`
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" class="request-checkbox" 
-                                            value="${request.id}" 
-                                            data-supplier-id="${request.supplier_id || ''}" 
-                                            data-amount="${request.amount}" 
-                                            data-purpose="${request.purpose}" 
-                                            data-request-no="${request.contract_no}" 
-                                            data-truck-no="${request.truck_no}"
-                                            data-bilty-no="${request.bilty_no}"
-                                            data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
-                                            data-loading-date="${request.loading_date}"
-                                            data-loading-weight="${request.loading_weight}">
-                                    </td>
-                                    <td>${request.contract_no}</td>
-                                    <td>${request.purpose}</td> 
-                                    <td>${request.saudaType}</td> 
-                                    <td>${request.request_date}</td>
-                                    <td>
-                                        <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                                            <span
-                                            class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
-                                                style="border-radius: 3px 0 0 3px;">
-                                                ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
-                                            </span>
-                                            <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
-                                                style="border-radius: 0 3px 3px 0;">
-                                                ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
-                                            </span>
-                                        </span>
-                                        </td>
-                                        <td>${request.truck_no}</td>
-                                        <td>${request.bilty_no}</td>
-                                        <td>${request.loading_date}</td>
-                                        <td>${request.loading_weight}</td>
-                                        <td>${request.amount}</td>
-                                </tr>
-                            `);
+                                                    <tr>
+                                                        <td>
+                                                            <input type="checkbox" class="request-checkbox" 
+                                                                value="${request.id}" 
+                                                                data-supplier-id="${request.supplier_id || ''}" 
+                                                                data-amount="${request.amount}" 
+                                                                data-purpose="${request.purpose}" 
+                                                                data-request-no="${request.contract_no}" 
+                                                                data-truck-no="${request.truck_no}"
+                                                                data-bilty-no="${request.bilty_no}"
+                                                                data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' : 'Ticket')} "
+                                                                data-loading-date="${request.loading_date}"
+                                                                data-loading-weight="${request.loading_weight}">
+                                                        </td>
+                                                        <td>${request.contract_no}</td>
+                                                        <td>${request.purpose}</td> 
+                                                        <td>${request.saudaType}</td> 
+                                                        <td>${request.request_date}</td>
+                                                        <td>
+                                                            <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                                                <span
+                                                                class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+                                                                    style="border-radius: 3px 0 0 3px;">
+                                                                    ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' : 'Ticket')} 
+                                                                </span>
+                                                                <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+                                                                    style="border-radius: 0 3px 3px 0;">
+                                                                    ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+                                                                </span>
+                                                            </span>
+                                                            </td>
+                                                            <td>${request.truck_no}</td>
+                                                            <td>${request.bilty_no}</td>
+                                                            <td>${request.loading_date}</td>
+                                                            <td>${request.loading_weight}</td>
+                                                            <td>${request.amount}</td>
+                                                            <td>
+                        ${request.file
+                                                ? `<a href="/${request.file}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                    <i class="fa fa-download"></i> Download File
+                               </a>`
+                                                : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
+                                    <i class="fa fa-ban"></i> No File
+                               </button>`
+                                            }
+                    </td>
+                                                    </tr>
+                                                `);
                                     });
                                 } else {
                                     tbody.append(
-                                        '<tr><td colspan="11" class="text-center">No payment requests found for this account</td></tr>'
+                                        '<tr><td colspan="12" class="text-center">No payment requests found for this account</td></tr>'
                                     );
                                 }
 
@@ -410,7 +421,7 @@
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
-                                    $.each(response.bank_accounts, function(index, account) {
+                                    $.each(response.bank_accounts, function (index, account) {
                                         const option = new Option(
                                             `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
                                             account.id,
@@ -441,23 +452,23 @@
                                 emptyMessage.show();
                             }
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             tbody.html(`
-                    <tr>
-                        <td colspan="11" class="text-center text-danger">
-                            Error loading payment requests. Please try again.
-                        </td>
-                    </tr>
-                `);
+                                        <tr>
+                                            <td colspan="12" class="text-center text-danger">
+                                                Error loading payment requests. Please try again.
+                                            </td>
+                                        </tr>
+                                    `);
                             console.error('Error:', xhr.responseText);
                         }
                     });
                 } else {
                     tbody.html(`
-            <tr>
-                <td colspan="11" class="text-center">Please select an account first.</td>
-            </tr>
-        `);
+                                <tr>
+                                    <td colspan="12" class="text-center">Please select an account first.</td>
+                                </tr>
+                            `);
                 }
             });
 
@@ -467,15 +478,15 @@
 
             //     if (supplierId) {
             //         tbody.html(`
-        //                     <tr>
-        //                         <td colspan="11" class="text-center">
-        //                             <div class="d-flex justify-content-center align-items-center">
-        //                                 <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-        //                                 Loading payment requests...
-        //                             </div>
-        //                         </td>
-        //                     </tr>
-        //                 `);
+            //                     <tr>
+            //                         <td colspan="11" class="text-center">
+            //                             <div class="d-flex justify-content-center align-items-center">
+            //                                 <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+            //                                 Loading payment requests...
+            //                             </div>
+            //                         </td>
+            //                     </tr>
+            //                 `);
 
             //         $.ajax({
             //             url: `/finance/payment-voucher/payment-requests/${supplierId}`,
@@ -487,44 +498,44 @@
             //                     if (response.payment_requests.length > 0) {
             //                         $.each(response.payment_requests, function(index, request) {
             //                             tbody.append(`
-        //                         <tr>
-        //                             <td>
-        //                                 <input type="checkbox" class="request-checkbox" 
-        //                                     value="${request.id}" 
-        //                                     data-supplier-id="${request.supplier_id || ''}" 
-        //                                     data-amount="${request.amount}" 
-        //                                     data-purpose="${request.purpose}" 
-        //                                     data-request-no="${request.contract_no}" 
-        //                                     data-truck-no="${request.truck_no}"
-        //                                     data-bilty-no="${request.bilty_no}"
-        //                                     data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
-        //                                     data-loading-date="${request.loading_date}"
-        //                                     data-loading-weight="${request.loading_weight}">
-        //                             </td>
-        //                             <td>${request.contract_no}</td>
-        //                             <td>${request.purpose}</td> 
-        //                             <td>${request.saudaType}</td> 
-        //                             <td>${request.request_date}</td>
-        //                             <td>
-        //                                 <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-        //                                     <span
-        //                                     class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
-        //                                         style="border-radius: 3px 0 0 3px;">
-        //                                         ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
-        //                                     </span>
-        //                                     <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
-        //                                         style="border-radius: 0 3px 3px 0;">
-        //                                         ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
-        //                                     </span>
-        //                                 </span>
-        //                                 </td>
-        //                                 <td>${request.truck_no}</td>
-        //                                 <td>${request.bilty_no}</td>
-        //                                 <td>${request.loading_date}</td>
-        //                                 <td>${request.loading_weight}</td>
-        //                                 <td>${request.amount}</td>
-        //                         </tr>
-        //                     `);
+            //                         <tr>
+            //                             <td>
+            //                                 <input type="checkbox" class="request-checkbox" 
+            //                                     value="${request.id}" 
+            //                                     data-supplier-id="${request.supplier_id || ''}" 
+            //                                     data-amount="${request.amount}" 
+            //                                     data-purpose="${request.purpose}" 
+            //                                     data-request-no="${request.contract_no}" 
+            //                                     data-truck-no="${request.truck_no}"
+            //                                     data-bilty-no="${request.bilty_no}"
+            //                                     data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
+            //                                     data-loading-date="${request.loading_date}"
+            //                                     data-loading-weight="${request.loading_weight}">
+            //                             </td>
+            //                             <td>${request.contract_no}</td>
+            //                             <td>${request.purpose}</td> 
+            //                             <td>${request.saudaType}</td> 
+            //                             <td>${request.request_date}</td>
+            //                             <td>
+            //                                 <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+            //                                     <span
+            //                                     class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+            //                                         style="border-radius: 3px 0 0 3px;">
+            //                                         ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
+            //                                     </span>
+            //                                     <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+            //                                         style="border-radius: 0 3px 3px 0;">
+            //                                         ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+            //                                     </span>
+            //                                 </span>
+            //                                 </td>
+            //                                 <td>${request.truck_no}</td>
+            //                                 <td>${request.bilty_no}</td>
+            //                                 <td>${request.loading_date}</td>
+            //                                 <td>${request.loading_weight}</td>
+            //                                 <td>${request.amount}</td>
+            //                         </tr>
+            //                     `);
             //                         });
             //                     } else {
             //                         tbody.append(
@@ -570,38 +581,38 @@
             //             },
             //             error: function(xhr) {
             //                 tbody.html(`
-        //             <tr>
-        //                 <td colspan="11" class="text-center text-danger">
-        //                     Error loading payment requests. Please try again.
-        //                 </td>
-        //             </tr>
-        //         `);
+            //             <tr>
+            //                 <td colspan="11" class="text-center text-danger">
+            //                     Error loading payment requests. Please try again.
+            //                 </td>
+            //             </tr>
+            //         `);
             //                 console.error('Error:', xhr.responseText);
             //             }
             //         });
             //     } else {
             //         tbody.html(`
-        //     <tr>
-        //         <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
-        //     </tr>
-        // `);
+            //     <tr>
+            //         <td colspan="11" class="text-center">No payment requests found please select supplier first.</td>
+            //     </tr>
+            // `);
             //     }
             // });
 
-            $('#module_id').change(function() {
+            $('#module_id').change(function () {
                 const poId = $(this).val();
 
                 if (poId) {
                     $.ajax({
                         url: `/finance/payment-voucher/payment-requests/${poId}`,
                         type: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 const tbody = $('#paymentRequestsTable tbody');
                                 tbody.empty();
 
                                 if (response.payment_requests.length > 0) {
-                                    $.each(response.payment_requests, function(index, request) {
+                                    $.each(response.payment_requests, function (index, request) {
                                         let {
                                             id,
                                             amount,
@@ -619,21 +630,21 @@
                                         } = purchaseOrder;
 
                                         tbody.append(`
-                                                <tr>
-                                                    <td>
-                                                        <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
-                                                    </td>
-                                                    <td>${request_no}</td>
-                                                    <td>${request_date}</td>
-                                                    <td>${amount}</td>
-                                                    <td>${purpose}</td>
-                                                    <td>
-                                                        <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
-                                                            ${type}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            `);
+                                                                    <tr>
+                                                                        <td>
+                                                                            <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
+                                                                        </td>
+                                                                        <td>${request_no}</td>
+                                                                        <td>${request_date}</td>
+                                                                        <td>${amount}</td>
+                                                                        <td>${purpose}</td>
+                                                                        <td>
+                                                                            <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
+                                                                                ${type}
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                `);
                                     });
                                 } else {
                                     tbody.append(
@@ -644,7 +655,7 @@
                                 bankAccountSelect.empty().append(
                                     '<option value="">Select Bank Account</option>');
                                 if (response.bank_accounts.length > 0) {
-                                    $.each(response.bank_accounts, function(index, account) {
+                                    $.each(response.bank_accounts, function (index, account) {
                                         const option = new Option(
                                             `${account.type === 'company' ? 'Company' : 'Owner'} - ${account.title || 'No Title'} (${account.account_number || 'N/A'})`,
                                             account.id,
@@ -677,7 +688,7 @@
                 }
             });
 
-            $(document).on('change', '.request-checkbox', function() {
+            $(document).on('change', '.request-checkbox', function () {
                 updateSelectedRequestsList();
             });
 
@@ -685,7 +696,7 @@
                 const selectedRequests = [];
                 let totalAmount = 0;
 
-                $('.request-checkbox:checked').each(function() {
+                $('.request-checkbox:checked').each(function () {
                     selectedRequests.push({
                         id: $(this).val(),
                         amount: $(this).data('amount'),
@@ -703,29 +714,29 @@
                     listContainer.empty();
                     emptyMessage.hide();
 
-                    $.each(selectedRequests, function(index, request) {
+                    $.each(selectedRequests, function (index, request) {
                         $('#supplier_id').val(request.supplierId);
 
                         listContainer.append(`
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>#${request.requestNo}</span>
-                            <span class="badge badge-primary badge-pill">${request.amount}</span>
-                        </div>
-                        <div class="small text-muted">
-                            Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
-                        </div>
-                        <input type="hidden" name="payment_requests[]" value="${request.id}">
-                    </li>
-                `);
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>#${request.requestNo}</span>
+                                                <span class="badge badge-primary badge-pill">${request.amount}</span>
+                                            </div>
+                                            <div class="small text-muted">
+                                                Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
+                                            </div>
+                                            <input type="hidden" name="payment_requests[]" value="${request.id}">
+                                        </li>
+                                    `);
                     });
 
                     listContainer.append(`
-                <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                    <strong>Total Amount</strong>
-                    <strong>${totalAmount.toFixed(2)}</strong>
-                </li>
-            `);
+                                    <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
+                                        <strong>Total Amount</strong>
+                                        <strong>${totalAmount.toFixed(2)}</strong>
+                                    </li>
+                                `);
 
                     listContainer.show();
                 } else {

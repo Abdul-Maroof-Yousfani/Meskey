@@ -95,10 +95,12 @@ class FreightRequestController extends Controller
             'qcProduct',
             'freight',
             'paymentRequestData' => function ($query) {
-                $query->with(['paymentRequests' => function ($q) {
-                    $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
-                        ->groupBy('payment_request_data_id', 'request_type', 'status');
-                }]);
+                $query->with([
+                    'paymentRequests' => function ($q) {
+                        $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                            ->groupBy('payment_request_data_id', 'request_type', 'status');
+                    }
+                ]);
             }
         ])
             ->where('is_ticket_verified', 1)
@@ -273,8 +275,7 @@ class FreightRequestController extends Controller
             }
 
             $message = $request->freight_pay_request_amount ?
-                'Payment and freight payment requests created successfully' :
-                'Payment request created successfully';
+                'Payment and freight payment requests created successfully' : 'Payment request created successfully';
 
             return response()->json(['success' => $message]);
         });
@@ -398,7 +399,7 @@ class FreightRequestController extends Controller
 
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'thadda-purchase')
+                ->where('payment_against', 'thadda-purchase')
                 ->where('account_id', $purchaseOrder->brokerTwo->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -433,7 +434,7 @@ class FreightRequestController extends Controller
             $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'thadda-purchase')
+                ->where('payment_against', 'thadda-purchase')
                 ->where('account_id', $purchaseOrder->brokerThree->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -476,7 +477,7 @@ class FreightRequestController extends Controller
             ->where('against_reference_no', "$truckNo/$biltyNo")
             ->first();
 
-        $advanceFreight = (int)($requestData['advance_freight']);
+        $advanceFreight = (int) ($requestData['advance_freight']);
 
         if ($advanceFreight > 0) {
             if ($existingSiTFreightTrx) {
@@ -676,6 +677,12 @@ class FreightRequestController extends Controller
             ->where('status', 'approved')
             ->sum('amount');
 
+        $paymentRequestData = PaymentRequestData::where('ticket_id', $arrivalTicket->id)
+            ->where('module_type', 'freight_payment')
+            ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+            ->latest()
+            ->first();
+ 
         $data = [
             'purchaseOrder' => $arrivalTicket->purchaseOrder,
             'arrivalTicket' => $arrivalTicket,
@@ -685,6 +692,7 @@ class FreightRequestController extends Controller
             'isRequestApprovalPage' => false,
             'isTicketApprovalPage' => false,
             'isTicketPage' => true,
+            'paymentRequestData' => $paymentRequestData,
         ];
         $data['vendors'] = Vendor::get();
 

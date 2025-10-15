@@ -67,7 +67,7 @@ class GateBuyingController extends Controller
         $data = $request->validated();
         $data = $request->all();
         $arrivalPurchaseOrder = null;
-
+        $data['sauda_type_id'] = 1;
         if (!empty($data['broker_one'])) {
             $broker = Broker::where('name', $data['broker_one'])->first();
             $data['broker_one_id'] = $broker ? $broker->id : null;

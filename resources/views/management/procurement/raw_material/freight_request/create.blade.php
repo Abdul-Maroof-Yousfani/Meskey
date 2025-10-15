@@ -4,6 +4,22 @@
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
+    
+    // Use paymentRequestData if available, otherwise use existing logic
+    $exempt = $paymentRequestData->exempt ?? $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0');
+    $freight_rs = $paymentRequestData->freight_rs ?? $freightPaymentRequest?->freight_rs ?? ($ticket->freight->net_freight ?? '0');
+    $freight_per_ton = $paymentRequestData->freight_per_ton ?? $freightPaymentRequest?->freight_per_ton ?? ($ticket->freight->freight_per_ton ?? '0');
+    $loading_kanta = $paymentRequestData->loading_kanta ?? $freightPaymentRequest?->loading_kanta ?? ($ticket->freight->kanta_golarchi_charges ?? '0');
+    $arrived_kanta = $paymentRequestData->arrived_kanta ?? $freightPaymentRequest?->arrived_kanta ?? ($ticket->freight->karachi_kanta_charges ?? '0');
+    $other_plus_labour = $paymentRequestData->other_plus_labour ?? $freightPaymentRequest?->other_plus_labour ?? ($ticket->freight->other_labour_charges ?? '0');
+    $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? ($ticket->freight->other_labour_charges ?? '0');
+    $market_comm = $paymentRequestData->market_comm ?? $freightPaymentRequest?->market_comm ?? 0;
+    $over_weight_ded = $paymentRequestData->over_weight_ded ?? $freightPaymentRequest?->over_weight_ded ?? 0;
+    $godown_penalty = $paymentRequestData->godown_penalty ?? $freightPaymentRequest?->godown_penalty ?? 0;
+    $other_minus_labour = $paymentRequestData->other_minus_labour ?? $freightPaymentRequest?->other_minus_labour ?? ($ticket->freight->other_labour_charges ?? '0');
+    $extra_minus_ded = $paymentRequestData->extra_minus_ded ?? $freightPaymentRequest?->extra_minus_ded ?? 0;
+    $commission_percent_ded = $paymentRequestData->commission_percent_ded ?? $freightPaymentRequest?->commission_percent_ded ?? 0;
+    $commission_amount = $paymentRequestData->commission_amount ?? $freightPaymentRequest?->commission_amount ?? 0;
 @endphp
 <form
     action="{{ route(isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id) ? 'raw-material.advance-payment-request-approval.store' : 'raw-material.freight-request.store') }}"
@@ -196,8 +212,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempt</label>
                 <input type="text" class="form-control editable-field" name="exempt" id="exemptedWeight"
-                    value="{{ $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0') }}"
-                    {{ $param }} placeholder="Exempt">
+                    value="{{ $exempt }}" {{ $param }} placeholder="Exempt">
             </div>
         </div>
         <div class="col-md col-6">
@@ -218,33 +233,29 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Freight (Rs)</label>
-                <input type="text" class="form-control editable-field" name="freight_amount"
-                    value="{{ $freightPaymentRequest?->freight_amount ?? ($ticket->freight->net_freight ?? '0') }}"
-                    {{ $param }} placeholder="Freight (Rs)">
+                <input type="text" class="form-control editable-field freight-rs" name="freight_rs"
+                    value="{{ $freight_rs }}" {{ $param }} placeholder="Freight (Rs)">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Freight Per Ton</label>
-                <input type="text" class="form-control editable-field" name="freight_per_ton"
-                    value="{{ $freightPaymentRequest?->freight_per_ton ?? ($ticket->freight->freight_per_ton ?? '0') }}"
-                    {{ $param }} placeholder="Freight Per Ton">
+                <input type="text" class="form-control editable-field freight-per-ton" name="freight_per_ton"
+                    value="{{ $freight_per_ton }}" {{ $param }} placeholder="Freight Per Ton">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Loading Kanta</label>
                 <input type="text" class="form-control editable-field" name="loading_kanta"
-                    value="{{ $freightPaymentRequest?->loading_kanta ?? ($ticket->freight->kanta_golarchi_charges ?? '0') }}"
-                    {{ $param }} placeholder="Loading Kanta">
+                    value="{{ $loading_kanta }}" {{ $param }} placeholder="Loading Kanta">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Arrived Kanta</label>
                 <input type="text" class="form-control editable-field" name="arrived_kanta"
-                    value="{{ $freightPaymentRequest?->arrived_kanta ?? ($ticket->freight->karachi_kanta_charges ?? '0') }}"
-                    {{ $param }} placeholder="Arrived Kanta">
+                    value="{{ $arrived_kanta }}" {{ $param }} placeholder="Arrived Kanta">
             </div>
         </div>
     </div>
@@ -258,25 +269,22 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Other(+)/Labour</label>
-                <input type="text" class="form-control editable-field" name="other_labour_positive"
-                    value="{{ $freightPaymentRequest?->other_labour_positive ?? ($ticket->freight->other_labour_charges ?? '0') }}"
-                    {{ $param }} placeholder="Other(+)/Labour">
+                <input type="text" class="form-control editable-field" name="other_plus_labour"
+                    value="{{ $other_plus_labour }}" {{ $param }} placeholder="Other(+)/Labour">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Dehari(+)/Extra</label>
-                <input type="text" class="form-control editable-field" name="dehari_extra"
-                    value="{{ $freightPaymentRequest?->dehari_extra ?? ($ticket->freight->other_labour_charges ?? '0') }}"
-                    {{ $param }} placeholder="Dehari(+)/Extra">
+                <input type="text" class="form-control editable-field" name="dehari_plus_extra"
+                    value="{{ $dehari_plus_extra }}" {{ $param }} placeholder="Dehari(+)/Extra">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Market Comm</label>
                 <input type="text" class="form-control editable-field" name="market_comm"
-                    value="{{ $freightPaymentRequest?->market_comm ?? 0 }}" {{ $param }}
-                    placeholder="Market Comm">
+                    value="{{ $market_comm }}" {{ $param }} placeholder="Market Comm">
             </div>
         </div>
     </div>
@@ -291,32 +299,28 @@
             <div class="form-group">
                 <label class="font-weight-bold">Over Weight Ded</label>
                 <input type="text" class="form-control editable-field" name="over_weight_ded"
-                    value="{{ $freightPaymentRequest?->over_weight_ded ?? 0 }}" {{ $param }}
-                    placeholder="Over Weight Ded">
+                    value="{{ $over_weight_ded }}" {{ $param }} placeholder="Over Weight Ded">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Godown Penalty</label>
                 <input type="text" class="form-control editable-field" name="godown_penalty"
-                    value="{{ $freightPaymentRequest?->godown_penalty ?? 0 }}" {{ $param }}
-                    placeholder="Godown Penalty">
+                    value="{{ $godown_penalty }}" {{ $param }} placeholder="Godown Penalty">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Other(-)/Labour</label>
-                <input type="text" class="form-control editable-field" name="other_labour_negative"
-                    value="{{ $freightPaymentRequest?->other_labour_negative ?? ($ticket->freight->other_labour_charges ?? '0') }}"
-                    {{ $param }} placeholder="Other(-)/Labour">
+                <input type="text" class="form-control editable-field" name="other_minus_labour"
+                    value="{{ $other_minus_labour }}" {{ $param }} placeholder="Other(-)/Labour">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Extra(-) Ded</label>
-                <input type="text" class="form-control editable-field" name="extra_ded"
-                    value="{{ $freightPaymentRequest?->extra_ded ?? 0 }}" {{ $param }}
-                    placeholder="Extra(-) Ded">
+                <input type="text" class="form-control editable-field" name="extra_minus_ded"
+                    value="{{ $extra_minus_ded }}" {{ $param }} placeholder="Extra(-) Ded">
             </div>
         </div>
     </div>
@@ -325,9 +329,15 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Commission % Ded</label>
-                <input type="text" class="form-control editable-field" name="commission_ded"
-                    value="{{ $freightPaymentRequest?->commission_ded ?? 0 }}" {{ $param }}
-                    placeholder="Commission % Ded">
+                <input type="text" class="form-control editable-field commission-percent" name="commission_percent_ded"
+                    value="{{ $commission_percent_ded }}" {{ $param }} placeholder="Commission % Ded">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Commission Amount</label>
+                <input type="text" class="form-control bg-light commission-amount" name="commission_amount"
+                    value="{{ $commission_amount }}" readonly placeholder="Commission Amount">
             </div>
         </div>
     </div>
@@ -366,12 +376,12 @@
         </div>
     </div>
 
-    <div class="row d-none">
+    <div class="row">
         <div class="col-md-4">
             <div class="form-group">
-                <label class="font-weight-bold">Paid Amount</label>
+                <label class="font-weight-bold">Requested Amount</label>
                 <input type="number" step="0.01" class="form-control bg-light" name="paid_amount"
-                    value="{{ $approvedAmount ?? 0 }}" readonly>
+                    value="{{ $requestedAmount ?? 0 }}" readonly>
             </div>
         </div>
         <div class="col-md-4">
@@ -467,6 +477,20 @@
     $(document).ready(function() {
         $('.editable-field').on('input', calculatePaymentSummary);
 
+        // Freight calculations
+        $('.freight-rs').on('input', function() {
+            calculateFreightFromRs();
+            calculateCommission();
+        });
+        
+        $('.freight-per-ton').on('input', function() {
+            calculateFreightFromTon();
+            calculateCommission();
+        });
+        
+        // Commission calculation
+        $('.commission-percent').on('input', calculateCommission);
+
         function calculateNetShortage() {
             const differenceWeight = parseFloat(document.getElementById('differenceWeight').value) || 0;
             const exemptedWeight = parseFloat(document.getElementById('exemptedWeight').value) || 0;
@@ -474,28 +498,64 @@
             document.getElementById('netShortage').value = netShortage > 0 ? netShortage : 0;
         }
 
+        function calculateFreightFromRs() {
+            const freightRs = parseFloat($('.freight-rs').val()) || 0;
+            const loadingWeight = parseFloat('{{ $ticket->net_weight ?? 0 }}') || 0;
+            
+            if (loadingWeight > 0) {
+                const freightPerTon = (freightRs / loadingWeight) * 1000;
+                $('.freight-per-ton').val(freightPerTon.toFixed(2));
+            }
+            
+            calculatePaymentSummary();
+        }
+
+        function calculateFreightFromTon() {
+            const freightPerTon = parseFloat($('.freight-per-ton').val()) || 0;
+            const loadingWeight = parseFloat('{{ $ticket->net_weight ?? 0 }}') || 0;
+            
+            if (loadingWeight > 0) {
+                const freightRs = (freightPerTon * loadingWeight) / 1000;
+                $('.freight-rs').val(freightRs.toFixed(2));
+            }
+            
+            calculatePaymentSummary();
+        }
+
+        function calculateCommission() {
+            const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
+            const freightRs = parseFloat($('.freight-rs').val()) || 0;
+            
+            if (commissionPercent > 0) {
+                const commissionAmount = (freightRs * commissionPercent) / 100;
+                $('.commission-amount').val(commissionAmount.toFixed(2));
+            } else {
+                $('.commission-amount').val('0');
+            }
+            
+            calculatePaymentSummary();
+        }
+
         function calculatePaymentSummary() {
-            let freightAmount = parseFloat($('[name="freight_amount"]').val()) || 0;
+            let freightRs = parseFloat($('[name="freight_rs"]').val()) || 0;
             let loadingKanta = parseFloat($('[name="loading_kanta"]').val()) || 0;
             let arrivedKanta = parseFloat($('[name="arrived_kanta"]').val()) || 0;
-            let otherPositive = parseFloat($('[name="other_labour_positive"]').val()) || 0;
-            let dehariExtra = parseFloat($('[name="dehari_extra"]').val()) || 0;
+            let otherPlusLabour = parseFloat($('[name="other_plus_labour"]').val()) || 0;
+            let dehariPlusExtra = parseFloat($('[name="dehari_plus_extra"]').val()) || 0;
             let marketComm = parseFloat($('[name="market_comm"]').val()) || 0;
 
             let overWeightDed = parseFloat($('[name="over_weight_ded"]').val()) || 0;
             let godownPenalty = parseFloat($('[name="godown_penalty"]').val()) || 0;
-            let otherNegative = parseFloat($('[name="other_labour_negative"]').val()) || 0;
-            let extraDed = parseFloat($('[name="extra_ded"]').val()) || 0;
-            let commissionDed = parseFloat($('[name="commission_ded"]').val()) || 0;
+            let otherMinusLabour = parseFloat($('[name="other_minus_labour"]').val()) || 0;
+            let extraMinusDed = parseFloat($('[name="extra_minus_ded"]').val()) || 0;
+            let commissionAmount = parseFloat($('[name="commission_amount"]').val()) || 0;
 
             let netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
             let contractRate = parseFloat($('.contract-rate').val()) || 0;
             let netShortageDeduction = netShortage * contractRate;
 
-            let grossAmount = freightAmount + loadingKanta + arrivedKanta + otherPositive + dehariExtra +
-                marketComm;
-            let totalDeductions = overWeightDed + godownPenalty + otherNegative + extraDed + commissionDed +
-                netShortageDeduction;
+            let grossAmount = freightRs + loadingKanta + arrivedKanta + otherPlusLabour + dehariPlusExtra + marketComm;
+            let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
             let netAmount = grossAmount - totalDeductions;
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
@@ -507,16 +567,80 @@
             let remainingAmount = netAmount - paidAmount - requestAmount;
             $('[name="remaining_amount"]').val(remainingAmount.toFixed(2));
 
-            $('[name="request_amount"]').attr('max', netAmount.toFixed(2));
-            $('[name="request_amount"]').val(netAmount.toFixed(2));
+            // Set maximum limit for request amount
+            $('[name="request_amount"]').attr('max', Math.max(0, netAmount - paidAmount).toFixed(2));
         }
+
+        // Percentage input handler for multiple requests
+        $('.percentage-input').on('input', function() {
+            let percentage = parseFloat($(this).val()) || 0;
+            if (percentage > 100) {
+                percentage = 100;
+                $(this).val(100);
+            }
+
+            const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+            const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+            const remainingAmount = netAmount - paidAmount;
+            const amount = (remainingAmount * percentage) / 100;
+            
+            $('[name="request_amount"]').val(amount.toFixed(2));
+            
+            // Update remaining amount
+            const finalRemaining = netAmount - (paidAmount + amount);
+            $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
+        });
+
+        // Request amount input handler
+        $('[name="request_amount"]').on('input', function() {
+            const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+            const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+            const newRequested = parseFloat($(this).val()) || 0;
+            const remainingAmount = netAmount - paidAmount;
+
+            // Ensure payment request doesn't exceed remaining amount
+            if (newRequested > remainingAmount) {
+                $(this).val(remainingAmount.toFixed(2));
+            }
+
+            // Update percentage
+            const percentageInput = $('.percentage-input');
+            const finalRequested = parseFloat($(this).val()) || 0;
+            const percentage = remainingAmount > 0 ? (finalRequested / remainingAmount) * 100 : 0;
+            percentageInput.val(percentage.toFixed(2));
+
+            // Update remaining amount display
+            const finalRemaining = netAmount - (paidAmount + finalRequested);
+            $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
+        });
 
         document.getElementById('exemptedWeight').addEventListener('input', function() {
             calculateNetShortage();
             calculatePaymentSummary();
         });
 
-        calculateNetShortage();
-        calculatePaymentSummary();
+        // Initialize calculations on page load
+        function initializeCalculations() {
+            calculateNetShortage();
+            
+            // Calculate freight per ton if freight Rs has value
+            const initialFreightRs = parseFloat($('.freight-rs').val()) || 0;
+            if (initialFreightRs > 0) {
+                calculateFreightFromRs();
+            } else {
+                // If freight per ton has value but freight Rs doesn't, calculate from ton
+                const initialFreightPerTon = parseFloat($('.freight-per-ton').val()) || 0;
+                if (initialFreightPerTon > 0) {
+                    calculateFreightFromTon();
+                } else {
+                    calculatePaymentSummary();
+                }
+            }
+            
+            calculateCommission();
+        }
+
+        // Run initialization
+        initializeCalculations();
     });
 </script>

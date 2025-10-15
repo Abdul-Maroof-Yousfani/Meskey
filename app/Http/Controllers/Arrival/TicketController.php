@@ -222,7 +222,7 @@ class TicketController extends Controller
         $userLocation = getUserParams('company_location_id');
 
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
-            ->where('purchase_type', 'regular')
+           // ->where('purchase_type', 'regular')
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
                 $q->where('company_location_id', $userLocation);
             })

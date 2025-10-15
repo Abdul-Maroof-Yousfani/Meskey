@@ -147,6 +147,18 @@
                                                             readonly>
                                                     </div>
                                                 </div>
+                                                @if(isset($arrivalTicket->purchaseOrder))
+                                                <div class="col-md-3">
+                                                    <div class="form-group"
+                                                        style="background-color: #ffff99; padding: 10px; border-radius: 5px;">
+                                                        <label style="font-weight: bold;">Purchase Type</label>
+                                                        <input type="text" class="form-control"
+                                                            style="font-weight: bold;"
+                                                            value="{{ formatEnumValue($arrivalTicket->purchaseOrder->purchase_type??'') ?? 'N/A' }}"
+                                                            readonly> 
+                                                    </div>
+                                                </div>
+                                                @endif
                                             </div>
 
                                             <div class="row mt-3">
