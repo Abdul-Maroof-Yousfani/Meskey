@@ -42,7 +42,7 @@ class PurchaseOrderController extends Controller
         $master = PurchaseRequest::find($requestId);
         $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'approved_purchase_quotation'])
             ->where('purchase_request_id', $requestId)
-            ->where('am_approval_status', 'approved')
+            // ->where('am_approval_status', 'approved')
             ->get();
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
@@ -60,12 +60,11 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::with(['PurchaseData' => function ($query) {
-            $query->where('am_approval_status', 'approved');
+        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with(['PurchaseData' => function ($query) {
+            // $query->where('am_approval_status', 'approved');
         }])
             ->whereHas('PurchaseData', function ($q) {
-                $q->where('am_approval_status', 'approved')
-                    ->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
+                $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
             })
             ->get();
 

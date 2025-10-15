@@ -1,14 +1,15 @@
  <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
  {{-- <input type="hidden" name="data_id" value="{{ $purchaseQuotation->purchase_quotation->id }}"> --}}
- <input type="hidden" name="purchase_request_data_id"
-     value="{{ $purchaseQuotation->purchase_quotation->purchase_request_data_id }}">
+<input type="hidden" name="purchase_request_data_id"
+    value="{{ optional($purchaseQuotation->quotation_data->first())->purchase_request_data_id }}">
+
  <div class="row form-mar">
      <div class="col-md-4">
          <div class="form-group">
              <label>Purchase Request:</label>
              <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                 <option value="{{ optional($purchaseQuotation->purchase_quotation->purchase_request)->id }}<">
-                     {{ optional($purchaseQuotation->purchase_quotation->purchase_request)->purchase_request_no }}
+                 <option value="{{ optional($purchaseQuotation->purchase_request)->id }}<">
+                     {{ optional($purchaseQuotation->purchase_request)->purchase_request_no }}
                  </option>
              </select>
          </div>
@@ -59,89 +60,95 @@
                      <th>Action</th>
                  </tr>
              </thead>
-             <tbody id="purchaseRequestBody">
-                 {{-- @foreach ($purchaseQuotation->quotation_data ?? [] as $key => $data) --}}
-                 @php
-                     $key = 0;
-                 @endphp
-                 <tr id="row_{{ $key }}">
-                     <td style="width: 25%">
-                         <select id="category_id_{{ $key }}" disabled
-                             onchange="filter_items(this.value,{{ $key }})"
-                             class="form-control item-select select2" data-index="{{ $key }}">
-                             <option value="">Select Category</option>
-                             @foreach ($categories ?? [] as $category)
-                                 <option {{ $category->id == $data->category_id ? 'selected' : '' }}
-                                     value="{{ $category->id }}">
-                                     {{ $category->name }}</option>
-                             @endforeach
-                         </select>
-                         <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
-                         <input type="hidden" name="data_id[]" value="{{ $data->id }}">
-                     </td>
-                     <td style="width: 25%">
-                         <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
-                             class="form-control item-select select2" data-index="{{ $key }}">
-                             @foreach (get_product_by_category($data->category_id) as $item)
-                                 <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
-                                     {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                                     {{ $item->name }}
-                                 </option>
-                             @endforeach
-                         </select>
-                         <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
-                     </td>
-                     <td style="width: 15%">
-                         <input type="text" id="uom_{{ $key }}" class="form-control uom"
-                             value="{{ get_uom($data->item_id) }}" disabled readonly>
-                         <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
-                     </td>
-                     <td style="width: 20%">
-                         <select id="supplier_id_{{ $key }}" name="supplier_id[]" disabled
-                             class="form-control item-select select2" data-index="{{ $key }}">
-                             <option value="">Select Vendor</option>
-                             @foreach (get_supplier() as $supplier)
-                                 <option value="{{ $supplier->id }}" @selected($data->supplier_id == $supplier->id)>
-                                     {{ $supplier->name }}</option>
-                             @endforeach
-                         </select>
-                     </td>
-                     <td style="width: 10%">
-                         <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
-                             onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                             id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                         <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-                     </td>
-                     <td style="width: 20%">
-                         <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                             onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}" disabled
-                             id="rate_{{ $key }}" class="form-control" step="0.01"
-                             min="{{ $key }}">
-                     </td>
-                     <td style="width: 20%">
-                         <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
-                             id="total_{{ $key }}" class="form-control" step="0.01" min="0"
-                             readonly name="total[]">
-                     </td>
-                     <td style="width: 25%">
-                         <input style="width: 100px" type="text" value="{{ $data->remarks }}"
-                             id="remark_{{ $key }}" class="form-control" readonly>
-                         <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
-                     </td>
-                     <td>
-                         <button type="button" class="btn btn-danger btn-sm removeRowBtn" disabled
-                             onclick="remove({{ $key }})" data-id="{{ $key }}">Remove</button>
-                     </td>
-                 </tr>
-                 {{-- @endforeach --}}
-             </tbody>
+          <tbody id="purchaseRequestBody">
+    @foreach ($purchaseQuotationData ?? [] as $key => $data)
+        <tr id="row_{{ $key }}">
+            <td style="width: 25%">
+                <select id="category_id_{{ $key }}" disabled
+                    onchange="filter_items(this.value,{{ $key }})"
+                    class="form-control item-select select2" data-index="{{ $key }}">
+                    <option value="">Select Category</option>
+                    @foreach ($categories ?? [] as $category)
+                        <option {{ $category->id == $data->category_id ? 'selected' : '' }}
+                            value="{{ $category->id }}">
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
+                <input type="hidden" name="data_id[]" value="{{ $data->id }}">
+            </td>
+
+            <td style="width: 25%">
+                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
+                    class="form-control item-select select2" data-index="{{ $key }}">
+                    @foreach (get_product_by_category($data->category_id) as $item)
+                        <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
+                            {{ $item->id == $data->item_id ? 'selected' : '' }}>
+                            {{ $item->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+            </td>
+
+            <td style="width: 15%">
+                <input type="text" id="uom_{{ $key }}" class="form-control uom"
+                    value="{{ get_uom($data->item_id) }}" disabled readonly>
+                <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+            </td>
+
+            <td style="width: 20%">
+                <select id="supplier_id_{{ $key }}" name="supplier_id[]" disabled
+                    class="form-control item-select select2" data-index="{{ $key }}">
+                    <option value="">Select Vendor</option>
+                    @foreach (get_supplier() as $supplier)
+                        <option value="{{ $supplier->id }}" @selected($data->supplier_id == $supplier->id)>
+                            {{ $supplier->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </td>
+
+            <td style="width: 10%">
+                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
+                    onblur="calc({{ $key }})" value="{{ $data->qty }}"
+                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
+                <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+            </td>
+
+            <td style="width: 20%">
+                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                    onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}" disabled
+                    id="rate_{{ $key }}" class="form-control" step="0.01" min="{{ $key }}">
+            </td>
+
+            <td style="width: 20%">
+                <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
+                    id="total_{{ $key }}" class="form-control" step="0.01" min="0" readonly name="total[]">
+            </td>
+
+            <td style="width: 25%">
+                <input style="width: 100px" type="text" value="{{ $data->remarks }}"
+                    id="remark_{{ $key }}" class="form-control" readonly>
+                <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
+            </td>
+
+            <td>
+                <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                    onclick="remove({{ $key }})" data-id="{{ $key }}">Remove</button>
+            </td>
+        </tr>
+    @endforeach
+</tbody>
+
          </table>
      </div>
  </div>
  <input type="hidden" id="rowCount" value="0">
  <div class="row">
      <div class="col-12">
-         <x-approval-status :model="$data" />
+         <x-approval-status :model="$data1" />
      </div>
  </div>
  <div class="row bottom-button-bar">
@@ -186,9 +193,9 @@
                         @endforeach
                     </select>
                 </td>
-                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
+                {{-- <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td> --}}
                 <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
+                {{-- <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td> --}}
                 <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>

@@ -36,39 +36,41 @@
              <div class="loop-fields">
                  <div class="form-group mb-0">
                      <select id="supplier_id_{{ $key }}" name="supplier_id[]"
-                         class="form-control item-select select2" data-index="{{ $key }}">
-                         <option value="">Select Vendor</option>
-                         @foreach (get_supplier() as $supplier)
-                             <option value="{{ $supplier->id }}">
-                                 {{ $supplier->name }}</option>
-                         @endforeach
-                     </select>
+                class="form-control item-select select2" data-index="{{ $key }}">
+                <option value="">Select Vendor</option>
+                @foreach (get_supplier() as $supplier)
+                    <option value="{{ $supplier->id }}"
+                        {{ $supplier->id == $data->supplier_id ? 'selected' : '' }}>
+                        {{ $supplier->name }}
+                    </option>
+                @endforeach
+            </select>
                  </div>
              </div>
          </td>
-         <td style="width: 10%">
+         {{-- <td style="width: 10%">
              <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
                  onblur="calc({{ $key }})" value="{{ $data->qty }}" id="qty_{{ $key }}"
                  class="form-control" step="0.01" min="0">
              <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-         </td>
+         </td> --}}
          <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">
                      <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                         onblur="calc({{ $key }})" name="rate[]" value=""
+                         onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
                          id="rate_{{ $key }}" class="form-control" step="0.01" min="{{ $key }}">
                  </div>
              </div>
          </td>
-         <td style="width: 20%">
+         {{-- <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">
                      <input style="width: 100px" type="number" readonly value="" id="total_{{ $key }}"
                          class="form-control" step="0.01" min="0" name="total[]">
                  </div>
              </div>
-         </td>
+         </td> --}}
          <td style="width: 25%">
              <input style="width: 100px" type="text" value="{{ $data->remarks }}" id="remark_{{ $key }}"
                  class="form-control" readonly>

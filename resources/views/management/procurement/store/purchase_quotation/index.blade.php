@@ -51,7 +51,7 @@
                                             <th class="col-sm-2">Item</th>
                                             <th class="col-sm-2">Item UOM</th>
                                             <th class="col-sm-2">Supplier</th>
-                                            <th class="col-sm-2">Qty</th>
+                                            {{-- <th class="col-sm-2">Qty</th> --}}
                                             <th class="col-sm-2">Rate</th>
                                             <th class="col-sm-2">Total Amount</th>
                                             {{-- <th class="col-sm-2">Item Status</th> --}}

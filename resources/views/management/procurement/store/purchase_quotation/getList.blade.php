@@ -1,14 +1,14 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-2">Purchase Request No</th>
+            <th class="col-2">Purchase Quotation No</th>
             <th class="col-3">Category</th>
             <th class="col-3">Supplier</th>
-            <th class="col-1 text-right">Qty</th>
+            <th class="col-1 text-right">UOM</th>
             <th class="col-1 text-right">Rate</th>
-            <th class="col-1 text-right">Amount</th>
-            <th class="col-1">Status</th>
+            {{-- <th class="col-1 text-right">Amount</th> --}}
             <th class="col-2">PQ Date</th>
+            <th class="col-1">Status</th>
             <th class="col-1">Action</th>
         </tr>
     </thead>
@@ -19,6 +19,16 @@
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php $isFirstItemRow = true; @endphp
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
+                        @php
+                            $approvalDataStatus = ucwords(
+                                $supplierRow['data']
+                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                    'am_approval_status'},
+                            );
+                                        $approvalStatus = ucwords($requestGroup['request_status']);
+
+                        @endphp
+
                         <tr>
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
@@ -27,12 +37,10 @@
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
-                                @php $isFirstRequestRow = false; @endphp
                             @endif
 
                             @if ($isFirstItemRow)
-                                <td rowspan="{{ $itemGroup['item_rowspan'] }}"
-                                    style="background-color: #e8f5e8; vertical-align: middle;">
+                                <td rowspan="{{ $itemGroup['item_rowspan'] }}" style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         {{ optional($supplierRow['data']->category)->name }} -
                                         {{ optional($supplierRow['data']->item)->name }}
@@ -44,11 +52,14 @@
                             <td style="background-color: #fff3e0; vertical-align: middle;">
                                 <p class="m-0 font-weight-bold">
                                     {{ optional($supplierRow['data']->supplier)->name }}
+                                     @if ($approvalStatus === 'Approved' && $approvalDataStatus === 'Pending')
+                                        <span class="text-danger ms-2">(Neglected)</span>
+                                    @endif
                                 </p>
                             </td>
                             <td>
                                 <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->qty }}
+                                    {{-- {{ $supplierRow['data']->qty }} --}}
                                     {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
                                 </p>
                             </td>
@@ -57,31 +68,12 @@
                                     {{ $supplierRow['data']->rate }}
                                 </p>
                             </td>
-                            <td>
+                            {{-- <td>
                                 <p class="m-0 text-right">
                                     {{ $supplierRow['data']->total }}
                                 </p>
-                            </td>
-                            <td>
-                                @php
-                                    $approvalStatus = ucwords(
-                                        $supplierRow['data']
-                                            ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
-                                                'am_approval_status'},
-                                    );
-                                    $badgeClass = 'badge-secondary';
-                                    if (strtolower($approvalStatus) === 'approved') {
-                                        $badgeClass = 'badge-success';
-                                    } elseif (strtolower($approvalStatus) === 'rejected') {
-                                        $badgeClass = 'badge-danger';
-                                    } elseif (strtolower($approvalStatus) === 'pending') {
-                                        $badgeClass = 'badge-warning';
-                                    }
-                                @endphp
-                                <span class="badge {{ $badgeClass }}">
-                                    {{ $approvalStatus }}
-                                </span>
-                            </td>
+                            </td> --}}
+
                             <td>
                                 <p class="m-0 white-nowrap">
                                     {{ \Carbon\Carbon::parse($supplierRow['data']->created_at)->format('Y-m-d') }}
@@ -89,41 +81,77 @@
                                     {{ \Carbon\Carbon::parse($supplierRow['data']->created_at)->format('h:i A') }}
                                 </p>
                             </td>
-                            <td>
-                                <div class="d-flex gap-2">
+                            @if ($isFirstRequestRow)
+                                {{-- <td>
                                     @php
-                                        $currentApprovalStatus =
-                                            $supplierRow['data']
-                                                ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
-                                                    'am_approval_status'};
-                                        $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
-                                        $shouldDisableApproval =
-                                            $requestGroup['has_approved_item'] && !$isCurrentApproved;
+                                    $approvalStatus = ucwords(
+                                    $supplierRow['data']
+                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                    'am_approval_status'},
+                                    );
+                                    $badgeClass = 'badge-secondary';
+                                    if (strtolower($approvalStatus) === 'approved') {
+                                    $badgeClass = 'badge-success';
+                                    } elseif (strtolower($approvalStatus) === 'rejected') {
+                                    $badgeClass = 'badge-danger';
+                                    } elseif (strtolower($approvalStatus) === 'pending') {
+                                    $badgeClass = 'badge-warning';
+                                    }
                                     @endphp
+                                    <span class="badge {{ $badgeClass }}">
+                                        {{ $approvalStatus }}
+                                    </span>
+                                </td> --}}
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                    @php
+                                        $badgeClass = match (strtolower($approvalStatus)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'pending' => 'badge-warning',
+                                            'returned' => 'badge-info',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">
+                                        {{ $approvalStatus }}
+                                    </span>
+                                </td>
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                    <div class="d-flex gap-2">
+                                        @php
+                                            $currentApprovalStatus =
+                                                $supplierRow['data']
+                                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                                    'am_approval_status'};
+                                            $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
+                                            $shouldDisableApproval =
+                                                $requestGroup['has_approved_item'] && !$isCurrentApproved;
+                                        @endphp
 
-                                    @if ($shouldDisableApproval)
-                                        <span class="info p-1 text-center mr-2 position-relative"
-                                            style="opacity: 0.5; cursor: not-allowed;"
+                                        {{-- @if ($shouldDisableApproval)
+                                        <span class="info p-1 text-center mr-2 position-relative" style="opacity: 0.5; cursor: not-allowed;"
                                             title="Approval disabled - Another item in this request is already approved">
                                             <i class="ft-eye font-medium-3"></i>
                                         </span>
-                                    @else
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.approvals', $supplierRow['data']->id) }}', 'Approval Voucher', false, '80%')"
+                                        @else --}}
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.approvals', $supplierRow['data']->purchase_quotation->id) }}', 'Approval Voucher', false, '80%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
-                                    @endif
+                                        {{-- @endif --}}
 
-                                    <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
-                                        class="info p-1 text-center mr-2 position-relative">
-                                        <i class="ft-edit font-medium-3"></i>
-                                    </a>
-                                    <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $supplierRow['data']->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
-                                        class="danger p-1 text-center mr-2 position-relative">
-                                        <i class="ft-x font-medium-3"></i>
-                                    </a>
-                                </div>
-                            </td>
+                                        <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
+                                            class="info p-1 text-center mr-2 position-relative">
+                                            <i class="ft-edit font-medium-3"></i>
+                                        </a>
+                                        <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $supplierRow['data']->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
+                                            class="danger p-1 text-center mr-2 position-relative">
+                                            <i class="ft-x font-medium-3"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                                @php $isFirstRequestRow = false; @endphp
+                            @endif
                         </tr>
                     @endforeach
                 @endforeach
@@ -175,7 +203,7 @@
                 $.ajax({
                     url: url,
                     type: 'GET',
-                    success: function(res) {
+                    success: function (res) {
                         Swal.fire({
                             title: 'Approved!',
                             text: res.message,
@@ -186,7 +214,7 @@
                             location.reload();
                         });
                     },
-                    error: function() {
+                    error: function () {
                         Swal.fire('Error', 'Error occurred while approving item.', 'error');
                     }
                 });

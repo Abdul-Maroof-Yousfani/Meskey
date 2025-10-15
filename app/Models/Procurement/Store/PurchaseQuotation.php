@@ -5,10 +5,12 @@ namespace App\Models\Procurement\Store;
 use App\Models\Master\CompanyLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use App\Traits\HasApproval;
 
 class PurchaseQuotation extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $table = "purchase_quotations";
     protected $guarded = [];
@@ -26,5 +28,10 @@ class PurchaseQuotation extends Model
     public function quotation_data()
     {
         return $this->hasMany(PurchaseQuotationData::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

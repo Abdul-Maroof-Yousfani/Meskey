@@ -6,16 +6,25 @@
     {{-- <input type="hidden" name="data_id" value="{{ $purchaseQuotation->id }}"> --}}
     <input type="hidden" name="purchase_request_data_id" value="{{ $purchaseQuotation->purchase_request_data_id }}">
     <div class="row form-mar">
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Purchase Quotation:</label>
+                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_quotation_id">
+                    <option value="{{ $purchaseQuotation->id }}<">
+                        {{ optional($purchaseQuotation)->purchase_quotation_no }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Request:</label>
-                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
+                <select readonly class="form-control" name="purchase_request_id">
                     <option value="{{ optional($purchaseQuotation->purchase_request)->id }}<">
                         {{ optional($purchaseQuotation->purchase_request)->purchase_request_no }}</option>
                 </select>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
                 <select disabled name="company_location" id="company_location_id" class="form-control select2">
@@ -29,7 +38,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Date:</label>
                 <input readonly type="date" id="purchase_date"
@@ -45,6 +54,11 @@
         </div>
     </div>
     <div class="row form-mar">
+    <div class="col-12 text-right mb-2">
+            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
+                <i class="fa fa-plus"></i>&nbsp; Add New Item
+            </button>
+        </div>
         <div class="col-md-12">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
@@ -53,9 +67,9 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th>Vendor</th>
-                        <th>Qty</th>
+                        {{-- <th>Qty</th> --}}
                         <th>Rate</th>
-                        <th>Total Amount</th>
+                        {{-- <th>Total Amount</th> --}}
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
@@ -105,23 +119,23 @@
                                     @endforeach
                                 </select>
                             </td>
-                            <td style="width: 10%">
+                            {{-- <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
                                     onblur="calc({{ $key }})" value="{{ $data->qty }}"
                                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-                            </td>
+                            </td> --}}
                             <td style="width: 20%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
                                     id="rate_{{ $key }}" class="form-control" step="0.01"
                                     min="{{ $key }}">
                             </td>
-                            <td style="width: 20%">
+                            {{-- <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
                                     id="total_{{ $key }}" class="form-control" step="0.01"
                                     min="0" readonly name="total[]">
-                            </td>
+                            </td> --}}
                             <td style="width: 25%">
                                 <input style="width: 100px" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control" readonly>
@@ -149,12 +163,21 @@
 </form>
 
 <script>
+$(document).ready(function () {
+        // Get the selected purchase request ID from the dropdown
+        let purchaseQuotationId = $('select[name="purchase_quotation_id"]').val();
+
+        // Call your function if an ID exists
+        if (purchaseQuotationId) {
+            get_purchase(purchaseQuotationId);
+        }
+    });
     $('.select2').select2({
         placeholder: 'Please Select',
         width: '100%'
     });
 
-    let rowIndex = 1;
+    let rowIndex = {{ $purchaseQuotationDataCount ?? 1 }};
 
     function addRow() {
         let index = rowIndex++;
@@ -170,7 +193,11 @@
                 </td>
                 <td style="width: 25%">
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
-                        
+                        <option value="">Select Item</option>
+                    
+                        @foreach ($items ?? [] as $item)
+                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                        @endforeach
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
@@ -183,9 +210,9 @@
                         @endforeach
                     </select>
                 </td>
-                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
+                {{-- <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td> --}}
                 <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
+                {{-- <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td> --}}
                 <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
@@ -199,33 +226,40 @@
 
     function filter_items(category_id, count) {
         $.ajax({
-            url: '{{ route('get.items') }}', // Replace with your actual API endpoint
+            url: '{{ route('get.items') }}',
             type: 'GET',
-            data: {
-                category_id: category_id
-            },
+            data: { category_id: category_id },
             dataType: 'json',
-            success: function(response) {
-                // Assuming response contains an array of categories
+            success: function (response) {
                 if (response.success && response.products) {
-                    // Clear existing options
-                    $('#item_id_' + count).empty();
+                    let $itemDropdown = $('#item_id_' + count);
+                    $itemDropdown.empty();
 
-                    // Add default option
-                    $('#item_id_' + count).append('<option value="">Select a Item</option>');
+                    // Default option
+                    $itemDropdown.append('<option value="">Select an Item</option>');
 
-                    // Append new category options to the select element
-                    $.each(response.products, function(index, product) {
-                        $('#item_id_' + count).append(
-                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
+                    $.each(response.products, function (index, product) {
+                        if (allowedItems.length > 0 && !allowedItems.includes(product.id)) {
+                            return; // skip items not in allowed list
+                        }
+
+                        $itemDropdown.append(
+                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" 
+                                 value="${product.id}">
+                                 ${product.name}
+                         </option>`
                         );
                     });
+
+                    // If no valid items remain
+                    if ($itemDropdown.children('option').length === 1) {
+                        $itemDropdown.html('<option value="">No valid items in this Purchase Request</option>');
+                    }
                 } else {
-                    console.error('No products found or request failed');
                     $('#item_id_' + count).html('<option value="">No products available</option>');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('AJAX Error:', status, error);
                 $('#item_id_' + count).html('<option value="">Error loading products</option>');
             }
@@ -237,37 +271,43 @@
         $('#uom_' + index).val(uom);
     }
 
-    function get_purchase(purchaseRequestId) {
-        if (!purchaseRequestId) return;
+    let allowedCategories = [];
+    let allowedItems = [];
+
+    function get_purchase(purchaseQuotationId) {
+        if (!purchaseQuotationId) return;
 
         $.ajax({
-            url: "{{ route('store.purchase-quotation.approve-item') }}",
+            url: "{{ route('store.purchase-quotation.get_quotation_item') }}",
             type: "GET",
-            data: {
-                id: purchaseRequestId
-            },
-            beforeSend: function() {
+            data: { id: purchaseQuotationId },
+            beforeSend: function () {
                 $('#purchaseRequestBody').html('<p>Loading...</p>');
             },
-            success: function(response) {
+            success: function (response) {
                 let html = response.html;
                 let master = response.master;
-                console.log(master);
 
+                allowedCategories = response.allowed_categories || [];
+                allowedItems = response.allowed_items || [];
 
+                // Fill in master data
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
                 $('#purchase_date').val(master.purchase_date);
-                $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
-                $('#purchaseRequestBody').html('').html(html);
+
+                // Load table HTML
+                $('#purchaseRequestBody').html(html);
+
+                // Reinitialize select2
                 $('.select2').select2({
-                    placeholder: 'Please Select', // or 'resolve', '300px', etc.
-                    width: '100%' // or 'resolve', '300px', etc.
+                    placeholder: 'Please Select',
+                    width: '100%'
                 });
             },
-            error: function() {
+            error: function () {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');
             }
         });
