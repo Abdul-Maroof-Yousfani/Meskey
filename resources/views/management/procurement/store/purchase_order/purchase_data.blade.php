@@ -161,6 +161,7 @@
                 id="total_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
 
+
         <td style="width: 25%">
             <input style="width: 100px" type="text" name="remarks[]" value="{{ $data->remarks }}"
                 id="remark_{{ $key }}" class="form-control">
