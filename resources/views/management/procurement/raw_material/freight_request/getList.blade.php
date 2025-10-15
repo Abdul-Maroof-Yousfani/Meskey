@@ -84,7 +84,7 @@
                     </td>
                     <td>
                         @if ($ticket['total_requests_count'] > 0)
-                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.view', $ticket['model']->id) }}','Manage Freight Payment Request', true, '70%')"
+                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '70%')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
