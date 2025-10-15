@@ -39,14 +39,14 @@ class PurchaseQuotationRequest extends FormRequest
             'uom'                 => 'nullable|array',
             'uom.*'               => 'nullable|string|max:255',
 
-            'qty'                 => 'required|array|min:1',
-            'qty.*'               => 'required|numeric|min:0.01',
+            // 'qty'                 => 'required|array|min:1',
+            // 'qty.*'               => 'required|numeric|min:0.01',
 
             'rate'                => 'required|array|min:1',
             'rate.*'              => 'required|numeric|min:0.01',
 
-            'total'               => 'required|array|min:1',
-            'total.*'             => 'required|numeric|min:0.01',
+            // 'total'               => 'required|array|min:1',
+            // 'total.*'             => 'required|numeric|min:0.01',
 
             'supplier_id'         => 'required|array',
             'supplier_id.*'       => [
@@ -91,21 +91,21 @@ class PurchaseQuotationRequest extends FormRequest
         return [
             'category_id.required' => 'At least one category is required.',
             'item_id.required' => 'At least one item is required.',
-            'qty.required' => 'At least one quantity is required.',
+            // 'qty.required' => 'At least one quantity is required.',
             'rate.required' => 'At least one rate is required.',
-            'total.required' => 'At least one total amount is required.',
+            // 'total.required' => 'At least one total amount is required.',
             'supplier_id.required' => 'At least one supplier is required.',
 
             'category_id.*.required' => 'Each category is required.',
             'item_id.*.required' => 'Each item is required.',
-            'qty.*.required' => 'Each quantity is required.',
+            // 'qty.*.required' => 'Each quantity is required.',
             'rate.*.required' => 'Each rate is required.',
-            'total.*.required' => 'Each total amount is required.',
+            // 'total.*.required' => 'Each total amount is required.',
             'supplier_id.*.required' => 'Each supplier is required.',
 
-            'qty.*.min' => 'Quantity must be at least 0.01.',
+            // 'qty.*.min' => 'Quantity must be at least 0.01.',
             'rate.*.min' => 'Rate must be at least 0.01.',
-            'total.*.min' => 'Total amount must be at least 0.01.',
+            // 'total.*.min' => 'Total amount must be at least 0.01.',
         ];
     }
 

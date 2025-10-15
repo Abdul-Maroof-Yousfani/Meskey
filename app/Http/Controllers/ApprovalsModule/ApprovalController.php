@@ -13,6 +13,7 @@ class ApprovalController extends Controller
 {
     public function approve(Request $request, $modelType, $id)
     {
+        // dd($request->all());
         $approvalModule = ApprovalModule::findOrFail($request->mc);
 
         $reqType = $request->type ?? '';
@@ -23,6 +24,19 @@ class ApprovalController extends Controller
         }
 
         $record = $modelClass::findOrFail($id);
+
+        if (!empty($request->model_data_ids)) {
+            $dataIds = json_decode($request->model_data_ids, true);
+
+            if (!empty($dataIds) && $request->type === 'approve') {
+                $dataModelClass = $modelClass . 'Data';
+
+                if (class_exists($dataModelClass)) {
+                    $dataModelClass::whereIn('id', $dataIds)->update(['am_approval_status' => 'approved']);
+                }
+            }
+        }
+
 
         if ($reqType == 'revert') {
             $record->am_change_made = 0;

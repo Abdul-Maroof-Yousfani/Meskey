@@ -127,6 +127,34 @@ class PurchaseOrderRequest extends FormRequest
             // 'quotation_ids.*.exists' => 'One or more quotation IDs are invalid.',
         ];
     }
+    
+    // protected function withValidator($validator)
+    // {
+    //     $validator->after(function ($validator) {
+    //         $arrayFields = [
+    //             'category_id',
+    //             'item_id',
+    //             'supplier_id',
+    //             'qty',
+    //             'rate',
+    //         ];
+
+    //         $count = null;
+
+    //         foreach ($arrayFields as $field) {
+    //             if ($this->has($field) && is_array($this->$field)) {
+    //                 if ($count === null) {
+    //                     $count = count($this->$field);
+    //                 } elseif (count($this->$field) !== $count) {
+    //                     $validator->errors()->add(
+    //                         $field,
+    //                         "The number of $field entries must match the number of other array fields."
+    //                     );
+    //                 }
+    //             }
+    //         }
+    //     });
+    // }
 
     /**
      * Prepare the data for validation.

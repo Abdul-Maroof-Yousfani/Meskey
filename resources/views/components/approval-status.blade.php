@@ -88,6 +88,7 @@
                         $logs = $model
                             ->approvalLogs()
                             ->where('role_id', $role->id)
+                            ->where('module_id', $module->id)
                             ->where('approval_cycle', $cycle)
                             ->with('user')
                             ->get();
@@ -141,7 +142,7 @@
                         <input type="hidden" name="class" value="{{ class_basename($model) }}">
                         <input type="hidden" name="mc" value="{{ $module->id }}">
                         <input type="hidden" name="id" value="{{ $model->id }}">
-                        <input type="hidden" name="approved_qty_data" id="approved_qty_data">
+                        <input type="hidden" name="model_data_ids" id="model_data_ids">
                         <input type="hidden" name="type" id="approvalTypeInput" value="">
 
                         <div class="mb-3">
@@ -330,15 +331,15 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 let approvedQtys = [];
-                $('input[name="approved_qty[]"]').each(function () {
+                $('input[name="data_id[]"]').each(function () {
                     approvedQtys.push($(this).val());
                 });
-                $('#approved_qty_data').val(JSON.stringify(approvedQtys));
+                $('#model_data_ids').val(JSON.stringify(approvedQtys));
 
                 $('#approvalTypeInput').val(type);
 
                 $('#ajaxSubmit').submit();
-                location.reload();
+                // location.reload();
             }
         });
     }
