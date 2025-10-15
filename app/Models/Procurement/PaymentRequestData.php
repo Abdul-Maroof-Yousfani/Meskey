@@ -65,7 +65,8 @@ class PaymentRequestData extends Model
         'paid_amount',
         'remaining_amount',
         'advance_freight',
-        'notes'
+        'notes',
+        'attachment',
     ];
 
     protected $casts = [

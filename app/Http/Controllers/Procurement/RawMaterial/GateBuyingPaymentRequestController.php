@@ -32,6 +32,7 @@ use App\Models\PurchaseSamplingRequest;
 use App\Models\PurchaseTicket;
 use App\Models\TruckSizeRange;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class GateBuyingPaymentRequestController extends Controller
 {
@@ -300,6 +301,13 @@ class GateBuyingPaymentRequestController extends Controller
             $requestData['is_loading'] = $request->loading_type === 'loading';
             $requestData['module_type'] = 'ticket';
 
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('payment_request_attachments', $fileName, 'public');
+                $requestData['attachment'] = 'storage/' . $path;
+            }
+
             $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
             $ticket = ArrivalTicket::where('id', $requestData['ticket_id'])->first();
             $purchaseOrder = ArrivalPurchaseOrder::where('id', $requestData['purchase_order_id'])->first();
@@ -325,7 +333,6 @@ class GateBuyingPaymentRequestController extends Controller
             return response()->json(['success' => 'Payment request created successfully']);
         });
     }
-
     protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
     {
         if (isset($request->ticket_id)) {
