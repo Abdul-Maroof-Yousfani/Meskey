@@ -315,7 +315,7 @@ class GateBuyingPaymentRequestController extends Controller
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('ticket_id', $ticket->id)
                 ->count();
-
+                
             $accountId = $purchaseOrder->supplier->account_id ?? null;
 
             $requestData['account_id'] = $accountId;

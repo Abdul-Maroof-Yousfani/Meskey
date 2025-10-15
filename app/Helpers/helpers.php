@@ -293,6 +293,13 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName, $isOperati
     return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
 }
 
+function getParamsForAccountCreationByPath($companyId, $accName, $path, $isOperational = 'yes')
+{
+    $account = Account::where('hierarchy_path', $path)->first();
+
+    return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $account->table_name, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
+}
+
 
 function get_product_by_category($id)
 {
@@ -664,7 +671,7 @@ if (!function_exists('getTicketDeductions')) {
 if (!function_exists('SlabTypeWisegetTicketDeductions')) {
     function SlabTypeWisegetTicketDeductions($ticket, $type = null)
     {
-      
+
         $result = [
             'is_lumpsum' => false,
             'lumpsum_deduction' => 0,
@@ -683,9 +690,9 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
 
             return $result;
         }
-        
+
         if ($type == null) {
-          
+
             $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
                 ->whereIn('approved_status', ['approved', 'rejected'])
                 ->latest()
@@ -693,7 +700,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
         } else {
             $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
                 ->where('sampling_type', $type)
-             //   ->whereIn('approved_status', ['approved', 'rejected'])
+                //   ->whereIn('approved_status', ['approved', 'rejected'])
                 ->latest()
                 ->first();
         }
@@ -728,7 +735,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
         }
 
         $slabResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)
-           // ->where('applied_deduction', '>', 0)
+            // ->where('applied_deduction', '>', 0)
             ->get();
 
         foreach ($slabResults as $slab) {
@@ -801,7 +808,7 @@ if (!function_exists('dateFormatHtml')) {
 
         if ($type === 'datetime') {
             return '<p class="m-0">' . $dateOnly .
-                   '  <small class="text-timestamp"> / ' . $timeOnly . '</small></p>';
+                '  <small class="text-timestamp"> / ' . $timeOnly . '</small></p>';
         }
 
         return null; // agar type match na kare

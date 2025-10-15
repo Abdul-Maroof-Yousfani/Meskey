@@ -516,11 +516,11 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
                 $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
                 return;
             }
-             $.get(`/arrival/get-contracts/${locationId}`, function(data) {
-                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
-                 $.each(data.contracts, function(index, contract) {
-                     $('#arrival_purchase_order_id').append(
-                         `<option value="${contract.id}"
+            $.get(`/arrival/get-contracts/${locationId}`, function (data) {
+                $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
+                $.each(data.contracts, function (index, contract) {
+                    $('#arrival_purchase_order_id').append(
+                        `<option value="${contract.id}"
                         data-product-id="${contract.product_id}"
                         data-supplier-id="${contract.supplier.name}"
                         data-sauda-type-id="${contract.sauda_type_id}"
@@ -528,50 +528,50 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
                         >
                         #${contract.contract_no} - Sauda Type: ${contract.sauda_type?.name ?? 'N/A'} - Purchase Type: ${contract.purchase_type?.toUpperCase() ?? 'N/A'}
                     </option>`
-                     );
-                 });
-             });
+                    );
+                });
+            });
 
-                $.get(`/arrival/get-suppliers/${locationId}`, function (data) {
-                    $('#broker_name').empty().append('<option value="">Broker Name</option>');
-                    $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
+            $.get(`/arrival/get-suppliers/${locationId}`, function (data) {
+                $('#broker_name').empty().append('<option value="">Broker Name</option>');
+                $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
 
-                    $.each(data.suppliers, function (index, supplier) {
-                        $('#broker_name').append(
-                            `<option value="${supplier.name}">${supplier.name}</option>`
-                        );
-                        $('#accounts_of').append(
-                            `<option value="${supplier.name}">${supplier.name}</option>`
-                        );
-                    });
+                $.each(data.suppliers, function (index, supplier) {
+                    $('#broker_name').append(
+                        `<option value="${supplier.name}">${supplier.name}</option>`
+                    );
+                    $('#accounts_of').append(
+                        `<option value="${supplier.name}">${supplier.name}</option>`
+                    );
+                });
+            });
+        }
+
+        $('#company_location_id').on('change', function () {
+            const locationId = $(this).val();
+
+            if (locationId) {
+                $.get(`/arrival/get-ticket-number/${locationId}`, function (data) {
+                    $('input[name="unique_no"]').val(data.ticket_no);
                 });
             }
 
-        $('#company_location_id').on('change', function () {
-                const locationId = $(this).val();
+            loadLocationData(locationId);
+        });
 
-                if (locationId) {
-                    $.get(`/arrival/get-ticket-number/${locationId}`, function (data) {
-                        $('input[name="unique_no"]').val(data.ticket_no);
-                    });
-                }
+        @if ($isRegularUser)
+            loadLocationData('{{ $userLocation->id ?? null }}');
+        @endif
 
-                loadLocationData(locationId);
-            });
-
-            @if ($isRegularUser)
-                loadLocationData('{{ $userLocation->id ?? null }}');
-            @endif
-
-            @if (auth()->user()->user_type === 'super-admin')
-                //      $('#company_location_id').on('change', function() {
-                //          const locationId = $(this).val();
-                //          if (locationId) {
-                //              $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
-                //                  $('input[name="unique_no"]').val(data.ticket_no);
-                //              });
-                //          }
-                //      });
-            @endif
+        @if (auth()->user()->user_type === 'super-admin')
+            //      $('#company_location_id').on('change', function() {
+            //          const locationId = $(this).val();
+            //          if (locationId) {
+            //              $.get(`/arrival/get-ticket-number/${locationId}`, function(data) {
+            //                  $('input[name="unique_no"]').val(data.ticket_no);
+            //              });
+            //          }
+            //      });
+        @endif
      });
 </script>

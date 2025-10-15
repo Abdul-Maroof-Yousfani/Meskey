@@ -206,7 +206,6 @@ class PaymentVoucherController extends Controller
                 ]);
             }
         }
-
         $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
             ->whereHas('paymentRequestData.purchaseOrder', function ($q) use ($supplierId) {
                 $q->where('supplier_id', $supplierId);
@@ -323,7 +322,8 @@ class PaymentVoucherController extends Controller
                             'purpose' => $request->paymentRequestData->notes ?? 'No description',
                             'status' => $request->approval_status,
                             'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
-                            'type' => ($request->request_type),
+                            'type' => ($request->request_type??null),
+                            'file' => ($request->paymentRequestData->attachment ?? null),
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : ''

@@ -90,7 +90,8 @@ class BrokerController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'brokers'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3'));
+
                 $requestData['account_id'] = $account->id;
             }
 
@@ -98,7 +99,8 @@ class BrokerController extends Controller
 
             if (!empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
-                    if (empty($bankName)) continue;
+                    if (empty($bankName))
+                        continue;
 
                     BrokerCompanyBankDetail::create([
                         'bank_name' => $bankName,
@@ -113,7 +115,8 @@ class BrokerController extends Controller
 
             if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
-                    if (empty($bankName)) continue;
+                    if (empty($bankName))
+                        continue;
 
                     BrokerOwnerBankDetail::create([
                         'bank_name' => $bankName,
@@ -180,11 +183,8 @@ class BrokerController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($broker->account_id)) {
-                $account = Account::create(getParamsForAccountCreation(
-                    $request->company_id,
-                    $request->company_name,
-                    'brokers'
-                ));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3'));
+
                 $requestData['account_id'] = $account->id;
             }
 
@@ -231,7 +231,8 @@ class BrokerController extends Controller
         $updatedIds = [];
 
         foreach ($bankNames as $index => $bankName) {
-            if (empty($bankName)) continue;
+            if (empty($bankName))
+                continue;
 
             $bankData = [
                 'bank_name' => $bankName,

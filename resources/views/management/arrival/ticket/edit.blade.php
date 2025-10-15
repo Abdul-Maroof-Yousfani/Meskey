@@ -28,7 +28,7 @@
                             data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
                             data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
                             data-created-at="{{ $order->created_at ?? '' }}" @selected($arrivalTicket->arrival_purchase_order_id == $order->id)>
-                            #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }}
+                            #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }} - Purchase Type: {{ formatEnumValue($order->purchase_type ?? 'N/A') }}
                         </option>
                     @endforeach
                 </select>

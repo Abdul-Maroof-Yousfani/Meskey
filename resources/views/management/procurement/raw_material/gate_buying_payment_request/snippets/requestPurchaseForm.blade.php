@@ -155,7 +155,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                    {
+                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -169,10 +169,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                            {
+                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                            },
+                                },
                 @endif
             @endforeach
         ],
@@ -717,7 +717,7 @@
             Attachment
         </h6>
     </div>
-    
+
     @if($isApprovalPage && isset($paymentRequestData) && $paymentRequestData->attachment)
         <!-- Show existing attachment on approval page -->
         <div class="col-md-12">
@@ -726,11 +726,11 @@
                 <div class="card">
                     <div class="card-body">
                         @if(Str::contains($paymentRequestData->attachment, ['.jpg', '.jpeg', '.png']))
-                            <img src="{{ asset($paymentRequestData->attachment) }}" alt="Attachment" 
-                                 class="img-fluid rounded" style="max-height: 200px;">
+                            <img src="{{ asset($paymentRequestData->attachment) }}" alt="Attachment" class="img-fluid rounded"
+                                style="max-height: 200px;">
                             <div class="mt-2">
-                                <a href="{{ asset($paymentRequestData->attachment) }}" 
-                                   target="_blank" class="btn btn-sm btn-outline-primary">
+                                <a href="{{ asset($paymentRequestData->attachment) }}" target="_blank"
+                                    class="btn btn-sm btn-outline-primary">
                                     <i class="fa fa-download"></i> Download Image
                                 </a>
                             </div>
@@ -743,8 +743,8 @@
                                         {{ basename($paymentRequestData->attachment) }}
                                     </small>
                                     <br>
-                                    <a href="{{ asset($paymentRequestData->attachment) }}" 
-                                       target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                    <a href="{{ asset($paymentRequestData->attachment) }}" target="_blank"
+                                        class="btn btn-sm btn-outline-primary mt-1">
                                         <i class="fa fa-download"></i> Download File
                                     </a>
                                 </div>
@@ -760,9 +760,8 @@
             <div class="form-group">
                 <label for="attachment">Upload Attachment</label>
                 <div class="custom-file">
-                    <input type="file" class="custom-file-input" id="attachment" name="attachment" 
-                           accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" 
-                           {{ $isApprovalPage ? 'disabled' : '' }}>
+                    <input type="file" class="custom-file-input" id="attachment" name="attachment"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" {{ $isApprovalPage ? 'disabled' : '' }}>
                     <label class="custom-file-label" for="attachment">
                         {{ $isApprovalPage ? 'Attachment disabled for approval' : 'Choose file' }}
                     </label>
@@ -771,17 +770,17 @@
                     Supported formats: JPG, PNG, PDF, DOC, DOCX. Max size: 5MB
                 </small>
             </div>
-        {{-- </div>
-        <div class="col-md-6">
+        </div>
+        {{-- <div class="col-md-6">
             <div id="attachment-preview" class="mt-2">
                 @if(isset($paymentRequestData) && $paymentRequestData->attachment)
-                     <div class="alert alert-info">
-                        <i class="fa fa-paperclip"></i> 
-                        Current attachment: 
-                        <a href="{{ asset($paymentRequestData->attachment) }}" target="_blank">
-                            {{ basename($paymentRequestData->attachment) }}
-                        </a>
-                    </div>
+                <div class="alert alert-info">
+                    <i class="fa fa-paperclip"></i>
+                    Current attachment:
+                    <a href="{{ asset($paymentRequestData->attachment) }}" target="_blank">
+                        {{ basename($paymentRequestData->attachment) }}
+                    </a>
+                </div>
                 @endif
             </div>
         </div> --}}
@@ -1019,7 +1018,7 @@
 
                 // Calculate gross amount without bank charges
                 let totalAmountBeforeBankCharges = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                            {{ $grossFreightAmount ?? 0 }});
+                                {{ $grossFreightAmount ?? 0 }});
 
                 $('#gross_amount').val(totalAmountBeforeBankCharges);
                 $('#gross_amount_display').val(totalAmountBeforeBankCharges.toFixed(2));
