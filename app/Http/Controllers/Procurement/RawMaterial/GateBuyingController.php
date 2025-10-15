@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Procurement\RawMaterial;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GateBuyingRequest;
-use App\Models\{ArrivalPurchaseOrder,User, Product, TruckSizeRange};
-use App\Models\Master\{Broker, CompanyLocation, ProductSlab, Supplier,ProductSlabForRmPo};
+use App\Models\{ArrivalPurchaseOrder, User, Product, TruckSizeRange};
+use App\Models\Master\{Broker, CompanyLocation, ProductSlab, Supplier, ProductSlabForRmPo};
 
 use App\Models\Procurement\PurchaseOrder;
 
@@ -74,7 +74,6 @@ class GateBuyingController extends Controller
             $data['broker_one_name'] = $data['broker_one'] ?? null;
         }
 
-
         DB::transaction(function () use ($data) {
             $arrivalPOData = collect($data)->except(['slabs'])->toArray();
             $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
@@ -114,7 +113,7 @@ class GateBuyingController extends Controller
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
         $getSlabs = ProductSlabForRmPo::with('slabType')
-            ->where('product_id',  $data['arrivalPurchaseOrder']->product_id)
+            ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
             ->where('arrival_purchase_order_id', $id)
             ->get()
@@ -204,7 +203,7 @@ class GateBuyingController extends Controller
             ->where('is_purchase_field', 1)
             ->get()
             ->groupBy('product_slab_type_id')
-            ->map(fn($group) => $group->sortBy(fn($item) => (float)$item->from)->first())
+            ->map(fn($group) => $group->sortBy(fn($item) => (float) $item->from)->first())
             ->values()
             ->map(function ($item) {
                 $item['slab_type_name'] = $item->slabType->name ?? null;
@@ -235,7 +234,7 @@ class GateBuyingController extends Controller
 
         if ($latestContract) {
             $parts = explode('-', $latestContract->contract_no);
-            $lastNumber = (int)end($parts);
+            $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
@@ -249,13 +248,13 @@ class GateBuyingController extends Controller
         ]);
     }
 
-        public function getSuppliersByLocation(Request $request)
+    public function getSuppliersByLocation(Request $request)
     {
         $request->validate([
             'location_id' => 'required|exists:company_locations,id'
         ]);
 
-        $locationId = (string)$request->location_id;
+        $locationId = (string) $request->location_id;
         $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->where('is_gate_buying_supplier', 'Yes')->get();
 
         return response()->json([

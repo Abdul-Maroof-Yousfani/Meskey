@@ -80,7 +80,6 @@ class FreightController extends Controller
                     return response('Freight has already been completed and cannot be performed again.', 422);
                 }
 
-
                 if ($ticket) {
                     $ticket->update([
                         'freight_status' => 'completed',
@@ -130,8 +129,13 @@ class FreightController extends Controller
 
                     // Gate buying transactions start
                     if ($ticket->purchaseOrder->purchase_type == 'gate_buying') {
-                        // $amount = $data['arrived_weight'] * $ticket->purchaseOrder->rate_per_kg;
-                      //  dd($amount);
+
+                        if ($ticket) {
+                            $ticket->update([
+                                'is_ticket_verified' => 1
+                            ]);
+                        }
+
                         createTransaction(
                             $amount,
                             $ticket->accountsOf->account_id,

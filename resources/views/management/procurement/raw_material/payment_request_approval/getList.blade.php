@@ -38,18 +38,21 @@
                             @endif
                         @else
                             <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                                <span
-                                    class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
+                                <span class="badge badge-{{ $request->module_type == 'purchase_order' ? 'primary' : 'info' }}"
                                     style="border-radius: 3px 0 0 3px;">
                                     {{ $request->module_type == 'purchase_order' ? 'Contract' : 'Ticket' }}
                                 </span>
-                                <span
-                                    class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}"
+                                <span class="badge badge-{{ $request->request_type == 'payment' ? 'success' : 'warning' }}"
                                     style="border-radius: 0 3px 3px 0;">
                                     {{ formatEnumValue($request->request_type) }}
                                 </span>
                             </span>
                             <br>
+
+                            @if (($request->paymentRequestData->purchaseOrder->purchase_type ?? null) == 'gate_buying')
+                                <span class="badge badge-danger mt-1">Gate Buying</span>
+                            @endif
+
                             @if ($request->is_advance_payment !== 0)
                                 <span class="badge badge-yellow mt-1">Advance Payment</span>
                             @endif
