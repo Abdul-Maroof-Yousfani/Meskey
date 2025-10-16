@@ -45,7 +45,6 @@ class PurchaseOrderController extends Controller
         $quotation = null;
         $dataItems = collect();
 
-        // ✅ Check if quotation exists for this request + supplier
         if ($supplierId) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('supplier_id', $supplierId)

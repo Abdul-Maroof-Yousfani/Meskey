@@ -1,26 +1,24 @@
 @foreach ($dataItems ?? [] as $key => $data)
     @php
-    $quotedData = $data?->approved_purchase_quotation;
+   // $quotedData = $data?->approved_purchase_quotation;
+//
+//    if ($quotedData && $quotedData->supplier_id != ($quotation->supplier_id ?? null)) {
+//        $quotedData = null;
+//    }
+//
+//    $quotedRate = $quotedData->rate ?? '';
+//    $quotedQty = $quotedData->qty ?? 0;
+//    $quotedTotal = ($quotedRate !== '' && $quotedQty > 0) ? (float)$quotedRate * (float)$quotedQty : '';
+//
+//    $quotedSupplierId = $quotedData->supplier_id ?? '';
+//    $quotedSupplierName = $quotedData->supplier->name ?? '';
 
-    // ✅ Only use the quotation if it's for the currently selected supplier
-    if ($quotedData && $quotedData->supplier_id != ($quotation->supplier_id ?? null)) {
-        $quotedData = null;
-    }
-
-    $quotedRate = $quotedData->rate ?? '';
-    $quotedQty = $quotedData->qty ?? 0;
-    $quotedTotal = ($quotedRate !== '' && $quotedQty > 0) ? (float)$quotedRate * (float)$quotedQty : '';
-
-    $quotedSupplierId = $quotedData->supplier_id ?? '';
-    $quotedSupplierName = $quotedData->supplier->name ?? '';
-
-    // ✅ Always define current variables, even if no quotation exists
-    $currentRate = $quotedRate ?: '';
-    $currentQty = $data->qty ?? $quotedQty ?? 0;
+    $currentRate = $data->rate ?? 0;
+    $currentQty = $data->qty ?? 0;
     $currentTotal = ($currentRate !== '' && $currentQty > 0) ? (float)$currentRate * (float)$currentQty : '';
 
-    $currentSupplierId = $quotedSupplierId ?: '';
-    $currentSupplierName = $quotedSupplierName ?: '';
+   // $currentSupplierId = $quotedSupplierId ?: '';
+    //$currentSupplierName = $quotedSupplierName ?: '';
 @endphp
 
 
@@ -72,7 +70,7 @@
             </select>
             <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
             <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
-            <input type="hidden" name="purchase_quotation_data_id[]" value="{{ $quotedData->id ?? '' }}">
+            <input type="hidden" name="purchase_quotation_data_id[]" value="{{ $data->id ?? '' }}">
         </td>
 
         <td style="width: 20%">
