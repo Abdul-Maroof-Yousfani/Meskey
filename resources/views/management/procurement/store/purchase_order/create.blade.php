@@ -203,7 +203,7 @@
             type: "GET",
             data: {
                 id: purchaseRequestId,
-                supplier_id: supplierId // ✅ pass supplier_id too
+                supplier_id: supplierId 
             },
             beforeSend: function () {
                 $('#purchaseOrderBody').html('<p>Loading...</p>');
@@ -211,17 +211,16 @@
             success: function (response) {
                 let html = response.html;
                 let master = response.master;
-                let quotation = response.quotation; // ✅ quotation data from controller
+                let quotation = response.quotation; 
 
-                // ✅ Update master fields
+
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
-              //  $('#purchase_date').val(master.purchase_date);
+              
                 $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
 
-                // ✅ 👉 Add this block here
                 if (quotation) {
                     $('#quotation_no').val(quotation.purchase_quotation_no);
                 } else {

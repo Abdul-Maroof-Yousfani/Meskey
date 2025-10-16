@@ -1,28 +1,28 @@
 @foreach ($dataItems ?? [] as $key => $data)
     @php
-        $quotedData = $data?->approved_purchase_quotation;
-        $hasApprovedQuotation = !empty($quotedData);
+    $quotedData = $data?->approved_purchase_quotation;
 
-        $quotedRate = $quotedData->rate ?? '';
-        $quotedQty = $quotedData->qty ?? 0;
-        $quotedTotal = $quotedRate && $quotedQty ? $quotedRate * $quotedQty : '';
-        $quotedSupplierId = $quotedData->supplier_id ?? '';
-        $quotedSupplierName = $quotedData->supplier->name ?? '';
-        $currentRate = $quotedRate;
-        $currentQty = $data->qty ?? $quotedQty;
-        // $currentTotal = $currentRate && $currentQty ? $currentRate * $currentQty : '';
-        $currentSupplierId = $quotedSupplierId;
-        $currentSupplierName = $quotedSupplierName;
-         $dataRate = isset($data->rate) ? (float) $data->rate : 0;
-    $dataQty = isset($data->qty) ? (float) $data->qty : 0;
+    // ✅ Only use the quotation if it's for the currently selected supplier
+    if ($quotedData && $quotedData->supplier_id != ($quotation->supplier_id ?? null)) {
+        $quotedData = null;
+    }
 
-    // ✅ Use quotation data if available, otherwise request data
-    $currentRate = $hasApprovedQuotation ? $quotedRate : $dataRate;
-    $currentQty = $hasApprovedQuotation ? $quotedQty : $dataQty;
+    $quotedRate = $quotedData->rate ?? '';
+    $quotedQty = $quotedData->qty ?? 0;
+    $quotedTotal = ($quotedRate !== '' && $quotedQty > 0) ? (float)$quotedRate * (float)$quotedQty : '';
 
-    // ✅ Safely calculate numeric total
-    $currentTotal = round($currentRate * $currentQty, 2);
-    @endphp
+    $quotedSupplierId = $quotedData->supplier_id ?? '';
+    $quotedSupplierName = $quotedData->supplier->name ?? '';
+
+    // ✅ Always define current variables, even if no quotation exists
+    $currentRate = $quotedRate ?: '';
+    $currentQty = $data->qty ?? $quotedQty ?? 0;
+    $currentTotal = ($currentRate !== '' && $currentQty > 0) ? (float)$currentRate * (float)$currentQty : '';
+
+    $currentSupplierId = $quotedSupplierId ?: '';
+    $currentSupplierName = $quotedSupplierName ?: '';
+@endphp
+
 
 @if (isset($data->purchase_order_data))
     @php
@@ -110,10 +110,10 @@
                 value="{{ $currentSupplierId }}">
         </td> --}}
 
-        <td style="width: 15%; display: none;" id="vendor_input_{{ $key }}">
+        {{-- <td style="width: 15%; display: none;" id="vendor_input_{{ $key }}">
             <input type="text" name="supplier_input[]" id="supplier_input_{{ $key }}"
                 value="{{ $currentSupplierName }}" class="form-control" readonly>
-        </td>
+        </td> --}}
 
         <td style="width: 10%">
     <input
@@ -157,7 +157,7 @@
 
 
         <td style="width: 20%">
-            <input style="width: 100px" type="number" readonly name="total[]" value="{{ $currentTotal }}"
+            <input style="width: 100px" type="number" readonly name="total[]" value="{{ $data->total ?? $currentTotal }}"
                 id="total_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
 
@@ -174,87 +174,3 @@
     </tr>
 @endforeach
 
-<script>
-    function toggleQuotationFields(key) {
-        const checkbox = document.getElementById('use_quotation_' + key);
-        const isChecked = checkbox.checked;
-
-        const supplierDropdown = document.getElementById('supplier_id_' + key);
-        const supplierHidden = document.getElementById('supplier_id_hidden_' + key);
-        const supplierInput = document.getElementById('supplier_input_' + key);
-        const qtyInput = document.getElementById('qty_' + key);
-        const rateInput = document.getElementById('rate_' + key);
-        const totalInput = document.getElementById('total_' + key);
-        const vendorDropdownContainer = document.getElementById('vendor_dropdown_' + key);
-        const vendorInputContainer = document.getElementById('vendor_input_' + key);
-
-        const quotedSupplierId = document.getElementById('quoted_supplier_id_' + key).value;
-        const quotedSupplierName = document.getElementById('quoted_supplier_name_' + key).value;
-        const quotedQty = document.getElementById('quoted_qty_' + key).value;
-        const quotedRate = document.getElementById('quoted_rate_' + key).value;
-        const quotedTotal = document.getElementById('quoted_total_' + key).value;
-
-        if (isChecked) {
-            supplierDropdown.value = quotedSupplierId;
-            supplierHidden.value = quotedSupplierId;
-            qtyInput.value = quotedQty;
-            rateInput.value = quotedRate;
-            totalInput.value = quotedTotal;
-
-            supplierDropdown.disabled = true;
-            qtyInput.readOnly = true;
-            rateInput.readOnly = true;
-
-            vendorDropdownContainer.style.display = 'none';
-            vendorInputContainer.style.display = 'table-cell';
-
-            supplierInput.value = quotedSupplierName;
-
-        } else {
-            supplierDropdown.disabled = false;
-            qtyInput.readOnly = false;
-            rateInput.readOnly = false;
-
-            vendorDropdownContainer.style.display = 'table-cell';
-            vendorInputContainer.style.display = 'none';
-
-            supplierHidden.value = supplierDropdown.value;
-        }
-
-        if (typeof $(supplierDropdown).select2 !== 'undefined') {
-            $(supplierDropdown).select2();
-        }
-    }
-
-    function updateVendorInput(key) {
-        const supplierDropdown = document.getElementById('supplier_id_' + key);
-        const supplierHidden = document.getElementById('supplier_id_hidden_' + key);
-        const supplierInput = document.getElementById('supplier_input_' + key);
-
-        const selectedOption = supplierDropdown.options[supplierDropdown.selectedIndex];
-        const supplierName = selectedOption?.text || '';
-        const supplierId = supplierDropdown.value;
-
-        supplierHidden.value = supplierId;
-        supplierInput.value = supplierName;
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        @foreach ($dataItems ?? [] as $key => $data)
-            @if (!empty($data?->approved_purchase_quotation))
-                document.getElementById('vendor_dropdown_{{ $key }}').style.display = 'none';
-                document.getElementById('vendor_input_{{ $key }}').style.display = 'table-cell';
-
-                const quotedSupplierName = document.getElementById('quoted_supplier_name_{{ $key }}')
-                    .value;
-                document.getElementById('supplier_input_{{ $key }}').value = quotedSupplierName;
-            @else
-                document.getElementById('supplier_id_{{ $key }}').disabled = false;
-            @endif
-
-            const supplierDropdown = document.getElementById('supplier_id_{{ $key }}');
-            const supplierHidden = document.getElementById('supplier_id_hidden_{{ $key }}');
-            supplierHidden.value = supplierDropdown.value;
-        @endforeach
-    });
-</script>

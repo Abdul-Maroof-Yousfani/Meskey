@@ -37,62 +37,45 @@ class PurchaseOrderController extends Controller
     }
 
     public function approve_item(Request $request)
-{
-    $requestId = $request->id;
-    $supplierId = $request->supplier_id;
+    {
+        $requestId = $request->id;
+        $supplierId = $request->supplier_id;
 
-    $master = PurchaseRequest::find($requestId);
-    $quotation = null;
-    $dataItems = collect();
+        $master = PurchaseRequest::find($requestId);
+        $quotation = null;
+        $dataItems = collect();
 
-    // ✅ Check if quotation exists for this request + supplier
-    if ($supplierId && $requestId) {
-        $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
-            ->where('supplier_id', $supplierId)
-            ->first();
+        // ✅ Check if quotation exists for this request + supplier
+        if ($supplierId) {
+            $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
+                ->where('supplier_id', $supplierId)
+                ->first();
 
-        if ($quotation) {
-            // ✅ Load only quotation data for this supplier
-            $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
-                ->where('purchase_quotation_id', $quotation->id)
+            if ($quotation) {
+                $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
+                    ->where('purchase_quotation_id', $quotation->id)
+                    ->get();
+            }
+        }
+
+        if (!$quotation || $dataItems->isEmpty()) {
+            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+                ->where('purchase_request_id', $requestId)
                 ->get();
         }
+
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
+
+        return response()->json([
+            'html' => $html,
+            'master' => $master,
+            'quotation' => $quotation
+        ]);
     }
 
-    // ✅ If no quotation found for this supplier → load purchase request data
-    if (!$quotation || $dataItems->isEmpty()) {
-        // ✅ Find all quotation items for other suppliers of this same request
-        $quotationItemIds = PurchaseQuotationData::whereHas('purchase_quotation', function ($q) use ($requestId, $supplierId) {
-                $q->where('purchase_request_id', $requestId)
-                  ->where('supplier_id', '!=', $supplierId);
-            })
-            ->pluck('item_id')
-            ->toArray();
-
-        // ✅ Now load only request items NOT linked to another supplier’s quotation
-        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
-            ->where('purchase_request_id', $requestId)
-            ->whereNotIn('item_id', $quotationItemIds)
-            ->get();
-    }
-
-    $categories = Category::select('id', 'name')
-        ->where('category_type', 'general_items')
-        ->get();
-
-    $job_orders = JobOrder::select('id', 'name')->get();
-
-    $html = view(
-        'management.procurement.store.purchase_order.purchase_data',
-        compact('dataItems', 'categories', 'job_orders', 'quotation')
-    )->render();
-
-    return response()->json([
-        'html' => $html,
-        'master' => $master,
-        'quotation' => $quotation
-    ]);
-}
 
     /**
      * Show the form for creating a new resource.
@@ -119,14 +102,22 @@ class PurchaseOrderController extends Controller
      */
     public function store(PurchaseOrderRequest $request)
     {
+        // dd($request->all());
         DB::beginTransaction();
 
         try {
+            $quotation = null;
+            if (!empty($request->quotation_no)) {
+                $quotation = PurchaseQuotation::where('purchase_quotation_no', $request->quotation_no)->first();
+            }
+
             $PurchaseOrder = PurchaseOrder::create([
                 'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
                 'purchase_request_id' => $request->purchase_request_id,
+                'purchase_quotation_id' => $quotation->id ?? null,
                 'order_date' => $request->purchase_date,
                 'location_id' => $request->location_id,
+                'supplier_id' => $request->supplier_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
@@ -142,7 +133,7 @@ class PurchaseOrderController extends Controller
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 

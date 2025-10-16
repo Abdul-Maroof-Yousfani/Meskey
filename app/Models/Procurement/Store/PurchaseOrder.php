@@ -3,6 +3,7 @@
 namespace App\Models\Procurement\Store;
 
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,11 @@ class PurchaseOrder extends Model
     public function location()
     {
         return $this->belongsTo(CompanyLocation::class, 'location_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
     public function purchase_request()
