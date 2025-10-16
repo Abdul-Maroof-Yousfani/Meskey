@@ -44,17 +44,18 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Purchase Order No </th>
-                                            <th class="col-sm-2">Purchase Order Date</th>
-                                            <th class="col-sm-2">Location</th>
-                                            <th class="col-sm-2">Category</th>
-                                            <th class="col-sm-2">Item</th>
-                                            <th class="col-sm-2">Item UOM</th>
-                                            <th class="col-sm-2">Supplier</th>
-                                            <th class="col-sm-2">Qty</th>
-                                            <th class="col-sm-2">Rate</th>
-                                            <th class="col-sm-2">Total Amount</th>
-                                            {{-- <th class="col-sm-2">Item Status</th> --}}
+                                            <th class="col-sm-3">Purchase Order No </th>
+                                            <th class="col-sm-3">Purchase Request No</th>
+                                            <th class="col-sm-3">Purchase Quotation No</th>
+                                            {{-- <th class="col-sm-2">Location</th> --}}
+                                            <th class="col-sm-3">Category- item</th>
+                                            <th class="col-sm-3">Supplier</th>
+                                            {{-- <th class="col-sm-2">Item UOM</th> --}}
+                                            {{-- <th class="col-sm-2">Supplier</th> --}}
+                                            <th class="col-sm-1">Qty</th>
+                                            <th class="col-sm-1">Rate</th>
+                                            <th class="col-sm-1">Total Amount</th>
+                                            <th class="col-sm-1">Item Status</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
@@ -71,7 +72,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('store.get.purchase-order') }}`)
         });
     </script>

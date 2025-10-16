@@ -8,13 +8,14 @@ use App\Models\Product;
 use App\Models\GrnNumber;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\GrnNumber as MasterGrnNumber;
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrderData extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
     protected $table = "purchase_order_data";
     protected $guarded = [];
 
