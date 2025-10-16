@@ -323,15 +323,14 @@
 
     function calc(num) {
         var qtyInput = $('#qty_' + num);
-        var maxQty = parseFloat(qtyInput.attr('max')); // get max value from input attribute
+        var maxQty = parseFloat(qtyInput.attr('max')); 
         var qty = parseFloat(qtyInput.val());
         var rate = parseFloat($('#rate_' + num).val());
 
-        // ✅ Restrict user from exceeding max quantity
         if (qty > maxQty) {
             alert('Maximum allowed quantity is ' + maxQty);
             qty = maxQty;
-            qtyInput.val(maxQty); // reset value to max
+            qtyInput.val(maxQty); 
         }
 
         var total = qty * rate;

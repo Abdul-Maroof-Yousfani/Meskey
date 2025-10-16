@@ -314,7 +314,6 @@ class PurchaseQuotationController extends Controller
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
 
-        // ✅ Count the current purchase quotation data rows
         $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
 
         return view('management.procurement.store.purchase_quotation.edit', compact(
@@ -439,6 +438,7 @@ class PurchaseQuotationController extends Controller
         $validator = Validator::make($request->all(), [
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'reference_no' => 'nullable|string|max:255',
             'description' => 'nullable|string',
 
@@ -448,8 +448,8 @@ class PurchaseQuotationController extends Controller
             'item_id' => 'required|array|min:1',
             'item_id.*' => 'required|exists:products,id',
 
-            'supplier_id' => 'required|array|min:1',
-            'supplier_id.*' => 'required|exists:suppliers,id',
+            // 'supplier_id' => 'required|array|min:1',
+            // 'supplier_id.*' => 'required|exists:suppliers,id',
 
             'uom' => 'nullable|array',
             'uom.*' => 'nullable|string|max:255',
@@ -461,31 +461,29 @@ class PurchaseQuotationController extends Controller
             'remarks.*' => 'nullable|string|max:1000',
         ]);
 
-        // ✅ Custom duplicate item + supplier check
-        $validator->after(function ($validator) use ($request) {
-            $itemSupplierPairs = [];
+        // $validator->after(function ($validator) use ($request) {
+        //     $itemSupplierPairs = [];
 
-            foreach ($request->item_id as $index => $itemId) {
-                $supplierId = $request->supplier_id[$index] ?? null;
+        //     foreach ($request->item_id as $index => $itemId) {
+        //         $supplierId = $request->supplier_id ?? null;
 
-                if (!$supplierId)
-                    continue;
+        //         if (!$supplierId)
+        //             continue;
 
-                $pairKey = $itemId . '_' . $supplierId;
+        //         $pairKey = $itemId . '_' . $supplierId;
 
-                if (isset($itemSupplierPairs[$pairKey])) {
-                    // ❌ Throw validation error for this specific combination
-                    $validator->errors()->add(
-                        "supplier_id.$index",
-                        "The supplier and item combination already exists in this quotation (Item ID: $itemId, Supplier ID: $supplierId)."
-                    );
-                }
+        //         if (isset($itemSupplierPairs[$pairKey])) {
+        //             $validator->errors()->add(
+        //                 "supplier_id.$index",
+        //                 "The supplier and item combination already exists in this quotation (Item ID: $itemId, Supplier ID: $supplierId)."
+        //             );
+        //         }
 
-                $itemSupplierPairs[$pairKey] = true;
-            }
-        });
+        //         $itemSupplierPairs[$pairKey] = true;
+        //     }
+        // });
 
-        $validated = $validator->validate();
+        // $validated = $validator->validate();
 
         // Continue your update logic after successful validation
         DB::beginTransaction();
@@ -503,7 +501,7 @@ class PurchaseQuotationController extends Controller
                     'qty' => $request->qty[$index] ?? 0,
                     'rate' => $request->rate[$index],
                     'total' => ($request->qty[$index] ?? 0) * $request->rate[$index],
-                    'supplier_id' => $request->supplier_id[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }

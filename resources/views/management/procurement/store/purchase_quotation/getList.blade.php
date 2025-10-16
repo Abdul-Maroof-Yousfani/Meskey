@@ -52,9 +52,9 @@
                             <td style="background-color: #fff3e0; vertical-align: middle;">
                                 <p class="m-0 font-weight-bold">
                                     {{ optional($supplierRow['data']->supplier)->name }}
-                                     @if ($approvalStatus === 'Approved' && $approvalDataStatus === 'Pending')
+                                     {{-- @if ($approvalStatus === 'Approved' && $approvalDataStatus === 'Pending')
                                         <span class="text-danger ms-2">(Neglected)</span>
-                                    @endif
+                                    @endif --}}
                                 </p>
                             </td>
                             <td>
@@ -139,11 +139,13 @@
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
                                         {{-- @endif --}}
+                                     @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
+    <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
+        class="info p-1 text-center mr-2 position-relative">
+        <i class="ft-edit font-medium-3"></i>
+    </a>
+@endif
 
-                                        <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
-                                            class="info p-1 text-center mr-2 position-relative">
-                                            <i class="ft-edit font-medium-3"></i>
-                                        </a>
                                         <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $supplierRow['data']->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
                                             class="danger p-1 text-center mr-2 position-relative">
                                             <i class="ft-x font-medium-3"></i>
