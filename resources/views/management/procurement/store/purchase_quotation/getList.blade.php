@@ -157,12 +157,13 @@
         class="info p-1 text-center mr-2 position-relative">
         <i class="ft-edit font-medium-3"></i>
     </a>
-@endif
 
                                         <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $supplierRow['data']->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
                                             class="danger p-1 text-center mr-2 position-relative">
                                             <i class="ft-x font-medium-3"></i>
                                         </a>
+@endif
+
                                     </div>
                                 </td>
                                 @php $isFirstRequestRow = false; @endphp

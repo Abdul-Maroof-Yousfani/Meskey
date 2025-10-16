@@ -550,8 +550,8 @@ class PurchaseQuotationController extends Controller
      */
     public function destroy($id)
     {
-        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseQuotationData = PurchaseQuotationData::where('id', $id)->delete();
+        $PurchaseOrderData = PurchaseQuotation::where('id', $id)->delete();
+        $PurchaseQuotationData = PurchaseQuotationData::where('purchase_quotation_id', $id)->delete();
 
         return response()->json(['success' => 'Purchase quotation deleted successfully.'], 200);
     }
