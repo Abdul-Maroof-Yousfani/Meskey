@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Procurement\Store;
 
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -24,63 +25,63 @@ class PurchaseQuotationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'purchase_date'       => 'required|date',
+            'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
-            'location_id'         => 'required|exists:company_locations,id',
-            'supplier_id'         => 'required|exists:suppliers,id',
-            'reference_no'        => 'nullable|string|max:255',
-            'description'         => 'nullable|string',
+            'location_id' => 'required|exists:company_locations,id',
+            'supplier_id' => [
+                'required',
+                'exists:suppliers,id',
+                function ($attribute, $value, $fail) {
+                    $itemIds = $this->input('item_id', []);
+                    $purchaseRequestId = $this->input('purchase_request_id');
 
-            'category_id'         => 'required|array|min:1',
-            'category_id.*'       => 'required|exists:categories,id',
+                    if (!empty($itemIds) && $purchaseRequestId) {
+                        // Find items that already have quotations for this supplier *and same purchase request*
+                        $existingItemIds = PurchaseQuotationData::whereIn('item_id', $itemIds)
+                            ->where('supplier_id', $value)
+                            ->whereHas('purchase_quotation', function ($query) use ($purchaseRequestId) {
+                            $query->where('purchase_request_id', $purchaseRequestId);
+                        })
+                            ->pluck('item_id')
+                            ->toArray();
 
-            'item_id'             => 'required|array|min:1',
-            'item_id.*'           => 'required|exists:products,id',
+                        if (!empty($existingItemIds)) {
+                            // Fetch item names for clearer feedback
+                            $itemNames = Product::whereIn('id', $existingItemIds)->pluck('name')->toArray();
+                            $itemList = implode(', ', $itemNames);
 
-            'uom'                 => 'nullable|array',
-            'uom.*'               => 'nullable|string|max:255',
+                            $fail("This supplier already has a quotation for the following item(s) in this purchase request: {$itemList}.");
+                        }
+                    }
+                },
+            ],
+
+
+            'reference_no' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+
+            'category_id' => 'required|array|min:1',
+            'category_id.*' => 'required|exists:categories,id',
+
+            'item_id' => 'required|array|min:1',
+            'item_id.*' => 'required|exists:products,id',
+
+            'uom' => 'nullable|array',
+            'uom.*' => 'nullable|string|max:255',
 
             // 'qty'                 => 'required|array|min:1',
             // 'qty.*'               => 'required|numeric|min:0.01',
 
-            'rate'                => 'required|array|min:1',
-            'rate.*'              => 'required|numeric|min:0.01',
+            'rate' => 'required|array|min:1',
+            'rate.*' => 'required|numeric|min:0.01',
 
             // 'total'               => 'required|array|min:1',
             // 'total.*'             => 'required|numeric|min:0.01',
 
-            // 'supplier_id'         => 'required|array',
-            // 'supplier_id.*'       => [
-            //     'required',
-            //     'exists:suppliers,id',
-            //     function ($attribute, $value, $fail) {
-            //         $parts = explode('.', $attribute);
-            //         $index = $parts[1] ?? null;
 
-            //         if ($index !== null) {
-            //             $itemIds = $this->input('item_id', []);
-            //             $purchaseRequestId = $this->input('purchase_request_id');
 
-            //             if (isset($itemIds[$index])) {
-            //                 $itemId = $itemIds[$index];
-
-            //                 $exists = PurchaseQuotationData::where('item_id', $itemId)
-            //                     ->where('supplier_id', $value)
-            //                     ->whereHas('purchase_quotation', function ($query) use ($purchaseRequestId) {
-            //                         $query->where('purchase_request_id', $purchaseRequestId);
-            //                     })
-            //                     ->exists();
-
-            //                 if ($exists) {
-            //                     $fail('The supplier for this item already exists in a purchase quotation for this purchase request.');
-            //                 }
-            //             }
-            //         }
-            //     }
-            // ],
-
-            'remarks'             => 'nullable|array',
-            'remarks.*'           => 'nullable|string|max:1000',
+            'remarks' => 'nullable|array',
+            'remarks.*' => 'nullable|string|max:1000',
         ];
     }
 
@@ -90,6 +91,8 @@ class PurchaseQuotationRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'purchase_date.required' => 'The quotation date field is required.',
+            'purchase_date.date' => 'The quotation date must be a valid date.',
             'category_id.required' => 'At least one category is required.',
             'item_id.required' => 'At least one item is required.',
             // 'qty.required' => 'At least one quantity is required.',

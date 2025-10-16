@@ -50,7 +50,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
-                <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
+                <select disabled id="vendor_id" name="vendor_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
@@ -58,6 +58,8 @@
                             {{ $supplier->name }}
                         </option>
                     @endforeach
+                    <input type="hidden" name="supplier_id" value="{{ optional($purchaseQuotation)->supplier_id }}"
+                        id="supplier_id">
                 </select>
             </div>
         </div>
@@ -70,11 +72,11 @@
         </div>
     </div>
     <div class="row form-mar">
-    <div class="col-12 text-right mb-2">
+    {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
         <div class="col-md-12">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
@@ -310,9 +312,12 @@ $(document).ready(function () {
                 // Fill in master data
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
+                $('#supplier_id').val(master.supplier_id);
+                $('#vendor_id').val(master.supplier_id);
                 $('#purchase_date').val(master.quotation_date);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
+                $('#vendor_id').val(master.supplier_id).trigger('change');
 
                 // Load table HTML
                 $('#purchaseRequestBody').html(html);

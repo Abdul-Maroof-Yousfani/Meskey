@@ -72,9 +72,9 @@
              </div>
          </td>
          <td style="width: 25%">
-             <input style="width: 100px" type="text" value="{{ $data->remarks }}" id="remark_{{ $key }}"
+             <input style="width: 100px" type="text" value="" id="remark_{{ $key }}"
                  class="form-control">
-             <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
+             <input type="hidden" name="remarks[]" value="">
          </td>
          <td>
              <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove({{ $key }})"

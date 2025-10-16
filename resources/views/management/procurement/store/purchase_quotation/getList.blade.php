@@ -2,7 +2,8 @@
     <thead>
         <tr>
             <th class="col-2">Purchase Quotation No</th>
-            <th class="col-3">Category</th>
+            <th class="col-2">Purchase Request No</th>
+            <th class="col-3">Category - Item</th>
             <th class="col-3">Supplier</th>
             <th class="col-1 text-right">UOM</th>
             <th class="col-1 text-right">Rate</th>
@@ -30,24 +31,36 @@
                         @endphp
 
                         <tr>
+
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
-                                        #{{ $requestGroup['request_no'] }}
+                                       #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
                             @endif
 
                             @if ($isFirstItemRow)
-                                <td rowspan="{{ $itemGroup['item_rowspan'] }}" style="background-color: #e8f5e8; vertical-align: middle;">
+    <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}" style="background-color: #e8f5e8; vertical-align: middle;">
+        <p class="m-0 font-weight-bold">
+         #{{ $requestGroup['purchase_request_no'] }}
+            
+        </p>
+    </td>
+    @php $isFirstItemRow = false; @endphp
+@endif
+
+
+                            {{-- @if ($isFirstItemRow) --}}
+                                <td>
                                     <p class="m-0 font-weight-bold">
                                         {{ optional($supplierRow['data']->category)->name }} -
                                         {{ optional($supplierRow['data']->item)->name }}
                                     </p>
                                 </td>
-                                @php $isFirstItemRow = false; @endphp
-                            @endif
+                                {{-- @php $isFirstItemRow = false; @endphp
+                            @endif --}}
 
                             <td style="background-color: #fff3e0; vertical-align: middle;">
                                 <p class="m-0 font-weight-bold">
