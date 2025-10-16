@@ -71,7 +71,7 @@
                 @endforeach
             </select>
             <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
-            <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->id }}">
+            <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
             <input type="hidden" name="purchase_quotation_data_id[]" value="{{ $quotedData->id ?? '' }}">
         </td>
 
