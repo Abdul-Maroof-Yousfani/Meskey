@@ -4,8 +4,8 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
     {{-- <input type="hidden" name="data_id" value="{{ $purchaseOrder->id }}"> --}}
-    <input type="hidden" name="purchase_request_id" value="{{ $purchaseOrder->purchase_request_id }}">
-    <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->purchase_order_id }}">
+    {{-- <input type="hidden" name="purchase_request_id" value="{{ $purchaseOrder->purchase_request_id }}"> --}}
+    <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
     <div class="row form-mar">
         <div class="col-md-3">
             <div class="form-group">
@@ -41,8 +41,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Reference No:</label>
-                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_order_id">
-                    <option value="{{ $purchaseOrder->id }}<">
+                <select readonly class="form-control" name="purchase_order_id">
+                    <option value="{{ $purchaseOrder->id }}">
                         {{ optional($purchaseOrder)->purchase_order_no }}</option>
                 </select>
             </div>
@@ -140,15 +140,17 @@
                             </td> --}}
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}">
-                                <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+                                    onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}"
+                                    @if(isset($data->purchase_quotation_data_id)) readonly @endif>
+                                {{-- <input type="hidden" name="qty[]" value="{{ $data->qty }}"> --}}
                             </td>
                             <td style="width: 20%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
                                     id="rate_{{ $key }}" class="form-control" step="0.01"
-                                    min="{{ $key }}">
+                                    min="{{ $key }}"
+                                    @if(isset($data->purchase_quotation_data_id)) readonly @endif>
                             </td>
                             <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
@@ -156,9 +158,9 @@
                                     min="0" readonly name="total[]">
                             </td>
                             <td style="width: 25%">
-                                <input style="width: 100px" type="text" value="{{ $data->remarks }}"
+                                <input style="width: 100px" name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">
-                                <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
+                                {{-- <input type="hidden" name="remarks[]" value="{{ $data->remarks }}"> --}}
                             </td>
                             <td>
                                 <button type="button" class="btn btn-danger btn-sm removeRowBtn"
@@ -187,9 +189,9 @@ $(document).ready(function () {
         let purchaseOrderId = $('select[name="purchase_order_id"]').val();
 
         // Call your function if an ID exists
-        if (purchaseOrderId) {
-            get_purchase(purchaseOrderId);
-        }
+       // if (purchaseOrderId) {
+       //     get_purchase(purchaseOrderId);
+      //  }
     });
     $('.select2').select2({
         placeholder: 'Please Select',

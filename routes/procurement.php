@@ -139,7 +139,8 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('purchase-order/approve-item', [StorePurchaseOrderController::class, 'approve_item'])->name('purchase-order.approve-item');
-    Route::get('purchase-order-approvals/{id}', [PurchaseOrderController::class, 'manageApprovals'])->name('purchase-order.approvals');
+    Route::get('purchase-order-approvals/{id}', [StorePurchaseOrderController::class, 'manageApprovals'])->name('purchase-order.approvals');
+    Route::get('purchase-order/get_order_item', [StorePurchaseOrderController::class, 'get_order_item'])->name('purchase-order.get_order_item');
 
 
     Route::resource('purchase-order-payment-request', PurchaseOrderPaymentRequestController::class)->except(['show']);

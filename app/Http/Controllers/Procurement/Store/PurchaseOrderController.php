@@ -134,7 +134,7 @@ class PurchaseOrderController extends Controller
                             'item_rowspan' => $itemRowspan
                         ];
                     }
-                $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
+                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
 
                     $processedData[] = [
                         'request_data' => $orderGroup['order_data'],
@@ -345,7 +345,7 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData',
             'purchaseOrderData.category',
             'purchaseOrderData.item',
-            'purchase_request.purchaseOrderData',
+            'purchase_request.PurchaseData',
             'purchase_quotation.quotation_data'
         ])->findOrFail($id);
 
@@ -369,6 +369,7 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // dd($request->all());
         $validated = $request->validate([
             'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
@@ -400,25 +401,18 @@ class PurchaseOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Find existing purchase request by ID
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
+            PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)->delete();
 
-            // Update purchase request fields (do NOT update purchase_order_no)
-
-            // Delete existing related purchase_order_data and their job orders to avoid duplicates
-            $data = PurchaseOrderData::find($request->data_id)->delete();
-
-            // Insert new purchase_order_data and job orders
             foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_order_data
-                $requestData = PurchaseOrderData::create([
+                PurchaseOrderData::create([
                     'purchase_order_id' => $PurchaseOrder->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }
@@ -426,8 +420,7 @@ class PurchaseOrderController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Purchase Quotation updated successfully.',
+                'success' => 'Purchase Order updated successfully.',
                 'data' => $PurchaseOrder,
             ], 200);
         } catch (\Exception $e) {
@@ -435,7 +428,7 @@ class PurchaseOrderController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update purchase request.',
+                'message' => 'Failed to order purchase quotation.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -481,6 +474,33 @@ class PurchaseOrderController extends Controller
             'job_orders' => $job_orders,
             'purchaseOrderData' => $purchaseOrderData,
             'data1' => $purchaseOrder,
+        ]);
+    }
+
+    public function get_order_item(Request $request)
+    {
+        $requestId = $request->id;
+
+        $master = PurchaseOrder::find($requestId);
+
+        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category'])
+            ->where('purchase_order_id', $requestId)
+            ->get();
+
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
+
+        // Extract IDs for frontend restriction logic
+        $categoryIds = $dataItems->pluck('category_id')->unique()->values();
+        $itemIds = $dataItems->pluck('item_id')->unique()->values();
+
+        return response()->json([
+            'html' => $html,
+            'master' => $master,
+            'allowed_categories' => $categoryIds,
+            'allowed_items' => $itemIds,
         ]);
     }
 
