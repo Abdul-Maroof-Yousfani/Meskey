@@ -132,10 +132,18 @@ class TicketController extends Controller
 
     public function getContractsByLocation($locationId)
     {
+        // Contracts filtering: for gate_buying, skip those with tickets; for regular, include all
         $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
             ->where('company_location_id', $locationId)
-          //  ->where('purchase_type', 'regular')
+            ->where(function ($q) {
+                $q->where('purchase_type', 'regular')
+                  ->orWhere(function ($q2) {
+                      $q2->where('purchase_type', 'gate_buying')
+                         ->whereDoesntHave('arrivalTickets');
+                  });
+            })
             ->get();
+         
 
         return response()->json([
             'contracts' => $contracts
