@@ -111,7 +111,6 @@ class GateBuyingController extends Controller
         $authUserCompany = $request->company_id;
 
 
-        $data['suppliers'] = Supplier::where('is_gate_buying_supplier', 'Yes')->get();
 
         $data['arrivalPurchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);
         $data['bagPackings'] = [];
