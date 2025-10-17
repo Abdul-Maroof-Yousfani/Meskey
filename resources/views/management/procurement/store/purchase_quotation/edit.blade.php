@@ -4,13 +4,13 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
     {{-- <input type="hidden" name="data_id" value="{{ $purchaseQuotation->id }}"> --}}
-    <input type="hidden" name="purchase_request_data_id" value="{{ $purchaseQuotation->purchase_request_data_id }}">
+    {{-- <input type="hidden" name="purchase_request_data_id" value="{{ $purchaseQuotation->quotation_data()->purchase_request_data_id }}"> --}}
     <div class="row form-mar">
         <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Request:</label>
                 <select readonly class="form-control" name="purchase_request_id">
-                    <option value="{{ optional($purchaseQuotation->purchase_request)->id }}<">
+                    <option value="{{ optional($purchaseQuotation->purchase_request)->id }}">
                         {{ optional($purchaseQuotation->purchase_request)->purchase_request_no }}</option>
                 </select>
             </div>
@@ -40,8 +40,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Reference No:</label>
-                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_quotation_id">
-                    <option value="{{ $purchaseQuotation->id }}<">
+                <select readonly class="form-control" name="purchase_quotation_id">
+                    <option value="{{ $purchaseQuotation->id }}">
                         {{ optional($purchaseQuotation)->purchase_quotation_no }}</option>
                 </select>
             </div>
@@ -94,6 +94,8 @@
                 </thead>
                 <tbody id="purchaseRequestBody">
                     @foreach ($purchaseQuotation->quotation_data ?? [] as $key => $data)
+                    {{-- @dd($data) --}}
+
                         <tr id="row_{{ $key }}">
                             <td style="width: 25%">
                                 <select id="category_id_{{ $key }}" disabled
@@ -108,6 +110,7 @@
                                 </select>
                                 <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
                                 <input type="hidden" name="data_id[]" value="{{ $data->id }}">
+                                <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id  }}">
                             </td>
                             <td style="width: 25%">
                                 <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
@@ -138,10 +141,10 @@
                                 </select>
                             </td> --}}
                             <td style="width: 10%">
-                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                <input style="width: 100px" name="qty[]" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" value="{{ $data->qty }}"
                                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}">
-                                <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+                                {{-- <input type="hidden" name="qty[]" value="{{ $data->qty }}"> --}}
                             </td>
                             <td style="width: 20%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
@@ -187,7 +190,7 @@ $(document).ready(function () {
 
         // Call your function if an ID exists
         if (purchaseQuotationId) {
-            get_purchase(purchaseQuotationId);
+            //get_purchase(purchaseQuotationId);
         }
     });
     $('.select2').select2({

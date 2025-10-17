@@ -456,6 +456,7 @@ class PurchaseQuotationController extends Controller
 
     public function update(Request $request, $id)
     {
+        // dd($request->all());
         $validator = Validator::make($request->all(), [
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',

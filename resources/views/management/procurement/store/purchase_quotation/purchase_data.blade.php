@@ -13,6 +13,8 @@
                  </select>
                  <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
                  <input type="hidden" name="data_id[]" value="{{ $data->id }}">
+                <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id  }}">
+
              </div>
          </td>
          <td style="width: 25%">
