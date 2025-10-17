@@ -148,10 +148,10 @@ class PaymentVoucherController extends Controller
         ]);
 
         $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
-        $prefixForAccounts = $request->voucher_type === 'bank_payment_voucher' ? 'Bank' : 'Cash';
+        $prefixForAccounts = $request->voucher_type === 'bank_payment_voucher' ? '1-1' : '1-4';
 
         $accounts = Account::whereHas('parent', function ($query) use ($prefixForAccounts) {
-            $query->where('name', $prefixForAccounts);
+            $query->where('hierarchy_path', $prefixForAccounts);
         })->get();
 
         $pvDate = $request->pv_date ? date('m-d-Y', strtotime($request->pv_date)) : date('m-d-Y');
