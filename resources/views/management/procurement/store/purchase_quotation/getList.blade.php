@@ -6,8 +6,9 @@
             <th class="col-3">Category - Item</th>
             <th class="col-3">Supplier</th>
             <th class="col-1 text-right">UOM</th>
+            <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
-            {{-- <th class="col-1 text-right">Amount</th> --}}
+            <th class="col-1 text-right">Amount</th>
             <th class="col-2">PQ Date</th>
             <th class="col-1">Status</th>
             <th class="col-1">Action</th>
@@ -78,14 +79,19 @@
                             </td>
                             <td>
                                 <p class="m-0 text-right">
+                                    {{ $supplierRow['data']->qty }}
+                                </p>
+                            </td>
+                             <td>
+                                <p class="m-0 text-right">
                                     {{ $supplierRow['data']->rate }}
                                 </p>
                             </td>
-                            {{-- <td>
+                            <td>
                                 <p class="m-0 text-right">
                                     {{ $supplierRow['data']->total }}
                                 </p>
-                            </td> --}}
+                            </td>
 
                             <td>
                                 <p class="m-0 white-nowrap">
