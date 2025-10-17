@@ -245,6 +245,7 @@ class PurchaseOrderController extends Controller
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
+                'created_by' => auth()->user()->id,
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
@@ -458,7 +459,7 @@ class PurchaseOrderController extends Controller
         ])->findOrFail($id);
 
 
-        $purchaseOrderData = PurchaseOrderData::where('purchase_quotation_id', $id)
+        $purchaseOrderData = PurchaseOrderData::where('purchase_order_id', $id)
             ->when(
                 $purchaseOrder->am_approval_status === 'approved',
                 function ($query) {
@@ -467,7 +468,7 @@ class PurchaseOrderController extends Controller
             )
             ->get();
 
-        return view('management.procurement.store.purchase_quotation.approvalCanvas', [
+        return view('management.procurement.store.purchase_order.approvalCanvas', [
             'purchaseOrder' => $purchaseOrder,
             'categories' => $categories,
             'locations' => $locations,
@@ -510,32 +511,33 @@ class PurchaseOrderController extends Controller
         $location = CompanyLocation::find($locationId ?? $request->location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'PO-' . $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $locationCode = $location->code ?? 'LOC';
+        $prefix = 'PO-' . $locationCode . '-' . $date;
 
-        $latestContract = PurchaseOrder::where('purchase_order_no', 'like', "$prefix-%")
-            ->latest()
+        // Find latest PO for the same prefix
+        $latestPO = PurchaseOrder::where('purchase_order_no', 'like', "$prefix-%")
+            ->orderByDesc('id')
             ->first();
 
-        $locationCode = $location->code ?? 'LOC';
-        $datePart = Carbon::parse($date)->format('Y-m-d');
-
-        if ($latestContract) {
-            $parts = explode('-', $latestContract->contract_no);
+        if ($latestPO) {
+            // Correct field name
+            $parts = explode('-', $latestPO->purchase_order_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        $purchase_order_no = 'PO-' . $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_order_no = 'PO-' . $locationCode . '-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
-                'purchase_order_no' => $purchase_order_no
+                'purchase_order_no' => $purchase_order_no,
             ]);
         }
 
         return $purchase_order_no;
     }
+
 }

@@ -137,7 +137,7 @@
                                     @endphp
 
                                     {{-- View Approval --}}
-                                    <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', $supplierRow['data']->purchase_order->id) }}', 'Approval Voucher', false, '80%')"
+                                    <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', $supplierRow['data']->purchase_order->id) }}', 'View Purchase Order', false, '80%')"
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
                                         <i class="ft-eye font-medium-3"></i>
                                     </a>

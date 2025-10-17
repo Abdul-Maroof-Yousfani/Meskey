@@ -187,6 +187,33 @@
         $('#uom_' + index).val(uom);
     }
 
+    function fetchUniqueNumber() {
+            let locationId = $('#company_location_id').val();
+            let contractDate = $('#purchase_date').val();
+
+            if (locationId && contractDate) {
+                let url = '/procurement/store/get-unique-number-order/' + locationId + '/' + contractDate;
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function (response) {
+                        if (typeof response === 'string') {
+                            $('#reference_no').val(response);
+                        } else {
+                            $('#reference_no').val('');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#reference_no').val('');
+                    }
+                });
+            } else {
+                $('#reference_no').val('');
+            }
+        }
+        $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
+
     function get_purchase(purchaseRequestId = null) {
         const supplierId = $('#supplier_id').val();
 
@@ -217,7 +244,7 @@
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
               
-                $('#reference_no').val(master.reference_no);
+               // $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
 

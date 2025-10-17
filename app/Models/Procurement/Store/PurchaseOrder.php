@@ -9,6 +9,7 @@ use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 class PurchaseOrder extends Model
 {
@@ -69,5 +70,10 @@ class PurchaseOrder extends Model
     public function getIsFullyPaidAttribute()
     {
         return $this->remaining_amount <= 0;
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
