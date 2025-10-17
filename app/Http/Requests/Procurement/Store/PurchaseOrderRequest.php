@@ -24,6 +24,7 @@ class PurchaseOrderRequest extends FormRequest
             'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'reference_no' => 'nullable|string|max:255',
             'description' => 'nullable|string',
 
@@ -33,8 +34,8 @@ class PurchaseOrderRequest extends FormRequest
             'item_id' => 'required|array|min:1',
             'item_id.*' => 'required|exists:products,id',
 
-            'supplier_id' => 'required|array|min:1',
-            'supplier_id.*' => 'required|exists:suppliers,id',
+            // 'supplier_id' => 'required|array|min:1',
+            // 'supplier_id.*' => 'required|exists:suppliers,id',
 
             'uom' => 'nullable|array',
             'uom.*' => 'nullable|string|max:255',
@@ -68,14 +69,17 @@ class PurchaseOrderRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'purchase_date.required' => 'The purchase date field is required.',
-            'purchase_date.date' => 'The purchase date must be a valid date.',
+            'purchase_date.required' => 'The purchase order date field is required.',
+            'purchase_date.date' => 'The purchase order date must be a valid date.',
 
             'purchase_request_id.required' => 'The purchase request field is required.',
             'purchase_request_id.exists' => 'The selected purchase request is invalid.',
 
             'location_id.required' => 'The location field is required.',
             'location_id.exists' => 'The selected location is invalid.',
+
+            'supplier_id.required' => 'The supplier field is required.',
+            'supplier_id.exists' => 'The selected supplier is invalid.',
 
             'reference_no.string' => 'The reference number must be a string.',
             'reference_no.max' => 'The reference number may not be greater than 255 characters.',
@@ -94,11 +98,11 @@ class PurchaseOrderRequest extends FormRequest
             'item_id.*.required' => 'Each item is required.',
             'item_id.*.exists' => 'One or more selected items are invalid.',
 
-            'supplier_id.required' => 'At least one supplier is required.',
-            'supplier_id.array' => 'The suppliers must be in array format.',
-            'supplier_id.min' => 'At least one supplier must be selected.',
-            'supplier_id.*.required' => 'Each supplier is required.',
-            'supplier_id.*.exists' => 'One or more selected suppliers are invalid.',
+            // 'supplier_id.required' => 'At least one supplier is required.',
+            // 'supplier_id.array' => 'The suppliers must be in array format.',
+            // 'supplier_id.min' => 'At least one supplier must be selected.',
+            // 'supplier_id.*.required' => 'Each supplier is required.',
+            // 'supplier_id.*.exists' => 'One or more selected suppliers are invalid.',
 
             'uom.array' => 'The UOM field must be an array.',
             'uom.*.string' => 'Each UOM must be a string.',
@@ -172,7 +176,7 @@ class PurchaseOrderRequest extends FormRequest
         $arrayFields = [
             'category_id',
             'item_id',
-            'supplier_id',
+            // 'supplier_id',
             'qty',
             'rate'
         ];

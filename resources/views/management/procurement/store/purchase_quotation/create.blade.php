@@ -29,7 +29,7 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label>Purchase Date:</label>
+                <label>Quatation Date:</label>
                 <input type="date" id="purchase_date" name="purchase_date" class="form-control">
             </div>
         </div>
@@ -40,6 +40,19 @@
                     id="reference_no" class="form-control">
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Supplier:</label>
+                <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
+                    <option value="">Select Vendor</option>
+                    @foreach (get_supplier() as $supplier)
+                        <option value="{{ $supplier->id }}">
+                            {{ $supplier->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
@@ -48,11 +61,11 @@
         </div>
     </div>
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
         <div class="col-md-12">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
@@ -60,10 +73,10 @@
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
-                        <th>Vendor</th>
-                        {{-- <th>Qty</th> --}}
+                        {{-- <th>Vendor</th> --}}
+                        <th>Qty</th>
                         <th>Rate</th>
-                        {{-- <th>Total Amount</th> --}}
+                        <th>Total Amount</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
@@ -96,7 +109,7 @@
 
             if (locationId && contractDate) {
                 let url = '/procurement/store/get-unique-number-quotation/' + locationId + '/' + contractDate;
-                
+
                 $.ajax({
                     url: url,
                     type: 'GET',
@@ -168,9 +181,9 @@
                         @endforeach
                     </select>
                 </td>
-                {{-- <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td> --}}
+                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                {{-- <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td> --}}
+                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
@@ -309,12 +322,19 @@
 
 
     function calc(num) {
-        var qty = parseFloat($('#qty_' + num).val());
+        var qtyInput = $('#qty_' + num);
+        var maxQty = parseFloat(qtyInput.attr('max')); 
+        var qty = parseFloat(qtyInput.val());
         var rate = parseFloat($('#rate_' + num).val());
 
+        if (qty > maxQty) {
+            alert('Maximum allowed quantity is ' + maxQty);
+            qty = maxQty;
+            qtyInput.val(maxQty); 
+        }
+
         var total = qty * rate;
-
         $('#total_' + num).val(total);
-
     }
+
 </script>

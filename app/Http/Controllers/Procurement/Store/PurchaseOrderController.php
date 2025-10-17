@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
+use App\Models\Procurement\Store\PurchaseQuotation;
 use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
@@ -26,43 +27,190 @@ class PurchaseOrderController extends Controller
     /**
      * Get list of categories.
      */
+    // public function getList(Request $request)
+    // {
+    //     $PurchaseOrder = PurchaseOrderData::with('purchase_order', 'category', 'item')
+    //         ->whereStatus(true)->latest()
+    //         ->paginate(request('per_page', 25));
+
+    //     return view('management.procurement.store.purchase_order.getList', compact('PurchaseOrder'));
+    // }
+
     public function getList(Request $request)
     {
-        $PurchaseOrder = PurchaseOrderData::with('purchase_order', 'category', 'item')
-            ->whereStatus(true)->latest()
+        $PurchaseOrderRaw = PurchaseOrderData::with(
+            'purchase_order.purchase_quotation.purchase_request',
+            'category',
+            'item',
+            'supplier'
+        )
+            ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.procurement.store.purchase_order.getList', compact('PurchaseOrder'));
+        $groupedData = [];
+        $processedData = [];
+
+        foreach ($PurchaseOrderRaw as $row) {
+            // Handle missing relationships
+            $purchaseRequestNo = $row->purchase_order->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
+            $quotationNo = $row->purchase_order->purchase_quotation->purchase_quotation_no ?? 'N/A';
+            $orderNo = $row->purchase_order->purchase_order_no ?? 'N/A';
+            $itemId = $row->item->id ?? 'unknown';
+            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+
+            if ($orderNo === 'N/A') {
+                continue; // Skip if no valid purchase order
+            }
+
+            // Rest of the grouping logic remains the same
+            if (!isset($groupedData[$orderNo])) {
+                $groupedData[$orderNo] = [
+                    'request_data' => $row->purchase_order->purchase_quotation->purchase_request ?? null,
+                    'quotations' => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo] = [
+                    'quotation_data' => $row->purchase_order->purchase_quotation ?? null,
+                    'orders' => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
+                    'order_data' => $row->purchase_order,
+                    'items' => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
+                    'item_data' => $row,
+                    'suppliers' => []
+                ];
+            }
+
+            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+        }
+
+        // Process grouped data (unchanged)
+        foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
+            foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
+                foreach ($quotationGroup['orders'] as $orderNo => $orderGroup) {
+                    $requestRowspan = 0;
+                    $requestItems = [];
+                    $hasApprovedItem = false;
+
+                    foreach ($orderGroup['items'] as $itemGroup) {
+                        foreach ($itemGroup['suppliers'] as $supplierData) {
+                            $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'N/A';
+                            if (strtolower($approvalStatus) === 'approved') {
+                                $hasApprovedItem = true;
+                                break 2;
+                            }
+                        }
+                    }
+
+                    foreach ($orderGroup['items'] as $itemId => $itemGroup) {
+                        $itemRowspan = count($itemGroup['suppliers']);
+                        $requestRowspan += $itemRowspan;
+
+                        $itemSuppliers = [];
+                        $isFirstSupplier = true;
+
+                        foreach ($itemGroup['suppliers'] as $supplierKey => $supplierData) {
+                            $itemSuppliers[] = [
+                                'data' => $supplierData,
+                                'is_first_supplier' => $isFirstSupplier,
+                                'item_rowspan' => $itemRowspan
+                            ];
+                            $isFirstSupplier = false;
+                        }
+
+                        $requestItems[] = [
+                            'item_data' => $itemGroup['item_data'],
+                            'suppliers' => $itemSuppliers,
+                            'item_rowspan' => $itemRowspan
+                        ];
+                    }
+                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
+
+                    $processedData[] = [
+                        'request_data' => $orderGroup['order_data'],
+                        'request_no' => $orderNo,
+                        'purchase_request_no' => $originalPurchaseRequestNo,
+                        'quotation_no' => $quotationNo,
+                        'created_by_id' => $orderGroup['order_data']->created_by ?? null,
+                        'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
+                        'request_rowspan' => $requestRowspan,
+                        'items' => $requestItems,
+                        'has_approved_item' => $hasApprovedItem
+                    ];
+                    // dd($processedData);
+                }
+            }
+        }
+
+        // dd(array_keys($groupedData)); // Debug to check all POs
+
+        return view('management.procurement.store.purchase_order.getList', [
+            'PurchaseOrder' => $PurchaseOrderRaw,
+            'GroupedPurchaseOrder' => $processedData
+        ]);
     }
+
 
     public function approve_item(Request $request)
     {
         $requestId = $request->id;
+        $supplierId = $request->supplier_id;
 
         $master = PurchaseRequest::find($requestId);
-        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'approved_purchase_quotation'])
-            ->where('purchase_request_id', $requestId)
-            // ->where('am_approval_status', 'approved')
-            ->get();
+        $quotation = null;
+        $dataItems = collect();
+
+        if ($supplierId) {
+            $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
+                ->where('supplier_id', $supplierId)
+                ->first();
+
+            if ($quotation) {
+                $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
+                    ->where('purchase_quotation_id', $quotation->id)
+                    ->get();
+            }
+        }
+
+        if (!$quotation || $dataItems->isEmpty()) {
+            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+                ->where('purchase_request_id', $requestId)
+                ->get();
+        }
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
 
         $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
-        return response()->json(
-            ['html' => $html, 'master' => $master]
-        );
+        return response()->json([
+            'html' => $html,
+            'master' => $master,
+            'quotation' => $quotation
+        ]);
     }
+
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with(['PurchaseData' => function ($query) {
-            // $query->where('am_approval_status', 'approved');
-        }])
+        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with([
+            'PurchaseData' => function ($query) {
+                // $query->where('am_approval_status', 'approved');
+            }
+        ])
             ->whereHas('PurchaseData', function ($q) {
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
             })
@@ -78,17 +226,26 @@ class PurchaseOrderController extends Controller
      */
     public function store(PurchaseOrderRequest $request)
     {
+        // dd($request->all());
         DB::beginTransaction();
 
         try {
+            $quotation = null;
+            if (!empty($request->quotation_no)) {
+                $quotation = PurchaseQuotation::where('purchase_quotation_no', $request->quotation_no)->first();
+            }
+
             $PurchaseOrder = PurchaseOrder::create([
                 'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
                 'purchase_request_id' => $request->purchase_request_id,
+                'purchase_quotation_id' => $quotation->id ?? null,
                 'order_date' => $request->purchase_date,
                 'location_id' => $request->location_id,
+                'supplier_id' => $request->supplier_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
+                'created_by' => auth()->user()->id,
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
@@ -101,18 +258,18 @@ class PurchaseOrderController extends Controller
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
                 if ($request->purchase_request_data_id[$index] != 0) {
-                    $data =  PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
+                    $data = PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
                         'po_status' => 2,
                     ]);
                 }
 
                 if ($request->purchase_quotation_data_id[$index] != 0) {
-                    $data =  PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
+                    $data = PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
                         'quotation_status' => 2,
                     ]);
                 }
@@ -139,14 +296,73 @@ class PurchaseOrderController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+
+    // public function edit($id)
+    // {
+    //     $purchaseQuotation = PurchaseQuotation::with([
+    //         'quotation_data',
+    //         'quotation_data.category',
+    //         'quotation_data.item',
+    //         'purchase_request.PurchaseData'
+    //     ])->findOrFail($id);
+
+    //     $purchaseRequest = $purchaseQuotation->purchase_request;
+
+    //     $allowedCategoryIds = [];
+    //     $allowedItemIds = [];
+
+    //     if ($purchaseRequest && $purchaseRequest->PurchaseData) {
+    //         $allowedCategoryIds = $purchaseRequest->PurchaseData->pluck('category_id')->unique()->toArray();
+    //         $allowedItemIds = $purchaseRequest->PurchaseData->pluck('item_id')->unique()->toArray();
+    //     }
+
+    //     $categories = Category::select('id', 'name')
+    //         ->whereIn('id', $allowedCategoryIds)
+    //         ->get();
+
+    //     $items = Product::select('id', 'name', 'category_id')
+    //         ->whereIn('id', $allowedItemIds)
+    //         ->get();
+
+    //     $locations = CompanyLocation::select('id', 'name')->get();
+    //     $job_orders = JobOrder::select('id', 'name')->get();
+
+    //     $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
+
+    //     return view('management.procurement.store.purchase_quotation.edit', compact(
+    //         'purchaseQuotation',
+    //         'categories',
+    //         'items',
+    //         'locations',
+    //         'job_orders',
+    //         'purchaseQuotationDataCount'
+    //     ));
+    // }
+
+
     public function edit($id)
     {
+        $purchaseOrder = PurchaseOrder::with([
+            'purchaseOrderData',
+            'purchaseOrderData.category',
+            'purchaseOrderData.item',
+            'purchase_request.PurchaseData',
+            'purchase_quotation.quotation_data'
+        ])->findOrFail($id);
+
+        $purchaseRequest = $purchaseOrder->purchase_request;
+        $purchaseQuotation = $purchaseOrder->purchase_quotation;
+
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-        $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
-            ->findOrFail($id);
-        return view('management.procurement.store.purchase_order.edit', compact('data', 'categories', 'locations', 'job_orders'));
+        // $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
+        //     ->findOrFail($id);
+
+        $purchaseOrderDataCount = $purchaseOrder->purchaseOrderData->count();
+
+        return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount'));
     }
 
     /**
@@ -154,30 +370,31 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // dd($request->all());
         $validated = $request->validate([
-            'purchase_date'    => 'required|date',
-            'purchase_request_id'      => 'required|exists:purchase_requests,id',
-            'location_id'      => 'required|exists:company_locations,id',
-            'reference_no'     => 'nullable|string|max:255',
-            'description'      => 'nullable|string',
+            'purchase_date' => 'required|date',
+            'purchase_request_id' => 'required|exists:purchase_requests,id',
+            'location_id' => 'required|exists:company_locations,id',
+            'reference_no' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
 
-            'category_id'      => 'required|array|min:1',
-            'category_id.*'    => 'required|exists:categories,id',
+            'category_id' => 'required|array|min:1',
+            'category_id.*' => 'required|exists:categories,id',
 
-            'item_id'          => 'required|array|min:1',
-            'item_id.*'        => 'required|exists:products,id',
+            'item_id' => 'required|array|min:1',
+            'item_id.*' => 'required|exists:products,id',
 
-            'uom'              => 'nullable|array',
-            'uom.*'            => 'nullable|string|max:255',
+            'uom' => 'nullable|array',
+            'uom.*' => 'nullable|string|max:255',
 
-            'qty'              => 'required|array|min:1',
-            'qty.*'            => 'required|numeric|min:0.01',
+            'qty' => 'required|array|min:1',
+            'qty.*' => 'required|numeric|min:0.01',
 
-            'rate'              => 'required|array|min:1',
-            'rate.*'            => 'required|numeric|min:0.01',
+            'rate' => 'required|array|min:1',
+            'rate.*' => 'required|numeric|min:0.01',
 
-            'remarks'          => 'nullable|array',
-            'remarks.*'        => 'nullable|string|max:1000',
+            'remarks' => 'nullable|array',
+            'remarks.*' => 'nullable|string|max:1000',
         ]);
 
 
@@ -185,25 +402,18 @@ class PurchaseOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Find existing purchase request by ID
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
+            PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)->delete();
 
-            // Update purchase request fields (do NOT update purchase_order_no)
-
-            // Delete existing related purchase_order_data and their job orders to avoid duplicates
-            $data = PurchaseOrderData::find($request->data_id)->delete();
-
-            // Insert new purchase_order_data and job orders
             foreach ($request->item_id as $index => $itemId) {
-                // Save purchase_order_data
-                $requestData = PurchaseOrderData::create([
+                PurchaseOrderData::create([
                     'purchase_order_id' => $PurchaseOrder->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
-                    'supplier_id' => $request->supplier_id[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }
@@ -211,8 +421,7 @@ class PurchaseOrderController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Purchase Quotation updated successfully.',
+                'success' => 'Purchase Order updated successfully.',
                 'data' => $PurchaseOrder,
             ], 200);
         } catch (\Exception $e) {
@@ -220,7 +429,7 @@ class PurchaseOrderController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update purchase request.',
+                'message' => 'Failed to order purchase quotation.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -236,37 +445,99 @@ class PurchaseOrderController extends Controller
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
+    public function manageApprovals($id)
+    {
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $locations = CompanyLocation::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+        $purchaseOrder = PurchaseOrder::with([
+            'purchaseOrderData',
+            'purchaseOrderData.category',
+            'purchaseOrderData.item',
+            'purchaseOrderData.supplier'
+        ])->findOrFail($id);
+
+
+        $purchaseOrderData = PurchaseOrderData::where('purchase_order_id', $id)
+            ->when(
+                $purchaseOrder->am_approval_status === 'approved',
+                function ($query) {
+                    $query->where('am_approval_status', 'approved');
+                }
+            )
+            ->get();
+
+        return view('management.procurement.store.purchase_order.approvalCanvas', [
+            'purchaseOrder' => $purchaseOrder,
+            'categories' => $categories,
+            'locations' => $locations,
+            'job_orders' => $job_orders,
+            'purchaseOrderData' => $purchaseOrderData,
+            'data1' => $purchaseOrder,
+        ]);
+    }
+
+    public function get_order_item(Request $request)
+    {
+        $requestId = $request->id;
+
+        $master = PurchaseOrder::find($requestId);
+
+        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category'])
+            ->where('purchase_order_id', $requestId)
+            ->get();
+
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
+
+        // Extract IDs for frontend restriction logic
+        $categoryIds = $dataItems->pluck('category_id')->unique()->values();
+        $itemIds = $dataItems->pluck('item_id')->unique()->values();
+
+        return response()->json([
+            'html' => $html,
+            'master' => $master,
+            'allowed_categories' => $categoryIds,
+            'allowed_items' => $itemIds,
+        ]);
+    }
+
+
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
         $location = CompanyLocation::find($locationId ?? $request->location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $locationCode = $location->code ?? 'LOC';
+        $prefix = 'PO-' . $locationCode . '-' . $date;
 
-        $latestContract = PurchaseOrder::where('purchase_order_no', 'like', "$prefix-%")
-            ->latest()
+        // Find latest PO for the same prefix
+        $latestPO = PurchaseOrder::where('purchase_order_no', 'like', "$prefix-%")
+            ->orderByDesc('id')
             ->first();
 
-        $locationCode = $location->code ?? 'LOC';
-        $datePart = Carbon::parse($date)->format('Y-m-d');
-
-        if ($latestContract) {
-            $parts = explode('-', $latestContract->contract_no);
+        if ($latestPO) {
+            // Correct field name
+            $parts = explode('-', $latestPO->purchase_order_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        $purchase_order_no = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_order_no = 'PO-' . $locationCode . '-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
-                'purchase_order_no' => $purchase_order_no
+                'purchase_order_no' => $purchase_order_no,
             ]);
         }
 
         return $purchase_order_no;
     }
+
 }

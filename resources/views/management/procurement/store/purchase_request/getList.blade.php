@@ -5,8 +5,8 @@
             <th class="col-3">Purchase Request No</th>
             {{-- <th class="col-2">Location</th> --}}
             <th class="col-4">Category</th>
-            <th class="col-2 text-right">Requested Qty</th>
-            <th class="col-1 text-right">Approved Qty</th>
+            {{-- <th class="col-2 text-right">Requested Qty</th> --}}
+            <th class="col-1 text-right">Qty</th>
             <th class="col-1">PR Date</th>
             <th class="col-1">Status</th>
             <th class="col-1">Action</th>
@@ -49,11 +49,11 @@
                             </p>
                         </td>
 
-                        <td>
+                        {{-- <td>
                             <p class="m-0 text-right">
                                 {{ $itemGroup['item_data']->qty }}
                             </p>
-                        </td>
+                        </td> --}}
                         <td>
                             <p class="m-0 white-nowrap">
                                 {{ \Carbon\Carbon::parse($itemGroup['item_data']->created_at)->format('Y-m-d h:i A') }}

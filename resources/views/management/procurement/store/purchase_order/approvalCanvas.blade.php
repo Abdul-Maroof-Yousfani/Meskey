@@ -1,15 +1,15 @@
- <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
- {{-- <input type="hidden" name="data_id" value="{{ $purchaseQuotation->purchase_quotation->id }}"> --}}
-<input type="hidden" name="purchase_request_data_id"
-    value="{{ optional($purchaseQuotation->quotation_data->first())->purchase_request_data_id }}">
+ <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
+ {{-- <input type="hidden" name="data_id" value="{{ $purchaseOrder->purchase_orde->id }}"> --}}
+{{-- <input type="hidden" name="purchase_request_data_id"
+    value="{{ optional($purchaseOrder->orde_data->first())->purchase_request_data_id }}"> --}}
 
  <div class="row form-mar">
      <div class="col-md-3">
          <div class="form-group">
              <label>Purchase Request:</label>
              <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                 <option value="{{ optional($purchaseQuotation->purchase_request)->id }}<">
-                     {{ optional($purchaseQuotation->purchase_request)->purchase_request_no }}
+                 <option value="{{ optional($purchaseOrder->purchase_request)->id }}<">
+                     {{ optional($purchaseOrder->purchase_request)->purchase_request_no }}
                  </option>
              </select>
          </div>
@@ -21,26 +21,26 @@
                  <option value="">Select Location</option>
                  @foreach (get_locations() as $loc)
                      <option
-                         {{ optional($purchaseQuotation)->location_id == $loc->id ? 'selected' : '' }}
+                         {{ optional($purchaseOrder)->location_id == $loc->id ? 'selected' : '' }}
                          value="{{ $loc->id }}">{{ $loc->name }}</option>
                  @endforeach
                  <input type="hidden" name="location_id"
-                     value="{{ optional($purchaseQuotation)->location_id }}" id="location_id">
+                     value="{{ optional($purchaseOrder)->location_id }}" id="location_id">
              </select>
          </div>
      </div>
      <div class="col-md-3">
          <div class="form-group">
-             <label>Quotation Date:</label>
+             <label>Order Date:</label>
              <input readonly type="date" id="purchase_date"
-                 value="{{ $purchaseQuotation->quotation_date }}" name="purchase_date"
+                 value="{{ $purchaseOrder->order_date }}" name="purchase_date"
                  class="form-control">
          </div>
      </div>
      <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Reference No:</label>
-                <input type="text" name="reference_no" value="{{ $purchaseQuotation->reference_no }}" placeholder="Please select location and date." readonly
+                <input type="text" name="reference_no" value="{{ $purchaseOrder->reference_no }}" placeholder="Please select location and date." readonly
                     id="reference_no" class="form-control">
             </div>
         </div>
@@ -51,7 +51,7 @@
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
-                        {{ $supplier->id == $purchaseQuotation->supplier_id ? 'selected' : '' }}>
+                        {{ $supplier->id == $purchaseOrder->supplier_id ? 'selected' : '' }}>
                             {{ $supplier->name }}
                         </option>
                     @endforeach
@@ -61,7 +61,7 @@
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>
-             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ $purchaseQuotation->description }}</textarea>
+             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ $purchaseOrder->description }}</textarea>
          </div>
      </div>
  </div>
@@ -82,7 +82,7 @@
                  </tr>
              </thead>
           <tbody id="purchaseRequestBody">
-    @foreach ($purchaseQuotationData ?? [] as $key => $data)
+    @foreach ($purchaseOrderData ?? [] as $key => $data)
         <tr id="row_{{ $key }}">
             <td style="width: 25%">
                 <select id="category_id_{{ $key }}" disabled
@@ -272,7 +272,7 @@
          if (!purchaseRequestId) return;
 
          $.ajax({
-             url: "{{ route('store.purchase-quotation.approve-item') }}",
+             url: "{{ route('store.purchase-order.approve-item') }}",
              type: "GET",
              data: {
                  id: purchaseRequestId

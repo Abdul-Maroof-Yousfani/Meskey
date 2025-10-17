@@ -2,11 +2,13 @@
     <thead>
         <tr>
             <th class="col-2">Purchase Quotation No</th>
-            <th class="col-3">Category</th>
+            <th class="col-2">Purchase Request No</th>
+            <th class="col-3">Category - Item</th>
             <th class="col-3">Supplier</th>
             <th class="col-1 text-right">UOM</th>
+            <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
-            {{-- <th class="col-1 text-right">Amount</th> --}}
+            <th class="col-1 text-right">Amount</th>
             <th class="col-2">PQ Date</th>
             <th class="col-1">Status</th>
             <th class="col-1">Action</th>
@@ -30,31 +32,43 @@
                         @endphp
 
                         <tr>
+
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
-                                        #{{ $requestGroup['request_no'] }}
+                                       #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
                             @endif
 
                             @if ($isFirstItemRow)
-                                <td rowspan="{{ $itemGroup['item_rowspan'] }}" style="background-color: #e8f5e8; vertical-align: middle;">
+    <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}" style="background-color: #e8f5e8; vertical-align: middle;">
+        <p class="m-0 font-weight-bold">
+         #{{ $requestGroup['purchase_request_no'] }}
+            
+        </p>
+    </td>
+    @php $isFirstItemRow = false; @endphp
+@endif
+
+
+                            {{-- @if ($isFirstItemRow) --}}
+                                <td>
                                     <p class="m-0 font-weight-bold">
                                         {{ optional($supplierRow['data']->category)->name }} -
                                         {{ optional($supplierRow['data']->item)->name }}
                                     </p>
                                 </td>
-                                @php $isFirstItemRow = false; @endphp
-                            @endif
+                                {{-- @php $isFirstItemRow = false; @endphp
+                            @endif --}}
 
                             <td style="background-color: #fff3e0; vertical-align: middle;">
                                 <p class="m-0 font-weight-bold">
                                     {{ optional($supplierRow['data']->supplier)->name }}
-                                     @if ($approvalStatus === 'Approved' && $approvalDataStatus === 'Pending')
+                                     {{-- @if ($approvalStatus === 'Approved' && $approvalDataStatus === 'Pending')
                                         <span class="text-danger ms-2">(Neglected)</span>
-                                    @endif
+                                    @endif --}}
                                 </p>
                             </td>
                             <td>
@@ -65,14 +79,19 @@
                             </td>
                             <td>
                                 <p class="m-0 text-right">
+                                    {{ $supplierRow['data']->qty }}
+                                </p>
+                            </td>
+                             <td>
+                                <p class="m-0 text-right">
                                     {{ $supplierRow['data']->rate }}
                                 </p>
                             </td>
-                            {{-- <td>
+                            <td>
                                 <p class="m-0 text-right">
                                     {{ $supplierRow['data']->total }}
                                 </p>
-                            </td> --}}
+                            </td>
 
                             <td>
                                 <p class="m-0 white-nowrap">
@@ -139,15 +158,18 @@
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
                                         {{-- @endif --}}
+                                     @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
+    <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
+        class="info p-1 text-center mr-2 position-relative">
+        <i class="ft-edit font-medium-3"></i>
+    </a>
 
-                                        <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
-                                            class="info p-1 text-center mr-2 position-relative">
-                                            <i class="ft-edit font-medium-3"></i>
-                                        </a>
                                         <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $supplierRow['data']->purchase_quotation->id) }}','{{ route('store.get.purchase-quotation') }}')"
                                             class="danger p-1 text-center mr-2 position-relative">
                                             <i class="ft-x font-medium-3"></i>
                                         </a>
+@endif
+
                                     </div>
                                 </td>
                                 @php $isFirstRequestRow = false; @endphp

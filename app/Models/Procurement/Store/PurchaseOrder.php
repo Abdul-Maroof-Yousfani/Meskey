@@ -3,14 +3,17 @@
 namespace App\Models\Procurement\Store;
 
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 class PurchaseOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
     protected $table = "purchase_orders";
     protected $guarded = [];
 
@@ -19,20 +22,30 @@ class PurchaseOrder extends Model
         return $this->belongsTo(CompanyLocation::class, 'location_id');
     }
 
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
     public function purchase_request()
     {
         return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
     }
 
-    public function purchaseOrderData()
+    public function purchase_quotation()
     {
-        return $this->hasMany(PurchaseOrderData::class);
+        return $this->belongsTo(PurchaseQuotation::class, 'purchase_quotation_id');
     }
 
-    public function items(): HasMany
+    public function purchaseOrderData()
     {
-        return $this->hasMany(PurchaseOrderData::class, 'purchase_order_id');
+        return $this->hasMany(PurchaseOrderData::class,'purchase_order_id');
     }
+
+    // public function items(): HasMany
+    // {
+    //     return $this->hasMany(PurchaseOrderData::class, 'purchase_order_id');
+    // }
 
     public function paymentRequests(): HasMany
     {
@@ -57,5 +70,10 @@ class PurchaseOrder extends Model
     public function getIsFullyPaidAttribute()
     {
         return $this->remaining_amount <= 0;
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

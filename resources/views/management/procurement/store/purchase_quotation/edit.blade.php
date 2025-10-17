@@ -4,22 +4,13 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
     {{-- <input type="hidden" name="data_id" value="{{ $purchaseQuotation->id }}"> --}}
-    <input type="hidden" name="purchase_request_data_id" value="{{ $purchaseQuotation->purchase_request_data_id }}">
+    {{-- <input type="hidden" name="purchase_request_data_id" value="{{ $purchaseQuotation->quotation_data()->purchase_request_data_id }}"> --}}
     <div class="row form-mar">
-        <div class="col-md-3">
-            <div class="form-group">
-                <label>Purchase Quotation:</label>
-                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_quotation_id">
-                    <option value="{{ $purchaseQuotation->id }}<">
-                        {{ optional($purchaseQuotation)->purchase_quotation_no }}</option>
-                </select>
-            </div>
-        </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Request:</label>
                 <select readonly class="form-control" name="purchase_request_id">
-                    <option value="{{ optional($purchaseQuotation->purchase_request)->id }}<">
+                    <option value="{{ optional($purchaseQuotation->purchase_request)->id }}">
                         {{ optional($purchaseQuotation->purchase_request)->purchase_request_no }}</option>
                 </select>
             </div>
@@ -40,12 +31,39 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label>Purchase Date:</label>
+                <label>Quotation Date:</label>
                 <input readonly type="date" id="purchase_date"
                     value="{{ optional($purchaseQuotation)->quotation_date }}" name="purchase_date"
                     class="form-control">
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Reference No:</label>
+                <select readonly class="form-control" name="purchase_quotation_id">
+                    <option value="{{ $purchaseQuotation->id }}">
+                        {{ optional($purchaseQuotation)->purchase_quotation_no }}</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Supplier:</label>
+                <select disabled id="vendor_id" name="vendor_id" class="form-control item-select select2">
+                    <option value="">Select Vendor</option>
+                    @foreach (get_supplier() as $supplier)
+                        <option value="{{ $supplier->id }}"
+                        {{ $purchaseQuotation->supplier_id == $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->name }}
+                        </option>
+                    @endforeach
+                    <input type="hidden" name="supplier_id" value="{{ optional($purchaseQuotation)->supplier_id }}"
+                        id="supplier_id">
+                </select>
+            </div>
+        </div>
+        
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
@@ -54,11 +72,11 @@
         </div>
     </div>
     <div class="row form-mar">
-    <div class="col-12 text-right mb-2">
+    {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
         <div class="col-md-12">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
@@ -66,16 +84,18 @@
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
-                        <th>Vendor</th>
-                        {{-- <th>Qty</th> --}}
+                        {{-- <th>Vendor</th> --}}
+                        <th>Qty</th>
                         <th>Rate</th>
-                        {{-- <th>Total Amount</th> --}}
+                        <th>Total Amount</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="purchaseRequestBody">
                     @foreach ($purchaseQuotation->quotation_data ?? [] as $key => $data)
+                    {{-- @dd($data) --}}
+
                         <tr id="row_{{ $key }}">
                             <td style="width: 25%">
                                 <select id="category_id_{{ $key }}" disabled
@@ -90,6 +110,7 @@
                                 </select>
                                 <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
                                 <input type="hidden" name="data_id[]" value="{{ $data->id }}">
+                                <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id  }}">
                             </td>
                             <td style="width: 25%">
                                 <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
@@ -109,7 +130,7 @@
                                     value="{{ get_uom($data->item_id) }}" disabled readonly>
                                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                             </td>
-                            <td style="width: 20%">
+                            {{-- <td style="width: 20%">
                                 <select id="supplier_id_{{ $key }}" name="supplier_id[]"
                                     class="form-control item-select select2" data-index="{{ $key }}">
                                     <option value="">Select Vendor</option>
@@ -118,27 +139,27 @@
                                             {{ $supplier->name }}</option>
                                     @endforeach
                                 </select>
-                            </td>
-                            {{-- <td style="width: 10%">
-                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
-                                    onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                                <input type="hidden" name="qty[]" value="{{ $data->qty }}">
                             </td> --}}
+                            <td style="width: 10%">
+                                <input style="width: 100px" name="qty[]" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" value="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}">
+                                {{-- <input type="hidden" name="qty[]" value="{{ $data->qty }}"> --}}
+                            </td>
                             <td style="width: 20%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
                                     id="rate_{{ $key }}" class="form-control" step="0.01"
                                     min="{{ $key }}">
                             </td>
-                            {{-- <td style="width: 20%">
+                            <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
                                     id="total_{{ $key }}" class="form-control" step="0.01"
                                     min="0" readonly name="total[]">
-                            </td> --}}
+                            </td>
                             <td style="width: 25%">
                                 <input style="width: 100px" type="text" value="{{ $data->remarks }}"
-                                    id="remark_{{ $key }}" class="form-control" readonly>
+                                    id="remark_{{ $key }}" class="form-control">
                                 <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                             </td>
                             <td>
@@ -169,7 +190,7 @@ $(document).ready(function () {
 
         // Call your function if an ID exists
         if (purchaseQuotationId) {
-            get_purchase(purchaseQuotationId);
+            //get_purchase(purchaseQuotationId);
         }
     });
     $('.select2').select2({
@@ -294,9 +315,12 @@ $(document).ready(function () {
                 // Fill in master data
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
-                $('#purchase_date').val(master.purchase_date);
+                $('#supplier_id').val(master.supplier_id);
+                $('#vendor_id').val(master.supplier_id);
+                $('#purchase_date').val(master.quotation_date);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
+                $('#vendor_id').val(master.supplier_id).trigger('change');
 
                 // Load table HTML
                 $('#purchaseRequestBody').html(html);
@@ -313,13 +337,20 @@ $(document).ready(function () {
         });
     }
 
-    function calc(num) {
-        var qty = parseFloat($('#qty_' + num).val());
+     function calc(num) {
+        var qtyInput = $('#qty_' + num);
+        var maxQty = parseFloat(qtyInput.attr('max')); 
+        var qty = parseFloat(qtyInput.val());
         var rate = parseFloat($('#rate_' + num).val());
 
+        if (qty > maxQty) {
+            alert('Maximum allowed quantity is ' + maxQty);
+            qty = maxQty;
+            qtyInput.val(maxQty); 
+        }
+
         var total = qty * rate;
-
         $('#total_' + num).val(total);
-
     }
+
 </script>

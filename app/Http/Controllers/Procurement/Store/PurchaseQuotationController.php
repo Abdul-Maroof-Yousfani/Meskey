@@ -31,85 +31,105 @@ class PurchaseQuotationController extends Controller
      */
     public function getList(Request $request)
     {
-        $PurchaseQuotationRaw = PurchaseQuotationData::with('purchase_quotation', 'category', 'item', 'approval', 'supplier')
-            ->whereStatus(true)->latest()
+        $PurchaseQuotationRaw = PurchaseQuotationData::with(
+            'purchase_quotation.purchase_request',
+            'category',
+            'item',
+            'supplier'
+        )
+            ->whereStatus(true)
+            ->latest()
             ->paginate(request('per_page', 25));
 
         $groupedData = [];
         $processedData = [];
 
         foreach ($PurchaseQuotationRaw as $row) {
-            if (!$row->purchase_quotation) {
-                continue; // skip orphaned data
+            if (!$row->purchase_quotation || !$row->purchase_quotation->purchase_request) {
+                continue;
             }
-            $requestNo = $row->purchase_quotation->purchase_quotation_no;
+
+            $purchaseRequestNo = $row->purchase_quotation->purchase_request->purchase_request_no;
+            $requestNo = $row->purchase_quotation->purchase_quotation_no; // purchase quotation no
             $itemId = $row->item->id ?? 'unknown';
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
 
-            if (!isset($groupedData[$requestNo])) {
-                $groupedData[$requestNo] = [
-                    'request_data' => $row->purchase_quotation,
+            // Group by purchase_request_no → purchase_quotation_no → item_id → suppliers
+            if (!isset($groupedData[$purchaseRequestNo])) {
+                $groupedData[$purchaseRequestNo] = [
+                    'request_data' => $row->purchase_quotation->purchase_request,
+                    'quotations' => []
+                ];
+            }
+
+            if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo])) {
+                $groupedData[$purchaseRequestNo]['quotations'][$requestNo] = [
+                    'quotation_data' => $row->purchase_quotation,
                     'items' => []
                 ];
             }
 
-            if (!isset($groupedData[$requestNo]['items'][$itemId])) {
-                $groupedData[$requestNo]['items'][$itemId] = [
+            if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId])) {
+                $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId] = [
                     'item_data' => $row,
                     'suppliers' => []
                 ];
             }
 
-            $groupedData[$requestNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+            $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
         }
 
-        foreach ($groupedData as $requestNo => $requestGroup) {
-            $requestRowspan = 0;
-            $requestItems = [];
+        // Build $processedData while preserving your structure
+        foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
+            foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
+                $requestRowspan = 0;
+                $requestItems = [];
+                $hasApprovedItem = false;
 
-            $hasApprovedItem = false;
-            foreach ($requestGroup['items'] as $itemGroup) {
-                foreach ($itemGroup['suppliers'] as $supplierData) {
-                    $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'};
-                    if (strtolower($approvalStatus) === 'approved') {
-                        $hasApprovedItem = true;
-                        break 2; // Break out of both loops
+                foreach ($quotationGroup['items'] as $itemGroup) {
+                    foreach ($itemGroup['suppliers'] as $supplierData) {
+                        $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'};
+                        if (strtolower($approvalStatus) === 'approved') {
+                            $hasApprovedItem = true;
+                            break 2;
+                        }
                     }
                 }
-            }
 
-            foreach ($requestGroup['items'] as $itemId => $itemGroup) {
-                $itemRowspan = count($itemGroup['suppliers']);
-                $requestRowspan += $itemRowspan;
+                foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
+                    $itemRowspan = count($itemGroup['suppliers']);
+                    $requestRowspan += $itemRowspan;
 
-                $itemSuppliers = [];
-                $isFirstSupplier = true;
+                    $itemSuppliers = [];
+                    $isFirstSupplier = true;
 
-                foreach ($itemGroup['suppliers'] as $supplierKey => $supplierData) {
-                    $itemSuppliers[] = [
-                        'data' => $supplierData,
-                        'is_first_supplier' => $isFirstSupplier,
+                    foreach ($itemGroup['suppliers'] as $supplierKey => $supplierData) {
+                        $itemSuppliers[] = [
+                            'data' => $supplierData,
+                            'is_first_supplier' => $isFirstSupplier,
+                            'item_rowspan' => $itemRowspan
+                        ];
+                        $isFirstSupplier = false;
+                    }
+
+                    $requestItems[] = [
+                        'item_data' => $itemGroup['item_data'],
+                        'suppliers' => $itemSuppliers,
                         'item_rowspan' => $itemRowspan
                     ];
-                    $isFirstSupplier = false;
                 }
 
-                $requestItems[] = [
-                    'item_data' => $itemGroup['item_data'],
-                    'suppliers' => $itemSuppliers,
-                    'item_rowspan' => $itemRowspan
+                $processedData[] = [
+                    'request_data' => $quotationGroup['quotation_data'],
+                    'request_no' => $quotationNo, 
+                    'purchase_request_no' => $purchaseRequestNo,
+                    'created_by_id' => $quotationGroup['quotation_data']->created_by,
+                    'request_status' => $quotationGroup['quotation_data']->am_approval_status,
+                    'request_rowspan' => $requestRowspan,
+                    'items' => $requestItems,
+                    'has_approved_item' => $hasApprovedItem
                 ];
             }
-
-            $processedData[] = [
-                'request_data' => $requestGroup['request_data'],
-                'request_no' => $requestNo,
-                'created_by_id' => $requestGroup['request_data']->created_by,
-                'request_status' => $requestGroup['request_data']->am_approval_status,
-                'request_rowspan' => $requestRowspan,
-                'items' => $requestItems,
-                'has_approved_item' => $hasApprovedItem
-            ];
         }
 
         return view('management.procurement.store.purchase_quotation.getList', [
@@ -117,6 +137,7 @@ class PurchaseQuotationController extends Controller
             'GroupedPurchaseQuotation' => $processedData
         ]);
     }
+
 
     public function manageApprovals($id)
     {
@@ -237,6 +258,7 @@ class PurchaseQuotationController extends Controller
                 'purchase_request_id' => $request->purchase_request_id,
                 'quotation_date' => $request->purchase_date,
                 'location_id' => $request->location_id,
+                'supplier_id' => $request->supplier_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
@@ -249,10 +271,10 @@ class PurchaseQuotationController extends Controller
                     'purchase_request_data_id' => $request->data_id[$index],
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
-                    'qty' => 0,
+                    'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
-                    'total' => 0,
-                    'supplier_id' => $request->supplier_id[$index],
+                    'total' => $request->total[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
@@ -313,7 +335,6 @@ class PurchaseQuotationController extends Controller
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
 
-        // ✅ Count the current purchase quotation data rows
         $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
 
         return view('management.procurement.store.purchase_quotation.edit', compact(
@@ -435,9 +456,11 @@ class PurchaseQuotationController extends Controller
 
     public function update(Request $request, $id)
     {
+        // dd($request->all());
         $validator = Validator::make($request->all(), [
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'reference_no' => 'nullable|string|max:255',
             'description' => 'nullable|string',
 
@@ -447,8 +470,8 @@ class PurchaseQuotationController extends Controller
             'item_id' => 'required|array|min:1',
             'item_id.*' => 'required|exists:products,id',
 
-            'supplier_id' => 'required|array|min:1',
-            'supplier_id.*' => 'required|exists:suppliers,id',
+            // 'supplier_id' => 'required|array|min:1',
+            // 'supplier_id.*' => 'required|exists:suppliers,id',
 
             'uom' => 'nullable|array',
             'uom.*' => 'nullable|string|max:255',
@@ -460,31 +483,29 @@ class PurchaseQuotationController extends Controller
             'remarks.*' => 'nullable|string|max:1000',
         ]);
 
-        // ✅ Custom duplicate item + supplier check
-        $validator->after(function ($validator) use ($request) {
-            $itemSupplierPairs = [];
+        // $validator->after(function ($validator) use ($request) {
+        //     $itemSupplierPairs = [];
 
-            foreach ($request->item_id as $index => $itemId) {
-                $supplierId = $request->supplier_id[$index] ?? null;
+        //     foreach ($request->item_id as $index => $itemId) {
+        //         $supplierId = $request->supplier_id ?? null;
 
-                if (!$supplierId)
-                    continue;
+        //         if (!$supplierId)
+        //             continue;
 
-                $pairKey = $itemId . '_' . $supplierId;
+        //         $pairKey = $itemId . '_' . $supplierId;
 
-                if (isset($itemSupplierPairs[$pairKey])) {
-                    // ❌ Throw validation error for this specific combination
-                    $validator->errors()->add(
-                        "supplier_id.$index",
-                        "The supplier and item combination already exists in this quotation (Item ID: $itemId, Supplier ID: $supplierId)."
-                    );
-                }
+        //         if (isset($itemSupplierPairs[$pairKey])) {
+        //             $validator->errors()->add(
+        //                 "supplier_id.$index",
+        //                 "The supplier and item combination already exists in this quotation (Item ID: $itemId, Supplier ID: $supplierId)."
+        //             );
+        //         }
 
-                $itemSupplierPairs[$pairKey] = true;
-            }
-        });
+        //         $itemSupplierPairs[$pairKey] = true;
+        //     }
+        // });
 
-        $validated = $validator->validate();
+        // $validated = $validator->validate();
 
         // Continue your update logic after successful validation
         DB::beginTransaction();
@@ -502,7 +523,7 @@ class PurchaseQuotationController extends Controller
                     'qty' => $request->qty[$index] ?? 0,
                     'rate' => $request->rate[$index],
                     'total' => ($request->qty[$index] ?? 0) * $request->rate[$index],
-                    'supplier_id' => $request->supplier_id[$index],
+                    'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }
@@ -530,8 +551,8 @@ class PurchaseQuotationController extends Controller
      */
     public function destroy($id)
     {
-        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseQuotationData = PurchaseQuotationData::where('id', $id)->delete();
+        $PurchaseOrderData = PurchaseQuotation::where('id', $id)->delete();
+        $PurchaseQuotationData = PurchaseQuotationData::where('purchase_quotation_id', $id)->delete();
 
         return response()->json(['success' => 'Purchase quotation deleted successfully.'], 200);
     }
@@ -541,24 +562,27 @@ class PurchaseQuotationController extends Controller
         $location = CompanyLocation::find($locationId ?? $request->location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'PQ-' . $location->code . '-' . $date;
 
+
+        // Find latest quotation with the same prefix
         $latestContract = PurchaseQuotation::where('purchase_quotation_no', 'like', "$prefix-%")
             ->latest()
             ->first();
 
         $locationCode = $location->code ?? 'LOC';
-        $datePart = Carbon::parse($date)->format('Y-m-d');
+        $datePart = $date;
 
         if ($latestContract) {
-            $parts = explode('-', $latestContract->contract_no);
+            // FIX: use purchase_quotation_no instead of contract_no
+            $parts = explode('-', $latestContract->purchase_quotation_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        $purchase_quotation_no = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_quotation_no = 'PQ-' . $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([
@@ -569,4 +593,5 @@ class PurchaseQuotationController extends Controller
 
         return $purchase_quotation_no;
     }
+
 }
