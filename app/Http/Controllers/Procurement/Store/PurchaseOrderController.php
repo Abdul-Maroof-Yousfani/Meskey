@@ -134,7 +134,7 @@ class PurchaseOrderController extends Controller
                             'item_rowspan' => $itemRowspan
                         ];
                     }
-                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
+                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_request->purchase_request_no ?? 'N/A';
 
                     $processedData[] = [
                         'request_data' => $orderGroup['order_data'],
@@ -455,7 +455,8 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData',
             'purchaseOrderData.category',
             'purchaseOrderData.item',
-            'purchaseOrderData.supplier'
+            'purchaseOrderData.supplier',
+            'purchase_quotation'
         ])->findOrFail($id);
 
 
