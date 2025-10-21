@@ -134,7 +134,7 @@ class PurchaseOrderController extends Controller
                             'item_rowspan' => $itemRowspan
                         ];
                     }
-                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
+                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_request->purchase_request_no ?? 'N/A';
 
                     $processedData[] = [
                         'request_data' => $orderGroup['order_data'],
@@ -173,11 +173,13 @@ class PurchaseOrderController extends Controller
         if ($supplierId) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('supplier_id', $supplierId)
+                ->whereIn('am_approval_status', ['approved', 'partial approved'])
                 ->first();
 
             if ($quotation) {
                 $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
+                    ->where('am_approval_status', 'approved')
                     ->get();
             }
         }
@@ -455,7 +457,8 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData',
             'purchaseOrderData.category',
             'purchaseOrderData.item',
-            'purchaseOrderData.supplier'
+            'purchaseOrderData.supplier',
+            'purchase_quotation'
         ])->findOrFail($id);
 
 

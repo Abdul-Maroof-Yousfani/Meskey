@@ -44,6 +44,11 @@ class PurchaseRequest extends Model
         return $this->hasOne(PurchaseQuotation::class, 'purchase_request_id');
     }
 
+    public function purchase_quotation()
+    {
+        return $this->belongsTo(PurchaseQuotation::class, 'purchase_request_id');
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

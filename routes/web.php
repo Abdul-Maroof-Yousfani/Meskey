@@ -49,6 +49,10 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
         Route::post('/reject/{modelType}/{id}', [ApprovalController::class, 'reject'])
             ->middleware(['auth', 'approval.permission'])
             ->name('approval.reject');
+
+        Route::post('/bulk_quotation_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_quotation_approval'])
+            ->middleware(['auth', 'approval.permission'])
+            ->name('approval.bulk_quotation_approval');
     });
 
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

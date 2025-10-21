@@ -1,79 +1,61 @@
- <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
- {{-- <input type="hidden" name="data_id" value="{{ $purchaseOrder->purchase_orde->id }}"> --}}
+ <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
+ {{-- <input type="hidden" name="data_id" value="{{ $purchaseRequest->purchase_quotation->id }}"> --}}
 {{-- <input type="hidden" name="purchase_request_data_id"
-    value="{{ optional($purchaseOrder->orde_data->first())->purchase_request_data_id }}"> --}}
+    value="{{ optional($purchaseRequest->quotation_data->first())->purchase_request_data_id }}"> --}}
 
  <div class="row form-mar">
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Purchase Request:</label>
              <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                 <option value="{{ optional($purchaseOrder->purchase_request)->id }}<">
-                     {{ optional($purchaseOrder->purchase_request)->purchase_request_no }}
+                 <option value="{{ optional($purchaseRequest)->id }}<">
+                     {{ optional($purchaseRequest)->purchase_request_no }}
                  </option>
              </select>
          </div>
      </div>
-
-     <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Supplier:</label>
-                <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
-                    <option value="">Select Vendor</option>
-                    @foreach (get_supplier() as $supplier)
-                        <option value="{{ $supplier->id }}"
-                        {{ $supplier->id == $purchaseOrder->supplier_id ? 'selected' : '' }}>
-                            {{ $supplier->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-<div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Quotation</label>
-                <input type="text" name="quotation_no" id="quotation_no" class="form-control"
-                    placeholder="-" value="{{ $purchaseOrder->purchase_quotation->purchase_quotation_no ?? null }}" readonly>
-            </div>
-        </div>
-     
-     <div class="col-md-4">
-         <div class="form-group">
-             <label>Purchase Order Date:</label>
-             <input readonly type="date" id="purchase_date"
-                 value="{{ $purchaseOrder->order_date }}" name="purchase_date"
-                 class="form-control">
-         </div>
-     </div>
-     <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Reference No:</label>
-                <input type="text" name="reference_no" value="{{ $purchaseOrder->reference_no }}" placeholder="Please select location and date." readonly
-                    id="reference_no" class="form-control">
-            </div>
-        </div>
-     
-     <div class="col-md-4">
+     {{-- <div class="col-md-3">
          <div class="form-group">
              <label>Location:</label>
              <select disabled name="company_location" id="company_location_id" class="form-control select2">
                  <option value="">Select Location</option>
                  @foreach (get_locations() as $loc)
                      <option
-                         {{ optional($purchaseOrder)->location_id == $loc->id ? 'selected' : '' }}
+                         {{ optional($purchaseRequest)->location_id == $loc->id ? 'selected' : '' }}
                          value="{{ $loc->id }}">{{ $loc->name }}</option>
                  @endforeach
                  <input type="hidden" name="location_id"
-                     value="{{ optional($purchaseOrder)->location_id }}" id="location_id">
+                     value="{{ optional($purchaseRequest)->location_id }}" id="location_id">
              </select>
          </div>
+     </div> --}}
+     <div class="col-md-3">
+         <div class="form-group">
+             <label>PR Date:</label>
+             <input readonly type="date" id="purchase_date"
+                 value="{{ $purchaseRequest->purchase_date }}" name="purchase_date"
+                 class="form-control">
+         </div>
      </div>
-     
+ 
+     {{-- <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Supplier:</label>
+                <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
+                    <option value="">Select Vendor</option>
+                    @foreach (get_supplier() as $supplier)
+                        <option value="{{ $supplier->id }}"
+                        {{ $supplier->id == $purchaseRequestData->supplier_id ? 'selected' : '' }}>
+                            {{ $supplier->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div> --}}
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>
-             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ $purchaseOrder->description }}</textarea>
+             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ $purchaseRequest->description }}</textarea>
          </div>
      </div>
  </div>
@@ -82,55 +64,28 @@
          <table class="table table-bordered" id="purchaseRequestTable">
              <thead>
                  <tr>
-                     <th>Category</th>
-                     <th>Item</th>
-                     <th>Item UOM</th>
-                     <th>Vendor</th>
+                     <th class="col-sm-4">PQ No.</th>
+                     <th class="col-sm-3">Supplier</th>
+                     <th class="col-sm-3">Item</th>
+                     {{-- <th>Item UOM</th> --}}
                      <th>Qty</th>
                      <th>Rate</th>
-                     <th>Total Amount</th>
+                     {{-- <th>Total Amount</th> --}}
                      <th>Remarks</th>
                      <th>Action</th>
                  </tr>
              </thead>
-          <tbody id="purchaseRequestBody">
-    @foreach ($purchaseOrderData ?? [] as $key => $data)
+        <tbody id="purchaseRequestBody">
+    @forelse ($PurchaseQuotationData ?? [] as $key => $data)
         <tr id="row_{{ $key }}">
-            <td style="width: 25%">
-                <select id="category_id_{{ $key }}" disabled
-                    onchange="filter_items(this.value,{{ $key }})"
-                    class="form-control item-select select2" data-index="{{ $key }}">
-                    <option value="">Select Category</option>
-                    @foreach ($categories ?? [] as $category)
-                        <option {{ $category->id == $data->category_id ? 'selected' : '' }}
-                            value="{{ $category->id }}">
-                            {{ $category->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
+            <td style="width: 20%">
                 <input type="hidden" name="data_id[]" value="{{ $data->id }}">
-            </td>
-
-            <td style="width: 25%">
-                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
-                    class="form-control item-select select2" data-index="{{ $key }}">
-                    @foreach (get_product_by_category($data->category_id) as $item)
-                        <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
-                            {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                            {{ $item->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
-            </td>
-
-            <td style="width: 15%">
-                <input type="text" id="uom_{{ $key }}" class="form-control uom"
-                    value="{{ get_uom($data->item_id) }}" disabled readonly>
-                <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
-            </td>
-
+                <input style="width: 170px" type="text" readonly
+                    value="{{ $data->purchase_quotation->purchase_quotation_no ?? '-' }}"
+                    id="purchase_quotation_no_{{ $key }}" class="form-control">
+                <input type="hidden" name="purchase_quotation_no[]"
+                    value="{{ $data->purchase_quotation->purchase_quotation_no ?? '' }}">
+            </td> 
             <td style="width: 20%">
                 <select id="supplier_id_{{ $key }}" name="supplier_id[]" disabled
                     class="form-control item-select select2" data-index="{{ $key }}">
@@ -142,38 +97,47 @@
                     @endforeach
                 </select>
             </td>
-
-            <td style="width: 10%">
-                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
+            <td style="width: 5%">
+                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
+                    class="form-control item-select select2" data-index="{{ $key }}">
+                    @foreach (get_product_by_category($data->category_id) as $item)
+                        <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
+                            {{ $item->id == $data->item_id ? 'selected' : '' }}>
+                            {{ $item->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+            </td>
+            <td style="width: 5%">
+                <input style="width: 85px" type="number" onkeyup="calc({{ $key }})" disabled
                     onblur="calc({{ $key }})" value="{{ $data->qty }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
             </td>
-
-            <td style="width: 20%">
-                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+            <td style="width: 5%">
+                <input style="width: 85px" type="number" onkeyup="calc({{ $key }})"
                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}" disabled
                     id="rate_{{ $key }}" class="form-control" step="0.01" min="{{ $key }}">
             </td>
-
-            <td style="width: 20%">
-                <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
-                    id="total_{{ $key }}" class="form-control" step="0.01" min="0" readonly name="total[]">
-            </td>
-
-            <td style="width: 25%">
-                <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
+            <td style="width: 5%">
+                <input style="width: 85px" type="text" readonly value="{{ $data->remarks }}"
                     id="remark_{{ $key }}" class="form-control">
                 <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
             </td>
-
+            
             <td>
                 <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                    onclick="remove({{ $key }})" disabled data-id="{{ $key }}">Remove</button>
+                    onclick="remove({{ $key }})" data-id="{{ $key }}">Remove</button>
             </td>
         </tr>
-    @endforeach
+    @empty
+        <tr>
+            <td colspan="7" class="text-center text-muted">No pending quotations against {{ $purchaseRequest->purchase_request_no }}.</td>
+        </tr>
+    @endforelse
 </tbody>
+
 
          </table>
      </div>
@@ -284,7 +248,7 @@
          if (!purchaseRequestId) return;
 
          $.ajax({
-             url: "{{ route('store.purchase-order.approve-item') }}",
+             url: "{{ route('store.purchase-quotation.approve-item') }}",
              type: "GET",
              data: {
                  id: purchaseRequestId

@@ -1,17 +1,6 @@
 @foreach ($dataItems ?? [] as $key => $data)
     @php
-   // $quotedData = $data?->approved_purchase_quotation;
-//
-//    if ($quotedData && $quotedData->supplier_id != ($quotation->supplier_id ?? null)) {
-//        $quotedData = null;
-//    }
-//
-//    $quotedRate = $quotedData->rate ?? '';
-//    $quotedQty = $quotedData->qty ?? 0;
-//    $quotedTotal = ($quotedRate !== '' && $quotedQty > 0) ? (float)$quotedRate * (float)$quotedQty : '';
-//
-//    $quotedSupplierId = $quotedData->supplier_id ?? '';
-//    $quotedSupplierName = $quotedData->supplier->name ?? '';
+   
 
     $currentRate = $data->rate ?? 0;
     $currentQty = $data->qty ?? 0;
@@ -41,23 +30,7 @@
    
 
     <tr id="row_{{ $key }}">
-        {{-- <td style="width: 5%">
-            <input type="checkbox" name="use_quotation[]" id="use_quotation_{{ $key }}" value="{{ $key }}"
-                class="quotation-checkbox" {{ $hasApprovedQuotation ? 'checked' : '' }}
-                {{ !$hasApprovedQuotation ? 'disabled' : '' }} onchange="toggleQuotationFields({{ $key }})">
-
-            <input type="hidden" id="quoted_supplier_id_{{ $key }}" value="{{ $quotedSupplierId }}">
-            <input type="hidden" id="quoted_supplier_name_{{ $key }}" value="{{ $quotedSupplierName }}">
-            <input type="hidden" id="quoted_qty_{{ $key }}" value="{{ $quotedQty }}">
-            <input type="hidden" id="quoted_rate_{{ $key }}" value="{{ $quotedRate }}">
-            <input type="hidden" id="quoted_total_{{ $key }}" value="{{ $quotedTotal }}">
-
-            @if ($hasApprovedQuotation)
-                <input type="hidden" name="quotation_ids[]" value="{{ $quotedData->id }}">
-            @else
-                <input type="hidden" name="quotation_ids[]" value="">
-            @endif
-        </td> --}}
+      
 
         <td style="width: 20%">
             <select id="category_id_{{ $key }}" onchange="filter_items(this.value,{{ $key }})"
@@ -93,27 +66,7 @@
                 class="form-control uom" readonly>
         </td>
 
-        {{-- <td style="width: 15%" id="vendor_dropdown_{{ $key }}">
-            <select name="supplier_id_dropdown[]" id="supplier_id_{{ $key }}"
-                class="form-control item-select select2" data-index="{{ $key }}"
-                {{ $hasApprovedQuotation ? 'disabled' : '' }} onchange="updateVendorInput({{ $key }})">
-                <option value="">Select Vendor</option>
-                @foreach (get_supplier() as $supplier)
-                    <option value="{{ $supplier->id }}" {{ $supplier->id == $currentSupplierId ? 'selected' : '' }}>
-                        {{ $supplier->name }}
-                    </option>
-                @endforeach
-            </select>
-
-            <input type="hidden" name="supplier_id[]" id="supplier_id_hidden_{{ $key }}"
-                value="{{ $currentSupplierId }}">
-        </td> --}}
-
-        {{-- <td style="width: 15%; display: none;" id="vendor_input_{{ $key }}">
-            <input type="text" name="supplier_input[]" id="supplier_input_{{ $key }}"
-                value="{{ $currentSupplierName }}" class="form-control" readonly>
-        </td> --}}
-
+      
         <td style="width: 10%">
     <input
         style="width: 100px"

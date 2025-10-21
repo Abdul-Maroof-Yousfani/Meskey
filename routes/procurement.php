@@ -135,6 +135,9 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-quotation/get_quotation_item', [PurchaseQuotationController::class, 'get_quotation_item'])->name('purchase-quotation.get_quotation_item');
     Route::get('purchase-quotation-approvals/{id}', [PurchaseQuotationController::class, 'manageApprovals'])->name('purchase-quotation.approvals');
     Route::get('get-unique-number-quotation/{locationId}/{contractDate}', [PurchaseQuotationController::class, 'getNumber'])->name('get-unique-number-quotation');
+    Route::post('purchase-quotation/comparison', [PurchaseQuotationController::class, 'get_comparison'])->name('purchase-quotation.comparison');
+    Route::get('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list');
+    Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
