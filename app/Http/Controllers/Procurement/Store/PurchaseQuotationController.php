@@ -121,7 +121,7 @@ class PurchaseQuotationController extends Controller
 
                 $processedData[] = [
                     'request_data' => $quotationGroup['quotation_data'],
-                    'request_no' => $quotationNo, 
+                    'request_no' => $quotationNo,
                     'purchase_request_no' => $purchaseRequestNo,
                     'created_by_id' => $quotationGroup['quotation_data']->created_by,
                     'request_status' => $quotationGroup['quotation_data']->am_approval_status,
@@ -138,6 +138,224 @@ class PurchaseQuotationController extends Controller
         ]);
     }
 
+    public function comparison_list()
+    {
+        return view('management.procurement.store.purchase_quotation.comparisonList');
+    }
+
+    public function get_comparison(Request $request)
+    {
+        $PurchaseQuotationRaw = PurchaseQuotationData::with(
+            'purchase_quotation.purchase_request',
+            'category',
+            'item',
+            'supplier'
+        )
+            ->whereStatus(true)
+            ->latest()
+            ->paginate(request('per_page', 25));
+
+        $groupedData = [];
+        $processedData = [];
+
+        foreach ($PurchaseQuotationRaw as $row) {
+            if (!$row->purchase_quotation || !$row->purchase_quotation->purchase_request) {
+                continue;
+            }
+
+            $purchaseRequestNo = $row->purchase_quotation->purchase_request->purchase_request_no;
+            $requestNo = $row->purchase_quotation->purchase_quotation_no; // purchase quotation no
+            $itemId = $row->item->id ?? 'unknown';
+            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+
+            // Group by purchase_request_no → purchase_quotation_no → item_id → suppliers
+            if (!isset($groupedData[$purchaseRequestNo])) {
+                $groupedData[$purchaseRequestNo] = [
+                    'request_data' => $row->purchase_quotation->purchase_request,
+                    'quotations' => []
+                ];
+            }
+
+            if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo])) {
+                $groupedData[$purchaseRequestNo]['quotations'][$requestNo] = [
+                    'quotation_data' => $row->purchase_quotation,
+                    'items' => []
+                ];
+            }
+
+            if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId])) {
+                $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId] = [
+                    'item_data' => $row,
+                    'suppliers' => []
+                ];
+            }
+
+            $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+        }
+
+        foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
+            foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
+                $requestRowspan = 0;
+                $quotaionRowspan = 0;
+                $requestItems = [];
+                $hasApprovedItem = false;
+
+                foreach ($quotationGroup['items'] as $itemGroup) {
+                    foreach ($itemGroup['suppliers'] as $supplierData) {
+                        $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'};
+                        if (strtolower($approvalStatus) === 'approved') {
+                            $hasApprovedItem = true;
+                            break 2;
+                        }
+                    }
+                }
+
+                foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
+                    $itemRowspan = count($itemGroup['suppliers']);
+                    $quotaionCount =count($requestGroup['quotations']);
+                    $requestRowspan += $itemRowspan;
+                    $quotaionRowspan += $quotaionCount;
+
+                    $itemSuppliers = [];
+                    $isFirstSupplier = true;
+
+                    foreach ($itemGroup['suppliers'] as $supplierKey => $supplierData) {
+                        $itemSuppliers[] = [
+                            'data' => $supplierData,
+                            'is_first_supplier' => $isFirstSupplier,
+                            'item_rowspan' => $itemRowspan
+                        ];
+                        $isFirstSupplier = false;
+                    }
+
+                    $requestItems[] = [
+                        'item_data' => $itemGroup['item_data'],
+                        'suppliers' => $itemSuppliers,
+                        'item_rowspan' => $itemRowspan
+                    ];
+                }
+
+                $processedData[] = [
+                    'request_data' => $quotationGroup['quotation_data'],
+                    'request_no' => $quotationNo,
+                    'purchase_request_no' => $purchaseRequestNo,
+                    'created_by_id' => $quotationGroup['quotation_data']->created_by,
+                    'request_status' => $quotationGroup['quotation_data']->am_approval_status,
+                    'request_rowspan' => $requestRowspan,
+                    'quotaion_rowspan' => $quotaionRowspan,
+
+                    
+                    'items' => $requestItems,
+                    'has_approved_item' => $hasApprovedItem
+                ];
+
+            }
+        }
+
+        return view('management.procurement.store.purchase_quotation.getComparison', [
+            'PurchaseQuotation' => $PurchaseQuotationRaw,
+            'GroupedPurchaseQuotation' => $processedData
+        ]);
+
+        // dd("ok");
+        // $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval', 'purchase_quotation_data.purchase_quotation')
+        //     ->whereStatus(true)
+        //     ->latest()
+        //     ->paginate(request('per_page', 25));
+
+        // $groupedData = [];
+        // $processedData = [];
+        // foreach ($PurchaseRequests as $row) {
+        //     $requestNo = $row->purchase_request->purchase_request_no;
+        //     $created_by_id = $row->purchase_request->created_by;
+        //     $itemId = $row->item->id ?? 'unknown';
+
+        //     if (!isset($groupedData[$requestNo])) {
+        //         $groupedData[$requestNo] = [
+        //             'request_data' => $row->purchase_request,
+        //             'items' => []
+        //         ];
+        //     }
+
+        //     $groupedData[$requestNo]['items'][$itemId] = [
+        //         'item_data' => $row,
+        //     ];
+        // }
+
+        // foreach ($groupedData as $requestNo => $requestGroup) {
+        //     $requestItems = [];
+        //     $hasApprovedItem = false;
+
+        //     foreach ($requestGroup['items'] as $itemGroup) {
+        //         $approvalStatus = $itemGroup['item_data']
+        //             ?->{$itemGroup['item_data']->getApprovalModule()->approval_column ?? 'am_approval_status'};
+        //         if (strtolower($approvalStatus) === 'approved') {
+        //             $hasApprovedItem = true;
+        //             break;
+        //         }
+        //     }
+
+        //     foreach ($requestGroup['items'] as $itemId => $itemGroup) {
+        //         $requestItems[] = [
+        //             'item_data' => $itemGroup['item_data'],
+        //             'item_rowspan' => 1
+        //         ];
+        //     }
+
+        //     $requestRowspan = count($requestItems);
+
+        //     $processedData[] = [
+        //         'request_data' => $requestGroup['request_data'],
+        //         'request_no' => $requestNo,
+        //         'created_by_id' => $requestGroup['request_data']->created_by,
+        //         'request_status' => $requestGroup['request_data']->am_approval_status,
+        //         'request_rowspan' => $requestRowspan,
+        //         'items' => $requestItems,
+        //         'has_approved_item' => $hasApprovedItem
+        //     ];
+        // }
+        // return view('management.procurement.store.purchase_quotation.getComparison', [
+        //     'PurchaseRequests' => $PurchaseRequests,
+        //     'GroupedPurchaseRequests' => $processedData
+        // ]);
+
+
+    }
+
+    public function manageComparisonApprovals($purchase_request_id)
+    {
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $locations = CompanyLocation::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+        $purchaseRequest = PurchaseRequest::with([
+            'PurchaseData',
+            'PurchaseData.category',
+            'PurchaseData.item',
+        ])->findOrFail($purchase_request_id);
+
+        $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
+            ->pluck('id');
+
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            // ->where('am_approval_status', 'pending')
+            ->get();
+
+            $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            // ->where('am_approval_status', 'pending')
+            ->first();
+
+        return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
+            'purchaseRequest' => $purchaseRequest,
+            'categories' => $categories,
+            'locations' => $locations,
+            'job_orders' => $job_orders,
+            'PurchaseQuotationData' => $PurchaseQuotationData,
+            'data1' => $data,
+        ]);
+    }
 
     public function manageApprovals($id)
     {
@@ -154,12 +372,19 @@ class PurchaseQuotationController extends Controller
 
 
         $purchaseQuotationData = PurchaseQuotationData::where('purchase_quotation_id', $id)
+            // ->when(
+            //     $purchaseQuotation->am_approval_status === 'approved',
+            //     function ($query) {
+            //         $query->where('am_approval_status', 'approved');
+            //     }
+            // )
             ->when(
-                $purchaseQuotation->am_approval_status === 'approved',
-                function ($query) {
-                    $query->where('am_approval_status', 'approved');
-                }
-            )
+        in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
+        function ($query) {
+            $query->where('am_approval_status', 'approved');
+        }
+    )
+            
             ->get();
 
         return view('management.procurement.store.purchase_quotation.approvalCanvas', [

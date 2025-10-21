@@ -68,6 +68,9 @@ trait HasApproval
             if ($row->status === 'pending') {
                 return 'pending';
             }
+            if ($row->status === 'partial_approved') {
+                return 'partial_approved';
+            }
         }
 
         return 'approved';
@@ -202,6 +205,53 @@ trait HasApproval
         }
 
         return false;
+    }
+
+    public function partial_approve($comments = null)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+
+        if (!$this->canApprove()) {
+            return false;
+        }
+
+        $module = $this->getApprovalModule();
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $userRoleId = $user->roles->first()->id;
+
+        $approvalRow = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->where('role_id', $userRoleId)
+            ->first();
+
+        if ($approvalRow && $approvalRow->current_count < $approvalRow->required_count) {
+            $approvalRow->increment('current_count');
+
+            if ($approvalRow->current_count >= $approvalRow->required_count) {
+                $approvalRow->update(['status' => 'partial_approved']);
+            }
+        }
+
+        ApprovalLog::create([
+            'module_id' => $module->id,
+            'record_id' => $this->id,
+            'user_id' => $user->id,
+            'role_id' => $userRoleId,
+            'action' => 'partial_approved',
+            'status' => 'active',
+            'approval_cycle' => $currentCycle,
+            'comments' => $comments,
+        ]);
+
+        if ($this->getApprovalStatus() === 'partial_approved') {
+            $this->onPartialApprovalComplete();
+        }
+
+        return true;
     }
 
     public function approve($comments = null)
@@ -369,6 +419,19 @@ trait HasApproval
 
         if (isset($module->approval_column, $this->{$module->approval_column})) {
             $this->update([$module->approval_column => 'approved']);
+        }
+
+        if (isset($this->am_change_made)) {
+            $this->update(['am_change_made' => 1]);
+        }
+    }
+
+    protected function onPartialApprovalComplete()
+    {
+        $module = $this->getApprovalModule();
+
+        if (isset($module->approval_column, $this->{$module->approval_column})) {
+            $this->update([$module->approval_column => 'partial approved']);
         }
 
         if (isset($this->am_change_made)) {

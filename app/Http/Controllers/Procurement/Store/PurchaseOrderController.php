@@ -173,11 +173,13 @@ class PurchaseOrderController extends Controller
         if ($supplierId) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('supplier_id', $supplierId)
+                ->whereIn('am_approval_status', ['approved', 'partial approved'])
                 ->first();
 
             if ($quotation) {
                 $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
+                    ->where('am_approval_status', 'approved')
                     ->get();
             }
         }

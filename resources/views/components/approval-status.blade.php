@@ -18,15 +18,15 @@
             <div class="d-flex align-items-center">
                 <i class="fa fa-exclamation-triangle me-3 text-primary"></i>
                 <div>
-                @php
-                    $latestLog = $model->approvalLogs()->latest()->first();
-                @endphp
+                    @php
+                        $latestLog = $model->approvalLogs()->latest()->first();
+                    @endphp
                     <strong>Approval Authority Comments</strong><br>
                     @if ($model->am_change_made == 0)
-                    <div class="small mb-1">
-                        <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong> 
-                        <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
-                    </div>
+                        <div class="small mb-1">
+                            <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong>
+                            <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                        </div>
                         {{ $latestLog->comments ?? 'No comments available' }}
                     @endif
                 </div>
@@ -55,6 +55,7 @@
     @endif
 
     @foreach ($approvalCycles as $cycle => $rows)
+
         <div class="approval-cycle-section mb-4 {{ $cycle !== $model->getCurrentApprovalCycle() ? 'd-none' : '' }}">
             @if ($approvalCycles->count() > 1)
                 @if ($cycle == $model->getCurrentApprovalCycle())
@@ -93,7 +94,7 @@
                             ->with('user')
                             ->get();
 
-                        $approvedLogs = $logs->where('action', 'approved');
+                        $approvedLogs = $logs->whereIn('action', ['approved', 'partial_approved']);
                         $rejectedLogs = $logs->where('action', 'rejected');
                         $rejectedIDS = [];
                     @endphp
@@ -136,8 +137,15 @@
         <div class="row g-3 mx-auto">
             <div class="col-md-8 mx-auto">
                 <div class="action-form">
+                    @php
+                        $routeName = class_basename($model) === 'PurchaseQuotationData'
+                            ? 'approval.bulk_quotation_approval'
+                            : 'approval.approve';
+                    @endphp
+
                     <form id="ajaxSubmit" method="POST"
-                        action="{{ route('approval.approve', ['modelType' => class_basename($model), 'id' => $model->id]) }}">
+                        action="{{ route($routeName, ['modelType' => class_basename($model), 'id' => $model->id]) }}">
+
                         @csrf
                         <input type="hidden" name="class" value="{{ class_basename($model) }}">
                         <input type="hidden" name="mc" value="{{ $module->id }}">
@@ -262,9 +270,9 @@
 
         .approval-cycle-section {
             /* border: 1px solid #e9ecef;
-                        border-radius: 8px;
-                        padding: 15px;
-                        background-color: #f8f9fa; */
+                            border-radius: 8px;
+                            padding: 15px;
+                            background-color: #f8f9fa; */
         }
 
         .cycle-header {

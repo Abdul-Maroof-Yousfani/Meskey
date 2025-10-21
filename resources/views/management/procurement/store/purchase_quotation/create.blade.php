@@ -129,7 +129,7 @@
             }
         }
 
-        $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
+        $('#purchase_date').on('change', fetchUniqueNumber);
 
     });
 
