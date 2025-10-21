@@ -49,8 +49,8 @@ class PurchaseOrderRequest extends FormRequest
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
 
-            'purchase_request_data_id' => 'sometimes|array',
-            'purchase_request_data_id.*' => 'sometimes|exists:purchase_request_data,id',
+            // 'purchase_request_data_id' => 'sometimes|array',
+            // 'purchase_request_data_id.*' => 'sometimes|exists:purchase_request_data,id',
 
             // 'purchase_quotation_data_id' => 'sometimes|array',
             // 'purchase_quotation_data_id.*' => 'sometimes|exists:purchase_quotation_data,id',
@@ -126,7 +126,7 @@ class PurchaseOrderRequest extends FormRequest
             'remarks.*.string' => 'Each remark must be a string.',
             'remarks.*.max' => 'Each remark may not be greater than 1000 characters.',
 
-            'purchase_request_data_id.*.exists' => 'One or more purchase request data items are invalid.',
+            // 'purchase_request_data_id.*.exists' => 'One or more purchase request data items are invalid.',
             // 'purchase_quotation_data_id.*.exists' => 'One or more purchase quotation data items are invalid.',
             // 'quotation_ids.*.exists' => 'One or more quotation IDs are invalid.',
         ];
