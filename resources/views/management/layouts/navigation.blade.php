@@ -625,6 +625,14 @@
                                         data-i18n="Extended">Inspection Companies</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('brands')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('brands.index') }}"
+                                    onclick="loadPageContent('{{ route('brands.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Brands</span></a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

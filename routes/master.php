@@ -25,7 +25,8 @@ use App\Http\Controllers\Master\{
     TruckSizeRangeController,
     VendorsController,
     FumigationCompanyController,
-    InspectionCompanyController
+    InspectionCompanyController,
+    BrandsController
 };
 
 
@@ -99,6 +100,9 @@ Route::post('/get-fumigation-company', [FumigationCompanyController::class, 'get
 
 Route::resource('inspection-company', InspectionCompanyController::class);
 Route::post('/get-inspection-company', [InspectionCompanyController::class, 'getList'])->name('get.inspection-company');
+
+Route::resource('brands', BrandsController::class);
+Route::post('/get-brands', [BrandsController::class, 'getList'])->name('get.brands');
 
 Route::resource('account', AccountController::class);
 Route::post('/get-account', [AccountController::class, 'getList'])->name('get.account');
