@@ -37,11 +37,7 @@
                         </p>
                     </td>
                     <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
-
-                        </p>
+                         {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
                         @can('role-edit')
