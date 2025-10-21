@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Loading Management
+   Create Payment Voucher
 @endsection
 @section('content')
     <div class="container-fluid">
