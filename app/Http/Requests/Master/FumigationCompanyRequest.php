@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Requests\Master;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class FumigationCompanyRequest extends FormRequest
+{
+    public function authorize()
+    {
+        return true;
+    }
+
+    public function rules()
+    {
+        return [
+            'company_id' => 'required|exists:companies,id',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+
+                Rule::unique('fumigation_companies', 'name')
+                    ->where('company_id', $this->input('company_id'))
+                    ->ignore($this->fumigation_company)
+            ],
+            'description' => 'nullable|string|max:500',
+            'status' => ['nullable', Rule::in(['active', 'inactive'])],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'company_id.required' => 'The company ID is required.',
+            'company_id.exists' => 'The selected company does not exist.',
+            'name.required' => 'The name field is required.',
+            'name.unique' => 'The name has already been taken for the selected company.',
+        ];
+    }
+}

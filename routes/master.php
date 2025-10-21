@@ -23,7 +23,9 @@ use App\Http\Controllers\Master\{
     DivisionController,
     QcReliefController,
     TruckSizeRangeController,
-    VendorsController
+    VendorsController,
+    FumigationCompanyController,
+    InspectionCompanyController
 };
 
 
@@ -91,6 +93,12 @@ Route::post('/get-truck-type', [TruckTypeController::class, 'getList'])->name('g
 
 Route::resource('station', StationController::class);
 Route::post('/get-station', [StationController::class, 'getList'])->name('get.station');
+
+Route::resource('fumigation-company', FumigationCompanyController::class);
+Route::post('/get-fumigation-company', [FumigationCompanyController::class, 'getList'])->name('get.fumigation-company');
+
+Route::resource('inspection-company', InspectionCompanyController::class);
+Route::post('/get-inspection-company', [InspectionCompanyController::class, 'getList'])->name('get.inspection-company');
 
 Route::resource('account', AccountController::class);
 Route::post('/get-account', [AccountController::class, 'getList'])->name('get.account');
