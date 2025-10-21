@@ -625,6 +625,22 @@
                                         data-i18n="Extended">Production Machines</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('fumigation-company')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('fumigation-company.index') }}"
+                                    onclick="loadPageContent('{{ route('fumigation-company.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Fumigation Companies</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('inspection-company')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('inspection-company.index') }}"
+                                    onclick="loadPageContent('{{ route('inspection-company.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Inspection Companies</span></a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

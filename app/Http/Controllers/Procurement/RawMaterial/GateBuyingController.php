@@ -105,13 +105,22 @@ class GateBuyingController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit($id, Request $request )
     {
+
+        $authUserCompany = $request->company_id;
+
+
+
         $data['arrivalPurchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
-
+        $data['accountsOf'] = User::role('Purchaser')
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)

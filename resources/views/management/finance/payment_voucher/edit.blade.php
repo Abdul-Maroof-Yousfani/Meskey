@@ -241,7 +241,7 @@
 
                                     response.accounts.forEach(function(account) {
                                         $accountSelect.append(
-                                            `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
+                                            `<option value="${account.id}">${account.name} (${account.hierarchy_path})</option>`
                                         );
                                     });
 

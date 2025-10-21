@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Loading Management
+   Create Payment Voucher
 @endsection
 @section('content')
     <div class="container-fluid">
@@ -242,7 +242,7 @@
 
                                     response.accounts.forEach(function (account) {
                                         $accountSelect.append(
-                                            `<option value="${account.id}">${account.name} (${account.unique_no})</option>`
+                                            `<option value="${account.id}">${account.name} (${account.hierarchy_path})</option>`
                                         );
                                     });
 

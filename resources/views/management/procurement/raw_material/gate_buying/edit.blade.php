@@ -48,15 +48,24 @@ div <form action="{{ route('raw-material.gate-buying.update', $arrivalPurchaseOr
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Supplier Name:</label>
-                <input type="text" name="supplier_name" value="{{ $arrivalPurchaseOrder->supplier_name }}"
-                    class="form-control" />
+                <select name="supplier_id" id="supplier_id" class="form-control select22">
+                   
+                  
+                        <option value="{{ $arrivalPurchaseOrder->supplier->id }}">{{ $arrivalPurchaseOrder->supplier->name }}</option>
+                   
+                </select>
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Purchaser Name:</label>
-                <input type="text" name="purchaser_name" value="{{ $arrivalPurchaseOrder->purchaser_name }}"
-                    class="form-control" />
+            <div class="form-group ">
+                <label>Accounts of:</label>
+                <select name="decision_of_id" id="decision_of_id" class="form-control select22">
+                    <option value="">Accounts Of</option>
+                    @foreach ($accountsOf as $account)
+                        <option {{ $account->id == $arrivalPurchaseOrder->decision_of_id ? 'selected' : '' }} value="{{ $account->id }}">{{ $account->name }}</option>
+                    @endforeach
+                </select>
+                
             </div>
         </div>
 
