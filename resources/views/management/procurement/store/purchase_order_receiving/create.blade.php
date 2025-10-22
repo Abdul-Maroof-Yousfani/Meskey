@@ -1,41 +1,61 @@
-<form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-order-receiving.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-receiving') }}" />
     <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
-                <label>Purchase Request:</label>
-                <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                    <option value="">Select Purchase Request</option>
-                    @foreach ($approvedRequests ?? [] as $value)
+                <label>Purchase Order:</label>
+                <select class="form-control select2" name="purchase_order_id">
+                    <option value="">Select Purchase Order</option>
+                    @foreach ($approvedPurchaseOrders ?? [] as $value)
                         <option value="{{ $value->id }}">
-                            {{ $value->purchase_request_no }}</option>
+                            {{ $value->purchase_order_no }}
+                        </option>
                     @endforeach
                 </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Supplier:</label>
+                <input type="hidden" name="supplier_id" id="supplier_id">
+                <input type="text" name="supplier_name" id="supplier_name" class="form-control" readonly>
+
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Purchase Request</label>
+                <input type="hidden" name="purchase_request_id" id="purchase_request_id">
+                <input type="text" name="purchase_request_no" id="purchase_request_no" class="form-control" readonly>
+
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Receiving Date:</label>
+                <input type="date" id="receiving_date" name="receiving_date" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Reference No:</label>
+                <input type="text" name="reference_no" placeholder="Please select location and date." readonly
+                    id="reference_no" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
-                    <option value="">Select Location</option>
-                    @foreach (get_locations() as $value)
-                        <option value="{{ $value->id }}">{{ $value->name }}</option>
-                    @endforeach
-                    <input type="hidden" name="location_id" id="location_id">
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Purchase Date:</label>
-                <input readonly type="date" id="purchase_date" name="purchase_date" class="form-control">
+                <input type="hidden" name="location_id" id="location_id">
+                <input type="text" name="location_name" id="location_name" class="form-control" readonly>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control"></textarea>
+                <textarea readonly name="description" id="description" placeholder="Description"
+                    class="form-control"></textarea>
             </div>
         </div>
     </div>
@@ -44,11 +64,9 @@
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
-                        <th></th>
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
-                        <th>Vendor</th>
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Amount</th>
@@ -73,6 +91,8 @@
 
 
 <script>
+    $(".select2").select2();
+
     let rowIndex = 1;
 
     function addRow() {
@@ -124,7 +144,7 @@
                 category_id: category_id
             },
             dataType: 'json',
-            success: function(response) {
+            success: function (response) {
                 // Assuming response contains an array of categories
                 if (response.success && response.products) {
                     // Clear existing options
@@ -134,7 +154,7 @@
                     $('#item_id_' + count).append('<option value="">Select a Item</option>');
 
                     // Append new category options to the select element
-                    $.each(response.products, function(index, product) {
+                    $.each(response.products, function (index, product) {
                         $('#item_id_' + count).append(
                             `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
                         );
@@ -144,7 +164,7 @@
                     $('#item_id_' + count).html('<option value="">No products available</option>');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('AJAX Error:', status, error);
                 $('#item_id_' + count).html('<option value="">Error loading products</option>');
             }
@@ -156,41 +176,97 @@
         $('#uom_' + index).val(uom);
     }
 
-    function get_purchase(purchaseRequestId) {
-        if (!purchaseRequestId) return;
+    function fetchUniqueNumber() {
+        let locationId = $('#location_id').val();
+        let contractDate = $('#receiving_date').val();
+
+        if (locationId && contractDate) {
+            let url = '/procurement/store/get-unique-number-order-receiving/' + locationId + '/' + contractDate;
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    if (typeof response === 'string') {
+                        $('#reference_no').val(response);
+                    } else {
+                        $('#reference_no').val('');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $('#reference_no').val('');
+                }
+            });
+        } else {
+            $('#reference_no').val('');
+        }
+    }
+    $('#receiving_date').on('change', function () {
+        fetchUniqueNumber();
+    });
+
+
+    function get_purchase(purchaseOrderId = null) {
+        const supplierId = $('#supplier_id').val();
+
+        // If both are empty, don’t fetch
+        if (!purchaseOrderId) return;
+
+        // If supplier changed but no purchase request selected yet
+        if (!purchaseOrderId) {
+            purchaseOrderId = $('select[name="purchase_order_id"]').val();
+        }
 
         $.ajax({
-            url: "{{ route('store.purchase-order.approve-item') }}",
+            url: "{{ route('store.purchase-order-receiving.approve-item') }}",
             type: "GET",
             data: {
-                id: purchaseRequestId
+                id: purchaseOrderId,
+                //supplier_id: supplierId
             },
-            beforeSend: function() {
+            beforeSend: function () {
                 $('#purchaseOrderBody').html('<p>Loading...</p>');
             },
-            success: function(response) {
+            success: function (response) {
                 let html = response.html;
                 let master = response.master;
-                console.log(master);
 
+                $('#supplier_id').val(master.supplier?.id || '');
+                $('#supplier_name').val(master.supplier?.name || '');
+                $('#purchase_request_id').val(master.purchase_request_id || '');
+                $('#purchase_request_no').val(master.purchase_request?.purchase_request_no || '');
 
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
-                $('#purchase_date').val(master.purchase_date);
-                $('#reference_no').val(master.reference_no);
+                $('#location_name').val(master.location?.name);
+
+                // $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
-                $('#purchaseOrderBody').html('').html(html);
+
+
+
+                $('#purchaseOrderBody').html(html);
+
                 $('.select2').select2({
                     placeholder: 'Please Select',
                     width: '100%'
                 });
             },
-            error: function() {
+            error: function () {
                 $('#purchaseOrderBody').html('<p>Error loading data.</p>');
             }
         });
     }
+
+    $('#supplier_id, select[name="purchase_order_id"]').on('change', function () {
+        const purchaseOrderId = $('select[name="purchase_order_id"]').val();
+        $('input[name="qty[]"], input[name="rate[]"], input[name="total[]"]').each(function () {
+            $(this).val(''); // set to empty
+        });
+        get_purchase(purchaseOrderId);
+    });
+
 
     function calc(num) {
         var qty = parseFloat($('#qty_' + num).val());
