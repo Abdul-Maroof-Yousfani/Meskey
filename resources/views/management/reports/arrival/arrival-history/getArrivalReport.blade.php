@@ -136,7 +136,12 @@
                     <td>{{ $row->secondWeighbridge->weight ?? 0 }}</td>
                     <td>{{ $row->arrived_net_weight ?? 0 }}</td>
                     <td>{{ $row->arrived_net_weight - $row->net_weight ?? 0 }}</td>
-                    <td>{{ $row->approvals?->total_bags ? ($row->arrived_net_weight/$row->approvals->total_bags) : 'N/A' }}</td>
+                    <td>
+                        {{ $row->approvals?->total_bags 
+                            ? number_format($row->arrived_net_weight / $row->approvals->total_bags, 2) 
+                            : 'N/A' 
+                        }}
+                    </td>
                         {{-- <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
                         <td>
                             @if ($row->saudaType->name == 'Thadda')
