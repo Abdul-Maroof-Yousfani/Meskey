@@ -3,63 +3,66 @@
         <tr>
             <th class="col-sm-1">Image </th>
             <th class="col-sm-3">Name </th>
-            <th class="col-sm-4">Description</th>
-            <th class="col-sm-2">Product Type</th>
+            <th class="col-sm-3">Parent</th>
+            <th class="col-sm-1">Product Type</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($UnitOfMeasures) != 0)
-            @foreach ($UnitOfMeasures as $key => $row)
-                <tr>
-                    <td>
-                        <img src="{{ image_path($row->image) }}" class="avatar lisiavatarlogo" />
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->name }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            <small> {{ $row->description ?? '--' }}</small>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            <small> {{ formatEnumValue($row->product_type) ?? '--' }}</small>
-                        </p>
-                    </td>
-                    <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
-                            {{ $row->status }}
-                        </label>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
+        @if ($products->count() > 0)
+            @foreach ($products as $parent)
 
-                        </p>
+                {{-- ==== Parent Product Row ==== --}}
+                <tr style="background: #f7f7f7;">
+                    <td><img src="{{ image_path($parent->image) }}" class="avatar lisiavatarlogo" /></td>
+                    <td style="background: #f7f7f7; font-weight: bold;">{{ $parent->name }}</td>
+                    <td>—</td>
+                    <td><small>{{ formatEnumValue($parent->product_type) ?? '--' }}</small></td>
+                    <td><label
+                            class="badge bg-light-{{ $parent->status == 'inactive' ? 'danger' : 'success' }}">{{ $parent->status }}</label>
                     </td>
+                    <td>{!! dateFormatHtml($parent->created_at) !!}</td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('product.edit', $row->id) }}','Edit Product')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                            <a onclick="openModal(this,'{{ route('product.edit', $parent->id) }}','Edit Product')"
+                                class="info p-1 mr-2 position-relative"><i class="ft-edit"></i></a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('product.destroy', $row->id) }}','{{ route('get.product') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
+                            <a onclick="deletemodal('{{ route('product.destroy', $parent->id) }}','{{ route('get.product') }}')"
+                                class="danger p-1 mr-2 position-relative">
+                                <i class="ft-x"></i>
                             </a>
                         @endcan
                     </td>
                 </tr>
+
+                {{-- ==== Child Products Under Same Parent ==== --}}
+                @foreach ($parent->children as $child)
+                    <tr>
+                        <td><img src="{{ image_path($child->image) }}" class="avatar lisiavatarlogo" /></td>
+                        <td>—— {{ $child->name }}</td>
+                        <td>{{ $parent->name }}</td>
+                        <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
+                        <td><label
+                                class="badge bg-light-{{ $child->status == 'inactive' ? 'danger' : 'success' }}">{{ $child->status }}</label>
+                        </td>
+                        <td>{!! dateFormatHtml($child->created_at) !!}</td>
+                        <td>
+                            @can('role-edit')
+                                <a onclick="openModal(this,'{{ route('product.edit', $child->id) }}','Edit Product')"
+                                    class="info p-1 mr-2 position-relative"><i class="ft-edit"></i></a>
+                            @endcan
+                            @can('role-delete')
+                                <a onclick="deletemodal('{{ route('product.destroy', $child->id) }}','{{ route('get.product') }}')"
+                                    class="danger p-1 mr-2 position-relative">
+                                    <i class="ft-x"></i>
+                                </a>
+                            @endcan
+                        </td>
+                    </tr>
+                @endforeach
             @endforeach
         @else
             <tr class="ant-table-placeholder">
@@ -94,6 +97,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $UnitOfMeasures->links() }}
+        {{ $products->links() }}
     </div>
 </div>

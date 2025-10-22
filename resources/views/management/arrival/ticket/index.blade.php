@@ -58,6 +58,7 @@
                                                 <label for="search" class="form-label">Ticket/Truck/Bilty (No).</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                                
                                                 <input type="text" class="form-control" id="search"
                                                     placeholder="Search By Ticket/Truck/Bilty (No)." name="search"
                                                     value="{{ request('search') }}">

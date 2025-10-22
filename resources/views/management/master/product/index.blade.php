@@ -46,8 +46,8 @@
                                         <tr>
                                             <th class="col-sm-1">Image </th>
                                             <th class="col-sm-3">Name </th>
-                                            <th class="col-sm-4">Description</th>
-                                            <th class="col-sm-2">Product Type</th>
+                                            <th class="col-sm-3">Parent</th>
+                                            <th class="col-sm-1">Product Type</th>
                                             <th class="col-sm-1">Status</th>
                                             <th class="col-sm-2">Created</th>
                                             <th class="col-sm-1">Action</th>
@@ -67,17 +67,17 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.product') }}`)
         });
 
-        function check(value){
+        function check(value) {
 
             var type = 'raw_finish';
-            if(value === 'general_items'){
+            if (value === 'general_items') {
                 type = 'general_items';
                 $('.showhide').hide();
-            }else{
+            } else {
                 $('.showhide').show();
             }
 
@@ -90,17 +90,17 @@
                 type: 'GET',
                 data: { category_type: type },
                 dataType: 'json',
-                success: function(response) {
+                success: function (response) {
                     // Assuming response contains an array of categories
                     if (response.success && response.categories) {
                         // Clear existing options
                         $('#category_id').empty();
-                        
+
                         // Add default option
                         $('#category_id').append('<option value="">Select a category</option>');
-                        
+
                         // Append new category options to the select element
-                        $.each(response.categories, function(index, category) {
+                        $.each(response.categories, function (index, category) {
                             $('#category_id').append(
                                 `<option value="${category.id}">${category.name}</option>`
                             );
@@ -110,7 +110,7 @@
                         $('#category_id').html('<option value="">No categories available</option>');
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error('AJAX Error:', status, error);
                     $('#category_id').html('<option value="">Error loading categories</option>');
                 }
