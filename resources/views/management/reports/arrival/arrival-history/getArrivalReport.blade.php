@@ -7,7 +7,7 @@
         <th>Broker</th>
         <th>A/c Of</th>
         <th>Truck #</th>
-        <th>Ticket Commodity</th>
+        {{-- <th>Ticket Commodity</th> --}}
         <th>QC Commodity</th>
         <th>Party Ref.#</th>
         <th>Status</th>
@@ -18,6 +18,7 @@
         <th>2nd Weight</th>
         <th>Net Weight</th>
         <th>Wt. Diff.</th>
+        <th>Avg. Weight.</th>
         {{-- <th>GRN #</th> --}}
         {{-- <th>Sauda Type</th>
         <th>Station</th> --}}
@@ -79,7 +80,7 @@
                         <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
                         <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
                          <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
-                        <td>{{ $row->product->name ?? 'N/A' }}</td>
+                        {{-- <td>{{ $row->product->name ?? 'N/A' }}</td> --}}
                         <td>{{ $row->qcProduct->name ?? 'N/A' }}</td>
                         <td>N/A</td>
                           <td>
@@ -130,11 +131,12 @@
 
 
                     <td>{{ $row->net_weight ?? 'N/A' }}</td>
+
                     <td>{{ $row->firstWeighbridge->weight ?? 0 }}</td>
                     <td>{{ $row->secondWeighbridge->weight ?? 0 }}</td>
                     <td>{{ $row->arrived_net_weight ?? 0 }}</td>
                     <td>{{ $row->arrived_net_weight - $row->net_weight ?? 0 }}</td>
-
+                    <td>{{ $row->approvals?->total_bags ? ($row->arrived_net_weight/$row->approvals->total_bags) : 'N/A' }}</td>
                         {{-- <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
                         <td>
                             @if ($row->saudaType->name == 'Thadda')
