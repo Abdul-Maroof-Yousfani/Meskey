@@ -2,12 +2,12 @@
     <thead>
         <tr>
             <th class="col-sm-1">S No.</th>
-            <th class="col-sm-3">Division Name</th>
-            <th class="col-sm-2">Hours</th>
+            <th class="col-sm-2">Division Name</th>
+            <th class="col-sm-1">Hours</th>
             <th class="col-sm-2">Status</th>
             <th class="col-sm-2">Added By</th>
             <th class="col-sm-2">Created At</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-2">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -23,7 +23,9 @@
                         </span>
                     </td>
                     <td>{{ $division->addedBy->name ?? '--' }}</td>
-                    <td>{{ $division->created_at->format('Y-m-d H:i A') }}</td>
+                    <td>
+                      {!! dateFormatHtml($division->created_at) !!}
+                    </td>
                     <td>
                         <a onclick="openModal(this,'{{ route('division.edit', $division->id) }}','Edit Division')"
                             class="info p-1 text-center mr-2 position-relative">

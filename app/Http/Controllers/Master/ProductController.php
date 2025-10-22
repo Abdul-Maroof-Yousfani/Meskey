@@ -24,19 +24,19 @@ class ProductController extends Controller
      */
     public function getList(Request $request)
     {
-        $UnitOfMeasures = Product::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
+        $products = Product::with('children') // Eager load children
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where('name', 'like', $searchTerm);
+            })
             ->where('company_id', $request->company_id)
-
+            ->whereNull('parent_id') // Only fetch top-level parents
             ->latest()
-            ->paginate(request('per_page', 25));
+            ->paginate($request->get('per_page', 25));
 
-        return view('management.master.product.getList', compact('UnitOfMeasures'));
+        return view('management.master.product.getList', compact('products'));
     }
+
 
     public function getItems(Request $request)
     {
@@ -65,10 +65,11 @@ class ProductController extends Controller
     {
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
-
+        $parentProducts = Product::where('parent_id', null)->get();
         return view('management.master.product.create', [
             'categories' => $categories,
             'units' => $units,
+            'parentProducts' => $parentProducts,
         ]);
     }
 
@@ -80,6 +81,7 @@ class ProductController extends Controller
         $data = $request->all();
         $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory', 'yes'));
 
+        $data['parent_id'] = $request->parent_id ?? null;
         $data['account_id'] = $account->id;
         $UnitOfMeasure = Product::create($data);
 
@@ -95,6 +97,7 @@ class ProductController extends Controller
 
         $product = Product::findOrFail($id);
 
+        $parentProducts = Product::where('parent_id', null)->get();
 
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
@@ -104,6 +107,7 @@ class ProductController extends Controller
             'categories' => $categories,
             'units' => $units,
             'product' => $product,
+            'parentProducts' => $parentProducts,
         ]);
     }
 

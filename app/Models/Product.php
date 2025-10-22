@@ -16,6 +16,7 @@ class Product extends Model
     // Fillable attributes for mass assignment
     protected $fillable = [
         'company_id',
+        'parent_id',
         'category_id',
         'account_id',
         'bag_weight_for_purchasing',
@@ -55,4 +56,16 @@ class Product extends Model
     {
         return $this->hasMany(QcReliefParameter::class);
     }
+
+    public function children()
+    {
+        return $this->hasMany(Product::class, 'parent_id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Product::class, 'parent_id');
+    }
+
+
 }

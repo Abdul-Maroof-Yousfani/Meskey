@@ -19,7 +19,11 @@
                             {{ ucfirst($range->status) }}
                         </span>
                     </td>
-                    <td>{{ $range->created_at->format('Y-m-d H:i A') }}</td>
+                    <td>
+                    
+                      {!! dateFormatHtml($range->created_at) !!}
+                    
+                  </td>
                     <td>
                         <a onclick="openModal(this,'{{ route('truck-size-ranges.edit', $range->id) }}','Edit Truck Size Range')"
                             class="info p-1 text-center mr-2 position-relative">

@@ -3,15 +3,14 @@
         <tr>
             <th style="width: 15%;">Name</th>
             <th style="width: 35%;">Description</th>
-            <th style="width: 20%;">Line Type</th>
             <th style="width: 10%;">Status</th>
             <th style="width: 10%;">Created</th>
             <th style="width: 10%;">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($stations) != 0)
-            @foreach ($stations as $key => $row)
+        @if (count($brands) != 0)
+            @foreach ($brands as $key => $row)
                 <tr>
                     <td>
                         <p class="m-0">
@@ -24,12 +23,7 @@
                         </p>
                     </td>
                     <td>
-                        <p class="m-0">
-                            {{ ucwOrds($row->line_type ?? 'N/A') }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
+                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'success' }}">
                             {{ $row->status }}
                         </label>
                     </td>
@@ -38,13 +32,13 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('arrival-location.edit', $row->id) }}','Edit Arrival Location')"
+                            <a onclick="openModal(this,'{{ route('brands.edit', $row->id) }}','Edit Brand')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
                         @can('role-delete')
-                            <a onclick="deletemodal('{{ route('arrival-location.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
+                            <a onclick="deletemodal('{{ route('brands.destroy', $row->id) }}','{{ route('get.brands') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
@@ -86,6 +80,6 @@
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $stations->links() }}
+        {{ $brands->links() }}
     </div>
 </div>

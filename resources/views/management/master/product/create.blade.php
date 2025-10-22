@@ -38,6 +38,20 @@
                 </select>
             </div>
         </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Parent Product:</label>
+                <select class="form-control" name="parent_id" id="parent_id">
+                    <option value="">Select Parent Product</option>
+                    @foreach ($parentProducts as $parentProduct)
+                        <option value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
+
+                    @endforeach
+
+
+                </select>
+            </div>
+        </div>
 
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
@@ -62,8 +76,8 @@
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
- 
-        <div class="col-xs-6 col-sm-6 col-md-6 showhide" >
+
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide">
             <div class="form-group">
                 <label>Bag Weight for Purchasing:</label>
                 <input type="text" name="bag_weight_for_purchasing" placeholder="Bag Weight for Purchasing"

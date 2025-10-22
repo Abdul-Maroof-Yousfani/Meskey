@@ -62,6 +62,20 @@
                 </select>
             </div>
         </div>
+          <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Parent Product:</label>
+                <select class="form-control" name="parent_id" id="parent_id">
+                    <option value="">Select Parent Product</option>
+                    @foreach ($parentProducts as $parentProduct)
+                        <option {{ $parentProduct->id == $product->parent_id ? 'selected' : '' }} value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
+
+                    @endforeach
+
+
+                </select>
+            </div>
+        </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Unit of Measure:</label>

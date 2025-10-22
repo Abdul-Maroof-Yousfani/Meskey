@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Divisions
+    Brands
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Divisions List</h2>
+                    <h2 class="page-title"> Brands</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('division.create') }}','Add Division')" type="button"
+                    <button onclick="openModal(this,'{{ route('brands.create') }}','Add Brand')" type="button"
                         class="btn btn-primary position-relative ">
-                        Create Division
+                        Create Brand
                     </button>
                 </div>
             </div>
@@ -37,19 +37,18 @@
                                     </div>
                                 </div>
                             </form>
+                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">S No.</th>
-                                            <th class="col-sm-2">Division Name</th>
-                                            <th class="col-sm-1">Hours</th>
-                                            <th class="col-sm-2">Status</th>
-                                            <th class="col-sm-2">Added By</th>
-                                            <th class="col-sm-2">Created At</th>
-                                            <th class="col-sm-2">Action</th>
+                                            <th style="width: 15%;">Name</th>
+                                            <th style="width: 35%;">Description</th>
+                                            <th style="width: 10%;">Status</th>
+                                            <th style="width: 10%;">Created</th>
+                                            <th style="width: 10%;">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -59,12 +58,14 @@
                 </div>
             </div>
         </section>
+
+
     </div>
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
-            filterationCommon(`{{ route('get.division') }}`)
+        $(document).ready(function() {
+            filterationCommon(`{{ route('get.brands') }}`)
         });
     </script>
 @endsection
