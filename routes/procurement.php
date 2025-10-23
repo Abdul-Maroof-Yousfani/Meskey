@@ -138,6 +138,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('purchase-quotation/comparison', [PurchaseQuotationController::class, 'get_comparison'])->name('purchase-quotation.comparison');
     Route::get('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list');
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
+    Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');

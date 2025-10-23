@@ -9,7 +9,7 @@
             <th>GRN Number</th>
             <th>Amount</th>
             <th>Status</th>
-            {{-- <th>Actions</th> --}}
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -34,28 +34,28 @@
                             {{ ucfirst($paymentRequest->status) }}
                         </span>
                     </td>
-                    {{-- <td>
-                        @can('payment-request-edit')
+                    <td>
+                        {{-- @can('payment-request-edit') --}}
                             <a onclick="openModal(this,'{{ route('store.purchase-order-payment-request.edit', $paymentRequest->id) }}','Edit Payment Request',true,'70%')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
-                        @endcan
-                        @can('payment-request-delete')
+                        {{-- @endcan --}}
+                        {{-- @can('payment-request-delete') --}}
                             <a onclick="deletemodal('{{ route('store.purchase-order-payment-request.destroy', $paymentRequest->id) }}','{{ route('store.get.purchase-order-payment-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
-                        @endcan
-                        @can('payment-request-approve')
+                        {{-- @endcan --}}
+                        {{-- @can('payment-request-approve') --}}
                             @if ($paymentRequest->status == 'pending')
                                 <a onclick="approvePaymentRequest('{{ route('store.purchase-order-payment-request.approve', $paymentRequest->id) }}')"
                                     class="success p-1 text-center position-relative" title="Approve">
                                     <i class="ft-check font-medium-3"></i>
                                 </a>
                             @endif
-                        @endcan
-                    </td> --}}
+                        {{-- @endcan --}}
+                    </td>
                 </tr>
             @endforeach
         @else
