@@ -351,7 +351,7 @@
                                     href="{{ route('store.purchase-order-receiving.index') }}"
                                     onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Receiving</span>
+                                    <span data-i18n="Task Board">Goods Received Note</span>
                                 </a>
                             </li>
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"

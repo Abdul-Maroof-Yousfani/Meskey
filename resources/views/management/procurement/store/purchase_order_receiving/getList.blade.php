@@ -130,12 +130,12 @@
                                         $shouldDisableApproval =
                                             $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                     @endphp
-                                    <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View Receiving', false, '80%')"
+                                    <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '80%')"
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
                                         <i class="ft-eye font-medium-3"></i>
                                     </a>
                                     @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit Receiving', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit GRN', false, '80%')"
                                             class="info p-1 text-center mr-2 position-relative">
                                             <i class="ft-edit font-medium-3"></i>
                                         </a>
