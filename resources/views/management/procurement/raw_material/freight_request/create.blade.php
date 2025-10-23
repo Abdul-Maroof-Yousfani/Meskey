@@ -72,7 +72,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Bill/T</label>
                 <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->purchaseFreight->bilty_no ?? 'N/A' }}" readonly placeholder="Bill/T">
+                    value="{{ $ticket->bilty_no ?? 'N/A' }}" readonly placeholder="Bill/T">
             </div>
         </div>
     </div>
