@@ -34,7 +34,7 @@
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
     <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
 
-    @if (isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id))
+    @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
     @else
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
