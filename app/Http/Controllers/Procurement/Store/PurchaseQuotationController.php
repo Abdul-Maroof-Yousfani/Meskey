@@ -335,18 +335,21 @@ class PurchaseQuotationController extends Controller
         ])->findOrFail($purchase_request_id);
 
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
+            ->where('am_approval_status', 'pending')->pluck('id');
+
+        $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             ->where('am_approval_status', 'pending')
-            ->whereHas('purchase_quotation', function ($query) {
-                $query->whereIn('am_approval_status', ['approved', 'partial_approved']);
-            })
+            //     ->whereHas('purchase_quotation', function ($query) {
+            //     $query->whereNotIn('am_approval_status', ['partial_approved']);
+            // })
             ->get();
 
         $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
-            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             // ->where('am_approval_status', 'pending')
             ->latest()->first();
 
