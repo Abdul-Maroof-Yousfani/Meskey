@@ -126,8 +126,8 @@
                         </option>
                     @endforeach
                 </select>
-                @if (isset($isRequestApprovalPage, $paymentRequestData->vendor_id))
-                    <input type="hidden" name="vendor_id" value="{{ $freightPaymentRequest->vendor_id }}" readonly>
+                @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
+                    <input type="hidden" name="vendor_id" value="{{ $paymentRequestData->payment_to }}" readonly>
                 @endif
             </div>
         </div>
