@@ -1,7 +1,7 @@
 @php
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
   //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
-    $param0 = isset($paymentRequestData->payment_to) && $paymentRequestData->payment_to ? 'disabled' : '';
+    $param0 = isset($paymentRequestData) && $paymentRequestData->payment_to ? 'disabled' : '';
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
@@ -117,11 +117,11 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="font-weight-bold">Freight Party {{ $paymentRequestData->payment_to }}</label>
+                <label class="font-weight-bold">Freight Party</label>
                 <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" @selected($paymentRequestData->payment_to == $vendor->id)>
+                        <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id)>
                             {{ $vendor->name }}
                         </option>
                     @endforeach
