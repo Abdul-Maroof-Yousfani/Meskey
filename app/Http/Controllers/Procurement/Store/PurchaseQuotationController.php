@@ -212,7 +212,7 @@ class PurchaseQuotationController extends Controller
 
                 foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
                     $itemRowspan = count($itemGroup['suppliers']);
-                    $quotaionCount =count($requestGroup['quotations']);
+                    $quotaionCount = count($requestGroup['quotations']);
                     $requestRowspan += $itemRowspan;
                     $quotaionRowspan += $quotaionCount;
 
@@ -244,7 +244,7 @@ class PurchaseQuotationController extends Controller
                     'request_rowspan' => $requestRowspan,
                     'quotaion_rowspan' => $quotaionRowspan,
 
-                    
+
                     'items' => $requestItems,
                     'has_approved_item' => $hasApprovedItem
                 ];
@@ -340,9 +340,12 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             ->where('am_approval_status', 'pending')
+            ->whereHas('purchase_quotation', function ($query) {
+                $query->whereNotIn('am_approval_status', ['approved', 'partial_approved']);
+            })
             ->get();
 
-            $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             // ->where('am_approval_status', 'pending')
             ->latest()->first();
@@ -377,7 +380,7 @@ class PurchaseQuotationController extends Controller
             ->where('am_approval_status', operator: 'approved')
             ->get();
 
-            $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             // ->where('am_approval_status', 'pending')
             ->first();
@@ -416,12 +419,12 @@ class PurchaseQuotationController extends Controller
             //     }
             // )
             ->when(
-        in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
-        function ($query) {
-            $query->where('am_approval_status', 'approved');
-        }
-    )
-            
+                in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
+                function ($query) {
+                    $query->where('am_approval_status', 'approved');
+                }
+            )
+
             ->get();
 
         return view('management.procurement.store.purchase_quotation.approvalCanvas', [
