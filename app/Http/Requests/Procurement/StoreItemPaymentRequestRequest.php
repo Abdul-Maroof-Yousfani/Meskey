@@ -20,7 +20,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
         return [
             // 'is_advance' => 'required|boolean',
             'purchase_order_id' => 'required_if:is_advance,1|nullable|exists:purchase_orders,id',
-            'grn_id' => 'required_if:is_advance,0|nullable|exists:good_receive_notes,id',
+            'purchase_order_receiving_id' => 'required_if:is_advance,0|nullable|exists:good_receive_notes,id',
             'supplier_id' => 'required|exists:suppliers,id',
             'amount' => [
                 'required',
@@ -37,7 +37,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
         return function ($attribute, $value, $fail) {
             $isAdvance = $this->input('is_advance');
             $purchaseOrderId = $this->input('purchase_order_id');
-            $grnId = $this->input('grn_id');
+            $grnId = $this->input('purchase_order_receiving_id');
             $amount = floatval($value);
 
             if ($isAdvance && $purchaseOrderId) {
@@ -66,7 +66,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
                 }
 
                 $totalAmount = $grn->price;
-                $paidAmount = PaymentRequest::where('grn_id', $grnId)
+                $paidAmount = PaymentRequest::where('purchase_order_receiving_id', $grnId)
                     ->where('status', '!=', 'rejected')
                     ->sum('amount');
                 $remainingAmount = $totalAmount - $paidAmount;
@@ -82,7 +82,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
     {
         return [
             'purchase_order_id.required_if' => 'Purchase order is required for advance payment.',
-            'grn_id.required_if' => 'GRN is required for payment against receiving.',
+            'purchase_order_receiving_id.required_if' => 'GRN is required for payment against receiving.',
             'amount.max_remaining' => 'Payment amount cannot exceed the remaining amount.',
         ];
     }

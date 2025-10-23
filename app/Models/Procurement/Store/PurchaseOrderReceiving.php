@@ -6,6 +6,7 @@ namespace App\Models\Procurement\Store;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
+use App\Models\Product;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -132,7 +133,7 @@ class PurchaseOrderReceiving extends Model
 
     public function paymentRequests(): HasMany
     {
-        return $this->hasMany(PaymentRequest::class, 'grn_id');
+        return $this->hasMany(PaymentRequest::class, 'purchase_order_receiving_id');
     }
 
     public function getTotalPaidAttribute()

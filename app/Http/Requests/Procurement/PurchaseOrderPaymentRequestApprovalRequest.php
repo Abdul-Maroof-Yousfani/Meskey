@@ -53,7 +53,7 @@ class PurchaseOrderPaymentRequestApprovalRequest extends FormRequest
         }
 
         $paymentRequestData = $paymentRequest->paymentRequestData;
-        $id =  $paymentRequest->purchase_order_id ?? $paymentRequest->grn_id;
+        $id =  $paymentRequest->purchase_order_id ?? $paymentRequest->purchase_order_receiving_id;
 
         if (!$id) {
             $fail('Invalid purchase order associated with payment request.');
@@ -67,9 +67,9 @@ class PurchaseOrderPaymentRequestApprovalRequest extends FormRequest
             $q->where(function ($query) use ($id) {
                 $query->where(function ($subQuery) use ($id) {
                     $subQuery->where('store_purchase_order_id', $id)
-                        ->whereNull('grn_id');
+                        ->whereNull('purchase_order_receiving_id');
                 })->orWhere(function ($subQuery) use ($id) {
-                    $subQuery->where('grn_id', $id)
+                    $subQuery->where('purchase_order_receiving_id', $id)
                         ->whereNull('store_purchase_order_id');
                 });
             });

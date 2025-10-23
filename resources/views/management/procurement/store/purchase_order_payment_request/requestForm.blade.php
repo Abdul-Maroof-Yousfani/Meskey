@@ -3,7 +3,7 @@
         ? $paymentType
         : old('payment_type') ?? ($paymentRequest->payment_type ?? 'against_receiving');
     $selectedPurchaseOrderId = old('purchase_order_id') ?? ($paymentRequest->purchaseOrder->id ?? null);
-    $selectedGrnId = old('grn_id') ?? ($paymentRequest->grn->id ?? null);
+    $selectedGrnId = old('purchase_order_receiving_id') ?? ($paymentRequest->grn->id ?? null);
     $amount = old('amount') ?? ($paymentRequest->amount ?? null);
     $description = old('description') ?? ($paymentRequest->description ?? null);
     $supplierId = old('supplier_id') ?? ($paymentRequest->supplier_id ?? null);
@@ -84,7 +84,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Select GRN:</label>
-                    <select class="form-control select2" id="grn_id" name="grn_id" disabled>
+                    <select class="form-control select2" id="purchase_order_receiving_id" name="purchase_order_receiving_id" disabled>
                         <option value="{{ $model->id }}">{{ $model->grn_number }}</option>
                     </select>
                 </div>
@@ -239,9 +239,9 @@
             //             is_advance: false
             //         },
             //         success: function(response) {
-            //             $('#grn_id').empty().append('<option value="">Select GRN</option>');
+            //             $('#purchase_order_receiving_id').empty().append('<option value="">Select GRN</option>');
             //             response.grns.forEach(function(grn) {
-            //                 $('#grn_id').append('<option value="' + grn.id +
+            //                 $('#purchase_order_receiving_id').append('<option value="' + grn.id +
             //                     '" data-supplier-id="' + grn.supplier.id +
             //                     '" data-supplier-name="' + grn.supplier.name +
             //                     '" data-total="' + grn.price + '"' +
@@ -251,7 +251,7 @@
             //                     '</option>');
             //             });
             //             if (selectedId) {
-            //                 $('#grn_id').val(selectedId).trigger('change');
+            //                 $('#purchase_order_receiving_id').val(selectedId).trigger('change');
             //             }
             //         }
             //     });
@@ -269,7 +269,7 @@
             @if (!isset($grns))
                 loadGRNs({{ $selectedGrnId ?? 'null' }});
             @else
-                $('#grn_id').val('{{ $selectedGrnId }}').trigger('change');
+                $('#purchase_order_receiving_id').val('{{ $selectedGrnId }}').trigger('change');
             @endif
         @endif
 
@@ -307,7 +307,7 @@
             }
         });
 
-        $('#grn_id').change(function() {
+        $('#purchase_order_receiving_id').change(function() {
             var grnId = $(this).val();
             var supplierId = $(this).find(':selected').data('supplier-id');
             var supplierName = $(this).find(':selected').data('supplier-name');
@@ -323,7 +323,7 @@
                     url: '{{ route('store.purchase-order-payment-request.get-paid-amount') }}',
                     type: 'GET',
                     data: {
-                        grn_id: grnId
+                        purchase_order_receiving_id: grnId
                     },
                     success: function(response) {
                         grnPaidAmount = response.paid_amount || 0;
