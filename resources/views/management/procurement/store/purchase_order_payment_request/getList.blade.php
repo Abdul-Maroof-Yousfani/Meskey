@@ -24,7 +24,7 @@
                         </span>
                     </td>
                     <td>{{ optional($paymentRequest->supplier)->name }}</td>
-                    <td>{{ optional($paymentRequest->purchase_order)->purchase_order_no ?? ($paymentRequest->grn->purchaseOrder->purchase_order_no ?? 'N/A') }}
+                    <td>{{ optional($paymentRequest->purchaseOrder)->purchase_order_no ?? ($paymentRequest->grn->purchaseOrder->purchase_order_no ?? 'N/A') }}
                     </td>
                     <td>{{ optional($paymentRequest->grn)->purchase_order_receiving_no ?? 'N/A' }}</td>
                     <td>{{ number_format($paymentRequest->amount, 2) }}</td>
