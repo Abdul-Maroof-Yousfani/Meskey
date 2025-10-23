@@ -6,6 +6,7 @@ use App\Models\Master\Account\GoodReceiveNote;
 use App\Models\Master\Supplier;
 use App\Models\PaymentVoucherData;
 use App\Models\Procurement\Store\PurchaseOrder;
+use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ class PaymentRequest extends Model
         'request_no',
         'supplier_id',
         'purchase_order_id',
-        'grn_id',
+        'purchase_order_receiving_id',
         'requested_by',
         'request_date',
         'approved_by',
@@ -71,7 +72,7 @@ class PaymentRequest extends Model
 
     public function grn()
     {
-        return $this->belongsTo(GoodReceiveNote::class, 'grn_id');
+        return $this->belongsTo(PurchaseOrderReceiving::class, 'purchase_order_receiving_id');
     }
 
     public function supplier()

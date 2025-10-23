@@ -1,4 +1,5 @@
-<form action="{{ route('store.purchase-order-payment-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.purchase-order-payment-request.store') }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-payment-request') }}" />
 
@@ -49,8 +50,7 @@
             <div class="col-md-6 d-none">
                 <div class="form-group">
                     <label>Payment Amount:</label>
-                    <input type="number" class="form-control" id="po_payment_amount" step="0.01" min="0"
-                        value="0">
+                    <input type="number" class="form-control" id="po_payment_amount" step="0.01" min="0" value="0">
                 </div>
             </div>
             <div class="col-md-6">
@@ -68,7 +68,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Select GRN:</label>
-                    <select class="form-control select2" id="grn_id" name="grn_id">
+                    <select class="form-control select2" id="purchase_order_receiving_id"
+                        name="purchase_order_receiving_id">
                         <option value="">Select GRN</option>
                     </select>
                 </div>
@@ -96,8 +97,7 @@
             <div class="col-md-6 d-none">
                 <div class="form-group">
                     <label>Payment Amount:</label>
-                    <input type="number" class="form-control" id="grn_payment_amount" step="0.01" min="0"
-                        value="0">
+                    <input type="number" class="form-control" id="grn_payment_amount" step="0.01" min="0" value="0">
                 </div>
             </div>
             <div class="col-md-6">
@@ -120,8 +120,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Amount:</label>
-                <input type="number" class="form-control" id="amount" name="amount" step="0.01"
-                    min="0" required>
+                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" required>
             </div>
         </div>
     </div>
@@ -144,7 +143,7 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
 
         // Store amounts for calculations
@@ -155,12 +154,12 @@
         let grnRequestedAmount = 0;
         let poRequestedAmount = 0;
 
-        $('#is_advance').change(function() {
+        $('#is_advance').change(function () {
             if ($(this).is(':checked')) {
                 $('#advanceSection').show();
                 $('#receivingSection').hide();
                 loadPurchaseOrders();
-                $('#grn_id').val('').trigger('change');
+                $('#purchase_order_receiving_id').val('').trigger('change');
             } else {
                 $('#advanceSection').hide();
                 $('#receivingSection').show();
@@ -178,16 +177,16 @@
                 data: {
                     is_advance: true
                 },
-                success: function(response) {
+                success: function (response) {
                     $('#purchase_order_id').empty().append(
                         '<option value="">Select Purchase Order</option>');
-                    response.purchase_orders.forEach(function(po) {
+                    response.purchase_orders.forEach(function (po) {
                         $('#purchase_order_id').append('<option value="' + po.id +
                             '" data-supplier-id="' + po.supplier_id +
                             '" data-supplier-name="' + po.supplier_name +
                             '" data-total="' + po.total_amount + '">' + '#' + po
-                            .purchase_order_no + (po.supplier_name ? ' - ' + po
-                                .supplier_name : '') +
+                                .purchase_order_no + (po.supplier_name ? ' - ' + po
+                                    .supplier_name : '') +
                             '</option>');
                     });
                 }
@@ -201,23 +200,26 @@
                 data: {
                     is_advance: false
                 },
-                success: function(response) {
-                    $('#grn_id').empty().append('<option value="">Select GRN</option>');
+                success: function (response) {
+                    $('#purchase_order_receiving_id').empty().append('<option value="">Select GRN</option>');
 
-                    response.grns.forEach(function(grn) {
-                        $('#grn_id').append('<option value="' + grn.id +
+                    response.grns.forEach(function (grn) {
+                        var totalAmount = grn.purchase_order_receiving_data.reduce(function (sum, item) {
+                            return sum + parseFloat(item.total || 0);
+                        }, 0);
+                        $('#purchase_order_receiving_id').append('<option value="' + grn.id +
                             '" data-supplier-id="' + grn.supplier.id +
                             '" data-supplier-name="' + grn.supplier.name +
-                            '" data-total="' + grn.price + '">' + '#' + grn
-                            .grn_number + (grn.product?.name ? ' - ' + grn.product
-                                .name : '') +
+                            '" data-total="' + totalAmount + '">' + '#' + grn
+                                .purchase_order_receiving_no + (grn.product?.name ? ' - ' + grn.product
+                                    .name : '') +
                             '</option>');
                     });
                 }
             });
         }
 
-        $('#purchase_order_id').change(function() {
+        $('#purchase_order_id').change(function () {
             var purchaseOrderId = $(this).val();
             var supplierId = $(this).find(':selected').data('supplier-id');
             var supplierName = $(this).find(':selected').data('supplier-name');
@@ -235,7 +237,7 @@
                     data: {
                         purchase_order_id: purchaseOrderId
                     },
-                    success: function(response) {
+                    success: function (response) {
                         poPaidAmount = response.paid_amount || 0;
                         poRequestedAmount = response.requested_amount || 0;
 
@@ -253,12 +255,11 @@
             }
         });
 
-        $('#grn_id').change(function() {
+        $('#purchase_order_receiving_id').change(function () {
             var grnId = $(this).val();
             var supplierId = $(this).find(':selected').data('supplier-id');
             var supplierName = $(this).find(':selected').data('supplier-name');
             grnTotalAmount = $(this).find(':selected').data('total');
-
             if (supplierId && supplierName) {
                 $('#supplier_id').val(supplierId);
                 $('#supplier_name').val(supplierName);
@@ -269,9 +270,9 @@
                     url: '{{ route('store.purchase-order-payment-request.get-paid-amount') }}',
                     type: 'GET',
                     data: {
-                        grn_id: grnId
+                        purchase_order_receiving_id: grnId
                     },
-                    success: function(response) {
+                    success: function (response) {
                         grnPaidAmount = response.paid_amount || 0;
                         grnRequestedAmount = response.requested_amount || 0;
 
@@ -289,17 +290,17 @@
             }
         });
 
-        $('#po_payment_amount').on('input', function() {
+        $('#po_payment_amount').on('input', function () {
             updatePORemainingAmount();
             $('#amount').val($(this).val());
         });
 
-        $('#grn_payment_amount').on('input', function() {
+        $('#grn_payment_amount').on('input', function () {
             updateGRNRemainingAmount();
             $('#amount').val($(this).val());
         });
 
-        $('#amount').on('input', function() {
+        $('#amount').on('input', function () {
             if ($('#is_advance').is(':checked')) {
                 $('#po_payment_amount').val($(this).val());
                 updatePORemainingAmount();

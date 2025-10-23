@@ -41,7 +41,6 @@
                     @endphp
 
                     <tr>
-                        {{-- ✅ Show request number and approval button only once per purchase_request_no --}}
                         @if ($previousRequestNo !== $currentRequestNo)
                               <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}" style="background-color: #e8f5e8; vertical-align: middle;">
                                 <p class="m-0 font-weight-bold">
@@ -131,7 +130,17 @@
                                 <div class="d-flex gap-2">
                                     <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                       <i class="ft-check font-medium-3"></i>
+                                        
+                                    </a>
+                                </div>
+                            {{-- </td>
+                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
+                                <div class="d-flex gap-2">
+                                    <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
+                                        class="info p-1 text-center mr-2 position-relative" title="View Approved">
                                         <i class="ft-eye font-medium-3"></i>
+
                                     </a>
                                 </div>
                             </td>

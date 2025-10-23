@@ -138,6 +138,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('purchase-quotation/comparison', [PurchaseQuotationController::class, 'get_comparison'])->name('purchase-quotation.comparison');
     Route::get('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list');
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
+    Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
@@ -145,6 +146,13 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-order-approvals/{id}', [StorePurchaseOrderController::class, 'manageApprovals'])->name('purchase-order.approvals');
     Route::get('purchase-order/get_order_item', [StorePurchaseOrderController::class, 'get_order_item'])->name('purchase-order.get_order_item');
     Route::get('get-unique-number-order/{locationId}/{contractDate}', [StorePurchaseOrderController::class, 'getNumber'])->name('get-unique-number-order');
+
+    Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class)->except(['show']);
+    Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');
+    Route::get('purchase-order-receiving/approve-item', [PurchaseOrderReceivingController::class, 'approve_item'])->name('purchase-order-receiving.approve-item');
+    Route::get('purchase-order-receiving-approvals/{id}', [PurchaseOrderReceivingController::class, 'manageApprovals'])->name('purchase-order-receiving.approvals');
+    Route::get('purchase-order-receiving/get_order_receiving_item', [PurchaseOrderReceivingController::class, 'get_order_item'])->name('purchase-order-receiving.get_order_receiving_item');
+    Route::get('get-unique-number-order-receiving/{locationId}/{contractDate}', [PurchaseOrderReceivingController::class, 'getNumber'])->name('get-unique-number-order-receiving');
 
 
     Route::resource('purchase-order-payment-request', PurchaseOrderPaymentRequestController::class)->except(['show']);
@@ -155,8 +163,6 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-order-payment-request/get-sources', [PurchaseOrderPaymentRequestController::class, 'getSources'])->name('purchase-order-payment-request.get-sources');
     Route::post('purchase-order-payment-request/{id}/approve', [PurchaseOrderPaymentRequestController::class, 'approve'])->name('purchase-order-payment-request.approve');
 
-    Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class);
-    Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);

@@ -212,7 +212,7 @@ class PurchaseQuotationController extends Controller
 
                 foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
                     $itemRowspan = count($itemGroup['suppliers']);
-                    $quotaionCount =count($requestGroup['quotations']);
+                    $quotaionCount = count($requestGroup['quotations']);
                     $requestRowspan += $itemRowspan;
                     $quotaionRowspan += $quotaionCount;
 
@@ -244,7 +244,7 @@ class PurchaseQuotationController extends Controller
                     'request_rowspan' => $requestRowspan,
                     'quotaion_rowspan' => $quotaionRowspan,
 
-                    
+
                     'items' => $requestItems,
                     'has_approved_item' => $hasApprovedItem
                 ];
@@ -339,10 +339,48 @@ class PurchaseQuotationController extends Controller
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            // ->where('am_approval_status', 'pending')
+            ->where('am_approval_status', 'pending')
+            ->whereHas('purchase_quotation', function ($query) {
+                $query->whereNotIn('am_approval_status', ['approved', 'partial_approved']);
+            })
             ->get();
 
-            $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            // ->where('am_approval_status', 'pending')
+            ->latest()->first();
+
+        return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
+            'purchaseRequest' => $purchaseRequest,
+            'categories' => $categories,
+            'locations' => $locations,
+            'job_orders' => $job_orders,
+            'PurchaseQuotationData' => $PurchaseQuotationData,
+            'data1' => $data,
+        ]);
+    }
+
+    public function manageComparisonApprovalsView($purchase_request_id)
+    {
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $locations = CompanyLocation::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
+
+        $purchaseRequest = PurchaseRequest::with([
+            'PurchaseData',
+            'PurchaseData.category',
+            'PurchaseData.item',
+        ])->findOrFail($purchase_request_id);
+
+        $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
+            ->pluck('id');
+
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            ->where('am_approval_status', operator: 'approved')
+            ->get();
+
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             // ->where('am_approval_status', 'pending')
             ->first();
@@ -356,6 +394,8 @@ class PurchaseQuotationController extends Controller
             'data1' => $data,
         ]);
     }
+
+
 
     public function manageApprovals($id)
     {
@@ -379,12 +419,12 @@ class PurchaseQuotationController extends Controller
             //     }
             // )
             ->when(
-        in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
-        function ($query) {
-            $query->where('am_approval_status', 'approved');
-        }
-    )
-            
+                in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
+                function ($query) {
+                    $query->where('am_approval_status', 'approved');
+                }
+            )
+
             ->get();
 
         return view('management.procurement.store.purchase_quotation.approvalCanvas', [

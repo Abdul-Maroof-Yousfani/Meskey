@@ -26,7 +26,7 @@ class PaymentRequestData extends Model
         'max_contract_range',
         'supplier_id',
         'store_purchase_order_id',
-        'grn_id',
+        'purchase_order_receiving_id',
         'description',
         'payment_type',
         'is_advance_payment',

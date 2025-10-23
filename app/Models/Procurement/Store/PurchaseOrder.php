@@ -42,10 +42,10 @@ class PurchaseOrder extends Model
         return $this->hasMany(PurchaseOrderData::class,'purchase_order_id');
     }
 
-    // public function items(): HasMany
-    // {
-    //     return $this->hasMany(PurchaseOrderData::class, 'purchase_order_id');
-    // }
+    public function items(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderData::class, 'purchase_order_id');
+    }
 
     public function paymentRequests(): HasMany
     {

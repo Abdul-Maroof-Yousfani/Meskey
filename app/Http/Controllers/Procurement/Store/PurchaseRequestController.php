@@ -313,7 +313,7 @@ class PurchaseRequestController extends Controller
         $location = CompanyLocation::find($locationId ?? $request->company_location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'PR-' . $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = PurchaseRequest::where('purchase_request_no', 'like', "$prefix-%")
             ->latest()
@@ -330,7 +330,7 @@ class PurchaseRequestController extends Controller
             $newNumber = 1;
         }
 
-        $purchase_request_no = $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_request_no = 'PR-' . $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([

@@ -12,6 +12,7 @@ use App\Models\Procurement\PaymentRequestApproval;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
+use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -64,12 +65,13 @@ class PurchaseOrderPaymentRequestController extends Controller
                 'grns' => []
             ]);
         } else {
-            $grns = GoodReceiveNote::with(['purchaseOrder', 'product', 'supplier'])
-                ->where('status', 'received')
+            $grns = PurchaseOrderReceiving::with(['purchase_order', 'product', 'supplier'])
+                ->where('am_approval_status', 'approved')
                 ->get()
                 ->map(function ($grn) {
                     $total_paid = $grn->paymentRequests()->where('status', 'approved')->sum('amount');
-                    $remaining_amount = max(0, $grn->price - $total_paid);
+                    $total_amount = $grn->purchaseOrderReceivingData->sum('total');
+                    $remaining_amount = max(0, $total_amount - $total_paid);
                     $grnArray = $grn->toArray();
                     $grnArray['total_paid'] = $total_paid;
                     $grnArray['remaining_amount'] = $remaining_amount;
@@ -79,7 +81,8 @@ class PurchaseOrderPaymentRequestController extends Controller
                     return $grn['remaining_amount'] > 0;
                 })
                 ->values()
-                ->all();
+                ->all()
+            ;
 
             return response()->json([
                 'purchase_orders' => [],
@@ -99,12 +102,13 @@ class PurchaseOrderPaymentRequestController extends Controller
                 ->sum('amount');
             $requestedAmount = PaymentRequest::where('purchase_order_id', $request->purchase_order_id)
                 ->sum('amount');
-        } elseif ($request->has('grn_id')) {
-            $paidAmount = PaymentRequest::where('grn_id', $request->grn_id)
+        } elseif ($request->has('purchase_order_receiving_id')) {
+            $paidAmount = PaymentRequest::where('purchase_order_receiving_id', $request->purchase_order_receiving_id)
                 ->where('status', 'approved')
                 ->sum('amount');
-            $requestedAmount = PaymentRequest::where('grn_id', $request->grn_id)
+            $requestedAmount = PaymentRequest::where('purchase_order_receiving_id', $request->purchase_order_receiving_id)
                 ->sum('amount');
+
         }
 
         return response()->json([
@@ -123,7 +127,6 @@ class PurchaseOrderPaymentRequestController extends Controller
 
             $paymentRequestData = PaymentRequestData::create([
                 'store_purchase_order_id' => $request->purchase_order_id,
-                'grn_id' => $request->grn_id,
                 'supplier_id' => $request->supplier_id,
                 'remaining_amount' => $request->remaining_amount,
                 'total_amount' => $request->amount,
@@ -137,14 +140,14 @@ class PurchaseOrderPaymentRequestController extends Controller
             $paymentRequest = PaymentRequest::create([
                 'request_no' => $this->generatePaymentRequestNumber(),
                 'payment_request_data_id' => $paymentRequestData->id,
-                'module_type' => $paymentRequestData->id,
+                'module_type' => 'purchase_order',
                 'supplier_id' => $request->supplier_id,
                 'purchase_order_id' => $request->purchase_order_id,
-                'grn_id' => $request->grn_id,
+                'purchase_order_receiving_id' => $request->purchase_order_receiving_id,
                 'account_id' => $accountId,
                 'requested_by' => Auth::user()->id,
                 'request_date' => now(),
-                'amount' => 'purchase_order',
+                'amount' => $request->amount,
                 'description' => $request->description,
                 'payment_type' => $request->is_advance ? 'advance' : 'against_receiving',
                 'is_advance_payment' => $request->is_advance ? 1 : 0,
@@ -243,16 +246,16 @@ class PurchaseOrderPaymentRequestController extends Controller
         $moduleType = $paymentRequest->paymentRequestData->module_type;
         $paymentType = $paymentRequest->payment_type;
 
-        $id =  $paymentRequest->purchase_order_id ?? $paymentRequest->grn_id;
-        $model =  $paymentRequest->purchaseOrder ?? $paymentRequest->grn;
+        $id = $paymentRequest->purchase_order_id ?? $paymentRequest->purchase_order_receiving_id;
+        $model = $paymentRequest->purchaseOrder ?? $paymentRequest->grn;
 
         $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($paymentRequest, $id) {
             $q->where(function ($query) use ($id) {
                 $query->where(function ($subQuery) use ($id) {
                     $subQuery->where('store_purchase_order_id', $id)
-                        ->whereNull('grn_id');
+                        ->whereNull('purchase_order_receiving_id');
                 })->orWhere(function ($subQuery) use ($id) {
-                    $subQuery->where('grn_id', $id)
+                    $subQuery->where('purchase_order_receiving_id', $id)
                         ->whereNull('store_purchase_order_id');
                 });
             });
@@ -265,9 +268,9 @@ class PurchaseOrderPaymentRequestController extends Controller
             $q->where(function ($query) use ($id) {
                 $query->where(function ($subQuery) use ($id) {
                     $subQuery->where('store_purchase_order_id', $id)
-                        ->whereNull('grn_id');
+                        ->whereNull('purchase_order_receiving_id');
                 })->orWhere(function ($subQuery) use ($id) {
-                    $subQuery->where('grn_id', $id)
+                    $subQuery->where('purchase_order_receiving_id', $id)
                         ->whereNull('store_purchase_order_id');
                 });
             });
@@ -306,8 +309,8 @@ class PurchaseOrderPaymentRequestController extends Controller
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             $paymentRequestData = $paymentRequest->paymentRequestData;
 
-            $poId =  $paymentRequest->purchase_order_id ?? null;
-            $grnId =  $paymentRequest->grn_id ?? null;
+            $poId = $paymentRequest->purchase_order_id ?? null;
+            $grnId = $paymentRequest->purchase_order_receiving_id ?? null;
 
             if ($request->has('total_amount')) {
                 $this->updatePaymentRequestData($paymentRequestData, $request);
@@ -322,7 +325,7 @@ class PurchaseOrderPaymentRequestController extends Controller
                 'payment_request_data_id' => $paymentRequest->payment_request_data_id,
                 'ticket_id' => Null,
                 'store_purchase_order_id' => $poId,
-                'grn_id' => $grnId,
+                'purchase_order_receiving_id' => $grnId,
                 'approver_id' => auth()->user()->id,
                 'status' => $request->status,
                 'remarks' => $request->remarks,
