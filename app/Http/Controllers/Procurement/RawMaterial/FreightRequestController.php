@@ -264,6 +264,8 @@ class FreightRequestController extends Controller
             $accountId = $vendor->account_id ?? null;
 
             $requestData['account_id'] = $accountId;
+            $requestData['payment_to_type'] = 'vendors';
+            $requestData['payment_to'] = $request->vendor_id;
             $requestData['supplier_name'] = $purchaseOrder->supplier->name;
 
             $paymentRequestData = PaymentRequestData::create($requestData);
@@ -645,12 +647,15 @@ class FreightRequestController extends Controller
     {
         if ($request->request_amount && $request->request_amount > 0) {
             PaymentRequest::create([
+
                 'payment_request_data_id' => $paymentRequestData->id,
                 'other_deduction_kg' => 0,
                 'other_deduction_value' => 0,
                 'request_type' => 'payment',
                 'module_type' => 'freight_payment',
                 'account_id' => $accountId,
+                'payment_to_type' => $paymentRequestData->payment_to_type,
+                'payment_to' => $paymentRequestData->payment_to,
                 'amount' => $request->request_amount ?? 0
             ]);
         }
@@ -682,7 +687,7 @@ class FreightRequestController extends Controller
             ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
             ->latest()
             ->first();
- 
+
         $data = [
             'purchaseOrder' => $arrivalTicket->purchaseOrder,
             'arrivalTicket' => $arrivalTicket,
