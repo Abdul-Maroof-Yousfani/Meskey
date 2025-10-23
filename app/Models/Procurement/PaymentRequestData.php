@@ -15,13 +15,15 @@ class PaymentRequestData extends Model
     protected $table = "payment_request_datas";
 
     protected $fillable = [
+        'payment_to_type',
+        'payment_to',
+        'account_id',
         'purchase_order_id',
         'ticket_id',
         'freight_payment_id',
         'request_type',
         'supplier_name',
         'contract_rate',
-        'account_id',
         'min_contract_range',
         'max_contract_range',
         'supplier_id',

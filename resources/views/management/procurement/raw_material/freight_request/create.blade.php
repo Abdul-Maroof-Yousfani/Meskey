@@ -116,11 +116,11 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="font-weight-bold">Freight Party</label>
+                <label class="font-weight-bold">Freight Party {{ $freightPaymentRequest->payment_to }}</label>
                 <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" @selected(isset($freightPaymentRequest) && $freightPaymentRequest->vendor_id == $vendor->id)>
+                        <option value="{{ $vendor->id }}" @selected(isset($freightPaymentRequest) && $freightPaymentRequest->payment_to == $vendor->id)>
                             {{ $vendor->name }}
                         </option>
                     @endforeach
