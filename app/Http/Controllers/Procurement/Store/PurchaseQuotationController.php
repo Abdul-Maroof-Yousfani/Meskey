@@ -341,7 +341,7 @@ class PurchaseQuotationController extends Controller
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             ->where('am_approval_status', 'pending')
             ->whereHas('purchase_quotation', function ($query) {
-                $query->whereNotIn('am_approval_status', ['approved', 'partial_approved']);
+                $query->whereIn('am_approval_status', ['approved', 'partial_approved']);
             })
             ->get();
 
