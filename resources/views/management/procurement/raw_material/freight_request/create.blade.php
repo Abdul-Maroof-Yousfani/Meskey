@@ -102,7 +102,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Supplier Name</label>
-                <input type="text" class="form-control bg-light"
+                <input type="text" class="form-control bg-light" 
                     value="{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}" readonly placeholder="Supplier Name">
             </div>
         </div>
