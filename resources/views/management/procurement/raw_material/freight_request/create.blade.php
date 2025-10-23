@@ -120,7 +120,7 @@
                 <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData->request_to) && $paymentRequestData->payment_to == $vendor->id)>
+                        <option value="{{ $vendor->id }}" @selected($paymentRequestData->payment_to == $vendor->id)>
                             {{ $vendor->name }}
                         </option>
                     @endforeach
