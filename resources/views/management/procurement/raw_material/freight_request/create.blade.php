@@ -1,6 +1,7 @@
 @php
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
-    $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
+  //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
+    $param0 = isset($paymentRequestData->payment_to) && $paymentRequestData->payment_to ? 'disabled' : '';
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
