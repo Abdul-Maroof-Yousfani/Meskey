@@ -192,15 +192,15 @@ class PurchaseOrderController extends Controller
 
             $purchaseRequestDataIds = $dataItems->pluck('id');
 
-            $existingQuotationCount = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-                ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
+            $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+                ->whereHas('purchase_order', function ($q) use ($supplierId) {
                     $q->where('supplier_id', $supplierId);
                 })
                 ->count();
 
             if ($existingQuotationCount > 0) {
-                $quotationQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-                    ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
+                $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+                    ->whereHas('purchase_order', function ($q) use ($supplierId) {
                         $q->where('supplier_id', $supplierId);
                     })
                     ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
@@ -211,10 +211,13 @@ class PurchaseOrderController extends Controller
                     $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
                     $remainingQty = $item->qty - $quotedQty;
                     $item->qty = max($remainingQty, 0);
+                    $item->total_quoted_qty = $quotedQty;
+
                 }
             } else {
                 foreach ($dataItems as $item) {
                     $item->qty = $item->qty;
+                    $item->total_quoted_qty = 0;
                 }
             }
 
