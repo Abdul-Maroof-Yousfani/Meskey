@@ -1,6 +1,7 @@
 @php
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
-    $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
+  //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
+    $param0 = isset($paymentRequestData) && $paymentRequestData->payment_to ? 'disabled' : '';
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
@@ -33,7 +34,7 @@
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
     <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
 
-    @if (isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id))
+    @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
     @else
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
@@ -71,7 +72,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Bill/T</label>
                 <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->purchaseFreight->bilty_no ?? 'N/A' }}" readonly placeholder="Bill/T">
+                    value="{{ $ticket->bilty_no ?? 'N/A' }}" readonly placeholder="Bill/T">
             </div>
         </div>
     </div>
@@ -102,7 +103,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Supplier Name</label>
-                <input type="text" class="form-control bg-light"
+                <input type="text" class="form-control bg-light" 
                     value="{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}" readonly placeholder="Supplier Name">
             </div>
         </div>
@@ -116,17 +117,17 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="font-weight-bold">Freight Party {{ $freightPaymentRequest->payment_to }}</label>
+                <label class="font-weight-bold">Freight Party</label>
                 <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" @selected(isset($freightPaymentRequest) && $freightPaymentRequest->payment_to == $vendor->id)>
+                        <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id)>
                             {{ $vendor->name }}
                         </option>
                     @endforeach
                 </select>
-                @if (isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id))
-                    <input type="hidden" name="vendor_id" value="{{ $freightPaymentRequest->vendor_id }}" readonly>
+                @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
+                    <input type="hidden" name="vendor_id" value="{{ $paymentRequestData->payment_to }}" readonly>
                 @endif
             </div>
         </div>
