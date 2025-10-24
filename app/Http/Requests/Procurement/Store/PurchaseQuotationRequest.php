@@ -31,29 +31,27 @@ class PurchaseQuotationRequest extends FormRequest
             'supplier_id' => [
                 'required',
                 'exists:suppliers,id',
-                function ($attribute, $value, $fail) {
-                    $itemIds = $this->input('item_id', []);
-                    $purchaseRequestId = $this->input('purchase_request_id');
+                // function ($attribute, $value, $fail) {
+                //     $itemIds = $this->input('item_id', []);
+                //     $purchaseRequestId = $this->input('purchase_request_id');
 
-                    if (!empty($itemIds) && $purchaseRequestId) {
-                        // Find items that already have quotations for this supplier *and same purchase request*
-                        $existingItemIds = PurchaseQuotationData::whereIn('item_id', $itemIds)
-                            ->where('supplier_id', $value)
-                            ->whereHas('purchase_quotation', function ($query) use ($purchaseRequestId) {
-                            $query->where('purchase_request_id', $purchaseRequestId);
-                        })
-                            ->pluck('item_id')
-                            ->toArray();
+                //     if (!empty($itemIds) && $purchaseRequestId) {
+                //         $existingItemIds = PurchaseQuotationData::whereIn('item_id', $itemIds)
+                //             ->where('supplier_id', $value)
+                //             ->whereHas('purchase_quotation', function ($query) use ($purchaseRequestId) {
+                //             $query->where('purchase_request_id', $purchaseRequestId);
+                //         })
+                //             ->pluck('item_id')
+                //             ->toArray();
 
-                        if (!empty($existingItemIds)) {
-                            // Fetch item names for clearer feedback
-                            $itemNames = Product::whereIn('id', $existingItemIds)->pluck('name')->toArray();
-                            $itemList = implode(', ', $itemNames);
+                //         if (!empty($existingItemIds)) {
+                //             $itemNames = Product::whereIn('id', $existingItemIds)->pluck('name')->toArray();
+                //             $itemList = implode(', ', $itemNames);
 
-                            $fail("This supplier already has a quotation for the following item(s) in this purchase request: {$itemList}.");
-                        }
-                    }
-                },
+                //             $fail("This supplier already has a quotation for the following item(s) in this purchase request: {$itemList}.");
+                //         }
+                //     }
+                // },
             ],
 
 
@@ -69,8 +67,8 @@ class PurchaseQuotationRequest extends FormRequest
             'uom' => 'nullable|array',
             'uom.*' => 'nullable|string|max:255',
 
-            // 'qty'                 => 'required|array|min:1',
-            // 'qty.*'               => 'required|numeric|min:0.01',
+            'qty'                 => 'required|array|min:1',
+            'qty.*'               => 'required|numeric|min:0.01',
 
             'rate' => 'required|array|min:1',
             'rate.*' => 'required|numeric|min:0.01',

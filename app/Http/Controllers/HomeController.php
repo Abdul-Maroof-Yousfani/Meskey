@@ -441,11 +441,12 @@ class HomeController extends Controller
         $enableTags = $request->input('enableTags', false);
         $targetTable = $request->input('targetTable');
         $targetColumn = $request->input('targetColumn');
-        $fetchMode = $request->input('fetchMode', 'source'); // 'source' or 'target'
+        $fetchMode = $request->input('fetchMode', 'source');
 
         // If fetching target data
         if ($fetchMode === 'target') {
             $sourceId = $request->input('sourceId');
+            $purchaseRequestId = $request->input('purchase_request_id'); // 👈 new line
 
             if (!$targetTable || !$targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
@@ -458,22 +459,30 @@ class HomeController extends Controller
                 $query->whereNull('deleted_at');
             }
 
-            // Search filter if provided
+            if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
+                $query->where('purchase_request_id', $purchaseRequestId);
+            }
+
             if ($search) {
                 $query->where('name', 'like', '%' . $search . '%');
             }
 
-            // Filter by relationship with source table
             if ($sourceId) {
                 $query->where(function ($q) use ($targetColumn, $sourceId) {
                     $q->where($targetColumn, $sourceId)
                         ->orWhereRaw("FIND_IN_SET(?, $targetColumn) > 0", [$sourceId])
                         ->orWhereJsonContains($targetColumn, $sourceId)
-                        ->orWhereJsonContains($targetColumn, (string)$sourceId);
+                        ->orWhereJsonContains($targetColumn, (string) $sourceId);
                 });
             }
 
-            $data = $query->select(['id', 'name as text'])->limit(50)->get();
+            $displayColumn = Schema::hasColumn($targetTable ?? $tableName, 'name')
+                ? 'name'
+                : (Schema::hasColumn($targetTable ?? $tableName, 'purchase_quotation_no')
+                    ? 'purchase_quotation_no'
+                    : $columnName);
+
+            $data = $query->select(['id', "$displayColumn as text"])->limit(50)->get();
 
             return response()->json(['items' => $data]);
         }

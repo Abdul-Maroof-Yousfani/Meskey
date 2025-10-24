@@ -1063,7 +1063,8 @@ function initializeDynamicDependentCall1Select2(
   enableTags = false,
   isMultiple = false,
   isSelectOnClose = true,
-  isAllowClear = false
+  isAllowClear = false,
+  extraFilters = {}
 ) {
   const $el = $(selector);
   const $targetEl = $(target);
@@ -1083,6 +1084,7 @@ function initializeDynamicDependentCall1Select2(
           targetColumn: targetColumn,
           fetchMode: "target",
           sourceId: $el.val(),
+          ...extraFilters
         };
       },
       processResults: function (data) {

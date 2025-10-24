@@ -31,8 +31,12 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Quotation</label>
-                <input type="text" name="quotation_no" id="quotation_no" class="form-control"
-                    placeholder="Quotation number will appear here" value="" readonly>
+                <select id="quotation_no" name="quotation_no" class="form-control select2">
+                    <option value="">Select Quotation</option>
+
+                </select>
+                {{-- <input type="text" name="quotation_no" id="quotation_no" class="form-control"
+                    placeholder="Quotation number will appear here" value="" readonly> --}}
             </div>
         </div>
         <div class="col-md-4">
@@ -102,125 +106,83 @@
 
 
 <script>
-    $(".select2").select2();
+    $(document).ready(function () {
 
-    let rowIndex = 1;
+        $(document).on('change', '#purchase_date', function () {
+            fetchUniqueNumber();
+        });
 
-    function addRow() {
-        let index = rowIndex++;
-        let row = `
-            <tr id="row_${index}">
-                <td style="width: 25%">
-                    <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select" data-index="0">
-                        <option value="">Select Category</option>
-                        @foreach ($categories ?? [] as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                </td>
-                <td style="width: 25%">
-                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
-                        
-                    </select>
-                    <input type="hidden" name="data_id[]" value="0">
-                </td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                 <td style="width: 20%">
-                    <select name="supplier_id[]" id="supplier_id_${index}" class="form-control item-select" data-index="0">
-                        <option value="">Select Vendor</option>
-                        @foreach (get_supplier() as $supplier)
-                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                        @endforeach
-                    </select>
-                </td>
-                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
-                
-                <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
-            </tr>`;
-        $('#purchaseOrderBody').append(row);
-    }
-
-    function remove(id) {
-        $('#row_' + id).remove();
-    }
-
-    function filter_items(category_id, count) {
-        $.ajax({
-            url: '{{ route('get.items') }}', // Replace with your actual API endpoint
-            type: 'GET',
-            data: {
-                category_id: category_id
-            },
-            dataType: 'json',
-            success: function (response) {
-                // Assuming response contains an array of categories
-                if (response.success && response.products) {
-                    // Clear existing options
-                    $('#item_id_' + count).empty();
-
-                    // Add default option
-                    $('#item_id_' + count).append('<option value="">Select a Item</option>');
-
-                    // Append new category options to the select element
-                    $.each(response.products, function (index, product) {
-                        $('#item_id_' + count).append(
-                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
-                        );
-                    });
-                } else {
-                    console.error('No products found or request failed');
-                    $('#item_id_' + count).html('<option value="">No products available</option>');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('AJAX Error:', status, error);
-                $('#item_id_' + count).html('<option value="">Error loading products</option>');
+        $(document).on('change', 'select[name="purchase_request_id"]', function () {
+            const purchaseRequestId = $(this).val();
+            if (purchaseRequestId) {
+                get_purchase(purchaseRequestId);
             }
         });
-    }
 
-    function get_uom(index) {
-        let uom = $('#item_id_' + index).find(':selected').data('uom');
-        $('#uom_' + index).val(uom);
-    }
+        $(document).on('change', '#quotation_no', function () {
+            const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+            if (purchaseRequestId) {
+                get_purchase(purchaseRequestId);
+            }
+        });
 
+        $(document).on('change', '#supplier_id, [name="purchase_request_id"]', function () {
+            const supplierId = $('#supplier_id').val();
+            const purchaseRequestId = $('[name="purchase_request_id"]').val();
+            $('#quotation_no').empty();
+            if (supplierId && purchaseRequestId) {
+                initializeDynamicDependentCall1Select2(
+                    '#supplier_id',
+                    '#quotation_no',
+                    'suppliers',
+                    'purchase_quotation_no',
+                    'id',
+                    'purchase_quotations',
+                    'supplier_id',
+                    'purchase_quotation_no',
+                    true,
+                    false,
+                    true,
+                    true,
+                    { purchase_request_id: purchaseRequestId }
+                );
+            }
+        });
+
+    });
+    $(".select2").select2();
+    let rowIndex = 1;
     function fetchUniqueNumber() {
-            let locationId = $('#company_location_id').val();
-            let contractDate = $('#purchase_date').val();
-
-            if (locationId && contractDate) {
-                let url = '/procurement/store/get-unique-number-order/' + locationId + '/' + contractDate;
-
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    success: function (response) {
-                        if (typeof response === 'string') {
-                            $('#reference_no').val(response);
-                        } else {
-                            $('#reference_no').val('');
-                        }
-                    },
-                    error: function (xhr, status, error) {
+        let locationId = $('#company_location_id').val();
+        let contractDate = $('#purchase_date').val();
+        if (locationId && contractDate) {
+            let url = '/procurement/store/get-unique-number-order/' + locationId + '/' + contractDate;
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    if (typeof response === 'string') {
+                        $('#reference_no').val(response);
+                    } else {
                         $('#reference_no').val('');
                     }
-                });
-            } else {
-                $('#reference_no').val('');
-            }
+                },
+                error: function (xhr, status, error) {
+                    $('#reference_no').val('');
+                }
+            });
+        } else {
+            $('#reference_no').val('');
         }
-        $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
+    }
+    // $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
 
     function get_purchase(purchaseRequestId = null) {
+        const quotationNo = $('#quotation_no').val();
         const supplierId = $('#supplier_id').val();
 
-        // If both are empty, don’t fetch
-        if (!purchaseRequestId && !supplierId) return;
+        if (!purchaseRequestId && !quotationNo) return;
 
-        // If supplier changed but no purchase request selected yet
         if (!purchaseRequestId) {
             purchaseRequestId = $('select[name="purchase_request_id"]').val();
         }
@@ -230,7 +192,8 @@
             type: "GET",
             data: {
                 id: purchaseRequestId,
-                supplier_id: supplierId 
+                quotation_no: quotationNo,
+                supplier_id: supplierId
             },
             beforeSend: function () {
                 $('#purchaseOrderBody').html('<p>Loading...</p>');
@@ -238,24 +201,11 @@
             success: function (response) {
                 let html = response.html;
                 let master = response.master;
-                let quotation = response.quotation; 
-
-
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
-              
-               // $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
                 $('#company_location_id').val(master.location_id).trigger('change');
-
-                if (quotation) {
-                    $('#quotation_no').val(quotation.purchase_quotation_no);
-                } else {
-                    $('#quotation_no').val('No quotation against this supplier');
-                }
-
                 $('#purchaseOrderBody').html(html);
-
                 $('.select2').select2({
                     placeholder: 'Please Select',
                     width: '100%'
@@ -267,13 +217,13 @@
         });
     }
 
-    $('#supplier_id, select[name="purchase_request_id"]').on('change', function () {
-        const purchaseRequestId = $('select[name="purchase_request_id"]').val();
-        $('input[name="qty[]"], input[name="rate[]"], input[name="total[]"]').each(function () {
-        $(this).val(''); // set to empty
-    });
-        get_purchase(purchaseRequestId);
-    });
+    // $('#quotation_no, select[name="purchase_request_id"]').on('change', function () {
+    //     const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+    //     $('input[name="qty[]"], input[name="rate[]"], input[name="total[]"]').each(function () {
+    //         $(this).val(''); // set to empty
+    //     });
+    //     get_purchase(purchaseRequestId);
+    // });
 
 
     function calc(num) {

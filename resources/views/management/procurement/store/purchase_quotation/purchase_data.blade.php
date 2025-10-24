@@ -13,7 +13,7 @@
                  </select>
                  <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
                  <input type="hidden" name="data_id[]" value="{{ $data->id }}">
-                <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id  }}">
+                {{-- <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id  }}"> --}}
 
              </div>
          </td>
@@ -52,9 +52,9 @@
          </td> --}}
          <td style="width: 10%">
              <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                 onblur="calc({{ $key }})" value="{{ $data->qty }}" id="qty_{{ $key }}"
+                 onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}" id="qty_{{ $key }}"
                  class="form-control" step="0.01" min="0" max="{{ $data->qty }}">
-             <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+             {{-- <input type="hidden"  value="{{ $data->qty }}"> --}}
          </td>
          <td style="width: 20%">
              <div class="loop-fields">
@@ -74,9 +74,9 @@
              </div>
          </td>
          <td style="width: 25%">
-             <input style="width: 100px" type="text" value="" id="remark_{{ $key }}"
+             <input style="width: 100px" type="text" name="remarks[]" value="" id="remark_{{ $key }}"
                  class="form-control">
-             <input type="hidden" name="remarks[]" value="">
+             {{-- <input type="hidden" name="remarks[]" value=""> --}}
          </td>
          <td>
              <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove({{ $key }})"

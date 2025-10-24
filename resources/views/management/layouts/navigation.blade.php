@@ -315,10 +315,10 @@
                             </span></a>
                     </li>
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a class="dropdown-item d-flex align-items-center"
-                             data-toggle="dropdown"><i
+                            href="{{ route('store.purchase-quotation.comparison-list') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Purchase Quotation
                             </span></a>
-                            <ul class="dropdown-menu">
+                            {{-- <ul class="dropdown-menu">
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('store.purchase-quotation.index') }}"
                                     onclick="loadPageContent('{{ route('store.purchase-quotation.index') }}')"
@@ -333,7 +333,7 @@
                                     <span data-i18n="Task Board">comparison</span>
                                 </a>
                             </li>
-                            </ul>
+                            </ul> --}}
                     </li>
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"

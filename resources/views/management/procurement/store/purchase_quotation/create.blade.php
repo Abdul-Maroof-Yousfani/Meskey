@@ -102,7 +102,23 @@
             placeholder: 'Please Select',
             width: '100%'
         });
+        $(document).on('change', 'select[name="purchase_request_id"]', function () {
+            const purchaseRequestId = $(this).val();
+            if (purchaseRequestId) {
+                get_purchase(purchaseRequestId);
+            }
+        });
 
+        $(document).on('change', '#purchase_date', function () {
+            fetchUniqueNumber();
+        });
+
+        $(document).on('change', '#supplier_id', function () {
+            const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+            if (purchaseRequestId) {
+                get_purchase(purchaseRequestId);
+            }
+        });
         function fetchUniqueNumber() {
             let locationId = $('#company_location_id').val();
             let contractDate = $('#purchase_date').val();
@@ -129,7 +145,6 @@
             }
         }
 
-        $('#purchase_date').on('change', fetchUniqueNumber);
 
     });
 
@@ -277,17 +292,22 @@
     //    //        }
     //     });
     // }
-
+    // $('#supplier_id').on('change', function () {
+    //    const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+    //    if (purchaseRequestId) {
+    //        get_purchase(purchaseRequestId);
+    //     }
+    //  });
     let allowedCategories = [];
     let allowedItems = [];
 
     function get_purchase(purchaseRequestId) {
         if (!purchaseRequestId) return;
-
+        const supplierId = $('#supplier_id').val();
         $.ajax({
             url: "{{ route('store.purchase-quotation.approve-item') }}",
             type: "GET",
-            data: { id: purchaseRequestId },
+            data: { id: purchaseRequestId, supplier_id: supplierId },
             beforeSend: function () {
                 $('#purchaseRequestBody').html('<p>Loading...</p>');
             },
@@ -323,14 +343,14 @@
 
     function calc(num) {
         var qtyInput = $('#qty_' + num);
-        var maxQty = parseFloat(qtyInput.attr('max')); 
+        var maxQty = parseFloat(qtyInput.attr('max'));
         var qty = parseFloat(qtyInput.val());
         var rate = parseFloat($('#rate_' + num).val());
 
         if (qty > maxQty) {
             alert('Maximum allowed quantity is ' + maxQty);
             qty = maxQty;
-            qtyInput.val(maxQty); 
+            qtyInput.val(maxQty);
         }
 
         var total = qty * rate;
