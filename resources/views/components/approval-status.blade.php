@@ -4,6 +4,7 @@
         $userAlreadyApproved = false;
         $userAlreadyRejected = false;
         $userActions = $model->approvalLogs()->where('user_id', $user->id)->get();
+       // dd(class_basename($module->id));
         $userAlreadyApproved = $userActions->where('action', 'approved')->where('status', 'active')->isNotEmpty();
         $userAlreadyRejected = $userActions->where('action', 'rejected')->where('status', 'active')->isNotEmpty();
         $userAlreadyActed = $userAlreadyApproved;
@@ -80,6 +81,59 @@
                         </div>
                     </div>
                 @endif
+                @php
+        // Group rows by role_id to avoid duplicate role displays
+        $rowsByRole = $rows->sortBy('id')->groupBy('role_id');
+    @endphp
+
+    @foreach ($rowsByRole as $role_id => $roleRows)
+        @php
+            $role = $roleRows->first()->role; // Get the role from the first row
+            $requiredCount = $roleRows->sum('required_count'); // Sum required counts for this role
+            $logs = $model
+                ->approvalLogs()
+                ->where('role_id', $role_id)
+                ->where('module_id', $module->id)
+                ->where('approval_cycle', $cycle)
+                ->with('user')
+                ->get();
+
+            $approvedLogs = $logs->whereIn('action', ['approved', 'partial_approved']);
+            $rejectedLogs = $logs->where('action', 'rejected');
+            $rejectedIDS = [];
+        @endphp
+
+        <div class="dash-item flex-fill">
+            <div class="dash-value d-flex flex-column text-uppercase text-center">
+                @if ($approvedLogs->isNotEmpty() && isset($approvedLogs->first()->user))
+                    <strong>{{ $approvedLogs->first()->user->name }}</strong>
+                @elseif ($rejectedLogs->isNotEmpty() && !in_array($rejectedLogs->first()->user->id, $rejectedIDS))
+                    <strong>{{ $rejectedLogs->first()->user->name }}</strong>
+                    @php
+                        $rejectedIDS[] = $rejectedLogs->first()->user->id;
+                    @endphp
+                @else
+                    <span>&nbsp;</span>
+                @endif
+                <small style="font-size: 10px;">({{ $role->name }})</small>
+            </div>
+            <div class="dash-line">______________________</div>
+            <div class="approver-name mt-1">
+                @if ($approvedLogs->isNotEmpty())
+                    Approved By
+                @elseif ($rejectedLogs->isNotEmpty())
+                    <span class="text-danger">Rejected By</span>
+                @else
+                    Approved By
+                @endif
+            </div>
+        </div>
+    @endforeach
+@endforeach
+                    {{-- @php
+
+dd($rows->sortBy('id'));
+                    @endphp
 
                 @foreach ($rows->sortBy('id') as $idx => $row)
                     @php
@@ -131,7 +185,7 @@
                 @endforeach
             </div>
         </div>
-    @endforeach
+    @endforeach --}}
 
     @if ($model->canApprove() && !$userAlreadyActed && !$changesRequired)
         <div class="row g-3 mx-auto">
