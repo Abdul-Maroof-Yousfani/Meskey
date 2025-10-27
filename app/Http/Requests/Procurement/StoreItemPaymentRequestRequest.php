@@ -66,7 +66,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
                     return;
                 }
 
-                $totalAmount = $grn->price;
+                $totalAmount = $grn->purchaseOrderReceivingData->sum('total');
                 $paidAmount = PaymentRequest::where('purchase_order_receiving_id', $grnId)
                     ->where('status', '!=', 'rejected')
                     ->sum('amount');
