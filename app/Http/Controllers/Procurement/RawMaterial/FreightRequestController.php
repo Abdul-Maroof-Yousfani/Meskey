@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Procurement\RawMaterial;
 
+use App\Models\Procurement\PaymentRequestApproval;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\Master\Broker;
@@ -771,6 +772,42 @@ class FreightRequestController extends Controller
         return response()->json(['message' => 'Request status updated successfully!']);
     }
 
+    public function pohouch_freight_payment_request_approval(Request $request)
+    {
+        return DB::transaction(function () use ($request) {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $paymentRequestData = $paymentRequest->paymentRequestData;
+
+            $purchaseOrder = $paymentRequestData->purchaseOrder;
+
+          //  if ($request->has('total_amount') || $request->has('bag_weight')) {
+            //    $this->updatePaymentRequestData($paymentRequestData, $request);
+           // }
+
+            if ($request->has('payment_request_amount')) {
+                $paymentRequest->update(['amount' => $request->payment_request_amount]);
+            }
+
+            PaymentRequestApproval::create([
+                'payment_request_id' => $request->payment_request_id,
+                'payment_request_data_id' => $paymentRequest->payment_request_data_id,
+                'ticket_id' => $request->ticket_id,
+                'purchase_order_id' => $purchaseOrder->id,
+                'approver_id' => auth()->user()->id,
+                'status' => $request->status,
+                'remarks' => $request->remarks,
+                'amount' => $paymentRequest->amount,
+                'request_type' => $paymentRequest->request_type
+            ]);
+
+            $paymentRequest->update(['status' => $request->status]);
+
+            return response()->json([
+                'success' => 'Payment request ' . $request->status . ' successfully!'
+            ]);
+        });
+
+    }
     public function getSlabsByPaymentRequestParams(Request $request)
     {
         $ticket = PurchaseTicket::with(['purchaseOrder', 'purchaseFreight'])->findOrFail($request->ticket_id);
@@ -858,4 +895,7 @@ class FreightRequestController extends Controller
 
         return response()->json(['success' => true, 'html' => $html]);
     }
+
+
+
 }

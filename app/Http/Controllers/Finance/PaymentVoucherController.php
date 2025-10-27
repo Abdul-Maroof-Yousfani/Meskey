@@ -8,6 +8,7 @@ use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\Broker;
 use App\Models\Master\Supplier;
+use App\Models\Master\Vendor;
 use App\Models\PaymentVoucher;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\PaymentVoucherData;
@@ -68,11 +69,11 @@ class PaymentVoucherController extends Controller
 
         $data['accounts'] = Account::where('is_operational', 'yes')
             ->whereHas('parent', function ($q) {
-                $q->where('name', 'Liabilities')
+                $q->where('hierarchy_path', '2')
                     ->orWhereHas('parent', function ($q2) {
-                        $q2->where('name', 'Liabilities')
+                        $q2->where('hierarchy_path', '2')
                             ->orWhereHas('parent', function ($q3) {
-                                $q3->where('name', 'Liabilities');
+                                $q3->where('hierarchy_path', '2');
                             });
                     });
             })
@@ -334,6 +335,77 @@ class PaymentVoucherController extends Controller
             }
         } elseif ($tableName === 'brokers') {
             $broker = Broker::with(['companyBankDetails', 'ownerBankDetails'])
+                ->where('account_id', $account->id)
+                ->first();
+
+            if ($broker) {
+                $modelId = $broker->id;
+                $companyBankAccounts = $broker->companyBankDetails ?? collect();
+                $ownerBankAccounts = $broker->ownerBankDetails ?? collect();
+
+                if ($companyBankAccounts) {
+                    foreach ($companyBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'company',
+                            'title' => $bank->broker->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                if ($ownerBankAccounts) {
+                    foreach ($ownerBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'owner',
+                            'title' => $bank->broker->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
+                    ->where('account_id', $accountId)
+                    ->whereDoesntHave('paymentVoucherData')
+                    ->where('status', 'approved')
+                    ->get()
+                    ->map(function ($request) {
+                        return [
+                            'id' => $request->id,
+                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
+                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
+                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
+                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
+                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
+                                : '-',
+                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
+                            'loading_weight' => $request->paymentRequestData->loading_weight,
+                            'module_type' => $request->paymentRequestData->module_type,
+                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                            'amount' => $request->amount,
+                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
+                            'status' => $request->approval_status,
+                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
+                            'type' => ($request->request_type),
+                            'request_date' => $request->created_at
+                                ? $request->created_at->format('Y-m-d')
+                                : ''
+                        ];
+                    });
+            }
+        }
+         elseif ($tableName === 'vendors') {
+            $broker = Vendor::with(['companyBankDetails', 'ownerBankDetails'])
                 ->where('account_id', $account->id)
                 ->first();
 

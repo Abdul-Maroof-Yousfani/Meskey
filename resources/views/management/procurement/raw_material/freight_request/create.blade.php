@@ -8,7 +8,7 @@
     
     // Use paymentRequestData if available, otherwise use existing logic
     $exempt = $paymentRequestData->exempt ?? $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0');
-    $freight_rs = $paymentRequestData->freight_rs ?? $freightPaymentRequest?->freight_rs ?? ($ticket->freight->net_freight ?? '0');
+    $freight_rs = $paymentRequestData->freight_rs ?? $freightPaymentRequest?->freight_rs ?? ($ticket->freight->freight_written_on_bilty ?? '0');
     $freight_per_ton = $paymentRequestData->freight_per_ton ?? $freightPaymentRequest?->freight_per_ton ?? ($ticket->freight->freight_per_ton ?? '0');
     $loading_kanta = $paymentRequestData->loading_kanta ?? $freightPaymentRequest?->loading_kanta ?? ($ticket->freight->kanta_golarchi_charges ?? '0');
     $arrived_kanta = $paymentRequestData->arrived_kanta ?? $freightPaymentRequest?->arrived_kanta ?? ($ticket->freight->karachi_kanta_charges ?? '0');
@@ -23,7 +23,7 @@
     $commission_amount = $paymentRequestData->commission_amount ?? $freightPaymentRequest?->commission_amount ?? 0;
 @endphp
 <form
-    action="{{ route(isset($isRequestApprovalPage, $freightPaymentRequest->vendor_id) ? 'raw-material.advance-payment-request-approval.store' : 'raw-material.freight-request.store') }}"
+    action="{{ route(isset($isRequestApprovalPage, $paymentRequestData->payment_to) ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.freight-request.store') }}"
     method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
     @csrf
     <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
@@ -368,6 +368,7 @@
                     value="0" readonly>
             </div>
         </div>
+          @if (!isset($isRequestApprovalPage))
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Request Amount</label>
@@ -375,6 +376,7 @@
                     min="0" required >
             </div>
         </div>
+        @endif
     </div>
 
     <div class="row">
@@ -392,6 +394,7 @@
                     value="0" readonly>
             </div>
         </div>
+         @if (!isset($isRequestApprovalPage))
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Percentage</label>
@@ -399,6 +402,7 @@
                     class="form-control percentage-input" value="0" placeholder="Enter percentage">
             </div>
         </div>
+        @endif
     </div>
 
     @if (isset($isRequestApprovalPage) && $isRequestApprovalPage)
