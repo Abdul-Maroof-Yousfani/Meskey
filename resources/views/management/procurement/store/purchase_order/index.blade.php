@@ -74,6 +74,9 @@
     <script>
         $(document).ready(function () {
             filterationCommon(`{{ route('store.get.purchase-order') }}`)
+
+           
+
         });
     </script>
 @endsection

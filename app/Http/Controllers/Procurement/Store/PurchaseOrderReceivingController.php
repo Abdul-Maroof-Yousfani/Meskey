@@ -30,7 +30,7 @@ class PurchaseOrderReceivingController extends Controller
         return view('management.procurement.store.purchase_order_receiving.index');
     }
 
-    
+
 
     public function getList(Request $request)
     {
@@ -55,10 +55,10 @@ class PurchaseOrderReceivingController extends Controller
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
 
             if ($orderNo === 'N/A') {
-                continue; 
+                continue;
             }
 
-            
+
             if (!isset($groupedData[$orderNo])) {
                 $groupedData[$orderNo] = [
                     'request_data' => $row->purchase_order_receiving->purchase_quotation->purchase_request ?? null,
@@ -162,19 +162,49 @@ class PurchaseOrderReceivingController extends Controller
     public function approve_item(Request $request)
     {
         $requestId = $request->id;
-        // $supplierId = $request->supplier_id;
+        $supplierId = $request->supplier_id;
 
-       $master = PurchaseOrder::with(['supplier', 'location', 'purchase_request'])->find($requestId);
+        $master = PurchaseOrder::with(['supplier', 'location', 'purchase_request'])->find($requestId);
 
         $quotation = null;
         $dataItems = collect();
 
-       
+
 
         if ($dataItems->isEmpty()) {
             $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category'])
                 ->where('purchase_order_id', $requestId)
                 ->get();
+
+            $purchaseOrderDataIds = $dataItems->pluck('id');
+
+            $existingQuotationCount = PurchaseOrderReceivingData::whereIn('purchase_order_data_id', $purchaseOrderDataIds)
+                // ->whereHas('purchase_order_receiving', function ($q) use ($supplierId) {
+                //     $q->where('supplier_id', $supplierId);
+                // })
+                ->count();
+
+            if ($existingQuotationCount > 0) {
+                $quotationQuantities = PurchaseOrderReceivingData::whereIn('purchase_order_data_id', $purchaseOrderDataIds)
+                    // ->whereHas('purchase_order_receiving', function ($q) use ($supplierId) {
+                    //     $q->where('supplier_id', $supplierId);
+                    // })
+                    ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
+                    ->groupBy('item_id')
+                    ->pluck('total_quoted_qty', 'item_id');
+
+                foreach ($dataItems as $item) {
+                    $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+                    $remainingQty = $item->qty - $quotedQty;
+                    $item->qty = max($remainingQty, 0);
+                    $item->total_quoted_qty = $quotedQty;
+                }
+            } else {
+                foreach ($dataItems as $item) {
+                    $item->total_quoted_qty = 0;
+                    $item->qty = $item->qty;
+                }
+            }
         }
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
@@ -249,7 +279,7 @@ class PurchaseOrderReceivingController extends Controller
                 //     ]);
                 // }
 
-                
+
             }
 
             DB::commit();

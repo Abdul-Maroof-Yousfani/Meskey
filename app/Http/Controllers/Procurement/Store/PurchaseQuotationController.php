@@ -468,12 +468,41 @@ class PurchaseQuotationController extends Controller
     public function approve_item(Request $request)
     {
         $requestId = $request->id;
+        $supplierId = $request->supplier_id;
 
         $master = PurchaseRequest::find($requestId);
 
         $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
             ->where('purchase_request_id', $requestId)
             ->get();
+
+        $purchaseRequestDataIds = $dataItems->pluck('id');
+
+        $existingQuotationCount = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+            ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
+                $q->where('supplier_id', $supplierId);
+            })
+            ->count();
+
+        if ($existingQuotationCount > 0) {
+            $quotationQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+                ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
+                    $q->where('supplier_id', $supplierId);
+                })
+                ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
+                ->groupBy('item_id')
+                ->pluck('total_quoted_qty', 'item_id');
+
+            foreach ($dataItems as $item) {
+                $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+                $remainingQty = $item->qty - $quotedQty;
+                $item->qty = max($remainingQty, 0);
+            }
+        } else {
+            foreach ($dataItems as $item) {
+                $item->qty = $item->qty;
+            }
+        }
 
         $purchaseRequestDataCount = $dataItems->count();
 
@@ -482,7 +511,6 @@ class PurchaseQuotationController extends Controller
 
         $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
-        // Extract IDs for frontend restriction logic
         $categoryIds = $dataItems->pluck('category_id')->unique()->values();
         $itemIds = $dataItems->pluck('item_id')->unique()->values();
 
@@ -517,6 +545,7 @@ class PurchaseQuotationController extends Controller
      */
     public function store(PurchaseQuotationRequest $request)
     {
+        // dd($request->all());
         DB::beginTransaction();
         try {
 

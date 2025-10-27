@@ -70,11 +70,11 @@
     >
 
     <div class="d-flex align-items-center">
-        Total Qty: {{ $data->qty }}
+        Total Qty: {{ $data->total_quoted_qty+$data->qty  }}
     </div>
 
     <div class="d-flex align-items-center">
-        Received Qty: {{ $totalOrdered }}
+        Received Qty: {{ $data->total_quoted_qty }}
     </div>
 </td>
 

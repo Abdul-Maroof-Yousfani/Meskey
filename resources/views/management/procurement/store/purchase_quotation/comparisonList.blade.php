@@ -9,13 +9,13 @@
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">Quotation Comparison</h2>
                 </div>
-                {{-- <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
                         onclick="openModal(this,'{{ route('store.purchase-quotation.create') }}','Add Purchase Quotation',false,'90%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Purchase Quotation
                     </button>
-                </div> --}}
+                </div>
             </div>
             <div class="row">
                 <div class="col-12">
@@ -44,10 +44,15 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-2">Purchase Quotation No </th>
-                                            <th class="col-sm-2">Purchase Quotation Date</th>
-                                            
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-2">Purchase Request No</th>
+                                            <th class="col-2">Purchase Quotation No</th>
+                                            <th class="col-3">Category - Item</th>
+                                            <th class="col-3">Supplier</th>
+                                            <th class="col-1 text-right">UOM</th>
+                                            <th class="col-1 text-right">Qty</th>
+                                            <th class="col-1 text-right">Rate</th>
+                                            <th class="col-1 text-right">Amount</th>
+                                            <th class="col-1">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -63,7 +68,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('store.purchase-quotation.comparison') }}`)
         });
     </script>

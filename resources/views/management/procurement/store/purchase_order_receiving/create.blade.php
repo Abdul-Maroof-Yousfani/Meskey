@@ -222,7 +222,7 @@
             type: "GET",
             data: {
                 id: purchaseOrderId,
-                //supplier_id: supplierId
+                supplier_id: supplierId
             },
             beforeSend: function () {
                 $('#purchaseOrderBody').html('<p>Loading...</p>');

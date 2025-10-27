@@ -164,15 +164,16 @@ class PurchaseOrderController extends Controller
     public function approve_item(Request $request)
     {
         $requestId = $request->id;
+        $quotationNo = $request->quotation_no;
         $supplierId = $request->supplier_id;
 
         $master = PurchaseRequest::find($requestId);
         $quotation = null;
         $dataItems = collect();
 
-        if ($supplierId) {
+        if ($quotationNo) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
-                ->where('supplier_id', $supplierId)
+                ->where('id', $quotationNo)
                 ->whereIn('am_approval_status', ['approved', 'partial approved'])
                 ->first();
 
@@ -188,6 +189,38 @@ class PurchaseOrderController extends Controller
             $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
                 ->where('purchase_request_id', $requestId)
                 ->get();
+
+            $purchaseRequestDataIds = $dataItems->pluck('id');
+
+            $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+                ->whereHas('purchase_order', function ($q) use ($supplierId) {
+                    $q->where('supplier_id', $supplierId);
+                })
+                ->count();
+
+            if ($existingQuotationCount > 0) {
+                $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+                    ->whereHas('purchase_order', function ($q) use ($supplierId) {
+                        $q->where('supplier_id', $supplierId);
+                    })
+                    ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
+                    ->groupBy('item_id')
+                    ->pluck('total_quoted_qty', 'item_id');
+
+                foreach ($dataItems as $item) {
+                    $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+                    $remainingQty = $item->qty - $quotedQty;
+                    $item->qty = max($remainingQty, 0);
+                    $item->total_quoted_qty = $quotedQty;
+
+                }
+            } else {
+                foreach ($dataItems as $item) {
+                    $item->qty = $item->qty;
+                    $item->total_quoted_qty = 0;
+                }
+            }
+
         }
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();

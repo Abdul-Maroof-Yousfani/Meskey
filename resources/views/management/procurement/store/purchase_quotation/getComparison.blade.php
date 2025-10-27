@@ -9,8 +9,6 @@
             <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
             <th class="col-1 text-right">Amount</th>
-            {{-- <th class="col-2">PQ Date</th> --}}
-            {{-- <th class="col-1">Status</th> --}}
             <th class="col-1">Action</th>
         </tr>
     </thead>
