@@ -3,7 +3,7 @@
         $user = auth()->user();
         $userAlreadyApproved = false;
         $userAlreadyRejected = false;
-        $userActions = $model->approvalLogs()->where('user_id', $user->id)->get();
+        $userActions = $model->approvalLogs()->where('user_id', $user->id)->where('module_id', $module->id)->get();
        // dd(class_basename($module->id));
         $userAlreadyApproved = $userActions->where('action', 'approved')->where('status', 'active')->isNotEmpty();
         $userAlreadyRejected = $userActions->where('action', 'rejected')->where('status', 'active')->isNotEmpty();
