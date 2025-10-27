@@ -86,6 +86,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('payment-request-approval', PaymentRequestApprovalController::class);
     Route::resource('advance-payment-request-approval', AdvancePaymentRequestApprovalController::class);
+    Route::post('pohouch-freight-payment-request-approval', [FreightRequestController::class, 'pohouch_freight_payment_request_approval'])->name('pohouch-freight-payment-request-approval');
 
     Route::get('purchase-order-payment-request-approval', [PurchaseOrderPaymentRequestController::class, 'index'])->name('purchase-order-payment-request-approval.index');
     Route::get('purchase-order-payment-request-approval/create', [PurchaseOrderPaymentRequestController::class, 'create'])->name('purchase-order-payment-request-approval.create');

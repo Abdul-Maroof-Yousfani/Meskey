@@ -91,7 +91,9 @@ class VendorsController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
+             //   $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
+                                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+
                 $requestData['account_id'] = $account->id;
             }
 
@@ -181,11 +183,9 @@ class VendorsController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($supplier->account_id)) {
-                $account = Account::create(getParamsForAccountCreation(
-                    $request->company_id,
-                    $request->company_name,
-                    'Supplier'
-                ));
+              
+                                                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+
                 $requestData['account_id'] = $account->id;
             }
 
