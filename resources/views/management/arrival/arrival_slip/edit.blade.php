@@ -342,7 +342,7 @@
                                 </tr>
                                 <tr>
 
-                                    <td style=" padding: 8px;border: none;">Other Deduction
+                                    <td style=" padding: 8px;border: none;">Godown Penalty
                                     </td>
                                     <td style="padding: 8px;" colspan="1">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"

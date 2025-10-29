@@ -197,7 +197,7 @@
      </div>
      <div class="col-md-6">
          <div class="form-group">
-             <label>Other Deduction</label>
+             <label>Godown Penalty</label>
              <input type="text" class="form-control bg-light mb-1"
                  value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}" readonly>
              <input type="text" class="form-control bg-light"

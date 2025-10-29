@@ -1,11 +1,11 @@
 @php
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
-  //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
+    //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
     $param0 = isset($paymentRequestData) && $paymentRequestData->payment_to ? 'disabled' : '';
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
-    
+
     // Use paymentRequestData if available, otherwise use existing logic
     $exempt = $paymentRequestData->exempt ?? $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0');
     $freight_rs = $paymentRequestData->freight_rs ?? $freightPaymentRequest?->freight_rs ?? ($ticket->freight->freight_written_on_bilty ?? '0');
@@ -16,14 +16,15 @@
     $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? ($ticket->freight->other_labour_charges ?? '0');
     $market_comm = $paymentRequestData->market_comm ?? $freightPaymentRequest?->market_comm ?? 0;
     $over_weight_ded = $paymentRequestData->over_weight_ded ?? $freightPaymentRequest?->over_weight_ded ?? 0;
-    $godown_penalty = $paymentRequestData->godown_penalty ?? $freightPaymentRequest?->godown_penalty ?? 0;
+    $godown_penalty = $paymentRequestData->godown_penalty ?? $ticket->freight->other_deduction;
     $other_minus_labour = $paymentRequestData->other_minus_labour ?? $freightPaymentRequest?->other_minus_labour ?? ($ticket->freight->other_labour_charges ?? '0');
     $extra_minus_ded = $paymentRequestData->extra_minus_ded ?? $freightPaymentRequest?->extra_minus_ded ?? 0;
     $commission_percent_ded = $paymentRequestData->commission_percent_ded ?? $freightPaymentRequest?->commission_percent_ded ?? 0;
     $commission_amount = $paymentRequestData->commission_amount ?? $freightPaymentRequest?->commission_amount ?? 0;
+    $weightDifference = ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0);
 @endphp
 <form
-    action="{{ route(isset($isRequestApprovalPage, $paymentRequestData->payment_to) ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.freight-request.store') }}"
+    action="{{ route($isRequestApprovalPage ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.freight-request.store') }}"
     method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
     @csrf
     <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
@@ -71,8 +72,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Bill/T</label>
-                <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->bilty_no ?? 'N/A' }}" readonly placeholder="Bill/T">
+                <input type="text" class="form-control bg-light" value="{{ $ticket->bilty_no ?? 'N/A' }}" readonly
+                    placeholder="Bill/T">
             </div>
         </div>
     </div>
@@ -81,8 +82,8 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label class="font-weight-bold">GRN No.</label>
-                <input type="text" class="form-control bg-light"
-                    value="#{{ $ticket->arrivalSlip->unique_no ?? 'N/A' }}" readonly placeholder="GRN No.">
+                <input type="text" class="form-control bg-light" value="#{{ $ticket->arrivalSlip->unique_no ?? 'N/A' }}"
+                    readonly placeholder="GRN No.">
             </div>
         </div>
         <div class="col-md-6">
@@ -103,7 +104,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Supplier Name</label>
-                <input type="text" class="form-control bg-light" 
+                <input type="text" class="form-control bg-light"
                     value="{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}" readonly placeholder="Supplier Name">
             </div>
         </div>
@@ -150,8 +151,8 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Godown</label>
-                <input type="text" class="form-control bg-light" value="{{ $ticket->location->name ?? 'N/A' }}"
-                    readonly placeholder="Godown">
+                <input type="text" class="form-control bg-light" value="{{ $ticket->location->name ?? 'N/A' }}" readonly
+                    placeholder="Godown">
             </div>
         </div>
         <div class="col-md-4">
@@ -179,6 +180,13 @@
                     value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate" readonly>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Deduction Rate</label>
+                <input type="text" class="form-control editable-field deduction-rate" name="deduction_rate" id="deduction_rate"
+                    value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate">
+            </div>
+        </div>
     </div>
 
     <div class="row">
@@ -190,15 +198,15 @@
         <div class="col-md col-4">
             <div class="form-group">
                 <label class="font-weight-bold">Loading Weight</label>
-                <input type="text" class="form-control bg-light" value="{{ $ticket->net_weight ?? '0' }}"
-                    readonly placeholder="Loading Weight">
+                <input type="text" class="form-control bg-light" value="{{ $ticket->net_weight ?? '0' }}" readonly
+                    placeholder="Loading Weight">
             </div>
         </div>
         <div class="col-md col-4">
             <div class="form-group">
                 <label class="font-weight-bold">Arrival Weight</label>
-                <input type="text" class="form-control bg-light" value="{{ $ticket->arrived_net_weight }}"
-                    readonly placeholder="Arrival Weight">
+                <input type="text" class="form-control bg-light" value="{{ $ticket->arrived_net_weight }}" readonly
+                    placeholder="Arrival Weight">
             </div>
         </div>
         <div class="col-md col-4">
@@ -213,14 +221,14 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempt</label>
                 <input type="text" class="form-control editable-field" name="exempt" id="exemptedWeight"
-                    value="{{ $exempt }}" {{ $param }} placeholder="Exempt">
+                    value="{{ $exempt }}" {{ $param }} {{ $weightDifference > 0 ? 'readonly' : '' }} placeholder="Exempt">
             </div>
         </div>
         <div class="col-md col-6">
             <div class="form-group">
                 <label class="form-label">Net Shortage</label>
                 <input type="number" class="form-control bg-light" name="net_shortage" id="netShortage"
-                    value="150" readonly>
+                    value="{{$weightDifference - $exempt }}" readonly>
             </div>
         </div>
     </div>
@@ -248,15 +256,15 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Loading Kanta</label>
-                <input type="text" class="form-control editable-field" name="loading_kanta"
-                    value="{{ $loading_kanta }}" {{ $param }} placeholder="Loading Kanta">
+                <input type="text" class="form-control editable-field" name="loading_kanta" value="{{ $loading_kanta }}"
+                    {{ $param }} placeholder="Loading Kanta">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Arrived Kanta</label>
-                <input type="text" class="form-control editable-field" name="arrived_kanta"
-                    value="{{ $arrived_kanta }}" {{ $param }} placeholder="Arrived Kanta">
+                <input type="text" class="form-control editable-field" name="arrived_kanta" value="{{ $arrived_kanta }}"
+                    {{ $param }} placeholder="Arrived Kanta">
             </div>
         </div>
     </div>
@@ -284,8 +292,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Market Comm</label>
-                <input type="text" class="form-control editable-field" name="market_comm"
-                    value="{{ $market_comm }}" {{ $param }} placeholder="Market Comm">
+                <input type="text" class="form-control editable-field" name="market_comm" value="{{ $market_comm }}" {{ $param }} placeholder="Market Comm">
             </div>
         </div>
     </div>
@@ -298,9 +305,9 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="font-weight-bold">Over Weight Ded</label>
-                <input type="text" class="form-control editable-field" name="over_weight_ded"
-                    value="{{ $over_weight_ded }}" {{ $param }} placeholder="Over Weight Ded">
+                <label class="font-weight-bold">Short Weight Ded</label>
+                <input type="text" class="form-control  bg-light" name="over_weight_ded" id="over_weight_ded"
+                    value="{{ $over_weight_ded }}" {{ $param }} placeholder="Over Weight Ded" readonly>
             </div>
         </div>
         <div class="col-md-3">
@@ -364,18 +371,16 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Net Amount</label>
-                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount"
-                    value="0" readonly>
+                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount" value="0" readonly>
             </div>
         </div>
-          @if (!isset($isRequestApprovalPage))
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Request Amount</label>
-                <input type="number" step="0.01" class="form-control" name="request_amount" value="0"
-                    min="0" required >
+        @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="font-weight-bold">Request Amount</label>
+                    <input type="number" step="0.01" class="form-control" name="request_amount" value="0" min="0" required>
+                </div>
             </div>
-        </div>
         @endif
     </div>
 
@@ -390,18 +395,19 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Remaining Amount</label>
-                <input type="number" step="0.01" class="form-control bg-light" name="remaining_amount"
-                    value="0" readonly>
+                <input type="number" step="0.01" class="form-control bg-light" name="remaining_amount" value="0"
+                    readonly>
             </div>
         </div>
-         @if (!isset($isRequestApprovalPage))
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="font-weight-bold">Percentage</label>
-                <input type="number" min="0" max="100" step="0.01"
-                    class="form-control percentage-input" value="0" placeholder="Enter percentage">
+
+        @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="font-weight-bold">Percentage</label>
+                    <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" value="0"
+                        placeholder="Enter percentage">
+                </div>
             </div>
-        </div>
         @endif
     </div>
 
@@ -419,8 +425,7 @@
                 <div class="form-group">
                     <label>Contract No</label>
                     <input type="text" class="form-control"
-                        value="#{{ $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}"
-                        readonly>
+                        value="#{{ $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="{{ 'col-md-6' }}">
@@ -434,8 +439,7 @@
                 <div class="form-group">
                     <label>Request Type</label>
                     <input type="text" class="form-control"
-                        value="{{ isset($paymentRequest) ? formatEnumValue($paymentRequest->request_type) : '' }}"
-                        readonly>
+                        value="{{ isset($paymentRequest) ? formatEnumValue($paymentRequest->request_type) : '' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -448,8 +452,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Status:</label>
-                    <select name="status" id="approvalStatus" class="form-control select2"
-                        {{ $isUpdated ? 'disabled' : '' }}>
+                    <select name="status" id="approvalStatus" class="form-control select2" {{ $isUpdated ? 'disabled' : '' }}>
                         <option value="">Select Status</option>
                         <option value="approved" {{ $approval && $approval->status == 'approved' ? 'selected' : '' }}>
                             Approved</option>
@@ -464,8 +467,7 @@
             <div class="col-md-12">
                 <div class="form-group">
                     <label>Remarks</label>
-                    <textarea id="approvalRemarks" name="remarks" class="form-control" rows="3"
-                        {{ $isUpdated ? 'readonly' : '' }}>{{ $approval->remarks ?? '' }}</textarea>
+                    <textarea id="approvalRemarks" name="remarks" class="form-control" rows="3" {{ $isUpdated ? 'readonly' : '' }}>{{ $approval->remarks ?? '' }}</textarea>
                 </div>
             </div>
         </div>
@@ -479,65 +481,98 @@
     </div>
 </form>
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.editable-field').on('input', calculatePaymentSummary);
 
         // Freight calculations
-        $('.freight-rs').on('input', function() {
+        $('.freight-rs').on('input', function () {
             calculateFreightFromRs();
             calculateCommission();
         });
-        
-        $('.freight-per-ton').on('input', function() {
+
+        $('.freight-per-ton').on('input', function () {
             calculateFreightFromTon();
             calculateCommission();
         });
-        
+
         // Commission calculation
         $('.commission-percent').on('input', calculateCommission);
 
-        function calculateNetShortage() {
-            const differenceWeight = parseFloat(document.getElementById('differenceWeight').value) || 0;
+        function calculateNetShortagebkl() {
+            const differenceWeight = Math.abs(parseFloat(document.getElementById('differenceWeight').value)) || 0;
             const exemptedWeight = parseFloat(document.getElementById('exemptedWeight').value) || 0;
             const netShortage = differenceWeight - exemptedWeight;
             document.getElementById('netShortage').value = netShortage > 0 ? netShortage : 0;
         }
 
+
+        function calculateNetShortage() {
+            const differenceWeight = parseFloat(document.getElementById('differenceWeight').value) || 0;
+            const exemptedWeight = parseFloat(document.getElementById('exemptedWeight').value) || 0;
+
+            let netShortage;
+
+            if (differenceWeight < 0) {
+                // agar differenceWeight minus me hai
+                netShortage = Math.abs(differenceWeight) - exemptedWeight;
+            } else {
+                // agar differenceWeight plus me hai
+                netShortage = 0;
+            }
+
+            document.getElementById('netShortage').value = netShortage;
+        }
+
+function calculateNetShortageDeduction() {
+    const netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
+    const deductionRate = parseFloat(document.getElementById('deduction_rate').value) || 0;
+
+    // Net deduction calculation
+    const netDeduction = deductionRate * netShortage;
+
+    console.log(netDeduction);
+
+    document.getElementById('over_weight_ded').value = netDeduction;
+}
+
+
+
+
         function calculateFreightFromRs() {
             const freightRs = parseFloat($('.freight-rs').val()) || 0;
             const loadingWeight = parseFloat('{{ $ticket->net_weight ?? 0 }}') || 0;
-            
+
             if (loadingWeight > 0) {
                 const freightPerTon = (freightRs / loadingWeight) * 1000;
                 $('.freight-per-ton').val(freightPerTon.toFixed(2));
             }
-            
+
             calculatePaymentSummary();
         }
 
         function calculateFreightFromTon() {
             const freightPerTon = parseFloat($('.freight-per-ton').val()) || 0;
             const loadingWeight = parseFloat('{{ $ticket->net_weight ?? 0 }}') || 0;
-            
+
             if (loadingWeight > 0) {
                 const freightRs = (freightPerTon * loadingWeight) / 1000;
                 $('.freight-rs').val(freightRs.toFixed(2));
             }
-            
+
             calculatePaymentSummary();
         }
 
         function calculateCommission() {
             const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
             const freightRs = parseFloat($('.freight-rs').val()) || 0;
-            
+
             if (commissionPercent > 0) {
                 const commissionAmount = (freightRs * commissionPercent) / 100;
                 $('.commission-amount').val(commissionAmount.toFixed(2));
             } else {
                 $('.commission-amount').val('0');
             }
-            
+
             calculatePaymentSummary();
         }
 
@@ -577,7 +612,7 @@
         }
 
         // Percentage input handler for multiple requests
-        $('.percentage-input').on('input', function() {
+        $('.percentage-input').on('input', function () {
             let percentage = parseFloat($(this).val()) || 0;
             if (percentage > 100) {
                 percentage = 100;
@@ -588,16 +623,16 @@
             const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
             const remainingAmount = netAmount - paidAmount;
             const amount = (remainingAmount * percentage) / 100;
-            
+
             $('[name="request_amount"]').val(amount.toFixed(2));
-            
+
             // Update remaining amount
             const finalRemaining = netAmount - (paidAmount + amount);
             $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
         });
 
         // Request amount input handler
-        $('[name="request_amount"]').on('input', function() {
+        $('[name="request_amount"]').on('input', function () {
             const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
             const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
             const newRequested = parseFloat($(this).val()) || 0;
@@ -619,15 +654,20 @@
             $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
         });
 
-        document.getElementById('exemptedWeight').addEventListener('input', function() {
+        document.getElementById('exemptedWeight').addEventListener('input', function () {
             calculateNetShortage();
+            calculateNetShortageDeduction();
             calculatePaymentSummary();
+        });
+        document.getElementById('deduction_rate').addEventListener('input', function () {
+            calculateNetShortageDeduction();
         });
 
         // Initialize calculations on page load
         function initializeCalculations() {
             calculateNetShortage();
-            
+            calculateNetShortageDeduction();
+
             // Calculate freight per ton if freight Rs has value
             const initialFreightRs = parseFloat($('.freight-rs').val()) || 0;
             if (initialFreightRs > 0) {
@@ -641,7 +681,7 @@
                     calculatePaymentSummary();
                 }
             }
-            
+
             calculateCommission();
         }
 
