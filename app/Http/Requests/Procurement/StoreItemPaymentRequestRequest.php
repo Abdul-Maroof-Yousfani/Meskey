@@ -5,6 +5,7 @@ namespace App\Http\Requests\Procurement;
 use App\Models\Master\Account\GoodReceiveNote;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\Store\PurchaseOrder;
+use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -58,14 +59,14 @@ class StoreItemPaymentRequestRequest extends FormRequest
                     $fail("Payment amount cannot exceed the remaining amount of Rs. " . number_format($remainingAmount, 2));
                 }
             } elseif (!$isAdvance && $grnId) {
-                $grn = GoodReceiveNote::find($grnId);
+                $grn = PurchaseOrderReceiving::find($grnId);
 
                 if (!$grn) {
                     $fail('Invalid GRN selected.');
                     return;
                 }
 
-                $totalAmount = $grn->price;
+                $totalAmount = $grn->purchaseOrderReceivingData->sum('total');
                 $paidAmount = PaymentRequest::where('purchase_order_receiving_id', $grnId)
                     ->where('status', '!=', 'rejected')
                     ->sum('amount');

@@ -273,7 +273,7 @@ class PurchaseOrderController extends Controller
             $PurchaseOrder = PurchaseOrder::create([
                 'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
                 'purchase_request_id' => $request->purchase_request_id,
-                'purchase_quotation_id' => $quotation->id ?? null,
+                'purchase_quotation_id' => $request->quotation_no ?? null,
                 'order_date' => $request->purchase_date,
                 'location_id' => $request->location_id,
                 'supplier_id' => $request->supplier_id,
@@ -485,6 +485,7 @@ class PurchaseOrderController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
+        $data = PurchaseOrder::with(['purchaseOrderData', 'purchaseOrderData.item.unitOfMeasure'])->where('id', $id)->first();
 
         $purchaseOrder = PurchaseOrder::with([
             'purchaseOrderData',
@@ -510,7 +511,7 @@ class PurchaseOrderController extends Controller
             'locations' => $locations,
             'job_orders' => $job_orders,
             'purchaseOrderData' => $purchaseOrderData,
-            'data1' => $purchaseOrder,
+            'data1' => $data,
         ]);
     }
 

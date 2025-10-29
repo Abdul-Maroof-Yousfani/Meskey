@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 // use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Support\Facades\Validator;
+use function PHPUnit\Framework\isEmpty;
 // use Illuminate\Validation\ValidationException;
 class PurchaseQuotationController extends Controller
 {
@@ -385,8 +386,14 @@ class PurchaseQuotationController extends Controller
 
         $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            // ->where('am_approval_status', 'pending')
+            ->where('am_approval_status', 'approved')
             ->first();
+
+            if($data == null){
+                $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            ->first();
+            }
 
         return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
             'purchaseRequest' => $purchaseRequest,

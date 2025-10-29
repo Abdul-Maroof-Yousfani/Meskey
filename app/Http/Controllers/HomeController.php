@@ -446,15 +446,14 @@ class HomeController extends Controller
         // If fetching target data
         if ($fetchMode === 'target') {
             $sourceId = $request->input('sourceId');
-            $purchaseRequestId = $request->input('purchase_request_id'); // 👈 new line
+            $purchaseRequestId = $request->input('purchase_request_id');
 
             if (!$targetTable || !$targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
 
-            $query = DB::table($targetTable);
+            $query = DB::table($targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
 
-            // Apply soft delete if exists
             if (Schema::hasColumn($targetTable, 'deleted_at')) {
                 $query->whereNull('deleted_at');
             }

@@ -200,6 +200,7 @@ class ApprovalController extends Controller
         $results = [];
         $uniqueParents = [];
 
+
         // First, process all child records
         foreach ($modelDataIds as $dataId) {
             $record = $modelClass::find($dataId);
@@ -217,6 +218,28 @@ class ApprovalController extends Controller
             if ($parentRecord) {
                 $uniqueParents[$parentRecord->id] = $parentRecord;
             }
+            $purchaseRequest = $record->purchase_quotation->purchase_request ?? null;
+
+            if (!$purchaseRequest) {
+                abort(404, 'Purchase request not found.');
+            }
+
+            $purchaseRequestId = $purchaseRequest->id;
+
+            $parentModelClass = get_class($record->purchase_quotation);
+
+            $allParentIds = $parentModelClass::where('purchase_request_id', $purchaseRequestId)
+                ->pluck('id')
+                ->toArray();
+
+            $selectedParentIds = $modelClass::whereIn('id', json_decode($request->model_data_ids, true))
+                ->pluck('purchase_quotation_id')
+                ->unique()
+                ->toArray();
+
+            $unselectedParentIds = array_diff($allParentIds, $selectedParentIds);
+
+            // dd($unselectedParentIds);
 
             if ($reqType == 'revert') {
                 $record->am_change_made = 0;
@@ -242,7 +265,6 @@ class ApprovalController extends Controller
                 'child_id' => $record->id,
                 'child_status' => $childStatus,
                 'parent_id' => $parentRecord ? $parentRecord->id : null,
-                'parent_status' => 'pending', // Will update after processing parents
                 'message' => 'Child processed, parent pending'
             ];
         }
@@ -277,35 +299,43 @@ class ApprovalController extends Controller
                 }
             }
 
-            $parentStatus = $returnedParent ? 'success' : 'failed';
+          
 
-            // Update results for all children of this parent
-            foreach ($results as &$result) {
-                if ($result['parent_id'] == $parentId) {
-                    $result['parent_status'] = $parentStatus;
-                    $result['message'] = match (true) {
-                        $result['child_status'] === 'success' && $parentStatus === 'success' => 'Both child and parent processed successfully',
-                        $result['child_status'] === 'success' && $parentStatus !== 'success' => 'Child processed, parent failed',
-                        $result['child_status'] !== 'success' && $parentStatus === 'success' => 'Parent processed, child failed',
-                        default => 'Both child and parent failed'
-                    };
-                }
-            }
         }
 
-        // Handle cases where parent was skipped (no parent)
-        foreach ($results as &$result) {
-            if ($result['parent_status'] === 'pending') {
-                $result['parent_status'] = 'skipped';
-                $result['message'] = $result['child_status'] === 'success' ? 'Child processed, no parent' : 'Child failed, no parent';
+        foreach ($unselectedParentIds as $parentId) {
+            // Use the parent model to find parent quotation
+            $parent = $parentModelClass::find($parentId);
+            if (!$parent) {
+                continue;
             }
+
+            $parent->am_change_made = 0;
+            $parent->save();
+            $parent->reject($request->comments);
+
+            $childIds = $modelClass::where('purchase_quotation_id', $parentId)
+                ->pluck('id')
+                ->toArray();
+
+            if (!empty($childIds)) {
+                $modelClass::whereIn('id', $childIds)
+                    ->each(function ($child) use ($request) {
+                        $child->reject($request->comments);
+                    });
+            }
+
+            $results[] = [
+                'parent_id' => $parent->id,
+                'status' => 'rejected (unselected)',
+                'action' => 'auto-rejected',
+            ];
         }
+
 
         return response()->json([
             'summary' => [
                 'total' => count($modelDataIds),
-                'success' => collect($results)->filter(fn($r) => $r['child_status'] === 'success' || $r['parent_status'] === 'success')->count(),
-                'failed' => collect($results)->filter(fn($r) => $r['child_status'] === 'failed' && $r['parent_status'] === 'failed')->count(),
             ],
             'details' => $results
         ]);
