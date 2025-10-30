@@ -38,7 +38,7 @@ class ArrivalLocationTransferController extends Controller
         })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->current_company_id);
+                    $sq->where('location_id', auth()->user()->company_location_id);
                 });
             })
             ->latest()
