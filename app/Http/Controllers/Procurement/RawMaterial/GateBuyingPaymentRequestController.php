@@ -7,29 +7,21 @@ use App\Http\Requests\Procurement\GateBuyingPaymentRequestRequest;
 use Illuminate\Http\Request;
 
 
-use App\Http\Requests\Procurement\PaymentRequestRequest;
-use App\Http\Requests\Procurement\TicketPaymentRequestRequest;
+
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Arrival\ArrivalTicket;
-use App\Models\Arrival\PurchaseSamplingResult;
-use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
+
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
-use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\Broker;
 use App\Models\Master\ProductSlab;
-use App\Models\Master\ProductSlabForRmPo;
-use App\Models\Master\ProductSlabType;
-use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PaymentRequestSamplingResult;
 use App\Models\Product;
-use App\Models\PurchaseSamplingRequest;
-use App\Models\PurchaseTicket;
 use App\Models\TruckSizeRange;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -87,6 +79,10 @@ class GateBuyingPaymentRequestController extends Controller
                     ->from('arrival_freights')
                     ->whereColumn('arrival_freights.arrival_ticket_id', 'arrival_tickets.id')
                     ->limit(1);
+            })
+            //superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
             })
             ->orderByDesc('created_at');
 
@@ -315,7 +311,7 @@ class GateBuyingPaymentRequestController extends Controller
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('ticket_id', $ticket->id)
                 ->count();
-                
+
             $accountId = $purchaseOrder->supplier->account_id ?? null;
 
             $requestData['account_id'] = $accountId;
