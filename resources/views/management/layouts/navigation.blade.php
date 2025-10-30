@@ -314,11 +314,13 @@
                                 class="ft-arrow-right submenu-icon"></i><span>Purchase Request
                             </span></a>
                     </li>
-                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a class="dropdown-item d-flex align-items-center"
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-quotation.comparison-list') }}" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Purchase Quotation
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Purchase
+                                Quotation
                             </span></a>
-                            {{-- <ul class="dropdown-menu">
+                        {{-- <ul class="dropdown-menu">
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('store.purchase-quotation.index') }}"
                                     onclick="loadPageContent('{{ route('store.purchase-quotation.index') }}')"
@@ -333,7 +335,7 @@
                                     <span data-i18n="Task Board">comparison</span>
                                 </a>
                             </li>
-                            </ul> --}}
+                        </ul> --}}
                     </li>
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
@@ -644,8 +646,8 @@
                             @canAccess('brands')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('brands.index') }}"
-                                    onclick="loadPageContent('{{ route('brands.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    onclick="loadPageContent('{{ route('brands.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Brands</span></a>
                             </li>
                             @endcanAccess
@@ -697,7 +699,7 @@
                         </ul>
                     </li>
                     @endcanAccess
-                    {{-- @canAccess('raw-material-supplier') --}}
+                    @canAccess('manage-divisions')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('division.index') }}"
                             onclick="loadPageContent('{{ route('division.index') }}')" data-toggle="dropdown"><i
@@ -705,6 +707,8 @@
                             <span data-i18n="Task Board">Manage Divisions</span>
                         </a>
                     </li>
+                    @endcanAccess
+                    @canAccess('arrival-doubt-trucks')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.doubt-trucks.index') }}"
                             onclick="loadPageContent('{{ route('raw-material.doubt-trucks.index') }}')"
@@ -712,7 +716,7 @@
                             <span data-i18n="Task Board">Doubt Trucks</span>
                         </a>
                     </li>
-                    {{-- @endcanAccess --}}
+                    @endcanAccess
                 </ul>
             </li>
             @endcanAccess
