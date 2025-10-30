@@ -251,7 +251,7 @@ class FreightRequestController extends Controller
      */
     public function store(FreightPaymentRequestRequest $request)
     {
-        dd($request);
+     
         return DB::transaction(function () use ($request) {
             $requestData = $request->all();
             $requestData['module_type'] = 'freight_payment';
