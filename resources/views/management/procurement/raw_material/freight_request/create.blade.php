@@ -183,8 +183,8 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Deduction Rate</label>
-                <input type="text" class="form-control editable-field deduction-rate" name="deduction_rate" id="deduction_rate"
-                    value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate">
+                <input type="text" class="form-control editable-field deduction-rate" name="deduction_contract_rate_for_freight" id="deduction_rate"
+                    value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate">
             </div>
         </div>
     </div>
@@ -364,35 +364,34 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="font-weight-bold">Penalty</label>
+                <input type="text" class="form-control bg-light" name="penalty" value="0" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="font-weight-bold">Total Deductions</label>
-                <input type="text" class="form-control bg-light" name="total_deductions" value="0" readonly>
+                <input type="text" class="form-control bg-light" name="total_deductions"  value="{{ $paymentRequestData->net_amount ?? '0' }}" readonly>
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Net Amount</label>
-                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount" value="0" readonly>
+                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount" value="{{ $paymentRequestData->net_amount ?? '0' }}" readonly>
             </div>
         </div>
-        @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label class="font-weight-bold">Request Amount</label>
-                    <input type="number" step="0.01" class="form-control" name="request_amount" value="0" min="0" required>
-                </div>
-            </div>
-        @endif
+      
     </div>
 
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Requested Amount</label>
                 <input type="number" step="0.01" class="form-control bg-light" name="paid_amount"
                     value="{{ $requestedAmount ?? 0 }}" readonly>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Remaining Amount</label>
                 <input type="number" step="0.01" class="form-control bg-light" name="remaining_amount" value="0"
@@ -401,11 +400,19 @@
         </div>
 
         @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label class="font-weight-bold">Percentage</label>
                     <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" value="0"
                         placeholder="Enter percentage">
+                </div>
+            </div>
+        @endif
+          @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="font-weight-bold">Request Amount</label>
+                    <input type="number" step="0.01" class="form-control" name="request_amount" value="0" min="0" required>
                 </div>
             </div>
         @endif
@@ -482,6 +489,7 @@
 </form>
 <script>
     $(document).ready(function () {
+        calculateNetShortageDeduction()
         $('.editable-field').on('input', calculatePaymentSummary);
 
         // Freight calculations
@@ -527,13 +535,12 @@ function calculateNetShortageDeduction() {
     const netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
     const deductionRate = parseFloat(document.getElementById('deduction_rate').value) || 0;
 
-    // Net deduction calculation
-    const netDeduction = deductionRate * netShortage;
-
-    console.log(netDeduction);
+    // Calculate and round properly to 2 decimals
+    const netDeduction = (deductionRate * netShortage).toFixed(2);
 
     document.getElementById('over_weight_ded').value = netDeduction;
 }
+
 
 
 
@@ -595,12 +602,14 @@ function calculateNetShortageDeduction() {
             let netShortageDeduction = netShortage * contractRate;
 
             let grossAmount = freightRs + loadingKanta + arrivedKanta + otherPlusLabour + dehariPlusExtra + marketComm;
-            let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
+           // let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
+            let totalDeductions = overWeightDed  + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
             let netAmount = grossAmount - totalDeductions;
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
             $('[name="net_amount"]').val(netAmount.toFixed(2));
+            $('[name="penalty"]').val(godownPenalty.toFixed(2));
 
             let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
             let requestAmount = parseFloat($('[name="request_amount"]').val()) || 0;
