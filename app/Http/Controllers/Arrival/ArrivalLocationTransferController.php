@@ -36,7 +36,11 @@ class ArrivalLocationTransferController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-            ->where('company_id', $request->company_id)
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereHas('arrivalTicket', function ($sq) {
+                    $sq->where('location_id', auth()->user()->current_company_id);
+                });
+            })
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -48,8 +52,19 @@ class ArrivalLocationTransferController extends Controller
      */
     public function create()
     {
-        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('location_transfer_status', 'pending')->get();
+        $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('company_location_id', auth()->user()->company_location_id);
+            })
+            ->get();
+            
+        $data['ArrivalTickets'] = ArrivalTicket::where('location_transfer_status', 'pending')
+        
+          ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
+        ->get();
+
         return view('management.arrival.location_transfer.create', $data);
     }
 
@@ -94,8 +109,8 @@ class ArrivalLocationTransferController extends Controller
             return response()->json(['success' => false, 'message' => 'Arrival ticket not found.'], 404);
         }
 
-        $initialRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
-        $initialRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+        $initialRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
+        $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
         $sampleTakenByUsers = User::all();
 
         return view('management.master.arrival_location.edit', compact('locationTransfer', 'initialRequestCompulsuryResults', 'initialRequestResults', 'sampleTakenByUsers', 'initialRequestForInnerReq'));
