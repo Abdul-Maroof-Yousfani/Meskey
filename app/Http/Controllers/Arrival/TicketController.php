@@ -39,46 +39,46 @@ class TicketController extends Controller
     /**
      * Get list of categories.
      */
-public function getList(Request $request)
-{
-    $tickets = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
-        $searchTerm = '%' . $request->search . '%';
-        $q->where(function ($sq) use ($searchTerm) {
-            $sq->where('unique_no', 'like', $searchTerm)
-                // ->orWhere('supplier_name', 'like', $searchTerm)
-                ->orWhere('truck_no', 'like', $searchTerm)
-                ->orWhere('bilty_no', 'like', $searchTerm);
-        });
-    })
-    ->when($request->filled('from_date'), function ($q) use ($request) {
-        $q->whereDate('created_at', '>=', $request->from_date);
-    })
-    ->when($request->filled('to_date'), function ($q) use ($request) {
-        $q->whereDate('created_at', '<=', $request->to_date);
-    })
-    ->when($request->filled('company_location_id'), function ($q) use ($request) {
-        return $q->where('location_id', $request->company_location_id);
-    })
-    ->when($request->filled('supplier_id'), function ($q) use ($request) {
-        return $q->where('accounts_of_id', $request->supplier_id);
-    })
-    ->when($request->filled('daterange'), function ($q) use ($request) {
-        $dates = explode(' - ', $request->daterange);
-        $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-        $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+    public function getList(Request $request)
+    {
+        $tickets = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
+            $searchTerm = '%' . $request->search . '%';
+            $q->where(function ($sq) use ($searchTerm) {
+                $sq->where('unique_no', 'like', $searchTerm)
+                    // ->orWhere('supplier_name', 'like', $searchTerm)
+                    ->orWhere('truck_no', 'like', $searchTerm)
+                    ->orWhere('bilty_no', 'like', $searchTerm);
+            });
+        })
+            ->when($request->filled('from_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->from_date);
+            })
+            ->when($request->filled('to_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->to_date);
+            })
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->where('location_id', $request->company_location_id);
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->where('accounts_of_id', $request->supplier_id);
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
 
-        return $q->whereDate('created_at', '>=', $startDate)
-                ->whereDate('created_at', '<=', $endDate);
-    })
-    // Yahan naya condition add karen
-    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-        return $q->where('location_id', auth()->user()->company_location_id);
-    })
-    ->latest()
-    ->paginate($request->get('per_page', 25));
+                return $q->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            })
+            // Yahan naya condition add karen
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
+            ->latest()
+            ->paginate($request->get('per_page', 25));
 
-    return view('management.arrival.ticket.getList', compact('tickets'));
-}
+        return view('management.arrival.ticket.getList', compact('tickets'));
+    }
 
 
     /**
@@ -107,6 +107,7 @@ public function getList(Request $request)
         $products = Product::where('status', 'active')->get();
 
         $accountsOf = User::role('Purchaser')
+            ->where('parent_user_id', null)
             ->whereHas('companies', function ($q) use ($authUserCompany) {
                 $q->where('companies.id', $authUserCompany);
             })
@@ -141,13 +142,13 @@ public function getList(Request $request)
             ->where('company_location_id', $locationId)
             ->where(function ($q) {
                 $q->where('purchase_type', 'regular')
-                  ->orWhere(function ($q2) {
-                      $q2->where('purchase_type', 'gate_buying')
-                         ->whereDoesntHave('arrivalTickets');
-                  });
+                    ->orWhere(function ($q2) {
+                        $q2->where('purchase_type', 'gate_buying')
+                            ->whereDoesntHave('arrivalTickets');
+                    });
             })
             ->get();
-         
+
 
         return response()->json([
             'contracts' => $contracts
@@ -234,7 +235,7 @@ public function getList(Request $request)
         $userLocation = getUserParams('company_location_id');
 
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
-           // ->where('purchase_type', 'regular')
+            // ->where('purchase_type', 'regular')
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
                 $q->where('company_location_id', $userLocation);
             })

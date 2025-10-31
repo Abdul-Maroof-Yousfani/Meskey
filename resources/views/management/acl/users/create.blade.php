@@ -90,7 +90,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Arrival Location:</label>
-                <select name="arrival_location_id" id="arrival_location" class="form-control select2">
+                <select name="arrival_location_id" id="arrival_location" class="form-control">
                     {{-- <option value="">Select Arrival Location</option> --}}
                     @if (isset($user) && $user->company_location_id)
                         @foreach ($user->companyLocation->arrivalLocations as $location)
