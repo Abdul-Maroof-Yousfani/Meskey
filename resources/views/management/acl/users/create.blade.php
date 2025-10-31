@@ -90,7 +90,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Arrival Location:</label>
-                <select name="arrival_location_id" id="arrival_location" class="form-control">
+                <select name="arrival_location_id" id="arrival_location" class="form-control select2">
                     {{-- <option value="">Select Arrival Location</option> --}}
                     @if (isset($user) && $user->company_location_id)
                         @foreach ($user->companyLocation->arrivalLocations as $location)
@@ -169,6 +169,8 @@
 
     <script>
         $(document).ready(function() {
+
+            $('.select2').select2();
             $('#company_location').on('change', function() {
                 const companyLocationId = $(this).val();
                 const arrivalLocationSelect = $('#arrival_location');

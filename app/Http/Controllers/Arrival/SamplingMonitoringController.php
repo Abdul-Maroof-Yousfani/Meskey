@@ -50,9 +50,17 @@ class SamplingMonitoringController extends Controller
             ->when($request->filled('sampling_type'), function ($q) use ($request) {
                 return $q->where('sampling_type', 'like', $request->sampling_type);
             })
+            //->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //  return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+            //    $query->where('decision_id', $authUser->id);
+            //});
+            //})
             ->when(!$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
-                    $query->where('decision_id', $authUser->id);
+                    $query->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_id);
+                    });
                 });
             })
             ->where(function ($q) {
@@ -279,8 +287,8 @@ class SamplingMonitoringController extends Controller
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
                 'decision_making' => $isDecisionMaking,
-                'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
-                'lumpsum_deduction_kgs' => (float)$request->lumpsum_deduction_kgs ?? 0.00,
+                'lumpsum_deduction' => (float) $request->lumpsum_deduction ?? 0.00,
+                'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
                 'is_done' => 'yes',
                 'done_by' => auth()->user()->id,
@@ -339,8 +347,8 @@ class SamplingMonitoringController extends Controller
             }
 
             $updateData = [
-                'lumpsum_deduction' => (float)($request->lumpsum_deduction ?? 0.00),
-                'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
+                'lumpsum_deduction' => (float) ($request->lumpsum_deduction ?? 0.00),
+                'lumpsum_deduction_kgs' => (float) ($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
                 'decision_making' => $isDecisionMaking,
                 'decision_making_time' => $decisionMadeOn,
