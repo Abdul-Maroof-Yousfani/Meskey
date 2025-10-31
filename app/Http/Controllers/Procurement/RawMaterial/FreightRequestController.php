@@ -251,7 +251,7 @@ class FreightRequestController extends Controller
      */
     public function store(FreightPaymentRequestRequest $request)
     {
-     
+
         return DB::transaction(function () use ($request) {
             $requestData = $request->all();
             $requestData['module_type'] = 'freight_payment';
@@ -779,7 +779,7 @@ class FreightRequestController extends Controller
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             $paymentRequestData = $paymentRequest->paymentRequestData;
-$vendorAccId = $paymentRequest->account_id;
+            $vendorAccId = $paymentRequest->account_id;
             $purchaseOrder = $paymentRequestData->purchaseOrder;
 
             //  if ($request->has('total_amount') || $request->has('bag_weight')) {
@@ -852,9 +852,13 @@ $vendorAccId = $paymentRequest->account_id;
                 );
             }
 
+
+
+
             $txnVendor = Transaction::where('grn_no', $grnNo)
                 ->where('purpose', 'pohouch-freight')
                 ->first();
+
             if ($txnVendor) {
                 $txnVendor->update([
                     'amount' => $request->net_amount,
@@ -863,7 +867,7 @@ $vendorAccId = $paymentRequest->account_id;
                     'type' => 'debit',
                     'voucher_no' => $purchaseOrder->contract_no,
                     'grn_no' => $grnNo,
-                    'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                    'remarks' => "Vendor ledger updated for freight payment related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount} recorded against supplier."
                 ]);
             } else {
                 createTransaction(
@@ -878,11 +882,12 @@ $vendorAccId = $paymentRequest->account_id;
                         'counter_account_id' => $qcAccountId,
                         'purpose' => "arrival-slip",
                         'payment_against' => "pohouch-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                        'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                        'remarks' => "Vendor ledger created for freight payment related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount} recorded against supplier."
                     ]
                 );
             }
+
 
 
 
