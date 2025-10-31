@@ -59,7 +59,7 @@ class SamplingMonitoringController extends Controller
                 return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
                     $query->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
-                            ->orWhere('decision_id', $authUser->parent_id);
+                            ->orWhere('decision_id', $authUser->parent_user_id);
                     });
                 });
             })
