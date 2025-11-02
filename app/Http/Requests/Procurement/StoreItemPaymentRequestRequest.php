@@ -52,6 +52,8 @@ class StoreItemPaymentRequestRequest extends FormRequest
                 $totalAmount = $purchaseOrder->items->sum('total');
                 $paidAmount = PaymentRequest::where('purchase_order_id', $purchaseOrderId)
                     ->where('status', '!=', 'rejected')
+                    ->where('status', '=', 'approved')
+
                     ->sum('amount');
                 $remainingAmount = $totalAmount - $paidAmount;
 
@@ -69,6 +71,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
                 $totalAmount = $grn->purchaseOrderReceivingData->sum('total');
                 $paidAmount = PaymentRequest::where('purchase_order_receiving_id', $grnId)
                     ->where('status', '!=', 'rejected')
+                    ->where('status', '=', 'approved')
                     ->sum('amount');
                 $remainingAmount = $totalAmount - $paidAmount;
 

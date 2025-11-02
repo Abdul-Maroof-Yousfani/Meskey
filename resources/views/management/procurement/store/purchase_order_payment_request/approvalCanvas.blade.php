@@ -1,7 +1,3 @@
-<form action="{{ route('store.purchase-order-payment-request.update', optional($paymentRequest)->id) }}" 
-      method="POST" id="ajaxSubmit" autocomplete="off">
-    @csrf
-    @method('PUT')
 
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-payment-request') }}" />
 
@@ -126,13 +122,20 @@
             <textarea class="form-control" id="description" name="description" rows="3">{{ $paymentRequest->description }}</textarea>
         </div>
     </div>
+<br>
+    <div class="row">
+        <div class="col-12">
+            <x-approval-status :model="$data1" />
+        </div>
+    </div>
+
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Update Payment Request</button>
         </div>
     </div>
-</form>
+
 
 <script>
     $(document).ready(function () {

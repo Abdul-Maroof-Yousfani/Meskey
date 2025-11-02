@@ -30,31 +30,42 @@
                     <td>{{ number_format($paymentRequest->amount, 2) }}</td>
                     <td>
                         <span
-                            class="badge badge-{{ $paymentRequest->status == 'approved' ? 'success' : ($paymentRequest->status == 'pending' ? 'warning' : 'danger') }}">
-                            {{ ucfirst($paymentRequest->status) }}
+                            class="badge badge-{{ $paymentRequest->am_approval_status == 'approved' ? 'success' : ($paymentRequest->am_approval_status == 'pending' ? 'warning' : 'danger') }}">
+                            {{ ucfirst($paymentRequest->am_approval_status) }}
                         </span>
                     </td>
                     <td>
                         {{-- @can('payment-request-edit') --}}
-                            <a onclick="openModal(this,'{{ route('store.purchase-order-payment-request.edit', $paymentRequest->id) }}','Edit Payment Request',true,'70%')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                        @if($paymentRequest->requested_by == auth()->user()->id)
+                            @if($paymentRequest->am_approval_status == 'pending' || $paymentRequest->am_approval_status == 'reverted')
+                                <a onclick="openModal(this,'{{ route('store.purchase-order-payment-request.edit', $paymentRequest->id) }}','Edit Payment Request',false,'80%')"
+                                    class="info p-1 text-center mr-2 position-relative">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @endif
+                        @endif
                         {{-- @endcan --}}
                         {{-- @can('payment-request-delete') --}}
+                        @if($paymentRequest->am_approval_status == 'pending' || $paymentRequest->am_approval_status == 'reverted')
+
                             <a onclick="deletemodal('{{ route('store.purchase-order-payment-request.destroy', $paymentRequest->id) }}','{{ route('store.get.purchase-order-payment-request') }}')"
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-x font-medium-3"></i>
                             </a>
+                        @endif
                         {{-- @endcan --}}
                         {{-- @can('payment-request-approve') --}}
-                            @if ($paymentRequest->status == 'pending')
-                                <a onclick="approvePaymentRequest('{{ route('store.purchase-order-payment-request.approve', $paymentRequest->id) }}')"
-                                    class="success p-1 text-center position-relative" title="Approve">
-                                    <i class="ft-check font-medium-3"></i>
-                                </a>
-                            @endif
+                        {{-- @if ($paymentRequest->status == 'pending')
+                        <a onclick="approvePaymentRequest('{{ route('store.purchase-order-payment-request.approve', $paymentRequest->id) }}')"
+                            class="success p-1 text-center position-relative" title="Approve">
+                            <i class="ft-check font-medium-3"></i>
+                        </a>
+                        @endif --}}
                         {{-- @endcan --}}
+                        <a onclick="openModal(this, '{{ route('store.purchase-order-payment-request.approvals', $paymentRequest->id) }}', 'View Payment Request', true, '80%')"
+                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach

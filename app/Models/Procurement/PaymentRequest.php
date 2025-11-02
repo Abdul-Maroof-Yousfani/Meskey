@@ -10,10 +10,11 @@ use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasApproval;
 
 class PaymentRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $fillable = [
         'payment_request_data_id',
@@ -36,7 +37,9 @@ class PaymentRequest extends Model
         'module_type',
         'payment_type',
         'status',
-        'amount'
+        'amount',
+        'am_approval_status',
+        'am_change_made'
     ];
 
     public function paymentRequestData()
@@ -90,5 +93,10 @@ class PaymentRequest extends Model
     public function approvedBy()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'requested_by');
     }
 }
