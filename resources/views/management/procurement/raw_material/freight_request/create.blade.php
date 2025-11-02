@@ -376,8 +376,8 @@
                 <label class="font-weight-bold">Penalty Adjust To</label>
                 <select name="penalty_adjust_to"  class="form-control select2" >
                     <option value="">Select Penalty Adjust To</option>
-                    <option value="{{ getAccountDetailsByHierarchyPath('4-1-2')->id }}">{{ getAccountDetailsByHierarchyPath('4-1-2')->name }}</option>
-                    <option value="{{ getAccountDetailsByHierarchyPath('5-1-1')->id }}">{{ getAccountDetailsByHierarchyPath('5-1-1')->name }}</option>
+                    <option {{ getAccountDetailsByHierarchyPath('4-1-2')->id == $paymentRequestData->penalty_adjust_to ? 'selected' : '' }} value="{{ getAccountDetailsByHierarchyPath('4-1-2')->id }}">{{ getAccountDetailsByHierarchyPath('4-1-2')->name }}</option>
+                    <option {{ getAccountDetailsByHierarchyPath('5-1-1')->id == $paymentRequestData->penalty_adjust_to ? 'selected' : '' }} value="{{ getAccountDetailsByHierarchyPath('5-1-1')->id }}">{{ getAccountDetailsByHierarchyPath('5-1-1')->name }}</option>
                 </select>
             </div>
             @endif
