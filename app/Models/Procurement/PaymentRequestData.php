@@ -69,7 +69,8 @@ class PaymentRequestData extends Model
         'advance_freight',
         'notes',
         'attachment',
-        'deduction_contract_rate_for_freight'
+        'deduction_contract_rate_for_freight',
+        'penalty_adjust_to',
     ];
 
     protected $casts = [

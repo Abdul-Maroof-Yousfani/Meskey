@@ -814,3 +814,18 @@ if (!function_exists('dateFormatHtml')) {
         return null; // agar type match na kare
     }
 }
+
+
+if (!function_exists('getAccountDetailsByHierarchyPath')) {
+    /**
+     * Return account details by hierarchy path
+     *
+     * @param  string $hierarchyPath
+     * @return Account|null
+     */
+    function getAccountDetailsByHierarchyPath($hierarchyPath)
+    {
+        $account = Account::where('hierarchy_path', $hierarchyPath)->first();
+        return $account;
+    }
+}
