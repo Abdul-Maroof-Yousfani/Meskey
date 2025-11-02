@@ -867,7 +867,7 @@ class FreightRequestController extends Controller
                     'type' => 'debit',
                     'voucher_no' => $purchaseOrder->contract_no,
                     'grn_no' => $grnNo,
-                    'remarks' => "Vendor ledger updated for freight payment related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount} recorded against supplier."
+                    'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                 ]);
             } else {
                 createTransaction(
@@ -883,7 +883,7 @@ class FreightRequestController extends Controller
                         'purpose' => "arrival-slip",
                         'payment_against' => "pohouch-purchase",
                         'against_reference_no' => "{$truckNo}/{$biltyNo}",
-                        'remarks' => "Vendor ledger created for freight payment related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount} recorded against supplier."
+                        'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                     ]
                 );
             }
