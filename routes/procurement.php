@@ -164,6 +164,9 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-order-payment-request/get-sources', [PurchaseOrderPaymentRequestController::class, 'getSources'])->name('purchase-order-payment-request.get-sources');
     Route::post('purchase-order-payment-request/{id}/approve', [PurchaseOrderPaymentRequestController::class, 'approve'])->name('purchase-order-payment-request.approve');
 
+    Route::get('purchase-order-payment-request-approvals/{id}', [PurchaseOrderPaymentRequestController::class, 'manageApprovals'])->name('purchase-order-payment-request.approvals');
+
+
 });
 
 // Route::resource('indicative-prices', IndicativePriceController::class)->except(['create', 'show', 'edit']);
