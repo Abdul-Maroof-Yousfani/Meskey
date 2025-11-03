@@ -93,6 +93,10 @@ class HomeController extends Controller
         $firstWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'transfered')
             ->where('first_weighbridge_status', 'pending')
+            //superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -125,12 +129,20 @@ class HomeController extends Controller
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
             })
+            //superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
         $secondWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
             ->where('second_weighbridge_status', 'pending')
+            //superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -279,6 +291,10 @@ class HomeController extends Controller
                     ->where('location_transfer_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -289,6 +305,10 @@ class HomeController extends Controller
                     ->where('first_qc_status', 'rejected')
                     ->where('bilty_return_confirmation', 0)
                     ->whereBetween('created_at', $dateRange)
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
                     ->paginate(1000);
@@ -300,6 +320,10 @@ class HomeController extends Controller
                     ->where('location_transfer_status', 'transfered')
                     ->where('first_weighbridge_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->with(['product', 'station', 'accountsOf', 'unloadingLocation'])
                     ->latest()
                     ->paginate(1000);
@@ -351,6 +375,10 @@ class HomeController extends Controller
                         $q->where('sampling_type', 'inner')
                             ->where('approved_status', 'pending');
                     })
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
                     ->latest()
@@ -362,6 +390,10 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
                     ->where('second_weighbridge_status', 'pending')
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'approvals'])
                     ->latest()
@@ -373,6 +405,10 @@ class HomeController extends Controller
                     ->where('second_weighbridge_status', 'completed')
                     ->where('freight_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
                     ->latest()
                     ->paginate(1000);
@@ -385,6 +421,10 @@ class HomeController extends Controller
                     ->where('freight_status', 'pending')
                     ->where('decision_making', 0)
                     ->whereBetween('created_at', $dateRange)
+                    //superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
                     ->latest()
                     ->paginate(1000);

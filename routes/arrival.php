@@ -19,6 +19,7 @@ use App\Models\Master\CompanyLocation;
 Route::resource('ticket', TicketController::class);
 Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.ticket');
 Route::put('/ticket/{ticket}/confirm-bilty-return', [TicketController::class, 'confirmBiltyReturn'])->name('ticket.confirm-bilty-return');
+Route::get('/ticket-revert/{ticket}', [TicketController::class, 'arrivalRevert'])->name('ticket.arrival-revert');
 Route::get('/get-ticket-number/{locationId}', [TicketController::class, 'getTicketNumber']);
 
 Route::resource('initialsampling', InitialSamplingController::class);
