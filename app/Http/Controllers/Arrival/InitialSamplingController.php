@@ -45,6 +45,12 @@ class InitialSamplingController extends Controller
                         ->orWhere('supplier_name', 'like', $searchTerm);
                 });
             })
+             // Yahan relation through company_location_id check karen
+        ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->whereHas('arrivalTicket', function ($sq) {
+                $sq->where('location_id', auth()->user()->company_location_id);
+            });
+        })
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -67,7 +73,14 @@ class InitialSamplingController extends Controller
             $query->where('is_re_sampling', 'no');
         }
 
-        $samplingRequests = $query->get();
+        $samplingRequests = $query
+        
+         ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->whereHas('arrivalTicket', function ($sq) {
+                $sq->where('location_id', auth()->user()->company_location_id);
+            });
+        })
+        ->get();
         $arrivalCustomSampling = ArrivalCustomSampling::all();
 
         $sampleTakenByUsers = User::role('QC')

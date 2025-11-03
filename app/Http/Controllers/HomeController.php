@@ -23,6 +23,9 @@ class HomeController extends Controller
 
         $totalTickets = ArrivalTicket::where('company_id', $companyId)
             // ->whereIn('first_qc_status', ['pending', 'resampling'])
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -36,6 +39,13 @@ class HomeController extends Controller
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
+
+            //Superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereHas('arrivalTicket', function ($sq) {
+                    $sq->where('location_id', auth()->user()->company_location_id);
+                });
+            })
             ->where('sampling_type', 'initial')
             ->where('is_done', 'no')
             ->count();
@@ -62,6 +72,10 @@ class HomeController extends Controller
 
         $locationTransferPending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'pending')
+            //superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -167,6 +181,9 @@ class HomeController extends Controller
             case 'total_tickets':
                 $title = 'Total Tickets';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     // ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
@@ -177,9 +194,14 @@ class HomeController extends Controller
             case 'new_tickets':
                 $title = 'New Tickets (Pending Initial Sampling)';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
+
                     ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
+                    // Superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -192,6 +214,14 @@ class HomeController extends Controller
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'no')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
+                    //Superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->whereHas('arrivalTicket', function ($sq) {
+                            $sq->where('location_id', auth()->user()->company_location_id);
+                        });
+                    })
+
+
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -201,6 +231,10 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('arrival_slip_status', 'generated')
                     ->with(['product', 'station', 'accountsOf'])
+                    // Superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->where('location_id', auth()->user()->company_location_id);
+                    })
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -215,6 +249,12 @@ class HomeController extends Controller
                     ->where('is_done', 'yes')
                     ->where('approved_status', 'pending')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
+                    //Superadmin
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->whereHas('arrivalTicket', function ($sq) {
+                            $sq->where('location_id', auth()->user()->company_location_id);
+                        });
+                    })
                     ->latest()
                     ->paginate(1000);
                 break;

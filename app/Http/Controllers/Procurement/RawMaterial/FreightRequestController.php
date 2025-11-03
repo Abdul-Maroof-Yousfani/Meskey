@@ -251,6 +251,7 @@ class FreightRequestController extends Controller
      */
     public function store(FreightPaymentRequestRequest $request)
     {
+     
         return DB::transaction(function () use ($request) {
             $requestData = $request->all();
             $requestData['module_type'] = 'freight_payment';
@@ -774,15 +775,16 @@ class FreightRequestController extends Controller
 
     public function pohouch_freight_payment_request_approval(Request $request)
     {
+
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             $paymentRequestData = $paymentRequest->paymentRequestData;
-
+$vendorAccId = $paymentRequest->account_id;
             $purchaseOrder = $paymentRequestData->purchaseOrder;
 
-          //  if ($request->has('total_amount') || $request->has('bag_weight')) {
+            //  if ($request->has('total_amount') || $request->has('bag_weight')) {
             //    $this->updatePaymentRequestData($paymentRequestData, $request);
-           // }
+            // }
 
             if ($request->has('payment_request_amount')) {
                 $paymentRequest->update(['amount' => $request->payment_request_amount]);
@@ -801,6 +803,88 @@ class FreightRequestController extends Controller
             ]);
 
             $paymentRequest->update(['status' => $request->status]);
+
+
+
+            $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
+            $paymentDetails = calculatePaymentDetails($ticket->id, 1);
+            $qcAccountId = $ticket->qcProduct->account_id;
+            $truckNo = $ticket->truck_no ?? 'N/A';
+            $biltyNo = $ticket->bilty_no ?? 'N/A';
+            $rate = $request->contract_rate;
+            $grnNo = $ticket->arrivalSlip->unique_no;
+
+
+            $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
+            $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+
+            $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount;
+
+            $txnInv = Transaction::where('grn_no', $grnNo)
+                ->where('purpose', 'arrival-slip')
+                ->first();
+            if ($txnInv) {
+                $txnInv->update([
+                    'amount' => $inventoryAmountwithFreight,
+                    'account_id' => $qcAccountId,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
+                    'type' => 'debit',
+                    'voucher_no' => $purchaseOrder->contract_no,
+                    'grn_no' => $grnNo,
+                    'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                ]);
+            } else {
+                createTransaction(
+                    $inventoryAmountwithFreight,
+                    $qcAccountId,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'debit',
+                    'no',
+                    [
+                        'grn_no' => $grnNo,
+                        'counter_account_id' => $purchaseOrder->supplier->account_id,
+                        'purpose' => "arrival-slip",
+                        'payment_against' => "pohouch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                    ]
+                );
+            }
+
+            $txnVendor = Transaction::where('grn_no', $grnNo)
+                ->where('purpose', 'pohouch-freight')
+                ->first();
+            if ($txnVendor) {
+                $txnVendor->update([
+                    'amount' => $request->net_amount,
+                    'account_id' => $vendorAccId,
+                    'counter_account_id' => $purchaseOrder->supplier->account_id,
+                    'type' => 'debit',
+                    'voucher_no' => $purchaseOrder->contract_no,
+                    'grn_no' => $grnNo,
+                    'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                ]);
+            } else {
+                createTransaction(
+                    $request->net_amount,
+                    $vendorAccId,
+                    1,
+                    $purchaseOrder->contract_no,
+                    'credit',
+                    'no',
+                    [
+                        'grn_no' => $grnNo,
+                        'counter_account_id' => $qcAccountId,
+                        'purpose' => "arrival-slip",
+                        'payment_against' => "pohouch-purchase",
+                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                    ]
+                );
+            }
+
+
 
             return response()->json([
                 'success' => 'Payment request ' . $request->status . ' successfully!'

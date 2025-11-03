@@ -128,7 +128,7 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label>Other Deduction</label>
+                <label>Godown Penalty</label>
                 <input type="number" step="0.01" name="other_deduction" class="form-control"
                     value="{{ $freight->other_deduction }}" />
             </div>

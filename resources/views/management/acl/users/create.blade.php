@@ -169,6 +169,8 @@
 
     <script>
         $(document).ready(function() {
+
+            $('.select2').select2();
             $('#company_location').on('change', function() {
                 const companyLocationId = $(this).val();
                 const arrivalLocationSelect = $('#arrival_location');

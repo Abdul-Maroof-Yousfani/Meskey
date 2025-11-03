@@ -134,7 +134,7 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label>Other Deduction</label>
+                <label>Godown Penalty</label>
                 <input type="number" step="0.01" name="other_deduction" min="0" class="form-control calculate-final"
                     value="0" />
             </div>

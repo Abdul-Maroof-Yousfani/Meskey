@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th class="col-sm-1">Image</th>
+            <th class="col-sm-2">Parent</th>
             <th class="col-sm-2">Name</th>
             <th class="col-sm-2">Username</th>
             <th class="col-sm-3">Role</th>
@@ -16,6 +17,11 @@
                 <tr>
                     <td>
                         <img src="{{ image_path($user->profile_image) }}" class="avatar lisiavatarlogo" />
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $user->parent?->name  ?? '--'}}
+                        </p>
                     </td>
                     <td>
                         <p class="m-0">

@@ -132,7 +132,7 @@ class PurchaseOrderController extends Controller
         $data['brokers'] = Broker::all();
         $authUser = auth()->user();
         $locationId = $authUser->companyLocation?->id ?? '1';
-        $locationId = (string)$locationId;
+        $locationId = (string) $locationId;
 
         $data['suppliers'] = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
 
@@ -182,6 +182,8 @@ class PurchaseOrderController extends Controller
             }
 
             $arrivalPOData['created_by'] = auth()->user()->id;
+            $arrivalPOData['decision_of_id'] = auth()->user()->parent_user_id == null ? auth()->user()->id : auth()->user()->parent_user_id;
+
             $arrivalPurchaseOrder = ArrivalPurchaseOrder::create($arrivalPOData);
 
             if (isset($data['slabs']) && count($data['slabs']) > 0) {
@@ -407,7 +409,7 @@ class PurchaseOrderController extends Controller
             'location_id' => 'required|exists:company_locations,id'
         ]);
 
-        $locationId = (string)$request->location_id;
+        $locationId = (string) $request->location_id;
         $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
 
         return response()->json([

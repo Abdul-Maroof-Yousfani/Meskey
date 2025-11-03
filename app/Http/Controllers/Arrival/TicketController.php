@@ -70,6 +70,10 @@ class TicketController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            // Yahan naya condition add karen
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->latest()
             ->paginate($request->get('per_page', 25));
 
@@ -103,6 +107,7 @@ class TicketController extends Controller
         $products = Product::where('status', 'active')->get();
 
         $accountsOf = User::role('Purchaser')
+            ->where('parent_user_id', null)
             ->whereHas('companies', function ($q) use ($authUserCompany) {
                 $q->where('companies.id', $authUserCompany);
             })
@@ -137,13 +142,13 @@ class TicketController extends Controller
             ->where('company_location_id', $locationId)
             ->where(function ($q) {
                 $q->where('purchase_type', 'regular')
-                  ->orWhere(function ($q2) {
-                      $q2->where('purchase_type', 'gate_buying')
-                         ->whereDoesntHave('arrivalTickets');
-                  });
+                    ->orWhere(function ($q2) {
+                        $q2->where('purchase_type', 'gate_buying')
+                            ->whereDoesntHave('arrivalTickets');
+                    });
             })
             ->get();
-         
+
 
         return response()->json([
             'contracts' => $contracts
@@ -230,7 +235,7 @@ class TicketController extends Controller
         $userLocation = getUserParams('company_location_id');
 
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
-           // ->where('purchase_type', 'regular')
+            // ->where('purchase_type', 'regular')
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
                 $q->where('company_location_id', $userLocation);
             })

@@ -65,12 +65,12 @@
                 </td>
                 <td>
                     <div class="d-flex gap-2 align-items-center justify-content-center">
-                        @can('role-edit')
+                      
                             <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
-                        @endcan
+                      
                         @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)
                             <button onclick="confirmBiltyReturn({{ $row->id }})" class="btn btn-sm btn-danger">
                                 Confirm Bilty Return
