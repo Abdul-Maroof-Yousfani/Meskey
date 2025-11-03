@@ -889,7 +889,7 @@ class FreightRequestController extends Controller
             }
 
 
-            if ($request->godown_penalty > 0) {
+            if ($request->godown_penalty == 'Commit') {
                 $txnExtraIncome = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'pohouch-freight-penalty')
                     ->first();
