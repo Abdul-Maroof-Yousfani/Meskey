@@ -804,7 +804,7 @@ class FreightRequestController extends Controller
 
             $paymentRequest->update(['status' => $request->status]);
 
-
+ 
 
             $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
