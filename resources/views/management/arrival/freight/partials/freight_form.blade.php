@@ -263,7 +263,8 @@
         const totalCharges = kantaCharges + karachiKanta + labourCharges;
 
         // Calculate final freight amount
-        let finalVal = (writtenOnBilly + totalCharges) - (otherDeduction + unpaidLabor);
+       // let finalVal = (writtenOnBilly + totalCharges) - (otherDeduction + unpaidLabor);
+        let finalVal = (writtenOnBilly + totalCharges) - (unpaidLabor);
 
         $('input[name="gross_freight_amount"]').val(finalVal.toFixed(2));
         $('input[name="net_freight"]').val(finalVal.toFixed(2));
