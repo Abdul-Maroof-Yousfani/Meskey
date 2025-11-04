@@ -92,26 +92,98 @@
     </div>
 </td>
 
-      <td style="width: 20%">
-    <input 
-        style="width: 100px" 
-        type="number"
-        onkeyup="calc({{ $key }})"
-        onblur="calc({{ $key }})"
-        name="rate[]" 
-        value="{{ $data->rate }}"
-        id="rate_{{ $key }}" 
-        class="form-control" 
-        step="0.01" 
-        min="0"
-        {{ $isQuotationAvailable ? 'readonly' : '' }}>
-</td>
+        <td style="width: 10%">
+            <input 
+                style="width: 70px" 
+                type="number"
+                onkeyup="calc({{ $key }})"
+                onblur="calc({{ $key }})"
+                name="rate[]" 
+                value="{{ $data->rate }}"
+                id="rate_{{ $key }}" 
+                class="form-control" 
+                step="0.01" 
+                min="0"
+                {{ $isQuotationAvailable ? 'readonly' : '' }}>
+        </td>
+        <td style="width: 5%">
+            <select style="width: 50px" id="tax_id_{{ $key }}" name="tax_id[]" 
+                onchange="calc({{ $key }})" class="form-control item-select select2">
+                <option value="">Select Tax</option>
+                @foreach ($taxes as $tax)
+                    <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}">
+                        {{ $tax->name . ' (' . $tax->percentage . ')%' }}
+                    </option>
+                @endforeach
+            </select>
+        </td>
 
+        <td style="width: 10%">
+            <input style="width: 70px" type="number" oninput="calc({{ $key }})" name="excise_duty[]" value=""
+                id="excise_duty_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
 
-        <td style="width: 20%">
+        <td style="width: 10%">
             <input style="width: 100px" type="number" readonly name="total[]" value="{{ $data->total ?? $currentTotal }}"
                 id="total_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
+
+         <td style="width: 5%">
+            <input style="width: 50px" type="number" readonly name="min_weight[]" value="{{ $data->min_weight }}"
+                id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
+         <td style="width: 5%">
+            <input style="width: 50px" type="text" readonly name="color[]" value="{{ $data->color }}"
+                id="color_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
+         <td style="width: 5%">
+            <input style="width: 50px" type="text" readonly name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}"
+                id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
+         <td style="width: 5%">
+            <input style="width: 50px" type="text" readonly name="size[]" value="{{ $data->size }}"
+                id="size_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
+         <td style="width: 5%">
+            <input style="width: 50px" type="text" readonly name="stitching[]" value="{{ $data->stitching }}"
+                id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
+        <td style="width: 5%">
+            <div class="loop-fields">
+                <div class="form-group mb-0">
+                    {{-- <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}"
+                        class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample"> --}}
+                     <input type="hidden" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ $data->printing_sample }}"
+                                            class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
+
+                    @if (!empty($item->printing_sample))
+                        <small>
+                            <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">
+                                View existing file
+                            </a>
+                        </small>
+                        @else
+                        <span>No Attach.</span>
+                    @endif
+                </div>
+            </div>
+        </td>
+        {{-- <td style="width: 5%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                        
+                                            @if (!empty($item->printing_sample))
+                                                <small>
+                                                    <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">
+                                                        View existing file
+                                                    </a>
+                                                </small>
+                                                @else
+                                                <span>No Attachment</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td> --}}
 
 
         <td style="width: 25%">

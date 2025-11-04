@@ -4,6 +4,7 @@ namespace App\Models\Procurement\Store;
 
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
+use App\Models\PaymentTerm;
 use App\Models\Procurement\PaymentRequest;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -75,5 +76,10 @@ class PurchaseOrder extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function paymentTerm()
+    {
+        return $this->belongsTo(PaymentTerm::class, 'payment_term_id');
     }
 }

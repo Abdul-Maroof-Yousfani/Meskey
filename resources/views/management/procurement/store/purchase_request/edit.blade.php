@@ -50,11 +50,17 @@
                 <table class="table table-bordered" id="purchaseRequestTable">
                     <thead>
                         <tr>
-                            <th>Category</th>
+                           <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
                             <th>Qty</th>
                             <th>Job Orders</th>
+                            <th>Min Weight</th>
+                            <th>Color</th>
+                            <th>Cons./sq. in.</th>
+                            <th>Size</th>
+                            <th>Stitching</th>
+                            <th>Printing Sample</th>
                             <th>Remarks</th>
                             <th>Action</th>
                         </tr>
@@ -62,9 +68,10 @@
                     <tbody id="purchaseRequestBody">
                         @foreach ($purchaseRequest->PurchaseData as $index => $item)
                             <tr id="row_{{ $index }}"
-                                class="{{ $purchaseRequestData->id == $item->id ? 'bg-orange' : '' }}">
+                                class="">
+                                {{-- class="{{ $purchaseRequestData->id == $item->id ? 'bg-orange' : '' }}"> --}}
                                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
-                                <td style="width: 25%">
+                                <td style="width: 10%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <select name="category_id[]" id="category_id_{{ $index }}"
@@ -80,7 +87,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 25%">
+                                <td style="width: 15%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <select name="item_id[]" id="item_id_{{ $index }}"
@@ -96,12 +103,12 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 10%">
+                                <td style="width: 8%">
                                     <input type="text" name="uom[]" id="uom_{{ $index }}"
                                         class="form-control uom" readonly
                                         value="{{ $item->item->unitOfMeasure->name ?? '' }}">
                                 </td>
-                                <td style="width: 10%">
+                                <td style="width: 8%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <input type="number" name="qty[]" id="qty_{{ $index }}"
@@ -110,7 +117,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 20%">
+                                <td style="width: 8%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <select name="job_order_id[{{ $index }}][]"
@@ -127,7 +134,67 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 25%">
+                                <td style="width: 7%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
+                                                step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 7%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="color[]" id="color_0" class="form-control" step="0.01"
+                                                min="0" value="{{ $item->color }}" placeholder="Color">
+                                        </div>
+                                    </div>
+                                </td>
+                                
+
+                                <td style="width: 7%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="construction_per_square_inch[]"
+                                                id="construction_per_square_inch_0" class="form-control" step="0.01" min="0"
+                                                value="{{ $item->construction_per_square_inch }}" placeholder="Cons./sq. in.">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 6%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="size[]" id="size_0" class="form-control" step="0.01"
+                                                min="0" value="{{ $item->size }}" placeholder="Size">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 6%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="stitching[]" id="stitching_0" class="form-control"
+                                                step="0.01" min="0" value="{{ $item->stitching }}" placeholder="Stitching">
+                                        </div>
+                                    </div>
+                                </td>
+                            <td style="width: 8%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="file" name="printing_sample[]" id="printing_sample_{{ $loop->index }}"
+                                                class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
+                                            
+                                            @if (!empty($item->printing_sample))
+                                                <small>
+                                                    <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">
+                                                        View existing file
+                                                    </a>
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td style="width: 8%">
                                     <input type="text" name="remarks[]" id="remark_{{ $index }}"
                                         class="form-control bg-white" placeholder="Remarks"
                                         value="{{ $item->remarks }}">
@@ -182,57 +249,119 @@
         let row = `
             <tr id="row_${index}">
                 <input type="hidden" name="item_row_id[]" value="">
-                <td style="width: 25%">
-                    <div class="loop-fields">
-                        <div class="form-group mb-0">
-                            <select name="category_id[]" id="category_id_${index}" onchange="filter_items(this.value,${index})" class="form-control item-select" data-index="${index}">
-                                <option value="">Select Category</option>
-                                @foreach ($categories ?? [] as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </td>
-                <td style="width: 25%">
-                    <div class="loop-fields">
-                        <div class="form-group mb-0">
-                            <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="${index}">
-                                <option value="">Select Item</option>
-                            </select>
-                        </div>
-                    </div>
-                </td>
                 <td style="width: 10%">
-                    <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
-                </td>
-                <td style="width: 10%">
-                    <div class="loop-fields">
-                        <div class="form-group mb-0">
-                            <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01" min="0" placeholder="Qty">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <select name="category_id[]" id="category_id_${index}"
+                                    onchange="filter_items(this.value,${index})" class="form-control item-select"
+                                    data-index="0">
+                                    <option value="">Select Category</option>
+                                    @foreach ($categories ?? [] as $category)
+                                        <option value="{{ $category->id }}">
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                </td>
-                <td style="width: 20%">
-                    <div class="loop-fields">
-                        <div class="form-group mb-0">
-                            <select name="job_order_id[${index}][]" id="job_order_id_${index}" multiple class="form-control item-select" data-index="${index}">
-                                <option value="">Select Job Order</option>
-                                @foreach ($job_orders ?? [] as $job_order)
-                                    <option value="{{ $job_order->id }}">{{ $job_order->name }}</option>
-                                @endforeach
-                            </select>
+                    </td>
+                    <td style="width: 15%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
+                                    class="form-control item-select" data-index="0">
+                                    <option value="">Select Item</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                </td>
-                <td style="width: 25%">
-                    <input type="text" name="remarks[]" id="remark_${index}" class="form-control bg-white" placeholder="Remarks">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                </td>
+                    </td>
+                    <td style="width: 8%">
+                        <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
+                    </td>
+                    <td style="width: 8%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01"
+                                    min="0" placeholder="Qty">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 8%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <select name="job_order_id[0][]" id="job_order_id_${index}" multiple
+                                    class="form-control item-select" data-index="0">
+                                    <option value="">Select Job Order</option>
+                                    @foreach ($job_orders ?? [] as $job_order)
+                                        <option value="{{ $job_order->id }}">
+                                            {{ $job_order->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 7%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
+                                    step="0.01" min="0" placeholder="Min Weight">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 7%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="color[]" id="color_${index}" class="form-control" step="0.01"
+                                    min="0" placeholder="Color">
+                            </div>
+                        </div>
+                    </td>
+                    
+
+                    <td style="width: 7%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="construction_per_square_inch[]"
+                                    id="construction_per_square_inch_${index}" class="form-control" step="0.01" min="0"
+                                    placeholder="Cons./sq. in.">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 6%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="size[]" id="size_${index}" class="form-control" step="0.01"
+                                    min="0" placeholder="Size">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 6%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="stitching[]" id="stitching_${index}" class="form-control"
+                                    step="0.01" min="0" placeholder="Stitching">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 8%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="file" name="printing_sample[]" id="printing_sample_${index}"
+                                    class="form-control" accept="image/*,application/pdf"
+                                    placeholder="Printing Sample">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 8%">
+                        <input type="text" name="remarks[]" id="remark_${index}" class="form-control"
+                            placeholder="Remarks">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
             </tr>`;
 
         $('#purchaseRequestBody').append(row);

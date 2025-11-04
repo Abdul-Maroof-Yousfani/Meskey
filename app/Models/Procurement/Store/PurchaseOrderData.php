@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\GrnNumber;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\GrnNumber as MasterGrnNumber;
+use App\Models\Tax;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -88,5 +89,10 @@ class PurchaseOrderData extends Model
     public function getIsFullyReceivedAttribute(): bool
     {
         return $this->remaining_qty <= 0;
+    }
+
+    public function tax()
+    {
+        return $this->belongsTo(Tax::class, 'tax_id');
     }
 }
