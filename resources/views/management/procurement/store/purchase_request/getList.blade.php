@@ -105,12 +105,13 @@
                                                 class="info p-1 text-center mr-2 position-relative">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
+
+                                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $itemGroup['item_data']->id) }}','{{ route('store.get.purchase-request') }}')"
+                                                class="danger p-1 text-center mr-2 position-relative">
+                                                <i class="ft-x font-medium-3"></i>
+                                            </a>
                                         @endif
                                     @endif
-                                    <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $itemGroup['item_data']->id) }}','{{ route('store.get.purchase-request') }}')"
-                                        class="danger p-1 text-center mr-2 position-relative">
-                                        <i class="ft-x font-medium-3"></i>
-                                    </a>
                                 </div>
                             </td>
                             @php $isFirstRequestRow = false; @endphp
