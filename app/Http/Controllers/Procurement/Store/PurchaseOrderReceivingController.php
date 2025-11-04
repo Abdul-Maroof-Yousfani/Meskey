@@ -139,7 +139,7 @@ class PurchaseOrderReceivingController extends Controller
                         'purchase_request_no' => $originalPurchaseRequestNo,
                         'purchase_order_no' => $originalPurchaseOrderNo,
                         'quotation_no' => $quotationNo,
-                        'created_by_id' => $orderGroup['order_data']->created_by ?? null,
+                        'created_by_id' => $orderGroup['order_data']->requested_by ?? null,
                         'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
