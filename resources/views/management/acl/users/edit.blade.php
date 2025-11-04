@@ -96,7 +96,7 @@
         <div class="form-group">
             <label>Arrival Location:</label>
             <select name="arrival_location_id" id="arrival_location" class="form-control">
-                {{-- <option value="">Select Arrival Location</option> --}}
+                <option value="">Select Arrival Location</option>
                 @if (isset($user) && $user->company_location_id && $user->companyLocation->arrivalLocations)
                     @foreach ($user->companyLocation->arrivalLocations as $location)
                         <option value="{{ $location->id }}"

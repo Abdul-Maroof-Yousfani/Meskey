@@ -251,7 +251,7 @@ class FreightRequestController extends Controller
      */
     public function store(FreightPaymentRequestRequest $request)
     {
-     
+
         return DB::transaction(function () use ($request) {
             $requestData = $request->all();
             $requestData['module_type'] = 'freight_payment';
@@ -776,15 +776,15 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
+
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
-            $paymentRequestData = $paymentRequest->paymentRequestData;
-$vendorAccId = $paymentRequest->account_id;
-            $purchaseOrder = $paymentRequestData->purchaseOrder;
 
-            //  if ($request->has('total_amount') || $request->has('bag_weight')) {
-            //    $this->updatePaymentRequestData($paymentRequestData, $request);
-            // }
+            $paymentRequestData = $paymentRequest->paymentRequestData;
+            $vendorAccId = $paymentRequest->account_id;
+            $purchaseOrder = $paymentRequestData->purchaseOrder;
+            $paymentRequestData->update(['penalty_adjust_to' => $request->penalty_adjust_to ?? null]);
+
 
             if ($request->has('payment_request_amount')) {
                 $paymentRequest->update(['amount' => $request->payment_request_amount]);
@@ -804,7 +804,7 @@ $vendorAccId = $paymentRequest->account_id;
 
             $paymentRequest->update(['status' => $request->status]);
 
-
+ 
 
             $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
@@ -818,7 +818,7 @@ $vendorAccId = $paymentRequest->account_id;
             $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
             $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
-            $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount;
+            $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
 
             $txnInv = Transaction::where('grn_no', $grnNo)
                 ->where('purpose', 'arrival-slip')
@@ -852,22 +852,26 @@ $vendorAccId = $paymentRequest->account_id;
                 );
             }
 
+
+
+
             $txnVendor = Transaction::where('grn_no', $grnNo)
                 ->where('purpose', 'pohouch-freight')
                 ->first();
+
             if ($txnVendor) {
                 $txnVendor->update([
-                    'amount' => $request->net_amount,
+                    'amount' => $request->net_amount + $request->godown_penalty,
                     'account_id' => $vendorAccId,
                     'counter_account_id' => $purchaseOrder->supplier->account_id,
                     'type' => 'debit',
                     'voucher_no' => $purchaseOrder->contract_no,
                     'grn_no' => $grnNo,
-                    'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                    'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                 ]);
             } else {
                 createTransaction(
-                    $request->net_amount,
+                    $request->net_amount + $request->godown_penalty,
                     $vendorAccId,
                     1,
                     $purchaseOrder->contract_no,
@@ -877,11 +881,47 @@ $vendorAccId = $paymentRequest->account_id;
                         'grn_no' => $grnNo,
                         'counter_account_id' => $qcAccountId,
                         'purpose' => "arrival-slip",
-                        'payment_against' => "pohouch-purchase",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                        'payment_against' => "pohouch-freight",
+                        'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                        'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                     ]
                 );
+            }
+
+
+            if ($request->godown_penalty == 'Commit') {
+                $txnExtraIncome = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', 'pohouch-freight-penalty')
+                    ->first();
+
+                if ($txnExtraIncome) {
+                    $txnExtraIncome->update([
+                        'amount' => $request->godown_penalty,
+                        'account_id' => $request->penalty_adjust_to,
+                        'counter_account_id' => $qcAccountId,
+                        'type' => 'credit',
+                        'voucher_no' => $purchaseOrder->contract_no,
+                        'grn_no' => $grnNo,
+                        'remarks' => "Recording extra income for Pohouch freight penalty related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg)."
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->godown_penalty,
+                        $request->penalty_adjust_to,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
+                            'purpose' => "arrival-slip",
+                            'payment_against' => "pohouch-freight-penalty",
+                            'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                            'remarks' => "Recording extra income for Pohouch freight penalty related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg)."
+                        ]
+                    );
+                }
             }
 
 

@@ -183,8 +183,10 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Deduction Rate</label>
-                <input type="text" class="form-control editable-field deduction-rate" name="deduction_contract_rate_for_freight" id="deduction_rate"
-                    value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate">
+                <input type="text" class="form-control editable-field deduction-rate"
+                    name="deduction_contract_rate_for_freight" id="deduction_rate"
+                    value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? $ticket->purchaseOrder->rate_per_kg ?? '0' }}"
+                    placeholder="Contract Rate">
             </div>
         </div>
     </div>
@@ -221,7 +223,8 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempt</label>
                 <input type="text" class="form-control editable-field" name="exempt" id="exemptedWeight"
-                    value="{{ $exempt }}" {{ $param }} {{ $weightDifference > 0 ? 'readonly' : '' }} placeholder="Exempt">
+                    value="{{ $exempt }}" {{ $param }} {{ $weightDifference > 0 ? 'readonly' : '' }}
+                    placeholder="Exempt">
             </div>
         </div>
         <div class="col-md col-6">
@@ -367,20 +370,33 @@
                 <label class="font-weight-bold">Penalty</label>
                 <input type="text" class="form-control bg-light" name="penalty" value="0" readonly>
             </div>
+             @if (isset($isRequestApprovalPage) && $isRequestApprovalPage && $godown_penalty > 0)
+            
+            <div class="form-group">
+                <label class="font-weight-bold">Penalty Adjust To</label>
+                <select name="penalty_adjust_to"  class="form-control select2" >
+                    <option value="">Select Penalty Adjust To</option>
+                    <option {{ getAccountDetailsByHierarchyPath('4-1-2')->id == $paymentRequestData->penalty_adjust_to ? 'selected' : '' }} value="{{ getAccountDetailsByHierarchyPath('4-1-2')->id }}">{{ getAccountDetailsByHierarchyPath('4-1-2')->name }}</option>
+                    <option {{ getAccountDetailsByHierarchyPath('5-1-1')->id == $paymentRequestData->penalty_adjust_to ? 'selected' : '' }} value="{{ getAccountDetailsByHierarchyPath('5-1-1')->id }}">{{ getAccountDetailsByHierarchyPath('5-1-1')->name }}</option>
+                </select>
+            </div>
+            @endif
+
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Total Deductions</label>
-                <input type="text" class="form-control bg-light" name="total_deductions"  value="{{ $paymentRequestData->net_amount ?? '0' }}" readonly>
+                <input type="text" class="form-control bg-light" name="total_deductions" value="" readonly>
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Net Amount</label>
-                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount" value="{{ $paymentRequestData->net_amount ?? '0' }}" readonly>
+                <input type="text" class="form-control bg-light font-weight-bold" name="net_amount"
+                    value="{{ $paymentRequestData->net_amount ?? '0' }}" readonly>
             </div>
         </div>
-      
+
     </div>
 
     <div class="row">
@@ -408,7 +424,7 @@
                 </div>
             </div>
         @endif
-          @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
+        @if (isset($isRequestApprovalPage) && !$isRequestApprovalPage)
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="font-weight-bold">Request Amount</label>
@@ -531,15 +547,15 @@
             document.getElementById('netShortage').value = netShortage;
         }
 
-function calculateNetShortageDeduction() {
-    const netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
-    const deductionRate = parseFloat(document.getElementById('deduction_rate').value) || 0;
+        function calculateNetShortageDeduction() {
+            const netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
+            const deductionRate = parseFloat(document.getElementById('deduction_rate').value) || 0;
 
-    // Calculate and round properly to 2 decimals
-    const netDeduction = (deductionRate * netShortage).toFixed(2);
+            // Calculate and round properly to 2 decimals
+            const netDeduction = (deductionRate * netShortage).toFixed(2);
 
-    document.getElementById('over_weight_ded').value = netDeduction;
-}
+            document.getElementById('over_weight_ded').value = netDeduction;
+        }
 
 
 
@@ -602,9 +618,14 @@ function calculateNetShortageDeduction() {
             let netShortageDeduction = netShortage * contractRate;
 
             let grossAmount = freightRs + loadingKanta + arrivedKanta + otherPlusLabour + dehariPlusExtra + marketComm;
-           // let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
-            let totalDeductions = overWeightDed  + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
-            let netAmount = grossAmount - totalDeductions;
+            // let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
+            let totalDeductions =
+                parseFloat(overWeightDed || 0) +
+                parseFloat(otherMinusLabour || 0) +
+                parseFloat(extraMinusDed || 0) +
+                parseFloat(commissionAmount || 0);
+
+            let netAmount = grossAmount - totalDeductions - godownPenalty;
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
@@ -670,6 +691,7 @@ function calculateNetShortageDeduction() {
         });
         document.getElementById('deduction_rate').addEventListener('input', function () {
             calculateNetShortageDeduction();
+            calculatePaymentSummary();
         });
 
         // Initialize calculations on page load
