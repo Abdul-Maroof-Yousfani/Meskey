@@ -26,7 +26,7 @@
                             {{ $user->name }}
                         </p>
                         <p class="m-0">
-                            <code class="text-dark d-block">{{ '@' . $user->username }}</code>
+                            <code class=" d-block">{{ '@' . $user->username }}</code>
                         </p>
                     </td>
                     <td>
@@ -34,11 +34,7 @@
                             {{ $user->parent?->name ?? '--'}}
                         </p>
                     </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $user->parent?->name ?? '--'}}
-                        </p>
-                    </td>
+
                     <td>
                         @if (!empty($user->getRoleNames()))
                             @foreach ($user->getRoleNames() as $v)
@@ -46,6 +42,7 @@
                             @endforeach
                         @endif
                     </td>
+                    
                     {{-- <td>{{ $user->parent ? $user->parent->name : 'N/A' }}</td> --}}
                     <td>
                         @if (!empty(getUserAllCompanies(auth()->user()->id)))
@@ -53,6 +50,13 @@
                                 <label class="badge gradient-pomegranate">{{ $v->name }}</label>
                             @endforeach
                         @endif
+                    </td>
+                                        <td>
+                        <p class="m-0">
+                    
+                            {{ $user->companyLocation?->name ?? 'N/A'}} <br>
+                            <small>{{ $user->arrivalLocation?->name ?? 'N/A'}}</small>
+                        </p>
                     </td>
                     <td>
                         @canAccess('user-delete')
