@@ -5,7 +5,7 @@
             <th class="col-3">Purchase Request No</th>
             {{-- <th class="col-2">Location</th> --}}
             <th class="col-4">Category</th>
-            {{-- <th class="col-2 text-right">Requested Qty</th> --}}
+            {{-- <th class="col-2 text-right">Qty</th> --}}
             <th class="col-1 text-right">Qty</th>
             <th class="col-1">PR Date</th>
             <th class="col-1">Status</th>

@@ -52,7 +52,7 @@
                             <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
-                            <th>Requested Qty</th>
+                            <th>Qty</th>
                             {{-- <th>Approved Qty</th> --}}
                             <th>Job Orders</th>
                             <th>Min Weight</th>
@@ -110,7 +110,7 @@
                                 <td style="width: 8%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
-                                            <input type="number" name="qty[]" id="qty_{{ $index }}"disabled
+                                            <input type="number" name="qty[]" id="qty_{{ $index }}" disabled
                                                 class="form-control bg-white" step="0.01" min="0"
                                                 placeholder="Qty" value="{{ $item->qty }}">
                                         </div>
