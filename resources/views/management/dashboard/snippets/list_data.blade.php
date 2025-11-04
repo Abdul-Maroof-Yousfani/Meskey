@@ -130,7 +130,7 @@
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
                         <td>{{ $item->truck_no ?? 'N/A' }}</td>
-                        <td>{{ $item->unloadingLocation->location_name ?? 'N/A' }}</td>
+                        <td>{{ $item->unloadingLocation->name ?? 'N/A' }}</td>
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
                         <td>{{ $item->bags ?? 'N/A' }}</td>
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>
