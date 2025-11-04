@@ -156,9 +156,9 @@
                      <input type="hidden" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ $data->printing_sample }}"
                                             class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
 
-                    @if (!empty($item->printing_sample))
+                    @if (!empty($data->printing_sample))
                         <small>
-                            <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">
+                            <a href="{{ asset('storage/' . $data->printing_sample) }}" target="_blank">
                                 View existing file
                             </a>
                         </small>
