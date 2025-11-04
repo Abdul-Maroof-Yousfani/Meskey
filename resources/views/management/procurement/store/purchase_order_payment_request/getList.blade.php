@@ -36,7 +36,7 @@
                     </td>
                     <td>
                         {{-- @can('payment-request-edit') --}}
-                        @if($paymentRequest->requested_by == auth()->user()->id)
+                        @if($requestGroup['created_by_id'] == auth()->user()->id)
                             @if($paymentRequest->am_approval_status == 'pending' || $paymentRequest->am_approval_status == 'reverted')
                                 <a onclick="openModal(this,'{{ route('store.purchase-order-payment-request.edit', $paymentRequest->id) }}','Edit Payment Request',false,'80%')"
                                     class="info p-1 text-center mr-2 position-relative">
