@@ -573,7 +573,8 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
         $deductions['loading_weighbridge_sum'] +
         $deductions['other_deduction_calculated'];;
 
-    $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
+   // $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
+    $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
 
     return [
         'gross_amount' => $grossAmount,
