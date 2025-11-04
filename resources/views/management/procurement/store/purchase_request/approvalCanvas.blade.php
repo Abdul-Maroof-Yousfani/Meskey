@@ -52,9 +52,15 @@
                             <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
-                            <th>Requested Qty</th>
+                            <th>Qty</th>
                             {{-- <th>Approved Qty</th> --}}
                             <th>Job Orders</th>
+                            <th>Min Weight</th>
+                            <th>Color</th>
+                            <th>Cons./sq. in.</th>
+                            <th>Size</th>
+                            <th>Stitching</th>
+                            <th>Printing Sample</th>
                             <th>Remarks</th>
                             <th>Action</th>
                         </tr>
@@ -64,7 +70,7 @@
                             <tr id="row_{{ $index }}"
                                 class="">
                                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
-                                <td style="width: 25%">
+                                <td style="width: 10%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <select name="category_id[]" id="category_id_{{ $index }}" disabled
@@ -80,7 +86,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 25%">
+                                <td style="width: 15%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <select name="item_id[]" id="item_id_{{ $index }}" disabled
@@ -96,15 +102,15 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 10%">
+                                <td style="width: 8%">
                                     <input type="text" name="uom[]" id="uom_{{ $index }}"
                                         class="form-control uom" readonly
                                         value="{{ $item->item->unitOfMeasure->name ?? '' }}">
                                 </td>
-                                <td style="width: 10%">
+                                <td style="width: 8%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
-                                            <input type="number" name="qty[]" id="qty_{{ $index }}"disabled
+                                            <input type="number" name="qty[]" id="qty_{{ $index }}" disabled
                                                 class="form-control bg-white" step="0.01" min="0"
                                                 placeholder="Qty" value="{{ $item->qty }}">
                                         </div>
@@ -122,7 +128,7 @@
                                     </div>
                                 </td> --}}
                                 {{-- @endif --}}
-                                <td style="width: 20%">
+                                <td style="width: 8%">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <select name="job_order_id[{{ $index }}][]" disabled
@@ -139,7 +145,67 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="width: 25%">
+                                <td style="width: 7%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="number" name="min_weight[]" id="min_weight_0" disabled class="form-control"
+                                                step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 7%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="color[]" id="color_0" disabled class="form-control" step="0.01"
+                                                min="0" value="{{ $item->color }}" placeholder="Color">
+                                        </div>
+                                    </div>
+                                </td>
+                                
+
+                                <td style="width: 7%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="construction_per_square_inch[]"
+                                                id="construction_per_square_inch_0" disabled class="form-control" step="0.01" min="0"
+                                                value="{{ $item->construction_per_square_inch }}" placeholder="Cons./sq. in.">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 6%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="size[]" id="size_0" disabled class="form-control" step="0.01"
+                                                min="0" value="{{ $item->size }}" placeholder="Size">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 6%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="text" name="stitching[]" id="stitching_0" disabled class="form-control"
+                                                step="0.01" min="0" value="{{ $item->stitching }}" placeholder="Stitching">
+                                        </div>
+                                    </div>
+                                </td>
+                            <td style="width: 8%">
+                                    <div class="loop-fields">
+                                        <div class="form-group mb-0">
+                                            <input type="file" name="printing_sample[]" id="printing_sample_{{ $loop->index }}"
+                                                disabled class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
+                                            
+                                            @if (!empty($item->printing_sample))
+                                                <small>
+                                                    <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">
+                                                        View existing file
+                                                    </a>
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td style="width: 8%">
                                     <input type="text" name="remarks[]" id="remark_{{ $index }}" disabled
                                         class="form-control bg-white" placeholder="Remarks"
                                         value="{{ $item->remarks }}">

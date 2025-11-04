@@ -5,7 +5,7 @@
             <th class="col-3">Purchase Request No</th>
             {{-- <th class="col-2">Location</th> --}}
             <th class="col-4">Category</th>
-            {{-- <th class="col-2 text-right">Requested Qty</th> --}}
+            {{-- <th class="col-2 text-right">Qty</th> --}}
             <th class="col-1 text-right">Qty</th>
             <th class="col-1">PR Date</th>
             <th class="col-1">Status</th>
@@ -94,23 +94,24 @@
                                             <i class="ft-eye font-medium-3"></i>
                                         </span>
                                     @else
-                                        <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
                                     @endif
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
                                         @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
-                                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'80%')"
+                                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')"
                                                 class="info p-1 text-center mr-2 position-relative">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
+
+                                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $itemGroup['item_data']->id) }}','{{ route('store.get.purchase-request') }}')"
+                                                class="danger p-1 text-center mr-2 position-relative">
+                                                <i class="ft-x font-medium-3"></i>
+                                            </a>
                                         @endif
                                     @endif
-                                    <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $itemGroup['item_data']->id) }}','{{ route('store.get.purchase-request') }}')"
-                                        class="danger p-1 text-center mr-2 position-relative">
-                                        <i class="ft-x font-medium-3"></i>
-                                    </a>
                                 </div>
                             </td>
                             @php $isFirstRequestRow = false; @endphp

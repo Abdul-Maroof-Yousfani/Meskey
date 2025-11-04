@@ -132,12 +132,25 @@ class PurchaseRequestController extends Controller
             ]);
 
             foreach ($request->item_id as $index => $itemId) {
+                $printingSamplePath = null;
+
+                if ($request->hasFile('printing_sample.' . $index)) {
+                    $file = $request->file('printing_sample.' . $index);
+                    $printingSamplePath = $file->store('printing_samples', 'public');
+                }
+
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'approved_qty' => 0,
+                    'min_weight' => $request->min_weight[$index] ?? null,
+                    'color' => $request->color[$index] ?? null,
+                    'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
+                    'size' => $request->size[$index] ?? null,
+                    'stitching' => $request->stitching[$index] ?? null,
+                    'printing_sample' => $printingSamplePath,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
@@ -216,7 +229,7 @@ class PurchaseRequestController extends Controller
                 'description' => $request->description,
                 'am_change_made' => 1,
             ];
-// echo $purchaseRequest->am_approval_status;
+            // echo $purchaseRequest->am_approval_status;
 
             if ($purchaseRequest->am_approval_status == 'reverted') {
                 $updateData['am_approval_status'] = 'pending';
@@ -230,11 +243,24 @@ class PurchaseRequestController extends Controller
             foreach ($request->item_id as $index => $itemId) {
                 if (!empty($request->item_row_id[$index])) {
                     $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
+                    $printingSamplePath = null;
+
                     if ($requestData) {
+                        if ($request->hasFile('printing_sample.' . $index)) {
+                            $file = $request->file('printing_sample.' . $index);
+                            $printingSamplePath = $file->store('printing_samples', 'public');
+                        }
+
                         $requestData->update([
                             'category_id' => $request->category_id[$index],
                             'item_id' => $itemId,
                             'qty' => $request->qty[$index],
+                            'min_weight' => $request->min_weight[$index] ?? null,
+                            'color' => $request->color[$index] ?? null,
+                            'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
+                            'size' => $request->size[$index] ?? null,
+                            'stitching' => $request->stitching[$index] ?? null,
+                            'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
                         ]);
 
@@ -253,12 +279,24 @@ class PurchaseRequestController extends Controller
                         }
                     }
                 } else {
+
+                    if ($request->hasFile('printing_sample.' . $index)) {
+                        $file = $request->file('printing_sample.' . $index);
+                        $printingSamplePath = $file->store('printing_samples', 'public');
+                    }
+
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
                         'category_id' => $request->category_id[$index],
                         'item_id' => $itemId,
                         'qty' => $request->qty[$index],
                         'approved_qty' => 0,
+                        'min_weight' => $request->min_weight[$index] ?? null,
+                        'color' => $request->color[$index] ?? null,
+                        'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
+                        'size' => $request->size[$index] ?? null,
+                        'stitching' => $request->stitching[$index] ?? null,
+                        'printing_sample' => $printingSamplePath,
                         'remarks' => $request->remarks[$index] ?? null,
                     ]);
 

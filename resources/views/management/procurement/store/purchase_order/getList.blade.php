@@ -137,7 +137,7 @@
                                         @endphp
 
                                         {{-- View Approval --}}
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', $supplierRow['data']->purchase_order->id) }}', 'View Purchase Order', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', $supplierRow['data']->purchase_order->id) }}', 'View Purchase Order', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
@@ -146,18 +146,16 @@
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
 
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
-                                                <a onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '80%')"
+                                                <a onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '100%')"
                                                     class="info p-1 text-center mr-2 position-relative">
                                                     <i class="ft-edit font-medium-3"></i>
                                                 </a>
-                                            @endif
-                                        @endif
-                                        @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
 
-                                            <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $supplierRow['data']->purchase_order->id) }}', '{{ route('store.get.purchase-order') }}')"
-                                                class="danger p-1 text-center mr-2 position-relative">
-                                                <i class="ft-x font-medium-3"></i>
-                                            </a>
+                                                <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $supplierRow['data']->purchase_order->id) }}', '{{ route('store.get.purchase-order') }}')"
+                                                    class="danger p-1 text-center mr-2 position-relative">
+                                                    <i class="ft-x font-medium-3"></i>
+                                                </a>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>

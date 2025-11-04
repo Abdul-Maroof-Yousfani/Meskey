@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
+use App\Models\PaymentTerm;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseQuotation;
@@ -13,6 +14,7 @@ use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Sales\JobOrder;
+use App\Models\Tax;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -225,8 +227,9 @@ class PurchaseOrderController extends Controller
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
+        $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
 
-        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
+        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders', 'taxes'))->render();
 
         return response()->json([
             'html' => $html,
@@ -252,8 +255,9 @@ class PurchaseOrderController extends Controller
             ->get();
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
 
-        return view('management.procurement.store.purchase_order.create', compact('categories', 'approvedRequests'));
+        return view('management.procurement.store.purchase_order.create', compact('categories', 'payment_terms', 'approvedRequests'));
     }
 
     /**
@@ -277,9 +281,11 @@ class PurchaseOrderController extends Controller
                 'order_date' => $request->purchase_date,
                 'location_id' => $request->location_id,
                 'supplier_id' => $request->supplier_id,
+                'payment_term_id' => $request->payment_term_id ?? null,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
+                'other_terms' => $request->other_term ?? null,
                 'created_by' => auth()->user()->id,
             ]);
 
@@ -294,6 +300,15 @@ class PurchaseOrderController extends Controller
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
                     'supplier_id' => $request->supplier_id,
+                    'tax_id' => $request->tax_id[$index] ?? null,
+                    'excise_duty' => $request->excise_duty[$index] ?? 0,
+                    'min_weight' => $request->min_weight[$index],
+                    'color' => $request->color[$index],
+                    'construction_per_square_inch' => $request->construction_per_square_inch[$index],
+                    'size' => $request->size[$index],
+                    'stitching' => $request->stitching[$index],
+                    'printing_sample' => $request->printing_sample[$index],
+
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
@@ -321,7 +336,7 @@ class PurchaseOrderController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create purchase request.',
+                'message' => 'Failed to create purchase order.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -392,12 +407,15 @@ class PurchaseOrderController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
+        $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
+        $taxes = Tax::select('id', 'percentage')->where('status', 'active')->get();
+
         // $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
         //     ->findOrFail($id);
 
         $purchaseOrderDataCount = $purchaseOrder->purchaseOrderData->count();
 
-        return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount'));
+        return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount', 'payment_terms', 'taxes'));
     }
 
     /**
@@ -449,6 +467,14 @@ class PurchaseOrderController extends Controller
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
                     'supplier_id' => $request->supplier_id,
+                    'tax_id' => $request->tax_id[$index] ?? null,
+                    'excise_duty' => $request->excise_duty[$index] ?? 0,
+                    'min_weight' => $request->min_weight[$index],
+                    'color' => $request->color[$index],
+                    'construction_per_square_inch' => $request->construction_per_square_inch[$index],
+                    'size' => $request->size[$index],
+                    'stitching' => $request->stitching[$index],
+                    'printing_sample' => $request->printing_sample[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }
@@ -485,6 +511,8 @@ class PurchaseOrderController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
+        $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
+        $taxes = Tax::select('id', 'percentage')->where('status', 'active')->get();
         $data = PurchaseOrder::with(['purchaseOrderData', 'purchaseOrderData.item.unitOfMeasure'])->where('id', $id)->first();
 
         $purchaseOrder = PurchaseOrder::with([
@@ -510,6 +538,8 @@ class PurchaseOrderController extends Controller
             'categories' => $categories,
             'locations' => $locations,
             'job_orders' => $job_orders,
+            'payment_terms' => $payment_terms,
+            'taxes' => $taxes,
             'purchaseOrderData' => $purchaseOrderData,
             'data1' => $data,
         ]);

@@ -21,7 +21,7 @@ class StoreItemPaymentRequestRequest extends FormRequest
         return [
             // 'is_advance' => 'required|boolean',
             'purchase_order_id' => 'required_if:is_advance,1|nullable|exists:purchase_orders,id',
-            'purchase_order_receiving_id' => 'required_if:is_advance,0|nullable|exists:good_receive_notes,id',
+            'purchase_order_receiving_id' => 'required_if:is_advance,0|nullable|exists:purchase_order_receivings,id',
             'supplier_id' => 'required|exists:suppliers,id',
             'amount' => [
                 'required',

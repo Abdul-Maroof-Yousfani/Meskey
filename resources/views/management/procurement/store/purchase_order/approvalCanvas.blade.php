@@ -4,7 +4,7 @@
     value="{{ optional($purchaseOrder->orde_data->first())->purchase_request_data_id }}"> --}}
 
  <div class="row form-mar">
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Purchase Request:</label>
              <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
@@ -15,7 +15,7 @@
          </div>
      </div>
 
-     <div class="col-md-4">
+     <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
                 <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
@@ -30,7 +30,7 @@
             </div>
         </div>
 
-<div class="col-md-4">
+<div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Quotation</label>
                 <input type="text" name="quotation_no" id="quotation_no" class="form-control"
@@ -38,7 +38,7 @@
             </div>
         </div>
      
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Purchase Order Date:</label>
              <input readonly type="date" id="purchase_date"
@@ -46,7 +46,7 @@
                  class="form-control">
          </div>
      </div>
-     <div class="col-md-4">
+     <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Reference No:</label>
                 <input type="text" name="reference_no" value="{{ $purchaseOrder->reference_no }}" placeholder="Please select location and date." readonly
@@ -54,7 +54,7 @@
             </div>
         </div>
      
-     <div class="col-md-4">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Location:</label>
              <select disabled name="company_location" id="company_location_id" class="form-control select2">
@@ -70,6 +70,18 @@
          </div>
      </div>
      
+      <div class="col-md-3">
+            <div class="form-group">
+                <label>Payment Term:</label>
+                <select disabled name="payment_term_id" id="payment_term_id" class="form-control select2">
+                    <option value="">Select Payment Term</option>
+                    @foreach ($payment_terms as $payment_term)
+                        <option value="{{ $payment_term->id }}" {{ $purchaseOrder->payment_term_id == $payment_term->id ? 'selected' : '' }}>{{ $payment_term->desc }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>
@@ -82,21 +94,29 @@
          <table class="table table-bordered" id="purchaseRequestTable">
              <thead>
                  <tr>
-                     <th>Category</th>
-                     <th>Item</th>
-                     <th>Item UOM</th>
-                     <th>Vendor</th>
-                     <th>Qty</th>
-                     <th>Rate</th>
-                     <th>Total Amount</th>
-                     <th>Remarks</th>
-                     <th>Action</th>
+                    <th>Category</th>
+                    <th>Item</th>
+                    <th>Item UOM</th>
+                    {{-- <th>Vendor</th> --}}
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Tax</th>
+                    <th>Duty</th>
+                    <th>Amount</th>
+                    <th>Min Weight</th>
+                    <th>Color</th>
+                    <th>Cons./sq. in.</th>
+                    <th>Size</th>
+                    <th>Stitching</th>
+                    <th>Printing Sample</th>
+                    <th>Remarks</th>
+                    <th>Action</th>
                  </tr>
              </thead>
           <tbody id="purchaseRequestBody">
     @foreach ($purchaseOrderData ?? [] as $key => $data)
         <tr id="row_{{ $key }}">
-            <td style="width: 25%">
+            <td style="width: 15%">
                 <select id="category_id_{{ $key }}" disabled
                     onchange="filter_items(this.value,{{ $key }})"
                     class="form-control item-select select2" data-index="{{ $key }}">
@@ -112,7 +132,7 @@
                 <input type="hidden" name="data_id[]" value="{{ $data->id }}">
             </td>
 
-            <td style="width: 25%">
+            <td style="width: 15%">
                 <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
                     class="form-control item-select select2" data-index="{{ $key }}">
                     @foreach (get_product_by_category($data->category_id) as $item)
@@ -125,13 +145,13 @@
                 <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
             </td>
 
-            <td style="width: 15%">
+            <td style="width: 8%">
                 <input type="text" id="uom_{{ $key }}" class="form-control uom"
                     value="{{ get_uom($data->item_id) }}" disabled readonly>
                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
             </td>
 
-            <td style="width: 20%">
+            {{-- <td style="width: 10%">
                 <select id="supplier_id_{{ $key }}" name="supplier_id[]" disabled
                     class="form-control item-select select2" data-index="{{ $key }}">
                     <option value="">Select Vendor</option>
@@ -141,28 +161,83 @@
                         </option>
                     @endforeach
                 </select>
-            </td>
+            </td> --}}
 
-            <td style="width: 10%">
-                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
+            <td style="width: 7%">
+                <input type="number" onkeyup="calc({{ $key }})" disabled
                     onblur="calc({{ $key }})" value="{{ $data->qty }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
             </td>
 
-            <td style="width: 20%">
-                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+            <td style="width: 7%">
+                <input type="number" onkeyup="calc({{ $key }})"
                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}" disabled
                     id="rate_{{ $key }}" class="form-control" step="0.01" min="{{ $key }}">
             </td>
+<td style="width: 10%">
+                                <select id="tax_id_{{ $key }}" name="tax_id[]" disabled
+                                    onchange="calc({{ $key }})" class="form-control item-select select2">
+                                    <option value="">Select Tax</option>
+                                    @foreach ($taxes as $tax)
+                                        <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}" {{ $tax->id == $data->tax_id ? 'selected' : '' }}>
+                                            {{ $tax->name . ' (' . $tax->percentage . ')%' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
 
-            <td style="width: 20%">
-                <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
+                            <td style="width: 7%">
+                                <input type="number" oninput="calc({{ $key }})" name="excise_duty[]" disabled value="{{ $data->excise_duty }}"
+                                    id="excise_duty_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+            <td style="width: 10%">
+                <input type="number" readonly value="{{ $data->total }}"
                     id="total_{{ $key }}" class="form-control" step="0.01" min="0" readonly name="total[]">
             </td>
+ <td style="width: 5%">
+                                <input type="number" readonly name="min_weight[]" value="{{ $data->min_weight }}"
+                                    id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 5%">
+                                <input type="text" readonly name="color[]" value="{{ $data->color }}"
+                                    id="color_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 5%">
+                                <input type="text" readonly name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}"
+                                    id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 7%">
+                                <input type="text" readonly name="size[]" value="{{ $data->size }}"
+                                    id="size_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 5%">
+                                <input type="text" readonly name="stitching[]" value="{{ $data->stitching }}"
+                                    id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 5%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        {{-- <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}"
+                                            class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample"> --}}
 
-            <td style="width: 25%">
-                <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
+                                        <input type="hidden" style="display: none;" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ $data->printing_sample }}"
+                                            class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
+
+                                        @if (!empty($data->printing_sample))
+                                            <small>
+                                                <a href="{{ asset('storage/' . $data->printing_sample) }}" target="_blank">
+                                                    View existing file
+                                                </a>
+                                            </small>
+                                            @else
+                                            <span>No Attach.</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+            <td style="width: 10%">
+                <input type="text" readonly value="{{ $data->remarks }}"
                     id="remark_{{ $key }}" class="form-control">
                 <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
             </td>
@@ -178,6 +253,16 @@
          </table>
      </div>
  </div>
+
+ <div class="row form-mar">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Other Terms:</label>
+                <textarea disabled name="other_term" id="other_term" placeholder="Other Terms" class="form-control">{{ $purchaseOrder->other_terms }}</textarea>
+            </div>
+        </div>
+    </div>
+
  <input type="hidden" id="rowCount" value="0">
  <div class="row">
      <div class="col-12">

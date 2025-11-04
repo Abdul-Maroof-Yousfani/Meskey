@@ -23,6 +23,7 @@ class PurchaseOrderRequest extends FormRequest
         return [
             'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
+            'payment_term_id' => 'required|exists:payment_terms,id',
             'location_id' => 'required|exists:company_locations,id',
             'supplier_id' => 'required|exists:suppliers,id',
             'reference_no' => 'nullable|string|max:255',

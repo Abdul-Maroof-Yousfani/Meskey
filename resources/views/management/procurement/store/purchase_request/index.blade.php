@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('store.purchase-request.create') }}','Add Purchase Request',false,'80%')"
+                        onclick="openModal(this,'{{ route('store.purchase-request.create') }}','Add Purchase Request',false,'100%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Purchase Request
                     </button>
@@ -47,7 +47,7 @@
                                             <th class="col-3">Purchase Request No</th>
                                             {{-- <th class="col-2">Location</th> --}}
                                             <th class="col-4">Category</th>
-                                            <th class="col-2 text-right">Requested Qty</th>
+                                            <th class="col-2 text-right">Qty</th>
                                             {{-- <th class="col-1 text-right">Approved Qty</th> --}}
                                             <th class="col-1">PR Date</th>
                                             <th class="col-1">Status</th>
