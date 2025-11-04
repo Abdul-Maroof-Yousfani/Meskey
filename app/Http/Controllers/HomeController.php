@@ -543,6 +543,7 @@ class HomeController extends Controller
         $targetTable = $request->input('targetTable');
         $targetColumn = $request->input('targetColumn');
         $fetchMode = $request->input('fetchMode', 'source');
+        $query = DB::table($tableName);
 
         // If fetching target data
         if ($fetchMode === 'target') {
@@ -552,9 +553,9 @@ class HomeController extends Controller
             if (!$targetTable || !$targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
-
-            $query = DB::table($targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
-
+            if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
+                $query = DB::table($targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
+            }
             if (Schema::hasColumn($targetTable, 'deleted_at')) {
                 $query->whereNull('deleted_at');
             }
@@ -592,7 +593,6 @@ class HomeController extends Controller
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
 
-        $query = DB::table($tableName);
 
         if (Schema::hasColumn($tableName, 'deleted_at')) {
             $query->whereNull('deleted_at');
