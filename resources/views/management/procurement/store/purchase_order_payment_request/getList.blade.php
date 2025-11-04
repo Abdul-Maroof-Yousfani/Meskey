@@ -35,6 +35,10 @@
                         </span>
                     </td>
                     <td>
+                    <a onclick="openModal(this, '{{ route('store.purchase-order-payment-request.approvals', $paymentRequest->id) }}', 'View Payment Request', true, '80%')"
+                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
                         {{-- @can('payment-request-edit') --}}
                         @if($paymentRequest->requested_by == auth()->user()->id)
                             @if($paymentRequest->am_approval_status == 'pending' || $paymentRequest->am_approval_status == 'reverted')
@@ -58,10 +62,7 @@
                         </a>
                         @endif --}}
                         {{-- @endcan --}}
-                        <a onclick="openModal(this, '{{ route('store.purchase-order-payment-request.approvals', $paymentRequest->id) }}', 'View Payment Request', true, '80%')"
-                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                            <i class="ft-eye font-medium-3"></i>
-                        </a>
+                        
                     </td>
                 </tr>
             @endforeach
