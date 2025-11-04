@@ -42,16 +42,12 @@
                                     class="info p-1 text-center mr-2 position-relative">
                                     <i class="ft-edit font-medium-3"></i>
                                 </a>
-                            @endif
-                        @endif
-                        {{-- @endcan --}}
-                        {{-- @can('payment-request-delete') --}}
-                        @if($paymentRequest->am_approval_status == 'pending' || $paymentRequest->am_approval_status == 'reverted')
 
-                            <a onclick="deletemodal('{{ route('store.purchase-order-payment-request.destroy', $paymentRequest->id) }}','{{ route('store.get.purchase-order-payment-request') }}')"
-                                class="danger p-1 text-center mr-2 position-relative">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                                <a onclick="deletemodal('{{ route('store.purchase-order-payment-request.destroy', $paymentRequest->id) }}','{{ route('store.get.purchase-order-payment-request') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative">
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endif
                         @endif
                         {{-- @endcan --}}
                         {{-- @can('payment-request-approve') --}}
