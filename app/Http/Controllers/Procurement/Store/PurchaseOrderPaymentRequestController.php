@@ -221,8 +221,10 @@ class PurchaseOrderPaymentRequestController extends Controller
 
     public function manageApprovals($id)
     {
-        $paymentRequestData = PaymentRequestData::findOrFail($id);
-        $paymentRequest = PaymentRequest::with(['purchaseOrder', 'grn', 'supplier'])->where('payment_request_data_id', $paymentRequestData->id)->first();
+        // dd($id);
+        $paymentRequest = PaymentRequest::with(['purchaseOrder', 'grn', 'supplier'])->where('id', $id)->first();
+        // $paymentRequestData = PaymentRequestData::findOrFail($id);
+
         // $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         // $job_orders = JobOrder::select('id', 'name')->get();
         // $locations = CompanyLocation::all();
@@ -230,7 +232,7 @@ class PurchaseOrderPaymentRequestController extends Controller
         return view('management.procurement.store.purchase_order_payment_request.approvalCanvas', [
             'paymentRequest' => $paymentRequest,
             'data1' => $paymentRequest,
-            'paymentRequestData' => $paymentRequestData,
+            // 'paymentRequestData' => $paymentRequestData,
             // 'categories' => $categories,
             // 'job_orders' => $job_orders,
             // 'locations' => $locations,
