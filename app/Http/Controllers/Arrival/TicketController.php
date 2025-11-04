@@ -13,11 +13,13 @@ use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
-use App\Models\Master\Station;
+use App\Models\Master\{Station,ArrivalSubLocation};
 use App\Models\Master\Supplier;
 use App\Models\Product;
 use App\Models\SaudaType;
 use App\Models\User;
+use App\Models\{BagType,BagCondition,BagPacking};
+use App\Models\Master\ArrivalLocation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -439,10 +441,17 @@ class TicketController extends Controller
 
 
 
-        public function arrivalRevert(Request $request, $id)
+    public function arrivalRevert(Request $request, $id)
     {
         $authUserCompany = $request->company_id;
         $source = $request->source ?? false;
+
+
+
+        $bagTypes = BagType::all();
+        $bagConditions = BagCondition::all();
+        $bagPackings = BagPacking::all();
+        $arrivalSubLocations = ArrivalSubLocation::where('status', 'Active')->get();
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -451,6 +460,13 @@ class TicketController extends Controller
             ->get();
 
         $arrivalTicket = ArrivalTicket::findOrFail($id);
+
+
+        $ArrivalLocations = ArrivalLocation::where('status', 'active')
+           ->where('company_location_id', $arrivalTicket->location_id)
+            
+            ->get();
+
 
         $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
             ->where('is_done', 'yes')
@@ -578,6 +594,11 @@ class TicketController extends Controller
             'Compulsuryresults',
             'accountsOf',
             'accountsOf',
+            'ArrivalLocations',
+            'arrivalSubLocations',
+            'bagTypes',
+            'bagConditions',
+            'bagPackings',
         ));
     }
 }

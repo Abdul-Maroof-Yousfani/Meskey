@@ -180,6 +180,9 @@ class HomeController extends Controller
 
     public function getListData(Request $request)
     {
+
+
+        $authUser = auth()->user();
         $type = $request->get('type');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
         // $fromDate = $request->get('from_date', Carbon::now()->subYear()->format('Y-m-d'));
@@ -324,6 +327,15 @@ class HomeController extends Controller
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
+
+                    ->when(
+                        $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
+                        function ($query) use ($authUser) {
+                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                                $q->where('arrival_location_id', $authUser->arrival_location_id);
+                            });
+                        }
+                    )
                     ->with(['product', 'station', 'accountsOf', 'unloadingLocation'])
                     ->latest()
                     ->paginate(1000);
