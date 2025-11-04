@@ -293,7 +293,7 @@ function getParamsForAccountCreation($companyId, $accName, $pAccName, $isOperati
     return ['name' => $accName, 'company_id' => $companyId, 'account_type' => $account->account_type ?? 'debit', 'table_name' => $pAccName, 'is_operational' => $isOperational ?? 'yes', 'parent_id' => $account->id ?? NULL, 'request_account_id' => 0];
 }
 
-function getParamsForAccountCreationByPath($companyId, $accName, $path, $referenceTableName , $isOperational = 'yes')
+function getParamsForAccountCreationByPath($companyId, $accName, $path, $referenceTableName, $isOperational = 'yes')
 {
     $account = Account::where('hierarchy_path', $path)->first();
 
@@ -827,5 +827,34 @@ if (!function_exists('getAccountDetailsByHierarchyPath')) {
     {
         $account = Account::where('hierarchy_path', $hierarchyPath)->first();
         return $account;
+    }
+}
+
+if (!function_exists('getUserMissingInfoAlert')) {
+    function getUserMissingInfoAlert()
+    {
+        $user = Auth::user();
+
+        if (!$user || $user->user_type === 'ssuper-admin') {
+            return '';
+        }
+
+        $missing = array_filter([
+            'Company Location' => !$user->company_location_id,
+            'Arrival Location' => !$user->arrival_location_id
+        ]);
+
+        if (empty($missing)) {
+            return '';
+        }
+
+        $missingText = implode(', ', array_keys($missing));
+
+        return "<div class=\"alert bg-light-danger\">
+    <i class=\"mr-1 fa fa-exclamation-triangle\"></i>
+    <strong>Action Required:</strong> Some required details are missing.<br>
+    Please contact your administrator to assign the following:
+    <strong>{$missingText}</strong>.
+</div>";
     }
 }
