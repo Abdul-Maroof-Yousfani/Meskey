@@ -2,7 +2,9 @@
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.second-weighbridge') }}" />
     <div class="row form-mar">
+    
         <div class="col-xs-12 col-sm-12 col-md-12">
+         {!! getUserMissingInfoAlert()  !!}
             <div class="form-group">
                 <label>Ticket:</label>
                 <select class="form-control select2" name="arrival_ticket_id" id="arrival_ticket_id">

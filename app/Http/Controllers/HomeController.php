@@ -89,6 +89,18 @@ class HomeController extends Controller
         $completedTickets = ArrivalTicket::where('company_id', $companyId)
             ->where('arrival_slip_status', 'generated')
             ->whereBetween('created_at', $dateRange)
+            // Superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
+            ->when(
+                $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
+                function ($query) use ($authUser) {
+                    return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                        $q->where('arrival_location_id', $authUser->arrival_location_id);
+                    });
+                }
+            )
             ->count();
 
         $firstWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
@@ -99,13 +111,13 @@ class HomeController extends Controller
                 return $q->where('location_id', auth()->user()->company_location_id);
             })
             ->when(
-                        auth()->user()->user_type != 'super-admin' && auth()->user()->arrival_location_id,
-                        function ($query) use ($authUser) {
-                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                                $q->where('arrival_location_id', $authUser->arrival_location_id);
-                            });
-                        }
-                    )
+                auth()->user()->user_type != 'super-admin' && auth()->user()->arrival_location_id,
+                function ($query) use ($authUser) {
+                    return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                        $q->where('arrival_location_id', $authUser->arrival_location_id);
+                    });
+                }
+            )
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -226,6 +238,14 @@ class HomeController extends Controller
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
+                    ->when(
+                        $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
+                        function ($query) use ($authUser) {
+                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                                $q->where('arrival_location_id', $authUser->arrival_location_id);
+                            });
+                        }
+                    )
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -259,6 +279,14 @@ class HomeController extends Controller
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
+                    ->when(
+                        $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
+                        function ($query) use ($authUser) {
+                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                                $q->where('arrival_location_id', $authUser->arrival_location_id);
+                            });
+                        }
+                    )
                     ->latest()
                     ->paginate(1000);
                 break;

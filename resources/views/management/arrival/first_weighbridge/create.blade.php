@@ -3,6 +3,7 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.first-weighbridge') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
+            {!! getUserMissingInfoAlert()  !!}
             <div class="form-group">
                 <label>Ticket:</label>
                 <select class="form-control select2" name="arrival_ticket_id" id="arrival_ticket_id">
@@ -28,8 +29,8 @@
 </form>
 
 <script>
-    $(document).ready(function() {
-        $('#arrival_ticket_id').change(function() {
+    $(document).ready(function () {
+        $('#arrival_ticket_id').change(function () {
             var arrival_ticket_id = $(this).val();
 
             if (arrival_ticket_id) {
@@ -40,7 +41,7 @@
                         arrival_ticket_id: arrival_ticket_id
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching slabs.",
@@ -50,7 +51,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Append the rendered HTML to a container element
@@ -60,7 +61,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -70,7 +71,7 @@
         });
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 </script>

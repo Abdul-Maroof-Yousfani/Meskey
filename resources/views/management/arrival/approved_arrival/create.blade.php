@@ -3,6 +3,7 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-approve') }}" />
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
+            {!! getUserMissingInfoAlert()  !!}
             <div class="form-group">
                 <label>Ticket:</label>
                 <select class="form-control select2" name="arrival_ticket_id" required>
@@ -153,7 +154,7 @@
 
 <script>
     $(document).ready(function () {
-        
+
         function toggleBagFields() {
             let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();
             if (selectedBagType.includes('bulk')) {
