@@ -75,6 +75,7 @@
                 <form id="ajaxSubmit" action="{{ route('ticket.arrival-revert.update', $arrivalTicket->id) }}"
                     method="POST">
                     @csrf
+                    <input type="hidden" id="url" value="{{ route('ticket.arrival-revert', $arrivalTicket->id) }}">
                     <div class="card">
                         <div class="card-content">
                             <div class="card-body">
@@ -262,14 +263,18 @@
                                         </div>
                                         <div class="col-xs-12 col-sm-12 col-md-12 text-right">
                                             <div class="form-group">
+                                                <input type="submit" value="Revert Location" name="location_transfer_revert"
+                                                    @if($arrivalTicket->first_weighbridge_status == 'completed') disabled
+                                                        data-toggle="tooltip"
+                                                    title="Revert 1st weighbridge first to unlock Location Transfer" @endif
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert location transfer?')" />
+
                                                 <input type="submit" value="Save Location" name="location_transfer_submit"
                                                     @if($arrivalTicket->freight_status == 'completed') disabled
                                                         data-toggle="tooltip"
                                                         title="You cannot update information because freight is already created"
                                                     @endif class="btn btn-primary" />
-                                                <input type="submit" value="Revert Location" name="location_transfer_revert"
-                                                    class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert location transfer?')" />
                                             </div>
                                         </div>
                                     @else
@@ -306,15 +311,19 @@
                                         </div>
                                         <div class="col-xs-12 col-sm-12 col-md-12 text-right">
                                             <div class="form-group">
+                                                <input type="submit" @if($arrivalTicket->document_approval_status != null)
+                                                    disabled data-toggle="tooltip"
+                                                    title="Revert Half/Full Approved first to unlock First weighbridge"
+                                                @endif value="Revert First Weighbridge" name="first_weighbridge_revert"
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert first weighbridge?')" />
                                                 <input type="submit" value="Save First Weighbridge"
                                                     name="first_weighbridge_submit"
                                                     @if($arrivalTicket->freight_status == 'completed') disabled
                                                         data-toggle="tooltip"
                                                         title="You cannot update information because freight is already created"
                                                     @endif class="btn btn-primary" />
-                                                <input type="submit" value="Revert First Weighbridge"
-                                                    name="first_weighbridge_revert" class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert first weighbridge?')" />
+
                                             </div>
                                         </div>
                                     @else
@@ -330,7 +339,7 @@
                     </div>
 
 
-                      <!-- Half/Full Approval Section -->
+                    <!-- Half/Full Approval Section -->
                     <div class="card">
                         <div class="card-content">
                             <div class="card-body">
@@ -416,25 +425,26 @@
                                                     <div class="form-group">
                                                         <label>Total Bags : </label>
                                                         <input type="number" name="total_bags" placeholder="Total Bags"
-                                                            class="form-control" autocomplete="off" readonly required />
+                                                            class="form-control" value="{{ $arrivalTicket->approvals->total_bags }}" autocomplete="off" {{ $arrivalTicket->document_approval_status == 'half_approved' ? 'readonly' : '' }}  required />
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row total-rejection-section">
-                                                <div class="col-12">
-                                                    <h6 class="header-heading-sepration" style="background:#ffafaf">
-                                                        Total Rejection
-                                                    </h6>
-                                                </div>
 
-                                                <div class="col-xs-12 col-sm-12 col-md-12">
-                                                    <div class="form-group">
-                                                        <label>Total Rejection Bags : </label>
-                                                        <input type="number" readonly name="total_rejection"
-                                                            id="total_rejection" placeholder="Total Rejection Bags"
-                                                            class="form-control" autocomplete="off" />
+                                            <div class="row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
+                                               
+                                                    <div class="col-12">
+                                                        <h6 class="header-heading-sepration" style="background:#ffafaf">
+                                                            Total Rejection
+                                                        </h6>
                                                     </div>
-                                                </div>
+                                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                                        <div class="form-group">
+                                                            <label>Total Rejection Bags : </label>
+                                                            <input  type="number" readonly name="total_rejection"
+                                                                id="total_rejection" placeholder="Total Rejection Bags"
+                                                                class="form-control" autocomplete="off" value="0"/>
+                                                        </div>
+                                                    </div>
                                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                                     <div class="form-group">
                                                         <label>Amanat:</label>
@@ -449,23 +459,25 @@
                                             <div class="row">
                                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                                     <div class="form-group">
-                                                        <label>Note:</label>
-                                                        <textarea name="note" placeholder="Note" class="form-control"
-                                                            rows="5"></textarea>
+                                                        <label>Remark:</label>
+                                                        <textarea name="remark" placeholder="Note" class="form-control"
+                                                            rows="5">{{ $arrivalTicket->approvals->remark }}</textarea>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        @if (isset($arrivalTicket->secondWeighbridge))
-                                            <div class="col-xs-12 col-sm-12 col-md-12 text-right">
-                                                <input type="submit" value="Revert Approval" name="half_full_approve_revert"
-                                                    class="btn btn-warning"
-                                                    onclick="return confirm('Are you sure you want to revert approval?')" />
-                                                <input type="submit" value="Save Half/Full" name="half_full_approve_submit"
-                                                    class="btn btn-primary" />
-                                            </div>
-                                        @endif
+                                        <div class="col-xs-12 col-sm-12 col-md-12 text-right">
+                                            <input type="submit" @if($arrivalTicket->second_weighbridge_status == 'completed')
+                                                disabled data-toggle="tooltip"
+                                                title="You cannot update information because freight is already created"
+                                            @endif value="Revert Approval" name="half_full_approve_revert"
+                                                class="btn btn-danger"
+                                                onclick="return confirm('Are you sure you want to revert approval?')" />
+                                            <input type="submit" value="Save Half/Full" name="half_full_approve_submit"
+                                                class="btn btn-primary" />
+                                        </div>
+
 
                                     @else
                                         <div class="col-12">
@@ -540,16 +552,18 @@
 
                                         <div class="col-xs-12 col-sm-12 col-md-12 text-right">
                                             <div class="form-group">
+                                                <input @if($arrivalTicket->freight_status == 'completed') disabled
+                                                    data-toggle="tooltip"
+                                                title="Revert freight first to unlock second weighbridge" @endif
+                                                    type="submit" value="Revert Second Weighbridge"
+                                                    name="second_weighbridge_revert" class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert second weighbridge?')" />
 
                                                 <input type="submit" @if($arrivalTicket->freight_status == 'completed')
                                                     disabled data-toggle="tooltip"
                                                     title="You cannot update information because freight is already created"
                                                 @endif value="Save Second Weighbridge" name="second_weighbridge_submit"
                                                     class="btn btn-primary" />
-
-                                                <input type="submit" value="Revert Second Weighbridge"
-                                                    name="second_weighbridge_revert" class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert second weighbridge?')" />
                                             </div>
                                         </div>
                                     @else
@@ -564,7 +578,7 @@
                             </div>
                         </div>
                     </div>
-                  
+
 
 
                     <div class="card">
@@ -746,10 +760,11 @@
                                                 @endif
                                             </div>
                                         </div>
-                                         <input type="submit" value="Revert Freight"
-                                                    name="freight_revert" class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert Arrival freight?')" />
-
+                                        <div class="col-md-12 text-right">
+                                            <input type="submit" value="Revert Freight" name="freight_revert"
+                                                class="btn btn-danger"
+                                                onclick="return confirm('Are you sure you want to revert Arrival freight?')" />
+                                        </div>
                                     @else
                                         <div class="col-12">
                                             <div class="alert bg-light-warning">
