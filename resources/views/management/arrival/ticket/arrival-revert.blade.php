@@ -425,26 +425,29 @@
                                                     <div class="form-group">
                                                         <label>Total Bags : </label>
                                                         <input type="number" name="total_bags" placeholder="Total Bags"
-                                                            class="form-control" value="{{ $arrivalTicket->approvals->total_bags }}" autocomplete="off" {{ $arrivalTicket->document_approval_status == 'half_approved' ? 'readonly' : '' }}  required />
+                                                            class="form-control" oninput="calculateBags()"
+                                                            value="{{ $arrivalTicket->approvals->total_bags }}"
+                                                            autocomplete="off" max="{{ $arrivalTicket->document_approval_status == 'half_approved' ?  $arrivalTicket->bags : '' }}"" required />
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div class="row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
-                                               
-                                                    <div class="col-12">
-                                                        <h6 class="header-heading-sepration" style="background:#ffafaf">
-                                                            Total Rejection
-                                                        </h6>
+                                            <div
+                                                class="row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
+
+                                                <div class="col-12">
+                                                    <h6 class="header-heading-sepration" style="background:#ffafaf">
+                                                        Total Rejection
+                                                    </h6>
+                                                </div>
+                                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                                    <div class="form-group">
+                                                        <label>Total Rejection Bags : </label>
+                                                        <input type="number" readonly name="total_rejection"
+                                                            id="total_rejection" placeholder="Total Rejection Bags"
+                                                            class="form-control" autocomplete="off" value="{{ $arrivalTicket->document_approval_status == 'fully_approved' ? 0 : $arrivalTicket->approvals->total_rejection }}" />
                                                     </div>
-                                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                                        <div class="form-group">
-                                                            <label>Total Rejection Bags : </label>
-                                                            <input  type="number" readonly name="total_rejection"
-                                                                id="total_rejection" placeholder="Total Rejection Bags"
-                                                                class="form-control" autocomplete="off" value="0"/>
-                                                        </div>
-                                                    </div>
+                                                </div>
                                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                                     <div class="form-group">
                                                         <label>Amanat:</label>
@@ -1693,7 +1696,16 @@
             </div>
         @endif
 <script>
+    function calculateBags() {
+        let bags = parseFloat($('[name="bags"]').val()) || 0;
+        let total = parseFloat($('[name="total_bags"]').val()) || 0;
+
+        let rejection = bags - total;
+
+        $('[name="total_rejection"]').val(rejection);
+    }
     $(document).ready(function () {
+
 
         function toggleBagFields() {
             let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();

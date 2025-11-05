@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\MasterControl;
 
 use App\Http\Controllers\Controller;
+use App\Models\Master\Account\Transaction;
+use App\Models\Master\GrnNumber;
 use Illuminate\Http\Request;
 use App\Models\Arrival\{ArrivalTicket, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalSamplingRequest};
 use App\Models\{SaudaType, ArrivalPurchaseOrder, BagType, BagCondition, BagPacking, User};
@@ -601,15 +603,34 @@ class ArrivalMasterRevertController extends Controller
     private function revertFreight($arrivalTicket)
     {
         if ($arrivalTicket->freight) {
-            $arrivalTicket->freight->delete();
+
+            $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+           
+
+            // Delete transactions
+            $Transaction = Transaction::where('grn_no', $grnNo)->delete();
+
+            
+            // Delete GRN
+         //   $arrivalTicket->arrivalSlip->grnNumber()->delete();
+ GrnNumber::where('unique_no',$grnNo)->delete();
+
+
+            // Delete arrival slip
             $arrivalTicket->arrivalSlip->delete();
+
+            // Delete freight
+            $arrivalTicket->freight->delete();
+
             $arrivalTicket->update([
                 'freight_status' => 'pending',
                 'arrival_slip_status' => null
             ]);
+
             $this->logRevertAction($arrivalTicket, 'freight_revert', 'Freight reverted');
         }
     }
+
 
     /**
      * Revert Complete Ticket (Master Revert)
