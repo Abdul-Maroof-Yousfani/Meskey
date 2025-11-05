@@ -1,13 +1,15 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-1">Image</th>
-            <th class="col-sm-2">Parent</th>
+            {{-- <th class="col-sm-1">Image</th> --}}
             <th class="col-sm-2">Name</th>
-            <th class="col-sm-2">Username</th>
+            <th class="col-sm-2">Parent</th>
+
+            {{-- <th class="col-sm-2">Username</th> --}}
             <th class="col-sm-3">Role</th>
-            <th class="col-sm-3">Parent</th>
+            {{-- <th class="col-sm-3">Parent</th> --}}
             <th class="col-sm-3">Companies Assign</th>
+            <th class="col-sm-3">Location/Sublocation</th>
             <th class="col-sm-2">Action</th>
         </tr>
     </thead>
@@ -15,24 +17,24 @@
         @if (count($users) != 0)
             @foreach ($users as $key => $user)
                 <tr>
-                    <td>
+                    {{-- <td>
                         <img src="{{ image_path($user->profile_image) }}" class="avatar lisiavatarlogo" />
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $user->parent?->name  ?? '--'}}
-                        </p>
-                    </td>
+                    </td> --}}
+
                     <td>
                         <p class="m-0">
                             {{ $user->name }}
                         </p>
+                        <p class="m-0">
+                            <code class=" d-block">{{ '@' . $user->username }}</code>
+                        </p>
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $user->username }}
+                            {{ $user->parent?->name ?? '--'}}
                         </p>
                     </td>
+
                     <td>
                         @if (!empty($user->getRoleNames()))
                             @foreach ($user->getRoleNames() as $v)
@@ -40,13 +42,21 @@
                             @endforeach
                         @endif
                     </td>
-                    <td>{{ $user->parent ? $user->parent->name : 'N/A' }}</td>
+                    
+                    {{-- <td>{{ $user->parent ? $user->parent->name : 'N/A' }}</td> --}}
                     <td>
                         @if (!empty(getUserAllCompanies(auth()->user()->id)))
                             @foreach (getUserAllCompanies($user->id) as $v)
                                 <label class="badge gradient-pomegranate">{{ $v->name }}</label>
                             @endforeach
                         @endif
+                    </td>
+                                        <td>
+                        <p class="m-0">
+                    
+                            {{ $user->companyLocation?->name ?? 'N/A'}} <br>
+                            <small>{{ $user->arrivalLocation?->name ?? 'N/A'}}</small>
+                        </p>
                     </td>
                     <td>
                         @canAccess('user-delete')

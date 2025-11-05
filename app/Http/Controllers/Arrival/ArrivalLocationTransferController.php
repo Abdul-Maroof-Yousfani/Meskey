@@ -99,6 +99,9 @@ class ArrivalLocationTransferController extends Controller
      */
     public function edit(Request $request, $id)
     {
+
+
+        
         $locationTransfer = ArrivalLocationTransfer::findOrFail($id);
         $initialRequestForInnerReq = ArrivalSamplingRequest::where('arrival_ticket_id', $locationTransfer->arrival_ticket_id)
             ->where('sampling_type', 'initial')
@@ -113,7 +116,7 @@ class ArrivalLocationTransferController extends Controller
         $initialRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialRequestForInnerReq->id)->get();
         $sampleTakenByUsers = User::all();
 
-        return view('management.master.arrival_location.edit', compact('locationTransfer', 'initialRequestCompulsuryResults', 'initialRequestResults', 'sampleTakenByUsers', 'initialRequestForInnerReq'));
+        return view('management.arrival.location_transfer.edit', compact('locationTransfer', 'initialRequestCompulsuryResults', 'initialRequestResults', 'sampleTakenByUsers', 'initialRequestForInnerReq'));
     }
 
     /**

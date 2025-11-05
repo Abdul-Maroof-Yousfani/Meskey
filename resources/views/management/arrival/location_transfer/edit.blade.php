@@ -1,4 +1,4 @@
-<form action="{{ route('arrival-location.update', $arrival_location->id) }}" method="POST" id="ajaxSubmit"
+<form action="{{ route('arrival-location.update', $locationTransfer->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -8,13 +8,12 @@
             <div class="form-group">
                 <label>Ticket:</label>
                 <select class="form-control select2" name="arrival_ticket_id">
-                    <option value="">Select Ticket</option>
-                    @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}">
-                            Ticket No: {{ $arrivalTicket->unique_no }} --
-                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
+                  
+                        <option  value="{{ $locationTransfer->arrivalTicket->id }}">
+                            Ticket No: {{ $locationTransfer->arrivalTicket->unique_no }} --
+                            Truck No: {{ $locationTransfer->arrivalTicket->truck_no ?? '-' }}
                         </option>
-                    @endforeach
+                    
                 </select>
             </div>
         </div>
@@ -22,12 +21,8 @@
             <div class="form-group">
                 <label>Location:</label>
                 <select class="form-control select2" name="arrival_location_id">
-                    <option value="">Select Location</option>
-                    @foreach ($ArrivalLocations as $ArrivalLocations)
-                        <option value="{{ $ArrivalLocations->id }}">
-                            {{ $ArrivalLocations->name }}
-                        </option>
-                    @endforeach
+                    <option value="">{{$locationTransfer->arrivalLocation->name}}</option>
+                    
                 </select>
             </div>
         </div>
@@ -36,7 +31,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
-                <textarea name="remark" placeholder="Remarks" class="form-control"></textarea>
+                <textarea name="remark" placeholder="Remarks" class="form-control">{{$locationTransfer->remark}}</textarea>
             </div>
         </div>
     </div>

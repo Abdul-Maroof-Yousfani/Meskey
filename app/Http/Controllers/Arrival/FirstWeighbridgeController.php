@@ -75,8 +75,8 @@ class FirstWeighbridgeController extends Controller
                     return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
                         $q->where('arrival_location_id', $authUser->arrival_location_id);
                     });
-                })
-                ->get()
+            })
+            ->get()
         ];
 
         return view('management.arrival.first_weighbridge.create', $data);
