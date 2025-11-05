@@ -242,7 +242,7 @@
                                             Location Transfer
                                         </h6>
                                     </div>
-                                    @if (isset($arrivalTicket->firstWeighbridge))
+                                    @if (isset($arrivalTicket->unloadingLocation))
                                         <div class="col-xs-12 col-sm-12 col-md-12">
                                             <div class="form-group">
                                                 <label>Location:</label>
@@ -275,7 +275,7 @@
                                     @else
                                         <div class="col-12">
                                             <div class="alert bg-light-warning">
-                                                <i class="fa fa-exclamation-triangle"></i> First Weighbridge not found
+                                                <i class="fa fa-exclamation-triangle"></i> Loading not found
                                             </div>
                                         </div>
                                     @endif
