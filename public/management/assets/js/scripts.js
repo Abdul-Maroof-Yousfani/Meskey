@@ -277,6 +277,21 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
 
   var formData = new FormData(form[0]);
 
+
+ // Find which submit button was actually clicked
+ var clickedSubmit = $(document.activeElement);
+ if (clickedSubmit.is('input[type="submit"], button[type="submit"]')) {
+   var submitName = clickedSubmit.attr("name");
+   var submitValue = clickedSubmit.val() || clickedSubmit.text() || "";
+   
+   if (submitName) {
+     formData.append(submitName, submitValue);
+   }
+ }
+
+
+
+
   // Process 'notes' field if value is '1'
   var notesValue = formData.get("notes");
   if (notesValue == 1) {

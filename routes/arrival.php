@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MasterControl\ArrivalMasterRevertController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Arrival\{
     TicketController,
@@ -19,7 +20,8 @@ use App\Models\Master\CompanyLocation;
 Route::resource('ticket', TicketController::class);
 Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.ticket');
 Route::put('/ticket/{ticket}/confirm-bilty-return', [TicketController::class, 'confirmBiltyReturn'])->name('ticket.confirm-bilty-return');
-Route::get('/ticket-revert/{ticket}', [TicketController::class, 'arrivalRevert'])->name('ticket.arrival-revert');
+Route::get('/ticket-revert/{ticket}', [ArrivalMasterRevertController::class, 'arrivalRevert'])->name('ticket.arrival-revert');
+Route::post('/ticket-revert/{ticket}', [ArrivalMasterRevertController::class, 'update'])->name('ticket.arrival-revert.update');
 Route::get('/get-ticket-number/{locationId}', [TicketController::class, 'getTicketNumber']);
 
 Route::resource('initialsampling', InitialSamplingController::class);

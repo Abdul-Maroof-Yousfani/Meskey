@@ -601,4 +601,8 @@ class TicketController extends Controller
             'bagPackings',
         ));
     }
+
+
+
+    
 }
