@@ -329,91 +329,8 @@
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-content">
-                            <div class="card-body">
 
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
-                                            Second Weighbridge Detail
-                                        </h6>
-                                    </div>
-                                    @if (isset($arrivalTicket->secondWeighbridge))
-                                        <div class="col-xs-4 col-sm-4 col-md-4">
-                                            <div class="form-group">
-                                                <label>First Weighbridge Weight:</label>
-                                                <input type="text" disabled placeholder="First Weight" class="form-control"
-                                                    autocomplete="off"
-                                                    value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-4 col-sm-4 col-md-4">
-                                            <div class="form-group">
-                                                <label>2nd Weighbridge Weight: </label>
-                                                <input type="text" name="arrival_second_weight" placeholder="Second Weight"
-                                                    class="form-control" autocomplete="off"
-                                                    value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-4 col-sm-4 col-md-4">
-                                            <div class="form-group">
-                                                <label>Net Weighbridge Weight: </label>
-                                                <input type="text" name="arrival_net_weight" disabled
-                                                    placeholder="Second Weight" class="form-control" autocomplete="off"
-                                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-12 col-sm-12 col-md-12">
-                                            <fieldset>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-primary" type="button">Weight
-                                                            Difference</button>
-                                                    </div>
-                                                    <input type="text" id="weight_difference" name="weight_difference"
-                                                        placeholder="Weight Difference" readonly class="form-control"
-                                                        autocomplete="off"
-                                                        value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
-                                                </div>
-                                            </fieldset>
-                                        </div>
-                                        <div class="col-xs-4 col-sm-4 col-md-4 d-none">
-                                            <div class="form-group">
-                                                <label>Weight Difference: </label>
-                                                <input type="text" name="net_weight" disabled placeholder="Net Weight"
-                                                    class="form-control" autocomplete="off"
-                                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
-                                            </div>
-                                        </div>
-
-                                        <div class="col-xs-12 col-sm-12 col-md-12 text-right">
-                                            <div class="form-group">
-
-                                                <input type="submit" @if($arrivalTicket->freight_status == 'completed')
-                                                    disabled data-toggle="tooltip"
-                                                    title="You cannot update information because freight is already created"
-                                                @endif value="Save Second Weighbridge" name="second_weighbridge_submit"
-                                                    class="btn btn-primary" />
-
-                                                <input type="submit" value="Revert Second Weighbridge"
-                                                    name="second_weighbridge_revert" class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert second weighbridge?')" />
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div class="col-12">
-                                            <div class="alert bg-light-warning">
-                                                <i class="fa fa-exclamation-triangle"></i> Second Weighbridge not found
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Half/Full Approval Section -->
+                      <!-- Half/Full Approval Section -->
                     <div class="card">
                         <div class="card-content">
                             <div class="card-body">
@@ -424,7 +341,7 @@
                                             Half / Full Approved
                                         </h6>
                                     </div>
-                                    @if (isset($arrivalTicket->secondWeighbridge))
+                                    @if (isset($arrivalTicket->approvals))
                                         <div class="col-xs-6 col-sm-6 col-md-6">
                                             <div class="form-group">
                                                 <label>Gala Name:</label>
@@ -562,6 +479,92 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="card-body">
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="header-heading-sepration">
+                                            Second Weighbridge Detail
+                                        </h6>
+                                    </div>
+                                    @if (isset($arrivalTicket->secondWeighbridge))
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label>First Weighbridge Weight:</label>
+                                                <input type="text" disabled placeholder="First Weight" class="form-control"
+                                                    autocomplete="off"
+                                                    value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label>2nd Weighbridge Weight: </label>
+                                                <input type="text" name="arrival_second_weight" placeholder="Second Weight"
+                                                    class="form-control" autocomplete="off"
+                                                    value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label>Net Weighbridge Weight: </label>
+                                                <input type="text" name="arrival_net_weight" disabled
+                                                    placeholder="Second Weight" class="form-control" autocomplete="off"
+                                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight }}" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <fieldset>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <button class="btn btn-primary" type="button">Weight
+                                                            Difference</button>
+                                                    </div>
+                                                    <input type="text" id="weight_difference" name="weight_difference"
+                                                        placeholder="Weight Difference" readonly class="form-control"
+                                                        autocomplete="off"
+                                                        value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4 d-none">
+                                            <div class="form-group">
+                                                <label>Weight Difference: </label>
+                                                <input type="text" name="net_weight" disabled placeholder="Net Weight"
+                                                    class="form-control" autocomplete="off"
+                                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
+                                            </div>
+                                        </div>
+
+                                        <div class="col-xs-12 col-sm-12 col-md-12 text-right">
+                                            <div class="form-group">
+
+                                                <input type="submit" @if($arrivalTicket->freight_status == 'completed')
+                                                    disabled data-toggle="tooltip"
+                                                    title="You cannot update information because freight is already created"
+                                                @endif value="Save Second Weighbridge" name="second_weighbridge_submit"
+                                                    class="btn btn-primary" />
+
+                                                <input type="submit" value="Revert Second Weighbridge"
+                                                    name="second_weighbridge_revert" class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert second weighbridge?')" />
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="col-12">
+                                            <div class="alert bg-light-warning">
+                                                <i class="fa fa-exclamation-triangle"></i> Second Weighbridge not found
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                  
 
 
                     <div class="card">
@@ -743,6 +746,10 @@
                                                 @endif
                                             </div>
                                         </div>
+                                         <input type="submit" value="Revert Freight"
+                                                    name="freight_revert" class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert Arrival freight?')" />
+
                                     @else
                                         <div class="col-12">
                                             <div class="alert bg-light-warning">

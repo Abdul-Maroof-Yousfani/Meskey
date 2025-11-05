@@ -835,7 +835,7 @@ if (!function_exists('getUserMissingInfoAlert')) {
     {
         $user = Auth::user();
 
-        if (!$user || $user->user_type === 'ssuper-admin') {
+        if (!$user || $user->user_type === 'super-admin') {
             return '';
         }
 

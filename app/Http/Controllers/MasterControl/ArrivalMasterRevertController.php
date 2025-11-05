@@ -357,6 +357,23 @@ public function update(Request $request, $id)
                 ], 500);
             }
         }
+        // Handle Half/Full Approval REVERT
+        if ($request->has('freight_revert')) {
+            try {
+                $this->revertFreight($arrivalTicket);
+                DB::commit();
+                return response()->json([
+                    'success' => 'Freight reverted successfully.',
+                    'data' => $arrivalTicket
+                ], 201);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Freight revert failed.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
 
         // Handle Complete Ticket REVERT
         if ($request->has('complete_ticket_revert')) {
@@ -550,6 +567,11 @@ public function update(Request $request, $id)
     {
         if ($arrivalTicket->secondWeighbridge) {
             $arrivalTicket->secondWeighbridge->delete();
+             $arrivalTicket->update([
+                'second_weighbridge_status' => 'pending',
+                'freight_status' => null,
+            ]);
+            
             $this->logRevertAction($arrivalTicket, 'second_weighbridge_revert', 'Second weighbridge reverted');
         }
     }
@@ -561,7 +583,22 @@ public function update(Request $request, $id)
     {
         if ($arrivalTicket->approvals) {
             $arrivalTicket->approvals->delete();
+             $arrivalTicket->update([
+                'document_approval_status' => null,
+            ]);
             $this->logRevertAction($arrivalTicket, 'half_full_approval_revert', 'Half/Full approval reverted');
+        }
+    }
+    private function revertFreight($arrivalTicket)
+    {
+        if ($arrivalTicket->freight) {
+            $arrivalTicket->freight->delete();
+            $arrivalTicket->arrivalSlip->delete();
+            $arrivalTicket->update([
+                'freight_status' => 'pending',
+                 'arrival_slip_status' => null
+            ]);
+            $this->logRevertAction($arrivalTicket, 'freight_revert', 'Freight reverted');
         }
     }
 
