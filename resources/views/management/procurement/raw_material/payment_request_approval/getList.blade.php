@@ -74,7 +74,7 @@
                     </td>
                     <td>{{ $request->created_at->format('Y-m-d H:i') }}</td>
                     <td>
-                        <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : '' }})"
+                        <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : ', false' }}, '80%')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>

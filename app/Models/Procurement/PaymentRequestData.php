@@ -71,6 +71,7 @@ class PaymentRequestData extends Model
         'attachment',
         'deduction_contract_rate_for_freight',
         'penalty_adjust_to',
+        'labour_vendor_id',
     ];
 
     protected $casts = [
