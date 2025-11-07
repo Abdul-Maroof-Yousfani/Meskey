@@ -191,7 +191,6 @@
                                         <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}" {{ $tax->id == $data->tax_id ? 'selected' : '' }}>
                                             {{ $tax->name . ' (' . $tax->percentage . ')%' }}
                                         </option>
-                                        <option data-percentage="20">(20)%</option>
                                     @endforeach
                                 </select>
                             </td>
