@@ -100,6 +100,8 @@
                     {{-- <th>Vendor</th> --}}
                     <th>Qty</th>
                     <th>Rate</th>
+                    <th>Gross Amount</th>
+                    <th>Tax Amount</th>
                     <th>Tax</th>
                     <th>Duty</th>
                     <th>Amount</th>
@@ -175,9 +177,15 @@
                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}" disabled
                     id="rate_{{ $key }}" class="form-control" step="0.01" min="{{ $key }}">
             </td>
+
+            <td style="width: 7%">
+                <input type="number" onkeyup="calc({{ $key }})"
+                    onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate * $data->qty }}" disabled
+                    id="rate_{{ $key }}" class="form-control gross_amount" step="0.01" min="{{ $key }}">
+            </td>
 <td style="width: 10%">
-                                <select id="tax_id_{{ $key }}" name="tax_id[]" disabled
-                                    onchange="calc({{ $key }})" class="form-control item-select select2">
+                                <select id="tax_id_{{ $key }}" name="tax_id[]"
+                                    onchange="calculatePercentage(this)" class="form-control item-select select2">
                                     <option value="">Select Tax</option>
                                     @foreach ($taxes as $tax)
                                         <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}" {{ $tax->id == $data->tax_id ? 'selected' : '' }}>
@@ -188,12 +196,18 @@
                             </td>
 
                             <td style="width: 7%">
+                                <input type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="rate[]" value="{{ ($tax->percentage / 100) * ($data->rate * $data->qty) }}" disabled
+                                    id="rate_{{ $key }}" class="form-control percent_amount" step="0.01" min="{{ $key }}">
+                            </td>
+
+                            <td style="width: 7%">
                                 <input type="number" oninput="calc({{ $key }})" name="excise_duty[]" disabled value="{{ $data->excise_duty }}"
                                     id="excise_duty_{{ $key }}" class="form-control" step="0.01" min="0">
                             </td>
             <td style="width: 10%">
                 <input type="number" readonly value="{{ $data->total }}"
-                    id="total_{{ $key }}" class="form-control" step="0.01" min="0" readonly name="total[]">
+                    id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0" readonly name="total[]">
             </td>
  <td style="width: 5%">
                                 <input type="number" readonly name="min_weight[]" value="{{ $data->min_weight }}"
@@ -408,6 +422,21 @@
          var total = qty * rate;
 
          $('#total_' + num).val(total);
+
+     }
+
+     function calculatePercentage(el) {
+        
+        const gross_amount = $(el).closest("tr").find(".gross_amount");
+        const tax_percent = $(el).find(":selected").data("percentage");
+        const percent_amount = $(el).closest("tr").find(".percent_amount");
+        const net_amount = $(el).closest("tr").find(".net_amount");
+
+        const percent_amount_of_gross = (parseFloat(tax_percent) / 100) * parseFloat(gross_amount.val());
+        const net_amount_value = parseFloat(gross_amount.val()) + parseFloat(percent_amount_of_gross);
+        percent_amount.val(percent_amount_of_gross);
+        net_amount.val(net_amount_value)
+
 
      }
  </script>

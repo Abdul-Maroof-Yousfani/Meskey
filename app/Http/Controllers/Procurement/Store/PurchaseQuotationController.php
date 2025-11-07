@@ -335,6 +335,9 @@ class PurchaseQuotationController extends Controller
             'PurchaseData.item',
         ])->findOrFail($purchase_request_id);
 
+        // dd(count($purchaseRequest->PurchaseData));
+        
+
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->where('am_approval_status', 'pending')->pluck('id');
 
@@ -349,11 +352,13 @@ class PurchaseQuotationController extends Controller
             // })
             ->get();
 
+        // dd($PurchaseQuotationData);
+
         $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             // ->where('am_approval_status', 'pending')
             ->latest()->first();
-
+      
         return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
             'purchaseRequest' => $purchaseRequest,
             'categories' => $categories,
@@ -375,6 +380,7 @@ class PurchaseQuotationController extends Controller
             'PurchaseData.category',
             'PurchaseData.item',
         ])->findOrFail($purchase_request_id);
+
 
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
