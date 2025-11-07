@@ -334,6 +334,8 @@ class PurchaseQuotationController extends Controller
             'PurchaseData.category',
             'PurchaseData.item',
         ])->findOrFail($purchase_request_id);
+
+        // dd(count($purchaseRequest->PurchaseData));
         
 
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
