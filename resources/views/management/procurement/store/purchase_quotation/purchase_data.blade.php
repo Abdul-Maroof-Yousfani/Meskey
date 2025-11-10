@@ -1,3 +1,4 @@
+ 
  @foreach ($dataItems ?? [] as $key => $data)
      <tr id="row_{{ $key }}">
          <td style="width: 25%">
@@ -29,13 +30,19 @@
              </select>
              <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
          </td>
+         <td style="width: 15%">
+             <input type="text" id="uom_{{ $key }}" class="form-control uom"
+                 value="{{ get_uom($data->item_id) }}" disabled readonly>
+             <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+         </td>
          <td style="width: 10%">
             
             <input type="text" id="min_weight_{{ $key }}" class="form-control min_weight"
                 value="{{ $data->min_weight }}" disabled readonly>
             
-            <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
+            <input type="hidden" name="item_id[]" value="{{ $data->min_weight }}">
          </td>
+          
          <td style="width: 10%">
             
             <input type="text" id="color_{{ $key }}" class="form-control color"
@@ -52,10 +59,10 @@
          </td>
          <td style="width: 25%">
             
-            <input type="text" id="size_{{ $key }}" class="form-control size"
+            <input type="text" id="size{{ $key }}" class="form-control size"
                 value="{{ $data->size }}" disabled readonly>
             
-            <input type="hidden" name="size_[]" value="{{ $data->size }}">
+            <input type="hidden" name="size[]" value="{{ $data->size }}">
          </td>
          <td style="width: 25%">
             
@@ -64,11 +71,7 @@
             
             <input type="hidden" name="stitching[]" value="{{ $data->stitching }}">
          </td>
-         <td style="width: 15%">
-             <input type="text" id="uom_{{ $key }}" class="form-control uom"
-                 value="{{ get_uom($data->item_id) }}" disabled readonly>
-             <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
-         </td>
+        
          {{-- <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">

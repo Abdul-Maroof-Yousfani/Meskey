@@ -494,7 +494,7 @@ class PurchaseQuotationController extends Controller
                 $q->where('supplier_id', $supplierId);
             })
             ->count();
-
+        $quantities = [];
         if ($existingQuotationCount > 0) {
             $quotationQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
                 ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
@@ -511,6 +511,11 @@ class PurchaseQuotationController extends Controller
             }
         } else {
             foreach ($dataItems as $item) {
+                if($item->qty) {
+                    $quantities[] = $item->qty;
+                } else {
+                    $quantities[] = 0;
+                }
                 $item->qty = $item->qty;
             }
         }
@@ -531,6 +536,7 @@ class PurchaseQuotationController extends Controller
             'allowed_categories' => $categoryIds,
             'allowed_items' => $itemIds,
             'purchaseRequestDataCount' => $purchaseRequestDataCount,
+            "quantities" => $quantities
         ]);
     }
 

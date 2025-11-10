@@ -152,7 +152,7 @@
         $(document).on('change', '#quotation_no', function () {
             const purchaseRequestId = $('select[name="purchase_request_id"]').val();
             if (purchaseRequestId) {
-                get_purchase(purchaseRequestId);
+                // get_purchase(purchaseRequestId);
             }
         });
 
