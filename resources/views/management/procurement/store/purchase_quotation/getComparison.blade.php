@@ -26,6 +26,7 @@
                 $currentRequestNo = $requestGroup['purchase_request_no'];
             @endphp
 
+            @php $isFirstRequestRow = true; @endphp
 
             @foreach ($requestGroup['items'] as $itemGroup)
                 @php $isFirstItemRow = true; @endphp
