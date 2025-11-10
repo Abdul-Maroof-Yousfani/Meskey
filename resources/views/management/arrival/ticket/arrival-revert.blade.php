@@ -139,30 +139,62 @@
                                                 value="{{ $arrivalTicket->decisionBy->name ?? 'N/A' }}" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
-                                        <div class="form-group">
+                      
+
+                                     <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group ">
                                             <label>Station:</label>
-                                            <input type="text" name="station_id" placeholder="Station"
-                                                class="form-control" disabled autocomplete="off"
-                                                value="{{ $arrivalTicket->station_name ?? 'N/A' }}" />
+                                            <select name="station" id="station_id" class="form-control select2">
+                                                <option value="" disabled>Station</option>
+                                                @if ($arrivalTicket->station_name)
+                                                    <option value="{{ $arrivalTicket->station_name }}" selected>
+                                                        {{ $arrivalTicket->station_name }}</option>
+                                                @endif
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <!-- <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Truck Type:</label>
                                             <input type="text" name="station_id" placeholder="Truck Type"
                                                 class="form-control" disabled autocomplete="off"
                                                 value="{{ $arrivalTicket->truckType->name ?? 'N/A' }}" />
                                         </div>
+                                    </div> -->
+
+
+                                     <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group ">
+                                            <label>Truck Type:</label>
+                                            <select name="truck_type_id" id="truck_type_id" class="form-control select2">
+                                                <option value="">Truck Type</option>
+                                                @foreach (getTableData('arrival_truck_types', ['id', 'name', 'sample_money']) as $arrival_truck_types)
+                                                    <option  data-samplemoney="{{ $arrival_truck_types->sample_money ?? 0 }}"
+                                                        value="{{ $arrival_truck_types->id }}" @selected($arrivalTicket->truck_type_id == $arrival_truck_types->id)>
+                                                        {{ $arrival_truck_types->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group ">
+                                            <label>Sample Money Type:</label>
+                                            <select name="sample_money_type" class="form-control">
+                                                <option value="n/a" @selected($arrivalTicket->sample_money_type == 'n/a')>N/A</option>
+                                                <option value="single" @selected($arrivalTicket->sample_money_type == 'single')>Single</option>
+                                                <option value="double" @selected($arrivalTicket->sample_money_type == 'double')>Double</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Sample Money Type:</label>
                                             <input type="text" name="station_id" placeholder="Product Name"
                                                 class="form-control" disabled autocomplete="off"
                                                 value="{{ isset($arrivalTicket->sample_money_type) ? ucwords($arrivalTicket->sample_money_type) : 'N/A' }}" />
                                         </div>
-                                    </div>
+                                    </div> -->
 
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
@@ -190,7 +222,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Sample Money: </label>
-                                            <input type="text" readonly name="sample_money" disabled
+                                            <input type="text" readonly name="sample_money" 
                                                 value="{{ $arrivalTicket->sample_money ?? 0 }}" placeholder="No of bags"
                                                 class="form-control" autocomplete="off" />
                                         </div>
@@ -198,7 +230,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Loading Date:</label>
-                                            <input type="date" name="loading_date" disabled
+                                            <input type="date" name="loading_date"
                                                 value="{{ $arrivalTicket->loading_date }}" placeholder="Bilty No"
                                                 class="form-control" autocomplete="off" />
                                         </div>
@@ -223,7 +255,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>First Weighbridge Weight:</label>
-                                            <input type="text" name="first_weight" disabled placeholder="First Weight"
+                                            <input type="text" name="first_weight"  placeholder="First Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->first_weight }}" />
                                         </div>
@@ -231,7 +263,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>2nd Weighbridge Weight: </label>
-                                            <input type="text" name="second_weight" disabled placeholder="Second Weight"
+                                            <input type="text" name="second_weight" placeholder="Second Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->second_weight }}" />
                                         </div>
@@ -244,6 +276,15 @@
                                                 value="{{ $arrivalTicket->net_weight }}" />
                                         </div>
                                     </div>
+            <div class="col-xs-12 col-sm-12 col-md-12 text-right">
+                                            <div class="form-group">
+                                     <input type="submit" value="Save Ticket" name="ticket_submit"
+                                                    @if($arrivalTicket->freight_status == 'completed') disabled
+                                                        data-toggle="tooltip"
+                                                        title="You cannot update information because freight is already created"
+                                                    @endif class="btn btn-primary" />
+                                                    </div>
+                                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1735,6 +1776,24 @@
             </div>
         @endif
 <script>
+
+        function calculateSampleMoney() {
+        let truckTypeSelect = $('[name="truck_type_id"]');
+        let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
+
+        let holidayType = $('[name="sample_money_type"]').val();
+
+        if (holidayType === 'double') {
+            sampleMoney = sampleMoney * 2;
+        }
+
+        if (holidayType === 'n/a') {
+            sampleMoney = 0;
+        }
+
+        $('input[name="sample_money"]').val(sampleMoney || 0);
+    }
+
     function calculateBags() {
         let bags = parseFloat($('[name="bags"]').val()) || 0;
         let total = parseFloat($('[name="total_bags"]').val()) || 0;
@@ -1746,6 +1805,14 @@
     $(document).ready(function () {
 
         initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
+
+
+            calculateSampleMoney();
+
+        $(document).on('change', '[name="truck_type_id"]', calculateSampleMoney);
+
+        $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
 
         function toggleBagFields() {
             let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();

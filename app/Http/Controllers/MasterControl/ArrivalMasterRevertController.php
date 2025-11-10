@@ -10,6 +10,8 @@ use App\Models\Arrival\{ArrivalTicket, ArrivalSamplingResult, ArrivalSamplingRes
 use App\Models\{SaudaType, ArrivalPurchaseOrder, BagType, BagCondition, BagPacking, User};
 use App\Models\Master\{ArrivalLocation, Station, ArrivalSubLocation, ProductSlab};
 use App\Models\AuditLog;
+use App\Models\Master\Miller;
+
 use DB;
 use Illuminate\Validation\ValidationException;
 class ArrivalMasterRevertController extends Controller
@@ -193,7 +195,38 @@ class ArrivalMasterRevertController extends Controller
         DB::beginTransaction();
 
         try {
+
+
+
+
             // ==================== UPDATE OPERATIONS ====================
+
+
+
+            // Handle Ticket UPDATE
+            if ($request->has('ticket_submit')) {
+                try {
+                    $this->updateTicket($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Ticket updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Ticket update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
+
 
             // Handle Location Transfer UPDATE
             if ($request->has('location_transfer_submit')) {
@@ -437,6 +470,62 @@ class ArrivalMasterRevertController extends Controller
             ], 500);
         }
     }
+
+
+
+
+
+
+        /**
+     * Update Half/Full Approval
+     */
+    private function updateTicket($request, $arrivalTicket)
+    {
+        $requestData = $request->validate([
+            'miller_name' => 'required|string|max:255',
+            'loading_date' => 'nullable|date',
+            'remarks' => 'nullable|string|max:500',
+            'station' => 'required|string|max:255',
+            'bilty_no' => 'required|string|max:255',
+            'truck_no' => 'required|string|max:255',
+            'bags' => 'required|numeric',
+            'truck_type_id' => 'required|max:255',
+            'sample_money_type' => 'required|in:n/a,single,double',
+            'sample_money' => 'required|numeric',
+            'first_weight' => 'required|numeric',
+            'second_weight' => 'required|numeric',
+        ]);
+
+        // Update or create approval record
+        if ($arrivalTicket) {
+
+        if (!empty($requestData['station'])) {
+            $station = Station::firstOrCreate(
+                [
+                    'name' => $requestData['station'],
+                    'company_id' => $request->company_id ?? null,
+                ]
+            );
+
+            $requestData['station_id'] = $station->id;
+            $requestData['station_name'] = $station->name;
+        }
+
+        if (!empty($requestData['miller_name'])) {
+            $miller = Miller::where('name', $requestData['miller_name'])->first();
+            if (!$miller) {
+                $miller = Miller::create(['name' => $requestData['miller_name']]);
+            }
+            $requestData['miller_id'] = $miller->id;
+        }
+
+    //    dd($requestData);
+            $arrivalTicket->update($requestData);
+        } 
+
+        $this->logRevertAction($arrivalTicket, 'half_full_approval_update', 'Half/Full approval updated');
+    }
+
     /**
      * Update Location Transfer
      */

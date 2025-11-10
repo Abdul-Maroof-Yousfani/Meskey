@@ -195,11 +195,24 @@ class TicketController extends Controller
             $requestData['accounts_of_name'] = $requestData['accounts_of'];
         }
 
+        // if (!empty($requestData['station'])) {
+        //     $station = Station::where('name', $requestData['station'])->first();
+        //     $requestData['station_id'] = $station ? $station->id : null;
+        //     $requestData['station_name'] = $requestData['station'];
+        // }
+
         if (!empty($requestData['station'])) {
-            $station = Station::where('name', $requestData['station'])->first();
-            $requestData['station_id'] = $station ? $station->id : null;
-            $requestData['station_name'] = $requestData['station'];
+            $station = Station::firstOrCreate(
+                [
+                    'name' => $requestData['station'],
+                    'company_id' => $requestData['company_id'] ?? null,
+                ]
+            );
+
+            $requestData['station_id'] = $station->id;
+            $requestData['station_name'] = $station->name;
         }
+
 
         if (!empty($requestData['broker_name'])) {
             $broker = Supplier::where('name', $requestData['broker_name'])->first();

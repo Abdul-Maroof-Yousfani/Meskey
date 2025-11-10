@@ -81,11 +81,11 @@ class ArrivalTicket extends Model
         'miller_id',
     ];
 
-    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'loading_date'];
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-    protected $casts = [
-        'loading_date' => 'date',
-    ];
+    // protected $casts = [
+    //     'loading_date' => 'date',
+    // ];
 
     public function company()
     {
