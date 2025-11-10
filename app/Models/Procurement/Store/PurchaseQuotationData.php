@@ -70,6 +70,9 @@ class PurchaseQuotationData extends Model
         return $this->belongsTo(PurchaseQuotation::class, 'purchase_quotation_id', 'id');
     }
     
+    public function purchase_request() {
+        return $this->belongsTo(PurchaseRequestData::class, "purchase_request_data_id", 'id');
+    }
 
     public function category()
     {

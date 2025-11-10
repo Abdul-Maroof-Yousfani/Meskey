@@ -4,6 +4,7 @@ use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Master\{
+    ColorController,
     AccountController,
     RegionController,
     CategoryController,
@@ -26,7 +27,8 @@ use App\Http\Controllers\Master\{
     VendorsController,
     FumigationCompanyController,
     InspectionCompanyController,
-    BrandsController
+    BrandsController,
+    SizeController
 };
 
 
@@ -34,7 +36,11 @@ use App\Http\Controllers\Master\{
 //Route::post('/get-regions', [RegionController::class, 'getList'])->name('get.regions');
 
 
+Route::resource("color", ColorController::class);
+Route::post("/get-colors", [ColorController::class, "getList"])->name("get.colors");
 
+Route::resource("size", SizeController::class);
+Route::post("/get-sizes", [SizeController::class, "getList"])->name("get.sizes");
 
 Route::resource('category', CategoryController::class);
 Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');

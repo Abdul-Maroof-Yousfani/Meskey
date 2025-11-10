@@ -72,6 +72,11 @@
                     <tr>
                         <th>Category</th>
                         <th>Item</th>
+                        <th class="col-sm-2">Min Weight</th>
+                        <th class="col-sm-2">Color</th>
+                        <th class="col-sm-2">Cons./sq. in.</th>
+                        <th class="col-sm-2">Size</th>
+                        <th class="col-sm-2">Stitching</th>
                         <th>Item UOM</th>
                         {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
@@ -182,6 +187,7 @@
                     ${categoryOptions}
                 </select>
             </td>
+            
                 <td style="width: 25%">
                 <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
                         class="form-control item-select select2"></select>

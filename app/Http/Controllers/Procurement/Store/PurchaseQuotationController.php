@@ -344,15 +344,13 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
-        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
             ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
             // })
             ->get();
-
-        // dd($PurchaseQuotationData);
 
         $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
@@ -521,7 +519,7 @@ class PurchaseQuotationController extends Controller
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-
+        
         $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
         $categoryIds = $dataItems->pluck('category_id')->unique()->values();
@@ -587,6 +585,7 @@ class PurchaseQuotationController extends Controller
                     'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
+
 
                 if ($request->data_id[$index] != 0) {
                     $data = PurchaseRequestData::find($request->data_id[$index])->update([

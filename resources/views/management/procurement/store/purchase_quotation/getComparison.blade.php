@@ -4,7 +4,7 @@
             <th class="col-2">Purchase Request No</th>
             <th class="col-2">Purchase Quotation No</th>
             <th class="col-3">Category - Item</th>
-            <th class="col-3">Supplier</th>
+            <th class="col-3">Suppliers</th>
             <th class="col-1 text-right">UOM</th>
             <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
@@ -123,7 +123,7 @@
 
                         @if ($previousRequestNo !== $currentRequestNo)
                        
-
+                            
                             <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
                                 <div class="d-flex gap-2">
                                     <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"

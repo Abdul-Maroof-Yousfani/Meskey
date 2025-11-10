@@ -29,6 +29,41 @@
              </select>
              <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
          </td>
+         <td style="width: 10%">
+            
+            <input type="text" id="min_weight_{{ $key }}" class="form-control min_weight"
+                value="{{ $data->min_weight }}" disabled readonly>
+            
+            <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
+         </td>
+         <td style="width: 10%">
+            
+            <input type="text" id="color_{{ $key }}" class="form-control color"
+                value="{{ $data->color }}" disabled readonly>
+            
+            <input type="hidden" name="color[]" value="{{ $data->color }}">
+         </td>
+         <td style="width: 25%">
+            
+            <input type="text" id="construction_per_square_inch{{ $key }}" class="form-control construction_per_square_inch"
+                value="{{ $data->construction_per_square_inch }}" disabled readonly>
+            
+            <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}">
+         </td>
+         <td style="width: 25%">
+            
+            <input type="text" id="size_{{ $key }}" class="form-control size"
+                value="{{ $data->size }}" disabled readonly>
+            
+            <input type="hidden" name="size_[]" value="{{ $data->size }}">
+         </td>
+         <td style="width: 25%">
+            
+            <input type="text" id="stitching{{ $key }}" class="form-control size"
+                value="{{ $data->stitching }}" disabled readonly>
+            
+            <input type="hidden" name="stitching[]" value="{{ $data->stitching }}">
+         </td>
          <td style="width: 15%">
              <input type="text" id="uom_{{ $key }}" class="form-control uom"
                  value="{{ get_uom($data->item_id) }}" disabled readonly>
