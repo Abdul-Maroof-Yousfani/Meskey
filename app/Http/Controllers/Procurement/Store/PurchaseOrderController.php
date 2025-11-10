@@ -180,7 +180,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();
@@ -224,11 +224,9 @@ class PurchaseOrderController extends Controller
             }
 
         }
-
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
-
         $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders', 'taxes'))->render();
 
         return response()->json([

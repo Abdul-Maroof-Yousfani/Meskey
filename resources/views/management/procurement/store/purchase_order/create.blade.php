@@ -92,10 +92,13 @@
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
+
                         {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
                         <th>Rate</th>
+                        <th>Gross Amount</th>
                         <th>Tax</th>
+                        <th>Tax Amount</th>
                         <th>Duty</th>
                         <th>Amount</th>
                         <th>Min Weight</th>
@@ -152,7 +155,7 @@
         $(document).on('change', '#quotation_no', function () {
             const purchaseRequestId = $('select[name="purchase_request_id"]').val();
             if (purchaseRequestId) {
-                // get_purchase(purchaseRequestId);
+                get_purchase(purchaseRequestId);
             }
         });
 
