@@ -63,7 +63,7 @@
                             </td>
                         @endif
 
-                        <td>
+                        <!-- <td>
                             @php
                                 $statusText = '';
                                 $statusColor = '';
@@ -84,7 +84,7 @@
                                         default => 'text-muted',
                                     };
                                 }
-                            @endphp
+                            @endphp -->
 
                             <!-- <p class="m-0 font-weight-bold">
                                 {{ optional($supplierRow['data']->category)->name }} -
@@ -95,7 +95,7 @@
                                     </span>
                                 @endif
                             </p> -->
-                        </td>
+                        <!-- </td> -->
 
                         <td style="background-color: #fff3e0; vertical-align: middle;">
                             <p class="m-0 font-weight-bold">
