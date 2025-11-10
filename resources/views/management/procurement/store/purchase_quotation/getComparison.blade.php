@@ -62,6 +62,9 @@
                                     #{{ $requestGroup['request_no'] }}
                                 </p>
                             </td>
+                        @php
+                            $isFirstRequestRow = false;
+                        @endphp
                         @endif
 
                         <td>
