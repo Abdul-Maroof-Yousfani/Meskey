@@ -117,9 +117,9 @@
                             <p class="m-0 text-right">{{ $supplierRow['data']->rate }}</p>
                         </td>
 
-                        <td>
+                        <!-- <td>
                             <p class="m-0 text-right">{{ $supplierRow['data']->total }}</p>
-                        </td>
+                        </td> -->
 
                         @if ($previousRequestNo !== $currentRequestNo)
                        
