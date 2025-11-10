@@ -18,6 +18,7 @@
         @php
             $previousRequestNo = null; // Track previous request number
             $previousQuotationNo = null;  
+            $isFirstRequestRow = true;
         @endphp
 
         @foreach ($GroupedPurchaseQuotation as $requestGroup)
@@ -62,9 +63,6 @@
                                     #{{ $requestGroup['request_no'] }}
                                 </p>
                             </td>
-                        @php
-                            $isFirstRequestRow = false;
-                        @endphp
                         @endif
 
                         <td>
