@@ -949,6 +949,8 @@ class FreightRequestController extends Controller
 
             if ($request->total_labour != 0) {
 
+
+              $vendorLabourAcc  = Vendor::where("id", $request->labour_vendor_id)->first();
                 $txnLabour = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-labour")
                     ->first();
@@ -966,7 +968,7 @@ class FreightRequestController extends Controller
                 } else {
                     createTransaction(
                         $request->total_labour,
-                        $request->labour_vendor_id,
+                        $vendorLabourAcc->account_id,
                         1,
                         $purchaseOrder->contract_no,
                         'credit',
