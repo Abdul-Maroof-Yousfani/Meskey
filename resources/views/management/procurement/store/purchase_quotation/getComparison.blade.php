@@ -97,11 +97,11 @@
                             </p>
                         </td>
 
-                        <!-- <td style="background-color: #fff3e0; vertical-align: middle;">
+                        <td style="background-color: #fff3e0; vertical-align: middle;">
                             <p class="m-0 font-weight-bold">
                                 {{ optional($supplierRow['data']->supplier)->name }}
                             </p>
-                        </td> -->
+                        </td>
 
                         <td>
                             <p class="m-0 text-right">
