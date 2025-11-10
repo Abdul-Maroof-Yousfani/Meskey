@@ -17,6 +17,7 @@
     @if (count($GroupedPurchaseQuotation) != 0)
         @php
             $previousRequestNo = null; // Track previous request number
+            $previousQuotationNo = null;  
         @endphp
 
         @foreach ($GroupedPurchaseQuotation as $requestGroup)
