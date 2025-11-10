@@ -556,6 +556,26 @@
                                         data-i18n="Extended">Unit of mesurement</span></a>
                             </li>
                             @endcanAccess
+
+
+                            @canAccess('sizes')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('color.index') }}"
+                                    onclick="loadPageContent('{{ route('color.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Colors</span></a>
+                            </li>
+                            @endcanAccess
+
+
+                            @canAccess('sizes')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('size.index') }}"
+                                    onclick="loadPageContent('{{ route('size.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Sizes</span></a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

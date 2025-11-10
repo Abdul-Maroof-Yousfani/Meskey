@@ -4,7 +4,7 @@
             <th class="col-2">Purchase Request No</th>
             <th class="col-2">Purchase Quotation No</th>
             <th class="col-3">Category - Item</th>
-            <th class="col-3">Supplier</th>
+            <th class="col-3">Suppliers</th>
             <th class="col-1 text-right">UOM</th>
             <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
@@ -12,149 +12,156 @@
             <th class="col-1">Action</th>
         </tr>
     </thead>
-   
-    <tbody>
-    @if (count($GroupedPurchaseQuotation) != 0)
-        @php
-            $previousRequestNo = null; // Track previous request number
-        @endphp
 
-        @foreach ($GroupedPurchaseQuotation as $requestGroup)
+    <tbody>
+        @if (count($GroupedPurchaseQuotation) != 0)
             @php
-                $currentRequestNo = $requestGroup['purchase_request_no'];
+                $previousRequestNo = null; // Track previous request number
+                $previousQuotationNo = null;
+                $isFirstRequestRow = true;
             @endphp
 
-            @php $isFirstRequestRow = true; @endphp
+            @foreach ($GroupedPurchaseQuotation as $requestGroup)
+                @php
+                    $currentRequestNo = $requestGroup['purchase_request_no'];
+                @endphp
 
-            @foreach ($requestGroup['items'] as $itemGroup)
-                @php $isFirstItemRow = true; @endphp
+                @php $isFirstRequestRow = true; @endphp
 
-                @foreach ($itemGroup['suppliers'] as $supplierRow)
-                    @php
-                        $approvalDataStatus = ucwords(
-                            $supplierRow['data']
-                                ?->{$supplierRow['data']->getApprovalModule()->approval_column ?? 'am_approval_status'},
-                        );
-                        $approvalStatus = ucwords($requestGroup['request_status']);
-                    @endphp
+                @foreach ($requestGroup['items'] as $itemGroup)
+                    @php $isFirstItemRow = true; @endphp
 
-                    <tr>
-                        @if ($previousRequestNo !== $currentRequestNo)
-                              <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}" style="background-color: #e8f5e8; vertical-align: middle;">
-                                <p class="m-0 font-weight-bold">
-                                    #{{ $requestGroup['purchase_request_no'] }}
-                                </p>
-                            </td>
+                    @foreach ($itemGroup['suppliers'] as $supplierRow)
+                        @php
+                            $approvalDataStatus = ucwords(
+                                $supplierRow['data']
+                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                        'am_approval_status'},
+                            );
+                            $approvalStatus = ucwords($requestGroup['request_status']);
+                        @endphp
 
-                     
+                        <tr>
+                            @if ($previousRequestNo !== $currentRequestNo)
+                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
+                                    style="background-color: #e8f5e8; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        #{{ $requestGroup['purchase_request_no'] }}
+                                    </p>
+                                </td>
 
-                            {{-- @php
+
+
+                                {{-- @php
                                 $previousRequestNo = $currentRequestNo;
                             @endphp --}}
-                        @endif
+                            @endif
 
-                        {{-- ✅ Other columns --}}
-                        @if ($isFirstRequestRow)
-                            <td rowspan="{{ $requestGroup['request_rowspan'] }}"
-                                style="background-color: #e3f2fd; vertical-align: middle;">
+                            {{-- ✅ Other columns --}}
+                            @if ($isFirstRequestRow)
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}"
+                                    style="background-color: #e3f2fd; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        #{{ $requestGroup['request_no'] }}
+                                    </p>
+                                </td>
+                            @endif
+
+                            <td>
+                                @php
+                                    $statusText = '';
+                                    $statusColor = '';
+
+                                    if (
+                                        strtolower($approvalStatus) === 'partial approved' &&
+                                        strtolower($approvalDataStatus) === 'pending'
+                                    ) {
+                                        $statusText = 'Neglected';
+                                        $statusColor = 'text-danger';
+                                    } elseif (
+                                        strtolower($approvalStatus) === 'rejected' &&
+                                        strtolower($approvalDataStatus) === 'pending'
+                                    ) {
+                                        $statusText = 'Rejected';
+                                        $statusColor = 'text-danger';
+                                    } else {
+                                        $statusText = $approvalDataStatus ?: 'N/A';
+                                        $statusColor = match (strtolower($statusText)) {
+                                            'approved' => 'text-success',
+                                            'rejected' => 'text-danger',
+                                            'returned' => 'text-primary',
+                                            'pending' => 'text-warning',
+                                            default => 'text-muted',
+                                        };
+                                    }
+                                @endphp
+
                                 <p class="m-0 font-weight-bold">
-                                    #{{ $requestGroup['request_no'] }}
+                                    {{ optional($supplierRow['data']->category)->name }} -
+                                    {{ optional($supplierRow['data']->item)->name }}
+                                    @if ($statusText)
+                                        <span class="{{ $statusColor }}" style="font-weight: 500;">
+                                            ({{ $statusText }})
+                                        </span>
+                                    @endif
                                 </p>
                             </td>
-                        @endif
 
-                        <td>
-                            @php
-                                $statusText = '';
-                                $statusColor = '';
-
-                                if (strtolower($approvalStatus) === 'partial approved' && strtolower($approvalDataStatus) === 'pending') {
-                                    $statusText = 'Neglected';
-                                    $statusColor = 'text-danger';
-                                } elseif (strtolower($approvalStatus) === 'rejected' && strtolower($approvalDataStatus) === 'pending') {
-                                    $statusText = 'Rejected';
-                                    $statusColor = 'text-danger';
-                                } else {
-                                    $statusText = $approvalDataStatus ?: 'N/A';
-                                    $statusColor = match (strtolower($statusText)) {
-                                        'approved' => 'text-success',
-                                        'rejected' => 'text-danger',
-                                        'returned' => 'text-primary',
-                                        'pending' => 'text-warning',
-                                        default => 'text-muted',
-                                    };
-                                }
-                            @endphp
-
-                            <p class="m-0 font-weight-bold">
-                                {{ optional($supplierRow['data']->category)->name }} -
-                                {{ optional($supplierRow['data']->item)->name }}
-                                @if ($statusText)
-                                    <span class="{{ $statusColor }}" style="font-weight: 500;">
-                                        ({{ $statusText }})
-                                    </span>
-                                @endif
-                            </p>
-                        </td>
-
-                        <td style="background-color: #fff3e0; vertical-align: middle;">
-                            <p class="m-0 font-weight-bold">
-                                {{ optional($supplierRow['data']->supplier)->name }}
-                            </p>
-                        </td>
-
-                        <td>
-                            <p class="m-0 text-right">
-                                {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
-                            </p>
-                        </td>
-
-                        <td>
-                            <p class="m-0 text-right">{{ $supplierRow['data']->qty }}</p>
-                        </td>
-
-                        <td>
-                            <p class="m-0 text-right">{{ $supplierRow['data']->rate }}</p>
-                        </td>
-
-                        <td>
-                            <p class="m-0 text-right">{{ $supplierRow['data']->total }}</p>
-                        </td>
-
-                        @if ($previousRequestNo !== $currentRequestNo)
-                       
-
-                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
-                                <div class="d-flex gap-2">
-                                    <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
-                                        class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                       <i class="ft-check font-medium-3"></i>
-                                        
-                                    </a>
-                                </div>
-                            {{-- </td>
-                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
-                                <div class="d-flex gap-2">
-                                    <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
-                                        class="info p-1 text-center mr-2 position-relative" title="View Approved">
-                                        <i class="ft-eye font-medium-3"></i>
-
-                                    </a>
-                                </div>
+                            <td style="background-color: #fff3e0; vertical-align: middle;">
+                                <p class="m-0 font-weight-bold">
+                                    {{ optional($supplierRow['data']->supplier)->name }}
+                                </p>
                             </td>
 
-                            @php
-                                $previousRequestNo = $currentRequestNo;
-                            @endphp
-                        @endif
+                            <td>
+                                <p class="m-0 text-right">
+                                    {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
+                                </p>
+                            </td>
 
-                    </tr>
+                            <td>
+                                <p class="m-0 text-right">{{ $supplierRow['data']->qty }}</p>
+                            </td>
 
+                            <td>
+                                <p class="m-0 text-right">{{ $supplierRow['data']->rate }}</p>
+                            </td>
+
+                            <td>
+                                <p class="m-0 text-right">{{ $supplierRow['data']->total }}</p>
+                            </td>
+
+                            @if ($previousRequestNo !== $currentRequestNo)
+                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
+                                    <div class="d-flex gap-2">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-check font-medium-3"></i>
+
+                                        </a>
+                                    </div>
+                                    {{-- </td>
+                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
+                                    <div class="d-flex gap-2">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="View Approved">
+                                            <i class="ft-eye font-medium-3"></i>
+
+                                        </a>
+                                    </div>
+                                </td>
+
+                                @php
+                                    $previousRequestNo = $currentRequestNo;
+                                @endphp
+                            @endif
+
+                        </tr>
+                    @endforeach
                     @php $isFirstRequestRow = false; @endphp
                 @endforeach
             @endforeach
-        @endforeach
-    @else
+        @else
             <tr class="ant-table-placeholder">
                 <td colspan="10" class="ant-table-cell text-center">
                     <div class="my-5">
@@ -201,7 +208,7 @@
                 $.ajax({
                     url: url,
                     type: 'GET',
-                    success: function (res) {
+                    success: function(res) {
                         Swal.fire({
                             title: 'Approved!',
                             text: res.message,
@@ -212,7 +219,7 @@
                             location.reload();
                         });
                     },
-                    error: function () {
+                    error: function() {
                         Swal.fire('Error', 'Error occurred while approving item.', 'error');
                     }
                 });
