@@ -143,7 +143,9 @@
                                 </div>
                             </td>
 
-                        
+                            @php
+                                $previousRequestNo = $currentRequestNo;
+                            @endphp
                         @endif
 
                     </tr>
