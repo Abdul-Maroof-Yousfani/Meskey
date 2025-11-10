@@ -52,9 +52,9 @@
 
 
 
-                                @php
+                                {{-- @php
                                 $previousRequestNo = $currentRequestNo;
-                            @endphp
+                            @endphp --}}
                             @endif
 
                             {{-- ✅ Other columns --}}
