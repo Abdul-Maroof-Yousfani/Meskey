@@ -128,7 +128,7 @@
             </td>
 
             <td style="width: 5%">
-                <input style="width: 85px" type="text" onkeyup="calc({{ $key }})" disabled
+                <input style="width: 85px" type="number" onkeyup="calc({{ $key }})" disabled
                     onblur="calc({{ $key }})" value="{{ $data->purchase_request->construction_per_square_inch }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                 <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->purchase_request->construction_per_square_inch }}">
