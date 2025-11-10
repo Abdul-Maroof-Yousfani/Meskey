@@ -143,9 +143,9 @@
                                 </div>
                             </td>
 
-                            @php
+                            <!-- @php
                                 $previousRequestNo = $currentRequestNo;
-                            @endphp
+                            @endphp -->
                         @endif
 
                     </tr>
