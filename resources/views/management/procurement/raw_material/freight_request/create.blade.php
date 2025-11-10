@@ -680,7 +680,7 @@
             let totalCommision = parseFloat(commissionAmount || 0);
 
 
-            let netAmount = grossAmount - totalDeductions - godownPenalty - totalCommision - totalLabour;
+            let netAmount = grossAmount - godownPenalty - totalCommision - totalLabour;
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));

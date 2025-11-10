@@ -1777,6 +1777,26 @@
         @endif
 <script>
 
+        function calculateNetWeight() {
+            const firstWeight = parseFloat($('#first_weight').val()) || 0;
+            const secondWeight = parseFloat($('#second_weight').val()) || 0;
+            const netWeight = secondWeight - firstWeight;
+
+            $('#net_weight').val(netWeight || 0);
+
+            if (firstWeight && secondWeight) {
+                if (netWeight < 0) {
+                    $('#net_weight').addClass('is-invalid');
+                    $('#net_weight').siblings('.error-message').show();
+                } else {
+                    $('#net_weight').removeClass('is-invalid');
+                    $('#net_weight').siblings('.error-message').hide();
+                }
+            }
+        }
+
+
+
         function calculateSampleMoney() {
         let truckTypeSelect = $('[name="truck_type_id"]');
         let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
@@ -1807,6 +1827,11 @@
         initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
         initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
+         
+        $('#first_weight, #second_weight').on('input', function () {
+            console.log('input changed');
+            calculateNetWeight();
+        });
 
             calculateSampleMoney();
 
