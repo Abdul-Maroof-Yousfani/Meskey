@@ -58,18 +58,13 @@
                             @endif
 
                             {{-- ✅ Other columns --}}
-                            @if ($isFirstRequestRow)
-                                <td rowspan="{{ $requestGroup['request_rowspan'] }}"
+                                <td rowspan="1"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
-                                @php
-                                    $isFirstRequestRow = false;
-                                @endphp
-                            @endif
-
+                          
                             <td>
                                 @php
                                     $statusText = '';
