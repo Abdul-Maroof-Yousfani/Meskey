@@ -66,7 +66,7 @@
                                     </p>
                                 </td>
                                 @php
-                                    $isFirstItemRow = false;
+                                    $isFirstRequestRow = false;
                                 @endphp
                             @endif
 
