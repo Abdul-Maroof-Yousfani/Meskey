@@ -86,7 +86,7 @@
                                 }
                             @endphp
 
-                            <p class="m-0 font-weight-bold">
+                            <!-- <p class="m-0 font-weight-bold">
                                 {{ optional($supplierRow['data']->category)->name }} -
                                 {{ optional($supplierRow['data']->item)->name }}
                                 @if ($statusText)
@@ -94,7 +94,7 @@
                                         ({{ $statusText }})
                                     </span>
                                 @endif
-                            </p>
+                            </p> -->
                         </td>
 
                         <td style="background-color: #fff3e0; vertical-align: middle;">
