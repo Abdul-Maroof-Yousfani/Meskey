@@ -500,6 +500,7 @@ class PurchaseOrderController extends Controller
      */
     public function destroy($id)
     {
+        $purchaseOrder= PurchaseOrder::where("id", $id)->delete();
         $PurchaseOrderData = PurchaseOrderData::where('id', $id)->delete();
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
