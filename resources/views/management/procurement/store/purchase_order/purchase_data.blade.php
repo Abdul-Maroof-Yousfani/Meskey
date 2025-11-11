@@ -138,8 +138,8 @@
                 id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
         </td>
 
-         <td style="width: 5%">
-            <input style="width: 50px" type="number" readonly name="min_weight[]" value="{{ $data->purchase_request->min_weight }}"
+         <td style="width: 15%">
+            <input style="width: 140px" type="number" readonly name="min_weight[]" value="{{ $data->purchase_request->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 5%">

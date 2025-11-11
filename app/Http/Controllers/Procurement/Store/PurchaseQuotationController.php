@@ -551,6 +551,8 @@ class PurchaseQuotationController extends Controller
             // ->where('quotation_status', 1);
         })
             ->get();
+        
+        dd($approvedRequests);
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
 
