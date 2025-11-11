@@ -626,6 +626,7 @@ class PurchaseQuotationController extends Controller
             'quotation_data.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
+        
 
         $purchaseRequest = $purchaseQuotation->purchase_request;
 

@@ -140,6 +140,16 @@
 
                                         </a>
                                     </div>
+
+                                    @if(strtolower($approvalDataStatus) == "pending")
+                                        <div class="d-flex gap-2">
+                                            <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '80%')"
+                                                class="info p-1 text-center mr-2 position-relative" title="View Approved">
+                                                <i class="ft-edit font-medium-3"></i>
+        
+                                            </a>
+                                        </div>
+                                    @endif
                                     {{-- </td>
                             <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
                                     <div class="d-flex gap-2">

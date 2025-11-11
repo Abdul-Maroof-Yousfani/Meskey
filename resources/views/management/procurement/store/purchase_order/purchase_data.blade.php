@@ -61,15 +61,15 @@
             <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
         </td>
 
-        <td style="width: 15%">
-            <input type="text" name="uom[]" value="{{ get_uom($data->item_id) }}" id="uom_{{ $key }}"
+        <td style="width: 30%">
+            <input type="text" style="width: 100px;" name="uom[]" value="{{ get_uom($data->item_id) }}" id="uom_{{ $key }}"
                 class="form-control uom" readonly>
         </td>
 
       
 
       
-        <td style="width: 10%">
+        <td style="width: 30%">
     <input
         style="width: 100px"
         type="number"
@@ -93,9 +93,9 @@
         Ordered Qty: {{ $data->total_quoted_qty }}
     </div>
 </td>
-        <td style="width: 10%">
+        <td style="width: 30%">
             <input 
-                style="width: 70px" 
+                style="width: 100px" 
                 type="number"
                 onkeyup="calc({{ $key }})"
                 onblur="calc({{ $key }})"
@@ -107,8 +107,8 @@
                 min="0"
                 {{ $isQuotationAvailable ? 'readonly' : '' }}>
         </td>
-          <td style="width: 15%">
-            <input type="text" name="gross_amount[]" value="{{ ($data->qty) * $data->rate }}" id="gross_amount{{ $key }}"
+          <td style="width: 30%">
+            <input type="text" style="width: 100px;" name="gross_amount[]" value="{{ ($data->qty) * $data->rate }}" id="gross_amount{{ $key }}"
                 class="form-control gross_amount" readonly>
         </td>
         <td style="width: 5%">
@@ -122,40 +122,40 @@
                 @endforeach
             </select>
         </td>
-        <td style="width: 15%">
-            <input type="text" name="tax_amount[]" value="{{ ($tax->percentage / 100) * (($data->qty) * $data->rate) }}" id="tax_amount{{ $key }}"
+        <td style="width: 30%">
+            <input type="text" style="width: 100px;" name="tax_amount[]" value="{{ ($tax->percentage / 100) * (($data->qty) * $data->rate) }}" id="tax_amount{{ $key }}"
                 class="form-control tax_amount percent_amount" readonly>
         </td>
         
 
-        <td style="width: 10%">
-            <input style="width: 70px" type="number" oninput="calc({{ $key }})" name="excise_duty[]" value=""
+        <td style="width: 30%">
+            <input style="width: 100px" type="number" oninput="calc({{ $key }})" name="excise_duty[]" value=""
                 id="excise_duty_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
 
-        <td style="width: 10%">
+        <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="total[]" value="{{ (($data->qty) * $data->rate) + (($tax->percentage / 100) * (($data->qty) * $data->rate)) }}"
                 id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
         </td>
 
-         <td style="width: 15%">
-            <input style="width: 140px" type="number" readonly name="min_weight[]" value="{{ $data->purchase_request->min_weight }}"
+         <td style="width: 30%">
+            <input style="width: 100px" type="number" readonly name="min_weight[]" value="{{ $data->purchase_request->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="width: 5%">
-            <input style="width: 50px" type="text" readonly name="color[]" value="{{ $data->purchase_request->color }}"
+         <td style="width: 30%">
+            <input style="width: 100px" type="text" readonly name="color[]" value="{{ $data->purchase_request->color }}"
                 id="color_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="width: 5%">
-            <input style="width: 50px" type="text" readonly name="construction_per_square_inch[]" value="{{ $data->purchase_request->construction_per_square_inch }}"
+         <td style="width: 30%">
+            <input style="width: 100px" type="text" readonly name="construction_per_square_inch[]" value="{{ $data->purchase_request->construction_per_square_inch }}"
                 id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="width: 5%">
-            <input style="width: 50px" type="text" readonly name="size[]" value="{{ $data->purchase_request->size }}"
+         <td style="width: 30%">
+            <input style="width: 100px" type="text" readonly name="size[]" value="{{ $data->purchase_request->size }}"
                 id="size_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="width: 5%">
-            <input style="width: 50px" type="text" readonly name="stitching[]" value="{{ $data->purchase_request->stitching }}"
+         <td style="width: 30%">
+            <input style="width: 100px" type="text" readonly name="stitching[]" value="{{ $data->purchase_request->stitching }}"
                 id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
         <td style="width: 5%">
