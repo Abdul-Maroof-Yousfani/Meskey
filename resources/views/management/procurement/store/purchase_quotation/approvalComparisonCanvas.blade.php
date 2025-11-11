@@ -86,7 +86,7 @@
         <tr id="row_{{ $key }}">
             <td style="width: 30%">
                 <input type="hidden" name="data_id[]" value="{{ $data->id }}">
-                <input style="width: 170px" type="text" readonly
+                <input style="width: 100px" type="text" readonly
                     value="{{ $data->purchase_quotation->purchase_quotation_no ?? '-' }}"
                     id="purchase_quotation_no_{{ $key }}" class="form-control">
                 <input type="hidden" name="purchase_quotation_no[]"

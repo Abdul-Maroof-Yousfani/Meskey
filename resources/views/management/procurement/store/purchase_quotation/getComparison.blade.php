@@ -140,8 +140,7 @@
 
                                         </a>
                                     </div>
-
-                                    @if(strtolower($approvalDataStatus) == "pending")
+                                    @if(strtolower($approvalDataStatus) == "pending" && $groupedData[$requestGroup['purchase_request_no']]["canApprove"])
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '100%')"
                                                 class="info p-1 text-center mr-2 position-relative" title="View Approved">

@@ -164,7 +164,9 @@ class PurchaseQuotationController extends Controller
                 continue;
             }
 
+            
             $purchaseRequestNo = $row->purchase_quotation->purchase_request->purchase_request_no;
+            $groupedData[$purchaseRequestNo]["canApprove"] = $row->canApprove();
             $requestNo = $row->purchase_quotation->purchase_quotation_no; // purchase quotation no
             $itemId = $row->item->id ?? 'unknown';
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
@@ -255,7 +257,8 @@ class PurchaseQuotationController extends Controller
 
         return view('management.procurement.store.purchase_quotation.getComparison', [
             'PurchaseQuotation' => $PurchaseQuotationRaw,
-            'GroupedPurchaseQuotation' => $processedData
+            'GroupedPurchaseQuotation' => $processedData,
+            "groupedData" => $groupedData
         ]);
 
         // dd("ok");
@@ -352,7 +355,7 @@ class PurchaseQuotationController extends Controller
             // })
             ->get();
 
-        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             // ->where('am_approval_status', 'pending')
             ->latest()->first();
@@ -549,6 +552,8 @@ class PurchaseQuotationController extends Controller
         $approvedRequests = PurchaseRequest::with('PurchaseData')->where('am_approval_status', 'approved')->whereHas('PurchaseData', function ($q) {
             // $q->where('am_approval_status', 'approved');
             // ->where('quotation_status', 1);
+                $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
+            
         })
             ->get();
         
