@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-2">Purchase Request No</th>
+            <th class="col-2">Purchase Request</th>
             <th class="col-2">Purchase Quotation No</th>
             <th class="col-3">Category - Item</th>
             <th class="col-3">Suppliers</th>
@@ -134,7 +134,7 @@
                             @if ($previousRequestNo !== $currentRequestNo)
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
                                     <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-check font-medium-3"></i>
 
@@ -143,7 +143,7 @@
 
                                     @if(strtolower($approvalDataStatus) == "pending")
                                         <div class="d-flex gap-2">
-                                            <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '80%')"
+                                            <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '100%')"
                                                 class="info p-1 text-center mr-2 position-relative" title="View Approved">
                                                 <i class="ft-edit font-medium-3"></i>
         
@@ -153,7 +153,7 @@
                                     {{-- </td>
                             <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
                                     <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="View Approved">
                                             <i class="ft-eye font-medium-3"></i>
 
