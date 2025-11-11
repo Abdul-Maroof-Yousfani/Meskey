@@ -116,34 +116,34 @@
             </td>
             <td style="width: 5%">
                 <input style="width: 85px" type="number" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request->min_weight }}"
+                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->min_weight ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                <input type="hidden" name="min_weight[]" value="{{ $data->purchase_request->min_weight ?? null }}">
+                <input type="hidden" name="min_weight[]" value="{{ $data->purchase_request?->min_weight ?? null }}">
             </td>
               <td style="width: 5%">
                 <input style="width: 85px" type="text" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request->color }}"
+                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->color ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                <input type="hidden" name="color[]" value="{{ $data->purchase_request->color }}">
+                <input type="hidden" name="color[]" value="{{ $data->purchase_request?->color ?? null }}">
             </td>
 
             <td style="width: 5%">
                 <input style="width: 85px" type="number" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request->construction_per_square_inch }}"
+                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->purchase_request->construction_per_square_inch }}">
+                <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}">
             </td>
             <td style="width: 5%">
                 <input style="width: 85px" type="text" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request->size }}"
+                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->size ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                <input type="hidden" name="size[]" value="{{ $data->purchase_request->size }}">
+                <input type="hidden" name="size[]" value="{{ $data->purchase_request?->size ?? null }}">
             </td>
             <td style="width: 5%">
                 <input style="width: 85px" type="text" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request->stitching }}"
+                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->stitching ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
-                <input type="hidden" name="stitch[]" value="{{ $data->purchase_request->stitching }}">
+                <input type="hidden" name="stitch[]" value="{{ $data->purchase_request?->stitching ?? null }}">
             </td>
             <td style="width: 5%">
                 <input style="width: 85px" type="number" onkeyup="calc({{ $key }})" disabled
