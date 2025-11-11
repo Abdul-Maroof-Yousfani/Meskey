@@ -42,7 +42,7 @@
                 @endforeach
             </select>
             <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
-            <input type="hidden" name="purchase_request_data_id[]" value="{{ !isset($data->rate) ? $data->id : '' }}">
+            <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id ? $data->purchase_request_data_id : $data->id }}">
             <input type="hidden" name="purchase_quotation_data_id[]" value="{{ isset($data->rate) ? $data->id : '' }}">
 
         </td>

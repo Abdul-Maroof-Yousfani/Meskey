@@ -242,7 +242,7 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with([
+        $approvedRequests = PurchaseRequest::with("purchase_order")->where('am_approval_status', 'approved')->with([
             'PurchaseData' => function ($query) {
                 // $query->where('am_approval_status', 'approved');
             }
@@ -252,6 +252,7 @@ class PurchaseOrderController extends Controller
             })
             ->get();
 
+     
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
 
@@ -272,6 +273,7 @@ class PurchaseOrderController extends Controller
                 $quotation = PurchaseQuotation::where('purchase_quotation_no', $request->quotation_no)->first();
             }
 
+
             $PurchaseOrder = PurchaseOrder::create([
                 'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
                 'purchase_request_id' => $request->purchase_request_id,
@@ -291,7 +293,7 @@ class PurchaseOrderController extends Controller
                 $requestData = PurchaseOrderData::create([
                     'purchase_order_id' => $PurchaseOrder->id,
                     'category_id' => $request->category_id[$index],
-                    'purchase_request_data_id' => $request->purchase_request_data_id[$index] ?? null,
+                    'purchase_request_data_id' => $request->purchase_request_data_id[$index],
                     'purchase_quotation_data_id' => isset($request->purchase_quotation_data_id[$index]) ? $request->purchase_quotation_data_id[$index] : null,
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
