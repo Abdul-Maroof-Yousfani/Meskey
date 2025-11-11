@@ -552,7 +552,6 @@ class PurchaseQuotationController extends Controller
         })
             ->get();
         
-        dd($approvedRequests);
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
 
