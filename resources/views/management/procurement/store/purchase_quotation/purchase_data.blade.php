@@ -40,7 +40,7 @@
             <input type="text" id="min_weight_{{ $key }}" class="form-control min_weight"
                 value="{{ $data->min_weight }}" disabled readonly>
             
-            <input type="hidden" name="item_id[]" value="{{ $data->min_weight }}">
+            <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
          </td>
           
          <td style="width: 10%">

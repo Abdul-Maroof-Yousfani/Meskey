@@ -562,7 +562,6 @@ class PurchaseQuotationController extends Controller
      */
     public function store(PurchaseQuotationRequest $request)
     {
-        // dd($request->all());
         DB::beginTransaction();
         try {
 
@@ -578,7 +577,6 @@ class PurchaseQuotationController extends Controller
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
             ]);
-
             foreach ($request->item_id as $index => $itemId) {
                 $requestData = PurchaseQuotationData::create([
                     'purchase_quotation_id' => $PurchaseQuotation->id,
@@ -599,7 +597,7 @@ class PurchaseQuotationController extends Controller
                     ]);
                 }
             }
-
+       
             DB::commit();
 
             return response()->json([
@@ -608,7 +606,6 @@ class PurchaseQuotationController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollback();
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create purchase quotation.',
