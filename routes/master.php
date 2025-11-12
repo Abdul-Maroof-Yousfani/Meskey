@@ -28,7 +28,8 @@ use App\Http\Controllers\Master\{
     FumigationCompanyController,
     InspectionCompanyController,
     BrandsController,
-    SizeController
+    SizeController,
+    PaymentTermController
 };
 
 
@@ -38,6 +39,9 @@ use App\Http\Controllers\Master\{
 
 Route::resource("color", ColorController::class);
 Route::post("/get-colors", [ColorController::class, "getList"])->name("get.colors");
+
+Route::resource("payment-term", PaymentTermController::class);
+Route::post("/get-payment-terms", [PaymentTermController::class, "getList"])->name("get.payment-terms");
 
 Route::resource("size", SizeController::class);
 Route::post("/get-sizes", [SizeController::class, "getList"])->name("get.sizes");

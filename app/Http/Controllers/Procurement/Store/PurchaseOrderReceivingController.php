@@ -164,15 +164,15 @@ class PurchaseOrderReceivingController extends Controller
         $requestId = $request->id;
         $supplierId = $request->supplier_id;
 
-        $master = PurchaseOrder::with(['supplier', 'location', 'purchase_request'])->find($requestId);
-
+        $master = PurchaseOrder::with(['supplier', 'location', 'purchase_request', 'purchaseOrderData', 'purchaseOrderData.purchase_request_data'])->find($requestId);
+        // dd($master->purchaseOrderData[0]->purchase_request_data);
         $quotation = null;
         $dataItems = collect();
 
 
 
         if ($dataItems->isEmpty()) {
-            $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category'])
+            $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data'])
                 ->where('purchase_order_id', $requestId)
                 ->get();
 
@@ -349,8 +349,8 @@ class PurchaseOrderReceivingController extends Controller
             'qty' => 'required|array|min:1',
             'qty.*' => 'required|numeric|min:0.01',
 
-            'rate' => 'required|array|min:1',
-            'rate.*' => 'required|numeric|min:0.01',
+            // 'rate' => 'required|array|min:1',
+            // 'rate.*' => 'required|numeric|min:0.01',
 
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
@@ -420,7 +420,7 @@ class PurchaseOrderReceivingController extends Controller
         ])->findOrFail($id);
 
 
-        $purchaseOrderReceivingData = PurchaseOrderReceivingData::where('purchase_order_receiving_id', $id)
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("purchase_order_data", "purchase_order_data.purchase_request_data")->where('purchase_order_receiving_id', $id)
             ->when(
                 $purchaseOrderReceiving->am_approval_status === 'approved',
                 function ($query) {
@@ -428,6 +428,7 @@ class PurchaseOrderReceivingController extends Controller
                 }
             )
             ->get();
+        
         $purchaseOrder = PurchaseOrder::select('id', 'purchase_order_no')->get();
 
         return view('management.procurement.store.purchase_order_receiving.approvalCanvas', [

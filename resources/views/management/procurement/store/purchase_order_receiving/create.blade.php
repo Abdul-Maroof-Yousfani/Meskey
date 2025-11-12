@@ -68,8 +68,13 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th>Qty</th>
-                        <th>Rate</th>
-                        <th>Amount</th>
+                        <th>Min Weight</th>
+                        <th>Color</th>
+                        <th>Cons./sq. in.</th>
+                        <th>Size</th>
+                        <th>Stitching</th>
+                        {{-- <th>Rate</th>
+                        <th>Amount</th> --}}
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
