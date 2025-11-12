@@ -130,7 +130,7 @@
             </td>
               <td style="width: 30%">
                 <input style="width: 100px" type="text" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->color ?? null }}"
+                    onblur="calc({{ $key }})" value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null}}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                 <input type="hidden" name="color[]" value="{{ $data->purchase_request?->color ?? null }}">
             </td>
@@ -143,7 +143,7 @@
             </td>
             <td style="width: 30%">
                 <input style="width: 100px" type="text" onkeyup="calc({{ $key }})" disabled
-                    onblur="calc({{ $key }})" value="{{ $data->purchase_request?->size ?? null }}"
+                    onblur="calc({{ $key }})" value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                 <input type="hidden" name="size[]" value="{{ $data->purchase_request?->size ?? null }}">
             </td>

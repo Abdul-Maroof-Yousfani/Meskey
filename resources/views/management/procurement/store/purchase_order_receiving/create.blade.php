@@ -98,7 +98,7 @@
 <script>
     $(".select2").select2();
 
-    let rowIndex = 1;
+    rowIndex = 1;
 
     function addRow() {
         let index = rowIndex++;

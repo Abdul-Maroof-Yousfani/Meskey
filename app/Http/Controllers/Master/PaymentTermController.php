@@ -19,9 +19,9 @@ class PaymentTermController extends Controller
 
     public function getList(Request $request) {
          $payment_terms = PaymentTerm::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%' . strtolower($request->search) . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('color', 'like', $searchTerm);
+                $sq->whereRaw('LOWER(`desc`) LIKE ?', [strtolower($searchTerm)]);
             });
         })
         ->latest()

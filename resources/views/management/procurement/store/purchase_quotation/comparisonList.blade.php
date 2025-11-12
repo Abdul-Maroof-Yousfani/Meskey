@@ -70,6 +70,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
+          
             filterationCommon(`{{ route('store.purchase-quotation.comparison') }}`)
         });
     </script>

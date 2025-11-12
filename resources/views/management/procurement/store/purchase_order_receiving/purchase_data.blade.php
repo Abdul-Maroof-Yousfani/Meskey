@@ -88,7 +88,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="color[]"  style="width: 100px;" value="{{ $data->purchase_request_data->color }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="color[]"  style="width: 100px;" value="{{ getColorById($data->purchase_request_data->color)?->color ?? null }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Color">
                                     </div>
                                 </div>
@@ -107,7 +107,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="size[]" style="width: 100px;" id="size_0" value="{{ $data->purchase_request_data->size }}" class="form-control" step="0.01"
+                                        <input type="text" name="size[]" style="width: 100px;" id="size_0" value="{{ getSizeById($data->purchase_request_data->size)?->size ?? null }}" class="form-control" step="0.01"
                                             min="0" placeholder="Size">
                                     </div>
                                 </div>

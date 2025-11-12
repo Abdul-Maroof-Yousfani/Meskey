@@ -5,6 +5,7 @@ use App\Models\{Category, Product, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\Color;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\Account\Transaction;
@@ -12,6 +13,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\Supplier;
+use App\Models\Size;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -113,6 +115,30 @@ if (!function_exists('getAllCompanies')) {
     function getAllCompanies()
     {
         return Company::where('status', 1)->get();
+    }
+}
+
+if(!function_exists("getAllColors")) {
+    function getAllColors() {
+        return Color::where('status', 1)->get();
+    }
+}
+
+if(!function_exists("getColorById")) {
+    function getColorById($id) {
+        return Color::where("id", $id)->where('status', 1)->first();
+    }
+}
+
+if(!function_exists("getAllSizes")) {
+    function getAllSizes() {
+        return Size::where('status', 1)->get();
+    }
+}
+
+if(!function_exists("getSizeById")) {
+    function getSizeById($id) {
+        return Size::where("id", $id)->where('status', 1)->first();
     }
 }
 

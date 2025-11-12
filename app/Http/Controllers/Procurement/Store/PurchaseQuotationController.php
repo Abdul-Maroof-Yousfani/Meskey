@@ -830,6 +830,10 @@ class PurchaseQuotationController extends Controller
         try {
             $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
 
+            $PurchaseQuotation->update([
+                "description" => $request->description
+            ]);
+
             PurchaseQuotationData::where('purchase_quotation_id', $PurchaseQuotation->id)->delete();
 
             foreach ($request->item_id as $index => $itemId) {

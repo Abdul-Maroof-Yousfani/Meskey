@@ -46,7 +46,7 @@
          <td style="width: 30%">
             
             <input style="width: 100px" type="text" id="color_{{ $key }}" class="form-control color"
-                value="{{ $data->color }}" disabled readonly>
+                value="{{ getColorById($data->color)?->color ?? null }}" disabled readonly>
             
             <input type="hidden" name="color[]" value="{{ $data->color }}">
          </td>
@@ -60,7 +60,7 @@
          <td style="width: 30%">
             
             <input style="width: 100px" type="text" id="size{{ $key }}" class="form-control size"
-                value="{{ $data->size }}" disabled readonly>
+                value="{{ getSizeById($data->size)?->size ?? null }}" disabled readonly>
             
             <input type="hidden" name="size[]" value="{{ $data->size }}">
          </td>

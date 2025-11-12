@@ -25,4 +25,10 @@ class PaymentTermRequest extends FormRequest
             "desc" => ["required"]
         ];
     }
+
+    public function messages() {
+        return [
+            "desc.required" => "Payment Term field is required"
+        ];
+    }
 }

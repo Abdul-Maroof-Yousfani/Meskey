@@ -17,7 +17,7 @@
 
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('size.edit', $row->id) }}','Edit Category')"
+                            <a onclick="openModal(this,'{{ route('size.edit', $row->id) }}','Edit Size')"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>

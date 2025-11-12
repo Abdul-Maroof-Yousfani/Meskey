@@ -67,7 +67,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseQuotation)->description }}</textarea>
+                <textarea name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseQuotation)->description }}</textarea>
             </div>
         </div>
     </div>
@@ -157,7 +157,7 @@
 
                 <td style="width: 30%">
                     <input style="width: 100px" type="text" disabled
-                        value="{{ $data->purchase_request?->color ?? null }}"
+                        value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
                         id="color_{{ $key }}" class="form-control">
                     <input type="hidden" name="color[]" value="{{ $data->purchase_request?->color ?? null }}">
                 </td>
@@ -171,7 +171,7 @@
 
                 <td style="width: 30%">
                     <input style="width: 100px" type="text" disabled
-                        value="{{ $data->purchase_request?->size ?? null }}"
+                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
                         id="size_{{ $key }}" class="form-control">
                     <input type="hidden" name="size[]" value="{{ $data->purchase_request?->size ?? null }}">
                 </td>
