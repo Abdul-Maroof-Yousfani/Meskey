@@ -50,6 +50,7 @@
                 <th>Item UOM</th>
                 <th>Qty</th>
                 <th>Job Orders</th>
+                <th>Brands</th>
                 <th>Min Weight</th>
                 <th>Color</th>
                 <th>Cons./sq. in.</th>
@@ -88,6 +89,12 @@
                         @endforeach
                     </select></td>
 
+                    <td><select name="brands[]" id="brands_0" class="form-control item-select brand-select" style="width:150px;">
+                        <option value="">Select Brand</option>
+                        @foreach(getAllBrands() ?? [] as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select></td>
                 <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
                         step="0.01" min="0" placeholder="Min Weight" style="width:120px;"></td>
 
@@ -144,6 +151,7 @@
     $(document).ready(function () {
         $('#category_id_0').select2();
         $(".color-select").select2();
+        $(".brand-select").select2();
         $(".size-select").select2();
         $('#job_order_id_0').select2({
             placeholder: 'Please Select Job Order',
@@ -236,6 +244,12 @@
                             </div>
                         </div>
                     </td>
+                    <td><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select" style="width:150px;">
+                        <option value="">Select Brand</option>
+                        @foreach(getAllBrands() ?? [] as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select></td>
                     <td style="width: 7%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -307,6 +321,7 @@
         });
 
 
+        $("#brands_" + index).select2();
         $("#color_" + index).select2();
         $("#size_" + index).select2();
 

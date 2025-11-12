@@ -142,6 +142,10 @@
             <input style="width: 100px" type="number" readonly name="min_weight[]" value="{{ $data->purchase_request->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
+        <td style="width: 30%">
+            <input style="width: 100px" type="text" readonly name="brand[]" value="{{ getBrandById($data->purchase_request->brand_id)?->name ?? null }}"
+                id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
          <td style="width: 30%">
             <input style="width: 100px" type="text" readonly name="color[]" value="{{ getColorById($data->purchase_request->color)?->color ?? null }}"
                 id="color_{{ $key }}" class="form-control" step="0.01" min="0">

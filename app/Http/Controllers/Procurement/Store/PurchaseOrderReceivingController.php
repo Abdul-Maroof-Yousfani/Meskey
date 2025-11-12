@@ -308,10 +308,9 @@ class PurchaseOrderReceivingController extends Controller
             'purchaseOrderReceivingData.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
-
+     
         $purchaseRequest = $purchaseOrderReceiving->purchase_request;
-
-
+        
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();

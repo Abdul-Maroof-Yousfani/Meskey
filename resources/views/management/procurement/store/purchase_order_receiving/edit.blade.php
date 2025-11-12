@@ -105,6 +105,7 @@
                      <th>Item UOM</th>
                      <th>Qty</th>
                      <th>Min Weight</th>
+                     <th>Brand</th>
                     <th>Color</th>
                     <th>Cons./sq. in.</th>
                     <th>Size</th>
@@ -165,6 +166,18 @@
                                     <div class="form-group mb-0">
                                         <input type="number" style="width: 100px;" name="min_weight[]" id="min_weight_0" class="form-control"
                                             step="0.01" min="0" value="{{ $data->purchase_order_data->min_weight }}" placeholder="Min Weight">
+                                    </div>
+                                </div>
+                            </td>
+                            @php
+                                $brandId = $data->purchase_order_data?->purchase_request_data?->brand_id ?? null;
+                                $brandName = $brandId ? getBrandById($brandId)?->name : '';
+                            @endphp
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="brand[]"  style="width: 100px;" value="{{ $brandName }}" id="color_0" class="form-control" step="0.01"
+                                            min="0" placeholder="Brand">
                                     </div>
                                 </div>
                             </td>

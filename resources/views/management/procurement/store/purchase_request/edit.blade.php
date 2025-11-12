@@ -56,6 +56,7 @@
                 <th>Qty</th>
                 <th>Job Orders</th>
                 <th>Min Weight</th>
+                <th>Brands</th>
                 <th>Color</th>
                 <th>Cons./sq. in.</th>
                 <th>Size</th>
@@ -114,7 +115,16 @@
 
                 <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" style="width:120px;"></td>
-
+                <td>
+                    <select name="brands[]" id="brands_{{ $index }}" class="form-control item-select color-select"
+                        style="width:150px;">
+                        <option value="">Select Brand</option>
+                        @foreach(getAllBrands() ?? [] as $brand)
+                        <option @selected($brand->id == getBrandById($item->brand_id)->id) value="{{ $brand->id }}">
+                            {{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
                 <td>
                     <select name="color[]" id="color_{{ $index }}" class="form-control item-select color-select"
                         style="width:150px;">
@@ -188,6 +198,7 @@
             $('#item_id_{{ $index }}').select2();
 
             $("#color_{{ $index }}").select2();
+            $("#brands_{{ $index }}").select2();
             $("#size_{{ $index }}").select2();
             $('#job_order_id_{{ $index }}').select2({
                 placeholder: 'Please Select Job Order',
@@ -267,6 +278,18 @@
                             </div>
                         </div>
                     </td>
+
+                <td>
+                    <select name="brands[]" id="brands_${index}" class="form-control item-select color-select"
+                        style="width:150px;">
+                        <option value="">Select Brand</option>
+                        @foreach(getAllBrands() ?? [] as $brand)
+                        <option @selected($brand->id == getBrandById($item->brand_id)->id) value="{{ $brand->id }}">
+                            {{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+
                     <td>
                         <select name="color[]" id="color_${index}" class="form-control item-select color-select"
                             style="width:150px;">
@@ -328,6 +351,8 @@
 
         $('#purchaseRequestBody').append(row);
 
+        $('#color_' + index).select2();
+        $('#brands_' + index).select2();
         $('#category_id_' + index).select2();
         $('#job_order_id_' + index).select2({
             placeholder: 'Please Select Job Order',

@@ -85,6 +85,15 @@
                                     </div>
                                 </div>
                             </td>
+
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="brand[]"  style="width: 100px;" value="{{ getBrandById($data->purchase_request_data->brand_id)?->name ?? null }}" id="brand_0" class="form-control" step="0.01"
+                                            min="0" placeholder="Brand">
+                                    </div>
+                                </div>
+                            </td>
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">

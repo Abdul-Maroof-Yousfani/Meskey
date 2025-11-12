@@ -42,7 +42,13 @@
             
             <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
          </td>
-          
+           <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="brands_{{ $key }}" class="form-control brands"
+                value="{{ getBrandById($data->brand_id)?->name ?? null }}" disabled readonly>
+            
+            <input type="hidden" name="color[]" value="{{ $data->brand_id }}">
+         </td>
          <td style="width: 30%">
             
             <input style="width: 100px" type="text" id="color_{{ $key }}" class="form-control color"

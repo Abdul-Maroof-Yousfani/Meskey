@@ -77,10 +77,14 @@
             </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
+        <div class="col-xs-12 col-sm-12 col-md-12 row">
+            <div class="form-group col-6">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseOrder)->description }}</textarea>
+                <textarea name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseOrder)->description }}</textarea>
+            </div>
+            <div class="form-group col-6">
+                <label>Delivery Address:</label>
+                <textarea name="delivery_address" id="delivery_address" placeholder="Delivery Address" class="form-control">{{ optional($purchaseOrder)->delivery_address }}</textarea>
             </div>
         </div>
     </div>
@@ -104,6 +108,7 @@
                         <th>Duty</th>
                         <th>Amount</th>
                         <th>Min Weight</th>
+                        <th>Brand</th>
                         <th>Color</th>
                         <th>Cons./sq. in.</th>
                         <th>Size</th>
@@ -197,6 +202,10 @@
                              <td style="width: 30%">
                                 <input style="width: 100px;" type="number" readonly name="min_weight[]" value="{{ $data->min_weight }}"
                                     id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 30%">
+                                <input style="width: 100px;" type="text" readonly name="brand[]" value="{{ getBrandById($data->purchase_request_data?->brand_id ?? null)?->name ?? null }}"
+                                    id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
                             </td>
                             <td style="width: 30%">
                                 <input style="width: 100px;" type="text" readonly name="color[]" value="{{ $data->color }}"

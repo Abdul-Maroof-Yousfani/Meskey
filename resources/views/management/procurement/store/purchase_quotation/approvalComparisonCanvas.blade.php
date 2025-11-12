@@ -69,6 +69,7 @@
                      <th class="col-sm-3">Item</th>
                      <th class="col-sm-3">Item uom</th>
                      <th class="col-sm-3">Min Weight</th>
+                     <th class="col-sm-3">Brand</th>
                      <th class="col-sm-3">Color</th>
                      <th class="col-sm-3">Cons./sq. in.</th>   
                      <th class="col-sm-3">Size</th>   
@@ -127,6 +128,12 @@
                     onblur="calc({{ $key }})" value="{{ $data->purchase_request?->min_weight ?? null }}"
                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                 <input type="hidden" name="min_weight[]" value="{{ $data->purchase_request?->min_weight ?? null }}">
+            </td>
+            <td style="width: 30%">
+                <input style="width: 100px" type="text" onkeyup="calc({{ $key }})" disabled
+                    onblur="calc({{ $key }})" value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null}}"
+                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
+                <input type="hidden" name="color[]" value="{{ $data->purchase_request?->brand_id ?? null }}">
             </td>
               <td style="width: 30%">
                 <input style="width: 100px" type="text" onkeyup="calc({{ $key }})" disabled

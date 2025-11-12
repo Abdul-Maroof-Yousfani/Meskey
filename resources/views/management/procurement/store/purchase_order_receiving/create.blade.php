@@ -69,6 +69,7 @@
                         <th>Item UOM</th>
                         <th>Qty</th>
                         <th>Min Weight</th>
+                        <th>Brands</th>
                         <th>Color</th>
                         <th>Cons./sq. in.</th>
                         <th>Size</th>

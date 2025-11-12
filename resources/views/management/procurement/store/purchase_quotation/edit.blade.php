@@ -86,6 +86,7 @@
             <th class="col-sm-3">Item</th>
             <th class="col-sm-3">Item UOM</th>
             <th class="col-sm-3">Min Weight</th>
+            <th class="col-sm-3">Brands</th>
             <th class="col-sm-3">Color</th>
             <th class="col-sm-3">Cons./sq. in.</th>
             <th class="col-sm-3">Size</th>
@@ -154,7 +155,12 @@
                         id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
                     <input type="hidden" name="min_weight[]" value="{{ $data->purchase_request?->min_weight ?? null }}">
                 </td>
-
+                <td style="width: 30%">
+                    <input style="width: 100px" type="text" disabled
+                        value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
+                        id="color_{{ $key }}" class="form-control">
+                    <input type="hidden" name="color[]" value="{{ $data->purchase_request?->brand_id ?? null }}">
+                </td>
                 <td style="width: 30%">
                     <input style="width: 100px" type="text" disabled
                         value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
