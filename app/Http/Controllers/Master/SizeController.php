@@ -34,7 +34,7 @@ class SizeController extends Controller
      public function store(SizeRequest $request) {
         $data = $request->validated();
         // dd($request->all());
-        $size = Size::create($request->all());
+        $size = Size::create([...$request->all(), "status" => 1]);
 
         return response()->json(['success' => 'Size created successfully.', 'data' => $size], 201);
   
