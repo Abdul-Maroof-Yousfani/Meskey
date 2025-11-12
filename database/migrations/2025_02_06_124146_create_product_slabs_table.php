@@ -20,8 +20,12 @@ return new class extends Migration {
             $table->string('deduction_type')->nullable();
             $table->string('deduction_value')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('is_purchase_field')->default(0);
+
             $table->softDeletes();
             $table->timestamps();
+
+
 
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products');

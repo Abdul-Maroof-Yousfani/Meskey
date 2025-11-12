@@ -790,7 +790,7 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
- 
+
 
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
@@ -801,7 +801,7 @@ class FreightRequestController extends Controller
             $paymentRequestData->update([
                 'penalty_adjust_to' => $request->penalty_adjust_to ?? null,
                 'labour_vendor_id' => $request->labour_vendor_id ?? null,
-                ]);
+            ]);
 
 
             if ($request->has('payment_request_amount')) {
@@ -832,8 +832,12 @@ class FreightRequestController extends Controller
             $rate = $request->contract_rate;
             $grnNo = $ticket->arrivalSlip->unique_no;
 
-            $saudaType = "pohouch";   // pohouch | bilti | etc
 
+            if ($ticket->sauda_type_id == 1) {
+                $saudaType = "pohouch";   // pohouch | bilti | etc
+            } else if ($ticket->sauda_type_id == 2) {
+                $saudaType = "thadda";
+            }
 
 
             $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
@@ -877,38 +881,75 @@ class FreightRequestController extends Controller
 
             }
 
-
-            $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
-                ->where('purpose', 'pohouch-freight-paid-to-vendor')
-                ->first();
-            if ($supplierDebitFreight) {
-                $supplierDebitFreight->update([
-                    'amount' => $request->gross_amount,
-                    'account_id' => $purchaseOrder->supplier->account_id,
-                    'counter_account_id' => $qcAccountId,
-                    'type' => 'debit',
-                    'voucher_no' => $purchaseOrder->contract_no,
-                    'grn_no' => $grnNo,
-                    'remarks' => "Adjusted freight amount ({$request->gross_amount}) on behalf of the supplier against GRN #{$grnNo}."
-                ]);
-            } else {
-                createTransaction(
-                    $request->gross_amount,
-                    $purchaseOrder->supplier->account_id,
-                    1,
-                    $purchaseOrder->contract_no,
-                    'debit',
-                    'no',
-                    [
-                        'grn_no' => $grnNo,
+            if ($saudaType == "pohouch") {
+                $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
+                    ->first();
+                if ($supplierDebitFreight) {
+                    $supplierDebitFreight->update([
+                        'amount' => $request->gross_amount,
+                        'account_id' => $purchaseOrder->supplier->account_id,
                         'counter_account_id' => $qcAccountId,
-                        'purpose' => "pohouch-freight-paid-to-vendor",
-                        'payment_against' => "pohouch-freight",
-                        'against_reference_no' => "$truckNo/$biltyNo",
+                        'type' => 'debit',
+                        'voucher_no' => $purchaseOrder->contract_no,
+                        'grn_no' => $grnNo,
                         'remarks' => "Adjusted freight amount ({$request->gross_amount}) on behalf of the supplier against GRN #{$grnNo}."
-                    ]
-                );
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->gross_amount,
+                        $purchaseOrder->supplier->account_id,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'debit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
+                            'purpose' => "{$saudaType}-freight-paid-to-vendor",
+                            'payment_against' => "pohouch-freight",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Adjusted freight amount ({$request->gross_amount}) on behalf of the supplier against GRN #{$grnNo}."
+                        ]
+                    );
+                }
             }
+            if ($saudaType == "thadda") {
+                $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
+                    ->first();
+                if ($supplierDebitFreight) {
+                    $supplierDebitFreight->update([
+                        'amount' => $request->gross_amount,
+                        'account_id' => $qcAccountId,
+                        'counter_account_id' => $vendorAccId,
+                        'type' => 'debit',
+                        'voucher_no' => $purchaseOrder->contract_no,
+                        'grn_no' => $grnNo,
+                        'remarks' => "Updated Inventory with remaining freight amount ({$request->gross_amount}) for the purchased goods against GRN #{$grnNo}."
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->gross_amount,
+                        $purchaseOrder->supplier->account_id,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'debit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
+                            'purpose' => "{$saudaType}-freight-paid-to-vendor",
+                            'payment_against' => "pohouch-freight",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Updated Inventory with remaining freight amount ({$request->gross_amount}) for the purchased goods against GRN #{$grnNo}."
+                            ]
+                    );
+                }
+            }
+
+
+
 
 
 
@@ -950,7 +991,7 @@ class FreightRequestController extends Controller
             if ($request->total_labour != 0) {
 
 
-              $vendorLabourAcc  = Vendor::where("id", $request->labour_vendor_id)->first();
+                $vendorLabourAcc = Vendor::where("id", $request->labour_vendor_id)->first();
                 $txnLabour = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-labour")
                     ->first();
@@ -958,7 +999,7 @@ class FreightRequestController extends Controller
                 if ($txnLabour) {
                     $txnLabour->update([
                         'amount' => $request->total_labour,
-                      //  'account_id' => $request->labour_vendor_id,
+                        //  'account_id' => $request->labour_vendor_id,
                         'counter_account_id' => $purchaseOrder->supplier->account_id,
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder->contract_no,
@@ -1035,7 +1076,7 @@ class FreightRequestController extends Controller
                 if ($txnExtraIncome) {
                     $txnExtraIncome->update([
                         'amount' => $request->godown_penalty,
-                       // 'account_id' => $request->penalty_adjust_to,
+                        // 'account_id' => $request->penalty_adjust_to,
                         'counter_account_id' => $qcAccountId,
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder->contract_no,

@@ -16,9 +16,14 @@ return new class extends Migration
             $table->unsignedBigInteger('company_id');
             $table->string('name');
             $table->string('description')->nullable();
+            $table->tinyInteger('calculation_base_type')->default(3)->nullable()
+            ->comment('1 = Percentage, 2 = KG, 3 = Price, 4 = Quantity, etc...');
+            $table->string('qc_symbol')->default('%');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->softDeletes();
             $table->timestamps();
+
+
 
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });

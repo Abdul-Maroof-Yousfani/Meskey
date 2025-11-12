@@ -22,11 +22,17 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             $table->text('remarks')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->foreignId('created_by')->constrained('users')->nullable()->nullOnDelete();
-            $table->foreignId('updated_by')->constrained('users')->nullable()->nullOnDelete();
+
+
+$table->unsignedBigInteger('created_by')->nullable();
+$table->unsignedBigInteger('updated_by')->nullable();
+
+            // $table->foreignId('updated_by')->constrained('users')->nullable()->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->index(['account_id', 'type']);
             $table->index(['voucher_no']);

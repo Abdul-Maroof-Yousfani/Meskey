@@ -100,7 +100,7 @@ function calculatePohaunchPayment($ticketId)
     $finalAmount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
     $finalAmount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
 
-    return   [
+    return [
         'ticket_type' => 'pohanch',
         'ticket_id' => $ticketId,
         'basic_info' => $basicInfo,
@@ -125,11 +125,18 @@ function calculatePohaunchPayment($ticketId)
  */
 function calculateThaddaPayment($ticketId)
 {
+
+
+
+
     $purchaseTicket = PurchaseTicket::with([
         'purchaseOrder',
         'purchaseFreight',
         'paymentRequestData.paymentRequests'
     ])->findOrFail($ticketId);
+
+
+
 
     $purchaseOrder = $purchaseTicket->purchaseOrder;
 
@@ -146,6 +153,21 @@ function calculateThaddaPayment($ticketId)
         'bilty_no' => $purchaseTicket->purchaseFreight->bilty_no ?? 'N/A',
         'station_name' => $purchaseOrder->station_name ?? 'N/A',
     ];
+
+
+    $arrivalFreight = ArrivalTicket::whereRaw('LOWER(truck_no) = ?', [strtolower($basicInfo['truck_no'])])
+        ->whereRaw('LOWER(bilty_no) = ?', [strtolower($basicInfo['bilty_no'])])
+        ->first();
+
+    if ($arrivalFreight && $arrivalFreight->freight) {
+        $arrivalFreightNetAmmount = $arrivalFreight->freight->gross_freight_amount;
+    } else {
+        $arrivalFreightNetAmmount = 0;
+    }
+
+
+
+
 
     // Loading Information
     $bagWeight = $purchaseTicket->bag_weight ?? 0;
@@ -164,6 +186,7 @@ function calculateThaddaPayment($ticketId)
         'rate_per_kg' => $ratePerKg,
         'kanta_charges' => $kantaCharges,
         'advance_freight' => $advanceFreight,
+        'arrived_frieght_amount' => $arrivalFreightNetAmmount ?? 0,
         'avg_rate' => $noOfBags > 0 ? $loadingWeight / $noOfBags : 0,
         'net_weight' => $loadingWeight - ($bagWeight * $noOfBags),
     ];
@@ -195,7 +218,7 @@ function calculateThaddaPayment($ticketId)
     $finalAmount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
     $finalAmount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
 
-    return   [
+    return [
         'ticket_type' => 'thadda',
         'ticket_id' => $ticketId,
         'basic_info' => $basicInfo,
@@ -401,7 +424,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
         // }
 
         foreach ($samplingData['sampling_results'] as $slab) {
-            $calculatedValue =  calculateSlabDeduction($slab, $loadingInfo['net_weight'], $ratePerKg);
+            $calculatedValue = calculateSlabDeduction($slab, $loadingInfo['net_weight'], $ratePerKg);
             $totalSamplingDeductions += $calculatedValue;
 
             $samplingDeductionDetails[] = [
@@ -445,7 +468,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
             ->latest()
             ->first();
 
-        $otherDeductionValue = (float)($otherDeduction->other_deduction_value ?? 0);
+        $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
     }
 
     return [
@@ -547,7 +570,7 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
             ->latest()
             ->first();
 
-        $otherDeductionValue = (float)($otherDeduction->other_deduction_value ?? 0);
+        $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
     }
 
     return [
@@ -571,9 +594,10 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
     $totalDeductionsForFormula = $deductions['total_sampling_deductions'] +
         $deductions['bag_weight_in_kg_sum'] +
         $deductions['loading_weighbridge_sum'] +
-        $deductions['other_deduction_calculated'];;
+        $deductions['other_deduction_calculated'];
+    ;
 
-   // $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
+    // $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
     $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
 
     return [
@@ -594,11 +618,17 @@ function calculateThaddaAmounts($loadingInfo, $deductions, $ratePerKg)
         $deductions['loading_weighbridge_sum'] +
         $deductions['other_deduction_calculated'];
 
+
+    $arrivedFreightAmount = $loadingInfo['arrived_frieght_amount'] ?? 0;
+
     $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
+    $total_amount_inc_arrived_freight  = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $arrivedFreightAmount;
 
     return [
         'gross_amount' => $grossAmount,
         'total_amount' => $totalAmount,
+        'total_amount_inc_arrived_freight' => $total_amount_inc_arrived_freight,
+        'arrived_freight_amount' => $arrivedFreightAmount,
         'remaining_amount' => $totalAmount, // Will be updated with payment history
     ];
 }

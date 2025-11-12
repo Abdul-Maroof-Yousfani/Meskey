@@ -28,13 +28,13 @@ return new class extends Migration {
             $table->dateTime('decision_making_time')->nullable();
 
             $table->unsignedBigInteger('truck_type_id')->nullable();
+            $table->unsignedBigInteger('station_id')->nullable();
             $table->string('sample_money')->nullable();
             $table->string('sample_money_type')->nullable();
             $table->string('truck_no')->nullable();
             $table->string('bilty_no')->nullable();
             $table->string('bags')->nullable();
 
-            $table->foreignId('station_id')->nullable()->constrained('stations');
 
             $table->date('loading_date')->nullable();
             $table->string('loading_weight')->nullable();
@@ -66,6 +66,8 @@ return new class extends Migration {
             $table->softDeletes();
             $table->timestamps();
 
+
+            $table->foreign('station_id')->references('id')->on('stations');
             $table->foreign('decision_id')->references('id')->on('users');
             $table->foreign('truck_type_id')->references('id')->on('arrival_truck_types');
             $table->foreign('product_id')->references('id')->on('products');

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('arrival_slips', function (Blueprint $table) {
             $table->id();
+            $table->string('unique_no')->nullable();
             $table->unsignedBigInteger('company_id');
             $table->unsignedBigInteger('arrival_ticket_id');
             $table->unsignedBigInteger('creator_id');

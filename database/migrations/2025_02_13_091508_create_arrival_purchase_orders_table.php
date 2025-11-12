@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('sauda_type_id')->nullable();
             $table->enum('purchase_type', ['regular', 'gate_buying'])->default('regular');
             $table->string('ref_no')->nullable();
-
+  
             // Supplier information
             $table->unsignedBigInteger('supplier_id')->nullable();
             $table->string('supplier_name')->nullable();
@@ -80,6 +80,7 @@ return new class extends Migration {
             // Other fields
             $table->boolean('is_replacement')->default(false);
             $table->text('weighbridge_from')->nullable();
+            $table->unsignedBigInteger('division_id')->nullable();
             $table->string('freight_status')->nullable();
 
             $table->tinyInteger('decision_making')->default(0);
@@ -98,6 +99,7 @@ return new class extends Migration {
             $table->softDeletes();
 
             // Foreign key constraints
+            $table->foreign('division_id')->references('id')->on('divisions');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('company_location_id')->references('id')->on('company_locations');
             $table->foreign('sauda_type_id')->references('id')->on('sauda_types');
