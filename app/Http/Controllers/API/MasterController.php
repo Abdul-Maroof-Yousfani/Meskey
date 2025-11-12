@@ -7,6 +7,7 @@ use App\Models\BagCondition;
 use App\Models\BagPacking;
 use App\Models\BagType;
 use App\Helpers\ApiResponse;
+use App\Models\Master\ArrivalSubLocation;
 
 class MasterController extends Controller
 {
@@ -39,4 +40,16 @@ class MasterController extends Controller
             return ApiResponse::error('Failed to retrieve bag packings: ' . $e->getMessage(), 500);
         }
     }
+    public function getGala()
+    {
+        try {
+            $gala = ArrivalSubLocation::with('arrivalLocation') // ✅ Relation include
+                ->get(['id', 'name', 'status', 'arrival_location_id']); // arrival_location_id bhi chahiye hoga
+    
+            return ApiResponse::success($gala, 'Gala retrieved successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve Gala: ' . $e->getMessage(), 500);
+        }
+    }
+    
 }

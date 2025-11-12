@@ -743,6 +743,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
                 'type' => 'slab',
                 'name' => $slab->slabType->name ?? 'N/A',
                 'slabType_id' => $slab->slabType->id ?? 'N/A',
+                'slabType_qc_symbol' => $slab->slabType->qc_symbol ?? 'N/A',
                 'deduction' => $slab->applied_deduction,
                 'checklist_value' => $slab->checklist_value ?? 'N/A',
                 'unit' => SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1],

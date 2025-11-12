@@ -42,12 +42,15 @@ Route::prefix('v1')->middleware(['api', 'throttle:60,1'])->group(function () {
                 Route::get('available-tickets', 'getAvailableTickets');
                 Route::post('store', 'store');
             });
+            Route::get('available-tickets-with-status', [ArrivalApproveController::class, 'getAvailableTicketsInnerSamplingStatus']);
+
         });
 
         Route::prefix('master')->controller(MasterController::class)->group(function () {
             Route::get('bag-types', 'getBagTypes');
             Route::get('bag-conditions', 'getBagConditions');
             Route::get('bag-packings', 'getBagPackings');
+            Route::get('gala', 'getGala');
         });
 
         // Route::get('user', fn(Request $r) => $r->user());
