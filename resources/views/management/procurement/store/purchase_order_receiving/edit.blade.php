@@ -86,7 +86,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseOrderReceiving)->description }}</textarea>
+                <textarea name="description" id="description" placeholder="Description" class="form-control">{{ optional($purchaseOrderReceiving)->description }}</textarea>
             </div>
         </div>
     </div>

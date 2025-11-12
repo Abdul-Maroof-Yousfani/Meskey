@@ -15,9 +15,9 @@ class ColorController extends Controller
 
     public function getList(Request $request) {
         $colors = Color::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%' . strtolower($request->search) . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('color', 'like', $searchTerm);
+                $sq->whereRaw('LOWER(color) LIKE ?', [strtolower($searchTerm)]);
             });
         })
         ->latest()
@@ -34,8 +34,7 @@ class ColorController extends Controller
 
     public function store(ColorRequest $request) {
         $data = $request->validated();
-        // dd($request->all());
-        $color = Color::create($request->all());
+        $color = Color::create([...$request->all(), "status" => 1]);
 
         return response()->json(['success' => 'Color created successfully.', 'data' => $color], 201);
   

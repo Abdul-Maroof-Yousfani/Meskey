@@ -362,6 +362,10 @@ class PurchaseOrderReceivingController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseOrderReceiving = PurchaseOrderReceiving::findOrFail($id);
+            $PurchaseOrderReceiving->update([
+                "description" => $request->description
+            ]);
+
             PurchaseOrderReceivingData::where('purchase_order_receiving_id', $PurchaseOrderReceiving->id)->delete();
 
             foreach ($request->item_id as $index => $itemId) {

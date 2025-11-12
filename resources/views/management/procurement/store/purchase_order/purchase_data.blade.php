@@ -143,7 +143,7 @@
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="color[]" value="{{ $data->purchase_request->color }}"
+            <input style="width: 100px" type="text" readonly name="color[]" value="{{ getColorById($data->purchase_request->color)?->color ?? null }}"
                 id="color_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
@@ -151,7 +151,7 @@
                 id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="size[]" value="{{ $data->purchase_request->size }}"
+            <input style="width: 100px" type="text" readonly name="size[]" value="{{ getSizeById($data->purchase_request->size)?->size ?? null }}"
                 id="size_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">

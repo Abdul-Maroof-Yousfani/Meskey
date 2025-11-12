@@ -308,8 +308,8 @@
     //        get_purchase(purchaseRequestId);
     //     }
     //  });
-    let allowedCategories = [];
-    let allowedItems = [];
+    allowedCategories = [];
+    allowedItems = [];
 
     function get_purchase(purchaseRequestId) {
         if (!purchaseRequestId) return;

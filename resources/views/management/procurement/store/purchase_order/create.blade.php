@@ -184,7 +184,7 @@
 
     });
     $(".select2").select2();
-    let rowIndex = 1;
+    rowIndex = 1;
     function fetchUniqueNumber() {
         let locationId = $('#company_location_id').val();
         let contractDate = $('#purchase_date').val();

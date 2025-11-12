@@ -15,9 +15,9 @@ class SizeController extends Controller
 
     public function getList(Request $request) {
         $sizes = Size::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%' . strtolower($request->search) . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('color', 'like', $searchTerm);
+                $sq->whereRaw('LOWER(size) LIKE ?', [strtolower($searchTerm)]);
             });
         })
         ->latest()
@@ -34,7 +34,7 @@ class SizeController extends Controller
      public function store(SizeRequest $request) {
         $data = $request->validated();
         // dd($request->all());
-        $size = Size::create($request->all());
+        $size = Size::create([...$request->all(), "status" => 1]);
 
         return response()->json(['success' => 'Size created successfully.', 'data' => $size], 201);
   
