@@ -314,7 +314,7 @@
                                 class="ft-arrow-right submenu-icon"></i><span>Purchase Request
                             </span></a>
                     </li>
-                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                    <li data-menu=""><a
                             class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-quotation.comparison-list') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Purchase

@@ -101,14 +101,18 @@
                 <thead>
                     <tr>
                         <th>Category</th>
-                        <th>Item</th>
-                        <th>Item UOM</th>
-                        {{-- <th>Vendor</th> --}}
-                        <th>Qty</th>
-                        <th>Rate</th>
-                        <th>Total Amount</th>
-                        <th>Remarks</th>
-                        <th>Action</th>
+                     <th>Item</th>
+                     <th>Item UOM</th>
+                     <th>Qty</th>
+                     <th>Min Weight</th>
+                    <th>Color</th>
+                    <th>Cons./sq. in.</th>
+                    <th>Size</th>
+                    <th>Stitching</th>
+                     <th>Rate</th>
+                     <th>Total Amount</th>
+                     <th>Remarks</th>
+                     <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="purchaseRequestBody">
@@ -155,6 +159,52 @@
                                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
+
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="number" style="width: 100px;" name="min_weight[]" id="min_weight_0" class="form-control"
+                                            step="0.01" min="0" value="{{ $data->purchase_order_data->min_weight }}" placeholder="Min Weight">
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="color[]"  style="width: 100px;" value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
+                                            min="0" placeholder="Color">
+                                    </div>
+                                </div>
+                            </td>
+                            
+
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" style="width: 100px;" name="construction_per_square_inch[]"
+                                            id="construction_per_square_inch_0" value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
+                                            placeholder="Cons./sq. in.">
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="size[]" style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
+                                            min="0" placeholder="Size">
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
+                                            step="0.01" min="0" placeholder="Stitching">
+                                    </div>
+                                </div>
+                            </td>
+
+
                             <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
