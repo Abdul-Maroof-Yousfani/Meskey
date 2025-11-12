@@ -100,7 +100,7 @@
                  @foreach ($purchaseOrderReceivingData ?? [] as $key => $data)
                      <tr id="row_{{ $key }}">
                          <td style="width: 50%">
-                             <select style="width: 100px;" id="category_id_{{ $key }}" disabled
+                             <select id="category_id_{{ $key }}" disabled
                                  onchange="filter_items(this.value,{{ $key }})"
                                  class="form-control item-select select2" data-index="{{ $key }}">
                                  <option value="">Select Category</option>
@@ -116,7 +116,7 @@
                          </td>
 
                          <td style="width: 50%">
-                             <select id="item_id_{{ $key }}" style="width: 100px;" onchange="get_uom({{ $key }})" disabled
+                             <select id="item_id_{{ $key }}"  onchange="get_uom({{ $key }})" disabled
                                  class="form-control item-select select2" data-index="{{ $key }}">
                                  @foreach (get_product_by_category($data->category_id) as $item)
                                      <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
