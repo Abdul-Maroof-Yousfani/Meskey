@@ -109,8 +109,8 @@
                     <th>Cons./sq. in.</th>
                     <th>Size</th>
                     <th>Stitching</th>
-                     <th>Rate</th>
-                     <th>Total Amount</th>
+                     {{-- <th>Rate</th>
+                     <th>Total Amount</th> --}}
                      <th>Remarks</th>
                      <th>Action</th>
                     </tr>
@@ -205,7 +205,7 @@
                             </td>
 
 
-                            <td style="width: 20%">
+                            {{-- <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
                                     id="rate_{{ $key }}" class="form-control" step="0.01"
@@ -215,7 +215,7 @@
                                 <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
                                     id="total_{{ $key }}" class="form-control" step="0.01"
                                     min="0" name="total[]">
-                            </td>
+                            </td> --}}
                             <td style="width: 25%">
                                 <input style="width: 100px" name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">

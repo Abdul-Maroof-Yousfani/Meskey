@@ -349,8 +349,8 @@ class PurchaseOrderReceivingController extends Controller
             'qty' => 'required|array|min:1',
             'qty.*' => 'required|numeric|min:0.01',
 
-            'rate' => 'required|array|min:1',
-            'rate.*' => 'required|numeric|min:0.01',
+            // 'rate' => 'required|array|min:1',
+            // 'rate.*' => 'required|numeric|min:0.01',
 
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
