@@ -115,6 +115,7 @@ class ArrivalApproveController extends Controller
                 'unloadingLocation.arrivalLocation:id,name'
             ])
             ->where('first_weighbridge_status', 'completed')
+            ->whereNull('document_approval_status')
             ->leftJoin('arrival_sampling_requests as inner_req', function ($join) {
                 $join->on('arrival_tickets.id', '=', 'inner_req.arrival_ticket_id')
                      ->where('inner_req.sampling_type', 'inner');
