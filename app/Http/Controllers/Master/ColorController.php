@@ -34,7 +34,7 @@ class ColorController extends Controller
 
     public function store(ColorRequest $request) {
         $data = $request->validated();
-        $color = Color::create($request->all());
+        $color = Color::create([...$request->all(), "status" => 1]);
 
         return response()->json(['success' => 'Color created successfully.', 'data' => $color], 201);
   
