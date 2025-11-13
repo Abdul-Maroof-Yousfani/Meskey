@@ -19,8 +19,9 @@ return new class extends Migration
             $table->string('username')->nullable();
             $table->string('status')->default('active');
             $table->string('jv_status')->default('pending');
-            $table->string('approve_username')->nullable();
-            $table->string('delete_username')->nullable();
+            $table->foreignId('approve_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('delete_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

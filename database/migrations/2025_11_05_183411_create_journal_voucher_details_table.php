@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('journal_voucher_id')->constrained('journal_vouchers')->onDelete('cascade');
             $table->foreignId('acc_id')->constrained('accounts');
-            $table->enum('debit_credit', ['debit', 'credit']);
-            $table->decimal('amount', 15, 2);
+            $table->decimal('debit_amount', 15, 2)->default(0);
+            $table->decimal('credit_amount', 15, 2)->default(0);
+            $table->text('description')->nullable();
             $table->string('username')->nullable();
             $table->string('status')->default('active');
             $table->timestamp('timestamp')->nullable();

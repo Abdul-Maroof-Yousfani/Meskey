@@ -53,8 +53,9 @@
                                                 <thead>
                                                     <tr>
                                                         <th>Account</th>
-                                                        <th>Debit/Credit</th>
-                                                        <th>Amount</th>
+                                                        <th>Description</th>
+                                                        <th>Debit</th>
+                                                        <th>Credit</th>
                                                         <th>Action</th>
                                                     </tr>
                                                 </thead>
@@ -73,16 +74,17 @@
                                                                 </select>
                                                             </td>
                                                             <td>
-                                                                <select name="details[{{ $index }}][debit_credit]" class="form-control debit-credit-select" required>
-                                                                    <option value="">Select</option>
-                                                                    <option value="debit" {{ $detail->debit_credit == 'debit' ? 'selected' : '' }}>Debit</option>
-                                                                    <option value="credit" {{ $detail->debit_credit == 'credit' ? 'selected' : '' }}>Credit</option>
-                                                                </select>
+                                                                <input type="text" name="details[{{ $index }}][description]" class="form-control description-input" placeholder="Line description" value="{{ $detail->description }}">
                                                             </td>
                                                             <td>
-                                                                <input type="number" name="details[{{ $index }}][amount]" 
-                                                                    class="form-control amount-input" step="0.01" min="0.01" 
-                                                                    value="{{ $detail->amount }}" required>
+                                                                <input type="number" name="details[{{ $index }}][debit_amount]" 
+                                                                    class="form-control debit-input" step="0.01" min="0" 
+                                                                    value="{{ $detail->debit_amount > 0 ? $detail->debit_amount : '' }}" placeholder="0.00">
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" name="details[{{ $index }}][credit_amount]" 
+                                                                    class="form-control credit-input" step="0.01" min="0" 
+                                                                    value="{{ $detail->credit_amount > 0 ? $detail->credit_amount : '' }}" placeholder="0.00">
                                                             </td>
                                                             <td>
                                                                 <button type="button" class="btn btn-sm btn-danger remove-row" 
@@ -98,19 +100,22 @@
                                                         <td colspan="2" class="text-right"><strong>Total Debits:</strong></td>
                                                         <td><strong id="totalDebits">0.00</strong></td>
                                                         <td></td>
+                                                        <td></td>
                                                     </tr>
                                                     <tr>
                                                         <td colspan="2" class="text-right"><strong>Total Credits:</strong></td>
+                                                        <td></td>
                                                         <td><strong id="totalCredits">0.00</strong></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="2" class="text-right"><strong>Difference:</strong></td>
+                                                        <td colspan="2" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                                         <td><strong id="difference">0.00</strong></td>
+                                                        <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="4">
+                                                        <td colspan="5">
                                                             <button type="button" class="btn btn-sm btn-primary" id="addRow">
                                                                 <i class="ft-plus"></i> Add Row
                                                             </button>
@@ -137,7 +142,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            let rowCount = {{ count($journalVoucher->journalVoucherDetails) }};
+            let rowCount = $('#journalEntriesBody tr').length;
 
             // Initialize select2
             $('.select2').select2();
@@ -155,14 +160,13 @@
                             </select>
                         </td>
                         <td>
-                            <select name="details[${rowCount}][debit_credit]" class="form-control debit-credit-select" required>
-                                <option value="">Select</option>
-                                <option value="debit">Debit</option>
-                                <option value="credit">Credit</option>
-                            </select>
+                            <input type="text" name="details[${rowCount}][description]" class="form-control description-input" placeholder="Line description">
                         </td>
                         <td>
-                            <input type="number" name="details[${rowCount}][amount]" class="form-control amount-input" step="0.01" min="0.01" required>
+                            <input type="number" name="details[${rowCount}][debit_amount]" class="form-control debit-input" step="0.01" min="0" placeholder="0.00">
+                        </td>
+                        <td>
+                            <input type="number" name="details[${rowCount}][credit_amount]" class="form-control credit-input" step="0.01" min="0" placeholder="0.00">
                         </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-danger remove-row">
@@ -175,6 +179,7 @@
                 $('.select2').select2();
                 rowCount++;
                 updateRemoveButtons();
+                calculateTotals();
             });
 
             // Remove row
@@ -184,6 +189,25 @@
                     updateRemoveButtons();
                     calculateTotals();
                 }
+            });
+
+            // Ensure only one of debit/credit has a value
+            $(document).on('input', '.debit-input', function () {
+                const $row = $(this).closest('tr');
+                const debitValue = parseFloat($(this).val()) || 0;
+                if (debitValue > 0) {
+                    $row.find('.credit-input').val('');
+                }
+                calculateTotals();
+            });
+
+            $(document).on('input', '.credit-input', function () {
+                const $row = $(this).closest('tr');
+                const creditValue = parseFloat($(this).val()) || 0;
+                if (creditValue > 0) {
+                    $row.find('.debit-input').val('');
+                }
+                calculateTotals();
             });
 
             // Update remove buttons visibility
@@ -202,22 +226,19 @@
                 let totalCredits = 0;
 
                 $('#journalEntriesBody tr').each(function () {
-                    const debitCredit = $(this).find('.debit-credit-select').val();
-                    const amount = parseFloat($(this).find('.amount-input').val()) || 0;
+                    const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
+                    const creditAmount = parseFloat($(this).find('.credit-input').val()) || 0;
 
-                    if (debitCredit === 'debit') {
-                        totalDebits += amount;
-                    } else if (debitCredit === 'credit') {
-                        totalCredits += amount;
-                    }
+                    totalDebits += debitAmount;
+                    totalCredits += creditAmount;
                 });
 
                 $('#totalDebits').text(totalDebits.toFixed(2));
                 $('#totalCredits').text(totalCredits.toFixed(2));
-                
+
                 const difference = totalDebits - totalCredits;
                 $('#difference').text(difference.toFixed(2));
-                
+
                 if (Math.abs(difference) > 0.01) {
                     $('#difference').css('color', 'red');
                 } else {
@@ -225,19 +246,44 @@
                 }
             }
 
-            // Calculate on amount or debit/credit change
-            $(document).on('change input', '.amount-input, .debit-credit-select', function () {
-                calculateTotals();
-            });
-
             // Form submission validation
             $('#ajaxSubmit').on('submit', function (e) {
+                calculateTotals();
+
                 const totalDebits = parseFloat($('#totalDebits').text()) || 0;
                 const totalCredits = parseFloat($('#totalCredits').text()) || 0;
-                
+
+                let invalidLine = null;
+
+                $('#journalEntriesBody tr').each(function (index) {
+                    const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
+                    const creditAmount = parseFloat($(this).find('.credit-input').val()) || 0;
+
+                    if ((debitAmount <= 0 && creditAmount <= 0) || (debitAmount > 0 && creditAmount > 0)) {
+                        invalidLine = index + 1;
+                        return false;
+                    }
+                });
+
+                if (invalidLine !== null) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: 'Line ' + invalidLine + ' must contain either a debit or a credit amount greater than zero (but not both).',
+                        confirmButtonColor: '#D95000'
+                    });
+                    return false;
+                }
+
                 if (Math.abs(totalDebits - totalCredits) > 0.01) {
                     e.preventDefault();
-                    alert('Total debits must equal total credits. Current difference: ' + (totalDebits - totalCredits).toFixed(2));
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: 'Total debits must equal total credits. Current difference: ' + (totalDebits - totalCredits).toFixed(2),
+                        confirmButtonColor: '#D95000'
+                    });
                     return false;
                 }
             });
