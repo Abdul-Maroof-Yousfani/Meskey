@@ -27,7 +27,9 @@ use App\Http\Controllers\Procurement\Store\{
     PurchaseOrderReceivingController,
     PurchaseQuotationController,
     PurchaseRequestController as StorePurchaseRequestController,
+    QcController
 };
+
 
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-request', PurchaseRequestController::class);
@@ -141,6 +143,8 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list.show');
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
     Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
+
+    Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');
