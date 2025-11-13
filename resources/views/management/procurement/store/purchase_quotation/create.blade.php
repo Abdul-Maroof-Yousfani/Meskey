@@ -78,6 +78,7 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th class="col-sm-2">Min Weight</th>
+                        <th class="col-sm-2">Brands</th>
                         <th class="col-sm-2">Color</th>
                         <th class="col-sm-2">Cons./sq. in.</th>
                         <th class="col-sm-2">Size</th>

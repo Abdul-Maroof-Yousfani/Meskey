@@ -53,6 +53,9 @@ class PurchaseRequest extends FormRequest
             'uom'                   => 'nullable|array',
             'uom.*'                 => 'nullable|string|max:255',
 
+            'brands' => 'required',
+            'brands.*' => 'required',
+
             'qty'                   => 'required|array|min:1',
             'qty.*'                 => 'required|numeric|min:0.01',
 
@@ -107,6 +110,8 @@ class PurchaseRequest extends FormRequest
             'remarks.array' => 'The remarks field must be an array.',
             'remarks.*.string' => 'Each remark must be a string.',
             'remarks.*.max' => 'Each remark may not be greater than 1000 characters.',
+
+            'brands.required' => "At least one brand is required"
         ];
     }
 

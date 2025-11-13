@@ -286,6 +286,7 @@ class PurchaseOrderController extends Controller
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'other_terms' => $request->other_term ?? null,
+                'delivery_address' => $request->delivery_address,
                 'created_by' => auth()->user()->id,
             ]);
 
@@ -307,6 +308,7 @@ class PurchaseOrderController extends Controller
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
+                    'brand' => $request->brand[$index],
                     'printing_sample' => $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
@@ -395,11 +397,11 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::with([
             'purchaseOrderData',
             'purchaseOrderData.category',
+            'purchaseOrderData.purchase_request_data',
             'purchaseOrderData.item',
             'purchase_request.PurchaseData',
             'purchase_quotation.quotation_data'
         ])->findOrFail($id);
-
         $purchaseRequest = $purchaseOrder->purchase_request;
         $purchaseQuotation = $purchaseOrder->purchase_quotation;
 
@@ -412,7 +414,7 @@ class PurchaseOrderController extends Controller
 
         // $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
         //     ->findOrFail($id);
-
+            
         $purchaseOrderDataCount = $purchaseOrder->purchaseOrderData->count();
 
         return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount', 'payment_terms', 'taxes'));
@@ -425,6 +427,7 @@ class PurchaseOrderController extends Controller
     {
         // dd($request->all());
         $validated = $request->validate([
+            'delivery_address' => "required",
             'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',
@@ -456,6 +459,10 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
+            $PurchaseOrder->update([
+                'description' => $request->description,
+                'delivery_address' => $request->delivery_address
+            ]);
             PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)->delete();
 
             foreach ($request->item_id as $index => $itemId) {
@@ -471,6 +478,7 @@ class PurchaseOrderController extends Controller
                     'excise_duty' => $request->excise_duty[$index] ?? 0,
                     'min_weight' => $request->min_weight[$index],
                     'color' => $request->color[$index],
+                    'brand' => $request->brand[$index],
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
@@ -525,7 +533,7 @@ class PurchaseOrderController extends Controller
         ])->findOrFail($id);
 
 
-        $purchaseOrderData = PurchaseOrderData::where('purchase_order_id', $id)
+        $purchaseOrderData = PurchaseOrderData::with("purchase_request_data")->where('purchase_order_id', $id)
             ->when(
                 $purchaseOrder->am_approval_status === 'approved',
                 function ($query) {
@@ -534,6 +542,7 @@ class PurchaseOrderController extends Controller
             )
             ->get();
 
+       
         return view('management.procurement.store.purchase_order.approvalCanvas', [
             'purchaseOrder' => $purchaseOrder,
             'categories' => $categories,

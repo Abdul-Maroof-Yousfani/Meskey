@@ -207,9 +207,10 @@ class PurchaseOrderReceivingController extends Controller
             }
         }
 
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-
+       
         $html = view('management.procurement.store.purchase_order_receiving.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
         return response()->json([
@@ -308,10 +309,9 @@ class PurchaseOrderReceivingController extends Controller
             'purchaseOrderReceivingData.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
-
+     
         $purchaseRequest = $purchaseOrderReceiving->purchase_request;
-
-
+        
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
@@ -327,6 +327,33 @@ class PurchaseOrderReceivingController extends Controller
     /**
      * Update the specified resource in storage.
      */
+
+    public function createQc(Request $request) {
+        $id = $request->id;
+        $accepted_quantity = $request->accepted_qty;
+        $rejected_quantity = $request->rejected_quantity;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::find($id);
+
+
+        try {
+            $purchaseOrderReceivingData = $purchaseOrderReceivingData->update([
+                "accepted_qty" => $accepted_quantity,
+                "rejected_qty" => $rejected_quantity
+            ]);
+
+            return response()->json([
+                'success' => 'QC has been created successfully.',
+                'data' => $purchaseOrderReceivingData,
+            ], 200);
+        } catch(\Exception $e) {
+            return response()->json([
+                'success' => 'Error',
+                'data' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         // dd($request->all());

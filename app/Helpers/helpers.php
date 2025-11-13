@@ -9,6 +9,7 @@ use App\Models\Color;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\Brands;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
@@ -135,6 +136,19 @@ if(!function_exists("getAllSizes")) {
         return Size::where('status', 1)->get();
     }
 }
+
+if(!function_exists("getAllBrands")) {
+    function getAllBrands() {
+        return Brands::where('status', 'active')->get();
+    }
+}
+
+if(!function_exists("getBrandById")) {
+    function getBrandById($id) {
+        return Brands::where("id", $id)->where('status', 'active')->first();
+    }
+}
+
 
 if(!function_exists("getSizeById")) {
     function getSizeById($id) {

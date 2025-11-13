@@ -55,6 +55,7 @@
                 <th>Qty</th>
                 <th>Job Orders</th>
                 <th>Min Weight</th>
+                <th>Brands</th>
                 <th>Color</th>
                 <th>Cons./sq. in.</th>
                 <th>Size</th>
@@ -114,7 +115,9 @@
                     <td style="width:120px;">
                         <input type="number" name="min_weight[]" id="min_weight_{{ $index }}" disabled class="form-control" step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight">
                     </td>
-
+                    <td style="width:150px;">
+                        <input type="text" name="brands[]" id="brands_{{ $index }}" disabled class="form-control" value="{{ getBrandById($item->brand_id)?->name ?? '' }}" placeholder="Color">
+                    </td>
                     <td style="width:150px;">
                         <input type="text" name="color[]" id="color_{{ $index }}" disabled class="form-control" value="{{ getColorById($item->color)?->color ?? '' }}" placeholder="Color">
                     </td>

@@ -119,7 +119,6 @@ class PurchaseRequestController extends Controller
     public function store(ProcurementPurchaseRequest $request)
     {
         DB::beginTransaction();
-
         try {
             $purchaseRequest = PurchaseRequest::create([
                 'purchase_request_no' => self::getNumber($request, $request->company_location_id, $request->purchase_date),
@@ -130,7 +129,6 @@ class PurchaseRequestController extends Controller
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
             ]);
-
             foreach ($request->item_id as $index => $itemId) {
                 $printingSamplePath = null;
 
@@ -151,6 +149,7 @@ class PurchaseRequestController extends Controller
                     'size' => $request->size[$index] ?? null,
                     'stitching' => $request->stitching[$index] ?? null,
                     'printing_sample' => $printingSamplePath,
+                    'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
@@ -244,7 +243,7 @@ class PurchaseRequestController extends Controller
                 if (!empty($request->item_row_id[$index])) {
                     $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
                     $printingSamplePath = null;
-
+                    
                     if ($requestData) {
                         if ($request->hasFile('printing_sample.' . $index)) {
                             $file = $request->file('printing_sample.' . $index);
@@ -262,8 +261,8 @@ class PurchaseRequestController extends Controller
                             'stitching' => $request->stitching[$index] ?? null,
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
+                            'brand_id' => $request->brands[$index],
                         ]);
-
                         $submittedItems[] = $requestData->id;
 
                         PurchaseAgainstJobOrder::where('purchase_request_data_id', $requestData->id)->delete();
@@ -297,6 +296,7 @@ class PurchaseRequestController extends Controller
                         'size' => $request->size[$index] ?? null,
                         'stitching' => $request->stitching[$index] ?? null,
                         'printing_sample' => $printingSamplePath,
+                        'brand_id' => $request->brands[$index],
                         'remarks' => $request->remarks[$index] ?? null,
                     ]);
 

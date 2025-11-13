@@ -134,8 +134,15 @@
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
+
+                                        {{-- <a onclick="openModal(this, '{{ route('store.qc.create', $supplierRow['data']->purchase_order_receiving->id) }}', 'QC', false, '100%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-edit font-medium-3"></i>
+                                        </a> --}}
+                                        
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
 
+                                            
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
                                                 <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit GRN', false, '100%')"
                                                     class="info p-1 text-center mr-2 position-relative">

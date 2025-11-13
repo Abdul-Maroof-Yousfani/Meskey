@@ -75,10 +75,15 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
+        <div class="col-xs-12 col-sm-12 col-md-12 row">
+            <div class="form-group col-6">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description"
+                <textarea name="description" id="description" placeholder="Description"
+                    class="form-control"></textarea>
+            </div>
+            <div class="form-group col-6">
+                <label>Delivery Address:</label>
+                <textarea name="delivery_address" id="delivery_address" placeholder="Delivery Address"
                     class="form-control"></textarea>
             </div>
         </div>
@@ -100,8 +105,9 @@
                         <th>Tax</th>
                         <th>Tax Amount</th>
                         <th>Duty</th>
-                        <th>Amount</th>
+                        <th>Net Amount</th>
                         <th>Min Weight</th>
+                        <th>Brand</th>
                         <th>Color</th>
                         <th>Cons./sq. in.</th>
                         <th>Size</th>

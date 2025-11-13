@@ -81,14 +81,23 @@
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
                                         <input type="number" style="width: 100px;" name="min_weight[]" id="min_weight_0" class="form-control"
-                                            step="0.01" min="0" value="{{ $data->purchase_request_data->min_weight }}" placeholder="Min Weight">
+                                            step="0.01" min="0" value="{{ $data->min_weight }}" placeholder="Min Weight">
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="brand[]"  style="width: 100px;" value="{{ $data->brand }}" id="brand_0" class="form-control" step="0.01"
+                                            min="0" placeholder="Brand">
                                     </div>
                                 </div>
                             </td>
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="color[]"  style="width: 100px;" value="{{ getColorById($data->purchase_request_data->color)?->color ?? null }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="color[]"  style="width: 100px;" value="{{ $data->color }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Color">
                                     </div>
                                 </div>
@@ -99,7 +108,7 @@
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
                                         <input type="text" style="width: 100px;" name="construction_per_square_inch[]"
-                                            id="construction_per_square_inch_0" value="{{ $data->purchase_request_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
+                                            id="construction_per_square_inch_0" value="{{ $data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
                                             placeholder="Cons./sq. in.">
                                     </div>
                                 </div>
@@ -107,7 +116,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="size[]" style="width: 100px;" id="size_0" value="{{ getSizeById($data->purchase_request_data->size)?->size ?? null }}" class="form-control" step="0.01"
+                                        <input type="text" name="size[]" style="width: 100px;" id="size_0" value="{{ $data->size }}" class="form-control" step="0.01"
                                             min="0" placeholder="Size">
                                     </div>
                                 </div>
@@ -115,7 +124,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_request_data->stitching }}" class="form-control"
+                                        <input type="text" name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->stitching }}" class="form-control"
                                             step="0.01" min="0" placeholder="Stitching">
                                     </div>
                                 </div>

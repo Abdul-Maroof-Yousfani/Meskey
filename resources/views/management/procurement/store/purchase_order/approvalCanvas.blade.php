@@ -106,6 +106,7 @@
                     <th>Duty</th>
                     <th>Amount</th>
                     <th>Min Weight</th>
+                    <th>Brand</th>
                     <th>Color</th>
                     <th>Cons./sq. in.</th>
                     <th>Size</th>
@@ -212,6 +213,10 @@
  <td style="width: 30%">
                                 <input style="width: 100px;" type="number" readonly name="min_weight[]" value="{{ $data->min_weight }}"
                                     id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
+                            </td>
+                            <td style="width: 30%">
+                                <input style="width: 100px;" type="text" readonly name="brand[]" value="{{ $data->brand }}"
+                                    id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
                             </td>
                             <td style="width: 30%">
                                 <input style="width: 100px;" type="text" readonly name="color[]" value="{{ $data->color }}"
