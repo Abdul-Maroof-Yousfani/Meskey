@@ -15,12 +15,26 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('purchase_request_id');
             $table->unsignedBigInteger('category_id');
+            $table->integer("brand_id");
             $table->unsignedBigInteger('item_id');
             $table->decimal('qty', 15, 2);
-            $table->text('remarks')->nullable();
+            $table->decimal('approved_qty', 15, 2);
+            $table->decimal('min_weight', 11, 2)->nullable();
+            $table->string('color')->nullable();
+            $table->string('construction_per_square_inch', 11, 2);
+            $table->string('size')->nullable();
+            $table->string('stitching')->nullable();
+            $table->string('printing_sample')->nullable();
+        
             $table->enum('quotation_status', ['1', '2'])->default('1')->comment('1 = pending, 2 = complete');
             $table->enum('po_status', ['1', '2'])->default('1')->comment('1 = pending, 2 = complete');
             $table->enum('status', ['1', '0'])->default('1')->comment('1 = active, 0 = inactive');
+            $table->text('remarks')->nullable();
+
+
+
+
+
             $table->timestamps();
             
         });

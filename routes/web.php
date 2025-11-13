@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Arrival\ArrivalSlipController;
-use App\Http\Controllers\Arrival\InitialSamplingController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use Illuminate\Support\Facades\Route;
@@ -10,10 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController, RoleController};
 use App\Http\Controllers\ApprovalsModule\ApprovalController;
 use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
-use App\Http\Controllers\FrontHomeController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Procurement\RawMaterial\PaymentRequestController;
-use Harimayco\Menu\Facades\Menu;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Reports\{
     TransactionController
@@ -37,7 +33,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-transactions-report', [TransactionController::class, 'getTransactionsReport'])->name('get.transactions-report');
 
 
-     
+
 });
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {

@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,10 +16,11 @@ return new class extends Migration
             $table->unsignedBigInteger('company_id');
             $table->unsignedBigInteger('arrival_ticket_id');
             $table->unsignedBigInteger('creator_id');
+            $table->integer('arrived_weight')->default(0);
             $table->string('remark');
             $table->softDeletes();
             $table->timestamps();
-
+            //foreign Key references
             $table->foreign('creator_id')->references('id')->on('users');
             $table->foreign('arrival_ticket_id')->references('id')->on('arrival_tickets')->onDelete('cascade');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');

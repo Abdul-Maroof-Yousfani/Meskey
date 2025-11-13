@@ -19,25 +19,24 @@ return new class extends Migration {
             $table->string('to')->nullable();
             $table->string('deduction_type')->nullable();
             $table->string('deduction_value')->nullable();
+            $table->tinyInteger('is_tiered')->default(1);
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->boolean('is_enabled')->default(true);
             $table->tinyInteger('is_purchase_field')->default(0);
-
             $table->softDeletes();
             $table->timestamps();
-
-
-
+            //foreign key reference
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products');
             $table->foreign('product_slab_type_id')->references('id')->on('product_slab_types');
         });
     }
 
-    // /**
-    //  * Reverse the migrations.
-    //  */
-    // public function down(): void
-    // {
-    //     Schema::dropIfExists('product_slabs');
-    // }
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('product_slabs');
+    }
 };

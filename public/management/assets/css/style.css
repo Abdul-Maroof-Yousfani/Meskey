@@ -916,8 +916,14 @@ tr.editing {
   padding: 8px 15px;
   vertical-align: middle;
   border-bottom: 1px solid #e0e0e0;
+
   white-space: nowrap;
   background: white;
+}
+.layout-dark .sticky-table th,
+.layout-dark .sticky-table td {
+  border-bottom: 1px solid #474748;
+  background: #1e1e1e;
 }
  th {
     
@@ -966,11 +972,11 @@ tr.editing {
 }
 
 .sticky-table .sticky-col-left-last {
-  box-shadow: 5px 0 10px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: 10px 0 10px -4px rgb(38 73 155 / 15%);
 }
 
 .sticky-table .sticky-col-right-first {
-  box-shadow: -5px 0 10px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: -10px 0 10px -4px rgb(38 73 155 / 15%);
 }
 
 .sticky-table thead .sticky-col-left,

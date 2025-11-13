@@ -60,13 +60,17 @@ return new class extends Migration {
 
             $table->string('bilty_return_reason')->nullable();
             $table->string('bilty_return_attachment')->nullable();
+            $table->tinyInteger('is_ticket_verified')->default(0);
+            $table->unsignedBigInteger('ticket_verified_by')->nullable();
+
+
 
             $table->unsignedBigInteger('miller_id')->nullable();
 
             $table->softDeletes();
             $table->timestamps();
 
-
+            $table->foreign('ticket_verified_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('station_id')->references('id')->on('stations');
             $table->foreign('decision_id')->references('id')->on('users');
             $table->foreign('truck_type_id')->references('id')->on('arrival_truck_types');
