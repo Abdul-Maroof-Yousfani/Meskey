@@ -391,6 +391,15 @@
                         </a>
                     </li>
                     @endcanAccess
+                    @canAccess('journal-voucher')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('journal-voucher.index') }}"
+                            onclick="loadPageContent('{{ route('journal-voucher.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Journal Vouchers</span>
+                        </a>
+                    </li>
+                    @endcanAccess
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
