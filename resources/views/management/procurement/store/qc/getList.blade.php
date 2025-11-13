@@ -7,9 +7,11 @@
             <th class="col-sm-3">Category- item</th>
             <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
-            <th class="col-sm-1">Rate</th>
-            <th class="col-sm-1">Total Amount</th>
-            <th class="col-sm-1">Item Status</th>
+            <th class="col-sm-1">Accepted Quantity</th>
+            <th class="col-sm-1">Rejected Quantity</th>
+            <th class="col-sm-1">Deduction Per Bag</th>
+            <th class="col-sm-1">Status</th>
+
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -86,12 +88,17 @@
                             </td>
                             <td>
                                 <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->rate }}
+                                    {{ $supplierRow['data']->accepted_qty }}
                                 </p>
                             </td>
                             <td>
                                 <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->total }}
+                                    {{ $supplierRow['data']->rejected_qty }}
+                                </p>
+                            </td>
+                            <td>
+                                <p class="m-0 text-right">
+                                    {{ $supplierRow['data']->rejected_qty * $supplierRow['data']->accepted_qty }}
                                 </p>
                             </td>
                             {{-- Created Date --}}
@@ -130,6 +137,10 @@
                                             $shouldDisableApproval =
                                                 $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                         @endphp
+                                        <a onclick="openModal(this, '{{ route('store.qc.view', $supplierRow['data']->purchase_order_receiving->id) }}', 'View QC', false, '70%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-check font-medium-3"></i>
+                                        </a>
                                         <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>

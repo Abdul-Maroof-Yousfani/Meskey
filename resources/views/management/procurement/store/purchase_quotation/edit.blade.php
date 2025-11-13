@@ -113,7 +113,7 @@
                         @endforeach
                     </select>
                     <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
-                    <input type="hidden" name="data_id[]" value="{{ $data->id }}">
+                    <input type="hidden" name="data_id[]" value="{{ $data->purchase_request?->id ?? null }}">
                     <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
                 </td>
 
@@ -159,7 +159,7 @@
                     <input style="width: 100px" type="text" disabled
                         value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
                         id="color_{{ $key }}" class="form-control">
-                    <input type="hidden" name="color[]" value="{{ $data->purchase_request?->brand_id ?? null }}">
+                    <input type="hidden" name="brand[]" value="{{ $data->purchase_request?->brand_id ?? null }}">
                 </td>
                 <td style="width: 30%">
                     <input style="width: 100px" type="text" disabled

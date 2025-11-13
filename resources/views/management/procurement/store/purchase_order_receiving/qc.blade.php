@@ -83,6 +83,7 @@
                      <th>Category</th>
                      <th>Item</th>
                      <th>Item UOM</th>
+                     <th>Vendor</th>
                      <th>Qty</th>
                      <th>Min Weight</th>
                      <th>Brand</th>
@@ -135,8 +136,19 @@
                              <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                          </td>
 
-                         
-                        <td style="width: 30%">
+                         <td style="width: 30%">
+                             <select id="supplier_id_{{ $key }}" style="width: 100px;" name="supplier_id[]" disabled
+                                 class="form-control item-select select2" data-index="{{ $key }}">
+                                 <option value="">Select Vendor</option>
+                                 @foreach (get_supplier() as $supplier)
+                                     <option value="{{ $supplier->id }}" @selected($data->supplier_id == $supplier->id)>
+                                         {{ $supplier->name }}
+                                     </option>
+                                 @endforeach
+                             </select>
+                         </td>
+
+                         <td style="width: 30%">
                              <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
                                  onblur="calc({{ $key }})" value="{{ $data->qty }}"
                                  id="qty_{{ $key }}" class="form-control" step="0.01" min="0">

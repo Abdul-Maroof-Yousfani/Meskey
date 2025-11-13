@@ -14,7 +14,7 @@ use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Sales\JobOrder;
-use App\Models\Tax;
+use App\Models\Master\Tax;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -308,6 +308,7 @@ class PurchaseOrderController extends Controller
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
+                    'brand' => $request->brand[$index],
                     'printing_sample' => $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
@@ -477,6 +478,7 @@ class PurchaseOrderController extends Controller
                     'excise_duty' => $request->excise_duty[$index] ?? 0,
                     'min_weight' => $request->min_weight[$index],
                     'color' => $request->color[$index],
+                    'brand' => $request->brand[$index],
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],

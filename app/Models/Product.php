@@ -29,6 +29,7 @@ class Product extends Model
         'image',
         'price',
         'name',
+        'is_bag'
     ];
 
     // Relationships

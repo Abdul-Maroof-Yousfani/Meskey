@@ -104,6 +104,9 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
+                     <th>Accepted Quantity</th>
+                     <th>Rejected Quantity</th>
+                     <th>Deduction Per KG</th>
                      <th>Min Weight</th>
                      <th>Brand</th>
                     <th>Color</th>
@@ -135,7 +138,7 @@
                                 <input type="hidden" name="purchase_order_data_id[]" value="{{ $data->purchase_order_data_id }}">
 
                             </td>
-                            <td style="width: 25%">
+                            <td style="width: 30%">
                                 <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
                                     disabled class="form-control item-select select2" data-index="{{ $key }}">
                                     @foreach (get_product_by_category($data->category_id) as $item)
@@ -148,8 +151,8 @@
                                 </select>
                                 <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                             </td>
-                            <td style="width: 15%">
-                                <input type="text" id="uom_{{ $key }}" class="form-control uom"
+                            <td style="width: 30%">
+                                <input type="text" id="uom_{{ $key }}"  class="form-control uom"
                                     value="{{ get_uom($data->item_id) }}" disabled readonly>
                                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                             </td>
@@ -158,6 +161,26 @@
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
                                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}"
+                                   >
+                            </td>
+                            <td style="width: 10%">
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="accepted_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->accepted_qty }}"
+                                    id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
+                                   >
+                            </td>
+
+                            <td style="width: 10%">
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="rejected_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->rejected_qty }}"
+                                    id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
+                                   >
+                            </td>
+
+                            <td style="width: 10%">
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" @readonly(isBag($data->item_id)) value=""
+                                    id="deduction_per_bag{{ $key }}" class="form-control" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
 
@@ -169,14 +192,10 @@
                                     </div>
                                 </div>
                             </td>
-                            @php
-                                $brandId = $data->purchase_order_data?->purchase_request_data?->brand_id ?? null;
-                                $brandName = $brandId ? getBrandById($brandId)?->name : '';
-                            @endphp
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="brand[]"  style="width: 100px;" value="{{ $brandName }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="brand[]"  style="width: 100px;" value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Brand">
                                     </div>
                                 </div>
@@ -233,10 +252,13 @@
                                 <input style="width: 100px" name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">
                             </td>
-                            <td>
-                                <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                            <td class="d-flex" style="gap: 10px;">
+                                <button style="width: 100px;" type="button" class="btn btn-danger btn-sm removeRowBtn"
                                     onclick="remove({{ $key }})"
                                     data-id="{{ $key }}">Remove</button>
+
+
+                                <button onclick="createQc('{{ $data->id }}', this)" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
                             </td>
                         </tr>
                     @endforeach
@@ -265,6 +287,57 @@ $(document).ready(function () {
     });
 
     let rowIndex = {{ $purchaseOrderReceivingDataCount ?? 1 }};
+
+    function createQc(id, element) {
+        const accepted_qty = $(element).closest("tr").find(".accepted_qty");
+        const rejected_qty = $(element).closest("tr").find(".rejected_qty");
+       
+        Swal.fire({
+            title: "Are you sure?",
+            text: "A QC will be created for this item.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, create it!",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Proceed with QC creation
+               
+                
+
+                $.ajax({
+                    url: "{{ route('store.qc.create') }}",
+                    type: 'POST',
+                    dataType: "json", // optional
+                    processData: true,
+                    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+                    data: { 
+                        id: id,
+                        accepted_qty: accepted_qty.val(),
+                        rej_qty: rejected_qty.val()
+                    },
+                    success: function (response) {
+                        console.log(response);
+                         Swal.fire({
+                            title: "Created!",
+                            text: "QC has been successfully created.",
+                            icon: "success"
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.log(error);
+                    }
+                });
+
+                // 👉 You can call your backend or AJAX here
+                // e.g. $.post('/create-qc', {...})
+                // qc.create
+            }
+        });
+    }
+
 
     function addRow() {
         let index = rowIndex++;

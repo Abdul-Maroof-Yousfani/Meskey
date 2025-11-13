@@ -207,9 +207,10 @@ class PurchaseOrderReceivingController extends Controller
             }
         }
 
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
-
+       
         $html = view('management.procurement.store.purchase_order_receiving.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
         return response()->json([
@@ -326,6 +327,33 @@ class PurchaseOrderReceivingController extends Controller
     /**
      * Update the specified resource in storage.
      */
+
+    public function createQc(Request $request) {
+        $id = $request->id;
+        $accepted_quantity = $request->accepted_qty;
+        $rej_qty = $request->rej_qty;
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::find($id);
+
+
+        try {
+            $purchaseOrderReceivingData = $purchaseOrderReceivingData->update([
+                "accepted_qty" => $accepted_quantity,
+                "rejected_qty" => $rej_qty,
+                "is_qc_created" => 1
+            ]);
+
+            return response()->json([
+                'success' => 'QC has been created successfully.',
+                'data' => $purchaseOrderReceivingData,
+            ], 200);
+        } catch(\Exception $e) {
+            return response()->json([
+                'success' => 'Error',
+                'data' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         // dd($request->all());
@@ -367,6 +395,7 @@ class PurchaseOrderReceivingController extends Controller
 
             PurchaseOrderReceivingData::where('purchase_order_receiving_id', $PurchaseOrderReceiving->id)->delete();
 
+
             foreach ($request->item_id as $index => $itemId) {
                 PurchaseOrderReceivingData::create([
                     'purchase_order_receiving_id' => $PurchaseOrderReceiving->id,
@@ -377,6 +406,8 @@ class PurchaseOrderReceivingController extends Controller
                     'rate' => $request->rate[$index] ?? 0,
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
+                    "accepted_qty" => $request->accepted_qty[$index] ?? 0,
+                    "rejected_qty" => $request->rejected_qty[$index] ?? 0,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }

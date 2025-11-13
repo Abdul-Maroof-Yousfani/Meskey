@@ -47,7 +47,7 @@
             <input style="width: 100px" type="text" id="brands_{{ $key }}" class="form-control brands"
                 value="{{ getBrandById($data->brand_id)?->name ?? null }}" disabled readonly>
             
-            <input type="hidden" name="color[]" value="{{ $data->brand_id }}">
+            <input type="hidden" name="brand[]" value="{{ $data->brand_id }}">
          </td>
          <td style="width: 30%">
             
