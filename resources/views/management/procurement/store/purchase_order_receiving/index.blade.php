@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Purchase Order
+    Goods Received Note
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('store.purchase-order-receiving.create') }}','Add GRN',false,'90%')"
+                        onclick="openModal(this,'{{ route('store.purchase-order-receiving.create') }}','Add GRN',false,'100%')"
                         type="button" class="btn btn-primary position-relative">
                         Create GRN
                     </button>
@@ -53,8 +53,8 @@
                                             {{-- <th class="col-sm-2">Item UOM</th> --}}
                                             {{-- <th class="col-sm-2">Supplier</th> --}}
                                             <th class="col-sm-1">Qty</th>
-                                            <th class="col-sm-1">Rate</th>
-                                            <th class="col-sm-1">Total Amount</th>
+                                            {{-- <th class="col-sm-1">Rate</th> --}}
+                                            {{-- <th class="col-sm-1">Total Amount</th> --}}
                                             <th class="col-sm-1">Item Status</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>

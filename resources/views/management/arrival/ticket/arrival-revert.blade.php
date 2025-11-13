@@ -75,6 +75,7 @@
                 <form id="ajaxSubmit" action="{{ route('ticket.arrival-revert.update', $arrivalTicket->id) }}"
                     method="POST">
                     @csrf
+                    <input type="hidden" id="url" value="{{ route('ticket.arrival-revert', $arrivalTicket->id) }}">
                     <div class="card">
                         <div class="card-content">
                             <div class="card-body">
@@ -95,9 +96,23 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Miller:</label>
-                                            <input type="text" placeholder="Miller" class="form-control" disabled
+                                           
+                                                    <label>Millers:</label>
+                                                    <select name="miller_name" id="miller_id"
+                                                        class="form-control select2">
+                                                        <option value="">Select Miller</option>
+                                                        @if ($arrivalTicket->miller)
+                                                            <option value="{{ $arrivalTicket->miller->name }}" selected>
+                                                                {{ $arrivalTicket->miller->name }}
+                                                            </option>
+                                                        @endif
+                                                    </select>
+                                                    {{-- <input type="hidden" name="miller_id" id="miller_id_submit">
+                                                    --}}
+                                              
+                                            {{-- <input type="text" placeholder="Miller" class="form-control" disabled
                                                 autocomplete="off"
-                                                value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" />
+                                                value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" /> --}}
                                         </div>
                                     </div>
 
@@ -124,36 +139,68 @@
                                                 value="{{ $arrivalTicket->decisionBy->name ?? 'N/A' }}" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
-                                        <div class="form-group">
+                      
+
+                                     <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group ">
                                             <label>Station:</label>
-                                            <input type="text" name="station_id" placeholder="Station"
-                                                class="form-control" disabled autocomplete="off"
-                                                value="{{ $arrivalTicket->station_name ?? 'N/A' }}" />
+                                            <select name="station" id="station_id" class="form-control select2">
+                                                <option value="" disabled>Station</option>
+                                                @if ($arrivalTicket->station_name)
+                                                    <option value="{{ $arrivalTicket->station_name }}" selected>
+                                                        {{ $arrivalTicket->station_name }}</option>
+                                                @endif
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <!-- <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Truck Type:</label>
                                             <input type="text" name="station_id" placeholder="Truck Type"
                                                 class="form-control" disabled autocomplete="off"
                                                 value="{{ $arrivalTicket->truckType->name ?? 'N/A' }}" />
                                         </div>
+                                    </div> -->
+
+
+                                     <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group ">
+                                            <label>Truck Type:</label>
+                                            <select name="truck_type_id" id="truck_type_id" class="form-control select2">
+                                                <option value="">Truck Type</option>
+                                                @foreach (getTableData('arrival_truck_types', ['id', 'name', 'sample_money']) as $arrival_truck_types)
+                                                    <option  data-samplemoney="{{ $arrival_truck_types->sample_money ?? 0 }}"
+                                                        value="{{ $arrival_truck_types->id }}" @selected($arrivalTicket->truck_type_id == $arrival_truck_types->id)>
+                                                        {{ $arrival_truck_types->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group ">
+                                            <label>Sample Money Type:</label>
+                                            <select name="sample_money_type" class="form-control">
+                                                <option value="n/a" @selected($arrivalTicket->sample_money_type == 'n/a')>N/A</option>
+                                                <option value="single" @selected($arrivalTicket->sample_money_type == 'single')>Single</option>
+                                                <option value="double" @selected($arrivalTicket->sample_money_type == 'double')>Double</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Sample Money Type:</label>
                                             <input type="text" name="station_id" placeholder="Product Name"
                                                 class="form-control" disabled autocomplete="off"
                                                 value="{{ isset($arrivalTicket->sample_money_type) ? ucwords($arrivalTicket->sample_money_type) : 'N/A' }}" />
                                         </div>
-                                    </div>
+                                    </div> -->
 
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Truck No:</label>
                                             <input type="text" name="truck_no" value="{{ $arrivalTicket->truck_no }}"
-                                                disabled placeholder="Truck No" class="form-control"
+                                                 placeholder="Truck No" class="form-control"
                                                 autocomplete="off" />
                                         </div>
                                     </div>
@@ -161,7 +208,7 @@
                                         <div class="form-group">
                                             <label>Bilty No: </label>
                                             <input type="text" name="bilty_no" value="{{ $arrivalTicket->bilty_no }}"
-                                                disabled placeholder="Bilty No" class="form-control"
+                                                 placeholder="Bilty No" class="form-control"
                                                 autocomplete="off" />
                                         </div>
                                     </div>
@@ -169,13 +216,13 @@
                                         <div class="form-group">
                                             <label>No of bags: </label>
                                             <input type="text" name="bags" placeholder="No of bags" class="form-control"
-                                                disabled autocomplete="off" value="{{ $arrivalTicket->bags }}" />
+                                                 autocomplete="off" value="{{ $arrivalTicket->bags }}" />
                                         </div>
                                     </div>
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Sample Money: </label>
-                                            <input type="text" readonly name="sample_money" disabled
+                                            <input type="text" readonly name="sample_money" 
                                                 value="{{ $arrivalTicket->sample_money ?? 0 }}" placeholder="No of bags"
                                                 class="form-control" autocomplete="off" />
                                         </div>
@@ -183,7 +230,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>Loading Date:</label>
-                                            <input type="date" name="loading_date" disabled
+                                            <input type="date" name="loading_date"
                                                 value="{{ $arrivalTicket->loading_date }}" placeholder="Bilty No"
                                                 class="form-control" autocomplete="off" />
                                         </div>
@@ -208,7 +255,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>First Weighbridge Weight:</label>
-                                            <input type="text" name="first_weight" disabled placeholder="First Weight"
+                                            <input type="text" name="first_weight"  placeholder="First Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->first_weight }}" />
                                         </div>
@@ -216,7 +263,7 @@
                                     <div class="col-xs-4 col-sm-4 col-md-4">
                                         <div class="form-group">
                                             <label>2nd Weighbridge Weight: </label>
-                                            <input type="text" name="second_weight" disabled placeholder="Second Weight"
+                                            <input type="text" name="second_weight" placeholder="Second Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->second_weight }}" />
                                         </div>
@@ -229,6 +276,15 @@
                                                 value="{{ $arrivalTicket->net_weight }}" />
                                         </div>
                                     </div>
+            <div class="col-xs-12 col-sm-12 col-md-12 text-right">
+                                            <div class="form-group">
+                                     <input type="submit" value="Save Ticket" name="ticket_submit"
+                                                    @if($arrivalTicket->freight_status == 'completed') disabled
+                                                        data-toggle="tooltip"
+                                                        title="You cannot update information because freight is already created"
+                                                    @endif class="btn btn-primary" />
+                                                    </div>
+                                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -262,14 +318,18 @@
                                         </div>
                                         <div class="col-xs-12 col-sm-12 col-md-12 text-right">
                                             <div class="form-group">
+                                                <input type="submit" value="Revert Location" name="location_transfer_revert"
+                                                    @if($arrivalTicket->first_weighbridge_status == 'completed') disabled
+                                                        data-toggle="tooltip"
+                                                    title="Revert 1st weighbridge first to unlock Location Transfer" @endif
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert location transfer?')" />
+
                                                 <input type="submit" value="Save Location" name="location_transfer_submit"
                                                     @if($arrivalTicket->freight_status == 'completed') disabled
                                                         data-toggle="tooltip"
                                                         title="You cannot update information because freight is already created"
                                                     @endif class="btn btn-primary" />
-                                                <input type="submit" value="Revert Location" name="location_transfer_revert"
-                                                    class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert location transfer?')" />
                                             </div>
                                         </div>
                                     @else
@@ -306,15 +366,19 @@
                                         </div>
                                         <div class="col-xs-12 col-sm-12 col-md-12 text-right">
                                             <div class="form-group">
+                                                <input type="submit" @if($arrivalTicket->document_approval_status != null)
+                                                    disabled data-toggle="tooltip"
+                                                    title="Revert Half/Full Approved first to unlock First weighbridge"
+                                                @endif value="Revert First Weighbridge" name="first_weighbridge_revert"
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('Are you sure you want to revert first weighbridge?')" />
                                                 <input type="submit" value="Save First Weighbridge"
                                                     name="first_weighbridge_submit"
                                                     @if($arrivalTicket->freight_status == 'completed') disabled
                                                         data-toggle="tooltip"
                                                         title="You cannot update information because freight is already created"
                                                     @endif class="btn btn-primary" />
-                                                <input type="submit" value="Revert First Weighbridge"
-                                                    name="first_weighbridge_revert" class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert first weighbridge?')" />
+
                                             </div>
                                         </div>
                                     @else
@@ -329,90 +393,7 @@
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-content">
-                            <div class="card-body">
 
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
-                                            Second Weighbridge Detail
-                                        </h6>
-                                    </div>
-                                    @if (isset($arrivalTicket->secondWeighbridge))
-                                        <div class="col-xs-4 col-sm-4 col-md-4">
-                                            <div class="form-group">
-                                                <label>First Weighbridge Weight:</label>
-                                                <input type="text" disabled placeholder="First Weight" class="form-control"
-                                                    autocomplete="off"
-                                                    value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-4 col-sm-4 col-md-4">
-                                            <div class="form-group">
-                                                <label>2nd Weighbridge Weight: </label>
-                                                <input type="text" name="arrival_second_weight" placeholder="Second Weight"
-                                                    class="form-control" autocomplete="off"
-                                                    value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-4 col-sm-4 col-md-4">
-                                            <div class="form-group">
-                                                <label>Net Weighbridge Weight: </label>
-                                                <input type="text" name="arrival_net_weight" disabled
-                                                    placeholder="Second Weight" class="form-control" autocomplete="off"
-                                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-12 col-sm-12 col-md-12">
-                                            <fieldset>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-primary" type="button">Weight
-                                                            Difference</button>
-                                                    </div>
-                                                    <input type="text" id="weight_difference" name="weight_difference"
-                                                        placeholder="Weight Difference" readonly class="form-control"
-                                                        autocomplete="off"
-                                                        value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
-                                                </div>
-                                            </fieldset>
-                                        </div>
-                                        <div class="col-xs-4 col-sm-4 col-md-4 d-none">
-                                            <div class="form-group">
-                                                <label>Weight Difference: </label>
-                                                <input type="text" name="net_weight" disabled placeholder="Net Weight"
-                                                    class="form-control" autocomplete="off"
-                                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
-                                            </div>
-                                        </div>
-
-                                        <div class="col-xs-12 col-sm-12 col-md-12 text-right">
-                                            <div class="form-group">
-
-                                                <input type="submit" @if($arrivalTicket->freight_status == 'completed')
-                                                    disabled data-toggle="tooltip"
-                                                    title="You cannot update information because freight is already created"
-                                                @endif value="Save Second Weighbridge" name="second_weighbridge_submit"
-                                                    class="btn btn-primary" />
-
-                                                <input type="submit" value="Revert Second Weighbridge"
-                                                    name="second_weighbridge_revert" class="btn btn-danger"
-                                                    onclick="return confirm('Are you sure you want to revert second weighbridge?')" />
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div class="col-12">
-                                            <div class="alert bg-light-warning">
-                                                <i class="fa fa-exclamation-triangle"></i> Second Weighbridge not found
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
                     <!-- Half/Full Approval Section -->
                     <div class="card">
                         <div class="card-content">
@@ -424,7 +405,7 @@
                                             Half / Full Approved
                                         </h6>
                                     </div>
-                                    @if (isset($arrivalTicket->secondWeighbridge))
+                                    @if (isset($arrivalTicket->approvals))
                                         <div class="col-xs-6 col-sm-6 col-md-6">
                                             <div class="form-group">
                                                 <label>Gala Name:</label>
@@ -499,261 +480,385 @@
                                                     <div class="form-group">
                                                         <label>Total Bags : </label>
                                                         <input type="number" name="total_bags" placeholder="Total Bags"
-                                                            class="form-control" autocomplete="off" readonly required />
+                                                            class="form-control" oninput="calculateBags()"
+                                                            value="{{ $arrivalTicket->approvals->total_bags }}"
+                                                            autocomplete="off"
+                                                            max="{{ $arrivalTicket->document_approval_status == 'half_approved' ? $arrivalTicket->bags : '' }}"" required />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div
+                                                            class=" row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
+
+                                                        <div class="col-12">
+                                                            <h6 class="header-heading-sepration" style="background:#ffafaf">
+                                                                Total Rejection
+                                                            </h6>
+                                                        </div>
+                                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                                            <div class="form-group">
+                                                                <label>Total Rejection Bags : </label>
+                                                                <input type="number" readonly name="total_rejection"
+                                                                    id="total_rejection" placeholder="Total Rejection Bags"
+                                                                    class="form-control" autocomplete="off"
+                                                                    value="{{ $arrivalTicket->document_approval_status == 'fully_approved' ? 0 : $arrivalTicket->approvals->total_rejection }}" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                                            <div class="form-group">
+                                                                <label>Amanat:</label>
+                                                                <select class="form-control" name="amanat">
+                                                                    <option value="No">No</option>
+                                                                    <option value="Yes">Yes</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row">
+                                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                                            <div class="form-group">
+                                                                <label>Remark:</label>
+                                                                <textarea name="remark" placeholder="Note"
+                                                                    class="form-control"
+                                                                    rows="5">{{ $arrivalTicket->approvals->remark }}</textarea>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="row total-rejection-section">
+
+                                                <div class="col-xs-12 col-sm-12 col-md-12 text-right">
+                                                    <input type="submit"
+                                                        @if($arrivalTicket->second_weighbridge_status == 'completed') disabled
+                                                            data-toggle="tooltip"
+                                                            title="You cannot update information because freight is already created"
+                                                        @endif value="Revert Approval" name="half_full_approve_revert"
+                                                        class="btn btn-danger"
+                                                        onclick="return confirm('Are you sure you want to revert approval?')" />
+                                                    <input type="submit" value="Save Half/Full"
+                                                        name="half_full_approve_submit" class="btn btn-primary" />
+                                                </div>
+
+
+                                    @else
                                                 <div class="col-12">
-                                                    <h6 class="header-heading-sepration" style="background:#ffafaf">
-                                                        Total Rejection
-                                                    </h6>
-                                                </div>
-
-                                                <div class="col-xs-12 col-sm-12 col-md-12">
-                                                    <div class="form-group">
-                                                        <label>Total Rejection Bags : </label>
-                                                        <input type="number" readonly name="total_rejection"
-                                                            id="total_rejection" placeholder="Total Rejection Bags"
-                                                            class="form-control" autocomplete="off" />
+                                                    <div class=" alert bg-light-warning">
+                                                        <i class="fa fa-exclamation-triangle"></i> Half/ Full Approved not
+                                                        found
                                                     </div>
                                                 </div>
-                                                <div class="col-xs-12 col-sm-12 col-md-12">
-                                                    <div class="form-group">
-                                                        <label>Amanat:</label>
-                                                        <select class="form-control" name="amanat">
-                                                            <option value="No">No</option>
-                                                            <option value="Yes">Yes</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row">
-                                                <div class="col-xs-12 col-sm-12 col-md-12">
-                                                    <div class="form-group">
-                                                        <label>Note:</label>
-                                                        <textarea name="note" placeholder="Note" class="form-control"
-                                                            rows="5"></textarea>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            @endif
                                         </div>
 
-                                        @if (isset($arrivalTicket->secondWeighbridge))
-                                            <div class="col-xs-12 col-sm-12 col-md-12 text-right">
-                                                <input type="submit" value="Revert Approval" name="half_full_approve_revert"
-                                                    class="btn btn-warning"
-                                                    onclick="return confirm('Are you sure you want to revert approval?')" />
-                                                <input type="submit" value="Save Half/Full" name="half_full_approve_submit"
-                                                    class="btn btn-primary" />
-                                            </div>
-                                        @endif
-
-                                    @else
-                                        <div class="col-12">
-                                            <div class=" alert bg-light-warning">
-                                                <i class="fa fa-exclamation-triangle"></i> Half/ Full Approved not found
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <div class="card">
-                        <div class="card-content">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
-                                            Arrival Freight
-                                        </h6>
                                     </div>
-                                    @if (isset($arrivalTicket->freight))
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Loaded Weight</label>
-                                                <input type="number" name="loaded_weight" class="form-control"
-                                                    value="{{ $arrivalTicket->freight->arrivalTicket->net_weight ?? 'N/A' }}"
-                                                    disabled />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Arrived Weight</label>
-                                                <input type="number" name="arrived_weight" class="form-control"
-                                                    value="{{ $arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 'N/A' }}"
-                                                    disabled />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Difference</label>
-                                                <input type="number" name="difference" class="form-control"
-                                                    value="{{ ($arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 0) - ($arrivalTicket->freight->arrivalTicket->net_weight ?? 0) }}"
-                                                    disabled />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Exempted Weight</label>
-                                                <input type="number" name="exempted_weight" class="form-control" disabled
-                                                    value="{{ $arrivalTicket->freight->exempted_weight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Net Shortage</label>
-                                                <input type="number" name="net_shortage" class="form-control" disabled
-                                                    value="{{ $arrivalTicket->freight->net_shortage }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Freight per Ton</label>
-                                                <input type="number" step="0.01" name="freight_per_ton" disabled
-                                                    class="form-control"
-                                                    value="{{ $arrivalTicket->freight->freight_per_ton }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Kanta Loading Charges</label>
-                                                <input type="number" step="0.01" disabled name="kanta_golarchi_charges"
-                                                    class="form-control"
-                                                    value="{{ $arrivalTicket->freight->kanta_golarchi_charges }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Arrived Kanta Charges</label>
-                                                <input type="number" step="0.01" name="karachi_kanta_charges"
-                                                    class="form-control" disabled
-                                                    value="{{ $arrivalTicket->freight->karachi_kanta_charges }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Other (+)/Labour Charges</label>
-                                                <input type="number" step="0.01" name="other_labour_charges"
-                                                    class="form-control" disabled
-                                                    value="{{ $arrivalTicket->freight->other_labour_charges }}" />
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Other Deduction</label>
-                                                <input type="number" step="0.01" name="other_deduction" class="form-control"
-                                                    disabled value="{{ $arrivalTicket->freight->other_deduction }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Unpaid Labor Charges</label>
-                                                <input type="number" step="0.01" name="unpaid_labor_charges"
-                                                    class="form-control" disabled
-                                                    value="{{ $arrivalTicket->freight->unpaid_labor_charges }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Freight Written on Bilty</label>
-                                                <input type="number" step="0.01" disabled name="freight_written_on_bilty"
-                                                    class="form-control"
-                                                    value="{{ $arrivalTicket->freight->freight_written_on_bilty }}" />
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Gross Freight Amount</label>
-                                                <input type="number" step="0.01" name="gross_freight_amount"
-                                                    class="form-control" disabled
-                                                    value="{{ $arrivalTicket->freight->gross_freight_amount }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Net Freight</label>
-                                                <input type="number" step="0.01" name="net_freight" class="form-control"
-                                                    disabled value="{{ $arrivalTicket->freight->net_freight }}" />
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 d-none">
-                                            <div class="form-group">
-                                                <label>Status</label>
-                                                <input type="hidden" name="status" value="approved">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Attach Bilty</label>
-                                                <br />
-                                                @if ($arrivalTicket->freight->bilty_document)
-                                                    <a href="{{ asset($arrivalTicket->freight->bilty_document) }}"
-                                                        target="_blank">View
-                                                        Current File</a>
-                                                @else
-                                                    <small class="text-danger">No file found</small>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Attach Loading Weight</label>
-                                                <br />
-                                                @if ($arrivalTicket->freight->loading_weight_document)
-                                                    <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}"
-                                                        target="_blank">View
-                                                        Current File</a>
-                                                @else
-                                                    <small class="text-danger">No file found</small>
-                                                @endif
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Other Document (Optional)</label>
-                                                <br />
-                                                @if ($arrivalTicket->freight->other_document)
-                                                    <a href="{{ asset($arrivalTicket->freight->other_document) }}"
-                                                        target="_blank">View
-                                                        Current File</a>
-                                                @else
-                                                    <small class="text-danger">No file found</small>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Other Document 2 (Optional)</label>
-                                                <br />
-                                                @if ($arrivalTicket->freight->other_document_2)
-                                                    <a href="{{ asset($arrivalTicket->freight->other_document_2) }}"
-                                                        target="_blank">View
-                                                        Current File</a>
-                                                @else
-                                                    <small class="text-danger">No file found</small>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div class="col-12">
-                                            <div class="alert bg-light-warning">
-                                                <i class="fa fa-exclamation-triangle"></i> Freight not found
-                                            </div>
-                                        </div>
-                                    @endif
                                 </div>
                             </div>
-                        </div>
-                    </div>
+
+                            <div class="card">
+                                <div class="card-content">
+                                    <div class="card-body">
+
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <h6 class="header-heading-sepration">
+                                                    Second Weighbridge Detail
+                                                </h6>
+                                            </div>
+                                            @if (isset($arrivalTicket->secondWeighbridge))
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>First Weighbridge Weight:</label>
+                                                        <input type="text" disabled placeholder="First Weight"
+                                                            class="form-control" autocomplete="off"
+                                                            value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>2nd Weighbridge Weight: </label>
+                                                        <input type="text" name="arrival_second_weight"
+                                                            placeholder="Second Weight" class="form-control"
+                                                            autocomplete="off"
+                                                            value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Net Weighbridge Weight: </label>
+                                                        <input type="text" name="arrival_net_weight" disabled
+                                                            placeholder="Second Weight" class="form-control"
+                                                            autocomplete="off"
+                                                            value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                                    <fieldset>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <button class="btn btn-primary" type="button">Weight
+                                                                    Difference</button>
+                                                            </div>
+                                                            <input type="text" id="weight_difference"
+                                                                name="weight_difference" placeholder="Weight Difference"
+                                                                readonly class="form-control" autocomplete="off"
+                                                                value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
+                                                        </div>
+                                                    </fieldset>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4 d-none">
+                                                    <div class="form-group">
+                                                        <label>Weight Difference: </label>
+                                                        <input type="text" name="net_weight" disabled
+                                                            placeholder="Net Weight" class="form-control" autocomplete="off"
+                                                            value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-xs-12 col-sm-12 col-md-12 text-right">
+                                                    <div class="form-group">
+                                                        <input @if($arrivalTicket->freight_status == 'completed') disabled
+                                                            data-toggle="tooltip"
+                                                        title="Revert freight first to unlock second weighbridge" @endif
+                                                            type="submit" value="Revert Second Weighbridge"
+                                                            name="second_weighbridge_revert" class="btn btn-danger"
+                                                            onclick="return confirm('Are you sure you want to revert second weighbridge?')" />
+
+                                                        <input type="submit"
+                                                            @if($arrivalTicket->freight_status == 'completed') disabled
+                                                                data-toggle="tooltip"
+                                                                title="You cannot update information because freight is already created"
+                                                            @endif value="Save Second Weighbridge"
+                                                            name="second_weighbridge_submit" class="btn btn-primary" />
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="col-12">
+                                                    <div class="alert bg-light-warning">
+                                                        <i class="fa fa-exclamation-triangle"></i> Second Weighbridge not
+                                                        found
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            <div class="card">
+                                <div class="card-content">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <h6 class="header-heading-sepration">
+                                                    Arrival Freight
+                                                </h6>
+                                            </div>
+                                            @if (isset($arrivalTicket->freight))
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Loaded Weight</label>
+                                                        <input type="number" name="loaded_weight" class="form-control"
+                                                            value="{{ $arrivalTicket->freight->arrivalTicket->net_weight ?? 'N/A' }}"
+                                                            disabled />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Arrived Weight</label>
+                                                        <input type="number" name="arrived_weight" class="form-control"
+                                                            value="{{ $arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 'N/A' }}"
+                                                            disabled />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Difference</label>
+                                                        <input type="number" name="difference" class="form-control"
+                                                            value="{{ ($arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 0) - ($arrivalTicket->freight->arrivalTicket->net_weight ?? 0) }}"
+                                                            disabled />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Exempted Weight</label>
+                                                        <input type="number" name="exempted_weight" class="form-control"
+                                                            disabled
+                                                            value="{{ $arrivalTicket->freight->exempted_weight }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Net Shortage</label>
+                                                        <input type="number" name="net_shortage" class="form-control"
+                                                            disabled value="{{ $arrivalTicket->freight->net_shortage }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Freight per Ton</label>
+                                                        <input type="number" step="0.01" name="freight_per_ton" disabled
+                                                            class="form-control"
+                                                            value="{{ $arrivalTicket->freight->freight_per_ton }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Kanta Loading Charges</label>
+                                                        <input type="number" step="0.01" disabled
+                                                            name="kanta_golarchi_charges" class="form-control"
+                                                            value="{{ $arrivalTicket->freight->kanta_golarchi_charges }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Arrived Kanta Charges</label>
+                                                        <input type="number" step="0.01" name="karachi_kanta_charges"
+                                                            class="form-control" disabled
+                                                            value="{{ $arrivalTicket->freight->karachi_kanta_charges }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Other (+)/Labour Charges</label>
+                                                        <input type="number" step="0.01" name="other_labour_charges"
+                                                            class="form-control" disabled
+                                                            value="{{ $arrivalTicket->freight->other_labour_charges }}" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Other Deduction</label>
+                                                        <input type="number" step="0.01" name="other_deduction"
+                                                            class="form-control" disabled
+                                                            value="{{ $arrivalTicket->freight->other_deduction }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Unpaid Labor Charges</label>
+                                                        <input type="number" step="0.01" name="unpaid_labor_charges"
+                                                            class="form-control" disabled
+                                                            value="{{ $arrivalTicket->freight->unpaid_labor_charges }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Freight Written on Bilty</label>
+                                                        <input type="number" step="0.01" disabled
+                                                            name="freight_written_on_bilty" class="form-control"
+                                                            value="{{ $arrivalTicket->freight->freight_written_on_bilty }}" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Gross Freight Amount</label>
+                                                        <input type="number" step="0.01" name="gross_freight_amount"
+                                                            class="form-control" disabled
+                                                            value="{{ $arrivalTicket->freight->gross_freight_amount }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Net Freight</label>
+                                                        <input type="number" step="0.01" name="net_freight"
+                                                            class="form-control" disabled
+                                                            value="{{ $arrivalTicket->freight->net_freight }}" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 d-none">
+                                                    <div class="form-group">
+                                                        <label>Status</label>
+                                                        <input type="hidden" name="status" value="approved">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Attach Bilty</label>
+                                                        <br />
+                                                        @if ($arrivalTicket->freight->bilty_document)
+                                                            <a href="{{ asset($arrivalTicket->freight->bilty_document) }}"
+                                                                target="_blank">View
+                                                                Current File</a>
+                                                        @else
+                                                            <small class="text-danger">No file found</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Attach Loading Weight</label>
+                                                        <br />
+                                                        @if ($arrivalTicket->freight->loading_weight_document)
+                                                            <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}"
+                                                                target="_blank">View
+                                                                Current File</a>
+                                                        @else
+                                                            <small class="text-danger">No file found</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Other Document (Optional)</label>
+                                                        <br />
+                                                        @if ($arrivalTicket->freight->other_document)
+                                                            <a href="{{ asset($arrivalTicket->freight->other_document) }}"
+                                                                target="_blank">View
+                                                                Current File</a>
+                                                        @else
+                                                            <small class="text-danger">No file found</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Other Document 2 (Optional)</label>
+                                                        <br />
+                                                        @if ($arrivalTicket->freight->other_document_2)
+                                                            <a href="{{ asset($arrivalTicket->freight->other_document_2) }}"
+                                                                target="_blank">View
+                                                                Current File</a>
+                                                        @else
+                                                            <small class="text-danger">No file found</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                @if($arrivalTicket->is_ticket_verified != 1)
+                                                    <div class="col-md-12 text-right">
+                                                        <input type="submit" value="Revert Freight" name="freight_revert"
+                                                            @if($arrivalTicket->is_ticket_verified == 1) disabled
+                                                                data-toggle="tooltip"
+                                                                title="This arrival has been verified and is locked from reverting."
+                                                            @endif class="btn btn-danger"
+                                                            onclick="return confirm('Are you sure you want to revert Arrival freight?')" />
+                                                    </div>
+                                                @endif
+                                                @if($arrivalTicket->is_ticket_verified == 1)
+                                                    <div class="col-12 mt-2">
+                                                        <div class="alert bg-light-success">
+                                                            <i class="fa fa-check"></i> This arrival has been
+                                                            verified and is locked from reverting.
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <div class="col-12">
+                                                    <div class="alert bg-light-warning">
+                                                        <i class="fa fa-exclamation-triangle"></i> Freight not found
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                 </form>
             </div>
             <div class="col-md-6">
@@ -1671,7 +1776,68 @@
             </div>
         @endif
 <script>
+
+        function calculateNetWeight() {
+            const firstWeight = parseFloat($('#first_weight').val()) || 0;
+            const secondWeight = parseFloat($('#second_weight').val()) || 0;
+            const netWeight = secondWeight - firstWeight;
+
+            $('#net_weight').val(netWeight || 0);
+
+            if (firstWeight && secondWeight) {
+                if (netWeight < 0) {
+                    $('#net_weight').addClass('is-invalid');
+                    $('#net_weight').siblings('.error-message').show();
+                } else {
+                    $('#net_weight').removeClass('is-invalid');
+                    $('#net_weight').siblings('.error-message').hide();
+                }
+            }
+        }
+
+
+
+        function calculateSampleMoney() {
+        let truckTypeSelect = $('[name="truck_type_id"]');
+        let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
+
+        let holidayType = $('[name="sample_money_type"]').val();
+
+        if (holidayType === 'double') {
+            sampleMoney = sampleMoney * 2;
+        }
+
+        if (holidayType === 'n/a') {
+            sampleMoney = 0;
+        }
+
+        $('input[name="sample_money"]').val(sampleMoney || 0);
+    }
+
+    function calculateBags() {
+        let bags = parseFloat($('[name="bags"]').val()) || 0;
+        let total = parseFloat($('[name="total_bags"]').val()) || 0;
+
+        let rejection = bags - total;
+
+        $('[name="total_rejection"]').val(rejection);
+    }
     $(document).ready(function () {
+
+        initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
+        initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
+
+         
+        $('#first_weight, #second_weight').on('input', function () {
+            console.log('input changed');
+            calculateNetWeight();
+        });
+
+            calculateSampleMoney();
+
+        $(document).on('change', '[name="truck_type_id"]', calculateSampleMoney);
+
+        $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
 
         function toggleBagFields() {
             let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();

@@ -1,7 +1,8 @@
+ 
  @foreach ($dataItems ?? [] as $key => $data)
      <tr id="row_{{ $key }}">
-         <td style="width: 25%">
-             <div class="form-group mb-0">
+         <td style="width: 30%">
+             <div style="width: 100px" class="form-group mb-0">
                  <select id="category_id_{{ $key }}" disabled
                      onchange="filter_items(this.value,{{ $key }})" class="form-control item-select select2"
                      data-index="{{ $key }}">
@@ -17,8 +18,8 @@
 
              </div>
          </td>
-         <td style="width: 25%">
-             <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
+         <td style="width: 30%">
+             <select style="width: 100px" id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
                  class="form-control item-select select2" data-index="{{ $key }}">
                  @foreach (get_product_by_category($data->category_id) as $item)
                      <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
@@ -29,11 +30,54 @@
              </select>
              <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
          </td>
-         <td style="width: 15%">
-             <input type="text" id="uom_{{ $key }}" class="form-control uom"
+         <td style="width: 30%">
+             <input style="width: 100px" type="text" id="uom_{{ $key }}" class="form-control uom"
                  value="{{ get_uom($data->item_id) }}" disabled readonly>
              <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
          </td>
+         <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="min_weight_{{ $key }}" class="form-control min_weight"
+                value="{{ $data->min_weight }}" disabled readonly>
+            
+            <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
+         </td>
+           <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="brands_{{ $key }}" class="form-control brands"
+                value="{{ getBrandById($data->brand_id)?->name ?? null }}" disabled readonly>
+            
+            <input type="hidden" name="color[]" value="{{ $data->brand_id }}">
+         </td>
+         <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="color_{{ $key }}" class="form-control color"
+                value="{{ getColorById($data->color)?->color ?? null }}" disabled readonly>
+            
+            <input type="hidden" name="color[]" value="{{ $data->color }}">
+         </td>
+         <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="construction_per_square_inch{{ $key }}" class="form-control construction_per_square_inch"
+                value="{{ $data->construction_per_square_inch }}" disabled readonly>
+            
+            <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}">
+         </td>
+         <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="size{{ $key }}" class="form-control size"
+                value="{{ getSizeById($data->size)?->size ?? null }}" disabled readonly>
+            
+            <input type="hidden" name="size[]" value="{{ $data->size }}">
+         </td>
+         <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="stitching{{ $key }}" class="form-control size"
+                value="{{ $data->stitching }}" disabled readonly>
+            
+            <input type="hidden" name="stitching[]" value="{{ $data->stitching }}">
+         </td>
+        
          {{-- <td style="width: 20%">
              <div class="loop-fields">
                  <div class="form-group mb-0">
@@ -50,7 +94,7 @@
                  </div>
              </div>
          </td> --}}
-         <td style="width: 10%">
+         <td style="width: 30%">
              <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                  onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}" id="qty_{{ $key }}"
                  class="form-control" step="0.01" min="0" max="{{ $data->qty }}">

@@ -180,7 +180,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();
@@ -224,11 +224,9 @@ class PurchaseOrderController extends Controller
             }
 
         }
-
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'name')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
-
         $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders', 'taxes'))->render();
 
         return response()->json([
@@ -244,7 +242,7 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::where('am_approval_status', 'approved')->with([
+        $approvedRequests = PurchaseRequest::with("purchase_order")->where('am_approval_status', 'approved')->with([
             'PurchaseData' => function ($query) {
                 // $query->where('am_approval_status', 'approved');
             }
@@ -254,6 +252,7 @@ class PurchaseOrderController extends Controller
             })
             ->get();
 
+     
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
 
@@ -274,6 +273,7 @@ class PurchaseOrderController extends Controller
                 $quotation = PurchaseQuotation::where('purchase_quotation_no', $request->quotation_no)->first();
             }
 
+
             $PurchaseOrder = PurchaseOrder::create([
                 'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
                 'purchase_request_id' => $request->purchase_request_id,
@@ -286,6 +286,7 @@ class PurchaseOrderController extends Controller
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'other_terms' => $request->other_term ?? null,
+                'delivery_address' => $request->delivery_address,
                 'created_by' => auth()->user()->id,
             ]);
 
@@ -293,7 +294,7 @@ class PurchaseOrderController extends Controller
                 $requestData = PurchaseOrderData::create([
                     'purchase_order_id' => $PurchaseOrder->id,
                     'category_id' => $request->category_id[$index],
-                    'purchase_request_data_id' => $request->purchase_request_data_id[$index] ?? null,
+                    'purchase_request_data_id' => $request->purchase_request_data_id[$index],
                     'purchase_quotation_data_id' => isset($request->purchase_quotation_data_id[$index]) ? $request->purchase_quotation_data_id[$index] : null,
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
@@ -395,11 +396,11 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::with([
             'purchaseOrderData',
             'purchaseOrderData.category',
+            'purchaseOrderData.purchase_request_data',
             'purchaseOrderData.item',
             'purchase_request.PurchaseData',
             'purchase_quotation.quotation_data'
         ])->findOrFail($id);
-
         $purchaseRequest = $purchaseOrder->purchase_request;
         $purchaseQuotation = $purchaseOrder->purchase_quotation;
 
@@ -412,7 +413,7 @@ class PurchaseOrderController extends Controller
 
         // $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
         //     ->findOrFail($id);
-
+            
         $purchaseOrderDataCount = $purchaseOrder->purchaseOrderData->count();
 
         return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount', 'payment_terms', 'taxes'));
@@ -425,6 +426,7 @@ class PurchaseOrderController extends Controller
     {
         // dd($request->all());
         $validated = $request->validate([
+            'delivery_address' => "required",
             'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',
@@ -456,6 +458,10 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
+            $PurchaseOrder->update([
+                'description' => $request->description,
+                'delivery_address' => $request->delivery_address
+            ]);
             PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)->delete();
 
             foreach ($request->item_id as $index => $itemId) {
@@ -502,6 +508,7 @@ class PurchaseOrderController extends Controller
      */
     public function destroy($id)
     {
+        $purchaseOrder= PurchaseOrder::where("id", $id)->delete();
         $PurchaseOrderData = PurchaseOrderData::where('id', $id)->delete();
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
@@ -524,7 +531,7 @@ class PurchaseOrderController extends Controller
         ])->findOrFail($id);
 
 
-        $purchaseOrderData = PurchaseOrderData::where('purchase_order_id', $id)
+        $purchaseOrderData = PurchaseOrderData::with("purchase_request_data")->where('purchase_order_id', $id)
             ->when(
                 $purchaseOrder->am_approval_status === 'approved',
                 function ($query) {
@@ -533,6 +540,7 @@ class PurchaseOrderController extends Controller
             )
             ->get();
 
+       
         return view('management.procurement.store.purchase_order.approvalCanvas', [
             'purchaseOrder' => $purchaseOrder,
             'categories' => $categories,

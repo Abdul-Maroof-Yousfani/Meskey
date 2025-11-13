@@ -314,7 +314,7 @@
                                 class="ft-arrow-right submenu-icon"></i><span>Purchase Request
                             </span></a>
                     </li>
-                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                    <li data-menu=""><a
                             class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-quotation.comparison-list') }}" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Purchase
@@ -563,6 +563,35 @@
                                     onclick="loadPageContent('{{ route('unit_of_measure.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Unit of mesurement</span></a>
+                            </li>
+                            @endcanAccess
+
+
+                            @canAccess('sizes')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('color.index') }}"
+                                    onclick="loadPageContent('{{ route('color.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Colors</span></a>
+                            </li>
+                            @endcanAccess
+
+
+                            @canAccess('sizes')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('size.index') }}"
+                                    onclick="loadPageContent('{{ route('size.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Sizes</span></a>
+                            </li>
+                            @endcanAccess
+
+                            @canAccess('payment-terms')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('payment-term.index') }}"
+                                    onclick="loadPageContent('{{ route('payment-term.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Payment Terms</span></a>
                             </li>
                             @endcanAccess
                         </ul>

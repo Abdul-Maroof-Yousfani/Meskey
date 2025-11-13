@@ -8,7 +8,7 @@ use App\Models\Arrival\ArrivalSamplingRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-
+use App\Services\ArrivalDashboardService;
 class HomeController extends Controller
 {
     public function __construct()
@@ -17,7 +17,7 @@ class HomeController extends Controller
         $this->middleware('auth');
     }
 
-    private function getArrivalDashboardData($fromDate, $toDate, $companyId)
+    private function getArrivalDashboardDatabk($fromDate, $toDate, $companyId)
     {
         $authUser = auth()->user();
         $dateRange = [Carbon::parse($fromDate)->startOfDay(), Carbon::parse($toDate)->endOfDay()];
@@ -197,6 +197,15 @@ class HomeController extends Controller
             'half_full_approve_pending' => $halfFullApprovePending,
             'second_weighbridge_pending' => $secondWeighbridgePending,
         ];
+    }
+
+    public function getArrivalDashboardDatadbk(Request $request, ArrivalDashboardService $service)
+    {
+        return $service->getArrivalDashboardData(
+            $request->from_date,
+            $request->to_date,
+            $request->company_id
+        );
     }
 
     public function getListData(Request $request)
@@ -489,7 +498,7 @@ class HomeController extends Controller
         return view('management.dashboard.snippets.list_data', compact('data', 'type'));
     }
 
-    public function index(Request $request)
+    public function index(Request $request, ArrivalDashboardService $service)
     {
         $module = $request->get('module', 'arrival');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
@@ -499,7 +508,12 @@ class HomeController extends Controller
         $data = [];
 
         if ($module === 'arrival') {
-            $data = $this->getArrivalDashboardData($fromDate, $toDate, $request->company_id);
+            $data = $service->getArrivalDashboardData(
+                $request->from_date,
+                $request->to_date,
+                $request->company_id
+            );
+           // $data = $this->getArrivalDashboardData($fromDate, $toDate, $request->company_id);
         }
 
         return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate'));

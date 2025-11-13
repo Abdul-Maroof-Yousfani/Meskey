@@ -1,87 +1,93 @@
-<x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'" :pagination="$tickets->links()">
+<x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'"
+    :pagination="$tickets->links()">
     @slot('head')
-        <th>Ticket No. </th>
-        <th>Commodity</th>
-        <th>Acc Of.</th>
-        <th>Miller</th>
-        <th>Net Weight</th>
-        <th>Truck No</th>
-        <th>Bilty No</th>
-        <th>First QC</th>
-        <th>Created</th>
-        <th>Action</th>
+    <th>Ticket No. </th>
+    <th>Commodity</th>
+    <th>Acc Of.</th>
+    <th>Miller</th>
+    <th>Net Weight</th>
+    <th>Truck No</th>
+    <th>Bilty No</th>
+    <th>First QC</th>
+    <th>Created</th>
+    <th>Action</th>
     @endslot
 
     @slot('body')
-        @foreach ($tickets as $key => $row)
-            <tr class="@if ($row->first_qc_status == 'rejected') bg-red @endif">
-                <td>
-                    <p class="m-0">
-                        #{{ $row->unique_no }} <br>
-                    </p>
-                </td>
-                <td>
-                    <p class="m-0">
-                        {{ optional($row->product)->name ?? 'No Found' }} <br>
-                    </p>
-                </td>
-                <td>
-                    <p class="m-0">
-                        {{ $row->accounts_of_name ?? 'N/A' }} <br>
-                    </p>
-                </td>
-                <td>
-                    <p class="m-0">
-                        {{ $row->miller->name ?? 'N/A' }} <br>
-                    </p>
-                </td>
-                <td>
-                    <p class="m-0">
-                        {{ $row->net_weight ?? 'N/A' }} <br>
-                    </p>
-                </td>
-                <td>
-                    <p class="m-0">
-                        {{ $row->truck_no }}
-                        <br>
-                    </p>
-                </td>
-                <td>
-                    <p class="m-0">
-                        {{ $row->bilty_no }} <br>
-                    </p>
-                </td>
-                <td>
-                    <label
-                        class="badge text-uppercase m-0 {{ $row->first_qc_status == 'rejected' ? 'badge-danger' : 'badge-primary' }}">
-                        {{ $row->first_qc_status }} <br>
-                    </label>
-                </td>
-                <td>
-                    <p class="m-0 white-nowrap">
-                        {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                        {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }}
-                    </p>
-                </td>
-                <td>
-                    <div class="d-flex gap-2 align-items-center justify-content-center">
-                      
-                            <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                      
-                        @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)
-                            <button onclick="confirmBiltyReturn({{ $row->id }})" class="btn btn-sm btn-danger">
-                                Confirm Bilty Return
-                            </button>
-                        @elseif($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 1)
-                            <span class="badge badge-success">Return Confirmed</span>
-                        @endif
-                    </div>
-                </td>
-            </tr>
-        @endforeach
+    @foreach ($tickets as $key => $row)
+        <tr class="@if ($row->first_qc_status == 'rejected') bg-red @endif">
+            <td>
+                <p class="m-0">
+                    #{{ $row->unique_no }} <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ optional($row->product)->name ?? 'No Found' }} <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ $row->accounts_of_name ?? 'N/A' }} <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ $row->miller->name ?? 'N/A' }} <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ $row->net_weight ?? 'N/A' }} <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ $row->truck_no }}
+                    <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ $row->bilty_no }} <br>
+                </p>
+            </td>
+            <td>
+                <label
+                    class="badge text-uppercase m-0 {{ $row->first_qc_status == 'rejected' ? 'badge-danger' : 'badge-primary' }}">
+                    {{ $row->first_qc_status }} <br>
+                </label>
+            </td>
+            <td>
+                <p class="m-0 white-nowrap">
+                    {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
+                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }}
+                </p>
+            </td>
+            <td>
+                <div class="d-flex gap-2 align-items-center justify-content-center">
+
+                    <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
+                        class="info p-1 text-center mr-2 position-relative">
+                        <i class="ft-eye font-medium-3"></i>
+                    </a>
+                    @canAccess('arrival-master-control')
+                    <a href="{{ route('ticket.arrival-revert', $row->id) }}" class="btn btn-sm btn-danger">
+                        Master Control
+                    </a>
+                    @endcanAccess
+
+                    @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)
+                        <button onclick="confirmBiltyReturn({{ $row->id }})" class="btn btn-sm btn-danger">
+                            Confirm Bilty Return
+                        </button>
+                    @elseif($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 1)
+                        <span class="badge badge-success">Return Confirmed</span>
+                    @endif
+                </div>
+            </td>
+        </tr>
+    @endforeach
     @endslot
 </x-sticky-table>
 
@@ -129,7 +135,7 @@
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire(
                                 'Confirmed!',
@@ -146,7 +152,7 @@
                             );
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.fire(
                             'Error!',
                             'Something went wrong.',

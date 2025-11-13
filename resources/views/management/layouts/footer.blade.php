@@ -431,6 +431,16 @@
         childList: true,
         subtree: true
     });
+    $(document).ready(function () {
+        $('body').on('input', '.percentage-input-field', function () {
+            let percentage = parseFloat($(this).val()) || 0;
+            if (percentage > 100) {
+                percentage = 100;
+                $(this).val(100);
+            }
+        });
+    });
+
 </script>
 
 @yield('script')

@@ -309,6 +309,7 @@ class FreightController extends Controller
 
                             $amount = $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0;
                             $inventoryAmount = $purchasePaymentDetail['calculations']['inventory_amount'] ?? 0;
+                            $total_amount_inc_arrived_freight = $purchasePaymentDetail['calculations']['total_amount_inc_arrived_freight'] ?? 0;
 
                             createTransaction(
                                 $inventoryAmount,

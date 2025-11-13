@@ -74,7 +74,11 @@ class ArrivalApproveController extends Controller
         $data['bagTypes'] = BagType::all();
         $data['bagConditions'] = BagCondition::all();
         $data['bagPackings'] = BagPacking::all();
-        $data['arrivalSubLocations'] = ArrivalSubLocation::where('status', 'Active')->get();
+        $data['arrivalSubLocations'] = ArrivalSubLocation::where('status', 'Active')
+         ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
+            })
+        ->get();
 
         return view('management.arrival.approved_arrival.create', $data);
     }

@@ -19,8 +19,10 @@ return new class extends Migration
             $table->string('checklist_value')->nullable();
             $table->string('suggested_deduction')->nullable();
             $table->string('applied_deduction')->nullable();
+            $table->decimal('relief_deduction', 6, 2)->nullable();
             $table->string('remark')->nullable();
             $table->timestamps();
+            
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('arrival_sampling_request_id')->references('id')->on('arrival_sampling_requests')->onDelete('cascade');
             $table->foreign('product_slab_type_id')->references('id')->on('product_slab_types')->onDelete('cascade');

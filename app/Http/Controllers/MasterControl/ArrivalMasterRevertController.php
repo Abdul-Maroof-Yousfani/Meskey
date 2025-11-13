@@ -3,15 +3,24 @@
 namespace App\Http\Controllers\MasterControl;
 
 use App\Http\Controllers\Controller;
+use App\Models\Master\Account\Transaction;
+use App\Models\Master\GrnNumber;
 use Illuminate\Http\Request;
 use App\Models\Arrival\{ArrivalTicket, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalSamplingRequest};
 use App\Models\{SaudaType, ArrivalPurchaseOrder, BagType, BagCondition, BagPacking, User};
 use App\Models\Master\{ArrivalLocation, Station, ArrivalSubLocation, ProductSlab};
 use App\Models\AuditLog;
+use App\Models\Master\Miller;
+
 use DB;
 use Illuminate\Validation\ValidationException;
 class ArrivalMasterRevertController extends Controller
 {
+
+    function __construct()
+    {
+        $this->middleware('check.company:arrival-master-control', ['only' => ['arrivalRevert']]);
+    }
     /**
      * Display the master revert form
      */
@@ -179,240 +188,344 @@ class ArrivalMasterRevertController extends Controller
      */
 
 
-public function update(Request $request, $id)
-{
-    $arrivalTicket = ArrivalTicket::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $arrivalTicket = ArrivalTicket::findOrFail($id);
 
-    DB::beginTransaction();
+        DB::beginTransaction();
 
-    try {
-        // ==================== UPDATE OPERATIONS ====================
+        try {
 
-        // Handle Location Transfer UPDATE
-        if ($request->has('location_transfer_submit')) {
-            try {
-                $this->updateLocationTransfer($request, $arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Location transfer updated successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (ValidationException $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Validation failed.',
-                    'errors' => $e->errors()
-                ], 422);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Location transfer update failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+
+
+
+            // ==================== UPDATE OPERATIONS ====================
+
+
+
+            // Handle Ticket UPDATE
+            if ($request->has('ticket_submit')) {
+                try {
+                    $this->updateTicket($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Ticket updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Ticket update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle First Weighbridge UPDATE
-        if ($request->has('first_weighbridge_submit')) {
-            try {
-                $this->updateFirstWeighbridge($request, $arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'First weighbridge updated successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (ValidationException $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Validation failed.',
-                    'errors' => $e->errors()
-                ], 422);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'First weighbridge update failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+
+            // Handle Location Transfer UPDATE
+            if ($request->has('location_transfer_submit')) {
+                try {
+                    $this->updateLocationTransfer($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Location transfer updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Location transfer update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle Second Weighbridge UPDATE
-        if ($request->has('second_weighbridge_submit')) {
-            try {
-                $this->updateSecondWeighbridge($request, $arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Second weighbridge updated successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (ValidationException $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Validation failed.',
-                    'errors' => $e->errors()
-                ], 422);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Second weighbridge update failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle First Weighbridge UPDATE
+            if ($request->has('first_weighbridge_submit')) {
+                try {
+                    $this->updateFirstWeighbridge($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'First weighbridge updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'First weighbridge update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle Half/Full Approval UPDATE
-        if ($request->has('half_full_approve_submit')) {
-            try {
-                $this->updateHalfFullApproval($request, $arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Half/Full approval updated successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (ValidationException $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Validation failed.',
-                    'errors' => $e->errors()
-                ], 422);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Half/Full approval update failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle Second Weighbridge UPDATE
+            if ($request->has('second_weighbridge_submit')) {
+                try {
+                    $this->updateSecondWeighbridge($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Second weighbridge updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Second weighbridge update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // ==================== REVERT OPERATIONS ====================
-
-        // Handle Location Transfer REVERT
-        if ($request->has('location_transfer_revert')) {
-            try {
-                $this->revertLocationTransfer($arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Location transfer reverted successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Location transfer revert failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle Half/Full Approval UPDATE
+            if ($request->has('half_full_approve_submit')) {
+                try {
+                    $this->updateHalfFullApproval($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Half/Full approval updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Half/Full approval update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle First Weighbridge REVERT
-        if ($request->has('first_weighbridge_revert')) {
-            try {
-                $this->revertFirstWeighbridge($arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'First weighbridge reverted successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'First weighbridge revert failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // ==================== REVERT OPERATIONS ====================
+
+            // Handle Location Transfer REVERT
+            if ($request->has('location_transfer_revert')) {
+                try {
+                    $this->revertLocationTransfer($arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Location transfer reverted successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Location transfer revert failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle Second Weighbridge REVERT
-        if ($request->has('second_weighbridge_revert')) {
-            try {
-                $this->revertSecondWeighbridge($arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Second weighbridge reverted successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Second weighbridge revert failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle First Weighbridge REVERT
+            if ($request->has('first_weighbridge_revert')) {
+                try {
+                    $this->revertFirstWeighbridge($arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'First weighbridge reverted successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'First weighbridge revert failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle Half/Full Approval REVERT
-        if ($request->has('half_full_approve_revert')) {
-            try {
-                $this->revertHalfFullApproval($arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Half/Full approval reverted successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Half/Full approval revert failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle Second Weighbridge REVERT
+            if ($request->has('second_weighbridge_revert')) {
+                try {
+                    $this->revertSecondWeighbridge($arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Second weighbridge reverted successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Second weighbridge revert failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
 
-        // Handle Complete Ticket REVERT
-        if ($request->has('complete_ticket_revert')) {
-            try {
-                $this->revertCompleteTicket($arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Complete ticket reverted successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Complete ticket revert failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle Half/Full Approval REVERT
+            if ($request->has('half_full_approve_revert')) {
+                try {
+                    $this->revertHalfFullApproval($arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Half/Full approval reverted successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Half/Full approval revert failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-        }
-
-        // Handle Master UPDATE
-        if ($request->has('master_update_submit')) {
-            try {
-                $this->handleMasterUpdate($request, $arrivalTicket);
-                DB::commit();
-                return response()->json([
-                    'success' => 'Master data updated successfully.',
-                    'data' => $arrivalTicket
-                ], 201);
-            } catch (ValidationException $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Validation failed.',
-                    'errors' => $e->errors()
-                ], 422);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'Master data update failed.',
-                    'error' => $e->getMessage()
-                ], 500);
+            // Handle Half/Full Approval REVERT
+            if ($request->has('freight_revert')) {
+                try {
+                    $this->revertFreight($arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Freight reverted successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Freight revert failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
+
+            // Handle Complete Ticket REVERT
+            if ($request->has('complete_ticket_revert')) {
+                try {
+                    $this->revertCompleteTicket($arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Complete ticket reverted successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Complete ticket revert failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
+
+            // Handle Master UPDATE
+            if ($request->has('master_update_submit')) {
+                try {
+                    $this->handleMasterUpdate($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Master data updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Master data update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Invalid action.'
+            ], 400);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Operation failed.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        DB::commit();
-        return response()->json([
-            'message' => 'Invalid action.'
-        ], 400);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'message' => 'Operation failed.',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
+
+
+
+
+
+
+        /**
+     * Update Half/Full Approval
+     */
+    private function updateTicket($request, $arrivalTicket)
+    {
+        $requestData = $request->validate([
+            'miller_name' => 'required|string|max:255',
+            'loading_date' => 'nullable|date',
+            'remarks' => 'nullable|string|max:500',
+            'station' => 'required|string|max:255',
+            'bilty_no' => 'required|string|max:255',
+            'truck_no' => 'required|string|max:255',
+            'bags' => 'required|numeric',
+            'truck_type_id' => 'required|max:255',
+            'sample_money_type' => 'required|in:n/a,single,double',
+            'sample_money' => 'required|numeric',
+            'first_weight' => 'required|numeric',
+            'second_weight' => 'required|numeric',
+        ]);
+
+        // Update or create approval record
+        if ($arrivalTicket) {
+
+        if (!empty($requestData['station'])) {
+            $station = Station::firstOrCreate(
+                [
+                    'name' => $requestData['station'],
+                    'company_id' => $request->company_id ?? null,
+                ]
+            );
+
+            $requestData['station_id'] = $station->id;
+            $requestData['station_name'] = $station->name;
+        }
+
+        if (!empty($requestData['miller_name'])) {
+            $miller = Miller::where('name', $requestData['miller_name'])->first();
+            if (!$miller) {
+                $miller = Miller::create(['name' => $requestData['miller_name']]);
+            }
+            $requestData['miller_id'] = $miller->id;
+        }
+
+    //    dd($requestData);
+            $arrivalTicket->update($requestData);
+        } 
+
+        $this->logRevertAction($arrivalTicket, 'half_full_approval_update', 'Half/Full approval updated');
+    }
+
     /**
      * Update Location Transfer
      */
@@ -500,11 +613,12 @@ public function update(Request $request, $id)
             'total_bags' => 'required|integer|min:0',
             'total_rejection' => 'required|integer|min:0',
             'amanat' => 'required|in:Yes,No',
-            'note' => 'nullable|string'
+            'remark' => 'nullable|string'
         ]);
 
         // Update or create approval record
         if ($arrivalTicket->approvals) {
+
             $arrivalTicket->approvals()->update($validated);
         } else {
             $arrivalTicket->approvals()->create($validated);
@@ -522,6 +636,10 @@ public function update(Request $request, $id)
     {
         if ($arrivalTicket->unloadingLocation) {
             $arrivalTicket->unloadingLocation->delete();
+            $arrivalTicket->update([
+                'location_transfer_status' => 'pending',
+                'first_weighbridge_status' => null,
+            ]);
             $this->logRevertAction($arrivalTicket, 'location_transfer_revert', 'Location transfer reverted');
         }
     }
@@ -533,11 +651,10 @@ public function update(Request $request, $id)
     {
         if ($arrivalTicket->firstWeighbridge) {
             $arrivalTicket->firstWeighbridge->delete();
-
-            // Also revert second weighbridge if it exists (as it depends on first)
-            if ($arrivalTicket->secondWeighbridge) {
-                $arrivalTicket->secondWeighbridge->delete();
-            }
+            $arrivalTicket->update([
+                'first_weighbridge_status' => 'pending',
+                'document_approval_status' => null,
+            ]);
 
             $this->logRevertAction($arrivalTicket, 'first_weighbridge_revert', 'First weighbridge reverted');
         }
@@ -550,6 +667,11 @@ public function update(Request $request, $id)
     {
         if ($arrivalTicket->secondWeighbridge) {
             $arrivalTicket->secondWeighbridge->delete();
+            $arrivalTicket->update([
+                'second_weighbridge_status' => 'pending',
+                'freight_status' => null,
+            ]);
+
             $this->logRevertAction($arrivalTicket, 'second_weighbridge_revert', 'Second weighbridge reverted');
         }
     }
@@ -561,9 +683,43 @@ public function update(Request $request, $id)
     {
         if ($arrivalTicket->approvals) {
             $arrivalTicket->approvals->delete();
+            $arrivalTicket->update([
+                'document_approval_status' => null,
+            ]);
             $this->logRevertAction($arrivalTicket, 'half_full_approval_revert', 'Half/Full approval reverted');
         }
     }
+    private function revertFreight($arrivalTicket)
+    {
+        if ($arrivalTicket->freight) {
+
+            $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+           
+
+            // Delete transactions
+            $Transaction = Transaction::where('grn_no', $grnNo)->delete();
+
+            
+            // Delete GRN
+         //   $arrivalTicket->arrivalSlip->grnNumber()->delete();
+ GrnNumber::where('unique_no',$grnNo)->delete();
+
+
+            // Delete arrival slip
+            $arrivalTicket->arrivalSlip->delete();
+
+            // Delete freight
+            $arrivalTicket->freight->delete();
+
+            $arrivalTicket->update([
+                'freight_status' => 'pending',
+                'arrival_slip_status' => null
+            ]);
+
+            $this->logRevertAction($arrivalTicket, 'freight_revert', 'Freight reverted');
+        }
+    }
+
 
     /**
      * Revert Complete Ticket (Master Revert)

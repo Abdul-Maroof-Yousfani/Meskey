@@ -75,10 +75,15 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
+        <div class="col-xs-12 col-sm-12 col-md-12 row">
+            <div class="form-group col-6">
                 <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description"
+                <textarea name="description" id="description" placeholder="Description"
+                    class="form-control"></textarea>
+            </div>
+            <div class="form-group col-6">
+                <label>Delivery Address:</label>
+                <textarea name="delivery_address" id="delivery_address" placeholder="Delivery Address"
                     class="form-control"></textarea>
             </div>
         </div>
@@ -92,13 +97,17 @@
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
+
                         {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
                         <th>Rate</th>
+                        <th>Gross Amount</th>
                         <th>Tax</th>
+                        <th>Tax Amount</th>
                         <th>Duty</th>
                         <th>Amount</th>
                         <th>Min Weight</th>
+                        <th>Brand</th>
                         <th>Color</th>
                         <th>Cons./sq. in.</th>
                         <th>Size</th>
@@ -181,7 +190,7 @@
 
     });
     $(".select2").select2();
-    let rowIndex = 1;
+    rowIndex = 1;
     function fetchUniqueNumber() {
         let locationId = $('#company_location_id').val();
         let contractDate = $('#purchase_date').val();

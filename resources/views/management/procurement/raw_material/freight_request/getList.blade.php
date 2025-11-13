@@ -84,12 +84,12 @@
                     </td>
                     <td>
                         @if ($ticket['total_requests_count'] > 0)
-                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '70%')"
+                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
                         @else
-                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '70%')"
+                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>

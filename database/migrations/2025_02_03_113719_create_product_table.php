@@ -18,12 +18,20 @@ return new class extends Migration {
             $table->string('unique_no');
             $table->string('name');
             $table->string('description')->nullable();
+            $table->float('bag_weight_for_purchasing')->nullable();
+            $table->enum('product_type', ['raw_material', 'finish_good','general_items'])->default('raw_material');
             $table->string('bardcode')->nullable();
             $table->string('image')->nullable();
             $table->string('price')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->softDeletes();
             $table->timestamps();
+
+
+
+
+  
+
 
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('set null');
             $table->foreign('unit_of_measure_id')->references('id')->on('unit_of_measures')->onDelete('set null');

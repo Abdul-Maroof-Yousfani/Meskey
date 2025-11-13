@@ -328,6 +328,37 @@
         });
     </script>
 
+<script>
+const companyId = "{{ auth()->user()->company_id ?? 1 }}";
+
+window.Echo.channel("dashboard-arrival-" + companyId)
+    .listen(".arrival-dashboard-updated", (e) => {
+        updateArrivalDashboardUI(e.stats);
+    });
+
+
+
+    function updateArrivalDashboardUI(stats) {
+
+$("[data-field='total_tickets']").text(stats.total_tickets);
+$("[data-field='rejected_tickets']").text(stats.rejected_tickets);
+$("[data-field='completed_tickets']").text(stats.completed_tickets);
+$("[data-field='initial_sampling_requested']").text(stats.initial_sampling_requested);
+$("[data-field='initial_sampling_done']").text(stats.initial_sampling_done);
+$("[data-field='location_transfer_pending']").text(stats.location_transfer_pending);
+$("[data-field='first_weighbridge_pending']").text(stats.first_weighbridge_pending);
+$("[data-field='inner_sampling_requested']").text(stats.inner_sampling_requested);
+$("[data-field='inner_sampling_pending_approval']").text(stats.inner_sampling_pending_approval);
+$("[data-field='half_full_approve_pending']").text(stats.half_full_approve_pending);
+$("[data-field='second_weighbridge_pending']").text(stats.second_weighbridge_pending);
+$("[data-field='freight_ready']").text(stats.freight_ready);
+$("[data-field='decision_on_average_enabled']").text(stats.decision_on_average_enabled);
+
+console.log("Realtime Arrival Stats Updated ✅", stats);
+}
+</script>
+
+
     <style>
         body.layout-dark .dashboard-filters {
             background: #2d2d2d;

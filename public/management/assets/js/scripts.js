@@ -655,6 +655,7 @@ function openImageModal(
 }
 
 function openModal(button, url, title, viewonly = false, drawerWidth = "50%") {
+  
   var $button = $(button); // Get the button element
   var originalText = $button.html(); // Store the original button text
   $button
@@ -681,12 +682,13 @@ function openModal(button, url, title, viewonly = false, drawerWidth = "50%") {
         $("#modal-sidebar").css("width", drawerWidth);
         $("#modal-sidebar").css("right", `-${drawerWidth}`);
       }
-
+    //  $('[data-toggle="tooltip"]').tooltip();
       $("#modal-sidebar").addClass("open");
       $("body").addClass("drawer-opened");
-
+    
       // Inject modal content into the page
       $("#modal-sidebar .modal-tab-content").html(data);
+      $('[data-toggle="tooltip"]').tooltip();
       //  initTinyMCE();
       if (viewonly) {
         $("#modal-sidebar :input").prop("readonly", true);

@@ -1,13 +1,13 @@
 @extends('management.layouts.master')
 @section('title')
-    Quotation Comparison
+    Purchase Quotation
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Quotation Comparison</h2>
+                    <h2 class="page-title">Purchase Quotation</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
@@ -47,6 +47,7 @@
                                             <th class="col-2">Purchase Request No</th>
                                             <th class="col-2">Purchase Quotation No</th>
                                             <th class="col-3">Category - Item</th>
+                                            
                                             <th class="col-3">Supplier</th>
                                             <th class="col-1 text-right">UOM</th>
                                             <th class="col-1 text-right">Qty</th>
@@ -69,6 +70,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
+          
             filterationCommon(`{{ route('store.purchase-quotation.comparison') }}`)
         });
     </script>

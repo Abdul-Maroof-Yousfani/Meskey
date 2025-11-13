@@ -5,13 +5,16 @@ use App\Models\{Category, Product, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\Color;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\Brands;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\Supplier;
+use App\Models\Size;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -113,6 +116,43 @@ if (!function_exists('getAllCompanies')) {
     function getAllCompanies()
     {
         return Company::where('status', 1)->get();
+    }
+}
+
+if(!function_exists("getAllColors")) {
+    function getAllColors() {
+        return Color::where('status', 1)->get();
+    }
+}
+
+if(!function_exists("getColorById")) {
+    function getColorById($id) {
+        return Color::where("id", $id)->where('status', 1)->first();
+    }
+}
+
+if(!function_exists("getAllSizes")) {
+    function getAllSizes() {
+        return Size::where('status', 1)->get();
+    }
+}
+
+if(!function_exists("getAllBrands")) {
+    function getAllBrands() {
+        return Brands::where('status', 'active')->get();
+    }
+}
+
+if(!function_exists("getBrandById")) {
+    function getBrandById($id) {
+        return Brands::where("id", $id)->where('status', 'active')->first();
+    }
+}
+
+
+if(!function_exists("getSizeById")) {
+    function getSizeById($id) {
+        return Size::where("id", $id)->where('status', 1)->first();
     }
 }
 
@@ -743,6 +783,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
                 'type' => 'slab',
                 'name' => $slab->slabType->name ?? 'N/A',
                 'slabType_id' => $slab->slabType->id ?? 'N/A',
+                'slabType_qc_symbol' => $slab->slabType->qc_symbol ?? 'N/A',
                 'deduction' => $slab->applied_deduction,
                 'checklist_value' => $slab->checklist_value ?? 'N/A',
                 'unit' => SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1],
@@ -835,7 +876,7 @@ if (!function_exists('getUserMissingInfoAlert')) {
     {
         $user = Auth::user();
 
-        if (!$user || $user->user_type === 'ssuper-admin') {
+        if (!$user || $user->user_type === 'super-admin') {
             return '';
         }
 

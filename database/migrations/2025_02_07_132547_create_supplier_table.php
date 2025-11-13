@@ -13,6 +13,8 @@ return new class extends Migration {
         Schema::create('suppliers', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id');
+            $table->enum('type', ['raw_material', 'store_supplier'])->default('raw_material'); // adjust 'after' as needed
+
             $table->string('unique_no');
             $table->string('name');
             $table->string('company_name');

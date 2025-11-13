@@ -11,10 +11,14 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('company_locations', function (Blueprint $table) {
-            $table->decimal('bank_charges_for_gate_buying', 10, 2)
-                ->default(0)
-                ->after('city_id')
-                ->comment('Bank charges for gate buying. Default 0.00');
+            $table->dropForeign(['city_id']);
+
+            $table->dropIndex('company_locations_city_id_foreign');
+
+            $table->foreign('city_id', 'fk_company_locations_city_id')
+                ->references('id')
+                ->on('cities')
+                ->onDelete('set null');
         });
     }
 
@@ -24,7 +28,8 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('company_locations', function (Blueprint $table) {
-            $table->dropColumn('bank_charges_for_gate_buying');
+            $table->dropForeign('fk_company_locations_city_id');
+            $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
         });
     }
 };

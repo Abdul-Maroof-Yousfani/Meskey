@@ -1,6 +1,10 @@
 <form action="{{ route('store.purchase-quotation.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
+    <div class="alert alert-danger" id="message" 
+     style="display:none; position:fixed; top:20px; right:20px; z-index:9999; min-width:300px;">
+    No Pending quantity to quote where quantity is zero
+</div>
     <div class="row form-mar">
         <div class="col-md-3">
             <div class="form-group">
@@ -73,6 +77,12 @@
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
+                        <th class="col-sm-2">Min Weight</th>
+                        <th class="col-sm-2">Brands</th>
+                        <th class="col-sm-2">Color</th>
+                        <th class="col-sm-2">Cons./sq. in.</th>
+                        <th class="col-sm-2">Size</th>
+                        <th class="col-sm-2">Stitching</th>
                         {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
                         <th>Rate</th>
@@ -182,6 +192,7 @@
                     ${categoryOptions}
                 </select>
             </td>
+            
                 <td style="width: 25%">
                 <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
                         class="form-control item-select select2"></select>
@@ -298,8 +309,8 @@
     //        get_purchase(purchaseRequestId);
     //     }
     //  });
-    let allowedCategories = [];
-    let allowedItems = [];
+    allowedCategories = [];
+    allowedItems = [];
 
     function get_purchase(purchaseRequestId) {
         if (!purchaseRequestId) return;
@@ -312,6 +323,21 @@
                 $('#purchaseRequestBody').html('<p>Loading...</p>');
             },
             success: function (response) {
+                const items = response.allowed_items;
+                const quantities = response.quantities;
+
+                if (items.length != quantities.length) {
+                    $("#message")
+                        .stop(true, true)          // stop previous animations if running
+                        .fadeIn(300)               // show smoothly
+                        .delay(3000)               // keep visible for 3 seconds
+                        .fadeOut(400);             // hide smoothly
+                } else {
+                    $("#message").fadeOut(200);    // hide quickly if already visible
+                }
+
+
+                console.log(response.allowed_items);
                 let html = response.html;
                 let master = response.master;
                 let purchaseRequestDataCount = response.purchaseRequestDataCount ?? 1;
