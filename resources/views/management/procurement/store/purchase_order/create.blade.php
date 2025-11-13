@@ -105,7 +105,7 @@
                         <th>Tax</th>
                         <th>Tax Amount</th>
                         <th>Duty</th>
-                        <th>Amount</th>
+                        <th>Net Amount</th>
                         <th>Min Weight</th>
                         <th>Brand</th>
                         <th>Color</th>
