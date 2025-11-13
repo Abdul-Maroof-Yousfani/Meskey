@@ -331,15 +331,15 @@ class PurchaseOrderReceivingController extends Controller
     public function createQc(Request $request) {
         $id = $request->id;
         $accepted_quantity = $request->accepted_qty;
-        $rejected_quantity = $request->rejected_quantity;
-
+        $rej_qty = $request->rej_qty;
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::find($id);
 
 
         try {
             $purchaseOrderReceivingData = $purchaseOrderReceivingData->update([
                 "accepted_qty" => $accepted_quantity,
-                "rejected_qty" => $rejected_quantity
+                "rejected_qty" => $rej_qty,
+                "is_qc_created" => 1
             ]);
 
             return response()->json([
@@ -395,6 +395,7 @@ class PurchaseOrderReceivingController extends Controller
 
             PurchaseOrderReceivingData::where('purchase_order_receiving_id', $PurchaseOrderReceiving->id)->delete();
 
+
             foreach ($request->item_id as $index => $itemId) {
                 PurchaseOrderReceivingData::create([
                     'purchase_order_receiving_id' => $PurchaseOrderReceiving->id,
@@ -405,6 +406,8 @@ class PurchaseOrderReceivingController extends Controller
                     'rate' => $request->rate[$index] ?? 0,
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
+                    "accepted_qty" => $request->accepted_qty[$index] ?? 0,
+                    "rejected_qty" => $request->rejected_qty[$index] ?? 0,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }

@@ -145,6 +145,10 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
 
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
+    Route::get("/qc", [QcController::class, "index"])->name("qc.get");
+    Route::post("/qc/getList", [QcController::class, "getList"])->name("qc.getList");
+    Route::get("/qc/view", [QcController::class, "show"])->name("qc.view");
+
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
     Route::post('get-purchase-order', [StorePurchaseOrderController::class, 'getList'])->name('get.purchase-order');

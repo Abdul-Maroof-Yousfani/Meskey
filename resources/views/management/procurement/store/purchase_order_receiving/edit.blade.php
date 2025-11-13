@@ -106,7 +106,7 @@
                      <th>Qty</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
-                     <th>Deduction Per Page</th>
+                     <th>Deduction Per KG</th>
                      <th>Min Weight</th>
                      <th>Brand</th>
                     <th>Color</th>
@@ -166,21 +166,21 @@
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="accepted_qty[]" value=""
+                                    onblur="calc({{ $key }})" name="accepted_qty[]" readonly value="{{ $data->accepted_qty }}"
                                     id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="rejected_qty[]" value=""
+                                    onblur="calc({{ $key }})" name="rejected_qty[]" readonly value="{{ $data->rejected_qty }}"
                                     id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
-                                <input style="width: 100px" readonly type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" value=""
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" readonly value=""
                                     id="deduction_per_bag{{ $key }}" class="form-control" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
@@ -317,7 +317,7 @@ $(document).ready(function () {
                     data: { 
                         id: id,
                         accepted_qty: accepted_qty.val(),
-                        rejected_qty: rejected_qty.val()
+                        rej_qty: rejected_qty.val()
                     },
                     success: function (response) {
                         console.log(response);

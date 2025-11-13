@@ -8,7 +8,7 @@ use App\Models\Product;
 use App\Models\GrnNumber;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\GrnNumber as MasterGrnNumber;
-use App\Models\Tax;
+use App\Models\Master\Tax;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
