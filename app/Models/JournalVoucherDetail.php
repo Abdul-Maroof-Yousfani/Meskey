@@ -14,15 +14,17 @@ class JournalVoucherDetail extends Model
     protected $fillable = [
         'journal_voucher_id',
         'acc_id',
-        'debit_credit',
-        'amount',
+        'debit_amount',
+        'credit_amount',
+        'description',
         'username',
         'status',
         'timestamp'
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'debit_amount' => 'decimal:2',
+        'credit_amount' => 'decimal:2',
         'timestamp' => 'datetime',
     ];
 

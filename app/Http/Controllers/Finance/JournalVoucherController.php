@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\JournalVoucher;
 use App\Models\JournalVoucherDetail;
 use App\Models\Master\Account\Account;
-use App\Models\Master\Account\Transaction;
 use App\Models\Master\Account\TransactionVoucherType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -92,20 +91,36 @@ class JournalVoucherController extends Controller
             'description' => 'nullable|string',
             'details' => 'required|array|min:2',
             'details.*.acc_id' => 'required|exists:accounts,id',
-            'details.*.debit_credit' => 'required|in:debit,credit',
-            'details.*.amount' => 'required|numeric|min:0.01',
+            'details.*.description' => 'nullable|string',
+            'details.*.debit_amount' => 'nullable|numeric|min:0',
+            'details.*.credit_amount' => 'nullable|numeric|min:0',
         ]);
 
         // Validate that total debits equal total credits
         $totalDebits = 0;
         $totalCredits = 0;
 
-        foreach ($request->details as $detail) {
-            if ($detail['debit_credit'] === 'debit') {
-                $totalDebits += $detail['amount'];
-            } else {
-                $totalCredits += $detail['amount'];
+        foreach ($request->details as $index => $detail) {
+            $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+            $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+
+            $debitAmount = round($debitAmount, 2);
+            $creditAmount = round($creditAmount, 2);
+
+            if ($debitAmount <= 0 && $creditAmount <= 0) {
+                return response()->json([
+                    'error' => 'Each line item must have either a debit or credit amount greater than zero.'
+                ], 422);
             }
+
+            if ($debitAmount > 0 && $creditAmount > 0) {
+                return response()->json([
+                    'error' => 'Each line item can only have either a debit or a credit amount, not both.'
+                ], 422);
+            }
+
+            $totalDebits += $debitAmount;
+            $totalCredits += $creditAmount;
         }
 
         if (abs($totalDebits - $totalCredits) > 0.01) {
@@ -123,15 +138,23 @@ class JournalVoucherController extends Controller
                 'description' => $request->description,
                 'username' => $username,
                 'status' => 'active',
-                'jv_status' => 'pending'
+                'jv_status' => 'pending',
+                'company_id' => Auth::user()->current_company_id ?? null
             ]);
 
             foreach ($request->details as $detail) {
+                $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+                $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+
+                $debitAmount = round($debitAmount, 2);
+                $creditAmount = round($creditAmount, 2);
+
                 JournalVoucherDetail::create([
                     'journal_voucher_id' => $journalVoucher->id,
                     'acc_id' => $detail['acc_id'],
-                    'debit_credit' => $detail['debit_credit'],
-                    'amount' => $detail['amount'],
+                    'debit_amount' => $debitAmount,
+                    'credit_amount' => $creditAmount,
+                    'description' => $detail['description'] ?? null,
                     'username' => $username,
                     'status' => 'active',
                     'timestamp' => now()
@@ -151,7 +174,9 @@ class JournalVoucherController extends Controller
     public function show($id)
     {
         $journalVoucher = JournalVoucher::with([
-            'journalVoucherDetails.account'
+            'journalVoucherDetails.account',
+            'approveUser',
+            'deleteUser'
         ])->findOrFail($id);
 
         return view('management.finance.journal_voucher.show', compact('journalVoucher'));
@@ -207,8 +232,9 @@ class JournalVoucherController extends Controller
             'description' => 'nullable|string',
             'details' => 'required|array|min:2',
             'details.*.acc_id' => 'required|exists:accounts,id',
-            'details.*.debit_credit' => 'required|in:debit,credit',
-            'details.*.amount' => 'required|numeric|min:0.01',
+            'details.*.description' => 'nullable|string',
+            'details.*.debit_amount' => 'nullable|numeric|min:0',
+            'details.*.credit_amount' => 'nullable|numeric|min:0',
         ]);
 
         // Validate that total debits equal total credits
@@ -216,11 +242,23 @@ class JournalVoucherController extends Controller
         $totalCredits = 0;
 
         foreach ($request->details as $detail) {
-            if ($detail['debit_credit'] === 'debit') {
-                $totalDebits += $detail['amount'];
-            } else {
-                $totalCredits += $detail['amount'];
+            $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+            $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+
+            if ($debitAmount <= 0 && $creditAmount <= 0) {
+                return response()->json([
+                    'error' => 'Each line item must have either a debit or credit amount greater than zero.'
+                ], 422);
             }
+
+            if ($debitAmount > 0 && $creditAmount > 0) {
+                return response()->json([
+                    'error' => 'Each line item can only have either a debit or a credit amount, not both.'
+                ], 422);
+            }
+
+            $totalDebits += $debitAmount;
+            $totalCredits += $creditAmount;
         }
 
         if (abs($totalDebits - $totalCredits) > 0.01) {
@@ -235,7 +273,8 @@ class JournalVoucherController extends Controller
             $journalVoucher->update([
                 'jv_date' => $request->jv_date,
                 'description' => $request->description,
-                'username' => $username
+                'username' => $username,
+                'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
             ]);
 
             // Delete old details
@@ -243,14 +282,22 @@ class JournalVoucherController extends Controller
 
             // Create new details
             foreach ($request->details as $detail) {
+                $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+                $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+
+                $debitAmount = round($debitAmount, 2);
+                $creditAmount = round($creditAmount, 2);
+
                 JournalVoucherDetail::create([
                     'journal_voucher_id' => $journalVoucher->id,
                     'acc_id' => $detail['acc_id'],
-                    'debit_credit' => $detail['debit_credit'],
-                    'amount' => $detail['amount'],
+                    'debit_amount' => $debitAmount,
+                    'credit_amount' => $creditAmount,
+                    'description' => $detail['description'] ?? null,
                     'username' => $username,
                     'status' => 'active',
-                    'timestamp' => now()
+                    'timestamp' => now(),
+                    'company_id' => $request->company_i
                 ]);
             }
         });
@@ -282,9 +329,7 @@ class JournalVoucherController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($journalVoucher, $request) {
-            $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
-            
+        DB::transaction(function () use ($journalVoucher) {
             // Get Journal Voucher transaction voucher type ID
             $voucherType = TransactionVoucherType::where('code', 'JV')->first();
             if (!$voucherType) {
@@ -293,25 +338,43 @@ class JournalVoucherController extends Controller
 
             // Create transactions for each journal entry
             foreach ($journalVoucher->journalVoucherDetails as $detail) {
-                createTransaction(
-                    $detail->amount,
-                    $detail->acc_id,
-                    $voucherType->id,
-                    $journalVoucher->jv_no,
-                    $detail->debit_credit,
-                    'no',
-                    [
-                        'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                        'remarks' => $journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}",
-                        'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                    ]
-                );
+                if ($detail->debit_amount > 0) {
+                    createTransaction(
+                        $detail->debit_amount,
+                        $detail->acc_id,
+                        $voucherType->id,
+                        $journalVoucher->jv_no,
+                        'debit',
+                        'no',
+                        [
+                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
+                            'remarks' => $detail->description ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
+                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
+                        ]
+                    );
+                }
+
+                if ($detail->credit_amount > 0) {
+                    createTransaction(
+                        $detail->credit_amount,
+                        $detail->acc_id,
+                        $voucherType->id,
+                        $journalVoucher->jv_no,
+                        'credit',
+                        'no',
+                        [
+                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
+                            'remarks' => $detail->description ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
+                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
+                        ]
+                    );
+                }
             }
 
             // Update journal voucher status
             $journalVoucher->update([
                 'jv_status' => 'approved',
-                'approve_username' => $username
+                'approve_user_id' => optional(Auth::user())->id
             ]);
         });
 
@@ -334,11 +397,9 @@ class JournalVoucherController extends Controller
             ], 422);
         }
 
-        $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
-
         $journalVoucher->update([
             'jv_status' => 'rejected',
-            'approve_username' => $username
+            'approve_user_id' => optional(Auth::user())->id
         ]);
 
         return response()->json([
@@ -360,12 +421,10 @@ class JournalVoucherController extends Controller
             ], 422);
         }
 
-        $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
-        
         $journalVoucher->update([
-            'delete_username' => $username
+            'delete_user_id' => optional(Auth::user())->id
         ]);
-        
+
         $journalVoucher->delete();
 
         return response()->json([
