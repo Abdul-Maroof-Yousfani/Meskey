@@ -215,7 +215,7 @@
                                     id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
                             </td>
                             <td style="width: 30%">
-                                <input style="width: 100px;" type="text" readonly name="brand[]" value="{{ getBrandById($data->purchase_request_data->brand_id ?? null)?->name ?? null }}"
+                                <input style="width: 100px;" type="text" readonly name="brand[]" value="{{ $data->brand }}"
                                     id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
                             </td>
                             <td style="width: 30%">

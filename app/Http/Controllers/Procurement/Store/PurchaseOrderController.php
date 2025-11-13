@@ -308,6 +308,7 @@ class PurchaseOrderController extends Controller
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
+                    'brand' => $request->brand[$index],
                     'printing_sample' => $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
@@ -477,6 +478,7 @@ class PurchaseOrderController extends Controller
                     'excise_duty' => $request->excise_duty[$index] ?? 0,
                     'min_weight' => $request->min_weight[$index],
                     'color' => $request->color[$index],
+                    'brand' => $request->brand[$index],
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
