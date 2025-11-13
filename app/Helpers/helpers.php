@@ -119,6 +119,13 @@ if (!function_exists('getAllCompanies')) {
     }
 }
 
+if(!function_exists("isBag")) {
+    function isBag($item_id) {
+        $product = Product::select("is_bag")->find($item_id);
+        return $product->is_bag; 
+    }
+}
+
 if(!function_exists("getAllColors")) {
     function getAllColors() {
         return Color::where('status', 1)->get();

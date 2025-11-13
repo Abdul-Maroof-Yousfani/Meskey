@@ -106,6 +106,20 @@
                 </select>
             </div>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
+            <div class="form-group">
+                <label>Type:</label>
+                <br>
+                <label>
+                    <input type="radio" name="is_bag" checked value="1"> Bag
+                </label>
+                <br>
+                <label>
+                    <input type="radio" name="is_bag" value="0"> Not Bag
+                </label>
+
+            </div>
+        </div>
     </div>
 
     <div class="row bottom-button-bar">

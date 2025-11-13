@@ -134,6 +134,20 @@
                 </select>
             </div>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
+            <div class="form-group">
+                <label>Type:</label>
+                <br>
+                <label>
+                    <input type="radio" name="is_bag" @checked($product->is_bag == 1) value="1"> Bag
+                </label>
+                <br>
+                <label>
+                    <input type="radio" name="is_bag" @checked($product->is_bag == 0) value="0"> Not Bag
+                </label>
+
+            </div>
+        </div>
     </div>
     <div class="row bottom-button-bar">
         <div class="col-12">
@@ -141,4 +155,5 @@
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
+    
 </form>

@@ -163,24 +163,23 @@
                                     id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
-
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="accepted_qty[]" readonly value="{{ $data->accepted_qty }}"
+                                    onblur="calc({{ $key }})" name="accepted_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->accepted_qty }}"
                                     id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="rejected_qty[]" readonly value="{{ $data->rejected_qty }}"
+                                    onblur="calc({{ $key }})" name="rejected_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->rejected_qty }}"
                                     id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" readonly value=""
+                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" @readonly(isBag($data->item_id)) value=""
                                     id="deduction_per_bag{{ $key }}" class="form-control" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>

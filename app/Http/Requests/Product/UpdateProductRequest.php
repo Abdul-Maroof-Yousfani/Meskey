@@ -31,6 +31,7 @@ class UpdateProductRequest extends FormRequest
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'price' => 'nullable|numeric',
+            'is_bag' => 'required',
             'status' => 'required|in:active,inactive',
         ];
     }
