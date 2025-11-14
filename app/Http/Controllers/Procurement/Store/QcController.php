@@ -10,6 +10,7 @@ use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Procurement\Store\PurchaseOrderReceivingData;
+use App\Models\Procurement\Store\QC;
 use App\Models\Sales\JobOrder;
 use DB;
 use Illuminate\Http\Request;
@@ -153,6 +154,15 @@ class QcController extends Controller
 
         return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id"));
     }
+    public function edit(Request $request) {
+        $id = $request->id;
+        $grn = $request->grn;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
+
+
+        return view("management.procurement.store.qc.edit", compact("grn", "purchaseOrderReceivingData", "id"));
+    }
     public function getForm($id) {
           $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
@@ -197,5 +207,12 @@ class QcController extends Controller
         $purchase_receiving_data->qc()->update($request->validated());
 
         return response()->json(["qc has been stored"], 200);
+    }
+    public function destroy(int $id) {
+        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        
+        $purchase_receiving_data->qc()->delete();
+
+        return response()->json("Qc has been deleted!");
     }
 }

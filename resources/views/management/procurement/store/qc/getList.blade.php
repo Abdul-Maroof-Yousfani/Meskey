@@ -94,9 +94,19 @@
 
                             {{-- Approval Status + Actions --}}
                             <td>
+
                                 <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '70%')"
                                     class="info p-1 text-center mr-2 position-relative" title="Approval">
                                     <i class="ft-check font-medium-3"></i>
+                                </a>
+                                <a onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'Edit QC', false, '70%')"
+                                    class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative ">
+
+                                    <i class="ft-x font-medium-3"></i>
                                 </a>
                             </td>
                             @if ($isFirstRequestRow)
