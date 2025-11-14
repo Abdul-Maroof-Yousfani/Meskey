@@ -198,9 +198,6 @@ class QcController extends Controller
     } 
     public function store(QCRequest $request) {
         $id = $request->purchase_receiving_data_id;
-        $accepted_qty = $request->accepted_quantity;
-        $rejected_qty = $request->rejected_quantity;
-        $deduction_per_bag = $request->deduction_per_bag;
 
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
 
