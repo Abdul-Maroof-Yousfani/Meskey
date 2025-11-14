@@ -163,6 +163,15 @@ class QcController extends Controller
 
         return view("management.procurement.store.qc.edit", compact("grn", "purchaseOrderReceivingData", "id"));
     }
+    public function create(Request $request) {
+        $id = $request->id;
+        $grn = $request->grn;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
+
+
+        return view("management.procurement.store.qc.create", compact("grn", "purchaseOrderReceivingData", "id"));
+    }
     public function getForm($id) {
           $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
@@ -197,11 +206,21 @@ class QcController extends Controller
         ]);
     } 
     public function store(QCRequest $request) {
+        
         $id = $request->purchase_receiving_data_id;
 
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
 
-        $purchase_receiving_data->qc()->update($request->validated());
+
+        return response()->json(["qc has been stored"], 200);
+    }
+    public function update(QCRequest $request) {
+        $id = $request->purchase_receiving_data_id;
+
+        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        $purchase_receiving_data->qc()->update([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+
 
         return response()->json(["qc has been stored"], 200);
     }

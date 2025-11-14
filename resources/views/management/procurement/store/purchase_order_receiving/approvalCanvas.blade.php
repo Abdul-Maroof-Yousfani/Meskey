@@ -101,7 +101,11 @@
                  </tr>
              </thead>
              <tbody id="purchaseRequestBody">
+               
                  @foreach ($purchaseOrderReceivingData ?? [] as $key => $data)
+                      <button id="modalButton{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $data->id]) }}', 'Add QC', false, '100%')">&nbsp;</button>
+                      <button id="modalButtonQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $data->id]) }}', 'Edit QC', false, '100%')">&nbsp;</button>
+                       
                      <tr id="row_{{ $key }}">
                          <td style="width: 50%">
                              <select id="category_id_{{ $key }}" disabled
@@ -246,13 +250,12 @@
                                  id="remark_{{ $key }}" class="form-control">
                              <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                          </td>
-
                          <td>
                              <button type="button" class="btn btn-danger btn-sm removeRowBtn"
                                  onclick="remove({{ $key }})" disabled
                                  data-id="{{ $key }}">Remove</button>
-
-                            <button onclick="createQc('{{ $data->id }}', this)" @disabled(($data->qc?->exists()) || ($data->qc?->is_approved ?? false)) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                            <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                            <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->is_qc_approved || !$data->qc?->exists()) style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
              
                          </td>
                      </tr>
@@ -277,66 +280,71 @@
 
  <script>
 
-
-    function createQc(id, element) {
-        const accepted_qty = $(element).closest("tr").find(".accepted_qty");
-        const rejected_qty = $(element).closest("tr").find(".rejected_qty");
-        const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
+    function createQc(id, key) {
+        $("#modalButton" + key).trigger("click");
+    }
+    function editQc(id, key) {
+        $("#modalButtonQc" + key).trigger("click");
+    }
+    // function createQc(id, element) {
+    //     const accepted_qty = $(element).closest("tr").find(".accepted_qty");
+    //     const rejected_qty = $(element).closest("tr").find(".rejected_qty");
+    //     const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
       
        
-        Swal.fire({
-            title: "Are you sure?",
-            text: "A QC will be created for this item.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, create it!",
-            cancelButtonText: "Cancel"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Proceed with QC creation
+    //     Swal.fire({
+    //         title: "Are you sure?",
+    //         text: "A QC will be created for this item.",
+    //         icon: "warning",
+    //         showCancelButton: true,
+    //         confirmButtonColor: "#3085d6",
+    //         cancelButtonColor: "#d33",
+    //         confirmButtonText: "Yes, create it!",
+    //         cancelButtonText: "Cancel"
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             // Proceed with QC creation
                
-                // 👉 Show processing/loading swal
-                Swal.fire({
-                    title: "Processing...",
-                    text: "Please wait while we create the QC.",
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+    //             // 👉 Show processing/loading swal
+    //             Swal.fire({
+    //                 title: "Processing...",
+    //                 text: "Please wait while we create the QC.",
+    //                 allowOutsideClick: false,
+    //                 allowEscapeKey: false,
+    //                 didOpen: () => {
+    //                     Swal.showLoading();
+    //                 }
+    //             });
 
 
-                $.ajax({
-                    url: "{{ route('store.qc.create') }}",
-                    type: 'POST',
-                    dataType: "json",
-                    processData: true,
-                    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-                    data: { 
-                        id: id,
-                        accepted_qty: accepted_qty.val(),
-                        rej_qty: rejected_qty.val(),
-                        deduction_per_bag: deduction_per_bag.val()
-                    },
-                    success: function (response) {
-                        console.log(response);
-                         Swal.fire({
-                            title: "Created!",
-                            text: "QC has been successfully created.",
-                            icon: "success"
-                        });
-                    },
-                    error: function (xhr, status, error) {
-                        console.log(error);
-                    }
-                });
+    //             $.ajax({
+    //                 url: "{{ route('store.qc.create') }}",
+    //                 type: 'POST',
+    //                 dataType: "json",
+    //                 processData: true,
+    //                 contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+    //                 data: { 
+    //                     id: id,
+    //                     accepted_qty: accepted_qty.val(),
+    //                     rej_qty: rejected_qty.val(),
+    //                     deduction_per_bag: deduction_per_bag.val()
+    //                 },
+    //                 success: function (response) {
+    //                     console.log(response);
+    //                      Swal.fire({
+    //                         title: "Created!",
+    //                         text: "QC has been successfully created.",
+    //                         icon: "success"
+    //                     });
+    //                 },
+    //                 error: function (xhr, status, error) {
+    //                     console.log(error);
+    //                 }
+    //             });
 
-            }
-        });
-    }
+    //         }
+    //     });
+    // }
      $('.select2').select2({
          placeholder: 'Please Select',
          width: '100%'
