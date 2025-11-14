@@ -24,6 +24,14 @@ class QCRequest extends FormRequest
         return [
             "accepted_quantity" => "required",
             "rejected_quantity" => "required",
+            "size" => "required",
+            "bio" => "required",
+            "smell" => "required",
+            "printing" => "required",
+            "bottom_stitching" => "required",
+            "ready_to_pack" => "required",
+            "remarks" => "required",
+            "date" => "required"
         ];
     }
 }

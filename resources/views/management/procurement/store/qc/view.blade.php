@@ -5,7 +5,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Date:</label>
-                    <input type="date" name="date" id="date" class="form-control">
+                    <input type="date" name="date" value="{{ $purchaseOrderReceivingData->qc->date }}" id="date" class="form-control">
                 </div>
             </div>
             <div class="col-md-6">
@@ -144,22 +144,22 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Size:</label>
-                    <input type="text" name="size" id="size" class="form-control">
+                    <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData->qc->size }}" class="form-control">
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Phy/Che/Bio:</label>
-                    <input type="text" name="bio" id="bio" class="form-control">
+                    <input type="text" name="bio" id="bio" value="{{ $purchaseOrderReceivingData->qc->bio }}" class="form-control">
                 </div>
             </div>
             <div class="col-md-4">
 
                 <label class="form-label">Smell:</label>
-                <select class="taxes form-group form-control select2">
+                <select  name="smell" class="taxes form-group form-control select2">
                     <option value="">Select Smell</option>
-                    <option>Smell 1</option>
-                    <option>Smell 1</option>
+                    <option value="2">Smell 1</option>
+                    <option value="3">Smell 1</option>
                 </select>
             </div>
         </div>
@@ -171,11 +171,11 @@
             <label class="form-label">Printing:</label>
             <br>
             <label>
-                <input type="radio" name="printing" value="cash"> Ok
+                <input type="radio" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 1) value="1"> Ok
             </label>
             <br>
             <label>
-                <input type="radio" name="printing" value="credit"> Not Ok
+                <input type="radio" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 0) value="0"> Not Ok
             </label>
         </div>
         <div class="col-md-4">
@@ -183,11 +183,11 @@
             <label class="form-label">Bottom Stitching:</label>
             <br>
             <label>
-                <input type="radio" name="bottom_stitching" value="cash"> Ok
+                <input type="radio" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 1) value="1"> Ok
             </label>
             <br>
             <label>
-                <input type="radio" name="bottom_stitching" value="credit"> Not Ok
+                <input type="radio" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 0) value="0"> Not Ok
             </label>
         </div>
         <div class="col-md-4">
@@ -195,11 +195,11 @@
             <label class="form-label">Ready to Pack:</label>
             <br>
             <label>
-                <input type="radio" name="ready_to_pack" value="cash"> Yes
+                <input type="radio" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 1) value="1"> Yes
             </label>
             <br>
             <label>
-                <input type="radio" name="ready_to_pack" value="credit"> No
+                <input type="radio" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 0) value="0"> No
             </label>
         </div>
     </div>
@@ -207,7 +207,7 @@
     <div class="row">
         <div class="col-md-12" style="margin-top: 10px; margin-bottom: 10px;">
             <label for="remarks">Remarks:</label>
-            <textarea id="remarks" class="form-control" name="remarks" rows="4" cols="50" placeholder=""></textarea>
+            <textarea id="remarks" class="form-control" name="remarks" rows="4" cols="50" placeholder="">{{ $purchaseOrderReceivingData->qc->remarks }}</textarea>
         </div>
     </div>
 

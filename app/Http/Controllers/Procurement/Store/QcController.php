@@ -194,11 +194,7 @@ class QcController extends Controller
 
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
 
-        $purchase_receiving_data->qc()->update([
-            "accepted_quantity" => $accepted_qty,
-            "rejected_quantity" => $rejected_qty,
-            "deduction_per_bag" => $deduction_per_bag
-        ]);
+        $purchase_receiving_data->qc()->update($request->validated());
 
         return response()->json(["qc has been stored"], 200);
     }
