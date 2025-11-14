@@ -9,6 +9,7 @@
             <th class="col-sm-1">Qty</th>
 
             <th class="col-sm-1">Action</th>
+            {{-- <th class="col-sm-1">Status</th> --}}
         </tr>
     </thead>
     <tbody>
@@ -92,7 +93,7 @@
                             </td> --}}
 
                             {{-- Approval Status + Actions --}}
-                            <td style="display: flex; flex-direction: column; justify-content: center; height: 100px;">
+                             <td style="display: flex; flex-direction: column; justify-content: center; height: 100px;">
                             <div style="display: flex; align-items: center; justify-content: center;">
                                 <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '70%')"
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
@@ -109,7 +110,25 @@
                                     </a>
                                 </div>
                             </td>
-                            
+                            @if ($isFirstRequestRow)
+                                {{-- <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                    @php
+                                        $badgeClass = match (strtolower($approvalStatus)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'pending' => 'badge-warning',
+                                            'returned' => 'badge-info',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">
+                                        {{ $approvalStatus }}
+                                    </span>
+                                </td> --}}
+                              
+                                
+                                @php $isFirstRequestRow = false; @endphp
+                            @endif
                         </tr>
                     @endforeach
                 @endforeach
