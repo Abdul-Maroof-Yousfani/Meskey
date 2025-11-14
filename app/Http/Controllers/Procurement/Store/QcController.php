@@ -19,9 +19,12 @@ class QcController extends Controller
         return view("management.procurement.store.qc.index");
     }
     public function getList(Request $request) {
-        $PurchaseOrderRaw = PurchaseOrderReceivingData::where("is_qc_created", 1)->where("is_qc_approved", 0)
+        
+        $PurchaseOrderRaw = PurchaseOrderReceivingData::whereHas("qc", function($query) {
+            return $query->where("is_qc_approved", 0);
+        })
             ->latest()
-            ->paginate(request('per_page', 25));
+            ->paginate(request("per_page", 25));
 
         $groupedData = [];
         $processedData = [];
@@ -33,11 +36,13 @@ class QcController extends Controller
             $orderNo = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
             $itemId = $row->item->id ?? 'unknown';
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+            $purchase_order_receving_id = $row->id;
 
             if ($orderNo === 'N/A') {
                 continue;
             }
 
+           
 
             if (!isset($groupedData[$orderNo])) {
                 $groupedData[$orderNo] = [
@@ -45,6 +50,7 @@ class QcController extends Controller
                     'quotations' => []
                 ];
             }
+
 
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo] = [
@@ -137,8 +143,12 @@ class QcController extends Controller
             'GroupedPurchaseOrderReceiving' => $processedData
         ]);
     }
-    public function show() {
-        return view("management.procurement.store.qc.view");
+    public function show(Request $request) {
+        $id = $request->id;
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc")->find($id);
+
+
+        return view("management.procurement.store.qc.view", compact("purchaseOrderReceivingData", "id"));
     }
     public function getForm($id) {
           $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
@@ -173,4 +183,20 @@ class QcController extends Controller
             'data1' => $purchaseOrderReceiving,
         ]);
     } 
+    public function store(Request $request) {
+        $id = $request->purchase_receiving_data_id;
+        $accepted_qty = $request->accepted_quantity;
+        $rejected_qty = $request->rejected_quantity;
+        $deduction_per_bag = $request->deduction_per_bag;
+
+        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+
+        $purchase_receiving_data->qc()->update([
+            "accepted_quantity" => $accepted_qty,
+            "rejected_quantity" => $rejected_qty,
+            "deduction_per_bag" => $deduction_per_bag
+        ]);
+
+        return response()->json(["qc has been stored"], 200);
+    }
 }

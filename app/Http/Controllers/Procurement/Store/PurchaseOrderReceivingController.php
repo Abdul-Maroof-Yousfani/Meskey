@@ -305,6 +305,7 @@ class PurchaseOrderReceivingController extends Controller
     {
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
             'purchaseOrderReceivingData',
+            'purchaseOrderReceivingData.qc',
             'purchaseOrderReceivingData.category',
             'purchaseOrderReceivingData.item',
             'purchase_request.PurchaseData'
@@ -332,16 +333,26 @@ class PurchaseOrderReceivingController extends Controller
         $id = $request->id;
         $accepted_quantity = $request->accepted_qty;
         $rej_qty = $request->rej_qty;
+        $deduction_per_bag = $request->deduction_per_bag;
+
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::find($id);
 
 
         try {
-            $purchaseOrderReceivingData = $purchaseOrderReceivingData->update([
-                "accepted_qty" => $accepted_quantity,
-                "rejected_qty" => $rej_qty,
-                "is_qc_created" => 1
-            ]);
-
+            if($purchaseOrderReceivingData->qc()?->exists()) {
+                $purchaseOrderReceivingData->qc()->update([
+                    "accepted_quantity" => $accepted_quantity,
+                    "rejected_quantity" => $rej_qty,
+                    "deduction_per_bag" => $deduction_per_bag
+                ]);
+            } else {
+                $purchaseOrderReceivingData->qc()->create([
+                    "accepted_quantity" => $accepted_quantity,
+                    "rejected_quantity" => $rej_qty,
+                    "deduction_per_bag" => $deduction_per_bag
+                ]);
+            }
+         
             return response()->json([
                 'success' => 'QC has been created successfully.',
                 'data' => $purchaseOrderReceivingData,

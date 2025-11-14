@@ -84,6 +84,10 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
+
+                     <th>Accepted Quantity</th>
+                     <th>Rejected Quantity</th>
+                     <th>Deduction Per KG</th>
                      <th>Min Weight</th>
                      <th>Brand</th>
                      <th>Color</th>
@@ -142,6 +146,27 @@
                                  id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                              <input type="hidden" name="qty[]" value="{{ $data->qty }}">
                          </td>
+
+                          <td style="width: 10%">
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="accepted_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->accepted_quantity ?? null }}"
+                                    id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
+                                   >
+                            </td>
+
+                            <td style="width: 10%">
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="rejected_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->rejected_quantity ?? null }}"
+                                    id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
+                                   >
+                            </td>
+
+                            <td style="width: 10%">
+                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->deduction_per_bag ?? null }}"
+                                    id="deduction_per_bag{{ $key }}" class="form-control deduction_per_bag" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
+                                   >
+                            </td>
 
                          <td style="width: 30%">
                              <div class="loop-fields">
@@ -226,6 +251,9 @@
                              <button type="button" class="btn btn-danger btn-sm removeRowBtn"
                                  onclick="remove({{ $key }})" disabled
                                  data-id="{{ $key }}">Remove</button>
+
+                            <button onclick="createQc('{{ $data->id }}', this)" @disabled(($data->qc?->exists()) || ($data->qc?->is_approved ?? false)) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+             
                          </td>
                      </tr>
                  @endforeach
@@ -248,6 +276,60 @@
  </div>
 
  <script>
+
+
+    function createQc(id, element) {
+        const accepted_qty = $(element).closest("tr").find(".accepted_qty");
+        const rejected_qty = $(element).closest("tr").find(".rejected_qty");
+        const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
+
+       
+        Swal.fire({
+            title: "Are you sure?",
+            text: "A QC will be created for this item.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, create it!",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Proceed with QC creation
+               
+                
+
+                $.ajax({
+                    url: "{{ route('store.qc.create') }}",
+                    type: 'POST',
+                    dataType: "json", // optional
+                    processData: true,
+                    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+                    data: { 
+                        id: id,
+                        accepted_qty: accepted_qty.val(),
+                        rej_qty: rejected_qty.val(),
+                        deduction_per_bag: deduction_per_bag.val()
+                    },
+                    success: function (response) {
+                        console.log(response);
+                         Swal.fire({
+                            title: "Created!",
+                            text: "QC has been successfully created.",
+                            icon: "success"
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.log(error);
+                    }
+                });
+
+                // 👉 You can call your backend or AJAX here
+                // e.g. $.post('/create-qc', {...})
+                // qc.create
+            }
+        });
+    }
      $('.select2').select2({
          placeholder: 'Please Select',
          width: '100%'

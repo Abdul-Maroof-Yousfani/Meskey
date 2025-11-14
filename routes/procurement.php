@@ -148,6 +148,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc/getList", [QcController::class, "getList"])->name("qc.getList");
     Route::get("/qc/view", [QcController::class, "show"])->name("qc.view");
+    Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
 
 
     Route::resource('purchase-order', StorePurchaseOrderController::class)->except(['show']);
