@@ -1,5 +1,5 @@
 <form action="{{ route('store.qc.store') }}" id="ajaxSubmit">
-    <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}"
+    <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}">
     <div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
             <div class="col-md-6">
@@ -11,7 +11,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">GRN:</label>
-                    <input type="text" name="grn" id="grn" class="form-control">
+                    <input type="text" name="grn" id="grn" value="{{ $grn }}" readonly class="form-control">
                 </div>
             </div>
         </div>
@@ -33,15 +33,15 @@
                     <tbody id="purchaseOrderBody">
                         <tr>
                             <td>
-                                <input type="text" name="item" id="item" value="Item Name" readonly
+                                <input type="text" name="item" id="item" value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
                                     class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="size" id="size" value="Size Value" readonly
+                                <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}" readonly
                                     class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="brand" id="brand" value="Brand Name" readonly
+                                <input type="text" name="brand" id="brand" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->brand ?? null }}" readonly
                                     class="form-control">
                             </td>
 
@@ -215,13 +215,13 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Accepted Qty:</label>
-                <input type="text" name="accepted_quantity" id="accepted_quantity" value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control" required>
+                <input type="text" name="accepted_quantity" id="accepted_quantity" value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control" >
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Rejected Qty:</label>
-                <input type="text" name="rejected_quantity" id="rejected_quantity" value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control" required>
+                <input type="text" name="rejected_quantity" id="rejected_quantity" value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control" >
             </div>
         </div>
         <div class="col-md-4">

@@ -94,7 +94,7 @@
 
                             {{-- Approval Status + Actions --}}
                             <td>
-                                <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id]) }}', 'View QC', false, '70%')"
+                                <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '70%')"
                                     class="info p-1 text-center mr-2 position-relative" title="Approval">
                                     <i class="ft-check font-medium-3"></i>
                                 </a>

@@ -282,7 +282,7 @@
         const accepted_qty = $(element).closest("tr").find(".accepted_qty");
         const rejected_qty = $(element).closest("tr").find(".rejected_qty");
         const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
-
+      
        
         Swal.fire({
             title: "Are you sure?",
@@ -297,12 +297,22 @@
             if (result.isConfirmed) {
                 // Proceed with QC creation
                
-                
+                // 👉 Show processing/loading swal
+                Swal.fire({
+                    title: "Processing...",
+                    text: "Please wait while we create the QC.",
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
 
                 $.ajax({
                     url: "{{ route('store.qc.create') }}",
                     type: 'POST',
-                    dataType: "json", // optional
+                    dataType: "json",
                     processData: true,
                     contentType: "application/x-www-form-urlencoded; charset=UTF-8",
                     data: { 
@@ -324,9 +334,6 @@
                     }
                 });
 
-                // 👉 You can call your backend or AJAX here
-                // e.g. $.post('/create-qc', {...})
-                // qc.create
             }
         });
     }

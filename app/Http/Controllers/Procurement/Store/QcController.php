@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\QCRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrder;
@@ -145,10 +146,12 @@ class QcController extends Controller
     }
     public function show(Request $request) {
         $id = $request->id;
-        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc")->find($id);
+        $grn = $request->grn;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
 
 
-        return view("management.procurement.store.qc.view", compact("purchaseOrderReceivingData", "id"));
+        return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id"));
     }
     public function getForm($id) {
           $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
@@ -183,7 +186,7 @@ class QcController extends Controller
             'data1' => $purchaseOrderReceiving,
         ]);
     } 
-    public function store(Request $request) {
+    public function store(QCRequest $request) {
         $id = $request->purchase_receiving_data_id;
         $accepted_qty = $request->accepted_quantity;
         $rejected_qty = $request->rejected_quantity;

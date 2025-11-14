@@ -126,6 +126,14 @@ if(!function_exists("isBag")) {
     }
 }
 
+if(!function_exists("getItem")) {
+    function getItem($item_id) {
+        $product = Product::find($item_id);
+        return $product;
+    }
+}
+
+
 if(!function_exists("getAllColors")) {
     function getAllColors() {
         return Color::where('status', 1)->get();

@@ -258,7 +258,7 @@
                                     data-id="{{ $key }}">Remove</button>
 
 
-                                <button onclick="createQc('{{ $data->id }}', this)" @disabled($data->qc?->is_approved ?? false) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                <button onclick="createQc('{{ $data->id }}', this)" @disabled($data->qc?->is_approved ?? false) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Edit QC</button>
                             </td>
                         </tr>
                     @endforeach
