@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('qc', function (Blueprint $table) {
-            $table->string("is_qc_approved")->change();
+            $table->string("is_qc_approved")->default("pending")->change();
         });
     }
 
