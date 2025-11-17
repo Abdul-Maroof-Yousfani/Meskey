@@ -1,4 +1,3 @@
-        <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
         <div style="padding-left: 10px; padding-right: 10px;">
             <div class="row">
                 <div class="col-md-6">
@@ -248,7 +247,9 @@
 
         @if ($purchaseOrderReceivingData->qc->canApprove())
         <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
-             <input type="text" name="total_bags" id="total_bags"
+            <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
+        
+             <input type="hidden" name="total_bags" id="total_bags"
                             value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
                             class="form-control">
             <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
