@@ -225,7 +225,7 @@ class PurchaseOrderController extends Controller
 
         }
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
         $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders', 'taxes'))->render();
 
@@ -408,7 +408,7 @@ class PurchaseOrderController extends Controller
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
         $taxes = Tax::select('id', 'percentage')->where('status', 'active')->get();
 
@@ -519,7 +519,7 @@ class PurchaseOrderController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
         $taxes = Tax::select('id', 'percentage')->where('status', 'active')->get();
         $data = PurchaseOrder::with(['purchaseOrderData', 'purchaseOrderData.item.unitOfMeasure'])->where('id', $id)->first();
@@ -566,7 +566,7 @@ class PurchaseOrderController extends Controller
             ->get();
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
 
         $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
