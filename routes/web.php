@@ -19,6 +19,12 @@ use App\Http\Controllers\Reports\{
 };
 
 
+Route::get("/restore-db", function() {
+   $job = JobOrder::all();
+   dd($job);
+
+
+});
 
 Auth::routes();
 
