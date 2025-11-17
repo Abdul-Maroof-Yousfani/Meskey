@@ -56,7 +56,7 @@
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" 
-                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',false,'80%')"
+                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',false,'90%')"
                                 class="btn btn-outline-primary" title="Edit">
                                 <i class="ft-edit"></i>
                             </button>
