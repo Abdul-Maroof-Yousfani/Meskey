@@ -245,8 +245,8 @@
             </div>
         </div>
 
-        @if ($purchaseOrderReceivingData->qc->canApprove())
         <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
+            @if ($purchaseOrderReceivingData->qc->canApprove())
             <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
         
              <input type="hidden" name="total_bags" id="total_bags"
@@ -277,8 +277,8 @@
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">Save</button>
+            @endif
         </form>
-        @endif
 
     @if($purchaseOrderReceivingData->qc->accepted_quantity > 0 || $purchaseOrderReceivingData->qc->rejected_quantity > 0)
    
