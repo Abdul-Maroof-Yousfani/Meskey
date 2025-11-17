@@ -14,6 +14,7 @@ use App\Models\Master\{InspectionCompany, FumigationCompany, CompanyLocation, Pr
 use App\Models\{Product, BagCondition, BagType};
 use Illuminate\Http\Request;
 use App\Models\User;
+use DB;
 class JobOrderController extends Controller
 {
     public function index()
@@ -69,69 +70,73 @@ class JobOrderController extends Controller
 
     public function store(JobOrderRequest $request)
     {
+        DB::beginTransaction();
 
+        try {
+            $locationCode = CompanyLocation::where('id', $request->company_location_id)
+                ->value('code');
 
-
-        $locationCode = CompanyLocation::where('id', $request->company_location_id)
-            ->value('code');
-
-        // 2) Isi waqt fresh unique number generate karo
-        $uniqueJobNo = generateUniversalUniqueNo('job_orders', [
-            'prefix' => 'JOB',
-            'location' => $locationCode,
-            'column' => 'job_order_no',
-            'with_date' => 1,
-            'custom_date' => $request->job_order_date,
-            'date_format' => 'm-Y',
-            'serial_at_end' => 1,
-        ]);
-
-        // Main job order data
-        $jobOrderData = $request->only([
-            'job_order_no',
-            'job_order_date',
-            'ref_no',
-            'product_id',
-            'remarks',
-            'order_description',
-            'delivery_date',
-            'loading_date',
-            'packing_description'
-        ]);
-
-        // JSON data store karein
-        $jobOrderData['company_id'] = $request->company_id; // Single location
-        $jobOrderData['job_order_no'] = $uniqueJobNo; // Single location
-        $jobOrderData['company_location_id'] = $request->company_location_id; // Single location
-        $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []); // Users array to JSON
-        $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []); // Inspection companies array to JSON
-        $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []); // Fumigation companies array to JSON
-        $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []); // Arrival locations array to JSON
-
-
-        $jobOrder = JobOrder::create($jobOrderData);
-
-        // Create packing items
-        foreach ($request->packing_items as $item) {
-            $jobOrder->packingItems()->create($item);
-        }
-
-        // Create specifications
-        foreach ($request->specifications as $spec) {
-            $jobOrder->specifications()->create([
-                'product_slab_type_id' => $spec['product_slab_type_id'],
-                'spec_name' => $spec['spec_name'],
-                'spec_value' => $spec['spec_value'],
-                'uom' => $spec['uom'],
-                'value_type' => $spec['value_type']
+            $uniqueJobNo = generateUniversalUniqueNo('job_orders', [
+                'prefix' => 'JOB',
+                'location' => $locationCode,
+                'column' => 'job_order_no',
+                'with_date' => 1,
+                'custom_date' => $request->job_order_date,
+                'date_format' => 'm-Y',
+                'serial_at_end' => 1,
             ]);
-        }
 
-        return response()->json([
-            'success' => 'Job Order created successfully.',
-            'data' => $jobOrder
-        ], 201);
+            $jobOrderData = $request->only([
+                'job_order_no',
+                'job_order_date',
+                'ref_no',
+                'product_id',
+                'remarks',
+                'order_description',
+                'delivery_date',
+                'loading_date',
+                'packing_description'
+            ]);
+
+            $jobOrderData['company_id'] = $request->company_id;
+            $jobOrderData['job_order_no'] = $uniqueJobNo;
+            $jobOrderData['company_location_id'] = $request->company_location_id;
+            $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []);
+            $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
+            $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
+            $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
+
+            $jobOrder = JobOrder::create($jobOrderData);
+
+            foreach ($request->packing_items as $item) {
+                $jobOrder->packingItems()->create($item);
+            }
+
+            foreach ($request->specifications as $spec) {
+                $jobOrder->specifications()->create([
+                    'product_slab_type_id' => $spec['product_slab_type_id'],
+                    'spec_name' => $spec['spec_name'],
+                    'spec_value' => $spec['spec_value'],
+                    'uom' => $spec['uom'],
+                    'value_type' => $spec['value_type']
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Job Order created successfully.',
+                'data' => $jobOrder
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
     public function edit($id)
     {
         $jobOrder = JobOrder::with(['packingItems', 'specifications', 'product'])->findOrFail($id);
@@ -164,7 +169,66 @@ class JobOrderController extends Controller
         ));
     }
 
+
     public function update(JobOrderRequest $request, JobOrder $jobOrder)
+    {
+        DB::beginTransaction();
+
+        try {
+            $jobOrderData = $request->only([
+                'job_order_no',
+                'job_order_date',
+                'ref_no',
+                'product_id',
+                'remarks',
+                'order_description',
+                'delivery_date',
+                'loading_date',
+                'packing_description',
+                'crop_year_id',
+                'other_specifications',
+            ]);
+
+            $jobOrderData['location'] = $request->location;
+            $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []);
+            $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
+            $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
+            $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
+
+            $jobOrder->update($jobOrderData);
+
+            $jobOrder->packingItems()->delete();
+            foreach ($request->packing_items as $item) {
+                $jobOrder->packingItems()->create($item);
+            }
+
+            $jobOrder->specifications()->delete();
+            foreach ($request->specifications as $spec) {
+                $jobOrder->specifications()->create([
+                    'product_slab_type_id' => $spec['product_slab_type_id'],
+                    'spec_name' => $spec['spec_name'],
+                    'spec_value' => $spec['spec_value'],
+                    'uom' => $spec['uom'],
+                    'value_type' => $spec['value_type']
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Job Order updated successfully.',
+                'data' => $jobOrder
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updatebk17Nov(JobOrderRequest $request, JobOrder $jobOrder)
     {
         // Update main job order data
         $jobOrderData = $request->only([
@@ -199,7 +263,7 @@ class JobOrderController extends Controller
         // Update specifications - delete old and create new
         $jobOrder->specifications()->delete();
         foreach ($request->specifications as $spec) {
-         
+
             $jobOrder->specifications()->create([
                 'product_slab_type_id' => $spec['product_slab_type_id'],
                 'spec_name' => $spec['spec_name'],

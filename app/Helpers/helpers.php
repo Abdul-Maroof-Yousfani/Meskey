@@ -385,10 +385,10 @@ function generateUniversalUniqueNo($tableName, $options = [])
     $lastNumber = 0;
 
     if ($latestRecord) {
-        preg_match('/(\d{' . $padLength . '})/', $latestRecord->{$uniqueColumn}, $m);
-        $lastNumber = $m[0] ?? 0;
+        preg_match('/(\d+)$/', $latestRecord->{$uniqueColumn}, $m);
+        $lastNumber = isset($m[1]) ? intval($m[1]) : 0;
     }
-
+    
     $newNumber = str_pad($lastNumber + 1, $padLength, '0', STR_PAD_LEFT);
 
     // ----------------------------------
