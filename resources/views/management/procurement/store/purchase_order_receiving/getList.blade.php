@@ -114,7 +114,7 @@
                                         <span class="badge badge-success">
                                             Approved
                                         </span>
-                                    @elseif(!is_null($requestGroup["qc_status"]))
+                                    @else
                                         <span class="badge badge-info">
                                             Not Created
                                         </span>

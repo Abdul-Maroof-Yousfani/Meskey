@@ -105,6 +105,7 @@
                  @foreach ($purchaseOrderReceivingData ?? [] as $key => $data)
                       <button id="modalButton{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $data->id]) }}', 'Add QC', false, '100%')">&nbsp;</button>
                       <button id="modalButtonQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $data->id]) }}', 'Edit QC', false, '100%')">&nbsp;</button>
+                      <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id]) }}', 'Edit QC', false, '100%')">&nbsp;</button>
                        
                      <tr id="row_{{ $key }}">
                          <td style="width: 50%">
@@ -256,6 +257,7 @@
                                  data-id="{{ $key }}">Remove</button>
                             <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
                             <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->is_qc_approved || !$data->qc?->exists()) style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                            <button onclick="viewQc('{{ $data->id }}', '{{ $key }}')" style="width: 100px;" type="button" class="btn btn-primary btn-sm viewQc">View QC</button>
              
                          </td>
                      </tr>
@@ -285,6 +287,9 @@
     }
     function editQc(id, key) {
         $("#modalButtonQc" + key).trigger("click");
+    }
+    function viewQc(id, key) {
+        $("#modalButtonViewQc" + key).trigger("click");
     }
     // function createQc(id, element) {
     //     const accepted_qty = $(element).closest("tr").find(".accepted_qty");
