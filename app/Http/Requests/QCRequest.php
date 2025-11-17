@@ -22,8 +22,30 @@ class QCRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "accepted_quantity" => "required",
-            "rejected_quantity" => "required",
+            "accepted_quantity" => [
+                "required",
+                function($attribute, $value, $fail) {
+                    $accepted_quantity = $this->accepted_quantity;
+                    $rejected_quantity = $this->rejected_quantity;
+                    $qty = $this->total_bags;
+
+                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
+                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
+                    }
+                }
+            ],
+            "rejected_quantity" => [
+                "required",
+                function($attribute, $value, $fail) {
+                    $accepted_quantity = $this->accepted_quantity;
+                    $rejected_quantity = $this->rejected_quantity;
+                    $qty = $this->total_bags;
+
+                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
+                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
+                    }
+                }
+            ],
             "size" => "required",
             "bio" => "required",
             "smell" => "required",

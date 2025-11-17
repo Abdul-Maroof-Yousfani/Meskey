@@ -216,7 +216,8 @@
         </div>
     </div>
 
-    <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
+
+    <div class="row" style="margin-bottom: 30px;">
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Accepted Qty:</label>
