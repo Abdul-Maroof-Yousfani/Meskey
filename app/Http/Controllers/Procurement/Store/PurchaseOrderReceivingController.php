@@ -92,6 +92,7 @@ class PurchaseOrderReceivingController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
+                    'qc_status' => $row->qc?->is_qc_approved,
                     'suppliers' => []
                 ];
             }
@@ -136,6 +137,7 @@ class PurchaseOrderReceivingController extends Controller
                         $requestItems[] = [
                             'item_data' => $itemGroup['item_data'],
                             'suppliers' => $itemSuppliers,
+                            'qc_status' => $itemGroup["qc_status"],
                             'item_rowspan' => $itemRowspan
                         ];
                     }
