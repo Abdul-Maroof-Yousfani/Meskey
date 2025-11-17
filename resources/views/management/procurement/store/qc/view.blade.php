@@ -17,7 +17,7 @@
             </div>
             <div class="row" style="margin-top: 10px;">
                 <div class="col-md-12">
-                    <table class="table table-bordered" id="purchaseRequestTable">
+                    <table class="table table-bordered" id="purchaseRequestTable2">
                         <thead>
                             <tr>
                                 <th>Item</th>
@@ -31,7 +31,7 @@
                                 <th>Total Weight Received</th>
                             </tr>
                         </thead>
-                        <tbody id="purchaseOrderBody">
+                        <tbody id="purchaseOrderBody3">
                             <tr>
                                 <td>
                                     <input type="text" name="item" id="item"
@@ -95,7 +95,7 @@
             <p style="margin-top: 20px; font-size: 20px;">Weight of randomly-selected 10-bags sets</p>
             <div class="row" style="margin-top: 10px;">
                 <div class="col-md-6" style="padding: 0px; padding-left: 10px;">
-                    <table class="table table-bordered" id="purchaseRequestTable">
+                    <table class="table table-bordered" id="purchaseRequestTable3">
                         <thead>
                             <tr>
                                 <th>S.#</th>
@@ -107,21 +107,21 @@
                             $bags = $purchaseOrderReceivingData->qc?->bags?->toArray();
 
                         @endphp
-                        <tbody id="purchaseOrderBody">
+                        <tbody id="purchaseOrderBody1">
                             @for ($i = 0; $i < 5; $i++)
                                 <tr>
                                     <td style="width: 100px;">
-                                        <input type="text" name="item" style="text-align: center" id="item"
+                                        <input type="text" name="item" style="text-align: center" class="item"
                                             value="{{ $i + 1 }}" readonly class="form-control">
                                     </td>
                                     <td>
                                         <input type="text" name="net_weight[]"
-                                            value="{{ $bags[$i]['net_weight'] ?? '' }}" id="net_weight"
+                                            value="{{ $bags[$i]['net_weight'] ?? '' }}" class="net_weight"
                                             placeholder="Net Weight" readonly class="form-control">
                                     </td>
                                     <td>
                                         <input type="text" name="bag_weight[]"
-                                            value="{{ $bags[$i]['bag_weight'] ?? '' }}" id="bag_weight"
+                                            value="{{ $bags[$i]['bag_weight'] ?? '' }}" class="bag_weight"
                                             placeholder="Bag Weight" readonly class="form-control">
                                     </td>
                                 </tr>
@@ -131,7 +131,7 @@
                     </table>
                 </div>
                 <div class="col-md-6" style="padding: 0px; padding-right: 10px;">
-                    <table class="table table-bordered" id="purchaseRequestTable">
+                    <table class="table table-bordered" id="purchaseRequestTable1">
                         <thead>
                             <tr>
                                 <th>S.#</th>
@@ -139,22 +139,22 @@
                                 <th>Bag Weight</th>
                             </tr>
                         </thead>
-                        <tbody id="purchaseOrderBody">
+                        <tbody id="purchaseOrderBody2">
                             @for ($i = 5; $i < 10; $i++)
                                 <tr>
                                     <td style="width: 100px; text-align: center;">
                                         <input type="text" name="item" style="text-align: center"
-                                            id="item" value="{{ $i + 1 }}" readonly
+                                            class="item" value="{{ $i + 1 }}" readonly
                                             class="form-control">
                                     </td>
                                     <td>
                                         <input type="text" name="net_weight[]"
-                                            value="{{ $bags[$i]['net_weight'] ?? '' }}" id="net_weight"
+                                            value="{{ $bags[$i]['net_weight'] ?? '' }}" class="net_weight"
                                             placeholder="Net Weight" readonly class="form-control">
                                     </td>
                                     <td>
                                         <input type="text" name="bag_weight[]"
-                                            value="{{ $bags[$i]['bag_weight'] ?? '' }}" id="bag_weight"
+                                            value="{{ $bags[$i]['bag_weight'] ?? '' }}" class="bag_weight"
                                             placeholder="Bag Weight" readonly class="form-control">
                                     </td>
                                 </tr>
@@ -289,11 +289,11 @@
         </form>
 
 
-            <div class="row">
-                <div class="col-12">
-                    <x-approval-status :model="$purchaseOrderReceivingData->qc" />
-                </div>
+        <div class="row">
+            <div class="col-12">
+                <x-approval-status :model="$purchaseOrderReceivingData->qc" />
             </div>
+        </div>
         <div class="row bottom-button-bar" style="padding-bottom: 20px;">
             &nbsp;
         </div>
