@@ -9,6 +9,7 @@
             <th class="col-sm-1">Qty</th>
             <th class="col-sm-1">Rate</th>
             <th class="col-sm-1">Total Amount</th>
+            <th class="col-sm-1">QC Status</th>
             <th class="col-sm-1">Item Status</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -92,6 +93,32 @@
                             <td>
                                 <p class="m-0 text-right">
                                     {{ $supplierRow['data']->total }}
+                                </p>
+                            </td>
+                            <td>
+                                <p class="m-0 text-right">
+                                    @php
+                                        $badgeClass = match (strtolower($approvalStatus)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'pending' => 'badge-warning',
+                                            'returned' => 'badge-info',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    @if($requestGroup["qc_status"] == '0')
+                                        <span class="badge badge-warning">
+                                            Pending
+                                        </span>
+                                    @elseif($requestGroup["qc_status"] == '1')
+                                        <span class="badge badge-success">
+                                            Approved
+                                        </span>
+                                    @elseif(!is_null($requestGroup["qc_status"]))
+                                        <span class="badge badge-info">
+                                            Not Created
+                                        </span>
+                                    @endif
                                 </p>
                             </td>
                             {{-- Created Date --}}

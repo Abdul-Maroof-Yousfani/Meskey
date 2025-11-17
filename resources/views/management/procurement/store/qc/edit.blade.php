@@ -87,6 +87,10 @@
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
+                        @php
+                            $bags = $purchaseOrderReceivingData->qc?->bags?->toArray();
+                            
+                        @endphp
                         @for ($i = 0; $i < 5; $i++)
                             <tr>
                                 <td style="width: 100px;">
@@ -94,12 +98,12 @@
                                         value="{{ $i + 1 }}" readonly class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="size" id="size" placeholder="Net Weight"
-                                        readonly class="form-control">
+                                    <input type="text" value="{{ $bags[$i]["net_weight"] ?? '' }}" name="net_weight[]" id="net_weight" placeholder="Net Weight"
+                                        class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="brand" id="brand" placeholder="Bag Weight"
-                                        readonly class="form-control">
+                                    <input type="text" name="bag_weight[]" value="{{ $bags[$i]["bag_weight"] ?? '' }}" id="bag_weight" placeholder="Bag Weight"
+                                        class="form-control">
                                 </td>
                             </tr>
                         @endfor
@@ -124,12 +128,12 @@
                                         value="{{ $i + 1 }}" readonly class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="size" id="size" placeholder="Net Weight"
-                                        readonly class="form-control">
+                                    <input type="text" name="net_weight[]" id="net_weight" placeholder="Net Weight"
+                                        class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="brand" id="brand" placeholder="Bag Weight"
-                                        readonly class="form-control">
+                                    <input type="text" name="bag_weight[]" id="bag_weight" placeholder="Bag Weight"
+                                        class="form-control">
                                 </td>
                             </tr>
                         @endfor

@@ -10,4 +10,8 @@ class QC extends Model
     use HasFactory;
     protected $table = "qc";
     protected $guarded = ["id", "created", "updated_at"];
+
+    public function bags() {
+        return $this->hasMany(QCBags::class, "qc_id");
+    }
 }
