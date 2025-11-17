@@ -469,8 +469,8 @@ class PurchaseOrderReceivingController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::get();
-        dd($job_orders);
+        // $job_orders = JobOrder::get();
+        // dd($job_orders);
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
             'purchaseOrderReceivingData',
             'purchaseOrderReceivingData.category',
@@ -494,7 +494,7 @@ class PurchaseOrderReceivingController extends Controller
             'purchaseOrderReceiving' => $purchaseOrderReceiving,
             'categories' => $categories,
             'locations' => $locations,
-            'job_orders' => $job_orders,
+            // 'job_orders' => $job_orders,
             'purchaseOrder' => $purchaseOrder,
             'purchaseOrderReceivingData' => $purchaseOrderReceivingData,
             'data1' => $purchaseOrderReceiving,
