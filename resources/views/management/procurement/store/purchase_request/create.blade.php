@@ -85,7 +85,7 @@
                         class="form-control item-select" data-index="0" style="width:180px;">
                         <option value="">Select Job Order</option>
                         @foreach ($job_orders ?? [] as $job_order)
-                            <option value="{{ $job_order->id }}">{{ $job_order->name }}</option>
+                            <option value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
                         @endforeach
                     </select></td>
 

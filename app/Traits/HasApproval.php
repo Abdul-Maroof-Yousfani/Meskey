@@ -71,7 +71,7 @@ trait HasApproval
             }
         }
 
-        return 'pending';
+        return 'approved';
     }
 
     public function getCurrentApprovalCycle()
@@ -202,7 +202,7 @@ trait HasApproval
             }
         }
 
-        return true;
+        return false;
     }
 
     public function partial_approve($comments = null)

@@ -55,7 +55,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="average_weight_of_1_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                                <input type="text" name="average_weight_of_one_bag" value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
                                      class="form-control" placeholder="Average Weight of One Bag">
                             </td>
 
@@ -70,7 +70,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_received" id="total_weight_received" value="Total Weight Received"
+                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}"
                                     readonly class="form-control">
                             </td>
 

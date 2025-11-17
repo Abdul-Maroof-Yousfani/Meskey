@@ -5,6 +5,7 @@ use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use App\Models\Procurement\Store\QC;
 use App\Models\Procurement\Store\QCBags;
+use App\Models\Production\JobOrder\JobOrder;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -19,10 +20,8 @@ use App\Http\Controllers\Reports\{
 
 
 Route::get("/restore-db", function() {
-    Schema::disableForeignKeyConstraints();
-QC::truncate();
-QCBags::truncate();
-Schema::enableForeignKeyConstraints();
+   $job = JobOrder::all();
+   dd($job);
 
 
 });

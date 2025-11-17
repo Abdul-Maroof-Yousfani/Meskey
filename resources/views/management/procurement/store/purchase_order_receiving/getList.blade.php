@@ -106,11 +106,16 @@
                                             default => 'badge-secondary',
                                         };
                                     @endphp
-                                    @if($itemGroup["qc_status"] == '0')
+                                    @if($itemGroup["qc_status"] == 'pending')
                                         <span class="badge badge-warning">
                                             Pending
                                         </span>
-                                    @elseif($itemGroup["qc_status"] == '1')
+                                    @elseif($itemGroup["qc_status"] == 'approved')
+                                        <span class="badge badge-success">
+                                            Approved
+                                        </span>
+
+                                    @elseif($itemGroup["qc_status"] == 'rejected')
                                         <span class="badge badge-success">
                                             Approved
                                         </span>

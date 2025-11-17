@@ -109,7 +109,7 @@ class PurchaseRequestController extends Controller
     public function create()
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders'));
     }
 
@@ -189,7 +189,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
         $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
 
         return view('management.procurement.store.purchase_request.edit', compact('purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
@@ -200,7 +200,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
         $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
         // dd($purchaseRequest);
         return view('management.procurement.store.purchase_request.approvalCanvas', [

@@ -330,7 +330,7 @@ class PurchaseQuotationController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
 
         $purchaseRequest = PurchaseRequest::with([
             'PurchaseData',
@@ -374,7 +374,7 @@ class PurchaseQuotationController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
 
         $purchaseRequest = PurchaseRequest::with([
             'PurchaseData',
@@ -418,7 +418,7 @@ class PurchaseQuotationController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
 
         $purchaseQuotation = PurchaseQuotation::with([
             'quotation_data',
@@ -526,7 +526,7 @@ class PurchaseQuotationController extends Controller
         $purchaseRequestDataCount = $dataItems->count();
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
         
         $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
@@ -651,7 +651,7 @@ class PurchaseQuotationController extends Controller
             ->get();
 
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
 
         $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
 
@@ -687,7 +687,7 @@ class PurchaseQuotationController extends Controller
             ->get();
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')->get();
 
         $html = view('management.procurement.store.purchase_quotation.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
