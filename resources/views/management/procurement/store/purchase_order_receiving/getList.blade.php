@@ -106,7 +106,6 @@
                                             default => 'badge-secondary',
                                         };
                                     @endphp
-                                    {{ $requestGroup["qc_status"] }}
                                     @if($requestGroup["qc_status"] == '0')
                                         <span class="badge badge-warning">
                                             Pending

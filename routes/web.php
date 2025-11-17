@@ -3,6 +3,8 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Procurement\Store\QC;
+use App\Models\Procurement\Store\QCBags;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -15,6 +17,11 @@ use App\Http\Controllers\Reports\{
     TransactionController
 };
 
+
+Route::get("/restore-db", function() {
+    QC::delete();
+    QCBags::delete();
+});
 
 Auth::routes();
 
