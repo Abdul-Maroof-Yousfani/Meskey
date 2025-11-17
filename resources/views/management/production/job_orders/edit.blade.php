@@ -10,6 +10,13 @@
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label>Job Order No:</label>
+                        <input type="text" readonly name="job_order_no" class="form-control"
+                            value="{{ $jobOrder->job_order_no }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label>Location:</label>
                         <select name="company_location_id" class="form-control" disabled>
                             <option value="">Select Location</option>
@@ -22,17 +29,11 @@
                         <input type="hidden" value="{{ $jobOrder->company_location_id }}" name="company_location_id">
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Job Order No:</label>
-                        <input type="text" readonly name="job_order_no" class="form-control"
-                            value="{{ $jobOrder->job_order_no }}">
-                    </div>
-                </div>
+
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order Date:</label>
-                        <input type="date" name="job_order_date" class="form-control"
+                        <input readonly type="date" readonly name="job_order_date" class="form-control"
                             value="{{ $jobOrder->job_order_date->format('Y-m-d') }}">
                     </div>
                 </div>
@@ -43,7 +44,7 @@
                         <input type="text" name="ref_no" class="form-control" value="{{ $jobOrder->ref_no }}">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group">
                         <label>Attention To:</label>
                         <select name="attention_to[]" class="form-control select2" multiple>
@@ -59,14 +60,15 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Remarks:</label>
-                        <input type="text" name="remarks" class="form-control" value="{{ $jobOrder->remarks }}">
+                        <textarea name="remarks" class="form-control"
+                        rows="5">{{ $jobOrder->remarks }}</textarea>
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Order Description:</label>
                         <textarea name="order_description" class="form-control"
-                            rows="4">{{ $jobOrder->order_description }}</textarea>
+                            rows="5">{{ $jobOrder->order_description }}</textarea>
                     </div>
                 </div>
             </div>
@@ -108,21 +110,33 @@
                                         <tr>
                                             <td>
                                                 <strong>{{ $spec->spec_name }}</strong>
-                                                <input type="hidden" name="specifications[{{ $index }}][product_slab_id]"
-                                                    value="{{ $spec->product_slab_id }}">
+                                                <input type="hidden" name="specifications[{{ $index }}][product_slab_type_id]"
+                                                    value="{{ $spec->product_slab_type_id }}">
                                                 <input type="hidden" name="specifications[{{ $index }}][spec_name]"
                                                     value="{{ $spec->spec_name }}">
                                                 <input type="hidden" name="specifications[{{ $index }}][uom]"
                                                     value="{{ $spec->uom }}">
                                             </td>
                                             <td>
-                                                <input type="text" name="specifications[{{ $index }}][spec_value]"
+                                            <fieldset>
+                                                <div class="input-group">
+                                                    <input type="text" name="specifications[{{ $index }}][spec_value]"  value="{{ $spec->spec_value ?? 0 }}"
+                                                        class="form-control form-control-sm spec-value-input" placeholder="Enter value">
+                                                    <div class="input-group-prepend">
+                                                        <button class="btn btn-secondary" type="button">{{ $spec->productSlabType->qc_symbol ?? 'N/A' }}</button>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                                <!-- <input type="text" name="specifications[{{ $index }}][spec_value]"
                                                     value="{{ $spec->spec_value }}"
                                                     class="form-control form-control-sm spec-value-input"
-                                                    placeholder="Enter value">
+                                                    placeholder="Enter value"> -->
                                             </td>
                                             <td>
-                                                {{ $spec->uom }}
+                                                <select name="specifications[{{ $index }}][value_type]" class="form-control">
+                                                    <option {{ $spec->value_type == 'min' ? 'selected' : ''}} value="min">Minimum</option>                             
+                                                    <option  {{ $spec->value_type == 'max' ? 'selected' : ''}} value="max">Maximum</option>                             
+                                                </select>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -136,6 +150,26 @@
                         <strong>No specifications found!</strong> Please select a commodity first!
                     </div>
                 @endif
+            </div>
+        </div>
+
+
+          <!-- CropYear Selection -->
+          <div class="col-md-12">
+            <div class="form-group">
+                <label>Crop Year:</label>
+                <select name="crop_year_id" class="form-control select2" id="productSelect">
+                    <option value="">Select Crop Year</option>
+                    @foreach($cropYears as $cropYear)
+                        <option {{ $jobOrder->crop_year_id == $cropYear->id ? 'selected' : '' }} value="{{ $cropYear->id }}">{{ $cropYear->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Other Specification:</label>
+                <textarea name="other_specifications" class="form-control" rows="4">{{ $jobOrder->other_specifications }}</textarea>
             </div>
         </div>
 
@@ -422,7 +456,66 @@
             calculateTotals(item);
         });
 
+
+
+        // Auto-calculate stuffing based on metric tons and containers
+        $(document).on('input', '.metric-tons, .containers', function () {
+            var item = $(this).closest('.packing-item');
+            calculateStuffing(item);
+        });
+
+        // Auto-calculate containers based on metric tons and stuffing
+        $(document).on('input', '.metric-tons, .stuffing', function () {
+            var item = $(this).closest('.packing-item');
+            calculateContainers(item);
+        });
+
+        function calculateStuffing(item) {
+            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
+            var containers = parseInt(item.find('.containers').val()) || 0;
+
+            if (containers > 0 && metricTons > 0) {
+                var stuffingPerContainer = metricTons / containers;
+                item.find('.stuffing').val(stuffingPerContainer.toFixed(3));
+            }
+        }
+
+        function calculateContainers(item) {
+            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
+            var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
+
+            if (stuffing > 0 && metricTons > 0) {
+                var containers = Math.ceil(metricTons / stuffing);
+                item.find('.containers').val(containers);
+            }
+        }
+
+        // Modified existing calculateTotals function to include stuffing calculation
         function calculateTotals(item) {
+            var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
+            var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+            var extraBags = parseInt(item.find('.extra-bags').val()) || 0;
+            var emptyBags = parseInt(item.find('.empty-bags').val()) || 0;
+
+            // Calculate totals
+            var totalBags = noOfBags + extraBags + emptyBags;
+            var totalKgs = noOfBags * bagSize;
+            var metricTons = totalKgs / 1000;
+
+            // Update fields
+            item.find('.total-bags').val(totalBags);
+            item.find('.total-kgs').val(totalKgs.toFixed(2));
+            item.find('.metric-tons').val(metricTons.toFixed(3));
+
+            // Auto-calculate stuffing if containers are specified
+            var containers = parseInt(item.find('.containers').val()) || 0;
+            if (containers > 0) {
+                calculateStuffing(item);
+            }
+        }
+
+
+        function calculateTotalsbk(item) {
             var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
             var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
             var extraBags = parseInt(item.find('.extra-bags').val()) || 0;

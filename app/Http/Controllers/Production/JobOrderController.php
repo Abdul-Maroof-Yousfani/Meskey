@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\JobOrderRequest;
+use App\Models\Master\CropYear;
 use App\Models\Production\JobOrder\{
     JobOrderPackingItem,
     JobOrder,
@@ -40,10 +41,11 @@ class JobOrderController extends Controller
     public function create()
     {
         $products = Product::where('status', 1)->get();
-        $inspectionCompanies = InspectionCompany::where('status', 1)->get();
-        $fumigationCompanies = FumigationCompany::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 1)->get();
-        $arrivalLocations = ArrivalLocation::where('status', 1)->get();
+        $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::where('status', 'active')->get();
+        $cropYears = CropYear::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
@@ -60,7 +62,8 @@ class JobOrderController extends Controller
             'bagConditions',
             'brands',
             'bagColors',
-            'users'
+            'users',
+            'cropYears'
         ));
     }
 
@@ -77,10 +80,10 @@ class JobOrderController extends Controller
             'prefix' => 'JOB',
             'location' => $locationCode,
             'column' => 'job_order_no',
-            // 'with_date' => 1,
-            // 'custom_date' => $request->job_order_date,
-            // 'date_format' => 'm-Y',
-            // 'serial_at_end' => 1,
+            'with_date' => 1,
+            'custom_date' => $request->job_order_date,
+            'date_format' => 'm-Y',
+            'serial_at_end' => 1,
         ]);
 
         // Main job order data
@@ -116,10 +119,11 @@ class JobOrderController extends Controller
         // Create specifications
         foreach ($request->specifications as $spec) {
             $jobOrder->specifications()->create([
-                'product_slab_id' => $spec['product_slab_id'],
+                'product_slab_type_id' => $spec['product_slab_type_id'],
                 'spec_name' => $spec['spec_name'],
                 'spec_value' => $spec['spec_value'],
-                'uom' => $spec['uom']
+                'uom' => $spec['uom'],
+                'value_type' => $spec['value_type']
             ]);
         }
 
@@ -133,10 +137,11 @@ class JobOrderController extends Controller
         $jobOrder = JobOrder::with(['packingItems', 'specifications', 'product'])->findOrFail($id);
 
         $products = Product::where('status', 1)->get();
-        $inspectionCompanies = InspectionCompany::where('status', 1)->get();
-        $fumigationCompanies = FumigationCompany::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 1)->get();
-        $arrivalLocations = ArrivalLocation::where('status', 1)->get();
+        $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::where('status', 'active')->get();
+        $cropYears = CropYear::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
@@ -154,7 +159,8 @@ class JobOrderController extends Controller
             'bagConditions',
             'brands',
             'bagColors',
-            'users'
+            'users',
+            'cropYears'
         ));
     }
 
@@ -170,7 +176,9 @@ class JobOrderController extends Controller
             'order_description',
             'delivery_date',
             'loading_date',
-            'packing_description'
+            'packing_description',
+            'crop_year_id',
+            'other_specifications',
         ]);
 
         // JSON data update karein
@@ -191,11 +199,13 @@ class JobOrderController extends Controller
         // Update specifications - delete old and create new
         $jobOrder->specifications()->delete();
         foreach ($request->specifications as $spec) {
+         
             $jobOrder->specifications()->create([
-                'product_slab_id' => $spec['product_slab_id'],
+                'product_slab_type_id' => $spec['product_slab_type_id'],
                 'spec_name' => $spec['spec_name'],
                 'spec_value' => $spec['spec_value'],
-                'uom' => $spec['uom']
+                'uom' => $spec['uom'],
+                'value_type' => $spec['value_type']
             ]);
         }
 
@@ -289,7 +299,7 @@ class JobOrderController extends Controller
                 // Pehla slab le rahe hain kyun ke har type ka ek hi slab hoga group mein
                 $firstSlab = $slabs->first();
                 return [
-                    'id' => $firstSlab->id,
+                    'id' => $firstSlab->slabType->id,
                     'spec_name' => $firstSlab->slabType->name ?? '',
                     'spec_value' => $firstSlab->deduction_value ?? 0,
                     'uom' => $firstSlab->slabType->qc_symbol ?? ''

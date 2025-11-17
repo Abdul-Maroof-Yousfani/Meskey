@@ -2,6 +2,7 @@
 
 namespace App\Models\Production\JobOrder;
 
+use App\Models\Master\ProductSlabType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Master\ProductSlab;
@@ -12,10 +13,11 @@ class JobOrderSpecification extends Model
 
     protected $fillable = [
         'job_order_id',
-        'product_slab_id',
+        'product_slab_type_id',
         'spec_name',
         'spec_value',
-        'uom'
+        'uom',
+        'value_type'
     ];
 
     public function jobOrder()
@@ -23,8 +25,8 @@ class JobOrderSpecification extends Model
         return $this->belongsTo(JobOrder::class);
     }
 
-    public function productSlab()
+    public function productSlabType()
     {
-        return $this->belongsTo(ProductSlab::class);
+        return $this->belongsTo(ProductSlabType::class);
     }
 }

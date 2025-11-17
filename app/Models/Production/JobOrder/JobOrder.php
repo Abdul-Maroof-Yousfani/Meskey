@@ -25,6 +25,8 @@ class JobOrder extends Model
         'loading_date',
         'arrival_locations',
         'packing_description',
+        'crop_year_id',
+        'other_specifications',
         'company_id'
     ];
 

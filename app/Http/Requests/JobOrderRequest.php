@@ -74,7 +74,7 @@ class JobOrderRequest extends FormRequest
                 'array',
                 'min:1'
             ],
-            'specifications.*.product_slab_id' => [
+            'specifications.*.product_slab_type_id' => [
                 'required',
                 'exists:product_slabs,id'
             ],
@@ -239,7 +239,7 @@ class JobOrderRequest extends FormRequest
             // Specifications Messages
             'specifications.required' => 'At least one specification is required',
             'specifications.min' => 'At least one specification is required',
-            'specifications.*.product_slab_id.required' => 'Specification ID is required',
+            'specifications.*.product_slab_type_id.required' => 'Specification ID is required',
             'specifications.*.spec_name.required' => 'Specification name is required',
             'specifications.*.spec_value.required' => 'Specification value is required',
 

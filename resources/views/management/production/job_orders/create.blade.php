@@ -46,7 +46,7 @@
                         <input type="text" name="ref_no" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group">
                         <label>Attention To:</label>
                         <select name="attention_to[]" class="form-control select2" multiple>
@@ -60,13 +60,15 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Remarks:</label>
-                        <input type="text" name="remarks" class="form-control">
+
+                        <textarea name="remarks" class="form-control" rows="5"></textarea>
+
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Order Description:</label>
-                        <textarea name="order_description" class="form-control" rows="4"></textarea>
+                        <textarea name="order_description" class="form-control" rows="5"></textarea>
                     </div>
                 </div>
             </div>
@@ -85,6 +87,7 @@
             </div>
         </div>
 
+
         <!-- Specifications Section -->
         <div class="col-md-12" id="specificationsSection" style="display: ;">
             <h6 class="header-heading-sepration">Specifications</h6>
@@ -93,6 +96,24 @@
                     <i class="ft-info mr-1"></i>
                     <strong>No specifications found!</strong> Please select a commodity first!
                 </div>
+            </div>
+        </div>
+        <!-- Product Selection -->
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Crop Year:</label>
+                <select name="crop_year_id" class="form-control select2" id="productSelect">
+                    <option value="">Select Crop Year</option>
+                    @foreach($cropYears as $cropYear)
+                        <option value="{{ $cropYear->id }}">{{ $cropYear->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Other Specification:</label>
+                <textarea name="other_specifications" class="form-control" rows="4"></textarea>
             </div>
         </div>
 
@@ -356,7 +377,66 @@
             calculateTotals(item);
         });
 
+
+        // Auto-calculate stuffing based on metric tons and containers
+        $(document).on('input', '.metric-tons, .containers', function () {
+            var item = $(this).closest('.packing-item');
+            calculateStuffing(item);
+        });
+
+        // Auto-calculate containers based on metric tons and stuffing
+        $(document).on('input', '.metric-tons, .stuffing', function () {
+            var item = $(this).closest('.packing-item');
+            calculateContainers(item);
+        });
+
+        function calculateStuffing(item) {
+            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
+            var containers = parseInt(item.find('.containers').val()) || 0;
+
+            if (containers > 0 && metricTons > 0) {
+                var stuffingPerContainer = metricTons / containers;
+                item.find('.stuffing').val(stuffingPerContainer.toFixed(3));
+            }
+        }
+
+        function calculateContainers(item) {
+            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
+            var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
+
+            if (stuffing > 0 && metricTons > 0) {
+                var containers = Math.ceil(metricTons / stuffing);
+                item.find('.containers').val(containers);
+            }
+        }
+
+        // Modified existing calculateTotals function to include stuffing calculation
         function calculateTotals(item) {
+            var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
+            var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+            var extraBags = parseInt(item.find('.extra-bags').val()) || 0;
+            var emptyBags = parseInt(item.find('.empty-bags').val()) || 0;
+
+            // Calculate totals
+            var totalBags = noOfBags + extraBags + emptyBags;
+            var totalKgs = noOfBags * bagSize;
+            var metricTons = totalKgs / 1000;
+
+            // Update fields
+            item.find('.total-bags').val(totalBags);
+            item.find('.total-kgs').val(totalKgs.toFixed(2));
+            item.find('.metric-tons').val(metricTons.toFixed(3));
+
+            // Auto-calculate stuffing if containers are specified
+            var containers = parseInt(item.find('.containers').val()) || 0;
+            if (containers > 0) {
+                calculateStuffing(item);
+            }
+        }
+
+
+
+        function calculateTotalsbk(item) {
             var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
             var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
             var extraBags = parseInt(item.find('.extra-bags').val()) || 0;
@@ -400,10 +480,10 @@
             table: 'job_orders',
             prefix: 'JOB',
             location: locationCode,
-            // with_date: 1,
+            with_date: 1,
             column: 'job_order_no',
-            // custom_date: selectedDate,
-            // date_format: 'm-Y',
+            custom_date: selectedDate,
+            date_format: 'm-Y',
             serial_at_end: 1,
         }, function (no) {
             $('input[name="job_order_no"]').val(no);

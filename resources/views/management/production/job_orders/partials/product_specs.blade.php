@@ -14,7 +14,7 @@
                         <tr>
                             <td>
                                 <strong>{{ $spec['spec_name'] }}</strong>
-                                <input type="hidden" name="specifications[{{ $index }}][product_slab_id]"
+                                <input type="hidden" name="specifications[{{ $index }}][product_slab_type_id]"
                                     value="{{ $spec['id'] }}">
                                 <input type="hidden" name="specifications[{{ $index }}][spec_name]"
                                     value="{{ $spec['spec_name'] }}">
@@ -38,7 +38,7 @@
                                                placeholder="Enter value"> -->
                             </td>
                             <td>
-                                <select name="specifications[{{ $index }}][spec_value_range]" class="form-control">
+                                <select name="specifications[{{ $index }}][value_type]" class="form-control">
                                     <option value="min">Minimum</option>                             
                                     <option value="max">Maximum</option>                             
                                 </select>

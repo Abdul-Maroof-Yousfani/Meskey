@@ -11,9 +11,10 @@ return new class extends Migration
         Schema::create('job_order_specifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('job_order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_slab_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_slab_type_id')->constrained()->onDelete('cascade');
             $table->string('spec_name');
             $table->string('spec_value');
+            $table->enum('value_type', ['min', 'max'])->default('min');
             $table->string('uom')->nullable();
             $table->timestamps();
         });
