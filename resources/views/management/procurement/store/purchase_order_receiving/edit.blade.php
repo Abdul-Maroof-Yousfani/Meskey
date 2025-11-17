@@ -96,7 +96,7 @@
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div> --}}
-        <div class="col-md-12">
+        <div class="col-md-12" style="overflow-x: auto; white-space: nowrap;">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
@@ -165,22 +165,22 @@
                             </td>
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="accepted_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->accepted_qty }}"
+                                    onblur="calc({{ $key }})" name="accepted_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->accepted_quantity ?? null }}"
                                     id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="rejected_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->rejected_qty }}"
+                                    onblur="calc({{ $key }})" name="rejected_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->rejected_quantity ?? null }}"
                                     id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" @readonly(isBag($data->item_id)) value=""
-                                    id="deduction_per_bag{{ $key }}" class="form-control" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
+                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->deduction_per_bag ?? null }}"
+                                    id="deduction_per_bag{{ $key }}" class="form-control deduction_per_bag" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
 
@@ -258,7 +258,7 @@
                                     data-id="{{ $key }}">Remove</button>
 
 
-                                <button onclick="createQc('{{ $data->id }}', this)" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                <button onclick="createQc('{{ $data->id }}', this)" @disabled($data->qc?->is_approved ?? false) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Edit QC</button>
                             </td>
                         </tr>
                     @endforeach
@@ -291,6 +291,8 @@ $(document).ready(function () {
     function createQc(id, element) {
         const accepted_qty = $(element).closest("tr").find(".accepted_qty");
         const rejected_qty = $(element).closest("tr").find(".rejected_qty");
+        const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
+
        
         Swal.fire({
             title: "Are you sure?",
@@ -316,7 +318,8 @@ $(document).ready(function () {
                     data: { 
                         id: id,
                         accepted_qty: accepted_qty.val(),
-                        rej_qty: rejected_qty.val()
+                        rej_qty: rejected_qty.val(),
+                        deduction_per_bag: deduction_per_bag.val()
                     },
                     success: function (response) {
                         console.log(response);

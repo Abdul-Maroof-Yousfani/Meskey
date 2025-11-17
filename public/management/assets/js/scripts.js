@@ -264,6 +264,7 @@ if (!SUBMISSION_ON_ENTER) {
 }
 
 $(document).on("submit", "#ajaxSubmit", function (e) {
+
   var formhunyr = $(this);
 
   e.preventDefault(); // Avoid executing the actual submit of the form.

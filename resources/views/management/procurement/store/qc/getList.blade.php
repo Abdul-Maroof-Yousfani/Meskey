@@ -7,12 +7,9 @@
             <th class="col-sm-3">Category- item</th>
             <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
-            <th class="col-sm-1">Accepted Quantity</th>
-            <th class="col-sm-1">Rejected Quantity</th>
-            <th class="col-sm-1">Deduction Per Bag</th>
-            <th class="col-sm-1">Status</th>
 
             <th class="col-sm-1">Action</th>
+            {{-- <th class="col-sm-1">Status</th> --}}
         </tr>
     </thead>
     <tbody>
@@ -86,21 +83,6 @@
                                     {{ $supplierRow['data']->qty }}
                                 </p>
                             </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->accepted_qty }}
-                                </p>
-                            </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->rejected_qty }}
-                                </p>
-                            </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->rejected_qty * $supplierRow['data']->accepted_qty }}
-                                </p>
-                            </td>
                             {{-- Created Date --}}
                             {{-- <td>
                                 <p class="m-0 white-nowrap">
@@ -111,8 +93,25 @@
                             </td> --}}
 
                             {{-- Approval Status + Actions --}}
+                             <td style="display: flex; flex-direction: column; justify-content: center; height: 100px;">
+                            <div style="display: flex; align-items: center; justify-content: center;">
+                                <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '70%')"
+                                        class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                        <i class="ft-check font-medium-3"></i>
+                                    </a>
+                                    <a onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'Edit QC', false, '70%')"
+                                        class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                        <i class="ft-edit font-medium-3"></i>
+                                    </a>
+                                    <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
+                                        class="danger p-1 text-center mr-2 position-relative ">
+
+                                        <i class="ft-x font-medium-3"></i>
+                                    </a>
+                                </div>
+                            </td>
                             @if ($isFirstRequestRow)
-                                <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                {{-- <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                     @php
                                         $badgeClass = match (strtolower($approvalStatus)) {
                                             'approved' => 'badge-success',
@@ -125,50 +124,9 @@
                                     <span class="badge {{ $badgeClass }}">
                                         {{ $approvalStatus }}
                                     </span>
-                                </td>
-                                <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex gap-2">
-                                        @php
-                                            $currentApprovalStatus =
-                                                $supplierRow['data']
-                                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
-                                                    'am_approval_status'};
-                                            $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
-                                            $shouldDisableApproval =
-                                                $requestGroup['has_approved_item'] && !$isCurrentApproved;
-                                        @endphp
-                                        <a onclick="openModal(this, '{{ route('store.qc.view', $supplierRow['data']->purchase_order_receiving->id) }}', 'View QC', false, '70%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-check font-medium-3"></i>
-                                        </a>
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-eye font-medium-3"></i>
-                                        </a>
-
-                                        {{-- <a onclick="openModal(this, '{{ route('store.qc.create', $supplierRow['data']->purchase_order_receiving->id) }}', 'QC', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-edit font-medium-3"></i>
-                                        </a> --}}
-                                        
-                                        @if($requestGroup['created_by_id'] == auth()->user()->id)
-
-                                            
-                                            @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
-                                                <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit GRN', false, '100%')"
-                                                    class="info p-1 text-center mr-2 position-relative">
-                                                    <i class="ft-edit font-medium-3"></i>
-                                                </a>
-
-
-                                                <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', $supplierRow['data']->purchase_order_receiving->id) }}', '{{ route('store.get.purchase-order-receiving') }}')"
-                                                    class="danger p-1 text-center mr-2 position-relative">
-                                                    <i class="ft-x font-medium-3"></i>
-                                                </a>
-                                            @endif
-                                        @endif
-                                    </div>
-                                </td>
+                                </td> --}}
+                              
+                                
                                 @php $isFirstRequestRow = false; @endphp
                             @endif
                         </tr>

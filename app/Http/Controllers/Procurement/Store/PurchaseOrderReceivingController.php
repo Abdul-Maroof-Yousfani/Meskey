@@ -35,6 +35,7 @@ class PurchaseOrderReceivingController extends Controller
     public function getList(Request $request)
     {
         $PurchaseOrderRaw = PurchaseOrderReceivingData::with(
+            'qc',
             'purchase_order_receiving.purchase_order.purchase_request',
             'category',
             'item',
@@ -76,6 +77,14 @@ class PurchaseOrderReceivingController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
                     'order_data' => $row->purchase_order_receiving,
+                    'row' => $row,
+                    'items' => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
+                    'qc' => $row->qc,
                     'items' => []
                 ];
             }
@@ -119,7 +128,7 @@ class PurchaseOrderReceivingController extends Controller
                             $itemSuppliers[] = [
                                 'data' => $supplierData,
                                 'is_first_supplier' => $isFirstSupplier,
-                                'item_rowspan' => $itemRowspan
+                                'item_rowspan' => $itemRowspan,
                             ];
                             $isFirstSupplier = false;
                         }
@@ -133,6 +142,7 @@ class PurchaseOrderReceivingController extends Controller
                     $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_request->purchase_request_no ?? 'N/A';
                     $originalPurchaseOrderNo = $orderGroup['order_data']->purchase_order->purchase_order_no ?? 'N/A';
 
+
                     $processedData[] = [
                         'request_data' => $orderGroup['order_data'],
                         'request_no' => $orderNo,
@@ -143,7 +153,8 @@ class PurchaseOrderReceivingController extends Controller
                         'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
-                        'has_approved_item' => $hasApprovedItem
+                        'qc_status' => $orderGroup['row']->qc?->is_qc_approved ?? null,
+                        'has_approved_item' => $hasApprovedItem,
                     ];
                     // dd($processedData);
                 }
@@ -305,6 +316,7 @@ class PurchaseOrderReceivingController extends Controller
     {
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
             'purchaseOrderReceivingData',
+            'purchaseOrderReceivingData.qc',
             'purchaseOrderReceivingData.category',
             'purchaseOrderReceivingData.item',
             'purchase_request.PurchaseData'
@@ -332,16 +344,26 @@ class PurchaseOrderReceivingController extends Controller
         $id = $request->id;
         $accepted_quantity = $request->accepted_qty;
         $rej_qty = $request->rej_qty;
+        $deduction_per_bag = $request->deduction_per_bag;
+
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::find($id);
 
 
         try {
-            $purchaseOrderReceivingData = $purchaseOrderReceivingData->update([
-                "accepted_qty" => $accepted_quantity,
-                "rejected_qty" => $rej_qty,
-                "is_qc_created" => 1
-            ]);
-
+            if($purchaseOrderReceivingData->qc()?->exists()) {
+                $purchaseOrderReceivingData->qc()->update([
+                    "accepted_quantity" => $accepted_quantity,
+                    "rejected_quantity" => $rej_qty,
+                    "deduction_per_bag" => $deduction_per_bag
+                ]);
+            } else {
+                $purchaseOrderReceivingData->qc()->create([
+                    "accepted_quantity" => $accepted_quantity,
+                    "rejected_quantity" => $rej_qty,
+                    "deduction_per_bag" => $deduction_per_bag
+                ]);
+            }
+         
             return response()->json([
                 'success' => 'QC has been created successfully.',
                 'data' => $purchaseOrderReceivingData,

@@ -25,6 +25,7 @@ class PurchaseOrderReceivingData extends Model
         return $this->belongsTo(PurchaseOrderReceiving::class);
     }
 
+
     public function purchase_order_data() {
         return $this->belongsTo(PurchaseOrderData::class, "purchase_order_data_id");
     }
@@ -92,5 +93,9 @@ class PurchaseOrderReceivingData extends Model
     public function getIsFullyReceivedAttribute(): bool
     {
         return $this->remaining_qty <= 0;
+    }
+
+    public function qc() {
+        return $this->hasOne(QC::class, "purchase_order_receiving_data_id");
     }
 }

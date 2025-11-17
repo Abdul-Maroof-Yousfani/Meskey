@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\QCRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Procurement\Store\PurchaseOrderReceivingData;
+use App\Models\Procurement\Store\QC;
 use App\Models\Sales\JobOrder;
 use DB;
 use Illuminate\Http\Request;
@@ -19,9 +21,12 @@ class QcController extends Controller
         return view("management.procurement.store.qc.index");
     }
     public function getList(Request $request) {
-        $PurchaseOrderRaw = PurchaseOrderReceivingData::where("is_qc_created", 1)->where("is_qc_approved", 0)
+        
+        $PurchaseOrderRaw = PurchaseOrderReceivingData::whereHas("qc", function($query) {
+            return $query->where("is_qc_approved", 0);
+        })
             ->latest()
-            ->paginate(request('per_page', 25));
+            ->paginate(request("per_page", 25));
 
         $groupedData = [];
         $processedData = [];
@@ -33,11 +38,13 @@ class QcController extends Controller
             $orderNo = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
             $itemId = $row->item->id ?? 'unknown';
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+            $purchase_order_receving_id = $row->id;
 
             if ($orderNo === 'N/A') {
                 continue;
             }
 
+           
 
             if (!isset($groupedData[$orderNo])) {
                 $groupedData[$orderNo] = [
@@ -45,6 +52,7 @@ class QcController extends Controller
                     'quotations' => []
                 ];
             }
+
 
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo] = [
@@ -137,8 +145,32 @@ class QcController extends Controller
             'GroupedPurchaseOrderReceiving' => $processedData
         ]);
     }
-    public function show() {
-        return view("management.procurement.store.qc.view");
+    public function show(Request $request) {
+        $id = $request->id;
+        $grn = $request->grn;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
+
+
+        return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id"));
+    }
+    public function edit(Request $request) {
+        $id = $request->id;
+        $grn = $request->grn;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
+
+
+        return view("management.procurement.store.qc.edit", compact("grn", "purchaseOrderReceivingData", "id"));
+    }
+    public function create(Request $request) {
+        $id = $request->id;
+        $grn = $request->grn;
+
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
+
+
+        return view("management.procurement.store.qc.create", compact("grn", "purchaseOrderReceivingData", "id"));
     }
     public function getForm($id) {
           $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
@@ -173,4 +205,49 @@ class QcController extends Controller
             'data1' => $purchaseOrderReceiving,
         ]);
     } 
+    public function store(QCRequest $request) {
+        $net_weights = $request->net_weight;
+        $bag_weights = $request->bag_weight;
+        $id = $request->purchase_receiving_data_id;
+
+        
+        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+        
+        foreach($net_weights as $index => $net_weight) {
+            if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
+            $purchase_receiving_data->qc->bags()->create([
+                "net_weight" => $net_weights[$index],
+                "bag_weight" => $bag_weights[$index]
+            ]);
+        }
+
+        return response()->json(["qc has been stored"], 200);
+    }
+    public function update(QCRequest $request) {
+        $net_weights = $request->net_weight;
+        $bag_weights = $request->bag_weight;
+        $id = $request->purchase_receiving_data_id;
+
+        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        $purchase_receiving_data->qc()->update([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+        $purchase_receiving_data->qc->bags()->delete();
+
+        foreach($net_weights as $index => $net_weight) {
+            if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
+            $purchase_receiving_data->qc->bags()->create([
+                "net_weight" => $net_weights[$index],
+                "bag_weight" => $bag_weights[$index]
+            ]);
+        }
+
+        return response()->json(["qc has been stored"], 200);
+    }
+    public function destroy(int $id) {
+        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        
+        $purchase_receiving_data->qc()->delete();
+
+        return response()->json("Qc has been deleted!");
+    }
 }
