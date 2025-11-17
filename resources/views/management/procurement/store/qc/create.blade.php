@@ -55,7 +55,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="average_weight_of_1_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                                <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
                                      class="form-control" placeholder="Average Weight of One Bag">
                             </td>
 

@@ -22,6 +22,7 @@ class QCRequest extends FormRequest
     public function rules(): array
     {
         return [
+            "average_weight_of_one_bag" => "required",
             "accepted_quantity" => [
                 "required",
                 function($attribute, $value, $fail) {
