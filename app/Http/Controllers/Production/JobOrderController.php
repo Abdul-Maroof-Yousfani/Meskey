@@ -95,7 +95,9 @@ class JobOrderController extends Controller
                 'order_description',
                 'delivery_date',
                 'loading_date',
-                'packing_description'
+                'packing_description',
+                'crop_year_id',
+                'other_specifications',
             ]);
 
             $jobOrderData['company_id'] = $request->company_id;
