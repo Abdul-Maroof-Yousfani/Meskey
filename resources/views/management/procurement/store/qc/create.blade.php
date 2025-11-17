@@ -217,6 +217,7 @@
     </div>
 
 
+    @can("approve")
     <div class="row" style="margin-bottom: 30px;">
         <div class="col-md-4">
             <div class="form-group">
@@ -237,6 +238,7 @@
             </div>
         </div>
     </div>
+    @endcan
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>

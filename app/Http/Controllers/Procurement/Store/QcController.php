@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\QCAmountRequest;
 use App\Http\Requests\QCRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
@@ -19,6 +20,13 @@ class QcController extends Controller
 {
     public function index() {
         return view("management.procurement.store.qc.index");
+    }
+    public function updateAmounts(QCAmountRequest $request) {
+        $id  = $request->id;
+        $qc = QC::find($id);
+        $qc->update($request->validated());
+
+        return response()->json("Qc has been updated");
     }
     public function getList(Request $request) {
         

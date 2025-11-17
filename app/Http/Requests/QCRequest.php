@@ -23,30 +23,6 @@ class QCRequest extends FormRequest
     {
         return [
             "average_weight_of_one_bag" => "required",
-            "accepted_quantity" => [
-                "required",
-                function($attribute, $value, $fail) {
-                    $accepted_quantity = $this->accepted_quantity;
-                    $rejected_quantity = $this->rejected_quantity;
-                    $qty = $this->total_bags;
-
-                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
-                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
-                    }
-                }
-            ],
-            "rejected_quantity" => [
-                "required",
-                function($attribute, $value, $fail) {
-                    $accepted_quantity = $this->accepted_quantity;
-                    $rejected_quantity = $this->rejected_quantity;
-                    $qty = $this->total_bags;
-
-                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
-                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
-                    }
-                }
-            ],
             "size" => "required",
             "bio" => "required",
             "smell" => "required",

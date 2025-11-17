@@ -1,3 +1,5 @@
+    <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
+        <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
     <div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
             <div class="col-md-6">
@@ -20,32 +22,30 @@
                 <table class="table table-bordered" id="purchaseRequestTable">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                                 <th>Item</th>
                             <th>Size</th>
                             <th>Brand</th>
                             <th>Job Order</th>
                             <th>Required Weight Per Bag</th>
-                            <th>Average Weight of 100 Bags</th>
+                            <th>Average Weight of 1 Bag</th>
                             <th>Total Bags</th>
-                            <th>Total Weight</th>
+                            <th>Total Weight Required</th>
+                            <th>Total Weight Received</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
                         <tr>
-                            <td>
-                                <input type="text" name="item" id="item"
-                                    value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
+                                 <td>
+                                <input type="text" name="item" id="item" value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
                                     class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="size" id="size"
-                                    value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}"
-                                    readonly class="form-control">
+                                <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}" readonly
+                                    class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="brand" id="brand"
-                                    value="{{ $purchaseOrderReceivingData?->purchase_order_data?->brand ?? null }}"
-                                    readonly class="form-control">
+                                <input type="text" name="brand" id="brand" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->brand ?? null }}" readonly
+                                    class="form-control">
                             </td>
 
                             <td>
@@ -53,24 +53,29 @@
                                     class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="required_weight_per_bag" id="required_weight_per_bag"
-                                    value="Required Weight Per Bag" readonly class="form-control">
+                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="average_weight_of_100_bag" id="average_weight_of_100_bag"
-                                    value="Average Weight of 100 Bags" readonly class="form-control">
+                                <input type="text" name="average_weight_of_one_bag" value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                                     class="form-control" placeholder="Average Weight of One Bag">
                             </td>
 
                             <td>
-                                <input type="text" name="total_bags" id="total_bags" value="Total Bags" readonly
+                                <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
                                     class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight" id="total_weight" value="Total Weight"
+                                <input type="text" name="total_weight_required" value="{{ ($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0) }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
+
+                            <td>
+                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}"
+                                    readonly class="form-control">
+                            </td>
+
 
                         </tr>
                     </tbody>
@@ -220,30 +225,34 @@
         </div>
     </div>
 
+    @if($purchaseOrderReceivingData->qc->canApprove())
     <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Accepted Qty:</label>
                 <input type="text" name="accepted_quantity" id="accepted_quantity"
-                    value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" readonly class="form-control">
+                    value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Rejected Qty:</label>
                 <input type="text" name="rejected_quantity" id="rejected_quantity"
-                    value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" readonly class="form-control">
+                    value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Deduction Per Bag:</label>
                 <input type="text" name="deduction_per_bag"
-                    value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}" readonly id="deduction_per_bag"
+                    value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}" id="deduction_per_bag"
                     class="form-control">
             </div>
         </div>
     </div>
+    @endif
+    <button type="submit" class="btn btn-primary">Save</button>
+    </form>
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         &nbsp;
     </div>

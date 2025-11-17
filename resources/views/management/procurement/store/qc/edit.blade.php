@@ -221,24 +221,26 @@
     </div>
 
     <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Accepted Qty:</label>
-                <input type="text" name="accepted_quantity" id="accepted_quantity" value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control" >
+        @can("approve")
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Accepted Qty:</label>
+                    <input type="text" name="accepted_quantity" id="accepted_quantity" value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control" >
+                </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Rejected Qty:</label>
-                <input type="text" name="rejected_quantity" id="rejected_quantity" value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control" >
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Rejected Qty:</label>
+                    <input type="text" name="rejected_quantity" id="rejected_quantity" value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control" >
+                </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Deduction Per Bag:</label>
-                <input type="text" name="deduction_per_bag" value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}" id="deduction_per_bag" class="form-control">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Deduction Per Bag:</label>
+                    <input type="text" name="deduction_per_bag" value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}" id="deduction_per_bag" class="form-control">
+                </div>
             </div>
-        </div>
+        @endcan
     </div>
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         <div class="col-12">
