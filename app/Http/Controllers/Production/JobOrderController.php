@@ -292,7 +292,7 @@ class JobOrderController extends Controller
                     'id' => $firstSlab->id,
                     'spec_name' => $firstSlab->slabType->name ?? '',
                     'spec_value' => $firstSlab->deduction_value ?? 0,
-                    'uom' => $firstSlab->slabType->uom ?? ''
+                    'uom' => $firstSlab->slabType->qc_symbol ?? ''
                 ];
             })
             ->values(); // Array keys reset karega
