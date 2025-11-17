@@ -4,6 +4,7 @@ namespace App\Models\Master;
 
 use App\Models\Acl\Company;
 use App\Models\City;
+use App\Models\Production\JobOrder\JobOrder;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -62,6 +63,10 @@ class CompanyLocation extends Model
     public function arrivalLocations()
     {
         return $this->hasMany(ArrivalLocation::class);
+    }
+    public function jobOrder()
+    {
+        return $this->hasMany(JobOrder::class);
     }
 
     public function creator()
