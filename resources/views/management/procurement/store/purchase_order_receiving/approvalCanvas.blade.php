@@ -67,6 +67,14 @@
              </select>
          </div>
      </div>
+       <div class="col-md-4">
+            <div class="form-group">
+                <label>>Reference No:</label>
+                <input readonly type="text" id="reference_no"
+                    value="{{ optional($purchaseOrderReceiving)->reference_no }}" name="reference_no"
+                    class="form-control">
+            </div>
+        </div>
 
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">

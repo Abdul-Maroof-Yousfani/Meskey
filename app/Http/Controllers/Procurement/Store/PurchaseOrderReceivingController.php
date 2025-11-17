@@ -323,6 +323,7 @@ class PurchaseOrderReceivingController extends Controller
             'purchaseOrderReceivingData.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
+
      
         $purchaseRequest = $purchaseOrderReceiving->purchase_request;
         
