@@ -67,7 +67,7 @@
                                 </td>
 
                                 <td>
-                                    <input type="text" name="total_bags_view" id="total_bags"
+                                    <input type="text" name="total_bags_view" id="total_bags_view"
                                         value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
                                         class="form-control">
                                 </td>
