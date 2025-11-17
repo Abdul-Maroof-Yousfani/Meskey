@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalsModule\ApprovalModule;
 use Illuminate\Support\Str;
+use Schema;
 
 class ApprovalController extends Controller
 {
@@ -15,7 +16,7 @@ class ApprovalController extends Controller
     {
         // dd($request->all());
         $approvalModule = ApprovalModule::findOrFail($request->mc);
-
+        
         $reqType = $request->type ?? '';
         $modelClass = $approvalModule->model_class ?? '';
 
@@ -24,19 +25,25 @@ class ApprovalController extends Controller
         }
 
         $record = $modelClass::findOrFail($id);
-
+        
         if (!empty($request->model_data_ids)) {
             $dataIds = json_decode($request->model_data_ids, true);
-
             if (!empty($dataIds) && $request->type === 'approve') {
                 $dataModelClass = $modelClass . 'Data';
-
                 if (class_exists($dataModelClass)) {
                     $dataModelClass::whereIn('id', $dataIds)->update(['am_approval_status' => 'approved']);
                 }
             }
         }
 
+
+        if($reqType == 'approve') {
+            if (Schema::hasColumn($record->getTable(), 'is_qc_approved')) {
+                $record->is_qc_approved = 'approved';
+                $record->save();
+            }
+        }
+     
 
         if ($reqType == 'revert') {
             $record->am_change_made = 0;
