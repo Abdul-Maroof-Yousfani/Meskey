@@ -67,6 +67,14 @@
              </select>
          </div>
      </div>
+       <div class="col-md-4">
+            <div class="form-group">
+                <label>>Reference No:</label>
+                <input readonly type="text" id="reference_no"
+                    value="{{ optional($purchaseOrderReceiving)->reference_no }}" name="reference_no"
+                    class="form-control">
+            </div>
+        </div>
 
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
@@ -103,8 +111,6 @@
              <tbody id="purchaseRequestBody">
                
                  @foreach ($purchaseOrderReceivingData ?? [] as $key => $data)
-                      <button id="modalButton{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $data->id]) }}', 'Add QC', false, '100%')">&nbsp;</button>
-                      <button id="modalButtonQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $data->id]) }}', 'Edit QC', false, '100%')">&nbsp;</button>
                        
                      <tr id="row_{{ $key }}">
                          <td style="width: 50%">
@@ -254,9 +260,7 @@
                              <button type="button" class="btn btn-danger btn-sm removeRowBtn"
                                  onclick="remove({{ $key }})" disabled
                                  data-id="{{ $key }}">Remove</button>
-                            <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
-                            <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->is_qc_approved || !$data->qc?->exists()) style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
-             
+                    
                          </td>
                      </tr>
                  @endforeach
@@ -285,6 +289,9 @@
     }
     function editQc(id, key) {
         $("#modalButtonQc" + key).trigger("click");
+    }
+    function viewQc(id, key) {
+        $("#modalButtonViewQc" + key).trigger("click");
     }
     // function createQc(id, element) {
     //     const accepted_qty = $(element).closest("tr").find(".accepted_qty");

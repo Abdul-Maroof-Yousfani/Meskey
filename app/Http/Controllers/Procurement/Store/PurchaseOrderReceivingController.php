@@ -92,6 +92,7 @@ class PurchaseOrderReceivingController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
+                    'qc_status' => $row->qc?->is_qc_approved,
                     'suppliers' => []
                 ];
             }
@@ -136,6 +137,7 @@ class PurchaseOrderReceivingController extends Controller
                         $requestItems[] = [
                             'item_data' => $itemGroup['item_data'],
                             'suppliers' => $itemSuppliers,
+                            'qc_status' => $itemGroup["qc_status"],
                             'item_rowspan' => $itemRowspan
                         ];
                     }
@@ -321,19 +323,20 @@ class PurchaseOrderReceivingController extends Controller
             'purchaseOrderReceivingData.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
+
      
         $purchaseRequest = $purchaseOrderReceiving->purchase_request;
         
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        // $job_orders = JobOrder::select('id', 'name')->get();
         $purchaseOrder = PurchaseOrder::select('id', 'purchase_order_no')->get();
         // $data = PurchaseOrderReceivingData::with('purchase_order_receiving', 'category', 'item')
         //     ->findOrFail($id);
 
         $purchaseOrderReceivingDataCount = $purchaseOrderReceiving->purchaseOrderReceivingData->count();
 
-        return view('management.procurement.store.purchase_order_receiving.edit', compact('purchaseOrderReceiving', 'categories', 'locations', 'job_orders', 'purchaseOrderReceivingDataCount', 'purchaseOrder'));
+        return view('management.procurement.store.purchase_order_receiving.edit', compact('purchaseOrderReceiving', 'categories', 'locations', 'purchaseOrderReceivingDataCount', 'purchaseOrder'));
     }
 
     /**
@@ -466,8 +469,8 @@ class PurchaseOrderReceivingController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
-
+        // $job_orders = JobOrder::get();
+        // dd($job_orders);
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
             'purchaseOrderReceivingData',
             'purchaseOrderReceivingData.category',
@@ -491,7 +494,7 @@ class PurchaseOrderReceivingController extends Controller
             'purchaseOrderReceiving' => $purchaseOrderReceiving,
             'categories' => $categories,
             'locations' => $locations,
-            'job_orders' => $job_orders,
+            // 'job_orders' => $job_orders,
             'purchaseOrder' => $purchaseOrder,
             'purchaseOrderReceivingData' => $purchaseOrderReceivingData,
             'data1' => $purchaseOrderReceiving,

@@ -69,6 +69,15 @@
                         id="location_id">
                 </select>
             </div>
+            {{-- reference_no --}}
+        </div>
+         <div class="col-md-4">
+            <div class="form-group">
+                <label>Reference No:</label>
+                <input readonly type="text" id="reference_no"
+                    value="{{ optional($purchaseOrderReceiving)->reference_no }}" name="reference_no"
+                    class="form-control">
+            </div>
         </div>
        
         {{-- <div class="col-md-3">
@@ -121,6 +130,10 @@
                 </thead>
                 <tbody id="purchaseRequestBody">
                     @foreach ($purchaseOrderReceiving->purchaseOrderReceivingData ?? [] as $key => $data)
+                             <button id="modalButton{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'Add QC', false, '100%')">&nbsp;</button>
+                      <button id="modalButtonQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'Edit QC', false, '100%')">&nbsp;</button>
+                      <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'View QC', false, '100%')">&nbsp;</button>
+             
                         <tr id="row_{{ $key }}">
                             <td style="width: 25%">
                                 <select id="category_id_{{ $key }}" disabled
@@ -258,7 +271,10 @@
                                     data-id="{{ $key }}">Remove</button>
 
 
-                                <button onclick="createQc('{{ $data->id }}', this)" @disabled($data->qc?->is_approved ?? false) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Edit QC</button>
+                                    <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                    <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->is_qc_approved || !$data->qc?->exists()) style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                    {{-- <button onclick="viewQc('{{ $data->id }}', '{{ $key }}')" style="width: 100px;" type="button" class="btn btn-primary btn-sm viewQc">View QC</button>
+              --}}
                             </td>
                         </tr>
                     @endforeach
@@ -277,6 +293,17 @@
 </form>
 
 <script>
+
+
+    function createQc(id, key) {
+        $("#modalButton" + key).trigger("click");
+    }
+    function editQc(id, key) {
+        $("#modalButtonQc" + key).trigger("click");
+    }
+    function viewQc(id, key) {
+        $("#modalButtonViewQc" + key).trigger("click");
+    }
 $(document).ready(function () {
         let purchaseOrderId = $('select[name="purchase_order_id"]').val();
 
@@ -288,58 +315,58 @@ $(document).ready(function () {
 
     let rowIndex = {{ $purchaseOrderReceivingDataCount ?? 1 }};
 
-    function createQc(id, element) {
-        const accepted_qty = $(element).closest("tr").find(".accepted_qty");
-        const rejected_qty = $(element).closest("tr").find(".rejected_qty");
-        const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
+    // function createQc(id, element) {
+    //     const accepted_qty = $(element).closest("tr").find(".accepted_qty");
+    //     const rejected_qty = $(element).closest("tr").find(".rejected_qty");
+    //     const deduction_per_bag = $(element).closest("tr").find(".deduction_per_bag");
 
        
-        Swal.fire({
-            title: "Are you sure?",
-            text: "A QC will be created for this item.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, create it!",
-            cancelButtonText: "Cancel"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Proceed with QC creation
+    //     Swal.fire({
+    //         title: "Are you sure?",
+    //         text: "A QC will be created for this item.",
+    //         icon: "warning",
+    //         showCancelButton: true,
+    //         confirmButtonColor: "#3085d6",
+    //         cancelButtonColor: "#d33",
+    //         confirmButtonText: "Yes, create it!",
+    //         cancelButtonText: "Cancel"
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             // Proceed with QC creation
                
                 
 
-                $.ajax({
-                    url: "{{ route('store.qc.create') }}",
-                    type: 'POST',
-                    dataType: "json", // optional
-                    processData: true,
-                    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-                    data: { 
-                        id: id,
-                        accepted_qty: accepted_qty.val(),
-                        rej_qty: rejected_qty.val(),
-                        deduction_per_bag: deduction_per_bag.val()
-                    },
-                    success: function (response) {
-                        console.log(response);
-                         Swal.fire({
-                            title: "Created!",
-                            text: "QC has been successfully created.",
-                            icon: "success"
-                        });
-                    },
-                    error: function (xhr, status, error) {
-                        console.log(error);
-                    }
-                });
+    //             $.ajax({
+    //                 url: "{{ route('store.qc.create') }}",
+    //                 type: 'POST',
+    //                 dataType: "json", // optional
+    //                 processData: true,
+    //                 contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+    //                 data: { 
+    //                     id: id,
+    //                     accepted_qty: accepted_qty.val(),
+    //                     rej_qty: rejected_qty.val(),
+    //                     deduction_per_bag: deduction_per_bag.val()
+    //                 },
+    //                 success: function (response) {
+    //                     console.log(response);
+    //                      Swal.fire({
+    //                         title: "Created!",
+    //                         text: "QC has been successfully created.",
+    //                         icon: "success"
+    //                     });
+    //                 },
+    //                 error: function (xhr, status, error) {
+    //                     console.log(error);
+    //                 }
+    //             });
 
-                // 👉 You can call your backend or AJAX here
-                // e.g. $.post('/create-qc', {...})
-                // qc.create
-            }
-        });
-    }
+    //             // 👉 You can call your backend or AJAX here
+    //             // e.g. $.post('/create-qc', {...})
+    //             // qc.create
+    //         }
+    //     });
+    // }
 
 
     function addRow() {
