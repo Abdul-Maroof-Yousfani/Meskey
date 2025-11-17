@@ -61,7 +61,7 @@
                                 </td>
 
                                 <td>
-                                    <input type="text" name="average_weight_of_one_bag"
+                                    <input type="text" name="average_weight_of_one_bag_view"
                                         value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}"
                                         onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
                                         class="form-control" placeholder="Average Weight of One Bag">
@@ -248,6 +248,11 @@
 
         @if ($purchaseOrderReceivingData->qc->canApprove())
         <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
+
+            <input type="hidden" name="average_weight_of_one_bag"
+                value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}"
+                onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                class="form-control" placeholder="Average Weight of One Bag">
             <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
                 <div class="col-md-4">
                     <div class="form-group">
