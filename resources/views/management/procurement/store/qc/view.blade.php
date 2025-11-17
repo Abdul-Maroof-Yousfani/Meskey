@@ -250,8 +250,8 @@
             </div>
         </div>
     </div>
-    @endif
     <button type="submit" class="btn btn-primary">Save</button>
+    @endif
     </form>
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         &nbsp;
