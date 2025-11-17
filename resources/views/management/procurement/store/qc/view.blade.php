@@ -248,6 +248,9 @@
 
         @if ($purchaseOrderReceivingData->qc->canApprove())
         <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
+             <input type="text" name="total_bags" id="total_bags"
+                            value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
+                            class="form-control">
             <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
                 <div class="col-md-4">
                     <div class="form-group">
@@ -277,9 +280,7 @@
         @endif
 
     @if((int)$purchaseOrderReceivingData->qc->accepted_quantity > 0 && (int)$purchaseOrderReceivingData->qc->rejected_quantity > 0)
-    <input type="text" name="total_bags" id="total_bags"
-                            value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
-                            class="form-control">
+   
                                
         <div class="row">
             <div class="col-12">
