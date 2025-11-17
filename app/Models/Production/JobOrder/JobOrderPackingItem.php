@@ -10,8 +10,8 @@ class JobOrderPackingItem extends Model
 
     protected $fillable = [
         'job_order_id',
-        'bag_type',
-        'bag_condition',
+        'bag_type_id',
+        'bag_condition_id',
         'bag_size',
         'no_of_bags',
         'extra_bags',
@@ -21,8 +21,8 @@ class JobOrderPackingItem extends Model
         'metric_tons',
         'stuffing_in_container',
         'no_of_containers',
-        'brand',
-        'bag_color',
+        'brand_id',
+        'bag_color_id',
         'min_weight_empty_bags'
     ];
 

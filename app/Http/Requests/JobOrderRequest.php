@@ -39,6 +39,10 @@ class JobOrderRequest extends FormRequest
                 'required',
                 'exists:company_locations,id'
             ],
+            'crop_year_id' => [
+                'required',
+                'exists:crop_years,id'
+            ],
             'ref_no' => [
                 'nullable',
                 'string',
@@ -100,12 +104,12 @@ class JobOrderRequest extends FormRequest
                 'array',
                 'min:1'
             ],
-            'packing_items.*.bag_type' => [
+            'packing_items.*.bag_type_id' => [
                 'required',
                 'string',
                 'max:100'
             ],
-            'packing_items.*.bag_condition' => [
+            'packing_items.*.bag_condition_id' => [
                 'required',
                 'string',
                 'max:100'
@@ -160,18 +164,18 @@ class JobOrderRequest extends FormRequest
                 'min:0',
                 'max:100'
             ],
-            'packing_items.*.brand' => [
+            'packing_items.*.brand_id' => [
                 'required',
                 'string',
                 'max:100'
             ],
-            'packing_items.*.bag_color' => [
+            'packing_items.*.bag_color_id' => [
                 'required',
                 'string',
                 'max:50'
             ],
             'packing_items.*.min_weight_empty_bags' => [
-                'nullable',
+                'required',
                 'numeric',
                 'min:0'
             ],
@@ -231,6 +235,8 @@ class JobOrderRequest extends FormRequest
             'job_order_date.before_or_equal' => 'Job order date cannot be in the future',
             'company_location_id.required' => 'Location is required',
             'company_location_id.exists' => 'Selected location does not exist',
+            'crop_year_id.required' => 'Crop Year is required',
+            'crop_year_id.exists' => 'Selected Crop Year does not exist',
 
             // Product Messages
             'product_id.required' => 'Product selection is required',

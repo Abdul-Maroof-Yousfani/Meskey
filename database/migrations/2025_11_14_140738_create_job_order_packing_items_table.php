@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('job_order_packing_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('job_order_id')->constrained()->onDelete('cascade');
-            $table->string('bag_type');
-            $table->string('bag_condition');
+            $table->foreignId('bag_type_id') ->constrained('bag_types');
+            $table->foreignId('bag_condition_id') ->constrained('bag_conditions');
             $table->decimal('bag_size', 8, 2);
             $table->integer('no_of_bags');
             $table->integer('extra_bags')->default(0);
@@ -25,8 +25,8 @@ return new class extends Migration
             $table->decimal('metric_tons', 8, 2)->default(0);
             $table->decimal('stuffing_in_container', 8, 2)->default(0);
             $table->integer('no_of_containers')->default(0);
-            $table->string('brand');
-            $table->string('bag_color');
+            $table->foreignId('brand_id') ->constrained('brands');
+            $table->foreignId('bag_color_id') ->constrained('colors');
             $table->decimal('min_weight_empty_bags', 8, 2)->default(0);
             $table->timestamps();
         });

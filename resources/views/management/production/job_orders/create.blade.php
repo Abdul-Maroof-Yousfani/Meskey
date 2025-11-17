@@ -128,10 +128,10 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Type:</label>
-                            <select name="packing_items[0][bag_type]" class="form-control">
+                            <select name="packing_items[0][bag_type_id]" class="form-control">
                                 <option value="">Select Bag Type</option>
                                 @foreach($bagTypes as $bagType)
-                                    <option value="{{ $bagType->name }}">{{ $bagType->name }}</option>
+                                    <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -139,10 +139,10 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Condition:</label>
-                            <select name="packing_items[0][bag_condition]" class="form-control">
+                            <select name="packing_items[0][bag_condition_id]" class="form-control">
                                 <option value="">Select Condition</option>
                                 @foreach($bagConditions as $condition)
-                                    <option value="{{ $condition->name }}">{{ $condition->name }}</option>
+                                    <option value="{{ $condition->id }}">{{ $condition->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -177,7 +177,7 @@
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Total Bags:</label>
-                            <input type="number" name="packing_items[0][total_bags]" class="form-control total-bags"
+                            <input type="number" min="0" name="packing_items[0][total_bags]" class="form-control total-bags"
                                 readonly>
                         </div>
                     </div>
@@ -192,30 +192,30 @@
                         <div class="form-group">
                             <label>Metric Tons:</label>
                             <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons"
-                                step="0.01" readonly>
+                                step="0.01" min="0" readonly>
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Stuffing (MTs):</label>
                             <input type="number" name="packing_items[0][stuffing_in_container]"
-                                class="form-control stuffing" step="0.01">
+                                class="form-control stuffing" step="0.01" min="0">
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>No. of Containers:</label>
                             <input type="number" name="packing_items[0][no_of_containers]"
-                                class="form-control containers" value="0">
+                                class="form-control containers" value="0" min="0">
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Brand:</label>
-                            <select name="packing_items[0][brand]" class="form-control">
+                            <select name="packing_items[0][brand_id]" class="form-control">
                                 <option value="">Select Brand</option>
                                 @foreach($brands as $brand)
-                                    <option value="{{ $brand->name }}">{{ $brand->name }}</option>
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -223,7 +223,7 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Color:</label>
-                            <select name="packing_items[0][bag_color]" class="form-control">
+                            <select name="packing_items[0][bag_color_id]" class="form-control">
                                 <option value="">Select Color</option>
                                 @foreach($bagColors as $color)
                                     <option value="{{ $color->id }}">{{ $color->color }}</option>
@@ -235,7 +235,7 @@
                         <div class="form-group">
                             <label>Min Weight Empty Bags (g):</label>
                             <input type="number" name="packing_items[0][min_weight_empty_bags]"
-                                class="form-control min-weight" step="0.01">
+                                class="form-control min-weight" value="0" min="0" step="0.01">
                         </div>
                     </div>
                     <div class="col-md-1">

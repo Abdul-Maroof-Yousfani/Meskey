@@ -185,10 +185,10 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Type:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_type]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][bag_type_id]" class="form-control">
                                     <option value="">Select Bag Type</option>
                                     @foreach($bagTypes as $bagType)
-                                        <option value="{{ $bagType->name }}" {{ $packingItem->bag_type == $bagType->name ? 'selected' : '' }}>
+                                        <option value="{{ $bagType->id }}" {{ $packingItem->bag_type_id == $bagType->id ? 'selected' : '' }}>
                                             {{ $bagType->name }}
                                         </option>
                                     @endforeach
@@ -198,10 +198,10 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Condition:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_condition]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][bag_condition_id]" class="form-control">
                                     <option value="">Select Condition</option>
                                     @foreach($bagConditions as $condition)
-                                        <option value="{{ $condition->name }}" {{ $packingItem->bag_condition == $condition->name ? 'selected' : '' }}>
+                                        <option value="{{ $condition->id }}" {{ $packingItem->bag_condition_id == $condition->id ? 'selected' : '' }}>
                                             {{ $condition->name }}
                                         </option>
                                     @endforeach
@@ -277,10 +277,10 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Brand:</label>
-                                <select name="packing_items[{{ $packingIndex }}][brand]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control">
                                     <option value="">Select Brand</option>
                                     @foreach($brands as $brand)
-                                        <option value="{{ $brand->name }}" {{ $packingItem->brand == $brand->name ? 'selected' : '' }}>
+                                        <option value="{{ $brand->id }}" {{ $packingItem->brand_id == $brand->id ? 'selected' : '' }}>
                                             {{ $brand->name }}
                                         </option>
                                     @endforeach
@@ -290,10 +290,10 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Color:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_color]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control">
                                     <option value="">Select Color</option>
                                     @foreach($bagColors as $color)
-                                        <option value="{{ $color->id }}" {{ $packingItem->bag_color == $color->id ? 'selected' : '' }}>
+                                        <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
                                             {{ $color->color }}
                                         </option>
                                     @endforeach
