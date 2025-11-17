@@ -222,7 +222,7 @@ class PurchaseOrderReceivingController extends Controller
 
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'job_order_name')->get();
+        $job_orders = JobOrder::select('id', 'name')->get();
        
         $html = view('management.procurement.store.purchase_order_receiving.purchase_data', compact('dataItems', 'categories', 'job_orders'))->render();
 
@@ -469,7 +469,7 @@ class PurchaseOrderReceivingController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
-        $job_orders = JobOrder::select('id', 'name')->get();
+        $job_orders = JobOrder::select('id', 'job_order_name')->get();
 
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
             'purchaseOrderReceivingData',
