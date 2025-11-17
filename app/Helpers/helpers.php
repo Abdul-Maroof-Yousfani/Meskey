@@ -119,54 +119,62 @@ if (!function_exists('getAllCompanies')) {
     }
 }
 
-if(!function_exists("isBag")) {
-    function isBag($item_id) {
+if (!function_exists("isBag")) {
+    function isBag($item_id)
+    {
         $product = Product::select("is_bag")->find($item_id);
-        return $product->is_bag; 
+        return $product->is_bag;
     }
 }
 
-if(!function_exists("getItem")) {
-    function getItem($item_id) {
+if (!function_exists("getItem")) {
+    function getItem($item_id)
+    {
         $product = Product::find($item_id);
         return $product;
     }
 }
 
 
-if(!function_exists("getAllColors")) {
-    function getAllColors() {
+if (!function_exists("getAllColors")) {
+    function getAllColors()
+    {
         return Color::where('status', 1)->get();
     }
 }
 
-if(!function_exists("getColorById")) {
-    function getColorById($id) {
+if (!function_exists("getColorById")) {
+    function getColorById($id)
+    {
         return Color::where("id", $id)->where('status', 1)->first();
     }
 }
 
-if(!function_exists("getAllSizes")) {
-    function getAllSizes() {
+if (!function_exists("getAllSizes")) {
+    function getAllSizes()
+    {
         return Size::where('status', 1)->get();
     }
 }
 
-if(!function_exists("getAllBrands")) {
-    function getAllBrands() {
+if (!function_exists("getAllBrands")) {
+    function getAllBrands()
+    {
         return Brands::where('status', 'active')->get();
     }
 }
 
-if(!function_exists("getBrandById")) {
-    function getBrandById($id) {
+if (!function_exists("getBrandById")) {
+    function getBrandById($id)
+    {
         return Brands::where("id", $id)->where('status', 'active')->first();
     }
 }
 
 
-if(!function_exists("getSizeById")) {
-    function getSizeById($id) {
+if (!function_exists("getSizeById")) {
+    function getSizeById($id)
+    {
         return Size::where("id", $id)->where('status', 1)->first();
     }
 }
@@ -312,6 +320,106 @@ function generateTicketNoWithDateFormat($tableName, $locationCode = 'LOC', $comp
 
     return $locationCode . '-' . $newNumber . '-' . $datePart;
 }
+
+
+function generateUniversalUniqueNo($tableName, $options = [])
+{
+    $prefix = $options['prefix'] ?? null;
+    $locationCode = $options['location'] ?? null;
+    $company_id = $options['company_id'] ?? auth()->user()->current_company_id;
+    $uniqueColumn = $options['column'] ?? 'unique_no';
+
+    $withDate = $options['with_date'] ?? false;
+    $customDate = $options['custom_date'] ?? null;
+    $dateFormat = $options['date_format'] ?? 'm-d-Y';
+
+    $padLength = $options['pad'] ?? 4;
+    $separator = $options['separator'] ?? '-';
+
+    $serialAtEnd = $options['serial_at_end'] ?? false;
+
+    // -------------------------------
+    // DATE
+    // -------------------------------
+    if ($withDate) {
+        $datePart = $customDate ? date($dateFormat, strtotime($customDate)) : date($dateFormat);
+    } else {
+        $datePart = null;
+    }
+
+    // ----------------------------------
+    // LIKE PATTERN
+    // ----------------------------------
+    $patternParts = [];
+
+    if ($prefix)
+        $patternParts[] = $prefix;
+    if ($locationCode)
+        $patternParts[] = $locationCode;
+    if ($withDate)
+        $patternParts[] = $datePart;
+
+    // SERIAL POSITION
+    if ($serialAtEnd == false) {
+        // SERIAL COMES **BEFORE** DATE
+        array_splice($patternParts, (count($patternParts) - ($withDate ? 1 : 0)), 0, '%');
+    } else {
+        // SERIAL COMES **AT END**
+        $patternParts[] = '%';
+    }
+
+    $pattern = implode($separator, $patternParts);
+
+    // ----------------------------------
+    // GET LAST RECORD
+    // ----------------------------------
+    $latestRecord = DB::table($tableName)
+        ->when($company_id, fn($q) => $q->where('company_id', $company_id))
+        ->where($uniqueColumn, 'like', $pattern)
+        ->orderBy($uniqueColumn, 'desc')
+        ->first();
+
+    // ----------------------------------
+    // LAST NUMBER
+    // ----------------------------------
+    $lastNumber = 0;
+
+    if ($latestRecord) {
+        preg_match('/(\d{' . $padLength . '})/', $latestRecord->{$uniqueColumn}, $m);
+        $lastNumber = $m[0] ?? 0;
+    }
+
+    $newNumber = str_pad($lastNumber + 1, $padLength, '0', STR_PAD_LEFT);
+
+    // ----------------------------------
+    // FINAL BUILD (SERIAL POSITION FIXED)
+    // ----------------------------------
+    $final = [];
+
+    if ($serialAtEnd == false) {
+        // SERIAL comes BEFORE date
+        if ($prefix)
+            $final[] = $prefix;
+        if ($locationCode)
+            $final[] = $locationCode;
+        $final[] = $newNumber;
+        if ($withDate)
+            $final[] = $datePart;
+    } else {
+        // SERIAL comes at END
+        if ($prefix)
+            $final[] = $prefix;
+        if ($locationCode)
+            $final[] = $locationCode;
+        if ($withDate)
+            $final[] = $datePart;
+        $final[] = $newNumber;
+    }
+
+    return implode($separator, $final);
+}
+
+
 
 if (!function_exists('formatEnumValue')) {
     function formatEnumValue($value)

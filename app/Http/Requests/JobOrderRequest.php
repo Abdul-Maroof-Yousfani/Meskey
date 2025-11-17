@@ -35,7 +35,7 @@ class JobOrderRequest extends FormRequest
                 'date',
                 'before_or_equal:today'
             ],
-            'location' => [
+            'company_location_id' => [
                 'required',
                 'exists:company_locations,id'
             ],
@@ -229,8 +229,8 @@ class JobOrderRequest extends FormRequest
             'job_order_no.unique' => 'This job order number already exists',
             'job_order_date.required' => 'Job order date is required',
             'job_order_date.before_or_equal' => 'Job order date cannot be in the future',
-            'location.required' => 'Location is required',
-            'location.exists' => 'Selected location does not exist',
+            'company_location_id.required' => 'Location is required',
+            'company_location_id.exists' => 'Selected location does not exist',
 
             // Product Messages
             'product_id.required' => 'Product selection is required',
@@ -275,7 +275,7 @@ class JobOrderRequest extends FormRequest
         return [
             'job_order_no' => 'job order number',
             'job_order_date' => 'job order date',
-            'location' => 'location',
+            'company_location_id' => 'location',
             'product_id' => 'product',
             'specifications' => 'specifications',
             'packing_items' => 'packing items',

@@ -68,6 +68,21 @@ class JobOrderController extends Controller
     {
 
 
+
+        $locationCode = CompanyLocation::where('id', $request->company_location_id)
+            ->value('code');
+
+        // 2) Isi waqt fresh unique number generate karo
+        $uniqueJobNo = generateUniversalUniqueNo('job_orders', [
+            'prefix' => 'JOB',
+            'location' => $locationCode,
+            'column' => 'job_order_no',
+            // 'with_date' => 1,
+            // 'custom_date' => $request->job_order_date,
+            // 'date_format' => 'm-Y',
+            // 'serial_at_end' => 1,
+        ]);
+
         // Main job order data
         $jobOrderData = $request->only([
             'job_order_no',
@@ -83,6 +98,7 @@ class JobOrderController extends Controller
 
         // JSON data store karein
         $jobOrderData['company_id'] = $request->company_id; // Single location
+        $jobOrderData['job_order_no'] = $uniqueJobNo; // Single location
         $jobOrderData['company_location_id'] = $request->company_location_id; // Single location
         $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []); // Users array to JSON
         $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []); // Inspection companies array to JSON
@@ -126,7 +142,7 @@ class JobOrderController extends Controller
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::get();
         $users = User::get();
-// dd($bagColors);
+        // dd($bagColors);
         return view('management.production.job_orders.edit', compact(
             'jobOrder',
             'products',

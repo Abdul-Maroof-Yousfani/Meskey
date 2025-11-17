@@ -4,6 +4,15 @@
 
 // renderLoadingTable("#filteredData table", 12);
 
+function getUniversalNumber(options, callback) {
+
+  $.get('/generate-unique-no', options, function(response) {
+      callback(response.unique_no);
+  });
+}
+
+
+
 function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
   renderLoadingTable("#filteredData table", 10);
 

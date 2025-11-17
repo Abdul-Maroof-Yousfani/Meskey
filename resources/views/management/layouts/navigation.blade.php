@@ -377,6 +377,30 @@
                 </ul>
             </li>
             @endcanAccess
+            @canAccess('production')
+            <li class="dropdown nav-item" data-menu="dropdown"><a
+                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+                    data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Production</span></a>
+                <ul class="dropdown-menu">
+                    @canAccess('production-job-order')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('job-orders.index') }}"
+                            onclick="loadPageContent('{{ route('account.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Job Order</span>
+                        </a>
+                    </li>
+                    @endcanAccess
+                   
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Menu</span>
+                        </a>
+                    </li> --}}
+                </ul>
+            </li>
+            @endcanAccess
             @canAccess('finance')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"

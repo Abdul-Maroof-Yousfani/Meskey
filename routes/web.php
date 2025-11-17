@@ -33,8 +33,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-transactions-report', [TransactionController::class, 'getTransactionsReport'])->name('get.transactions-report');
 
 
-
+    Route::get('/generate-unique-no', [\App\Http\Controllers\Common\UniversalNumberController::class, 'generate']);
 });
+
+
 
 Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::prefix('approval')->group(function () {

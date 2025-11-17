@@ -22,7 +22,7 @@ Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.tick
 Route::put('/ticket/{ticket}/confirm-bilty-return', [TicketController::class, 'confirmBiltyReturn'])->name('ticket.confirm-bilty-return');
 Route::get('/ticket-revert/{ticket}', [ArrivalMasterRevertController::class, 'arrivalRevert'])->name('ticket.arrival-revert');
 Route::post('/ticket-revert/{ticket}', [ArrivalMasterRevertController::class, 'update'])->name('ticket.arrival-revert.update');
-Route::get('/get-ticket-number/{locationId}', [TicketController::class, 'getTicketNumber']);
+Route::get('/get-unique-number', [TicketController::class, 'getTicketNumber']);
 
 Route::resource('initialsampling', InitialSamplingController::class);
 Route::resource('initial-resampling', InitialSamplingController::class);

@@ -8,28 +8,38 @@
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
                 <div class="col-md-3">
+                    <fieldset>
+                        <label>Job Order No#</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <button class="btn btn-primary" type="button">Job Order No#</button>
+                            </div>
+                            <input type="text" readonly name="job_order_no" class="form-control">
+
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
-                        <label>Job Order No:</label>
-                        <input type="text" name="job_order_no" class="form-control">
+                        <label>Company Location:</label>
+                        <select name="company_location_id" id="company_location_id" class="form-control">
+                            <option value="">Select Location</option>
+                            @foreach($companyLocations as $location)
+                                <option data-code="{{ $location->code }}" value="{{ $location->id }}">{{ $location->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
+
+
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order Date:</label>
                         <input type="date" name="job_order_date" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Location:</label>
-                        <select name="location" class="form-control">
-                            <option value="">Select Location</option>
-                            @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Ref No:</label>
@@ -119,7 +129,8 @@
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Bag Size (kg):</label>
-                            <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01">
+                            <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size"
+                                step="0.01">
                         </div>
                     </div>
                     <div class="col-md-1">
@@ -131,43 +142,50 @@
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Extra Bags:</label>
-                            <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags" value="0">
+                            <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags"
+                                value="0">
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Empty Bags:</label>
-                            <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags" value="0">
+                            <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags"
+                                value="0">
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Total Bags:</label>
-                            <input type="number" name="packing_items[0][total_bags]" class="form-control total-bags" readonly>
+                            <input type="number" name="packing_items[0][total_bags]" class="form-control total-bags"
+                                readonly>
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Total KGs:</label>
-                            <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" step="0.01" readonly>
+                            <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs"
+                                step="0.01" readonly>
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Metric Tons:</label>
-                            <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" step="0.01" readonly>
+                            <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons"
+                                step="0.01" readonly>
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Stuffing (MTs):</label>
-                            <input type="number" name="packing_items[0][stuffing_in_container]" class="form-control stuffing" step="0.01">
+                            <input type="number" name="packing_items[0][stuffing_in_container]"
+                                class="form-control stuffing" step="0.01">
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>No. of Containers:</label>
-                            <input type="number" name="packing_items[0][no_of_containers]" class="form-control containers" value="0">
+                            <input type="number" name="packing_items[0][no_of_containers]"
+                                class="form-control containers" value="0">
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -195,13 +213,15 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Min Weight Empty Bags (g):</label>
-                            <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control min-weight" step="0.01">
+                            <input type="number" name="packing_items[0][min_weight_empty_bags]"
+                                class="form-control min-weight" step="0.01">
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <button type="button" class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
+                            <button type="button"
+                                class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
                         </div>
                     </div>
                 </div>
@@ -367,5 +387,27 @@
 
         // Initial calculation for first item
         calculateTotals($('.packing-item').first());
+
+
+
+
     });
+    $('#company_location_id, input[name="job_order_date"]').on('change', function () {
+        let locationCode = $("#company_location_id option:selected").data('code');
+        let selectedDate = $('input[name="job_order_date"]').val(); // yahan se date le lo
+
+        getUniversalNumber({
+            table: 'job_orders',
+            prefix: 'JOB',
+            location: locationCode,
+            // with_date: 1,
+            column: 'job_order_no',
+            // custom_date: selectedDate,
+            // date_format: 'm-Y',
+            serial_at_end: 1,
+        }, function (no) {
+            $('input[name="job_order_no"]').val(no);
+        });
+    });
+
 </script>
