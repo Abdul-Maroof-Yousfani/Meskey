@@ -276,11 +276,13 @@
         </form>
         @endif
 
-    <div class="row">
-        <div class="col-12">
-            <x-approval-status :model="$purchaseOrderReceivingData->qc" />
+    @if((int)$purchaseOrderReceivingData->qc->accepted_quantity > 0 && (int)$purchaseOrderReceivingData->qc->rejected_quantity > 0)
+        <div class="row">
+            <div class="col-12">
+                <x-approval-status :model="$purchaseOrderReceivingData->qc" />
+            </div>
         </div>
-    </div>
+    @endif
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         &nbsp;
     </div>
