@@ -19,8 +19,9 @@ use App\Http\Controllers\Reports\{
 
 
 Route::get("/restore-db", function() {
-    QC::delete();
-    QCBags::delete();    
+    QC::truncate();
+    QCBags::truncate();
+
 });
 
 Auth::routes();
