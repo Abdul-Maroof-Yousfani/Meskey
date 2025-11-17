@@ -29,7 +29,7 @@ class JobOrderController extends Controller
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('job_order_no', 'like', $searchTerm)
-                        ->orWhere('location', 'like', $searchTerm)
+                       // ->orWhere('job_order_no', 'like', $searchTerm)
                         ->orWhere('ref_no', 'like', $searchTerm);
                 });
             })
