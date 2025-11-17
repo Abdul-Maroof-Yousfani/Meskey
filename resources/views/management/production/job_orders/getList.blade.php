@@ -81,7 +81,7 @@
                         <i class="ft-briefcase ft-3x text-muted mb-3"></i>
                         <h5 class="text-muted">No Job Orders Found</h5>
                         <p class="text-muted mb-3">Get started by creating your first job order</p>
-                        <button onclick="openModal(this,'{{ route('job-orders.create') }}','Create Job Order')" 
+                        <button onclick="openModal(this,'{{ route('job-orders.create') }}','Create Job Order',false,'90%')" 
                                 class="btn btn-primary">
                             <i class="ft-plus mr-1"></i> Create Job Order
                         </button>
