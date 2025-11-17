@@ -247,43 +247,40 @@
         </div>
 
         @if ($purchaseOrderReceivingData->qc->canApprove())
-            <form>
-                <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Accepted Qty:</label>
-                            <input type="text" name="accepted_quantity" id="accepted_quantity"
-                                value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Rejected Qty:</label>
-                            <input type="text" name="rejected_quantity" id="rejected_quantity"
-                                value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Deduction Per Bag:</label>
-                            <input type="text" name="deduction_per_bag"
-                                value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}" id="deduction_per_bag"
-                                class="form-control">
-                        </div>
+        <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
+            <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Accepted Qty:</label>
+                        <input type="text" name="accepted_quantity" id="accepted_quantity"
+                            value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}" class="form-control">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </form>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Rejected Qty:</label>
+                        <input type="text" name="rejected_quantity" id="rejected_quantity"
+                            value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Deduction Per Bag:</label>
+                        <input type="text" name="deduction_per_bag"
+                            value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}" id="deduction_per_bag"
+                            class="form-control">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
         @endif
 
-    </form>
-    @if($purchaseOrderReceivingData->qc->accepted_quantity && $purchaseOrderReceivingData->qc->rejected_quantity)
-        <div class="row">
-            <div class="col-12">
-                <x-approval-status :model="$purchaseOrderReceivingData->qc" />
-            </div>
+    <div class="row">
+        <div class="col-12">
+            <x-approval-status :model="$purchaseOrderReceivingData->qc" />
         </div>
-    @endif
+    </div>
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         &nbsp;
     </div>
