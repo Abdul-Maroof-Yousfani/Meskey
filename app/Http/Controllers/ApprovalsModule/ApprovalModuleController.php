@@ -26,7 +26,6 @@ class ApprovalModuleController extends Controller
         $roles = Role::all();
 
         $usedModels = ApprovalModule::pluck('model_class')->toArray();
-
         $allModels = [
             [
                 'value' => 'App\Models\PaymentVoucher',
@@ -40,6 +39,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Procurement\Store\PurchaseQuotationData',
                 'label' => 'Purchase Quotation Item',
             ],
+            [
+                'value' => 'App\Models\Procurement\Store\QC',
+                'label' => 'QC data'
+            ]
         ];
 
         $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {
