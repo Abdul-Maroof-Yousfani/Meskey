@@ -280,7 +280,7 @@
         </form>
         @endif
 
-    @if((int)$purchaseOrderReceivingData->qc->accepted_quantity > 0 && (int)$purchaseOrderReceivingData->qc->rejected_quantity > 0)
+    @if($purchaseOrderReceivingData->qc->accepted_quantity > 0 && $purchaseOrderReceivingData->qc->rejected_quantity > 0)
    
                                
         <div class="row">
