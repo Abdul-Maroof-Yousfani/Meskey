@@ -35,12 +35,13 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="model_class">Model Class</label>
+                                    <label for="model_class">Model Clas</label>
                                     <select class="form-control" id="model_class" name="model_class">
                                         <option value="">Select Model Class</option>
                                         @foreach ($availableModels as $class)
                                             <option value="{{ $class['value'] }}">{{ $class['label'] }}</option>
                                         @endforeach
+                                        <option value="App\Models\Procurement\Store\QC">QC</option>
                                     </select>
                                     <small class="text-muted">Fully qualified class name if applicable</small>
                                 </div>

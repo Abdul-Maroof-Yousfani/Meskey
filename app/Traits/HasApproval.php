@@ -57,10 +57,8 @@ trait HasApproval
         if (isset($this->am_change_made) && $this->am_change_made == 0) {
             return 'changes_required';
         }
-
         $currentCycle = $this->getCurrentApprovalCycle();
         $approvalRows = $this->approvalRows()->where('module_id', $module->id)->where('approval_cycle', $currentCycle)->get();
-
         foreach ($approvalRows as $row) {
             if ($row->status === 'rejected') {
                 return 'rejected';
@@ -73,7 +71,7 @@ trait HasApproval
             }
         }
 
-        return 'approved';
+        return 'pending';
     }
 
     public function getCurrentApprovalCycle()
@@ -204,7 +202,7 @@ trait HasApproval
             }
         }
 
-        return false;
+        return true;
     }
 
     public function partial_approve($comments = null)

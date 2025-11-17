@@ -23,7 +23,7 @@ class QcController extends Controller
     public function getList(Request $request) {
         
         $PurchaseOrderRaw = PurchaseOrderReceivingData::whereHas("qc", function($query) {
-            return $query->where("is_qc_approved", 0);
+            return $query->where("is_qc_approved", "pending");
         })
             ->latest()
             ->paginate(request("per_page", 25));

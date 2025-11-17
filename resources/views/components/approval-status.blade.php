@@ -1,3 +1,4 @@
+<p>{{ $model->canApprove() }}</p>
 @if ($module)
     @php
         $user = auth()->user();
