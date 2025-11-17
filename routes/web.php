@@ -19,8 +19,11 @@ use App\Http\Controllers\Reports\{
 
 
 Route::get("/restore-db", function() {
-    QC::truncate();
-    QCBags::truncate();
+    Schema::disableForeignKeyConstraints();
+QC::truncate();
+QCBags::truncate();
+Schema::enableForeignKeyConstraints();
+
 
 });
 
