@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Procurement\Store\PurchaseOrderData;
 use Illuminate\Http\Request;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSamplingRequest;
@@ -596,7 +597,7 @@ class HomeController extends Controller
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
-                $query = DB::table($targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
+                $query = DB::table(table: $targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
             }
             if (Schema::hasColumn($targetTable, 'deleted_at')) {
                 $query->whereNull('deleted_at');
@@ -604,6 +605,24 @@ class HomeController extends Controller
 
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $query->where('purchase_request_id', $purchaseRequestId);
+            }
+
+          
+// @if (isset($data->purchase_order_data))
+//     @php
+//         $totalOrdered = $data->purchase_order_data->sum('qty');
+//     @endphp
+// @else
+//     @php
+//         $totalOrdered = 0;
+//     @endphp
+// @endif
+
+// @php
+//     $remainingQty = $data->qty - $totalOrdered;
+//     $isQuotationAvailable = ($data->rate) > 0 ? true : false;
+// @endphp
+// @if($remainingQty <= 0) @continue @endif;
             }
 
             if ($search) {
@@ -627,7 +646,11 @@ class HomeController extends Controller
 
             $data = $query->select(['id', "$displayColumn as text"])->limit(50)->get();
 
-            return response()->json(['items' => $data]);
+            // if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
+            //     $purchaseOrderData = PurchaseOrderData::where("purchase_request_data_id", $purchaseRequestId)->get();
+            //     $totalOrdered = $purchaseOrderData->sum("qty");
+            //     $remaining = 
+            return response()->json(['items' => ""]);
         }
 
         // Original source table fetch logic
