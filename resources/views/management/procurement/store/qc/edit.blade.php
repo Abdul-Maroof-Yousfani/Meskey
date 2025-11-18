@@ -47,7 +47,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="job_order" id="job_order" value="Job Order" readonly
+                                <input type="text" name="job_order" id="job_order" value="JOB-KHI-11-2025-0001" readonly
                                     class="form-control">
                             </td>
                             <td>
