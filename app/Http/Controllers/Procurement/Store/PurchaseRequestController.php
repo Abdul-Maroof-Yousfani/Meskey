@@ -80,8 +80,8 @@ class PurchaseRequestController extends Controller
             $processedData[] = [
                 'request_data' => $requestGroup['request_data'],
                 'request_no' => $requestNo,
-                'created_by_id' => $requestGroup['request_data']->created_by,
-                'request_status' => $requestGroup['request_data']->am_approval_status,
+                'created_by_id' => $requestGroup['request_data']?->created_by,
+                'request_status' => $requestGroup['request_data']?->am_approval_status,
                 'request_rowspan' => $requestRowspan,
                 'items' => $requestItems,
                 'has_approved_item' => $hasApprovedItem
