@@ -255,7 +255,7 @@ class PurchaseQuotationController extends Controller
             }
         }
 
-        return view('management.procurement.store.purchase_quotation.getList', [
+        return view('management.procurement.store.purchase_quotation.getComparison', [
             'PurchaseQuotation' => $PurchaseQuotationRaw,
             'GroupedPurchaseQuotation' => $processedData,
             "groupedData" => $groupedData
