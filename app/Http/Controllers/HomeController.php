@@ -614,11 +614,11 @@ class HomeController extends Controller
             }
 
             if ($sourceId) {
-                $query->where(function ($q) use ($targetColumn, $sourceId) {
-                    $q->where($targetColumn, $sourceId)
-                        ->orWhereRaw("FIND_IN_SET(?, $targetColumn) > 0", [$sourceId])
-                        ->orWhereJsonContains($targetColumn, $sourceId)
-                        ->orWhereJsonContains($targetColumn, (string) $sourceId);
+                $query->where(function ($q) use ("{$targetTable}.{$targetColumn}", $sourceId) {
+                    $q->where("{$targetTable}.{$targetColumn}", $sourceId)
+                        ->orWhereRaw("FIND_IN_SET(?, "{$targetTable}.{$targetColumn}") > 0", [$sourceId])
+                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", $sourceId)
+                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", (string) $sourceId);
                 });
             }
 
@@ -626,7 +626,7 @@ class HomeController extends Controller
                 ? 'name'
                 : (Schema::hasColumn($targetTable ?? $tableName, 'purchase_quotation_no')
                     ? 'purchase_quotation_no'
-                    : "{$tableName}.{$columnName}");
+                    : "{$columnName}");
 
             if($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $data = $query->join("purchase_quotation_data", "purchase_quotation_data.purchase_quotation_id", "=", "purchase_quotations.id");
