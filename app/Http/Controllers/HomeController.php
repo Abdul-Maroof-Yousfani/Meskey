@@ -613,14 +613,14 @@ class HomeController extends Controller
                 $query->where("{$targetTable}.name", 'like', '%' . $search . '%');
             }
 
-            if ($sourceId) {
-                $query->where(function ($q) use ("{$targetTable}.{$targetColumn}", $sourceId) {
-                    $q->where("{$targetTable}.{$targetColumn}", $sourceId)
-                        ->orWhereRaw("FIND_IN_SET(?, "{$targetTable}.{$targetColumn}") > 0", [$sourceId])
-                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", $sourceId)
-                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", (string) $sourceId);
-                });
-            }
+           if ($sourceId) {
+    $query->where(function ($q) use ($targetTable, $targetColumn, $sourceId) {
+        $q->where("{$targetTable}.{$targetColumn}", $sourceId)
+            ->orWhereRaw("FIND_IN_SET(?, {$targetTable}.{$targetColumn}) > 0", [$sourceId])
+            ->orWhereJsonContains("{$targetTable}.{$targetColumn}", $sourceId)
+            ->orWhereJsonContains("{$targetTable}.{$targetColumn}", (string) $sourceId);
+    });
+}
 
             $displayColumn = Schema::hasColumn($targetTable ?? $tableName, 'name')
                 ? 'name'
