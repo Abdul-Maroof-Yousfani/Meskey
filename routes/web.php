@@ -3,6 +3,9 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Procurement\Store\PurchaseOrder;
+use App\Models\Procurement\Store\PurchaseQuotation;
+use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\QC;
 use App\Models\Procurement\Store\QCBags;
 use App\Models\Production\JobOrder\JobOrder;
@@ -20,9 +23,12 @@ use App\Http\Controllers\Reports\{
 
 
 Route::get("/restore-db", function() {
-   $job = JobOrder::all();
-   dd($job);
 
+    $purchase_request = PurchaseRequest::query()->delete();
+    $purchase_quotation = PurchaseQuotation::query()->delete();
+    $purchase_order = PurchaseOrder::query()->delete();
+
+    dd("All data deleted");
 
 });
 
