@@ -341,7 +341,7 @@ class PurchaseRequestController extends Controller
     {
         $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
         $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseRequestData = PurchaseRequestData::where('id', $id)->update(['status' => 0]);
+        $PurchaseRequestData = PurchaseRequestData::where('id', $id)->update(['status' => '0']);
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
