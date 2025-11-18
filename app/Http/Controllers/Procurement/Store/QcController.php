@@ -180,8 +180,8 @@ class QcController extends Controller
         $id = $request->id;
         $grn = $request->grn;
 
-        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
-
+        $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data", 'purchase_order_data.purchase_request_data.JobOrder')->find($id);
+        
 
         return view("management.procurement.store.qc.create", compact("grn", "purchaseOrderReceivingData", "id"));
     }

@@ -47,7 +47,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="job_order" id="job_order" value="Job Order" readonly
+                                <input type="text" name="job_order" id="job_order" value="{{ optional(optional($row->purchase_order_data)->purchase_request_data)->JobOrder?->pluck('job_order_no')->implode(', ') }}" readonly
                                     class="form-control">
                             </td>
                             <td>
