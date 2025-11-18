@@ -7,7 +7,7 @@
             <th class="col-sm-3">Category- item</th>
             <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
-
+            <th class="col-sm-1">QC Status</th>
             <th class="col-sm-1">Action</th>
             {{-- <th class="col-sm-1">Status</th> --}}
         </tr>
@@ -83,6 +83,37 @@
                                     {{ $supplierRow['data']->qty }}
                                 </p>
                             </td>
+                            <td>
+                                <p class="m-0 text-right">
+                                    @php
+                                        $badgeClass = match (strtolower($approvalStatus)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'pending' => 'badge-warning',
+                                            'returned' => 'badge-info',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    @if($itemGroup["qc_status"] == 'pending')
+                                        <span class="badge badge-warning">
+                                            Pending
+                                        </span>
+                                    @elseif($itemGroup["qc_status"] == 'approved')
+                                        <span class="badge badge-success">
+                                            Approved
+                                        </span>
+
+                                    @elseif($itemGroup["qc_status"] == 'rejected')
+                                        <span class="badge badge-success">
+                                            Approved
+                                        </span>
+                                    @else
+                                        <span class="badge badge-info">
+                                            Not Created
+                                        </span>
+                                    @endif
+                                </p>
+                            </td>
                             {{-- Created Date --}}
                             {{-- <td>
                                 <p class="m-0 white-nowrap">
@@ -99,11 +130,11 @@
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
                                         <i class="ft-check font-medium-3"></i>
                                     </a>
-                                    <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
-                                        class="danger p-1 text-center mr-2 position-relative ">
+                                        <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
+                                            class="danger p-1 text-center mr-2 position-relative ">
 
-                                        <i class="ft-x font-medium-3"></i>
-                                    </a>
+                                            <i class="ft-x font-medium-3"></i>
+                                        </a>
                                 </div>
                             </td>
                             @if ($isFirstRequestRow)

@@ -270,17 +270,18 @@
                         </div>
                     </div>
                 </div>
-
-                @endif
                 <button type="submit" class="btn btn-primary">Save</button>
+                @endif
         </form>
 
 
-        <div class="row">
-            <div class="col-12">
-                <x-approval-status :model="$purchaseOrderReceivingData->qc" />
+        @if($purchaseOrderReceivingData->qc->accepted_quantity > 0 || $purchaseOrderReceivingData->qc->rejected_quantity > 0)        
+            <div class="row">
+                <div class="col-12">
+                    <x-approval-status :model="$purchaseOrderReceivingData->qc" />
+                </div>
             </div>
-        </div>
+        @endif
         <div class="row bottom-button-bar" style="padding-bottom: 20px;">
             &nbsp;
         </div>

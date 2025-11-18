@@ -80,6 +80,8 @@ class QcController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
+                    'qc_status' => $row->qc?->is_qc_approved,
+                    'canApprove' => $row->qc?->canApprove(),
                     'suppliers' => []
                 ];
             }
@@ -124,6 +126,8 @@ class QcController extends Controller
                         $requestItems[] = [
                             'item_data' => $itemGroup['item_data'],
                             'suppliers' => $itemSuppliers,
+                            'qc_status' => $itemGroup["qc_status"],
+                            'canApprove' => $row->qc?->canApprove(),
                             'item_rowspan' => $itemRowspan
                         ];
                     }
