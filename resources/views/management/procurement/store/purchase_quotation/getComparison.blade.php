@@ -159,9 +159,9 @@
                                     </div>
                                 </td>
 
-                                {{-- @php
+                                @php
                                     $previousRequestNo = $currentRequestNo;
-                                @endphp --}}
+                                @endphp
                             @php $isFirstRequestRow = false; @endphp
                             @endif
 
