@@ -960,6 +960,7 @@ class PurchaseQuotationController extends Controller
         try {
             $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
             
+            
             $PurchaseQuotation->update([
                 "description" => $request->description
             ]);

@@ -14,6 +14,8 @@
     $remainingQty = $data->qty - $totalOrdered;
 @endphp
 
+@if($remainingQty <= 0) @continue @endif
+
 
    
 
