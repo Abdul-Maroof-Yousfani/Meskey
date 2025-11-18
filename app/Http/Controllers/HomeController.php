@@ -608,22 +608,6 @@ class HomeController extends Controller
             }
 
        
-// @if (isset($data->purchase_order_data))
-//     @php
-//         $totalOrdered = $data->purchase_order_data->sum('qty');
-//     @endphp
-// @else
-//     @php
-//         $totalOrdered = 0;
-//     @endphp
-// @endif
-
-// @php
-//     $remainingQty = $data->qty - $totalOrdered;
-//     $isQuotationAvailable = ($data->rate) > 0 ? true : false;
-// @endphp
-// @if($remainingQty <= 0) @continue @endif;
-            }
 
             if ($search) {
                 $query->where('name', 'like', '%' . $search . '%');
