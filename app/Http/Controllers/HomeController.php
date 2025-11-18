@@ -631,7 +631,7 @@ class HomeController extends Controller
             if($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $data = $query->join("purchase_quotation_data", "purchase_quotation_data.purchase_quotation_id", "=", "purchase_quotations.id");
             }
-            $data = $query->select(['purchase_quotations.id', "$displayColumn as text"])->limit(50)->get();
+            $data = $query->select(['purchase_quotations.id', "$displayColumn as text", "purchase_quotation_data.qty"])->limit(50)->get();
 
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $purchaseOrderData = PurchaseOrderData::where("purchase_request_data_id", $purchaseRequestId)->get();
