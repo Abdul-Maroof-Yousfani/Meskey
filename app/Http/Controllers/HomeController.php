@@ -636,6 +636,7 @@ class HomeController extends Controller
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $purchaseOrderData = PurchaseOrderData::where("purchase_request_data_id", $purchaseRequestId)->get();
                 $totalOrdered = $purchaseOrderData->sum("qty");
+                dd($totalOrdered);
                 $data = $data->reject(function ($datum) use ($totalOrdered) {
                     $remainingQty = $datum->qty - $totalOrdered;
                     return $remainingQty <= 0;
