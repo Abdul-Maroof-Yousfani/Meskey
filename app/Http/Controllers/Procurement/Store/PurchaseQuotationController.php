@@ -737,8 +737,9 @@ class PurchaseQuotationController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id, $purchase_request_id)
+    public function edit($id)
     {
+        $purchase_request_id = request()->purchase_request_id;
         $purchaseQuotation = PurchaseQuotation::with([
             'quotation_data',
             'quotation_data.category',
