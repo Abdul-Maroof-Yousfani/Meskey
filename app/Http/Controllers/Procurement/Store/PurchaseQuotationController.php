@@ -737,7 +737,7 @@ class PurchaseQuotationController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit($id, $purchase_request_id)
     {
         $purchaseQuotation = PurchaseQuotation::with([
             'quotation_data',
@@ -746,6 +746,13 @@ class PurchaseQuotationController extends Controller
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
         
+ $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
+            ->pluck('id');
+
+         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            ->where('am_approval_status', operator: 'approved')
+            ->get();
 
         $purchaseRequest = $purchaseQuotation->purchase_request;
 
