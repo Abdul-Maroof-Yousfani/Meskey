@@ -32,6 +32,112 @@ class PurchaseQuotationController extends Controller
      */
     public function getList(Request $request)
     {
+        // $PurchaseQuotationRaw = PurchaseQuotationData::with(
+        //     'purchase_quotation.purchase_request',
+        //     'category',
+        //     'item',
+        //     'supplier'
+        // )
+        //     ->whereStatus(true)
+        //     ->latest()
+        //     ->paginate(request('per_page', 25));
+
+        // $groupedData = [];
+        // $processedData = [];
+
+        // foreach ($PurchaseQuotationRaw as $row) {
+        //     if (!$row->purchase_quotation || !$row->purchase_quotation->purchase_request) {
+        //         continue;
+        //     }
+
+        //     $purchaseRequestNo = $row->purchase_quotation->purchase_request->purchase_request_no;
+        //     $requestNo = $row->purchase_quotation->purchase_quotation_no; // purchase quotation no
+        //     $itemId = $row->item->id ?? 'unknown';
+        //     $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+
+        //     // Group by purchase_request_no → purchase_quotation_no → item_id → suppliers
+        //     if (!isset($groupedData[$purchaseRequestNo])) {
+        //         $groupedData[$purchaseRequestNo] = [
+        //             'request_data' => $row->purchase_quotation->purchase_request,
+        //             'quotations' => []
+        //         ];
+        //     }
+
+        //     if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo])) {
+        //         $groupedData[$purchaseRequestNo]['quotations'][$requestNo] = [
+        //             'quotation_data' => $row->purchase_quotation,
+        //             'items' => []
+        //         ];
+        //     }
+
+        //     if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId])) {
+        //         $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId] = [
+        //             'item_data' => $row,
+        //             'suppliers' => []
+        //         ];
+        //     }
+
+        //     $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+        // }
+
+        // // Build $processedData while preserving your structure
+        // foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
+        //     foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
+        //         $requestRowspan = 0;
+        //         $requestItems = [];
+        //         $hasApprovedItem = false;
+
+        //         foreach ($quotationGroup['items'] as $itemGroup) {
+        //             foreach ($itemGroup['suppliers'] as $supplierData) {
+        //                 $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'};
+        //                 if (strtolower($approvalStatus) === 'approved') {
+        //                     $hasApprovedItem = true;
+        //                     break 2;
+        //                 }
+        //             }
+        //         }
+
+        //         foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
+        //             $itemRowspan = count($itemGroup['suppliers']);
+        //             $requestRowspan += $itemRowspan;
+
+        //             $itemSuppliers = [];
+        //             $isFirstSupplier = true;
+
+        //             foreach ($itemGroup['suppliers'] as $supplierKey => $supplierData) {
+        //                 $itemSuppliers[] = [
+        //                     'data' => $supplierData,
+        //                     'is_first_supplier' => $isFirstSupplier,
+        //                     'item_rowspan' => $itemRowspan
+        //                 ];
+        //                 $isFirstSupplier = false;
+        //             }
+
+        //             $requestItems[] = [
+        //                 'item_data' => $itemGroup['item_data'],
+        //                 'suppliers' => $itemSuppliers,
+        //                 'item_rowspan' => $itemRowspan
+        //             ];
+        //         }
+
+        //         $processedData[] = [
+        //             'request_data' => $quotationGroup['quotation_data'],
+        //             'request_no' => $quotationNo,
+        //             'purchase_request_no' => $purchaseRequestNo,
+        //             'created_by_id' => $quotationGroup['quotation_data']->created_by,
+        //             'request_status' => $quotationGroup['quotation_data']->am_approval_status,
+        //             'request_rowspan' => $requestRowspan,
+        //             'items' => $requestItems,
+        //             'has_approved_item' => $hasApprovedItem
+        //         ];
+        //     }
+        // }
+
+        // return view('management.procurement.store.purchase_quotation.getList', [
+        //     'PurchaseQuotation' => $PurchaseQuotationRaw,
+        //     'GroupedPurchaseQuotation' => $processedData
+        // ]);
+
         $PurchaseQuotationRaw = PurchaseQuotationData::with(
             'purchase_quotation.purchase_request',
             'category',
@@ -50,7 +156,9 @@ class PurchaseQuotationController extends Controller
                 continue;
             }
 
+            
             $purchaseRequestNo = $row->purchase_quotation->purchase_request->purchase_request_no;
+            $groupedData[$purchaseRequestNo]["canApprove"] = $row->canApprove();
             $requestNo = $row->purchase_quotation->purchase_quotation_no; // purchase quotation no
             $itemId = $row->item->id ?? 'unknown';
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
@@ -80,10 +188,10 @@ class PurchaseQuotationController extends Controller
             $groupedData[$purchaseRequestNo]['quotations'][$requestNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
         }
 
-        // Build $processedData while preserving your structure
         foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
             foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
                 $requestRowspan = 0;
+                $quotaionRowspan = 0;
                 $requestItems = [];
                 $hasApprovedItem = false;
 
@@ -96,10 +204,12 @@ class PurchaseQuotationController extends Controller
                         }
                     }
                 }
-
+                
                 foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
                     $itemRowspan = count($itemGroup['suppliers']);
+                    $quotaionCount = count($requestGroup['quotations']);
                     $requestRowspan += $itemRowspan;
+                    $quotaionRowspan += $quotaionCount;
 
                     $itemSuppliers = [];
                     $isFirstSupplier = true;
@@ -127,15 +237,20 @@ class PurchaseQuotationController extends Controller
                     'created_by_id' => $quotationGroup['quotation_data']->created_by,
                     'request_status' => $quotationGroup['quotation_data']->am_approval_status,
                     'request_rowspan' => $requestRowspan,
+                    'quotaion_rowspan' => $quotaionRowspan,
+
+
                     'items' => $requestItems,
                     'has_approved_item' => $hasApprovedItem
                 ];
+
             }
         }
 
-        return view('management.procurement.store.purchase_quotation.getList', [
+        return view('management.procurement.store.purchase_quotation.getComparison', [
             'PurchaseQuotation' => $PurchaseQuotationRaw,
-            'GroupedPurchaseQuotation' => $processedData
+            'GroupedPurchaseQuotation' => $processedData,
+            "groupedData" => $groupedData
         ]);
     }
 
@@ -212,7 +327,7 @@ class PurchaseQuotationController extends Controller
                         }
                     }
                 }
-
+                
                 foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
                     $itemRowspan = count($itemGroup['suppliers']);
                     $quotaionCount = count($requestGroup['quotations']);
