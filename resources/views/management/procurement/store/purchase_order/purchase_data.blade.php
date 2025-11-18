@@ -105,7 +105,7 @@
                 class="form-control rate" 
                 step="0.01" 
                 min="0"
-                {{ $isQuotationAvailable ? 'readonly' : '' }}>
+                {{ $isQuotationAvailable && $data->am_approval_status != 'pending' ? 'readonly' : '' }}>
         </td>
           <td style="width: 30%">
             <input type="text" style="width: 100px;" name="gross_amount[]" value="{{ ($data->qty) * $data->rate }}" id="gross_amount{{ $key }}"
