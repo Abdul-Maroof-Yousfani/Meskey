@@ -170,7 +170,7 @@
             const purchaseRequestId = $('[name="purchase_request_id"]').val();
             $('#quotation_no').empty();
             if (supplierId && purchaseRequestId) {
-                initializeDynamicDependentCall1Select2All(
+                initializeDynamicDependentCall1Select2(
                     '#supplier_id',
                     '#quotation_no',
                     'suppliers',
