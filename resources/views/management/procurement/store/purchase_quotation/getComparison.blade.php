@@ -9,21 +9,24 @@
             <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
             <th class="col-1 text-right">Amount</th>
-            <th class="col-1 text-center">Action</th>
+            <th class="col-1">Action</th>
         </tr>
     </thead>
 
     <tbody>
         @if (count($GroupedPurchaseQuotation) != 0)
             @php
-                $previousRequestNo = null;
+                $previousRequestNo = null; // Track previous request number
+                $previousQuotationNo = null;
+                $isFirstRequestRow = true;
             @endphp
 
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
-                    $isFirstRequestRow = true;
                 @endphp
+
+                @php $isFirstRequestRow = true; @endphp
 
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php $isFirstItemRow = true; @endphp
@@ -32,38 +35,53 @@
                         @php
                             $approvalDataStatus = ucwords(
                                 $supplierRow['data']
-                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ?? 'am_approval_status'}
+                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                        'am_approval_status'},
                             );
                             $approvalStatus = ucwords($requestGroup['request_status']);
                         @endphp
 
                         <tr>
-                            {{-- Purchase Request --}}
                             @if ($previousRequestNo !== $currentRequestNo)
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
-                                    style="background-color: #e8f5e8; vertical-align: middle; text-align: center;">
-                                    <strong>#{{ $requestGroup['purchase_request_no'] }}</strong>
+                                    style="background-color: #e8f5e8; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        #{{ $requestGroup['purchase_request_no'] }}
+                                    </p>
                                 </td>
+
+
+
+                                {{-- @php
+                                $previousRequestNo = $currentRequestNo;
+                            @endphp --}}
                             @endif
 
-                            {{-- Purchase Quotation No --}}
+                            {{-- ✅ Other columns --}}
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
-                                    style="background-color: #e3f2fd; vertical-align: middle; text-align: center;">
-                                    <strong>#{{ $requestGroup['request_no'] }}</strong>
+                                    style="background-color: #e3f2fd; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        #{{ $requestGroup['request_no'] }}
+                                    </p>
                                 </td>
                             @endif
 
-                            {{-- Category - Item --}}
-                            <td style="vertical-align: middle;">
+                            <td>
                                 @php
                                     $statusText = '';
                                     $statusColor = '';
 
-                                    if (strtolower($approvalStatus) === 'partial approved' && strtolower($approvalDataStatus) === 'pending') {
+                                    if (
+                                        strtolower($approvalStatus) === 'partial approved' &&
+                                        strtolower($approvalDataStatus) === 'pending'
+                                    ) {
                                         $statusText = 'Neglected';
                                         $statusColor = 'text-danger';
-                                    } elseif (strtolower($approvalStatus) === 'rejected' && strtolower($approvalDataStatus) === 'pending') {
+                                    } elseif (
+                                        strtolower($approvalStatus) === 'rejected' &&
+                                        strtolower($approvalDataStatus) === 'pending'
+                                    ) {
                                         $statusText = 'Rejected';
                                         $statusColor = 'text-danger';
                                     } else {
@@ -77,59 +95,66 @@
                                         };
                                     }
                                 @endphp
-                                <strong>
+
+                                <p class="m-0 font-weight-bold">
                                     {{ optional($supplierRow['data']->category)->name }} -
                                     {{ optional($supplierRow['data']->item)->name }}
                                     @if ($statusText)
-                                        <span class="{{ $statusColor }}" style="font-weight: 500;">({{ $statusText }})</span>
+                                        <span class="{{ $statusColor }}" style="font-weight: 500;">
+                                            ({{ $statusText }})
+                                        </span>
                                     @endif
-                                </strong>
+                                </p>
                             </td>
 
-                            {{-- Supplier --}}
-                            <td style="background-color: #fff3e0; vertical-align: middle; text-align: center;">
-                                <strong>{{ optional($supplierRow['data']->supplier)->name }}</strong>
+                            <td style="background-color: #fff3e0; vertical-align: middle;">
+                                <p class="m-0 font-weight-bold">
+                                    {{ optional($supplierRow['data']->supplier)->name }}
+                                </p>
                             </td>
 
-                            {{-- UOM --}}
-                            <td class="text-right" style="vertical-align: middle;">
-                                {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
+                            <td>
+                                <p class="m-0 text-right">
+                                    {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
+                                </p>
                             </td>
 
-                            {{-- Qty --}}
-                            <td class="text-right" style="vertical-align: middle;">
-                                {{ $supplierRow['data']->qty }}
+                            <td>
+                                <p class="m-0 text-right">{{ $supplierRow['data']->qty }}</p>
                             </td>
 
-                            {{-- Rate --}}
-                            <td class="text-right" style="vertical-align: middle;">
-                                {{ $supplierRow['data']->rate }}
+                            <td>
+                                <p class="m-0 text-right">{{ $supplierRow['data']->rate }}</p>
                             </td>
 
-                            {{-- Amount --}}
-                            <td class="text-right" style="vertical-align: middle;">
-                                {{ $supplierRow['data']->total }}
+                            <td>
+                                <p class="m-0 text-right">{{ $supplierRow['data']->total }}</p>
                             </td>
 
-                            {{-- Action --}}
                             @if ($previousRequestNo !== $currentRequestNo)
-                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}" class="text-center" style="vertical-align: middle;">
-                                    <div class="d-flex flex-column gap-1 align-items-center">
+                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
+                                    <div class="d-flex gap-2">
                                         <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
-                                           class="info p-1 text-center" title="Approval">
-                                           <i class="ft-check font-medium-3"></i>
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-check font-medium-3"></i>
+
                                         </a>
-
-                                        @if(!in_array(strtolower($requestGroup['request_status']), ['approved', 'rejected', 'partial approved']))
+                                    </div>
+                                    @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected' && $requestGroup['request_status'] != 'partial approved')
+                                        <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '100%')"
-                                               class="info p-1 text-center" title="Edit">
-                                               <i class="ft-edit font-medium-3"></i>
+                                                class="info p-1 text-center mr-2 position-relative" title="View Approved">
+                                                <i class="ft-edit font-medium-3"></i>
+        
                                             </a>
-                                        @endif
-
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Quotation', false, '100%')"
-                                           class="info p-1 text-center" title="View">
-                                           <i class="ft-eye font-medium-3"></i>
+                                        </div>
+                                    @endif
+                                    {{-- </td>
+                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
+                                    <div class="d-flex gap-2">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="View Approved">
+                                            <i class="ft-eye font-medium-3"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -138,11 +163,11 @@
                                     $previousRequestNo = $currentRequestNo;
                                 @endphp
                             @endif
-
+                            
                         </tr>
-                    @endforeach
-                    @php $isFirstRequestRow = false; @endphp
-                @endforeach
+                        @endforeach
+                        @php $isFirstRequestRow = false; @endphp
+                        @endforeach
             @endforeach
         @else
             <tr class="ant-table-placeholder">
@@ -150,10 +175,15 @@
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
-                                <ellipse fill="#f5f5f5" cx="32" cy="33" rx="32" ry="7"></ellipse>
+                                <ellipse fill="#f5f5f5" cx="32" cy="33" rx="32" ry="7">
+                                </ellipse>
                                 <g fill-rule="nonzero" stroke="#d9d9d9">
-                                    <path d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z"></path>
-                                    <path d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z" fill="#fafafa"></path>
+                                    <path
+                                        d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z">
+                                    </path>
+                                    <path
+                                        d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z"
+                                        fill="#fafafa"></path>
                                 </g>
                             </g>
                         </svg>
