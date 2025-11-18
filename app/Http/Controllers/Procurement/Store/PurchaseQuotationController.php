@@ -779,6 +779,7 @@ class PurchaseQuotationController extends Controller
         $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
 
         return view('management.procurement.store.purchase_quotation.edit', compact(
+            "PurchaseQuotationData",
             'purchaseQuotation',
             'categories',
             'items',

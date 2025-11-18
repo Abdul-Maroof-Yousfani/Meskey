@@ -101,7 +101,7 @@
 
     <tbody id="purchaseRequestBody">
      
-        @foreach ($purchaseQuotation->quotation_data ?? [] as $key => $data)
+        @foreach ($PurchaseQuotationData ?? [] as $key => $data)
             <tr id="row_{{ $key }}">
                 <td style="width: 30%">
                     <select style="width: 100px" id="category_id_{{ $key }}" disabled
