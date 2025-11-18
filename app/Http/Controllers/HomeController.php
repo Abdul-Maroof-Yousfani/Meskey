@@ -596,7 +596,7 @@ class HomeController extends Controller
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
-                $query = DB::table($targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
+                $query = DB::table($targetTable);
             }
             if (Schema::hasColumn($targetTable, 'deleted_at')) {
                 $query->whereNull('deleted_at');
