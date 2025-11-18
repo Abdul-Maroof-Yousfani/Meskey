@@ -1282,7 +1282,7 @@ function initializeDynamicDependentCall1Select2(
 
   $targetEl.select2({
     ajax: {
-      url: "/dynamic-dependent-fetch-data",
+      url: "/dynamic-dependent-fetch-data-all",
       dataType: "json",
       delay: 250,
       data: function (params) {
