@@ -192,7 +192,6 @@ class PurchaseOrderController extends Controller
                 ->where('purchase_request_id', $requestId)
                 ->get();
 
-            dd($dataItems);
             $purchaseRequestDataIds = $dataItems->pluck('id');
 
             $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
