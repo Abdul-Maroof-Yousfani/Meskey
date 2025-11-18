@@ -162,11 +162,11 @@
                                 @php
                                     $previousRequestNo = $currentRequestNo;
                                 @endphp
+                            @php $isFirstRequestRow = false; @endphp
                             @endif
 
                         </tr>
                     @endforeach
-                    @php $isFirstRequestRow = false; @endphp
                 @endforeach
             @endforeach
         @else
