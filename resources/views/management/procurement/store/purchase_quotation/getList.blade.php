@@ -183,13 +183,13 @@
                                             <i class="ft-eye font-medium-3"></i>
                                         </span>
                                         @else --}}
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Approval Voucher', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Approval Voucher', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
                                         {{-- @endif --}}
                                         @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected' && $requestGroup['request_status'] != 'partial approved')
-                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'80%')"
+                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'100%')"
                                                 class="info p-1 text-center mr-2 position-relative">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
