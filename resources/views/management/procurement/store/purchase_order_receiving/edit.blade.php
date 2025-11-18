@@ -173,26 +173,26 @@
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control" step="0.01" min="0" max="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc?->is_qc_approved == "approved") step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="accepted_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->accepted_quantity ?? null }}"
+                                    onblur="calc({{ $key }})" name="accepted_qty[]" readonly value="{{ $data->qc?->accepted_quantity ?? null }}"
                                     id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="rejected_qty[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->rejected_quantity ?? null }}"
+                                    onblur="calc({{ $key }})" name="rejected_qty[]" readonly value="{{ $data->qc?->rejected_quantity ?? null }}"
                                     id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
                                    >
                             </td>
 
                             <td style="width: 10%">
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" @readonly(isBag($data->item_id)) value="{{ $data->qc?->deduction_per_bag ?? null }}"
+                                    onblur="calc({{ $key }})" name="deduction_per_bag[]" readonly value="{{ $data->qc?->deduction_per_bag ?? null }}"
                                     id="deduction_per_bag{{ $key }}" class="form-control deduction_per_bag" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
@@ -200,7 +200,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="number" style="width: 100px;" name="min_weight[]" id="min_weight_0" class="form-control"
+                                        <input type="number" style="width: 100px;" name="min_weight[]" @readonly($data->qc?->is_qc_approved == "approved") id="min_weight_0" class="form-control"
                                             step="0.01" min="0" value="{{ $data->purchase_order_data->min_weight }}" placeholder="Min Weight">
                                     </div>
                                 </div>
@@ -208,7 +208,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="brand[]"  style="width: 100px;" value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="brand[]"  style="width: 100px;" @readonly($data->qc?->is_qc_approved == "approved") value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Brand">
                                     </div>
                                 </div>
@@ -216,7 +216,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="color[]"  style="width: 100px;" value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="color[]"  style="width: 100px;" @readonly($data->qc?->is_qc_approved == "approved") value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Color">
                                     </div>
                                 </div>
@@ -227,7 +227,7 @@
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
                                         <input type="text" style="width: 100px;" name="construction_per_square_inch[]"
-                                            id="construction_per_square_inch_0" value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
+                                            id="construction_per_square_inch_0" @readonly($data->qc?->is_qc_approved == "approved") value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
                                             placeholder="Cons./sq. in.">
                                     </div>
                                 </div>
@@ -235,7 +235,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="size[]" style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
+                                        <input type="text" name="size[]" @readonly($data->qc?->is_qc_approved == "approved") style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
                                             min="0" placeholder="Size">
                                     </div>
                                 </div>
@@ -243,7 +243,7 @@
                             <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
+                                        <input type="text" @readonly($data->qc?->is_qc_approved == "approved") name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
                                             step="0.01" min="0" placeholder="Stitching">
                                     </div>
                                 </div>
@@ -262,7 +262,7 @@
                                     min="0" name="total[]">
                             </td> --}}
                             <td style="width: 25%">
-                                <input style="width: 100px" name="remarks[]" type="text" value="{{ $data->remarks }}"
+                                <input style="width: 100px" @readonly($data->qc?->is_qc_approved == "approved") name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">
                             </td>
                             <td class="d-flex" style="gap: 10px;">

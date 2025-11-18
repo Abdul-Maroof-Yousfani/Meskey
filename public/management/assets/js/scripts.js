@@ -456,6 +456,190 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
   });
 });
 
+$(document).on("submit", "#ajaxSubmit2", function (e) {
+
+  var formhunyr = $(this);
+
+  e.preventDefault(); // Avoid executing the actual submit of the form.
+
+  // Clear previous errors and success messages
+  $(".print-error-msg").find("ul").html("");
+  $(".alert-success").find("ul").html("");
+
+  var form = $(this);
+  var actionUrl = form.attr("action");
+
+  var formData = new FormData(form[0]);
+
+
+ // Find which submit button was actually clicked
+ var clickedSubmit = $(document.activeElement);
+ if (clickedSubmit.is('input[type="submit"], button[type="submit"]')) {
+   var submitName = clickedSubmit.attr("name");
+   var submitValue = clickedSubmit.val() || clickedSubmit.text() || "";
+   
+   if (submitName) {
+     formData.append(submitName, submitValue);
+   }
+ }
+
+
+
+
+  // Process 'notes' field if value is '1'
+  var notesValue = formData.get("notes");
+  if (notesValue == 1) {
+    var editorElement = document.querySelector(".ql-editor");
+    var textContent = editorElement.innerHTML;
+    formData.append("notes", textContent);
+  }
+
+  // Remove any previous error styling and messages
+  $(".error-message").remove();
+  $(".is-invalid").removeClass("is-invalid");
+
+  // Display SweetAlert loader
+  Swal.fire({
+    title: "Processing",
+    text: "Please wait...",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  // AJAX request
+  $.ajax({
+    type: "POST",
+    url: actionUrl,
+    data: formData,
+    processData: false,
+    contentType: false,
+
+    success: function (data) {
+      Swal.close();
+
+      if (data.catchError) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.catchError,
+          confirmButtonColor: "#D95000",
+        });
+      } else if ($.isEmptyObject(data.error)) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: data.success,
+          confirmButtonColor: "#3085d6",
+        }).then((result) => {
+          // if (result.isConfirmed) {
+          if (form.data("reset") === true) {
+            form[0].reset();
+          }
+
+          var url = form.find("#url").val();
+          var listRefresh = form.find("#listRefresh").val();
+          var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
+          $(formhunyr).parents(".modal-sidebar").removeClass("open");
+          $(".main-content").css("cursor", "auto");
+
+          var afterAjaxElement = form.find("#afterAjax");
+          if (afterAjaxElement.length > 0) {
+            var variableName = afterAjaxElement.data("variable");
+
+            if (
+              data.data &&
+              data.data[variableName] &&
+              data.data[variableName].id
+            ) {
+              var originalOnClick = afterAjaxElement.attr("onclick");
+              var routeMatch = originalOnClick.match(/'([^']+)'/);
+
+              if (routeMatch && routeMatch[1]) {
+                var originalRoute = routeMatch[1];
+                var newId = data.data[variableName].id;
+
+                var newRoute = originalRoute.replace(
+                  /\/(\d+)(\/edit)?$/,
+                  "/" + newId + "$2"
+                );
+
+                if (newRoute !== originalRoute) {
+                  var newOnClick = originalOnClick.replace(
+                    originalRoute,
+                    newRoute
+                  );
+                  afterAjaxElement.attr("onclick", newOnClick);
+                  afterAjaxElement.trigger("click");
+                } else {
+                  console.error(
+                    "Route replacement failed - routes are identical"
+                  );
+                }
+              }
+            }
+          }
+
+          if (url) {
+            window.location.href = url;
+          }
+          if (listRefresh) {
+            filterationCommon(listRefresh);
+            $(formhunyr).parents(".model").slideUp();
+          }
+          if (ajaxLoadFlag == 1) {
+            getAjaxDataOnEditColumns();
+          }
+          // }
+        });
+      } else {
+        printErrorMsg(data.error);
+      }
+    },
+
+    error: function (xhr, status, error) {
+  Swal.close();
+
+  if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+    let errors = xhr.responseJSON.errors;
+    let message = "";
+
+    for (let field in errors) {
+      message += errors[field].join("<br>") + "<br>";
+    }
+
+    Swal.fire({
+      title: "Validation Error",
+      html: message,
+      icon: "warning",
+      confirmButtonColor: "#D95000",
+    });
+
+    printErrorMsg(errors);
+  }
+
+  else if (xhr.responseJSON && xhr.responseJSON.message) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: xhr.responseJSON.message,
+      confirmButtonColor: "#D95000",
+    });
+  }
+
+  else {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: xhr.responseText || "Something went wrong. Please try again.",
+      confirmButtonColor: "#D95000",
+    });
+  }
+},
+  });
+});
+
 function validateSlabInput(input) {
   const maxRange = parseFloat(input.dataset.maxRange) || 100;
   const isPercentage = input.dataset.isPercentage;

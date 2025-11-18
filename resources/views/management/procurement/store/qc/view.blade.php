@@ -27,64 +27,52 @@
                                 <th>Required Weight Per Bag</th>
                                 <th>Average Weight of 1 Bag</th>
                                 <th>Total Bags</th>
-                                <th>Total Weight Required</th>
-                                <th>Total Weight Received</th>
+                                <th>Total Weight Required (Kg)</th>
+                                <th>Total Weight Received (Kg)</th>
                             </tr>
                         </thead>
                         <tbody id="purchaseOrderBody">
                             <tr>
-                                <td>
-                                    <input type="text" name="item" id="item"
-                                        value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
-                                        class="form-control">
-                                </td>
-                                <td>
-                                    <input type="text" name="size" id="size"
-                                        value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}"
-                                        readonly class="form-control">
-                                </td>
-                                <td>
-                                    <input type="text" name="brand" id="brand"
-                                        value="{{ $purchaseOrderReceivingData?->purchase_order_data?->brand ?? null }}"
-                                        readonly class="form-control">
-                                </td>
+                                    <td>
+                                <input type="text" name="item" id="item" value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
+                                    class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}" readonly
+                                    class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="brand" id="brand" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->brand ?? null }}" readonly
+                                    class="form-control">
+                            </td>
 
-                                <td>
-                                    <input type="text" name="job_order" id="job_order" value="Job Order" readonly
-                                        class="form-control">
-                                </td>
-                                <td>
-                                    <input type="text" name="required_weight_per_bag"
-                                        value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}"
-                                        id="required_weight_per_bag" readonly class="form-control">
-                                </td>
+                            <td>
+                                <input type="text" name="job_order" id="job_order" value="Job Order" readonly
+                                    class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
+                            </td>
 
-                                <td>
-                                    <input type="text" name="average_weight_of_one_bag_view"
-                                        value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}"
-                                        onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                        class="form-control" placeholder="Average Weight of One Bag">
-                                </td>
+                            <td>
+                                <input type="text" name="average_weight_of_one_bag" value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                                     class="form-control" placeholder="Average Weight of One Bag">
+                            </td>
 
-                                <td>
-                                    <input type="text" name="total_bags_view" id="total_bags_view"
-                                        value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
-                                        class="form-control">
-                                </td>
+                            <td>
+                                <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
+                                    class="form-control">
+                            </td>
 
-                                <td>
-                                    <input type="text" name="total_weight_required"
-                                        value="{{ ($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0) }}"
-                                        id="total_weight_required" value="Total Weight Required" readonly
-                                        class="form-control">
-                                </td>
+                            <td>
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
+                                    readonly class="form-control">
+                            </td>
 
-                                <td>
-                                    <input type="text" name="total_weight_received" id="total_weight_received"
-                                        value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}"
-                                        readonly class="form-control">
-                                </td>
-
+                            <td>
+                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ ($purchaseOrderReceivingData?->purchase_order_data?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag) / 1000 }}"
+                                    readonly class="form-control">
+                            </td>
 
                             </tr>
                         </tbody>
@@ -245,9 +233,8 @@
             </div>
         </div>
 
-        <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit">
-            @csrf
-
+        <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit2">
+           
             @if ($purchaseOrderReceivingData->qc->canApprove())
                 <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
 
@@ -297,6 +284,8 @@
         <div class="row bottom-button-bar" style="padding-bottom: 20px;">
             &nbsp;
         </div>
+        
         <script>
+            
             $(".select2").select2();
         </script>

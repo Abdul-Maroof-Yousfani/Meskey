@@ -15,4 +15,15 @@ class QC extends Model
     public function bags() {
         return $this->hasMany(QCBags::class, "qc_id");
     }
+
+    public function scopeFilter($query)
+    {
+        if (!$this->canApprove()) {
+            return $query->where('is_qc_approved', 'pending');
+        }
+
+        return $query;
+    }
+
 }
+

@@ -27,8 +27,8 @@
                             <th>Required Weight Per Bag</th>
                             <th>Average Weight of 1 Bag</th>
                             <th>Total Bags</th>
-                            <th>Total Weight Required</th>
-                            <th>Total Weight Received</th>
+                            <th>Total Weight Required (Kg)</th>
+                            <th>Total Weight Received (Kg)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -65,7 +65,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_required" value="{{ ($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0) }}" id="total_weight_required" value="Total Weight Required"
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
 
@@ -251,7 +251,7 @@
         const average_weight = $(el).val();
         const total_bags = $("#total_bags").val();
         const total_weight_received = $("#total_weight_received");
-        const result = parseInt(average_weight) * parseInt(total_bags);
+        const result = (parseInt(average_weight) * parseInt(total_bags)) / 1000;
 
         if(isNaN(result)) {
             total_weight_received.val("");

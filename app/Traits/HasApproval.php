@@ -150,7 +150,6 @@ trait HasApproval
         if (isset($this->am_change_made) && $this->am_change_made == 0) {
             return false;
         }
-
         $userRoleIds = $user->roles->pluck('id')->toArray();
         $requiredRoles = $module->roles->pluck('role_id')->toArray();
         if (empty(array_intersect($userRoleIds, $requiredRoles))) {
