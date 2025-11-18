@@ -172,8 +172,7 @@ class PurchaseOrderController extends Controller
         $master = PurchaseRequest::find($requestId);
         $quotation = null;
         $dataItems = collect();
-        dd("test");
-
+       
         if ($quotationNo) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('id', $quotationNo)
@@ -200,6 +199,7 @@ class PurchaseOrderController extends Controller
                     $q->where('supplier_id', $supplierId);
                 })
                 ->count();
+            dd($existingQuotationCount);
 
             if ($existingQuotationCount > 0) {
                 $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
