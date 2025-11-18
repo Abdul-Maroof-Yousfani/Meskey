@@ -633,7 +633,6 @@ class HomeController extends Controller
             }
             $data = $query->select(['purchase_quotations.id', "$displayColumn as text", "purchase_quotation_data.qty", "purchase_quotation_data.id as purchase_quotation_data_id"])->limit(50)->get();
         
-            dd($data);
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $data = $data->reject(function ($datum)  {
                     $purchaseOrderData = PurchaseOrderData::where("purchase_quotation_data_id", $datum->purchase_quotation_data_id)->get();
@@ -643,6 +642,12 @@ class HomeController extends Controller
                 });
             }
 
+            $data = $data->groupBy('id')->map(function ($group) {
+                return [
+                    'id' => $group->first()->id,
+                    'text' => $group->first()->text,
+                ];
+            })->values();
             return response()->json(['items' => $data]);
         }
         // Original source table fetch logic
