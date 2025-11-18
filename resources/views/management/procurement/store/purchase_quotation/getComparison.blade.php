@@ -140,7 +140,7 @@
 
                                         </a>
                                     </div>
-                                    @if(strtolower($approvalDataStatus) == "pending" && $groupedData[$requestGroup['purchase_request_no']]["canApprove"])
+                                    @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected' && $requestGroup['request_status'] != 'partial approved')
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '100%')"
                                                 class="info p-1 text-center mr-2 position-relative" title="View Approved">
@@ -155,7 +155,6 @@
                                         <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="View Approved">
                                             <i class="ft-eye font-medium-3"></i>
-
                                         </a>
                                     </div>
                                 </td>
