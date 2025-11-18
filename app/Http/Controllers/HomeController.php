@@ -607,7 +607,7 @@ class HomeController extends Controller
                 $query->where('purchase_request_id', $purchaseRequestId);
             }
 
-          
+       
 // @if (isset($data->purchase_order_data))
 //     @php
 //         $totalOrdered = $data->purchase_order_data->sum('qty');
@@ -646,13 +646,19 @@ class HomeController extends Controller
 
             $data = $query->select(['id', "$displayColumn as text"])->limit(50)->get();
 
-            // if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
-            //     $purchaseOrderData = PurchaseOrderData::where("purchase_request_data_id", $purchaseRequestId)->get();
-            //     $totalOrdered = $purchaseOrderData->sum("qty");
-            //     $remaining = 
-            return response()->json(['items' => ""]);
-        }
+            if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
+                $purchaseOrderData = PurchaseOrderData::where("purchase_request_data_id", $purchaseRequestId)->get();
+                $totalOrdered = $purchaseOrderData->sum("qty");
 
+                $data = $data->reject(function ($datum) use ($totalOrdered) {
+                    $remainingQty = $datum->qty - $totalOrdered;
+                    return $remainingQty <= 0;
+                });
+            }
+
+            return response()->json(['items' => $data]);
+        }
+        }
         // Original source table fetch logic
         if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
