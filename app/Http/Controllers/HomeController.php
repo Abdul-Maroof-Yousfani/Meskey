@@ -597,20 +597,20 @@ class HomeController extends Controller
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
-                $query = DB::table(table: $targetTable)->whereIn('am_approval_status', ['approved', 'partial_approved']);
+                $query = DB::table(table: $targetTable)->whereIn("{$targetTable}.am_approval_status", ['approved', 'partial_approved']);
             }
             if (Schema::hasColumn($targetTable, 'deleted_at')) {
-                $query->whereNull('deleted_at');
+                $query->whereNull("{$targetTable}.deleted_at");
             }
 
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
-                $query->where('purchase_request_id', $purchaseRequestId);
+                $query->where("{$targetTable}.purchase_request_id", $purchaseRequestId);
             }
 
        
 
             if ($search) {
-                $query->where('name', 'like', '%' . $search . '%');
+                $query->where("{$targetTable}.name", 'like', '%' . $search . '%');
             }
 
             if ($sourceId) {
