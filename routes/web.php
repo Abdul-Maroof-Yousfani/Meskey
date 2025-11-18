@@ -46,8 +46,8 @@ Route::get("/restore-db", function() {
 
     // dd("All data deleted");
 
-    $purchaseQuotationData = PurchaseQuotationData::all();
-    dd($purchaseQuotationData);
+    $purchaseQuotation = PurchaseQuotation::all();
+    dd($purchaseQuotation);
 
 });
 
