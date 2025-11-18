@@ -183,7 +183,7 @@
                                             <i class="ft-eye font-medium-3"></i>
                                         </span>
                                         @else --}}
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.approvals', $supplierRow['data']->purchase_quotation->id) }}', 'Approval Voucher', false, '80%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Approval Voucher', false, '80%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
