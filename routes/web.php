@@ -90,6 +90,7 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
 
     Route::get('/dynamic-fetch-data', [App\Http\Controllers\HomeController::class, 'dynamicFetchData'])->name('dynamic-fetch-data');
     Route::get('/dynamic-dependent-fetch-data', [App\Http\Controllers\HomeController::class, 'dynamicDependentFetchData'])->name('dynamic-dependent-fetch-data');
+    Route::get('/dynamic-dependent-fetch-data-all', [App\Http\Controllers\HomeController::class, 'dynamicDependentFetchDataAll'])->name('dynamic-dependent-fetch-data-all');
     Route::post('/set-layout-cookie', function (Illuminate\Http\Request $request) {
         $layout = $request->input('layout', 'light');
         return response()

@@ -1310,6 +1310,54 @@ function initializeDynamicDependentCall1Select2(
   });
 
 }
+function initializeDynamicDependentCall1Select2All(
+  selector,
+  target,
+  tableName,
+  columnName,
+  idColumn = "id",
+  targetTable = null,
+  targetColumn = null,
+  targetDisplayColumn = "name",
+  enableTags = false,
+  isMultiple = false,
+  isSelectOnClose = true,
+  isAllowClear = false,
+  extraFilters = {}
+) {
+  const $el = $(selector);
+  const $targetEl = $(target);
+
+  $targetEl.select2({
+    ajax: {
+      url: "/dynamic-dependent-fetch-data-all",
+      dataType: "json",
+      delay: 250,
+      data: function (params) {
+        return {
+          search: params.term,
+          table: targetTable,
+          column: targetDisplayColumn,
+          idColumn: "id",
+          targetTable: targetTable,
+          targetColumn: targetColumn,
+          fetchMode: "target",
+          sourceId: $el.val(),
+          ...extraFilters
+        };
+      },
+      processResults: function (data) {
+        return {
+          results: data.items,
+        };
+      },
+    },
+    minimumInputLength: 0,
+    allowClear: true,
+    placeholder: "Select options",
+  });
+
+}
 
 // Handle select change event
 function handleSelectChange(selectElement) {

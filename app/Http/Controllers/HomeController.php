@@ -664,4 +664,95 @@ class HomeController extends Controller
 
         return response()->json(['items' => $results]);
     }
+
+
+     public function dynamicDependentFetchDataAll(Request $request)
+    {
+        $search = $request->input('search');
+        $tableName = $request->input('table');
+        $columnName = $request->input('column');
+        $idColumn = $request->input('idColumn', 'id');
+        $enableTags = $request->input('enableTags', false);
+        $targetTable = $request->input('targetTable');
+        $targetColumn = $request->input('targetColumn');
+        $fetchMode = $request->input('fetchMode', 'source');
+        $query = DB::table($tableName);
+
+        // If fetching target data
+        if ($fetchMode === 'target') {
+            $sourceId = $request->input('sourceId');
+            $purchaseRequestId = $request->input('purchase_request_id');
+
+            if (!$targetTable || !$targetColumn) {
+                return response()->json(['error' => 'Target table and column required'], 400);
+            }
+            if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
+                $query = DB::table($targetTable);
+            }
+            if (Schema::hasColumn($targetTable, 'deleted_at')) {
+                $query->whereNull('deleted_at');
+            }
+
+            if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
+                $query->where('purchase_request_id', $purchaseRequestId);
+            }
+
+            if ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            }
+
+            if ($sourceId) {
+                $query->where(function ($q) use ($targetColumn, $sourceId) {
+                    $q->where($targetColumn, $sourceId)
+                        ->orWhereRaw("FIND_IN_SET(?, $targetColumn) > 0", [$sourceId])
+                        ->orWhereJsonContains($targetColumn, $sourceId)
+                        ->orWhereJsonContains($targetColumn, (string) $sourceId);
+                });
+            }
+
+            $displayColumn = Schema::hasColumn($targetTable ?? $tableName, 'name')
+                ? 'name'
+                : (Schema::hasColumn($targetTable ?? $tableName, 'purchase_quotation_no')
+                    ? 'purchase_quotation_no'
+                    : $columnName);
+
+            $data = $query->select(['id', "$displayColumn as text"])->limit(50)->get();
+
+            return response()->json(['items' => $data]);
+        }
+
+        // Original source table fetch logic
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
+            return response()->json(['error' => 'Invalid table or column'], 400);
+        }
+
+
+        if (Schema::hasColumn($tableName, 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        if ($search) {
+            $query->where($columnName, 'like', '%' . $search . '%');
+        }
+
+        $data = $query->select(["$tableName.$idColumn", "$tableName.$columnName as text"])->limit(50)->get();
+
+        $results = [];
+        foreach ($data as $item) {
+            $results[] = [
+                'id' => $item->$idColumn,
+                'text' => $item->text
+            ];
+        }
+
+        if (count($results) === 0 && $enableTags == "true") {
+            $results[] = [
+                'id' => $search,
+                'text' => $search,
+                'newTag' => true
+            ];
+        }
+
+        return response()->json(['items' => $results]);
+    }
 }
