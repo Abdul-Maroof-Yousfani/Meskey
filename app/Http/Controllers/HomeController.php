@@ -637,7 +637,6 @@ class HomeController extends Controller
                 $data = $data->reject(function ($datum)  {
                     $purchaseOrderData = PurchaseOrderData::where("purchase_quotation_data_id", $datum->purchase_quotation_data_id)->get();
                     $totalOrdered = $purchaseOrderData->sum("qty");
-                    dd($totalOrdered);
                     $remainingQty = $datum->qty - $totalOrdered;
                     return $remainingQty <= 0;
                 });
