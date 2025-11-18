@@ -658,7 +658,6 @@ class HomeController extends Controller
 
             return response()->json(['items' => $data]);
         }
-        }
         // Original source table fetch logic
         if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
