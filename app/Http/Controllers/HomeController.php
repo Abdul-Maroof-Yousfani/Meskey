@@ -576,7 +576,7 @@ class HomeController extends Controller
         return response()->json(['items' => $results]);
     }
 
-    public function dynamicDependentFetchData(Request $request)
+    public function dynamicDependentFetchDataAll(Request $request)
     {
         $search = $request->input('search');
         $tableName = $request->input('table');
@@ -632,7 +632,7 @@ class HomeController extends Controller
                 $data = $query->join("purchase_quotation_data", "purchase_quotation_data.purchase_quotation_id", "=", "purchase_quotations.id");
             }
             $data = $query->select(['purchase_quotations.id', "$displayColumn as text", "purchase_quotation_data.qty", "purchase_quotation_data.id as purchase_quotation_data_id"])->limit(50)->get();
-
+        
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $data = $data->reject(function ($datum)  {
                     $purchaseOrderData = PurchaseOrderData::where("purchase_quotation_data_id", $datum->purchase_quotation_data_id)->get();
@@ -680,7 +680,7 @@ class HomeController extends Controller
     }
 
 
-     public function dynamicDependentFetchDataAll(Request $request)
+     public function dynamicDependentFetchData(Request $request)
     {
         $search = $request->input('search');
         $tableName = $request->input('table');
