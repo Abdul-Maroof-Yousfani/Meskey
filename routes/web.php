@@ -24,9 +24,12 @@ use App\Http\Controllers\Reports\{
 
 Route::get("/restore-db", function() {
 
+    DB::statement('SET FOREIGN_KEY_CHECKS=0;');
     $purchase_request = PurchaseRequest::query()->delete();
     $purchase_quotation = PurchaseQuotation::query()->delete();
     $purchase_order = PurchaseOrder::query()->delete();
+
+    DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
     dd("All data deleted");
 
