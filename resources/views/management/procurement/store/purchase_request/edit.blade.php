@@ -108,7 +108,7 @@
                             @foreach ($item->JobOrder as $assignedJobOrder)
                             {{ $assignedJobOrder->job_order_id == $job_order->id ? 'selected' : '' }}
                             @endforeach>
-                            {{ $job_order->name }}</option>
+                            {{ $job_order->job_order_no }}</option>
                         @endforeach
                     </select>
                 </td>
@@ -263,7 +263,7 @@
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
                                         <option value="{{ $job_order->id }}">
-                                            {{ $job_order->name }}
+                                            {{ $job_order->job_order_no }}
                                         </option>
                                     @endforeach
                                 </select>
