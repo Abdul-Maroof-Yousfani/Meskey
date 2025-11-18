@@ -100,6 +100,9 @@
     </thead>
 
     <tbody id="purchaseRequestBody">
+        @php
+            dd($purchaseQuotation->quotation_data);
+        @endphp
         @foreach ($purchaseQuotation->quotation_data ?? [] as $key => $data)
             <tr id="row_{{ $key }}">
                 <td style="width: 30%">
