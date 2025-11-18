@@ -628,6 +628,9 @@ class HomeController extends Controller
                     ? 'purchase_quotation_no'
                     : $columnName);
 
+            if($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
+                $data = $query->join("purchase_quotation_data", "purchase_quotation_data.purchase_quotation_id", "=", "purchase_quotations.id")
+            }
             $data = $query->select(['id', "$displayColumn as text"])->limit(50)->get();
 
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
