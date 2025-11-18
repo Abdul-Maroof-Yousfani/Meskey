@@ -40,7 +40,7 @@ class PurchaseRequestController extends Controller
         $processedData = [];
         foreach ($PurchaseRequests as $row) {
             $requestNo = $row->purchase_request?->purchase_request_no;
-            $created_by_id = $row->purchase_request->created_by;
+            $created_by_id = $row->purchase_request?->created_by;
             $itemId = $row->item->id ?? 'unknown';
 
             if (!isset($groupedData[$requestNo])) {
