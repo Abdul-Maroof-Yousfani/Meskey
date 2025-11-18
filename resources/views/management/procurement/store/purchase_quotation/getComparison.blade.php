@@ -142,7 +142,7 @@
                                     </div>
                                     @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected' && $requestGroup['request_status'] != 'partial approved')
                                         <div class="d-flex gap-2">
-                                            <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Edit', false, '100%')"
+                                            <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}', 'Quotation Edit', false, '100%')"
                                                 class="info p-1 text-center mr-2 position-relative" title="View Approved">
                                                 <i class="ft-edit font-medium-3"></i>
         
