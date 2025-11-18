@@ -740,6 +740,7 @@ class PurchaseQuotationController extends Controller
     public function edit($id)
     {
         $purchase_request_id = request()->purchase_request_id;
+        dd($purchase_request_id);
         $purchaseQuotation = PurchaseQuotation::with([
             'quotation_data',
             'quotation_data.category',
