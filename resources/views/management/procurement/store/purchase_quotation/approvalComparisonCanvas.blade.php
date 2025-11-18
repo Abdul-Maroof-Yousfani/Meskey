@@ -203,7 +203,7 @@
      </div>
  </div>
  <input type="hidden" id="rowCount" value="0">
-@if ($PurchaseQuotationData->isNotEmpty())
+@if ($PurchaseQuotationData->isNotEmpty() && request()->routeIs("store.purchase-quotation.comparison-approvals"))
     <div class="row">
         <div class="col-12">
             <x-approval-status :model="$data1" />
