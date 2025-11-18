@@ -237,7 +237,7 @@
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
                                         <option value="{{ $job_order->id }}">
-                                            {{ $job_order->name }}
+                                            {{ $job_order->job_order_no }}
                                         </option>
                                     @endforeach
                                 </select>
