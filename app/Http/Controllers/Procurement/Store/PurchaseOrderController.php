@@ -172,6 +172,7 @@ class PurchaseOrderController extends Controller
         $master = PurchaseRequest::find($requestId);
         $quotation = null;
         $dataItems = collect();
+        dd("test");
 
         if ($quotationNo) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
