@@ -180,7 +180,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_order_data', 'purchase_request', 'purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();

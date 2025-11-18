@@ -69,6 +69,10 @@ class PurchaseQuotationData extends Model
     {
         return $this->belongsTo(PurchaseQuotation::class, 'purchase_quotation_id', 'id');
     }
+
+    public function purchase_order_data() {
+        return $this->hasMany(PurchaseOrderData::class, "purchase_quotation_data_id");
+    }
     
     public function purchase_request() {
         return $this->belongsTo(PurchaseRequestData::class, "purchase_request_data_id", 'id');
