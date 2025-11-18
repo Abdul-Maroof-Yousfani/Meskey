@@ -106,7 +106,7 @@
                                     @foreach ($item->JobOrder as $assignedJobOrder)
                                         {{ $assignedJobOrder->job_order_id == $job_order->id ? 'selected' : '' }}
                                     @endforeach>
-                                    {{ $job_order->name }}
+                                    {{ $job_order->job_order_no }}
                                 </option>
                             @endforeach
                         </select>
