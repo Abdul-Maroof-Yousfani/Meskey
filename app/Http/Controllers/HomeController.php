@@ -626,7 +626,7 @@ class HomeController extends Controller
                 ? 'name'
                 : (Schema::hasColumn($targetTable ?? $tableName, 'purchase_quotation_no')
                     ? 'purchase_quotation_no'
-                    : $columnName);
+                    : "{$tableName}.{$columnName}");
 
             if($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
                 $data = $query->join("purchase_quotation_data", "purchase_quotation_data.purchase_quotation_id", "=", "purchase_quotations.id");
