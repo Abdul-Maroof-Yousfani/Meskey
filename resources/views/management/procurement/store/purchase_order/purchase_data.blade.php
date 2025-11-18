@@ -25,7 +25,7 @@
     $remainingQty = $data->qty - $totalOrdered;
     $isQuotationAvailable = ($data->rate) > 0 ? true : false;
 @endphp
-@if($remainingQty <= 0) @continue;
+@if($remainingQty <= 0) @continue @endif;
 
    
 
