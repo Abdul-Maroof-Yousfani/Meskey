@@ -35,7 +35,7 @@ class QcController extends Controller
         })
             ->latest()
             ->paginate(request("per_page", 25));
-
+        
 
         $groupedData = [];
         $processedData = [];
@@ -81,7 +81,7 @@ class QcController extends Controller
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
                     'qc_status' => $row->qc?->is_qc_approved,
-                    'canApprove' => $row->qc?->canApprove(),
+                    'canUserApprove' => $row->qc?->canUserApprove(),
                     'suppliers' => []
                 ];
             }
@@ -127,7 +127,7 @@ class QcController extends Controller
                             'item_data' => $itemGroup['item_data'],
                             'suppliers' => $itemSuppliers,
                             'qc_status' => $itemGroup["qc_status"],
-                            'canApprove' => $row->qc?->canApprove(),
+                            'canUserApprove' => $itemGroup["canUserApprove"],
                             'item_rowspan' => $itemRowspan
                         ];
                     }

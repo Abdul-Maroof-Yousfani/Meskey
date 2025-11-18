@@ -18,7 +18,7 @@ class QC extends Model
 
     public function scopeFilter($query)
     {
-        if (!$this->canApprove()) {
+        if ($this->canUserApprove()) {
             return $query->where('is_qc_approved', 'pending');
         }
 

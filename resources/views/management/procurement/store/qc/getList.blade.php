@@ -130,11 +130,13 @@
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
                                         <i class="ft-check font-medium-3"></i>
                                     </a>
+                                    @if($itemGroup["canUserApprove"])
                                         <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
                                             class="danger p-1 text-center mr-2 position-relative ">
 
                                             <i class="ft-x font-medium-3"></i>
                                         </a>
+                                    @endif
                                 </div>
                             </td>
                             @if ($isFirstRequestRow)

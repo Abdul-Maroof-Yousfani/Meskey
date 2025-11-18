@@ -135,6 +135,30 @@ trait HasApproval
             ->pluck('current_count', 'role_id')
             ->toArray();
     }
+    public function canUserApprove() {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+
+        $module = $this->getApprovalModule();
+        if (!$module) {
+            return false;
+        }
+        if (isset($this->am_change_made) && $this->am_change_made == 0) {
+            return false;
+        }
+        $userRoleIds = $user->roles->pluck('id')->toArray();
+        $requiredRoles = $module->roles->pluck('role_id')->toArray();
+
+
+        if (empty(array_intersect($userRoleIds, $requiredRoles
+        ))) {
+            return false;
+        }
+
+        return true;
+    }
 
     public function canApprove()
     {
@@ -152,13 +176,18 @@ trait HasApproval
         }
         $userRoleIds = $user->roles->pluck('id')->toArray();
         $requiredRoles = $module->roles->pluck('role_id')->toArray();
-        if (empty(array_intersect($userRoleIds, $requiredRoles))) {
+
+
+        if (empty(array_intersect($userRoleIds, $requiredRoles
+        ))) {
             return false;
         }
-
+        
         if ($this->getApprovalStatus() !== 'pending') {
             return false;
         }
+
+        
 
         $currentCycle = $this->getCurrentApprovalCycle();
 
@@ -214,6 +243,7 @@ trait HasApproval
         if (!$this->canApprove()) {
             return false;
         }
+
 
         $module = $this->getApprovalModule();
         $currentCycle = $this->getCurrentApprovalCycle();
