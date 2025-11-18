@@ -176,7 +176,7 @@ class PurchaseOrderController extends Controller
         if ($quotationNo) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('id', $quotationNo)
-                ->whereIn('am_approval_status', ['approved', 'partial approved'])
+                // ->whereIn('am_approval_status', ['approved', 'partial approved'])
                 ->first();
 
             if ($quotation) {
