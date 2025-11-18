@@ -13,6 +13,9 @@
 
 @if (isset($data->purchase_order_data))
     @php
+        dd($data->purchase_order_data);
+    @endphp
+    @php
         $totalOrdered = $data->purchase_order_data->sum('qty');
     @endphp
 @else
