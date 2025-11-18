@@ -746,14 +746,19 @@ class PurchaseQuotationController extends Controller
             'quotation_data.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
-        
- $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-            ->pluck('id');
-            dd($PurchaseQuotationIds);
+   
+         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
+            ->where('am_approval_status', 'pending')->pluck('id');
 
-         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
+            ->pluck('id');
+
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->where('am_approval_status', operator: 'approved')
+            ->where('am_approval_status', 'pending')
+            //     ->whereHas('purchase_quotation', function ($query) {
+            //     $query->whereNotIn('am_approval_status', ['partial_approved']);
+            // })
             ->get();
 
         $purchaseRequest = $purchaseQuotation->purchase_request;
