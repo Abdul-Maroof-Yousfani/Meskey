@@ -68,7 +68,12 @@ class InnersamplingController extends Controller
             $query->where('is_re_sampling', 'no');
         }
 
-        $samplingRequests = $query->get();
+        $samplingRequests = $query
+        ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->whereHas('arrivalTicket', function ($sq) {
+                $sq->where('location_id', auth()->user()->company_location_id);
+            });
+        })->get();
 
 
         $products = Product::all();
