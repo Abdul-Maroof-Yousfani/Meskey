@@ -45,7 +45,6 @@
 
                         <tr>
                             @if ($previousRequestNo !== $currentRequestNo)
-                            
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
@@ -143,12 +142,16 @@
 
                                         </a>
                                     </div>
-                                    @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected' && $requestGroup['request_status'] != 'partial approved')
+                                    @if (
+                                        $requestGroup['request_status'] != 'approved' &&
+                                            $requestGroup['request_status'] != 'rejected' &&
+                                            $requestGroup['request_status'] != 'partial approved')
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
-                                                class="info p-1 text-center mr-2 position-relative" title="View Approved">
+                                                class="info p-1 text-center mr-2 position-relative"
+                                                title="View Approved">
                                                 <i class="ft-edit font-medium-3"></i>
-        
+
                                             </a>
                                         </div>
                                     @endif
@@ -166,15 +169,15 @@
                                     $previousRequestNo = $currentRequestNo;
                                 @endphp
                             @endif
-                            
+
                         </tr>
-                        @endforeach
-                        @php $isFirstRequestRow = false; @endphp
                         @php
                             $requestGroup['quotaion_rowspan'] = 0;
-                
+
                         @endphp
-                        @endforeach
+                    @endforeach
+                    @php $isFirstRequestRow = false; @endphp
+                @endforeach
             @endforeach
         @else
             <tr class="ant-table-placeholder">
