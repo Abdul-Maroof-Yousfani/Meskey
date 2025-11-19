@@ -264,10 +264,10 @@ class ArrivalApproveController extends Controller
                     ],
                     'note' => 'nullable|string',
 
-                    // ✅ Conditionally required fields
-                    'filling_bags_no' => 'required_if:bag_type_id,15|integer',
-                    'bag_condition_id' => 'required_if:bag_type_id,15|exists:bag_conditions,id',
-                    'bag_packing_id' => 'required_if:bag_type_id,15|exists:bag_packings,id',
+                    // // ✅ Conditionally required fields
+                    // 'filling_bags_no' => 'required_if:bag_type_id,15|integer',
+                    // 'bag_condition_id' => 'required_if:bag_type_id,15|exists:bag_conditions,id',
+                    // 'bag_packing_id' => 'required_if:bag_type_id,15|exists:bag_packings,id',
                 ],
                 [
                     // ✅ Custom error messages (optional)
