@@ -31,7 +31,7 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
+        $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval', 'JobOrder')
             ->whereStatus(true)
             ->latest()
             ->paginate(request('per_page', 25));
