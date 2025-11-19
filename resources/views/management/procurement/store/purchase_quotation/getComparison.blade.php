@@ -48,7 +48,7 @@
 
                         <tr>
                             @if ($previousRequestNo !== $currentRequestNo)
-                                <td rowspan="{{ $quotation_rowspan }}"
+                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['purchase_request_no'] }}
