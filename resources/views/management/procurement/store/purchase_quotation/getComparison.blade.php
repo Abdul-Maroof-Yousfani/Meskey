@@ -24,6 +24,7 @@
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
+                    $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
@@ -51,7 +52,7 @@
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
-                                        {{ $requestGroup['quotaion_rowspan'] }}
+                                        {{ $totalRequestRowspan }}
                                         #{{ $requestGroup['purchase_request_no'] }}
                                     </p>
                                 </td>
