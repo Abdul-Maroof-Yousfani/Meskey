@@ -332,7 +332,7 @@ class PurchaseQuotationController extends Controller
                     $itemRowspan = count($itemGroup['suppliers']);
                     $quotaionCount = count(value: $requestGroup['quotations']);
                     $requestRowspan += $itemRowspan;
-                    $quotaionRowspan += ($quotaionCount + $requestRowspan);
+                    $quotaionRowspan += ($quotaionCount);
 
                     $itemSuppliers = [];
                     $isFirstSupplier = true;
