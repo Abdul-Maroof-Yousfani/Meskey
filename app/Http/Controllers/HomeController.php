@@ -576,7 +576,7 @@ class HomeController extends Controller
         return response()->json(['items' => $results]);
     }
 
-    public function dynamicDependentFetchData(Request $request)
+    public function dynamicDependentFetchDataAll(Request $request)
     {
         $search = $request->input('search');
         $tableName = $request->input('table');
@@ -686,7 +686,7 @@ class HomeController extends Controller
     }
 
 
-     public function dynamicDependentFetchDataAll(Request $request)
+     public function dynamicDependentFetchData(Request $request)
     {
         $search = $request->input('search');
         $tableName = $request->input('table');

@@ -26,7 +26,6 @@ use App\Http\Controllers\Reports\{
     TransactionController
 };
 
-
 Route::get("/restore-db", function() {
 
     DB::statement('SET FOREIGN_KEY_CHECKS=0;');
