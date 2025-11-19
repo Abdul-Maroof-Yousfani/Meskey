@@ -26,15 +26,20 @@
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row justify-content-nd text">
-                                            <div class="col-md-2">
-                                                <div class="form-group mb-0">
-                                                    <label>Location:</label>
-                                                    <select name="company_location_id" id="company_location"
-                                                        class="form-control select2">
-                                                        <option value="">Location</option>
-                                                    </select>
-                                                </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group mb-0">
+                                                <label>Location:</label>
+                                                <select name="company_location_id[]" id="cmpany_location" {{ count($locations) == 1 ? 'disabled' : 'multiple' }} class="form-control selectWithoutAjax" >
+                                                    <option value="">Location</option>
+                                                    @foreach ($locations as $location)
+                                                        <option value="{{ $location->id }}"
+                                                            {{ (is_array(request('company_location_id')) && in_array($location->id, request('company_location_id'))) || count($locations) == 1 ? 'selected' : '' }}>
+                                                            {{ $location->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                             </div>
+                                        </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Master\Account\Account;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
@@ -18,8 +20,12 @@ class ArrivalReportController extends Controller
 
         $commodities = Product::all();
         $millers = Miller::all();
+        $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->where('id', auth()->user()->company_location_id);
+        })->get();
 
-        return view('management.reports.arrival.arrival-history.index', compact('commodities', 'millers'));
+
+        return view('management.reports.arrival.arrival-history.index', compact('commodities', 'millers', 'locations'));
     }
 
     public function getArrivalReport(Request $request)
@@ -32,10 +38,10 @@ class ArrivalReportController extends Controller
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
             //->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
-           // ->where(function ($query) {
-              //  $query->where('arrival_tickets.freight_status', 'completed')
-           //         ->orWhere('arrival_tickets.first_qc_status', 'rejected');
-         //   })
+            // ->where(function ($query) {
+            //  $query->where('arrival_tickets.freight_status', 'completed')
+            //         ->orWhere('arrival_tickets.first_qc_status', 'rejected');
+            //   })
             ->when($request->filled('grn_no'), function ($q) use ($request) {
                 return $q->where('grn_numbers.unique_no', 'like', '%' . $request->grn_no . '%');
             })
@@ -53,7 +59,7 @@ class ArrivalReportController extends Controller
                     $subQuery->whereHas('qcProduct', function ($query) use ($request) {
                         $query->whereIn('id', $request->commodity_id);
                     });
-                        
+
                 });
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {
@@ -65,7 +71,7 @@ class ArrivalReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->where('arrival_tickets.location_id', $request->company_location_id);
+                return $q->whereIn('arrival_tickets.location_id', $request->company_location_id);
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
@@ -76,6 +82,9 @@ class ArrivalReportController extends Controller
                 $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
                 return $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
                     ->whereDate('arrival_tickets.created_at', '<=', $endDate);
+            })
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('arrival_tickets.location_id', auth()->user()->company_location_id);
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
