@@ -42,11 +42,13 @@
                                         'am_approval_status'},
                             );
                             $approvalStatus = ucwords($requestGroup['request_status']);
+
+                            $quotation_rowspan = 0;
                         @endphp
 
                         <tr>
                             @if ($previousRequestNo !== $currentRequestNo)
-                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
+                                <td rowspan="{{ $quotation_rowspan }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['purchase_request_no'] }}
@@ -62,6 +64,9 @@
 
                             {{-- ✅ Other columns --}}
                             @if ($isFirstRequestRow)
+                                @php
+                                    $quotation_rowspan += $requestGroup['request_rowspan'];
+                                @endphp
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
