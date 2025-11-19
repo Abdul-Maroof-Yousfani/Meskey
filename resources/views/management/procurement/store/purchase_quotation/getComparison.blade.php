@@ -31,9 +31,7 @@
                     $requestGroup['quotaion_rowspan'] = 0;
                 @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
-                    @php
-                        dd($requestGroup);
-                    @endphp
+                  
                     @php $isFirstItemRow = true; @endphp
                       
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
@@ -53,6 +51,7 @@
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
+                                        {{ $requestGroup['quotaion_rowspan'] }}
                                         #{{ $requestGroup['purchase_request_no'] }}
                                     </p>
                                 </td>
@@ -72,6 +71,7 @@
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
+                                        {{ $requestGroup['request_rowspan'] }}
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
