@@ -129,6 +129,7 @@ class PurchaseRequestController extends Controller
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
             ]);
+             $purchase_request_data_ids = [];
             foreach ($request->item_id as $index => $itemId) {
                 $printingSamplePath = null;
 
@@ -152,7 +153,6 @@ class PurchaseRequestController extends Controller
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
-
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
                         PurchaseAgainstJobOrder::create([
@@ -163,7 +163,7 @@ class PurchaseRequestController extends Controller
                     }
                 }
             }
-
+            
             DB::commit();
 
             return response()->json([
@@ -242,7 +242,7 @@ class PurchaseRequestController extends Controller
             foreach ($request->item_id as $index => $itemId) {
                 if (!empty($request->item_row_id[$index])) {
                     $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
-                    $printingSamplePath = null;
+                    $printingSamplePath = $requestData->printing_sample;
                     
                     if ($requestData) {
                         if ($request->hasFile('printing_sample.' . $index)) {

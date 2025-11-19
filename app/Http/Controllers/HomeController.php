@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Procurement\Store\PurchaseOrderData;
-use Illuminate\Http\Request;
-use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSamplingRequest;
+use App\Models\Arrival\ArrivalTicket;
+use App\Models\Procurement\Store\PurchaseOrderData;
+use App\Services\ArrivalDashboardService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use App\Services\ArrivalDashboardService;
+
 class HomeController extends Controller
 {
     public function __construct()
@@ -36,13 +37,12 @@ class HomeController extends Controller
             ->whereBetween('created_at', $dateRange)
             ->count();
 
-
         $initialSamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
 
-            //Superadmin
+            // Superadmin
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereHas('arrivalTicket', function ($sq) {
                     $sq->where('location_id', auth()->user()->company_location_id);
@@ -51,8 +51,6 @@ class HomeController extends Controller
             ->where('sampling_type', 'initial')
             ->where('is_done', 'no')
             ->count();
-
-
 
         $initialSamplingDone = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
             $q->where('company_id', $companyId)
@@ -74,7 +72,7 @@ class HomeController extends Controller
 
         $locationTransferPending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'pending')
-            //superadmin
+            // superadmin
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('location_id', auth()->user()->company_location_id);
             })
@@ -107,7 +105,7 @@ class HomeController extends Controller
         $firstWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'transfered')
             ->where('first_weighbridge_status', 'pending')
-            //superadmin
+            // superadmin
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('location_id', auth()->user()->company_location_id);
             })
@@ -151,7 +149,7 @@ class HomeController extends Controller
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
             })
-            //superadmin
+            // superadmin
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('location_id', auth()->user()->company_location_id);
             })
@@ -161,7 +159,7 @@ class HomeController extends Controller
         $secondWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
             ->where('second_weighbridge_status', 'pending')
-            //superadmin
+            // superadmin
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('location_id', auth()->user()->company_location_id);
             })
@@ -211,7 +209,6 @@ class HomeController extends Controller
 
     public function getListData(Request $request)
     {
-
 
         $authUser = auth()->user();
         $type = $request->get('type');
@@ -268,13 +265,12 @@ class HomeController extends Controller
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'no')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
-                    //Superadmin
+                    // Superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->whereHas('arrivalTicket', function ($sq) {
                             $sq->where('location_id', auth()->user()->company_location_id);
                         });
                     })
-
 
                     ->latest()
                     ->paginate(1000);
@@ -311,7 +307,7 @@ class HomeController extends Controller
                     ->where('is_done', 'yes')
                     ->where('approved_status', 'pending')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
-                    //Superadmin
+                    // Superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->whereHas('arrivalTicket', function ($sq) {
                             $sq->where('location_id', auth()->user()->company_location_id);
@@ -341,7 +337,7 @@ class HomeController extends Controller
                     ->where('location_transfer_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -355,7 +351,7 @@ class HomeController extends Controller
                     ->where('first_qc_status', 'rejected')
                     ->where('bilty_return_confirmation', 0)
                     ->whereBetween('created_at', $dateRange)
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -370,7 +366,7 @@ class HomeController extends Controller
                     ->where('location_transfer_status', 'transfered')
                     ->where('first_weighbridge_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -434,7 +430,7 @@ class HomeController extends Controller
                         $q->where('sampling_type', 'inner')
                             ->where('approved_status', 'pending');
                     })
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -449,7 +445,7 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
                     ->where('second_weighbridge_status', 'pending')
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -464,7 +460,7 @@ class HomeController extends Controller
                     ->where('second_weighbridge_status', 'completed')
                     ->where('freight_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -480,7 +476,7 @@ class HomeController extends Controller
                     ->where('freight_status', 'pending')
                     ->where('decision_making', 0)
                     ->whereBetween('created_at', $dateRange)
-                    //superadmin
+                    // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
                     })
@@ -514,7 +510,7 @@ class HomeController extends Controller
                 $request->to_date,
                 $request->company_id
             );
-           // $data = $this->getArrivalDashboardData($fromDate, $toDate, $request->company_id);
+            // $data = $this->getArrivalDashboardData($fromDate, $toDate, $request->company_id);
         }
 
         return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate'));
@@ -524,6 +520,7 @@ class HomeController extends Controller
     {
         $countryId = $request->input('state_id');
         $cities = Cities::where('state_id', $countryId)->get();
+
         return response()->json($cities);
     }
 
@@ -531,8 +528,10 @@ class HomeController extends Controller
     {
         $countryId = $request->input('country_id');
         $cities = States::where('country_id', $countryId)->get();
+
         return response()->json($cities);
     }
+
     public function dynamicFetchData(Request $request)
     {
         $search = $request->input('search');
@@ -541,7 +540,7 @@ class HomeController extends Controller
         $idColumn = $request->input('idColumn', 'id');
         $enableTags = $request->input('enableTags', false);
 
-        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
+        if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, $columnName) || ! Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
 
@@ -552,7 +551,7 @@ class HomeController extends Controller
         }
 
         if ($search) {
-            $query->where($columnName, 'like', '%' . $search . '%');
+            $query->where($columnName, 'like', '%'.$search.'%');
         }
 
         $data = $query->limit(50)->get();
@@ -561,15 +560,15 @@ class HomeController extends Controller
         foreach ($data as $item) {
             $results[] = [
                 'id' => $item->$idColumn,
-                'text' => $item->$columnName
+                'text' => $item->$columnName,
             ];
         }
 
-        if (count($results) === 0 && $enableTags == "true") {
+        if (count($results) === 0 && $enableTags == 'true') {
             $results[] = [
                 'id' => $search,
                 'text' => $search,
-                'newTag' => true
+                'newTag' => true,
             ];
         }
 
@@ -593,7 +592,7 @@ class HomeController extends Controller
             $sourceId = $request->input('sourceId');
             $purchaseRequestId = $request->input('purchase_request_id');
 
-            if (!$targetTable || !$targetColumn) {
+            if (! $targetTable || ! $targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
@@ -607,20 +606,18 @@ class HomeController extends Controller
                 $query->where("{$targetTable}.purchase_request_id", $purchaseRequestId);
             }
 
-       
-
             if ($search) {
-                $query->where("{$targetTable}.name", 'like', '%' . $search . '%');
+                $query->where("{$targetTable}.name", 'like', '%'.$search.'%');
             }
 
-           if ($sourceId) {
-    $query->where(function ($q) use ($targetTable, $targetColumn, $sourceId) {
-        $q->where("{$targetTable}.{$targetColumn}", $sourceId)
-            ->orWhereRaw("FIND_IN_SET(?, {$targetTable}.{$targetColumn}) > 0", [$sourceId])
-            ->orWhereJsonContains("{$targetTable}.{$targetColumn}", $sourceId)
-            ->orWhereJsonContains("{$targetTable}.{$targetColumn}", (string) $sourceId);
-    });
-}
+            if ($sourceId) {
+                $query->where(function ($q) use ($targetTable, $targetColumn, $sourceId) {
+                    $q->where("{$targetTable}.{$targetColumn}", $sourceId)
+                        ->orWhereRaw("FIND_IN_SET(?, {$targetTable}.{$targetColumn}) > 0", [$sourceId])
+                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", $sourceId)
+                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", (string) $sourceId);
+                });
+            }
 
             $displayColumn = Schema::hasColumn($targetTable ?? $tableName, 'name')
                 ? 'name'
@@ -628,16 +625,17 @@ class HomeController extends Controller
                     ? 'purchase_quotation_no'
                     : "{$columnName}");
 
-            if($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
-                $data = $query->join("purchase_quotation_data", "purchase_quotation_data.purchase_quotation_id", "=", "purchase_quotations.id");
-            }
-            $data = $query->select(['purchase_quotations.id', "$displayColumn as text", "purchase_quotation_data.qty", "purchase_quotation_data.id as purchase_quotation_data_id"])->limit(50)->get();
-        
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
-                $data = $data->reject(function ($datum)  {
-                    $purchaseOrderData = PurchaseOrderData::where("purchase_quotation_data_id", $datum->purchase_quotation_data_id)->get();
-                    $totalOrdered = $purchaseOrderData->sum("qty");
+                $data = $query->join('purchase_quotation_data', 'purchase_quotation_data.purchase_quotation_id', '=', 'purchase_quotations.id');
+            }
+            $data = $query->select(['purchase_quotations.id', "$displayColumn as text", 'purchase_quotation_data.qty', 'purchase_quotation_data.id as purchase_quotation_data_id'])->limit(50)->get();
+
+            if ($purchaseRequestId && Schema::hasColumn($targetTable, 'purchase_request_id')) {
+                $data = $data->reject(function ($datum) {
+                    $purchaseOrderData = PurchaseOrderData::where('purchase_quotation_data_id', $datum->purchase_quotation_data_id)->get();
+                    $totalOrdered = $purchaseOrderData->sum('qty');
                     $remainingQty = $datum->qty - $totalOrdered;
+
                     return $remainingQty <= 0;
                 });
             }
@@ -648,20 +646,20 @@ class HomeController extends Controller
                     'text' => $group->first()->text,
                 ];
             })->values();
+
             return response()->json(['items' => $data]);
         }
         // Original source table fetch logic
-        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
+        if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, $columnName) || ! Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
-
 
         if (Schema::hasColumn($tableName, 'deleted_at')) {
             $query->whereNull('deleted_at');
         }
 
         if ($search) {
-            $query->where($columnName, 'like', '%' . $search . '%');
+            $query->where($columnName, 'like', '%'.$search.'%');
         }
 
         $data = $query->select(["$tableName.$idColumn", "$tableName.$columnName as text"])->limit(50)->get();
@@ -670,23 +668,22 @@ class HomeController extends Controller
         foreach ($data as $item) {
             $results[] = [
                 'id' => $item->$idColumn,
-                'text' => $item->text
+                'text' => $item->text,
             ];
         }
 
-        if (count($results) === 0 && $enableTags == "true") {
+        if (count($results) === 0 && $enableTags == 'true') {
             $results[] = [
                 'id' => $search,
                 'text' => $search,
-                'newTag' => true
+                'newTag' => true,
             ];
         }
 
         return response()->json(['items' => $results]);
     }
 
-
-     public function dynamicDependentFetchData(Request $request)
+    public function dynamicDependentFetchData(Request $request)
     {
         $search = $request->input('search');
         $tableName = $request->input('table');
@@ -703,7 +700,7 @@ class HomeController extends Controller
             $sourceId = $request->input('sourceId');
             $purchaseRequestId = $request->input('purchase_request_id');
 
-            if (!$targetTable || !$targetColumn) {
+            if (! $targetTable || ! $targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
@@ -718,7 +715,7 @@ class HomeController extends Controller
             }
 
             if ($search) {
-                $query->where('name', 'like', '%' . $search . '%');
+                $query->where('name', 'like', '%'.$search.'%');
             }
 
             if ($sourceId) {
@@ -742,17 +739,16 @@ class HomeController extends Controller
         }
 
         // Original source table fetch logic
-        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
+        if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, $columnName) || ! Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
-
 
         if (Schema::hasColumn($tableName, 'deleted_at')) {
             $query->whereNull('deleted_at');
         }
 
         if ($search) {
-            $query->where($columnName, 'like', '%' . $search . '%');
+            $query->where($columnName, 'like', '%'.$search.'%');
         }
 
         $data = $query->select(["$tableName.$idColumn", "$tableName.$columnName as text"])->limit(50)->get();
@@ -761,15 +757,15 @@ class HomeController extends Controller
         foreach ($data as $item) {
             $results[] = [
                 'id' => $item->$idColumn,
-                'text' => $item->text
+                'text' => $item->text,
             ];
         }
 
-        if (count($results) === 0 && $enableTags == "true") {
+        if (count($results) === 0 && $enableTags == 'true') {
             $results[] = [
                 'id' => $search,
                 'text' => $search,
-                'newTag' => true
+                'newTag' => true,
             ];
         }
 

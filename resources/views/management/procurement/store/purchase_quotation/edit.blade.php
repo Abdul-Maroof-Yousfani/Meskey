@@ -1,3 +1,10 @@
+<style>
+    html,
+    body {
+        overflow-x: hidden;
+    }
+</style>
+
 <form action="{{ route('store.purchase-quotation.update', optional($purchaseQuotation)->id) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -46,7 +53,7 @@
                 </select>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
@@ -54,7 +61,7 @@
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
-                        {{ $purchaseQuotation->supplier_id == $supplier->id ? 'selected' : '' }}>
+                            {{ $purchaseQuotation->supplier_id == $supplier->id ? 'selected' : '' }}>
                             {{ $supplier->name }}
                         </option>
                     @endforeach
@@ -63,7 +70,7 @@
                 </select>
             </div>
         </div>
-        
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description (Optional):</label>
@@ -72,156 +79,173 @@
         </div>
     </div>
     <div class="row form-mar">
-    {{-- <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div> --}}
         <div class="col-md-12">
-            <table class="table table-bordered" id="purchaseRequestTable">
-    <thead>
-        <tr>
-            <th class="col-sm-4">PQ No.</th>
-            <th class="col-sm-3">Supplier</th>
-            <th class="col-sm-3">Item</th>
-            <th class="col-sm-3">Item UOM</th>
-            <th class="col-sm-3">Min Weight</th>
-            <th class="col-sm-3">Brands</th>
-            <th class="col-sm-3">Color</th>
-            <th class="col-sm-3">Cons./sq. in.</th>
-            <th class="col-sm-3">Size</th>
-            <th class="col-sm-3">Stitching</th>
-            <th>Qty</th>
-            <th>Rate</th>
-            <th>Total Amount</th>
-            <th>Remarks</th>
-            <th>Action</th>
-        </tr>
-    </thead>
 
-    <tbody id="purchaseRequestBody">
-     
-        @foreach ($PurchaseQuotationData ?? [] as $key => $data)
-            <tr id="row_{{ $key }}">
-                <td style="width: 30%">
-                    <select style="width: 100px" id="category_id_{{ $key }}" disabled
-                        onchange="filter_items(this.value,{{ $key }})"
-                        class="form-control item-select select2" data-index="{{ $key }}">
-                        <option value="">Select Category</option>
-                        @foreach ($categories ?? [] as $category)
-                            <option {{ $category->id == $data->category_id ? 'selected' : '' }}
-                                value="{{ $category->id }}">{{ $category->name }}</option>
+            <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
+                <table class="table table-bordered" id="purchaseRequestTable">
+                    <thead>
+                        <tr>
+                            <th class="col-sm-4">PQ No.</th>
+                            <th class="col-sm-3">Supplier</th>
+                            <th class="col-sm-3">Item</th>
+                            <th class="col-sm-3">Item UOM</th>
+                            <th class="col-sm-3">Min Weight</th>
+                            <th class="col-sm-3">Brands</th>
+                            <th class="col-sm-3">Color</th>
+                            <th class="col-sm-3">Cons./sq. in.</th>
+                            <th class="col-sm-3">Size</th>
+                            <th class="col-sm-3">Stitching</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Total Amount</th>
+                            <th>Remarks</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="purchaseRequestBody">
+
+                        @foreach ($PurchaseQuotationData ?? [] as $key => $data)
+                            <tr id="row_{{ $key }}">
+                                <td style="width: 30%">
+                                    <select style="width: 100px" id="category_id_{{ $key }}" disabled
+                                        onchange="filter_items(this.value,{{ $key }})"
+                                        class="form-control item-select select2" data-index="{{ $key }}">
+                                        <option value="">Select Category</option>
+                                        @foreach ($categories ?? [] as $category)
+                                            <option {{ $category->id == $data->category_id ? 'selected' : '' }}
+                                                value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
+                                    <input type="hidden" name="data_id[]"
+                                        value="{{ $data->purchase_request?->id ?? null }}">
+                                    <input type="hidden" name="purchase_request_data_id[]"
+                                        value="{{ $data->purchase_request_data_id }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <select style="width: 100px" id="supplier_id_{{ $key }}"
+                                        name="supplier_id[]" disabled class="form-control item-select select2"
+                                        data-index="{{ $key }}">
+                                        <option value="">Select Vendor</option>
+                                        @foreach (get_supplier() as $supplier)
+                                            <option value="{{ $supplier->id }}" @selected($data->supplier_id == $supplier->id)>
+                                                {{ $supplier->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
+
+                                <td style="width: 30%">
+                                    <select style="width: 100px;" id="item_id_{{ $key }}"
+                                        onchange="get_uom({{ $key }})" disabled
+                                        class="form-control item-select select2" data-index="{{ $key }}">
+                                        @foreach (get_product_by_category($data->category_id) as $item)
+                                            <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
+                                                value="{{ $item->id }}"
+                                                {{ $item->id == $data->item_id ? 'selected' : '' }}>
+                                                {{ $item->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
+                                        id="uom_{{ $key }}" class="form-control" disabled readonly>
+                                    <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="number" disabled
+                                        value="{{ $data->purchase_request?->min_weight ?? null }}"
+                                        id="min_weight_{{ $key }}" class="form-control" step="0.01"
+                                        min="0">
+                                    <input type="hidden" name="min_weight[]"
+                                        value="{{ $data->purchase_request?->min_weight ?? null }}">
+                                </td>
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="text" disabled
+                                        value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
+                                        id="color_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="brand[]"
+                                        value="{{ $data->purchase_request?->brand_id ?? null }}">
+                                </td>
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="text" disabled
+                                        value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
+                                        id="color_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="color[]"
+                                        value="{{ $data->purchase_request?->color ?? null }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="number" disabled
+                                        value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}"
+                                        id="construction_{{ $key }}" class="form-control" step="0.01"
+                                        min="0">
+                                    <input type="hidden" name="construction_per_square_inch[]"
+                                        value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="text" disabled
+                                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
+                                        id="size_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="size[]"
+                                        value="{{ $data->purchase_request?->size ?? null }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="text" disabled
+                                        value="{{ $data->purchase_request?->stitching ?? null }}"
+                                        id="stitching_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="stitch[]"
+                                        value="{{ $data->purchase_request?->stitching ?? null }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" name="qty[]" type="number"
+                                        value="{{ $data->qty }}" id="qty_{{ $key }}"
+                                        class="form-control" step="0.01" min="0"
+                                        max="{{ $data->qty }}">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="number" name="rate[]"
+                                        value="{{ $data->rate }}" id="rate_{{ $key }}"
+                                        class="form-control" step="0.01" min="0">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
+                                        id="total_{{ $key }}" class="form-control" step="0.01"
+                                        min="0" name="total[]">
+                                </td>
+
+                                <td style="width: 30%">
+                                    <input style="width: 100px" type="text" value="{{ $data->remarks }}"
+                                        id="remark_{{ $key }}" class="form-control" readonly>
+                                    <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
+                                </td>
+
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                        onclick="remove({{ $key }})"
+                                        data-id="{{ $key }}">Remove</button>
+                                </td>
+                            </tr>
                         @endforeach
-                    </select>
-                    <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
-                    <input type="hidden" name="data_id[]" value="{{ $data->purchase_request?->id ?? null }}">
-                    <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
-                </td>
-
-                <td style="width: 30%">
-                    <select style="width: 100px" id="supplier_id_{{ $key }}" name="supplier_id[]" disabled
-                        class="form-control item-select select2" data-index="{{ $key }}">
-                        <option value="">Select Vendor</option>
-                        @foreach (get_supplier() as $supplier)
-                            <option value="{{ $supplier->id }}" @selected($data->supplier_id == $supplier->id)>
-                                {{ $supplier->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </td>
-
-                <td style="width: 30%">
-                    <select style="width: 100px;" id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
-                        disabled class="form-control item-select select2" data-index="{{ $key }}">
-                        @foreach (get_product_by_category($data->category_id) as $item)
-                            <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
-                                value="{{ $item->id }}"
-                                {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                                {{ $item->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
-                        id="uom_{{ $key }}" class="form-control" disabled readonly>
-                    <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="number" disabled
-                        value="{{ $data->purchase_request?->min_weight ?? null }}"
-                        id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
-                    <input type="hidden" name="min_weight[]" value="{{ $data->purchase_request?->min_weight ?? null }}">
-                </td>
-                <td style="width: 30%">
-                    <input style="width: 100px" type="text" disabled
-                        value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
-                        id="color_{{ $key }}" class="form-control">
-                    <input type="hidden" name="brand[]" value="{{ $data->purchase_request?->brand_id ?? null }}">
-                </td>
-                <td style="width: 30%">
-                    <input style="width: 100px" type="text" disabled
-                        value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
-                        id="color_{{ $key }}" class="form-control">
-                    <input type="hidden" name="color[]" value="{{ $data->purchase_request?->color ?? null }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="number" disabled
-                        value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}"
-                        id="construction_{{ $key }}" class="form-control" step="0.01" min="0">
-                    <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="text" disabled
-                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                        id="size_{{ $key }}" class="form-control">
-                    <input type="hidden" name="size[]" value="{{ $data->purchase_request?->size ?? null }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="text" disabled
-                        value="{{ $data->purchase_request?->stitching ?? null }}"
-                        id="stitching_{{ $key }}" class="form-control">
-                    <input type="hidden" name="stitch[]" value="{{ $data->purchase_request?->stitching ?? null }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" name="qty[]" type="number"
-                        value="{{ $data->qty }}" id="qty_{{ $key }}"
-                        class="form-control" step="0.01" min="0" max="{{ $data->qty }}">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="number"
-                        name="rate[]" value="{{ $data->rate }}"
-                        id="rate_{{ $key }}" class="form-control" step="0.01" min="0">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="number" readonly
-                        value="{{ $data->total }}" id="total_{{ $key }}"
-                        class="form-control" step="0.01" min="0" name="total[]">
-                </td>
-
-                <td style="width: 30%">
-                    <input style="width: 100px" type="text" value="{{ $data->remarks }}"
-                        id="remark_{{ $key }}" class="form-control" readonly>
-                    <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
-                </td>
-
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                        onclick="remove({{ $key }})" data-id="{{ $key }}">Remove</button>
-                </td>
-            </tr>
-        @endforeach
-    </tbody>
-</table>
+                    </tbody>
+                </table>
+            </div>
 
         </div>
     </div>
@@ -236,7 +260,7 @@
 </form>
 
 <script>
-$(document).ready(function () {
+    $(document).ready(function() {
         // Get the selected purchase request ID from the dropdown
         let purchaseQuotationId = $('select[name="purchase_quotation_id"]').val();
 
@@ -301,9 +325,11 @@ $(document).ready(function () {
         $.ajax({
             url: '{{ route('get.items') }}',
             type: 'GET',
-            data: { category_id: category_id },
+            data: {
+                category_id: category_id
+            },
             dataType: 'json',
-            success: function (response) {
+            success: function(response) {
                 if (response.success && response.products) {
                     let $itemDropdown = $('#item_id_' + count);
                     $itemDropdown.empty();
@@ -311,7 +337,7 @@ $(document).ready(function () {
                     // Default option
                     $itemDropdown.append('<option value="">Select an Item</option>');
 
-                    $.each(response.products, function (index, product) {
+                    $.each(response.products, function(index, product) {
                         if (allowedItems.length > 0 && !allowedItems.includes(product.id)) {
                             return; // skip items not in allowed list
                         }
@@ -326,13 +352,14 @@ $(document).ready(function () {
 
                     // If no valid items remain
                     if ($itemDropdown.children('option').length === 1) {
-                        $itemDropdown.html('<option value="">No valid items in this Purchase Request</option>');
+                        $itemDropdown.html(
+                            '<option value="">No valid items in this Purchase Request</option>');
                     }
                 } else {
                     $('#item_id_' + count).html('<option value="">No products available</option>');
                 }
             },
-            error: function (xhr, status, error) {
+            error: function(xhr, status, error) {
                 console.error('AJAX Error:', status, error);
                 $('#item_id_' + count).html('<option value="">Error loading products</option>');
             }
@@ -353,11 +380,13 @@ $(document).ready(function () {
         $.ajax({
             url: "{{ route('store.purchase-quotation.get_quotation_item') }}",
             type: "GET",
-            data: { id: purchaseQuotationId },
-            beforeSend: function () {
+            data: {
+                id: purchaseQuotationId
+            },
+            beforeSend: function() {
                 $('#purchaseRequestBody').html('<p>Loading...</p>');
             },
-            success: function (response) {
+            success: function(response) {
                 let html = response.html;
                 let master = response.master;
 
@@ -383,26 +412,25 @@ $(document).ready(function () {
                     width: '100%'
                 });
             },
-            error: function () {
+            error: function() {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');
             }
         });
     }
 
-     function calc(num) {
+    function calc(num) {
         var qtyInput = $('#qty_' + num);
-        var maxQty = parseFloat(qtyInput.attr('max')); 
+        var maxQty = parseFloat(qtyInput.attr('max'));
         var qty = parseFloat(qtyInput.val());
         var rate = parseFloat($('#rate_' + num).val());
 
         if (qty > maxQty) {
             alert('Maximum allowed quantity is ' + maxQty);
             qty = maxQty;
-            qtyInput.val(maxQty); 
+            qtyInput.val(maxQty);
         }
 
         var total = qty * rate;
         $('#total_' + num).val(total);
     }
-
 </script>

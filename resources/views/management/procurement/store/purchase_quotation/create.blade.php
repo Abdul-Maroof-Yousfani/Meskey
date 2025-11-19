@@ -1,3 +1,9 @@
+<style>
+    html, body {
+        overflow-x: hidden;
+    }
+</style>
+
 <form action="{{ route('store.purchase-quotation.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
@@ -71,6 +77,7 @@
             </button>
         </div> --}}
         <div class="col-md-12">
+        <div style="overflow-x: auto; white-space: nowrap;">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
@@ -83,7 +90,6 @@
                         <th class="col-sm-2">Cons./sq. in.</th>
                         <th class="col-sm-2">Size</th>
                         <th class="col-sm-2">Stitching</th>
-                        {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Total Amount</th>
@@ -91,9 +97,11 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="purchaseRequestBody"> </tbody>
+                <tbody id="purchaseRequestBody"></tbody>
             </table>
         </div>
+    </div>
+
     </div>
 
     <input type="hidden" id="rowCount" value="0">

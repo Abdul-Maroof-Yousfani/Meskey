@@ -1,3 +1,9 @@
+<style>
+    html, body {
+        overflow-x: hidden;
+    }
+</style>
+
 <form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
@@ -78,48 +84,47 @@
         <div class="col-xs-12 col-sm-12 col-md-12 row">
             <div class="form-group col-6">
                 <label>Description (Optional):</label>
-                <textarea name="description" id="description" placeholder="Description"
-                    class="form-control"></textarea>
+                <textarea name="description" id="description" placeholder="Description" class="form-control"></textarea>
             </div>
             <div class="form-group col-6">
                 <label>Delivery Address:</label>
-                <textarea name="delivery_address" id="delivery_address" placeholder="Delivery Address"
-                    class="form-control"></textarea>
+                <textarea name="delivery_address" id="delivery_address" placeholder="Delivery Address" class="form-control"></textarea>
             </div>
         </div>
     </div>
     <div class="row form-mar">
         <div class="col-md-12">
-            <table class="table table-bordered" id="purchaseRequestTable">
-                <thead>
-                    <tr>
-                        {{-- <th></th> --}}
-                        <th>Category</th>
-                        <th>Item</th>
-                        <th>Item UOM</th>
+            <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
+                <table class="table table-bordered" id="purchaseRequestTable">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Item</th>
+                            <th>Item UOM</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Gross Amount</th>
+                            <th>Tax</th>
+                            <th>Tax Amount</th>
+                            <th>Duty</th>
+                            <th>Net Amount</th>
+                            <th>Min Weight</th>
+                            <th>Brand</th>
+                            <th>Color</th>
+                            <th>Cons./sq. in.</th>
+                            <th>Size</th>
+                            <th>Stitching</th>
+                            <th>Printing Sample</th>
+                            <th>Remarks</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-                        {{-- <th>Vendor</th> --}}
-                        <th>Qty</th>
-                        <th>Rate</th>
-                        <th>Gross Amount</th>
-                        <th>Tax</th>
-                        <th>Tax Amount</th>
-                        <th>Duty</th>
-                        <th>Net Amount</th>
-                        <th>Min Weight</th>
-                        <th>Brand</th>
-                        <th>Color</th>
-                        <th>Cons./sq. in.</th>
-                        <th>Size</th>
-                        <th>Stitching</th>
-                        <th>Printing Sample</th>
-                        <th>Remarks</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="purchaseOrderBody"></tbody>
-            </table>
+                    <tbody id="purchaseOrderBody"></tbody>
+                </table>
+            </div>
         </div>
+
     </div>
 
     <div class="row form-mar">
@@ -145,27 +150,27 @@
 
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
 
-        $(document).on('change', '#purchase_date', function () {
+        $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
         });
 
-        $(document).on('change', 'select[name="purchase_request_id"]', function () {
+        $(document).on('change', 'select[name="purchase_request_id"]', function() {
             const purchaseRequestId = $(this).val();
             if (purchaseRequestId) {
                 get_purchase(purchaseRequestId);
             }
         });
 
-        $(document).on('change', '#quotation_no', function () {
+        $(document).on('change', '#quotation_no', function() {
             const purchaseRequestId = $('select[name="purchase_request_id"]').val();
             if (purchaseRequestId) {
                 get_purchase(purchaseRequestId);
             }
         });
 
-        $(document).on('change', '#supplier_id, [name="purchase_request_id"]', function () {
+        $(document).on('change', '#supplier_id, [name="purchase_request_id"]', function() {
             const supplierId = $('#supplier_id').val();
             const purchaseRequestId = $('[name="purchase_request_id"]').val();
             $('#quotation_no').empty();
@@ -182,8 +187,9 @@
                     true,
                     false,
                     true,
-                    true,
-                    { purchase_request_id: purchaseRequestId }
+                    true, {
+                        purchase_request_id: purchaseRequestId
+                    }
                 );
             }
         });
@@ -191,6 +197,7 @@
     });
     $(".select2").select2();
     rowIndex = 1;
+
     function fetchUniqueNumber() {
         let locationId = $('#company_location_id').val();
         let contractDate = $('#purchase_date').val();
@@ -199,14 +206,14 @@
             $.ajax({
                 url: url,
                 type: 'GET',
-                success: function (response) {
+                success: function(response) {
                     if (typeof response === 'string') {
                         $('#reference_no').val(response);
                     } else {
                         $('#reference_no').val('');
                     }
                 },
-                error: function (xhr, status, error) {
+                error: function(xhr, status, error) {
                     $('#reference_no').val('');
                 }
             });
@@ -234,10 +241,10 @@
                 quotation_no: quotationNo,
                 supplier_id: supplierId
             },
-            beforeSend: function () {
+            beforeSend: function() {
                 $('#purchaseOrderBody').html('<p>Loading...</p>');
             },
-            success: function (response) {
+            success: function(response) {
                 let html = response.html;
                 let master = response.master;
                 $('#company_location_id').val(master.location_id);
@@ -250,7 +257,7 @@
                     width: '100%'
                 });
             },
-            error: function () {
+            error: function() {
                 $('#purchaseOrderBody').html('<p>Error loading data.</p>');
             }
         });
@@ -280,6 +287,4 @@
 
         $('#total_' + num).val(total.toFixed(2));
     }
-
-
 </script>
