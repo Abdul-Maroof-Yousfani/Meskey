@@ -24,7 +24,7 @@
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
-                    $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
+                    $totalRequestRowspan = array_sum(array_column($requestGroup, 'request_rowspan'));
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
