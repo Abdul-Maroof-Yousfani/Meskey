@@ -71,6 +71,7 @@
             </button>
         </div> --}}
         <div class="col-md-12">
+        <div style="overflow-x: auto; white-space: nowrap;">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
@@ -83,7 +84,6 @@
                         <th class="col-sm-2">Cons./sq. in.</th>
                         <th class="col-sm-2">Size</th>
                         <th class="col-sm-2">Stitching</th>
-                        {{-- <th>Vendor</th> --}}
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Total Amount</th>
@@ -91,9 +91,11 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="purchaseRequestBody"> </tbody>
+                <tbody id="purchaseRequestBody"></tbody>
             </table>
         </div>
+    </div>
+
     </div>
 
     <input type="hidden" id="rowCount" value="0">
