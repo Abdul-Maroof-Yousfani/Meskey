@@ -152,7 +152,7 @@ class PurchaseRequestController extends Controller
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
-
+                dd($request->job_order_id);
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
                         PurchaseAgainstJobOrder::create([
