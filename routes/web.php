@@ -29,17 +29,17 @@ use App\Http\Controllers\Reports\{
 Route::get("/restore-db", function() {
 
     DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-    $purchase_request = PurchaseRequest::query()->delete();
-    $purchase_request_data = PurchaseRequestData::query()->delete();
+    // $purchase_request = PurchaseRequest::query()->delete();
+    // $purchase_request_data = PurchaseRequestData::query()->delete();
     $purchase_quotation = PurchaseQuotation::query()->delete();
-    $purchase_receive = PurchaseOrderReceiving::query()->delete();
+    // $purchase_receive = PurchaseOrderReceiving::query()->delete();
 
     $purchase_quotation_data = PurchaseQuotationData::query()->delete();
-    $purchase_order = PurchaseOrder::query()->delete();
-    $purchase_order_data = PurchaseOrderData::query()->delete();
-    $purchase_receive_data = PurchaseOrderReceivingData::query()->delete();
-    $qc = QC::query()->delete();
-    $qc_bags = QCBags::query()->delete();
+    // $purchase_order = PurchaseOrder::query()->delete();
+    // $purchase_order_data = PurchaseOrderData::query()->delete();
+    // $purchase_receive_data = PurchaseOrderReceivingData::query()->delete();
+    // $qc = QC::query()->delete();
+    // $qc_bags = QCBags::query()->delete();
 
     DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
