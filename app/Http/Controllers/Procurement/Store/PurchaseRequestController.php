@@ -129,6 +129,8 @@ class PurchaseRequestController extends Controller
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
             ]);
+            $arr = [];
+             
             foreach ($request->item_id as $index => $itemId) {
                 $printingSamplePath = null;
 
@@ -152,7 +154,7 @@ class PurchaseRequestController extends Controller
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
-                $arr = [];
+                $arr[] = $requestData;
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
                         $arr[] = [$purchaseRequest->id, $requestData->id, $jobOrderId];
@@ -163,9 +165,9 @@ class PurchaseRequestController extends Controller
                         ]);
                     }
                 }
-                dd($arr);
             }
-
+            
+            dd($);
             DB::commit();
 
             return response()->json([
