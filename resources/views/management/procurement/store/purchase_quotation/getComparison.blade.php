@@ -31,6 +31,9 @@
                     $requestGroup['quotaion_rowspan'] = 0;
                 @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
+                @php
+                    dd($requestGroup['items']);
+                @endphp
                     @php $isFirstItemRow = true; @endphp
 
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
