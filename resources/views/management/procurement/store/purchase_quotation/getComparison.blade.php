@@ -20,7 +20,9 @@
                 $previousQuotationNo = null;
                 $isFirstRequestRow = true;
             @endphp
-
+            @php
+                dd($GroupedPurchaseQuotation);
+            @endphp
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
