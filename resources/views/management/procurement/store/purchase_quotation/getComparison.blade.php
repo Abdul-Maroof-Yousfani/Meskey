@@ -27,7 +27,9 @@
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
-
+                @php
+                    $requestGroup['quotaion_rowspan'] = 0;
+                @endphp
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php $isFirstItemRow = true; @endphp
 
@@ -42,7 +44,11 @@
                         @endphp
 
                         <tr>
+                            @php
+                                $requestGroup['quotaion_rowspan'] += $requestGroup['request_rowspan'];
+                            @endphp
                             @if ($previousRequestNo !== $currentRequestNo)
+                            
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
