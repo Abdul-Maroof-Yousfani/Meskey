@@ -171,6 +171,10 @@
                         @endforeach
                         @php $isFirstRequestRow = false; @endphp
                         @endforeach
+                        @php
+                            $requestGroup['quotaion_rowspan'] = 0;
+                
+                        @endphp
             @endforeach
         @else
             <tr class="ant-table-placeholder">
