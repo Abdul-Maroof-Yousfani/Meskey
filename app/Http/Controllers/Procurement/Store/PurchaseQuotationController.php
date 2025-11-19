@@ -330,7 +330,8 @@ class PurchaseQuotationController extends Controller
                 
                 foreach ($quotationGroup['items'] as $itemId => $itemGroup) {
                     $itemRowspan = count($itemGroup['suppliers']);
-                    $quotaionCount = count($requestGroup['quotations']);
+                    $quotaionCount = count(value: $requestGroup['quotations']);
+                    dd($quotaionCount);
                     $requestRowspan += $itemRowspan;
                     $quotaionRowspan += ($quotaionCount + $requestRowspan);
 
