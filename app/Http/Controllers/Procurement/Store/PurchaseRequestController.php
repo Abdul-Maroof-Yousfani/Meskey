@@ -242,7 +242,7 @@ class PurchaseRequestController extends Controller
             foreach ($request->item_id as $index => $itemId) {
                 if (!empty($request->item_row_id[$index])) {
                     $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
-                    $printingSamplePath = null;
+                    $printingSamplePath = $requestData->printing_sample;
                     
                     if ($requestData) {
                         if ($request->hasFile('printing_sample.' . $index)) {
