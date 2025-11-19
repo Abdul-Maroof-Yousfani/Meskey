@@ -33,7 +33,9 @@
                 @foreach ($requestGroup['items'] as $itemGroup)
                 
                     @php $isFirstItemRow = true; @endphp
-
+                    @php
+                        dd($requestGroup);
+                    @endphp
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
                         @php
                             $approvalDataStatus = ucwords(
