@@ -1,3 +1,9 @@
+<style>
+    html, body {
+        overflow-x: hidden;
+    }
+</style>
+
 <form action="{{ route('store.purchase-quotation.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
