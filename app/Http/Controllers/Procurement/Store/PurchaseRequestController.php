@@ -167,7 +167,7 @@ class PurchaseRequestController extends Controller
                 }
             }
             
-            dd($);
+            dd($arr);
             DB::commit();
 
             return response()->json([
