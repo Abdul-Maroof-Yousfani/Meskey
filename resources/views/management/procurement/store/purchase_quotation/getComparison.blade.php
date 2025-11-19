@@ -32,7 +32,7 @@
                 @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php
-                        dd($requestGroup['items']);
+                        dd($requestGroup);
                     @endphp
                     @php $isFirstItemRow = true; @endphp
                       
