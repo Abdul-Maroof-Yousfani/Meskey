@@ -20,9 +20,7 @@
                 $previousQuotationNo = null;
                 $isFirstRequestRow = true;
             @endphp
-            {{-- @php
-                dd($GroupedPurchaseQuotation[0]);
-            @endphp --}}
+        
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
@@ -33,7 +31,9 @@
                     $requestGroup['quotaion_rowspan'] = 0;
                 @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
-                
+                    @php
+                        dd($requestGroup['items']);
+                    @endphp
                     @php $isFirstItemRow = true; @endphp
                       
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
