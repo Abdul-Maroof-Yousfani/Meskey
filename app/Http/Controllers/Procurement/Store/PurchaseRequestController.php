@@ -155,7 +155,7 @@ class PurchaseRequestController extends Controller
                 ]);
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
-                        $arr[] = [$purchaseRequest->id, $requestData->id];
+                        $arr[$index] = [$purchaseRequest->id, $requestData->id];
                         PurchaseAgainstJobOrder::create([
                             'purchase_request_id' => $purchaseRequest->id,
                             'purchase_request_data_id' => $requestData->id,
