@@ -26,6 +26,7 @@
                     $currentRequestNo = $requestGroup['purchase_request_no'];
                     $totalRequestRowspan = $requestGroup['request_rowspan'];
                     // $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
+                    dd($GroupedPurchaseQuotation);
                     dd(  $allRequestRowspans = array_column($GroupedPurchaseQuotation, 'request_rowspan'));
                 @endphp
 
