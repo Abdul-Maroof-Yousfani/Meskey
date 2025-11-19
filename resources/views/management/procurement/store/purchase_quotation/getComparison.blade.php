@@ -170,11 +170,11 @@
                         </tr>
                         @endforeach
                         @php $isFirstRequestRow = false; @endphp
-                        @endforeach
                         @php
                             $requestGroup['quotaion_rowspan'] = 0;
                 
                         @endphp
+                        @endforeach
             @endforeach
         @else
             <tr class="ant-table-placeholder">
