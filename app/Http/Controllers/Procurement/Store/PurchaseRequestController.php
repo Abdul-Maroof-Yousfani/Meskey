@@ -153,7 +153,7 @@ class PurchaseRequestController extends Controller
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
-                $arr[] = [$purchaseRequest->id, $requestData->id, $jobOrderId];
+                $arr[] = [$purchaseRequest->id, $requestData->id];
                 $purchase_request_data_ids[] = $requestData->id;
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
