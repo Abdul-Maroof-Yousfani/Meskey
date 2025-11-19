@@ -24,10 +24,17 @@
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
-                    $totalRequestRowspan = $requestGroup['request_rowspan'];
+                    // $totalRequestRowspan = $requestGroup['request_rowspan'];
+                    $totalRequestRowspan = array_sum(
+                        array_column(
+                            array_filter($GroupedPurchaseQuotation, function ($row) use ($currentRequestNo) {
+                                return $row['purchase_request_no'] === $currentRequestNo;
+                            }),
+                            'request_rowspan'
+                        )
+                    );
+
                     // $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
-                    dd($GroupedPurchaseQuotation);
-                    dd(  $allRequestRowspans = array_column($GroupedPurchaseQuotation, 'request_rowspan'));
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
