@@ -165,7 +165,7 @@ class PurchaseRequestController extends Controller
                     }
                 }
             }
-            dd($purchase_request_data_ids);
+            dd($arr);
             
             DB::commit();
 
