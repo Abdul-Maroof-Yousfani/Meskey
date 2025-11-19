@@ -32,7 +32,7 @@
                 @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
                 @php
-                    dd($requestGroup['items']);
+                    dd($requestGroup['quotaion_rowspan']);
                 @endphp
                     @php $isFirstItemRow = true; @endphp
 
