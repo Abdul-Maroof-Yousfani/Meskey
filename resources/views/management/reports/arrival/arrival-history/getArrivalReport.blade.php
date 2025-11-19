@@ -6,9 +6,11 @@
         <th>Miller</th>
         <th>Broker</th>
         <th>A/c Of</th>
+        <th>decision Of</th>
         <th>Truck #</th>
         {{-- <th>Ticket Commodity</th> --}}
         <th>QC Commodity</th>
+        <th>Location</th>
         <th>Party Ref.#</th>
         <th>Status</th>
         <th>Station</th>
@@ -79,9 +81,12 @@
                         <td>{{ $row->miller->name ?? 'N/A' }}</td>
                         <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
                         <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
+                        <td>{{ $row->decisionBy->name ?? 'N/A' }}</td>
                          <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
                         {{-- <td>{{ $row->product->name ?? 'N/A' }}</td> --}}
                         <td>{{ $row->qcProduct->name ?? 'N/A' }}</td>
+                        <td>{{ $row->location->name ?? 'N/A' }}</td>
+
                         <td>N/A</td>
                           <td>
                             @php
