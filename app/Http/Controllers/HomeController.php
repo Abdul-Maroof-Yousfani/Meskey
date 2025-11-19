@@ -281,6 +281,7 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('arrival_slip_status', 'generated')
                     ->with(['product', 'station', 'accountsOf'])
+                    ->whereBetween('created_at', $dateRange)
                     // Superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                         return $q->where('location_id', auth()->user()->company_location_id);
@@ -349,7 +350,7 @@ class HomeController extends Controller
                 $title = 'Rejected Tickets (Bilty Return Pending)';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('first_qc_status', 'rejected')
-                    ->where('bilty_return_confirmation', 0)
+                    // ->where('bilty_return_confirmation', 0)
                     ->whereBetween('created_at', $dateRange)
                     // superadmin
                     ->when(auth()->user()->user_type != 'super-admin', function ($q) {
@@ -390,6 +391,11 @@ class HomeController extends Controller
                     $q->where('company_id', $request->company_id)
                         ->whereBetween('created_at', $dateRange);
                 })
+                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                        return $q->whereHas('arrivalTicket', function ($sq) {
+                            $sq->where('location_id', auth()->user()->company_location_id);
+                        });
+                    })
                     ->where('sampling_type', 'inner')
                     ->where('is_done', 'no')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
@@ -540,7 +546,7 @@ class HomeController extends Controller
         $idColumn = $request->input('idColumn', 'id');
         $enableTags = $request->input('enableTags', false);
 
-        if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, $columnName) || ! Schema::hasColumn($tableName, $idColumn)) {
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
 
@@ -551,7 +557,7 @@ class HomeController extends Controller
         }
 
         if ($search) {
-            $query->where($columnName, 'like', '%'.$search.'%');
+            $query->where($columnName, 'like', '%' . $search . '%');
         }
 
         $data = $query->limit(50)->get();
@@ -592,7 +598,7 @@ class HomeController extends Controller
             $sourceId = $request->input('sourceId');
             $purchaseRequestId = $request->input('purchase_request_id');
 
-            if (! $targetTable || ! $targetColumn) {
+            if (!$targetTable || !$targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
@@ -607,7 +613,7 @@ class HomeController extends Controller
             }
 
             if ($search) {
-                $query->where("{$targetTable}.name", 'like', '%'.$search.'%');
+                $query->where("{$targetTable}.name", 'like', '%' . $search . '%');
             }
 
             if ($sourceId) {
@@ -650,7 +656,7 @@ class HomeController extends Controller
             return response()->json(['items' => $data]);
         }
         // Original source table fetch logic
-        if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, $columnName) || ! Schema::hasColumn($tableName, $idColumn)) {
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
 
@@ -659,7 +665,7 @@ class HomeController extends Controller
         }
 
         if ($search) {
-            $query->where($columnName, 'like', '%'.$search.'%');
+            $query->where($columnName, 'like', '%' . $search . '%');
         }
 
         $data = $query->select(["$tableName.$idColumn", "$tableName.$columnName as text"])->limit(50)->get();
@@ -700,7 +706,7 @@ class HomeController extends Controller
             $sourceId = $request->input('sourceId');
             $purchaseRequestId = $request->input('purchase_request_id');
 
-            if (! $targetTable || ! $targetColumn) {
+            if (!$targetTable || !$targetColumn) {
                 return response()->json(['error' => 'Target table and column required'], 400);
             }
             if ($purchaseRequestId && Schema::hasColumn($targetTable, 'am_approval_status')) {
@@ -715,7 +721,7 @@ class HomeController extends Controller
             }
 
             if ($search) {
-                $query->where('name', 'like', '%'.$search.'%');
+                $query->where('name', 'like', '%' . $search . '%');
             }
 
             if ($sourceId) {
@@ -739,7 +745,7 @@ class HomeController extends Controller
         }
 
         // Original source table fetch logic
-        if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, $columnName) || ! Schema::hasColumn($tableName, $idColumn)) {
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $columnName) || !Schema::hasColumn($tableName, $idColumn)) {
             return response()->json(['error' => 'Invalid table or column'], 400);
         }
 
@@ -748,7 +754,7 @@ class HomeController extends Controller
         }
 
         if ($search) {
-            $query->where($columnName, 'like', '%'.$search.'%');
+            $query->where($columnName, 'like', '%' . $search . '%');
         }
 
         $data = $query->select(["$tableName.$idColumn", "$tableName.$columnName as text"])->limit(50)->get();

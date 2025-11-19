@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::create('job_order_raw_material_qc_parameters', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('job_order__qc_item_id')->constrained()->onDelete('cascade');
+            $table->foreignId('job_order__qc_item_id')->
+            constrained('job_order_raw_material_qc_items')
+            ->onDelete('cascade');
             $table->foreignId('product_slab_type_id')->constrained()->onDelete('cascade');
             $table->string('parameter_name');
             $table->decimal('parameter_value', 8, 4);

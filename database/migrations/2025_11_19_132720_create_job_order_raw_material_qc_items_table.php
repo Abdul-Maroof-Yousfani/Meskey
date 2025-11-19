@@ -10,10 +10,10 @@ return new class extends Migration {
         Schema::create('job_order_raw_material_qc_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('job_order_rm_qc_id')
-                ->constrained('job_order_raw_material_qc')
+                ->constrained('job_order_raw_material_qcs')
                 ->onDelete('cascade');
             $table->foreignId('product_id')->constrained();
-            $table->foreignId('arrival_sublocation_id')->constrained();
+            $table->foreignId('arrival_sub_location_id')->constrained();
             $table->decimal('suggested_quantity', 12, 2);
             $table->timestamps();
         });

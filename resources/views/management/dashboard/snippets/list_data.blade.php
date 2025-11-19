@@ -1,4 +1,5 @@
 <div class="table-responsive">
+    <h6 class="text-uppercase">Total Records: {{ count($data) }}</h6>
     <table class="table table-striped table-hover">
         <thead class="thead-dark">
             <tr>

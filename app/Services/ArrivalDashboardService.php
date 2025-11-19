@@ -74,7 +74,10 @@ class ArrivalDashboardService
 
         $rejectedTickets = ArrivalTicket::where('company_id', $companyId)
             ->where('first_qc_status', 'rejected')
-            ->where('bilty_return_confirmation', 0)
+            // ->where('bilty_return_confirmation', 0)
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -117,6 +120,11 @@ class ArrivalDashboardService
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereHas('arrivalTicket', function ($sq) {
+                    $sq->where('location_id', auth()->user()->company_location_id);
+                });
+            })
             ->where('sampling_type', 'inner')
             ->where('is_done', 'no')
             ->count();
