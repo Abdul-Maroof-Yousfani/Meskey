@@ -34,7 +34,7 @@
                 
                     @php $isFirstItemRow = true; @endphp
                         @if(!$loop->first)
-                            dd($requestGroup);
+                            @dd($requestGroup);
                         @endif
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
                         @php
