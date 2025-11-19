@@ -123,7 +123,7 @@
             </select>
         </td>
         <td style="width: 30%">
-            <input type="text" style="width: 100px;" name="tax_amount[]" value="{{ ($tax->percentage / 100) * (($data->qty) * $data->rate) }}" id="tax_amount{{ $key }}"
+            <input type="text" style="width: 100px;" name="tax_amount[]" value="{{ (0 / 100) * (($data->qty) * $data->rate) }}" id="tax_amount{{ $key }}"
                 class="form-control tax_amount percent_amount" readonly>
         </td>
         
@@ -134,7 +134,7 @@
         </td>
 
         <td style="width: 30%">
-            <input style="width: 100px" type="number" readonly name="total[]" value="{{ (($data->qty) * $data->rate) + (($tax->percentage / 100) * (($data->qty) * $data->rate)) }}"
+            <input style="width: 100px" type="number" readonly name="total[]" value="{{ (($data->qty) * $data->rate) + ((0 / 100) * (($data->qty) * $data->rate)) }}"
                 id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
         </td>
 

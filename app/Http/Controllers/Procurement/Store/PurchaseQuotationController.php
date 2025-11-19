@@ -959,6 +959,7 @@ class PurchaseQuotationController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
+            // $PurchaseQuotation = PurchaseQuotation::where("purchase_request_id", $request->purchase_request_id);
             
             
             $PurchaseQuotation->update([
