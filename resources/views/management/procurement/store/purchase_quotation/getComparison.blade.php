@@ -27,9 +27,9 @@
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
-                @php
+                {{-- @php
                     $requestGroup['quotaion_rowspan'] = 0;
-                @endphp
+                @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php $isFirstItemRow = true; @endphp
 
@@ -171,10 +171,7 @@
                             @endif
 
                         </tr>
-                        @php
-                            $requestGroup['quotaion_rowspan'] = 0;
-
-                        @endphp
+                      
                     @endforeach
                     @php $isFirstRequestRow = false; @endphp
                 @endforeach
