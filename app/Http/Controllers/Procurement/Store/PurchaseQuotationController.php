@@ -261,7 +261,6 @@ class PurchaseQuotationController extends Controller
 
     public function get_comparison(Request $request)
     {
-        dd("test");
         $PurchaseQuotationRaw = PurchaseQuotationData::with(
             'purchase_quotation.purchase_request',
             'category',
