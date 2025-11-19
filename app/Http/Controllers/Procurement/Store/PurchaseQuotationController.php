@@ -138,6 +138,7 @@ class PurchaseQuotationController extends Controller
         //     'GroupedPurchaseQuotation' => $processedData
         // ]);
 
+        dd("test");
         $PurchaseQuotationRaw = PurchaseQuotationData::with(
             'purchase_quotation.purchase_request',
             'category',
