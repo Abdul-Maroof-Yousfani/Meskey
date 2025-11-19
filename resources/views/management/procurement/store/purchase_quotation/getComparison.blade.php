@@ -44,9 +44,6 @@
                         @endphp
 
                         <tr>
-                            @php
-                                $requestGroup['quotaion_rowspan'] += $requestGroup['request_rowspan'];
-                            @endphp
                             @if ($previousRequestNo !== $currentRequestNo)
                             
                                 <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
