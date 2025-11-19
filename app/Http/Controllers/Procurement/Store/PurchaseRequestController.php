@@ -152,9 +152,10 @@ class PurchaseRequestController extends Controller
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
-                dd($request->job_order_id);
+                $arr = [];
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
+                        $arr[] = [$purchaseRequest->id, $requestData->id, $jobOrderId];
                         PurchaseAgainstJobOrder::create([
                             'purchase_request_id' => $purchaseRequest->id,
                             'purchase_request_data_id' => $requestData->id,
@@ -162,6 +163,7 @@ class PurchaseRequestController extends Controller
                         ]);
                     }
                 }
+                dd($arr);
             }
 
             DB::commit();
