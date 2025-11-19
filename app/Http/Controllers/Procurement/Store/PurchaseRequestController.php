@@ -199,7 +199,6 @@ class PurchaseRequestController extends Controller
     {
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
         $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
-        dd($purchaseRequest);
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
