@@ -11,7 +11,7 @@ use App\Models\{SaudaType, ArrivalPurchaseOrder, BagType, BagCondition, BagPacki
 use App\Models\Master\{ArrivalLocation, Station, ArrivalSubLocation, ProductSlab};
 use App\Models\AuditLog;
 use App\Models\Master\Miller;
-
+use Illuminate\Support\Facades\Validator;
 use DB;
 use Illuminate\Validation\ValidationException;
 class ArrivalMasterRevertController extends Controller
@@ -52,28 +52,31 @@ class ArrivalMasterRevertController extends Controller
 
 
         $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
-            ->where('is_done', 'yes')
+            ->where('arrival_ticket_id', $arrivalTicket->id)
+            // ->where('is_done', 'yes')
             ->groupBy('arrival_ticket_id')
             ->pluck('id');
-
+        // dd($latestRequestIds);
         $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
             ->whereIn('id', $latestRequestIds)
-            ->where(function ($q) {
-                $q->where('approved_status', '!=', 'pending')
-                    ->orWhere(function ($q) {
-                        $q->where('decision_making', 1);
-                    });
-            })
+            // ->where(function ($q) {
+            //     $q->where('approved_status', '!=', 'pending')
+            //         ->orWhere(function ($q) {
+            //             $q->where('decision_making', 1);
+            //         });
+            // })
             ->latest()
             ->first();
-
+        // dd( $arrivalSamplingRequest);
         $slabs = collect();
         $productSlabCalculations = null;
         $results = collect();
         $Compulsuryresults = collect();
         $arrivalPurchaseOrders = collect();
         $sampleTakenByUsers = collect();
-        $saudaTypes = collect();
+        // $saudaTypes = collect();
+        $saudaTypes = SaudaType::all();
+
         $allInitialRequests = collect();
         $allInnerRequests = collect();
         $initialRequestsData = [];
@@ -118,7 +121,9 @@ class ArrivalMasterRevertController extends Controller
             $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
                 ->where('arrival_ticket_id', $arrivalTicket->id)
                 ->where('approved_status', '!=', 'pending')
+                ->where('id', '!=', $latestRequestIds)
                 ->orderBy('created_at', 'asc')
+
                 ->get();
 
             $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
@@ -180,6 +185,7 @@ class ArrivalMasterRevertController extends Controller
             'bagTypes',
             'bagConditions',
             'bagPackings',
+            'saudaTypes',
         ));
     }
 
@@ -323,9 +329,60 @@ class ArrivalMasterRevertController extends Controller
                     ], 500);
                 }
             }
+            // Handle Half/Full Approval UPDATE
+            if ($request->has('last_qc_submit')) {
+                try {
+
+                    $this->updateLastQc($request, $arrivalTicket);
+                    DB::commit();
+                    return response()->json([
+                        'success' => 'Half/Full approval updated successfully.',
+                        'data' => $arrivalTicket
+                    ], 201);
+                } catch (ValidationException $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Validation failed.',
+                        'errors' => $e->errors()
+                    ], 422);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Half/Full approval update failed.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
 
             // ==================== REVERT OPERATIONS ====================
 
+            // Handle Location Transfer REVERT
+            if ($request->has('qc_request_revert')) {
+                try {
+
+                    $requestisPending = ArrivalSamplingRequest::findOrFail($request->arrivalSamplingRequestid);
+                    if ($requestisPending && $requestisPending->is_done == 'no') {
+                        $this->revertQcRequest($requestisPending, $arrivalTicket);
+                        DB::commit();
+                        return response()->json([
+                            'success' => 'Request Reverted successfully.',
+                            'data' => $arrivalTicket
+                        ], 201);
+                    } else {
+                        return response()->json([
+                            'success' => 'Qc Already Performed you can not revert it please referesh page to see the QC result',
+                            'data' => $arrivalTicket
+                        ], 422);
+
+                    }
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Revert failed:' . $e->getMessage(),
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
             // Handle Location Transfer REVERT
             if ($request->has('location_transfer_revert')) {
                 try {
@@ -476,7 +533,7 @@ class ArrivalMasterRevertController extends Controller
 
 
 
-        /**
+    /**
      * Update Half/Full Approval
      */
     private function updateTicket($request, $arrivalTicket)
@@ -499,29 +556,29 @@ class ArrivalMasterRevertController extends Controller
         // Update or create approval record
         if ($arrivalTicket) {
 
-        if (!empty($requestData['station'])) {
-            $station = Station::firstOrCreate(
-                [
-                    'name' => $requestData['station'],
-                    'company_id' => $request->company_id ?? null,
-                ]
-            );
+            if (!empty($requestData['station'])) {
+                $station = Station::firstOrCreate(
+                    [
+                        'name' => $requestData['station'],
+                        'company_id' => $request->company_id ?? null,
+                    ]
+                );
 
-            $requestData['station_id'] = $station->id;
-            $requestData['station_name'] = $station->name;
-        }
-
-        if (!empty($requestData['miller_name'])) {
-            $miller = Miller::where('name', $requestData['miller_name'])->first();
-            if (!$miller) {
-                $miller = Miller::create(['name' => $requestData['miller_name']]);
+                $requestData['station_id'] = $station->id;
+                $requestData['station_name'] = $station->name;
             }
-            $requestData['miller_id'] = $miller->id;
-        }
 
-    //    dd($requestData);
+            if (!empty($requestData['miller_name'])) {
+                $miller = Miller::where('name', $requestData['miller_name'])->first();
+                if (!$miller) {
+                    $miller = Miller::create(['name' => $requestData['miller_name']]);
+                }
+                $requestData['miller_id'] = $miller->id;
+            }
+
+            //    dd($requestData);
             $arrivalTicket->update($requestData);
-        } 
+        }
 
         $this->logRevertAction($arrivalTicket, 'half_full_approval_update', 'Half/Full approval updated');
     }
@@ -627,11 +684,177 @@ class ArrivalMasterRevertController extends Controller
         $this->logRevertAction($arrivalTicket, 'half_full_approval_update', 'Half/Full approval updated');
     }
 
+
+    private function updateLastQc($request, $arrivalTicket)
+    {
+        $id = $request->arrivalSamplingRequestid;
+        $validated = $request->validate([
+            'stage_status' => 'required',
+            'sauda_type_id' => 'required'
+        ]);
+
+
+        try {
+            $ArrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
+            $reqStatus = $ArrivalSamplingRequest->approved_status;
+
+            // if ($reqStatus === 'approved' && $request->stage_status !== 'approved') {
+            //     return response()->json([
+            //         'errors' => [
+            //             'stage_status' => ['This request is already approved, stage status must be "approved"']
+            //         ]
+            //     ], 422);
+            // }
+
+            $decisionMakingValue = 'off';
+            $isLumpsum = 0;
+
+            if ($ArrivalSamplingRequest->sampling_type === 'initial' && $reqStatus === 'pending' && $request->stage_status === 'resampling') {
+                $decisionMakingValue = 'off';
+                $isLumpsum = 0;
+            } else {
+                if ($reqStatus === 'approved') {
+                    $decisionMakingValue = $request->decision_making ?? 'off';
+                    $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+                } elseif ($reqStatus === 'pending') {
+                    $decisionMakingValue = ($request->stage_status === 'approved')
+                        ? ($request->decision_making ?? 'off')
+                        : 'off';
+                    $isLumpsum = convertToBoolean($request->is_lumpsum_deduction ?? 'off');
+                }
+            }
+
+            $decisionMadeOn = null;
+            $isDecisionMaking = convertToBoolean($decisionMakingValue);
+            $isDecisionMakingReq = convertToBoolean($request->decision_making ?? 'off');
+
+            if (!$isDecisionMakingReq && $ArrivalSamplingRequest->arrivalTicket->decision_making === 1) {
+                $decisionMadeOn = now();
+            }
+
+            $ArrivalSamplingRequest->update([
+                'remark' => $request->remarks,
+                'decision_making' => $isDecisionMaking,
+                'lumpsum_deduction' => (float) $request->lumpsum_deduction ?? 0.00,
+                'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,
+                'is_lumpsum_deduction' => $isLumpsum,
+                'is_done' => 'yes',
+                'done_by' => auth()->user()->id,
+            ]);
+
+            $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+
+            foreach ($records as $record) {
+                $record->delete();
+            }
+
+            $recordsQc = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
+
+            foreach ($recordsQc as $recordQc) {
+                $recordQc->delete();
+            }
+
+            if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
+                foreach ($request->product_slab_type_id as $key => $slabTypeId) {
+                    ArrivalSamplingResult::create([
+                        'company_id' => $request->company_id,
+                        'arrival_sampling_request_id' => $id,
+                        'product_slab_type_id' => $slabTypeId,
+                        'checklist_value' => $request->checklist_value[$key] ?? null,
+                        'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
+                        'applied_deduction' => $request->applied_deduction[$key] ?? null,
+                    ]);
+                }
+            }
+
+            if (!empty($request->compulsory_param_id)) {
+                foreach ($request->compulsory_param_id as $key => $slabTypeId) {
+                    ArrivalSamplingResultForCompulsury::create([
+                        'company_id' => $request->company_id,
+                        'arrival_sampling_request_id' => $id,
+                        'arrival_compulsory_qc_param_id' => $slabTypeId,
+                        'compulsory_checklist_value' => $request->compulsory_checklist_value[$key] ?? null,
+                        'applied_deduction' => $request->compulsory_aapplied_deduction[$key] ?? 0,
+                        'remark' => $request->remarks ?? null,
+                    ]);
+                }
+            }
+
+            if ($reqStatus == 'pending') {
+                if ($request->stage_status == 'resampling') {
+                    ArrivalSamplingRequest::create([
+                        'company_id' => $ArrivalSamplingRequest->company_id,
+                        'arrival_ticket_id' => $ArrivalSamplingRequest->arrival_ticket_id,
+                        'sampling_type' => $ArrivalSamplingRequest->sampling_type,
+                        'is_re_sampling' => 'yes',
+                        'is_done' => 'no',
+                        'remark' => null,
+                    ]);
+                    $ArrivalSamplingRequest->is_resampling_made = 'yes';
+                }
+            }
+
+            $updateData = [
+                'lumpsum_deduction' => (float) ($request->lumpsum_deduction ?? 0.00),
+                'lumpsum_deduction_kgs' => (float) ($request->lumpsum_deduction_kgs ?? 0.00),
+                'is_lumpsum_deduction' => $isLumpsum,
+                'decision_making' => $isDecisionMaking,
+                'decision_making_time' => $decisionMadeOn,
+                //'location_transfer_status' => $request->stage_status == 'approved' ? 'pending' : null,
+                'sauda_type_id' => $request->sauda_type_id,
+                // 'arrival_purchase_order_id' => $request->arrival_purchase_order_id,
+            ];
+
+            if ($ArrivalSamplingRequest->sampling_type == 'inner') {
+                $updateData['second_qc_status'] = $request->stage_status;
+            } else {
+                // if ($reqStatus !== 'approved') {
+                // dd($request->stage_status);
+                $updateData['first_qc_status'] = $request->stage_status;
+                if ($reqStatus !== 'approved') {
+                    $updateData['location_transfer_status'] = $request->stage_status == 'approved' ? 'pending' : null;
+                }
+                if ($request->stage_status == 'rejected') {
+                    $updateData['location_transfer_status'] = null;
+                }
+                // }
+            }
+
+            $ArrivalSamplingRequest->arrivalTicket()->first()->update($updateData);
+
+            // if ($reqStatus == 'pending') {
+            $ArrivalSamplingRequest->approved_status = $request->stage_status;
+            // }
+
+            $ArrivalSamplingRequest->save();
+
+            return response()->json([
+                'success' => 'Data stored successfully',
+                'data' => [],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     // ==================== REVERT METHODS ====================
 
     /**
      * Revert Location Transfer
      */
+    private function revertQcRequest($requestisPending, $arrivalTicket)
+    {
+        // dd($request->arrivalSamplingRequestid);
+        if ($requestisPending) {
+            $requestisPending->delete();
+            $this->logRevertAction($arrivalTicket, 'qc_request_revert', 'QC Request  reverted');
+        }
+    }
     private function revertLocationTransfer($arrivalTicket)
     {
         if ($arrivalTicket->unloadingLocation) {
@@ -694,15 +917,15 @@ class ArrivalMasterRevertController extends Controller
         if ($arrivalTicket->freight) {
 
             $grnNo = $arrivalTicket->arrivalSlip->unique_no;
-           
+
 
             // Delete transactions
             $Transaction = Transaction::where('grn_no', $grnNo)->delete();
 
-            
+
             // Delete GRN
-         //   $arrivalTicket->arrivalSlip->grnNumber()->delete();
- GrnNumber::where('unique_no',$grnNo)->delete();
+            //   $arrivalTicket->arrivalSlip->grnNumber()->delete();
+            GrnNumber::where('unique_no', $grnNo)->delete();
 
 
             // Delete arrival slip
