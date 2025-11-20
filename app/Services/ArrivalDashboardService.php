@@ -65,6 +65,11 @@ class ArrivalDashboardService
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereHas('arrivalTicket', function ($sq) {
+                    $sq->where('location_id', auth()->user()->company_location_id);
+                });
+            })
             ->where('sampling_type', 'initial')
             ->where('is_re_sampling', 'yes')
             ->where('is_done', 'no')
@@ -140,6 +145,11 @@ class ArrivalDashboardService
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereHas('arrivalTicket', function ($sq) {
+                    $sq->where('location_id', auth()->user()->company_location_id);
+                });
+            })
             ->where('sampling_type', 'inner')
             ->where('is_done', 'yes')
             ->where('approved_status', 'pending')
