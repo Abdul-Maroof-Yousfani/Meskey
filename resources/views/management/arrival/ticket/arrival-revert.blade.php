@@ -1519,6 +1519,7 @@
                                                                     Sampling Request Generated --
                                                                     operation in progress
                                                                 </div>
+                                                                @if($arrivalSamplingRequest->sampling_type == 'inner')
                                                                 <div class="col-xs-12 col-sm-4 col-md-4 text-right">
                                                                     <div class="form-group mb-0">
 
@@ -1527,6 +1528,7 @@
 
                                                                     </div>
                                                                 </div>
+                                                                @endif
                                                             </div>
                                                             @else
                                                             <div class="currntbox">
