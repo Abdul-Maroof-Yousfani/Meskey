@@ -155,6 +155,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post("/qc/updateAmount", [QcController::class, "updateAmounts"])->name("qc.update-amount");
 
     Route::resource("bill", BillController::class);
+    Route::post("/bill/getList", [BillController::class, "getList"])->name("get.bills");
 
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
     Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
