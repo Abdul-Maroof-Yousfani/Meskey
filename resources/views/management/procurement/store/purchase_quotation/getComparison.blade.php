@@ -20,19 +20,31 @@
                 $previousQuotationNo = null;
                 $isFirstRequestRow = true;
             @endphp
-
+        
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
                     $currentRequestNo = $requestGroup['purchase_request_no'];
+                    // $totalRequestRowspan = $requestGroup['request_rowspan'];
+                    $totalRequestRowspan = array_sum(
+                        array_column(
+                            array_filter($GroupedPurchaseQuotation, function ($row) use ($currentRequestNo) {
+                                return $row['purchase_request_no'] === $currentRequestNo;
+                            }),
+                            'request_rowspan'
+                        )
+                    );
+
+                    // $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
-                @php
+                {{-- @php
                     $requestGroup['quotaion_rowspan'] = 0;
-                @endphp
+                @endphp --}}
                 @foreach ($requestGroup['items'] as $itemGroup)
+                  
                     @php $isFirstItemRow = true; @endphp
-
+                      
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
                         @php
                             $approvalDataStatus = ucwords(
@@ -41,12 +53,13 @@
                                         'am_approval_status'},
                             );
                             $approvalStatus = ucwords($requestGroup['request_status']);
+
+                            $quotation_rowspan = 0;
                         @endphp
 
                         <tr>
                             @if ($previousRequestNo !== $currentRequestNo)
-                            
-                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"
+                                <td rowspan="{{ $totalRequestRowspan }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['purchase_request_no'] }}
@@ -62,6 +75,9 @@
 
                             {{-- ✅ Other columns --}}
                             @if ($isFirstRequestRow)
+                                @php
+                                    $quotation_rowspan += $requestGroup['request_rowspan'];
+                                @endphp
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
@@ -143,12 +159,16 @@
 
                                         </a>
                                     </div>
-                                    @if($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected' && $requestGroup['request_status'] != 'partial approved')
+                                    @if (
+                                        $requestGroup['request_status'] != 'approved' &&
+                                            $requestGroup['request_status'] != 'rejected' &&
+                                            $requestGroup['request_status'] != 'partial approved')
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
-                                                class="info p-1 text-center mr-2 position-relative" title="View Approved">
+                                                class="info p-1 text-center mr-2 position-relative"
+                                                title="View Approved">
                                                 <i class="ft-edit font-medium-3"></i>
-        
+
                                             </a>
                                         </div>
                                     @endif
@@ -166,11 +186,12 @@
                                     $previousRequestNo = $currentRequestNo;
                                 @endphp
                             @endif
-                            
+
                         </tr>
-                        @endforeach
-                        @php $isFirstRequestRow = false; @endphp
-                        @endforeach
+                      
+                    @endforeach
+                    @php $isFirstRequestRow = false; @endphp
+                @endforeach
             @endforeach
         @else
             <tr class="ant-table-placeholder">

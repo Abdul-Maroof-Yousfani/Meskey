@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillController;
 use App\Http\Controllers\IndicativePriceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
@@ -152,6 +153,14 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get("/qc/edit", [QcController::class, "edit"])->name("qc.edit");
     Route::get("/qc/create", [QcController::class, "create"])->name("qc.show-create");
     Route::post("/qc/updateAmount", [QcController::class, "updateAmounts"])->name("qc.update-amount");
+
+
+    Route::get("bill/approve-item", [BillController::class, "approve_item"])->name("bill.approve-item");
+    Route::resource("bill", BillController::class);
+    Route::post("/bill/getList", [BillController::class, "getList"])->name("get.bills");
+    Route::get("get-unique-number-bill/{locationId}/{contractDate}", [BillController::class, "getNumber"])->name("bill.getNumber");
+    Route::get("get-grns", [BillController::class, "getGrns"])->name("get.grns");
+   
 
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
     Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
