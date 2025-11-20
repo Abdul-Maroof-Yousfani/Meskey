@@ -81,7 +81,6 @@
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
-                                        {{ $requestGroup['request_rowspan'] }}
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
