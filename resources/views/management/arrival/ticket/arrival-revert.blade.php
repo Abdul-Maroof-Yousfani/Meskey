@@ -488,12 +488,12 @@
                                                             value="{{ $arrivalTicket->approvals->total_bags }}"
                                                             autocomplete="off"
                                                             mddax="{{ $arrivalTicket->document_approval_status == 'half_approved' ? $arrivalTicket->bags : '' }}"" required />
-                                                                                                                                                        </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
+                                                                                                                                                                    </div>
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
 
-                                                                                                                                                <div
-                                                                                                                                                    class="
+                                                                                                                                                            <div
+                                                                                                                                                                class="
                                                             row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
 
                                                         <div class="col-12">
@@ -917,11 +917,8 @@
                                                         <input type="hidden" name="stage_status"
                                                             value="{{ $arrivalSamplingRequest->approved_status }}">
                                                     @endif
-                                                    <select 
-                                                    @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered') disabled
-                                                    @elseif($arrivalSamplingRequest->sampling_type == 'inner' && $arrivalTicket->document_approval_status != null)
-                                                    disabled
-                                                    @endif
+                                                    <select @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered') disabled
+                                                    @elseif($arrivalSamplingRequest->sampling_type == 'inner' && $arrivalTicket->document_approval_status != null) disabled @endif
                                                         name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status' : 'stage_status' }}"
                                                         id="stage_status" class="form-control select2" <option value=""
                                                         hidden>Choose Status</option>
@@ -1516,16 +1513,22 @@
                                                     <div class="tab-pane fade show active" id="current-inner" role="tabpanel"
                                                         aria-labelledby="current-inner-tab">
                                                         @if($arrivalSamplingRequest->is_done == 'no')
-                                                            <div class="alert bg-light-danger">Sampling Request Generated --
-                                                                operation in progress</div>
-                                                            <div class="col-xs-12 col-sm-12 col-md-12 text-right">
-                                                                <div class="form-group">
+                                                            <div class="alert bg-light-danger row w-100 mx-auto align-items-center">
+                                                                <div class="col-xs-12 col-sm-8 col-md-8">
 
-                                                                    <input type="submit" value="Remove QC Request"
-                                                                        name="qc_request_revert" class="btn btn-primary" />
-
+                                                                    Sampling Request Generated --
+                                                                    operation in progress
                                                                 </div>
-                                                        </div> @else
+                                                                <div class="col-xs-12 col-sm-4 col-md-4 text-right">
+                                                                    <div class="form-group mb-0">
+
+                                                                        <input type="submit" value="Revert QC Request"
+                                                                            name="qc_request_revert" class="btn btn-primary" />
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @else
                                                             <div class="currntbox">
                                                                 <div class="row w-100 mx-auto">
                                                                     <div class="col-md-4"></div>
