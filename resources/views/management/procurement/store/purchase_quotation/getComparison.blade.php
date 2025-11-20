@@ -62,7 +62,6 @@
                                 <td rowspan="{{ $totalRequestRowspan }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
-                                        {{ $totalRequestRowspan }}
                                         #{{ $requestGroup['purchase_request_no'] }}
                                     </p>
                                 </td>
