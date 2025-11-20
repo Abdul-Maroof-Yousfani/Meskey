@@ -1524,7 +1524,9 @@
                                                                     <div class="form-group mb-0">
 
                                                                         <input type="submit" value="Revert QC Request"
-                                                                            name="qc_request_revert" class="btn btn-primary" />
+                                                                            name="qc_request_revert" class="btn btn-danger"
+                                                                              onclick="return confirm('Are you sure you want to revert Qc?')"
+                                                                            />
 
                                                                     </div>
                                                                 </div>

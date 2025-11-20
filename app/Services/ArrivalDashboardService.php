@@ -49,12 +49,12 @@ class ArrivalDashboardService
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
-        
+
             ->where('sampling_type', 'initial')
             ->where('is_done', 'yes')
             ->where('approved_status', 'pending')
-              // Superadmin
-              ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            // Superadmin
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereHas('arrivalTicket', function ($sq) {
                     $sq->where('location_id', auth()->user()->company_location_id);
                 });
@@ -178,12 +178,18 @@ class ArrivalDashboardService
             ->where('second_weighbridge_status', 'completed')
             ->whereNull('freight_status')
             ->where('decision_making', 0)
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
         $freightReady = ArrivalTicket::where('company_id', $companyId)
             ->where('second_weighbridge_status', 'completed')
             ->where('freight_status', 'pending')
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('location_id', auth()->user()->company_location_id);
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
