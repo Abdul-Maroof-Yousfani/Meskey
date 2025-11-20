@@ -3,12 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use App\Models\Category;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\Tax;
+use App\Models\Procurement\Store\PurchaseOrderReceiving;
+use App\Models\Procurement\Store\PurchaseOrderReceivingData;
+use App\Models\Procurement\Store\PurchaseRequest;
+use App\Models\Sales\JobOrder;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class BillController extends Controller
 {
     public function index() {
         return view('management.procurement.store.bill.index');
+    }
+    public function create() {
+        $approvedPurchaseOrders = Bill::where('am_approval_status', 'approved')->with([
+            'purchaseOrderData' => function ($query) {
+                // $query->where('am_approval_status', 'approved');
+            }
+        ])
+            // ->whereHas('purchaseOrderData', function ($q): void {
+            //     $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_receiving_data WHERE purchase_order_data_id = purchase_order_data.id)');
+            // })
+            ->get();
+
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
+
+        return view('management.procurement.store.bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests'));
+   
     }
     public function getList() {
         // $PurchaseOrderRaw = PurchaseOrderReceivingData::with(
@@ -153,6 +178,114 @@ class BillController extends Controller
         return view('management.procurement.store.bill.getList', [
             'PurchaseOrderReceiving' => $bills,
             'GroupedPurchaseOrderReceiving' => $processedData
+        ]);
+    }
+
+    public function getNumber(Request $request, $locationId = null, $contractDate = null)
+    {
+        $location = CompanyLocation::find($locationId ?? $request->location_id);
+        $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+
+        $locationCode = $location->code ?? 'LOC';
+        $prefix = 'BILL-' . $locationCode . '-' . $date;
+
+        // Find latest PO for the same prefix
+        $latestBill = Bill::where('bill_no', 'like', "$prefix-%")
+            ->orderByDesc('id')
+            ->first();
+
+        if ($latestBill) {
+            // Correct field name
+            $parts = explode('-', $latestBill->purchase_order_no);
+            $lastNumber = (int) end($parts);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        $bill_no = 'BILL-' . $locationCode . '-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        if (!$locationId && !$contractDate) {
+            return response()->json([
+                'success' => true,
+                'purchase_order_no' => $bill_no,
+            ]);
+        }
+
+        return $bill_no;
+    }
+    public function getGrns(Request $request) {
+        $supplier_id = $request->supplier_id;
+        
+        $purchase_order_receivings = PurchaseOrderReceiving::select("id", "purchase_order_receiving_no")->where("supplier_id", $supplier_id)->get();
+
+        $results = [];
+        foreach ($purchase_order_receivings as $item) {
+            $results[] = [
+                'id' => $item->id,
+                'text' => $item->purchase_order_receiving_no,
+            ];
+        }
+
+        return $results;
+    }
+    public function show() {
+
+    }
+    public function approve_item(Request $request) {
+        $requestId = $request->id;
+        $supplierId = $request->supplier_id;
+    
+
+        $master = PurchaseOrderReceiving::find($requestId);
+        $dataItems = collect();
+        
+        
+
+            $dataItems = PurchaseOrderReceivingData::with(['purchase_request_data', 'item'])
+                ->where('purchase_order_receiving_id', $master->id)
+               
+                ->get();
+
+       
+            $purchaseOrderReceivingDataIds = $dataItems->pluck('id');
+
+            // $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseOrderReceivingDataIds)
+            //     ->whereHas('purchase_order', function ($q) use ($supplierId) {
+            //         $q->where('supplier_id', $supplierId);
+            //     })
+            //     ->count();
+         
+            // if ($existingQuotationCount > 0) {
+            //     $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+            //         ->whereHas('purchase_order', function ($q) use ($supplierId) {
+            //             $q->where('supplier_id', $supplierId);
+            //         })
+            //         ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
+            //         ->groupBy('item_id')
+            //         ->pluck('total_quoted_qty', 'item_id');
+
+            //     foreach ($dataItems as $item) {
+            //         $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+            //         $remainingQty = $item->qty - $quotedQty;
+            //         $item->qty = max($remainingQty, 0);
+            //         $item->total_quoted_qty = $quotedQty;
+
+            //     }
+            // } else {
+            //     foreach ($dataItems as $item) {
+            //         $item->qty = $item->qty;
+            //         $item->total_quoted_qty = 0;
+            //     }
+            // }
+
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        // $job_orders = JobOrder::select('id', 'job_order_no')->get();
+        $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+        $html = view('management.procurement.store.bill.bills', compact('dataItems', 'categories', 'taxes'))->render();
+        return response()->json([
+            'html' => $html,
+            'master' => $master,
         ]);
     }
 }

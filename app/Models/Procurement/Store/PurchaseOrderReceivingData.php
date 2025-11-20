@@ -2,6 +2,7 @@
 
 namespace App\Models\Procurement\Store;
 
+use App\Models\Bill;
 use App\Models\Category;
 use App\Models\Master\Supplier;
 use App\Models\Product;
@@ -53,6 +54,9 @@ class PurchaseOrderReceivingData extends Model
     /**
      * Get all GRNs for this purchase order data
      */
+    public function bills() {
+        return $this->hasMany(Bill::class, "purchase_order_receiving_id");
+    }
     public function grns(): HasMany
     {
         return $this->hasMany(MasterGrnNumber::class, 'model_id')
