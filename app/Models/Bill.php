@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Procurement\Store\PurchaseRequest;
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Bill extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $guarded = [
         "id",

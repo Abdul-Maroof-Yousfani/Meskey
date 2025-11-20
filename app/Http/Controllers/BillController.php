@@ -17,15 +17,18 @@ use Illuminate\Http\Request;
 
 class BillController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         return view('management.procurement.store.bill.index');
     }
-    public function create() {
-        $approvedPurchaseOrders = Bill::where('am_approval_status', 'approved')->with([
-            'purchaseOrderData' => function ($query) {
-                // $query->where('am_approval_status', 'approved');
-            }
-        ])
+    public function create()
+    {
+        $approvedPurchaseOrders = Bill::where('am_approval_status', 'approved')
+            ->with([
+                'purchaseOrderData' => function ($query) {
+                    // $query->where('am_approval_status', 'approved');
+                },
+            ])
             // ->whereHas('purchaseOrderData', function ($q): void {
             //     $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_receiving_data WHERE purchase_order_data_id = purchase_order_data.id)');
             // })
@@ -35,9 +38,9 @@ class BillController extends Controller
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
 
         return view('management.procurement.store.bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests'));
-   
     }
-    public function getList() {
+    public function getList()
+    {
         // $PurchaseOrderRaw = PurchaseOrderReceivingData::with(
         //     'qc',
         //     'purchase_order_receiving.purchase_order.purchase_request',
@@ -48,88 +51,99 @@ class BillController extends Controller
         //     ->latest()
         //     ->paginate(request('per_page', 25));
 
-        $bills = Bill::with(
-            "grn",
-            "purchase_request",
-            "purchase_order"
-        )
+        $bills = Bill::with(['bill_data', 'grn'])
             ->latest()
-            ->paginate(request("per_page", 25));
+            ->paginate(request('per_page', 25));
 
         $groupedData = [];
         $processedData = [];
 
         foreach ($bills as $row) {
-            // Handle missing relationships
-            $purchaseRequestNo = $row->purchase_order_receiving->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
-            $quotationNo = $row->purchase_order_receiving->purchase_quotation->purchase_quotation_no ?? 'N/A';
-            $orderNo = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
-            $itemId = $row->item->id ?? 'unknown';
-            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+            // Request-level identifiers
+            $purchaseOrderReceivingNo = $row->grn->purchase_order_receiving_no ?? 'N/A';
+            $orderNo = $row->bill_no ?? 'N/A';
 
             if ($orderNo === 'N/A') {
                 continue;
             }
 
+            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
 
+            // Initialize main order group
             if (!isset($groupedData[$orderNo])) {
                 $groupedData[$orderNo] = [
                     'request_data' => $row->purchase_order_receiving->purchase_quotation->purchase_request ?? null,
-                    'quotations' => []
+                    'purchase_order_receiving_no' => [],
                 ];
             }
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo] = [
+            // Initialize receiving number group
+            if (!isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo])) {
+                $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo] = [
                     'quotation_data' => $row->purchase_order_receiving->purchase_quotation ?? null,
-                    'orders' => []
+                    'orders' => [],
                 ];
             }
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
-                    'order_data' => $row->purchase_order_receiving,
+            // Initialize specific order group
+            if (!isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo])) {
+                $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo] = [
+                    'order_data' => $row->grn,
                     'row' => $row,
-                    'items' => []
+                    'items' => [],
                 ];
             }
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
-                    'qc' => $row->qc,
-                    'items' => []
-                ];
-            }
+            /*
+     |--------------------------------------------------------------------------
+     |  FIXED PART: ADD BILL DATA BASED ON item_id
+     |--------------------------------------------------------------------------
+     |  Each bill has multiple bill_data.
+     |  We now iterate OVER bill_data and use item_id as key.
+     */
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
-                    'item_data' => $row,
-                    // 'qc_status' => $row->qc?->is_qc_approved,
-                    'suppliers' => []
-                ];
-            }
+            foreach ($row->bill_data as $billItem) {
+                $itemId = $billItem->item_id;
 
-            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+                // Create item group
+                if (!isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId])) {
+                    $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId] = [
+                        'item_data' => $billItem,
+                        'suppliers' => [],
+                    ];
+                }
+
+                // Add supplier under that item
+                $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+            }
         }
 
-        // Process grouped data (unchanged)
+        /*
+ |--------------------------------------------------------------------------
+ |  PROCESS GROUPED DATA (unchanged)
+ |--------------------------------------------------------------------------
+*/
         foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
-            foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
+            foreach ($requestGroup['purchase_order_receiving_no'] as $purchaseOrderReceivingNo => $quotationGroup) {
                 foreach ($quotationGroup['orders'] as $orderNo => $orderGroup) {
                     $requestRowspan = 0;
                     $requestItems = [];
                     $hasApprovedItem = false;
 
+                    // Check approved items
                     foreach ($orderGroup['items'] as $itemGroup) {
                         foreach ($itemGroup['suppliers'] as $supplierData) {
-                            $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'N/A';
-                            if (strtolower($approvalStatus) === 'approved') {
+                            $approvalColumn = $supplierData->getApprovalModule()->approval_column ?? 'am_approval_status';
+                            $approvalStatus = strtolower($supplierData->{$approvalColumn} ?? 'N/A');
+
+                            if ($approvalStatus === 'approved') {
                                 $hasApprovedItem = true;
                                 break 2;
                             }
                         }
                     }
 
+                    // Build final items
                     foreach ($orderGroup['items'] as $itemId => $itemGroup) {
                         $itemRowspan = count($itemGroup['suppliers']);
                         $requestRowspan += $itemRowspan;
@@ -149,37 +163,32 @@ class BillController extends Controller
                         $requestItems[] = [
                             'item_data' => $itemGroup['item_data'],
                             'suppliers' => $itemSuppliers,
-                            'qc_status' => $itemGroup["qc_status"],
-                            'item_rowspan' => $itemRowspan
+                            'item_rowspan' => $itemRowspan,
                         ];
                     }
-                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_request->purchase_request_no ?? 'N/A';
-                    $originalPurchaseOrderNo = $orderGroup['order_data']->purchase_order->purchase_order_no ?? 'N/A';
 
+                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_order_receiving_no ?? 'N/A';
+                    $originalPurchaseOrderNo = $orderGroup['order_data']->purchase_order->purchase_order_no ?? 'N/A';
 
                     $processedData[] = [
                         'request_data' => $orderGroup['order_data'],
                         'request_no' => $orderNo,
                         'purchase_request_no' => $originalPurchaseRequestNo,
                         'purchase_order_no' => $originalPurchaseOrderNo,
-                        'quotation_no' => $quotationNo,
+                        'quotation_no' => $purchaseOrderReceivingNo,
                         'created_by_id' => $orderGroup['order_data']->created_by ?? null,
                         'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
-                        'qc_status' => $orderGroup['row']->qc?->is_qc_approved ?? null,
                         'has_approved_item' => $hasApprovedItem,
                     ];
-                    // dd($processedData);
                 }
             }
         }
 
-        // dd(array_keys($groupedData)); // Debug to check all POs
-
         return view('management.procurement.store.bill.getList', [
             'PurchaseOrderReceiving' => $bills,
-            'GroupedPurchaseOrderReceiving' => $processedData
+            'GroupedPurchaseOrderReceiving' => $processedData,
         ]);
     }
 
@@ -216,10 +225,11 @@ class BillController extends Controller
 
         return $bill_no;
     }
-    public function getGrns(Request $request) {
+    public function getGrns(Request $request)
+    {
         $supplier_id = $request->supplier_id;
-        
-        $purchase_order_receivings = PurchaseOrderReceiving::select("id", "purchase_order_receiving_no")->where("supplier_id", $supplier_id)->get();
+
+        $purchase_order_receivings = PurchaseOrderReceiving::select('id', 'purchase_order_receiving_no')->where('supplier_id', $supplier_id)->get();
 
         $results = [];
         foreach ($purchase_order_receivings as $item) {
@@ -231,26 +241,20 @@ class BillController extends Controller
 
         return $results;
     }
-    public function show() {
-
-    }
-    public function approve_item(Request $request) {
+    public function show() {}
+    public function approve_item(Request $request)
+    {
         $requestId = $request->id;
         $supplierId = $request->supplier_id;
-    
 
-        $master = PurchaseOrderReceiving::where("purchase_order_receiving_no", $requestId)->first();
+        $master = PurchaseOrderReceiving::where('purchase_order_receiving_no', $requestId)->first();
         $dataItems = collect();
-        
-        
 
-            $dataItems = PurchaseOrderReceivingData::with(['purchase_request_data', 'item'])
-                ->where('purchase_order_receiving_id', $master->id)
-                ->get();
+        $dataItems = PurchaseOrderReceivingData::with(['purchase_request_data', 'item'])
+            ->where('purchase_order_receiving_id', $master->id)
+            ->get();
 
-       
-            $purchaseOrderReceivingDataIds = $dataItems->pluck('id');
-
+        $purchaseOrderReceivingDataIds = $dataItems->pluck('id');
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         // $job_orders = JobOrder::select('id', 'job_order_no')->get();
@@ -262,8 +266,9 @@ class BillController extends Controller
         ]);
     }
 
-    public function store(Request $request) {
-        $purchaseOrderReceiving = PurchaseOrderReceiving::where("purchase_order_receiving_no", $request->grn_no)->first();
+    public function store(Request $request)
+    {
+        $purchaseOrderReceiving = PurchaseOrderReceiving::where('purchase_order_receiving_no', $request->grn_no)->first();
         $location = $request->company_location;
         $reference_no = $request->reference_no;
         $description = $request->description;
@@ -283,47 +288,45 @@ class BillController extends Controller
 
         try {
             $bill = Bill::create([
-                "purchase_order_receiving_id" => $purchaseOrderReceiving->id,
-                "purchase_request_id" => $purchaseOrderReceiving->purchase_request_id,
-                "purchase_order_id" => $purchaseOrderReceiving->purchase_order_id,
-                "bill_no" => $reference_no,
-                "reference_no" => $reference_no,
-                "created_by" => 1,
-                "status" => 'active',
-                "location_id" => $location,
-                "description" => "Description",
-                "company_id" => 1,
-                "am_approval_status" => "pending",
-                "am_change_made" => 1
+                'purchase_order_receiving_id' => $purchaseOrderReceiving->id,
+                // "purchase_request_id" => $purchaseOrderReceiving->purchase_request_id,
+                // "purchase_order_id" => $purchaseOrderReceiving->purchase_order_id,
+                'bill_no' => $reference_no,
+                'reference_no' => $reference_no,
+                'created_by' => 1,
+                'status' => 'active',
+                'location_id' => $location,
+                'description' => 'Description',
+                'company_id' => 1,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
-    
-            foreach($items as $index => $item) {
+
+            foreach ($items as $index => $item) {
                 BillData::create([
-                    "bill_id" => $bill->id,
-                    "item_id" => $items[$index],
-                    "purchase_order_receiving_data_id" => $purchaseOrderReceiving->id,
-                    "description" => $descriptions[$index],
-                    "qty" => $qty[$index],
-                    "rate" => $rate[$index],
-                    "gross_amount" => $gross_amount[$index],
-                    "tax_id" => $taxes[$index],
-                    "net_amount" => $net_amount[$index],
-                    "discount_percent" => $discounts[$index],
-                    "discount_amount" => $discount_amounts[$index],
-                    "deduction" => $deduction[$index],
-                    "final_amount" => $final_amount[$index],
-                    "am_approval_status" => "pending",
-                    "am_change_mode" => 1
+                    'bill_id' => $bill->id,
+                    'item_id' => $items[$index],
+                    'purchase_order_receiving_data_id' => $purchaseOrderReceiving->id,
+                    'description' => $descriptions[$index],
+                    'qty' => $qty[$index],
+                    'rate' => $rate[$index],
+                    'gross_amount' => $gross_amount[$index],
+                    'tax_id' => $taxes[$index],
+                    'net_amount' => $net_amount[$index],
+                    'discount_percent' => $discounts[$index],
+                    'discount_amount' => $discount_amounts[$index],
+                    'deduction' => $deduction[$index],
+                    'final_amount' => $final_amount[$index],
+                    'am_approval_status' => 'pending',
+                    'am_change_mode' => 1,
                 ]);
             }
 
             DB::commit();
-            return response()->json("Bill has been created successfully!");
-        } catch(\Exception $e) {
+            return response()->json('Bill has been created successfully!');
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
-
-
     }
 }

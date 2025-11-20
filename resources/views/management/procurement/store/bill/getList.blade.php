@@ -1,10 +1,9 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-3">PO Receiving No </th>
-            <th class="col-sm-3">Purchase Request No</th>
-            <th class="col-sm-3">Purchase Order No</th>
-            <th class="col-sm-3">Category- item</th>
+            <th class="col-sm-3">Bill No</th>
+            <th class="col-sm-3">GR No</th>
+            <th class="col-sm-3">Item</th>
             <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
             <th class="col-sm-1">Rate</th>
@@ -49,12 +48,7 @@
                                     </p>
                                 </td>
 
-                                <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}"
-                                    style="background-color: #fff3e0; vertical-align: middle;">
-                                    <p class="m-0 font-weight-bold">
-                                        #{{ $requestGroup['purchase_order_no'] ?? '-' }}
-                                    </p>
-                                </td>
+                                
                                 @php $isFirstItemRow = false; @endphp
                             @endif
                             {{-- Item --}}
@@ -106,24 +100,9 @@
                                             default => 'badge-secondary',
                                         };
                                     @endphp
-                                    @if($itemGroup["qc_status"] == 'pending')
-                                        <span class="badge badge-warning">
-                                            Pending
-                                        </span>
-                                    @elseif($itemGroup["qc_status"] == 'approved')
-                                        <span class="badge badge-success">
-                                            Approved
-                                        </span>
-
-                                    @elseif($itemGroup["qc_status"] == 'rejected')
-                                        <span class="badge badge-success">
-                                            Approved
-                                        </span>
-                                    @else
-                                        <span class="badge badge-info">
-                                            Not Created
-                                        </span>
-                                    @endif
+                                    <span class="badge badge-warning">
+                                        Pending
+                                    </span>
                                 </p>
                             </td>
                             {{-- Created Date --}}
@@ -162,7 +141,7 @@
                                             $shouldDisableApproval =
                                                 $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                         @endphp
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '100%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', 1) }}', 'View GRN', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
@@ -176,13 +155,13 @@
 
                                             
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
-                                                <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit GRN', false, '100%')"
+                                                <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', 1) }}', 'Edit GRN', false, '100%')"
                                                     class="info p-1 text-center mr-2 position-relative">
                                                     <i class="ft-edit font-medium-3"></i>
                                                 </a>
 
 
-                                                <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', $supplierRow['data']->purchase_order_receiving->id) }}', '{{ route('store.get.purchase-order-receiving') }}')"
+                                                <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', 1) }}', '{{ route('store.get.purchase-order-receiving') }}')"
                                                     class="danger p-1 text-center mr-2 position-relative">
                                                     <i class="ft-x font-medium-3"></i>
                                                 </a>
