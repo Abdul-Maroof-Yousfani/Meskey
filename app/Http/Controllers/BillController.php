@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use App\Models\BillData;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Tax;
@@ -11,6 +12,7 @@ use App\Models\Procurement\Store\PurchaseOrderReceivingData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Sales\JobOrder;
 use Carbon\Carbon;
+use DB;
 use Illuminate\Http\Request;
 
 class BillController extends Controller
@@ -222,7 +224,7 @@ class BillController extends Controller
         $results = [];
         foreach ($purchase_order_receivings as $item) {
             $results[] = [
-                'id' => $item->id,
+                'id' => $item->purchase_order_receiving_no,
                 'text' => $item->purchase_order_receiving_no,
             ];
         }
@@ -237,47 +239,18 @@ class BillController extends Controller
         $supplierId = $request->supplier_id;
     
 
-        $master = PurchaseOrderReceiving::find($requestId);
+        $master = PurchaseOrderReceiving::where("purchase_order_receiving_no", $requestId)->first();
         $dataItems = collect();
         
         
 
             $dataItems = PurchaseOrderReceivingData::with(['purchase_request_data', 'item'])
                 ->where('purchase_order_receiving_id', $master->id)
-               
                 ->get();
 
        
             $purchaseOrderReceivingDataIds = $dataItems->pluck('id');
 
-            // $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseOrderReceivingDataIds)
-            //     ->whereHas('purchase_order', function ($q) use ($supplierId) {
-            //         $q->where('supplier_id', $supplierId);
-            //     })
-            //     ->count();
-         
-            // if ($existingQuotationCount > 0) {
-            //     $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-            //         ->whereHas('purchase_order', function ($q) use ($supplierId) {
-            //             $q->where('supplier_id', $supplierId);
-            //         })
-            //         ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
-            //         ->groupBy('item_id')
-            //         ->pluck('total_quoted_qty', 'item_id');
-
-            //     foreach ($dataItems as $item) {
-            //         $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
-            //         $remainingQty = $item->qty - $quotedQty;
-            //         $item->qty = max($remainingQty, 0);
-            //         $item->total_quoted_qty = $quotedQty;
-
-            //     }
-            // } else {
-            //     foreach ($dataItems as $item) {
-            //         $item->qty = $item->qty;
-            //         $item->total_quoted_qty = 0;
-            //     }
-            // }
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         // $job_orders = JobOrder::select('id', 'job_order_no')->get();
@@ -287,5 +260,68 @@ class BillController extends Controller
             'html' => $html,
             'master' => $master,
         ]);
+    }
+
+    public function store(Request $request) {
+        $purchaseOrderReceiving = PurchaseOrderReceiving::where("purchase_order_receiving_no", $request->grn_no)->first();
+        $location = $request->company_location;
+        $reference_no = $request->reference_no;
+        $description = $request->description;
+        $items = $request->item_id;
+        $descriptions = $request->description;
+        $qty = $request->qty;
+        $rate = $request->rate;
+        $gross_amount = $request->gross_amount;
+        $taxes = $request->tax_id;
+        $net_amount = $request->net_amount;
+        $discounts = $request->discount_id;
+        $discount_amounts = $request->discount_amount;
+        $deduction = $request->deduction;
+        $final_amount = $request->final_amount;
+
+        DB::beginTransaction();
+
+        try {
+            $bill = Bill::create([
+                "purchase_order_receiving_id" => $purchaseOrderReceiving->id,
+                "purchase_request_id" => $purchaseOrderReceiving->purchase_request_id,
+                "purchase_order_id" => $purchaseOrderReceiving->purchase_order_id,
+                "bill_no" => $reference_no,
+                "reference_no" => $reference_no,
+                "created_by" => 1,
+                "status" => 'active',
+                "location_id" => $location,
+                "description" => "Description",
+                "company_id" => 1,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
+            ]);
+    
+            foreach($items as $index => $item) {
+                BillData::create([
+                    "bill_id" => $bill->id,
+                    "item_id" => $items[$index],
+                    "purchase_order_receiving_data_id" => $purchaseOrderReceiving->id,
+                    "description" => $descriptions[$index],
+                    "qty" => $qty[$index],
+                    "rate" => $rate[$index],
+                    "gross_amount" => $gross_amount[$index],
+                    "tax_id" => $taxes[$index],
+                    "net_amount" => $net_amount[$index],
+                    "discount_percent" => $discounts[$index],
+                    "discount_amount" => $discount_amounts[$index],
+                    "deduction" => $deduction[$index],
+                    "final_amount" => $final_amount[$index]
+                ]);
+            }
+
+            DB::commit();
+            return response()->json("Bill has been created successfully!");
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 500);
+        }
+
+
     }
 }

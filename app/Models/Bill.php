@@ -29,4 +29,8 @@ class Bill extends Model
     public function purchase_order() {
         return $this->belongsTo(PurchaseOrder::class, "purchase_order_id");
     }
+
+    public function bill_data() {
+        return $this->hasMany(BillData::class, "bill_id");
+    }
 }

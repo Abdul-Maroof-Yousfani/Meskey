@@ -64,8 +64,6 @@
                 id="qty_{{ $key }}"
                 class="form-control qty"
                 step="0.01"
-                min="0"
-                max="1"
                 {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}
             >
         </td>
@@ -81,7 +79,7 @@
                 id="rate_{{ $key }}" 
                 class="form-control rate" 
                 step="0.01" 
-                min="0">
+                >
         </td>
 
         <td style="width: 30%">
@@ -103,7 +101,7 @@
         </td>
 
         <td style="width: 30%">
-            <input style="width: 100px" type="number" readonly name="total[]" value="{{ (($data->qty) * $data->rate) + ((0 / 100) * (($data->qty) * $data->rate)) }}"
+            <input style="width: 100px" type="number" readonly name="net_amount[]" value="{{ (($data->qty) * $data->rate) + ((0 / 100) * (($data->qty) * $data->rate)) }}"
                 id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
         </td>
 

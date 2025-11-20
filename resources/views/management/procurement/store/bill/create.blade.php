@@ -4,7 +4,7 @@
     }
 </style>
 
-<form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('store.bill.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
     <div class="row form-mar">
