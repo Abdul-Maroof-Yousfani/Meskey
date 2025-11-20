@@ -311,7 +311,9 @@ class BillController extends Controller
                     "discount_percent" => $discounts[$index],
                     "discount_amount" => $discount_amounts[$index],
                     "deduction" => $deduction[$index],
-                    "final_amount" => $final_amount[$index]
+                    "final_amount" => $final_amount[$index],
+                    "am_approval_status" => "pending",
+                    "am_change_mode" => 1
                 ]);
             }
 
