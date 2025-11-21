@@ -51,7 +51,7 @@
 
         <td style="width: 30%">
             <input type="text" style="width: 100%;" name="description[]" value=""
-                id="description_{{ $key }}" class="form-control uom" readonly>
+                id="description_{{ $key }}" class="form-control uom">
         </td>
 
         <td style="width: 30%">
