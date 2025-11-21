@@ -42,6 +42,11 @@ class ApprovalModuleController extends Controller
             [
                 'value' => 'App\Models\Procurement\Store\QC',
                 'label' => 'QC data'
+            ],
+
+            [
+                'value' => 'App\Models\Procurement\Store\PurchaseBill',
+                'label' => 'Purchase Bill'
             ]
         ];
 

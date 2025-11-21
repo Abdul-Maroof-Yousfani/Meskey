@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{Category, Product, User};
+use App\Models\{Category, Master\Tax, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -124,6 +124,27 @@ if (!function_exists("isBag")) {
     {
         $product = Product::select("is_bag")->find($item_id);
         return $product->is_bag;
+    }
+}
+
+if(!function_exists("totalBillQuantityCreated")) {
+    function totalBillQuantityCreated(int $purchase_order_receving_id, int $item_id) {
+        $purchase_bill_ids = (PurchaseBill::where("purchase_order_receiving_id", $purchase_order_receving_id)->get())->pluck("id");
+        $data = PurchaseBillData::select(
+            DB::raw("SUM(qty) AS billed_quantity")
+        )
+            ->whereIn("purchase_bill_id", $purchase_bill_ids)
+            ->where("item_id", $item_id)
+            ->first();
+
+        return $data->billed_quantity; 
+    }
+}
+
+if(!function_exists("getTaxById")) {
+    function getTaxPercentageById($tax_id) {
+        $tax = Tax::find($tax_id);
+        return $tax->percentage;
     }
 }
 

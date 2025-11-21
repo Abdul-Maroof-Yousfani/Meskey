@@ -3,6 +3,8 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Procurement\Store\PurchaseBill;
+use App\Models\Procurement\Store\PurchaseBillData;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
@@ -33,6 +35,7 @@ Route::get("/restore-db", function() {
     $purchase_request_data = PurchaseRequestData::query()->delete();
     $purchase_quotation = PurchaseQuotation::query()->delete();
     $purchase_receive = PurchaseOrderReceiving::query()->delete();
+    $purchase_bill = PurchaseBill::query()->delete();
 
     $purchase_quotation_data = PurchaseQuotationData::query()->delete();
     $purchase_order = PurchaseOrder::query()->delete();
@@ -40,6 +43,7 @@ Route::get("/restore-db", function() {
     $purchase_receive_data = PurchaseOrderReceivingData::query()->delete();
     $qc = QC::query()->delete();
     $qc_bags = QCBags::query()->delete();
+    $purchase_bill_data = PurchaseBillData::query()->delete();
 
     DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 

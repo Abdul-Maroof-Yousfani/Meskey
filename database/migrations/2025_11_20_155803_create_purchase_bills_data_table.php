@@ -11,22 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bill_data', function (Blueprint $table) {
+        Schema::create('purchase_bills_data', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("bill_id")->constrained("bills")->cascadeOnDelete();
+            $table->foreignId("purchase_bill_id")->constrained("purchase_bills")->cascadeOnDelete();
             $table->foreignId("item_id")->constrained("products")->cascadeOnDelete();
-            $table->foreignId("purchase_order_receiving_data_id")->constrained("purchase_order_receiving_data")->cascadeOnDelete();
             $table->string("description")->nullable();
             $table->float("qty");
             $table->float("rate");
             $table->float("gross_amount");
+            $table->float("net_amount");
             $table->float("tax_percent");
             $table->float("tax_amount");
-            $table->float("net_amount");
             $table->float("discount_percent");
             $table->float("discount_amount");
-            $table->float("deduction_per_piece");
             $table->float("deduction");
+            $table->float("deduction_per_piece");
             $table->float("final_amount");
             $table->enum("bill_status", ["pending", "completed"])->default("pending");
             $table->string("am_approval_status");
@@ -40,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bill_data');
+        Schema::dropIfExists('purchase_bills_data');
     }
 };

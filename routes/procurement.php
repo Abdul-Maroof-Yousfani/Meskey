@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\IndicativePriceController;
+use App\Http\Controllers\Procurement\Store\PurchaseBillController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     GateBuyingPaymentRequestController,
@@ -155,11 +156,12 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post("/qc/updateAmount", [QcController::class, "updateAmounts"])->name("qc.update-amount");
 
 
-    Route::get("bill/approve-item", [BillController::class, "approve_item"])->name("bill.approve-item");
-    Route::resource("bill", BillController::class);
-    Route::post("/bill/getList", [BillController::class, "getList"])->name("get.bills");
-    Route::get("get-unique-number-bill/{locationId}/{contractDate}", [BillController::class, "getNumber"])->name("bill.getNumber");
-    Route::get("get-grns", [BillController::class, "getGrns"])->name("get.grns");
+    Route::get("purchase-bill/approve-item", [PurchaseBillController::class, "approve_item"])->name("purchase-bill.approve-item");
+    Route::resource("purchase-bill", PurchaseBillController::class);
+    Route::get('purchase-bill-approvals/{id}', [PurchaseBillController::class, 'manageApprovals'])->name('purchase-bill.approvals');
+    Route::post("/purchase-bill/getList", [PurchaseBillController::class, "getList"])->name("get.purchase-bill");
+    Route::get("get-unique-number-purchase-bill/{locationId}/{contractDate}", [PurchaseBillController::class, "getNumber"])->name("purchase-bill.getNumber");
+    Route::get("get-grns", [PurchaseBillController::class, "getGrns"])->name("get.grns");
    
 
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
