@@ -1971,7 +1971,7 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="row mt-2 w-100 mx-auto d-none">
+                                                                <div class="row mt-2 w-100 mx-auto d-one">
 
 
                                                                     @if($arrivalSamplingRequest->is_done == 'yes' && $arrivalSamplingRequest->approved_status == 'pending')
