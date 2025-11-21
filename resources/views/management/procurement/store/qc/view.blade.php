@@ -275,18 +275,17 @@
         </form>
 
 
-        @if($purchaseOrderReceivingData->qc->accepted_quantity > 0 || $purchaseOrderReceivingData->qc->rejected_quantity > 0)        
-            <div class="row">
-                <div class="col-12">
-                    <x-approval-status :model="$purchaseOrderReceivingData->qc" />
-                </div>
+        <div class="row">
+            <div class="col-12">
+                <x-approval-status-and-saved :model="$purchaseOrderReceivingData->qc" />
             </div>
-        @endif
+        </div>
         <div class="row bottom-button-bar" style="padding-bottom: 20px;">
             &nbsp;
         </div>
         
         <script>
             
+         
             $(".select2").select2();
         </script>
