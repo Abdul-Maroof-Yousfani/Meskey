@@ -11,6 +11,7 @@
         $changesRequired = $model->am_change_made == 0;
         $currentApprovals = $model->getCurrentApprovals();
         $approvalCycles = $model->approvalRows()->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
+
     @endphp
 
 
@@ -404,7 +405,6 @@
                     $('#model_data_ids').val(JSON.stringify(approvedQtys));
 
                     $('#approvalTypeInput').val(type);
-
                     $('#ajaxSubmit').submit();
                     // location.reload();
                 }

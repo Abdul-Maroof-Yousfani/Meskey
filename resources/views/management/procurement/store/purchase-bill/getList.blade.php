@@ -4,12 +4,10 @@
             <th class="col-sm-3">Bill No</th>
             <th class="col-sm-3">GR No</th>
             <th class="col-sm-3">Item</th>
-            <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
             <th class="col-sm-1">Rate</th>
             <th class="col-sm-1">Total Amount</th>
-            <th class="col-sm-1">QC Status</th>
-            <th class="col-sm-1">Item Status</th>
+            <th class="col-sm-1">Status</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -22,6 +20,7 @@
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php $isFirstItemRow = true; @endphp
                     @foreach ($itemGroup['suppliers'] as $supplierRow)
+                      
                         @php
                             $approvalDataStatus = ucwords(
                                 $supplierRow['data']
@@ -31,6 +30,7 @@
                         @endphp
                         <tr>
                             {{-- Purchase Order No --}}
+                          
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
@@ -52,19 +52,31 @@
                                 @php $isFirstItemRow = false; @endphp
                             @endif
                             {{-- Item --}}
+                          
                             <td>
                                 <p class="m-0 font-weight-bold">
-                                    {{ optional($supplierRow['data']->category)->name }} -
-                                    {{ optional($supplierRow['data']->item)->name }}
+                                    {{ getItem($itemGroup["item_data"]?->item_id ?? 0)["name"] ?? 0 }}
                                 </p>
                             </td>
 
-                            {{-- Supplier --}}
-                            <td style="background-color: #fff3e0; vertical-align: middle;">
+                            <td>
                                 <p class="m-0 font-weight-bold">
-                                    {{ optional($supplierRow['data']->supplier)->name }}
+                                    {{ number_format($itemGroup["item_data"]?->qty ?? 0) }}
                                 </p>
                             </td>
+                            <td>
+                                <p class="m-0 font-weight-bold">
+                                    {{ number_format($itemGroup["item_data"]?->rate ?? 0) }}
+                                </p>
+                            </td>
+                         
+                            <td>
+                                <p class="m-0 font-weight-bold">
+                                    {{ number_format($itemGroup["item_data"]?->final_amount ?? 0) }}
+                                </p>
+                            </td>
+                            {{-- Supplier --}}
+                        
 
                             {{-- Unit --}}
                             {{-- <td>
@@ -74,37 +86,8 @@
                             </td> --}}
 
                             {{-- Rate --}}
-                            <td>
-                                <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->qty }}
-                                </p>
-                            </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->rate }}
-                                </p>
-                            </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->total }}
-                                </p>
-                            </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    @php
-                                        $badgeClass = match (strtolower($approvalStatus)) {
-                                            'approved' => 'badge-success',
-                                            'rejected' => 'badge-danger',
-                                            'pending' => 'badge-warning',
-                                            'returned' => 'badge-info',
-                                            default => 'badge-secondary',
-                                        };
-                                    @endphp
-                                    <span class="badge badge-warning">
-                                        Pending
-                                    </span>
-                                </p>
-                            </td>
+                         
+                         
                             {{-- Created Date --}}
                             {{-- <td>
                                 <p class="m-0 white-nowrap">
@@ -118,7 +101,7 @@
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                     @php
-                                        $badgeClass = match (strtolower($approvalStatus)) {
+                                        $badgeClass = match (strtolower($requestGroup["row_data"]["am_approval_status"])) {
                                             'approved' => 'badge-success',
                                             'rejected' => 'badge-danger',
                                             'pending' => 'badge-warning',
@@ -127,7 +110,7 @@
                                         };
                                     @endphp
                                     <span class="badge {{ $badgeClass }}">
-                                        {{ $approvalStatus }}
+                                        {{ $requestGroup["row_data"]["am_approval_status"]  }}
                                     </span>
                                 </td>
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
@@ -141,7 +124,7 @@
                                             $shouldDisableApproval =
                                                 $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                         @endphp
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', 1) }}', 'View GRN', false, '100%')"
+                                        <a onclick="openModal(this, '{{ route('store.purchase-bill.approvals',  $requestGroup["row_data"] ? $requestGroup["row_data"]["id"] : 0) }}', 'View Purchase Bill', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
@@ -150,18 +133,17 @@
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
                                             <i class="ft-edit font-medium-3"></i>
                                         </a> --}}
-                                        
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
 
                                             
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
-                                                <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', 1) }}', 'Edit GRN', false, '100%')"
+                                                <a onclick="openModal(this, '{{ route('store.purchase-bill.edit', $requestGroup["row_data"] ? $requestGroup["row_data"]["id"] : 0) }}', 'Edit Purchase Bill', false, '100%')"
                                                     class="info p-1 text-center mr-2 position-relative">
                                                     <i class="ft-edit font-medium-3"></i>
                                                 </a>
 
 
-                                                <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', 1) }}', '{{ route('store.get.purchase-order-receiving') }}')"
+                                                <a onclick="deletemodal('{{ route('store.purchase-bill.destroy', $requestGroup["row_data"] ? $requestGroup["row_data"]["id"] : 0) }}', '{{ route('store.get.purchase-bill') }}')"
                                                     class="danger p-1 text-center mr-2 position-relative">
                                                     <i class="ft-x font-medium-3"></i>
                                                 </a>
