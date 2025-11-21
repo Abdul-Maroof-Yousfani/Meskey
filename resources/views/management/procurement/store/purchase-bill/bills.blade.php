@@ -52,7 +52,7 @@
 
         <td style="width: 30%">
             <input type="text" style="width: 100%;" name="description[]" value="" id="description_{{ $key }}"
-                class="form-control uom">
+                class="form-control uom" readonly>
         </td>
        
         <td style="width: 30%">
@@ -66,6 +66,7 @@
                 id="qty_{{ $key }}"
                 class="form-control qty"
                 step="0.01"
+                readonly
                 {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}
             >
         </td>
@@ -81,6 +82,7 @@
                 id="rate_{{ $key }}" 
                 class="form-control rate" 
                 step="0.01" 
+                readonly
                 >
         </td>
 
@@ -92,16 +94,16 @@
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]" value="{{ getTaxPercentageById($data->sales_tax) }}"
-                id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01" min="0">
+                id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01" min="0" readonly>
         </td>
         <td style="width: 30%">
             <input style="width: 100px" type="number"  readonly onkeyup="calculatePercentage(this)" name="tax_amount[]" value="{{ (getTaxPercentageById($data->sales_tax) / 100) * ($remainingQty * $data->purchase_order_data->rate) }}"
-                id="tax_id_{{ $key }}" class="form-control tax_amount" step="0.01" min="0">
+                id="tax_id_{{ $key }}" class="form-control tax_amount" step="0.01" min="0" readonly>
         </td>
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="net_amount[]" value="{{ (($remainingQty) * $data->purchase_order_data->rate) }}"
-                id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
+                id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0" readonly>
         </td>
 
 
@@ -115,21 +117,22 @@
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="discount_amount[]" value="0"
-                id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01" min="0">
+                id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01" min="0" readonly>
         </td>
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
+            readonly
                 id="deduction_per_piece_{{ $key }}" value="{{ $data->qc?->deduction_per_bag ?? 0 }}" class="form-control deduction_per_piece" step="0.01" min="0">
         </td>
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="deduction[]" value="{{ ($data->qc?->deduction_per_bag ?? 0) * $remainingQty }}"
-                id="deduction_{{ $key }}" class="form-control deduction" step="0.01" min="0">
+                id="deduction_{{ $key }}" class="form-control deduction" step="0.01" min="0" readonly>
         </td>
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="final_amount[]"  value="{{ (($remainingQty) * $data->purchase_order_data->rate) + ((getTaxPercentageById($data->sales_tax) / 100) * ($remainingQty * $data->purchase_order_data->rate)) }}"
-                id="final_amount_{{ $key }}" class="form-control final_amount" step="0.01" min="0">
+                id="final_amount_{{ $key }}" class="form-control final_amount" step="0.01" min="0" readonly>
         </td>
     
 

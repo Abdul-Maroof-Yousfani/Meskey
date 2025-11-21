@@ -110,7 +110,7 @@
 
                                 <td style="width: 30%">
                                     <input type="text" style="width: 100%;" name="description[]" value="" id="description_{{ $key }}"
-                                        class="form-control uom">
+                                        class="form-control uom" readonly>
                                 </td>
                             
                                 <td style="width: 30%">
@@ -124,6 +124,7 @@
                                         id="qty_{{ $key }}"
                                         class="form-control qty"
                                         step="0.01"
+                                        readonly
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}
                                     >
                                 </td>
@@ -139,6 +140,7 @@
                                         id="rate_{{ $key }}" 
                                         class="form-control rate" 
                                         step="0.01" 
+                                        readonly
                                         >
                                 </td>
 
@@ -150,16 +152,16 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]" value="{{ $data->tax_percent }}"
-                                        id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01" min="0">
+                                        id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01" min="0" readonly>
                                 </td>
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number"  readonly onkeyup="calculatePercentage(this)" name="tax_amount[]" value="{{ $data->tax_amount }}"
-                                        id="tax_id_{{ $key }}" class="form-control tax_amount" step="0.01" min="0">
+                                        id="tax_id_{{ $key }}" class="form-control tax_amount" step="0.01" min="0" readonly>
                                 </td>
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="net_amount[]" value="{{ $data->net_amount }}"
-                                        id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
+                                        id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0" readonly>
                                 </td>
 
 
@@ -173,21 +175,21 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="discount_amount[]" value="{{ $data->discount_amount }}"
-                                        id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01" min="0">
+                                        id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01" min="0" readonly>
                                 </td>
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
-                                        id="deduction_per_piece_{{ $key }}" value="{{ $data->deduction_per_piece }}" class="form-control deduction_per_piece" step="0.01" min="0">
+                                        id="deduction_per_piece_{{ $key }}" value="{{ $data->deduction_per_piece }}" class="form-control deduction_per_piece" step="0.01" min="0" readonly>
                                 </td>
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="deduction[]" value="{{ $data->deduction }}"
-                                        id="deduction_{{ $key }}" class="form-control deduction" step="0.01" min="0">
+                                        id="deduction_{{ $key }}" class="form-control deduction" step="0.01" min="0" readonly>
                                 </td>
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="final_amount[]"  value="{{ $data->final_amount }}"
-                                        id="final_amount_{{ $key }}" class="form-control final_amount" step="0.01" min="0">
+                                        id="final_amount_{{ $key }}" class="form-control final_amount" step="0.01" min="0" readonly>
                                 </td>
                             
 
