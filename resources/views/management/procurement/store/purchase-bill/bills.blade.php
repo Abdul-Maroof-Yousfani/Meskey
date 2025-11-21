@@ -146,11 +146,12 @@
         });
     });
 
-    function round(num, decimals = 2) {
+     function round(num, decimals = 2) {
         return Number(Math.round(num + "e" + decimals) + "e-" + decimals);
     }
+
     function calculatePercentage(el) {
-    const row = $(el).closest("tr");
+       const row = $(el).closest("tr");
 
     const gross_amount = row.find(".gross_amount");
     const rate = row.find(".rate");
@@ -168,13 +169,13 @@
     const discountPercentVal = parseFloat(discount_percent.val()) || 0;
     const taxPercentVal = parseFloat(tax_percent.val()) || 0;
 
-    const percent_amount_of_gross = 1;
+    // const percent_amount_of_gross = 1;
 
     // Clean values
     const gross = rateVal * qtyVal;
     gross_amount.val(gross);
 
-    const net_amount_value = gross + percent_amount_of_gross;
+    const net_amount_value = gross;
     const discount_amount_value =
         (discountPercentVal / 100) * gross;
 
@@ -188,11 +189,12 @@
     // Set values
     tax_amount_input.val(tax_amount_rounded);
     net_amount.val(net_amount_rounded);
-    percent_amount.val(round(percent_amount_of_gross));
-    discount_amount.val(round((discountPercentVal / 100) * net_amount_value));
-
+    discount_amount.val((discountPercentVal / 100) * net_amount_value);
+    console.log(net_amount_value);
     // IMPORTANT: Use rounded tax value
     final_amount.val(round(net_amount_rounded + tax_amount_rounded));
-}
+
+
+    }
 
 </script>
