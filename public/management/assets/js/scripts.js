@@ -848,8 +848,22 @@ function openImageModal(
   });
 }
 
-function openModal(button, url, title, viewonly = false, drawerWidth = "50%") {
+function openModal(button, url, title, viewonly = false, drawerWidth = null) {
   
+
+
+
+   // Auto responsive width if not provided manually
+   if (!drawerWidth) {
+    if (window.innerWidth <= 576) {
+        drawerWidth = "98%";   // Mobile
+    } else if (window.innerWidth <= 768) {
+        drawerWidth = "70%";    // Tablet
+    } else {
+        drawerWidth = "50%";    // Desktop
+    }
+  }
+
   var $button = $(button); // Get the button element
   var originalText = $button.html(); // Store the original button text
   $button

@@ -62,7 +62,7 @@
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-6">
                     <h2 class="page-title"> Arrival Summary: {{ $arrivalTicket->unique_no }}</h2>
                 </div>
             </div>
@@ -86,13 +86,56 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
+                                            <label class="d-block">Contract Detail:</label>
+                                            <select name="arrival_purchase_order_id" id="arrival_purchase_order_id"
+                                                class="form-control select2">
+                                                <option value="">N/A</option>
+                                                @foreach ($arrivalPurchaseOrders as $order)
+                                                    <option value="{{ $order->id }}"
+                                                        data-product-id="{{ $order->product->id ?? '' }}"
+                                                        data-product-name="{{ $order->product->name ?? '' }}"
+                                                        data-supplier-id="{{ $order->supplier->name ?? '' }}"
+                                                        data-supplier-name="{{ $order->supplier->name ?? '' }}"
+                                                        data-created-by-id="{{ $order->created_by ?? '' }}"
+                                                        data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
+                                                        data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
+                                                        data-sauda-type-id="{{ $order->saudaType->id ?? '' }}"
+                                                        data-created-at="{{ $order->created_at ?? '' }}"
+                                                        @selected($arrivalTicket->arrival_purchase_order_id == $order->id)>
+                                                        #{{ $order->contract_no }} - Type:
+                                                        {{ $order->saudaType->name ?? 'N/A' }} - Purchase Type:
+                                                        {{ formatEnumValue($order->purchase_type ?? 'N/A') }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
                                             <label>Product:</label>
                                             <input type="text" name="station_id" placeholder="Product Name"
                                                 class="form-control" disabled autocomplete="off"
                                                 value="{{ $arrivalTicket->product->name ?? 'N/A' }}" />
                                         </div>
+                                    </div> -->
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
+                                        <div class="form-group ">
+                                            <label>Product:</label>
+                                            <select name="product_id_display" id="product_id"
+                                                class="form-control select2">
+                                                <option value="">Product Name</option>
+                                                @foreach ($products as $product)
+                                                    <option value="{{ $product->id }}"
+                                                        @selected($arrivalTicket->product_id == $product->id)>
+                                                        {{ $product->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <input type="hidden" name="product_id" id="product_id_hidden"
+                                                value="{{ $arrivalTicket->product_id }}">
+                                        </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Miller:</label>
 
@@ -114,22 +157,54 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <!-- <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Broker:</label>
                                             <input type="text" placeholder="Broker" class="form-control" disabled
                                                 autocomplete="off" value="{{ $arrivalTicket->broker_name }}" />
                                         </div>
+                                    </div> -->
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
+                                        <div class="form-group ">
+                                            <label>Broker:</label>
+                                            <select name="broker_name" id="broker_name" class="form-control select2">
+                                                <option value="">Broker Name</option>
+                                                @foreach ($suppliers as $supplier)
+                                                    <option value="{{ $supplier->name }}"
+                                                        @selected($arrivalTicket->broker_name == $supplier->name)>
+                                                        {{ $supplier->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            
+                                        </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <!-- <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Accounts Of:</label>
                                             <input type="text" placeholder="Accounts Of" class="form-control" disabled
                                                 autocomplete="off"
                                                 value="{{ $arrivalTicket->accounts_of_name ?? 'N/A' }}" />
                                         </div>
+                                    </div> -->
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
+                                        <div class="form-group">
+                                            <label>Accounts Of:</label>
+                                            <select name="accounts_of_display" id="accounts_of" class="form-control select2">
+                                                <option value="" hidden>Accounts Of</option>
+                                                @foreach ($suppliers as $supplier)
+                                                    <option value="{{ $supplier->name }}"
+                                                        @selected($arrivalTicket->accounts_of_name == $supplier->name)>
+                                                        {{ $supplier->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <input type="hidden" name="accounts_of" id="accounts_of_hidden">
+
+
+                                        </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Decision Of:</label>
                                             <input type="text" placeholder="Decision Of" class="form-control" disabled
@@ -139,7 +214,7 @@
                                     </div>
 
 
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group ">
                                             <label>Station:</label>
                                             <select name="station" id="station_id" class="form-control select2">
@@ -152,7 +227,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <!-- <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <!-- <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Truck Type:</label>
                                             <input type="text" name="station_id" placeholder="Truck Type"
@@ -162,7 +237,7 @@
                                     </div> -->
 
 
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group ">
                                             <label>Truck Type:</label>
                                             <select name="truck_type_id" id="truck_type_id"
@@ -178,7 +253,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group ">
                                             <label>Sample Money Type:</label>
                                             <select name="sample_money_type" class="form-control">
@@ -193,7 +268,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <!-- <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <!-- <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Sample Money Type:</label>
                                             <input type="text" name="station_id" placeholder="Product Name"
@@ -202,28 +277,28 @@
                                         </div>
                                     </div> -->
 
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Truck No:</label>
                                             <input type="text" name="truck_no" value="{{ $arrivalTicket->truck_no }}"
                                                 placeholder="Truck No" class="form-control" autocomplete="off" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Bilty No: </label>
                                             <input type="text" name="bilty_no" value="{{ $arrivalTicket->bilty_no }}"
                                                 placeholder="Bilty No" class="form-control" autocomplete="off" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>No of bags: </label>
                                             <input type="text" name="bags" placeholder="No of bags" class="form-control"
                                                 autocomplete="off" value="{{ $arrivalTicket->bags }}" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Sample Money: </label>
                                             <input type="text" readonly name="sample_money"
@@ -231,7 +306,7 @@
                                                 class="form-control" autocomplete="off" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Loading Date:</label>
                                             <input type="date" name="loading_date"
@@ -256,7 +331,7 @@
                                             Loading Weight Detail
                                         </h6>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>First Weighbridge Weight:</label>
                                             <input type="text" name="first_weight" placeholder="First Weight"
@@ -264,7 +339,7 @@
                                                 value="{{ $arrivalTicket->first_weight }}" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>2nd Weighbridge Weight: </label>
                                             <input type="text" name="second_weight" placeholder="Second Weight"
@@ -272,7 +347,7 @@
                                                 value="{{ $arrivalTicket->second_weight }}" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Net Weight: </label>
                                             <input type="text" name="net_weight" disabled placeholder="Net Weight"
@@ -488,12 +563,12 @@
                                                             value="{{ $arrivalTicket->approvals->total_bags }}"
                                                             autocomplete="off"
                                                             mddax="{{ $arrivalTicket->document_approval_status == 'half_approved' ? $arrivalTicket->bags : '' }}"" required />
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
+                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                </div>
 
-                                                                                                                                                            <div
-                                                                                                                                                                class="
+                                                                                                                                                                                                <div
+                                                                                                                                                                                                    class="
                                                             row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
 
                                                         <div class="col-12">
@@ -572,7 +647,7 @@
                                                 </h6>
                                             </div>
                                             @if (isset($arrivalTicket->secondWeighbridge))
-                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="col-xs-6 col-sm-6 col-md-4">
                                                     <div class="form-group">
                                                         <label>First Weighbridge Weight:</label>
                                                         <input type="text" disabled placeholder="First Weight"
@@ -580,7 +655,7 @@
                                                             value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
                                                     </div>
                                                 </div>
-                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="col-xs-6 col-sm-6 col-md-4">
                                                     <div class="form-group">
                                                         <label>2nd Weighbridge Weight: </label>
                                                         <input type="text" name="arrival_second_weight"
@@ -589,7 +664,7 @@
                                                             value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
                                                     </div>
                                                 </div>
-                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="col-xs-6 col-sm-6 col-md-4">
                                                     <div class="form-group">
                                                         <label>Net Weighbridge Weight: </label>
                                                         <input type="text" name="arrival_net_weight" disabled
@@ -612,7 +687,7 @@
                                                         </div>
                                                     </fieldset>
                                                 </div>
-                                                <div class="col-xs-4 col-sm-4 col-md-4 d-none">
+                                                <div class="col-xs-6 col-sm-6 col-md-4 d-none">
                                                     <div class="form-group">
                                                         <label>Weight Difference: </label>
                                                         <input type="text" name="net_weight" disabled
@@ -1520,19 +1595,18 @@
                                                                     operation in progress
                                                                 </div>
                                                                 @if($arrivalSamplingRequest->sampling_type == 'inner')
-                                                                <div class="col-xs-12 col-sm-4 col-md-4 text-right">
-                                                                    <div class="form-group mb-0">
+                                                                    <div class="col-xs-12 col-sm-6 col-md-4 text-right">
+                                                                        <div class="form-group mb-0">
 
-                                                                        <input type="submit" value="Revert QC Request"
-                                                                            name="qc_request_revert" class="btn btn-danger"
-                                                                              onclick="return confirm('Are you sure you want to revert Qc?')"
-                                                                            />
+                                                                            <input type="submit" value="Revert QC Request"
+                                                                                name="qc_request_revert" class="btn btn-danger"
+                                                                                onclick="return confirm('Are you sure you want to revert Qc?')" />
 
+                                                                        </div>
                                                                     </div>
-                                                                </div>
                                                                 @endif
                                                             </div>
-                                                            @else
+                                                        @else
                                                             <div class="currntbox">
                                                                 <div class="row w-100 mx-auto">
                                                                     <div class="col-md-4"></div>
@@ -2166,6 +2240,86 @@
         }
     });
 
+</script>
+
+<script>
+    $(document).ready(function () {
+
+
+
+        $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
+            // First reset all form fields
+            resetAllFormFields();
+
+            var selectedOption = $(this).find('option:selected');
+            if (selectedOption.val() === "") {
+                return; // If N/A is selected, just keep all fields reset
+            }
+
+            // Now populate fields from the selected contract
+            var supplierId = selectedOption.data('supplier-id');
+            var productId = selectedOption.data('product-id');
+            var createdById = selectedOption.data('created-by-id');
+            var saudaTypeName = selectedOption.data('sauda-type-name');
+            var saudaTypeId = selectedOption.data('sauda-type-id');
+            var createdAt = selectedOption.data('created-at');
+
+            // Set product selection
+            if (productId) {
+                $('#product_id').val(productId).trigger('change');
+                $('#product_id_hidden').val(productId);
+                $('#product_id').prop('disabled', true).addClass('disabled-field');
+            }
+
+            // Set broker/supplier selection
+            if (supplierId) {
+                $('#broker_name').val(supplierId).trigger('change');
+                $('#accounts_of').val(supplierId).trigger('change');
+                $('#accounts_of_hidden').val(supplierId);
+                $('#accounts_of').prop('disabled', true).addClass('disabled-field');
+            }
+
+            // Set decision maker selection
+            if (createdById) {
+                $('#decision_id').val(createdById).trigger('change');
+            }
+
+            console.log({
+                saudaTypeName
+            });
+
+            // Set Sauda Type
+            if (saudaTypeName) {
+                $('#sauda_type_id').val(saudaTypeId).trigger('change');
+
+                $('#sauda_type').val(saudaTypeName);
+                // If you need to store the sauda_type_id, you would need to add it to the data attributes
+                $('#sauda_type_id').val(saudaTypeId);
+            }
+
+            // Set loading date
+            if (createdAt) {
+                //  $('input[name="loading_date"]').val(createdAt.split(' ')[0]);
+            }
+        });
+
+        function resetAllFormFields() {
+            // Reset product fields
+            // $('#product_id').val('').trigger('change');
+
+            $('#product_id').prop('disabled', false).removeClass('disabled-field');
+            $('#accounts_of').prop('disabled', false).removeClass('disabled-field');
+
+        }
+
+        var selectedOption1 = $('[name="arrival_purchase_order_id"]').find('option:selected');
+        if (selectedOption1.val() === "") {
+            return; // If N/A is selected, just keep all fields reset
+        }
+        $('#product_id').prop('disabled', true).addClass('disabled-field');
+        $('#accounts_of').prop('disabled', true).addClass('disabled-field');
+
+    });
 </script>
 @if (!isset($source) || $source != 'contract')
     @endsection

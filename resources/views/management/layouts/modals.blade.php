@@ -1,5 +1,5 @@
     <!-- START Notification Sidebar-->
-    <aside class="modal-sidebar d-none d-sm-none d-md-block" id="modal-sidebar">
+    <aside class="modal-sidebar d-block d-sm-block d-md-block" id="modal-sidebar">
         <div class="side-nav modal-sidebar-content">
             <div class="row w-100 mx-auto align-items-center">
                 <div class="col-10 ">

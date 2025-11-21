@@ -5,6 +5,8 @@ namespace App\Http\Controllers\MasterControl;
 use App\Http\Controllers\Controller;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\GrnNumber;
+use App\Models\Master\Supplier;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\Arrival\{ArrivalTicket, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalSamplingRequest};
 use App\Models\{SaudaType, ArrivalPurchaseOrder, BagType, BagCondition, BagPacking, User};
@@ -27,14 +29,30 @@ class ArrivalMasterRevertController extends Controller
     public function arrivalRevert(Request $request, $id)
     {
         $authUserCompany = $request->company_id;
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+        $userLocation = $authUser->companyLocation ?? null;
         $source = $request->source ?? false;
 
+
+
+
+
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where('purchase_type', 'regular')
+            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
+                $q->where('company_location_id', $userLocation?->id);
+            })
+            ->orderByDesc('id')
+            ->get();
 
 
         $bagTypes = BagType::all();
         $bagConditions = BagCondition::all();
         $bagPackings = BagPacking::all();
         $arrivalSubLocations = ArrivalSubLocation::where('status', 'Active')->get();
+        $suppliers = Supplier::where('status', 'active')->get();
+        $products = Product::where('status', 'active')->get();
 
         $accountsOf = User::role('Purchaser')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
@@ -186,6 +204,9 @@ class ArrivalMasterRevertController extends Controller
             'bagConditions',
             'bagPackings',
             'saudaTypes',
+            'suppliers',
+            'products',
+            'arrivalPurchaseOrders'
         ));
     }
 
@@ -551,6 +572,8 @@ class ArrivalMasterRevertController extends Controller
             'sample_money' => 'required|numeric',
             'first_weight' => 'required|numeric',
             'second_weight' => 'required|numeric',
+            'arrival_purchase_order_id' => 'nullable|integer',
+            'accounts_of' => 'required|string'
         ]);
 
         // Update or create approval record
@@ -566,6 +589,14 @@ class ArrivalMasterRevertController extends Controller
 
                 $requestData['station_id'] = $station->id;
                 $requestData['station_name'] = $station->name;
+            }
+
+
+            if (!empty($requestData['accounts_of'])) {
+              //  dd($requestData['accounts_of']);
+                $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
+                $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
+                $requestData['accounts_of_name'] = $requestData['accounts_of'];
             }
 
             if (!empty($requestData['miller_name'])) {
