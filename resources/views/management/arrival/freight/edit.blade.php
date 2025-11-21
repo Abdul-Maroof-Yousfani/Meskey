@@ -62,21 +62,21 @@
             </h6>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label>Loaded Weight</label>
                 <input type="number" name="loaded_weight" class="form-control"
                     value="{{ $freight->arrivalTicket->net_weight ?? 'N/A' }}" disabled />
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label>Arrived Weight</label>
                 <input type="number" name="arrived_weight" class="form-control"
                     value="{{ $freight->arrivalTicket->arrived_net_weight ?? 'N/A' }}" disabled />
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label>Difference</label>
                 <input type="number" name="difference" class="form-control"
@@ -84,78 +84,106 @@
                     disabled />
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label>Exempted Weight</label>
                 <input type="number" name="exempted_weight" class="form-control"
                     value="{{ $freight->exempted_weight }}" />
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label>Net Shortage</label>
                 <input type="number" name="net_shortage" class="form-control" value="{{ $freight->net_shortage }}" />
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Freight per Ton</label>
-                <input type="number" step="0.01" name="freight_per_ton" class="form-control"
-                    value="{{ $freight->freight_per_ton }}" required />
-            </div>
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Freight &amp; Charges
+            </h6>
         </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Kanta Loading Charges</label>
-                <input type="number" step="0.01" name="kanta_golarchi_charges" class="form-control"
-                    value="{{ $freight->kanta_golarchi_charges }}" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Arrived Kanta Charges</label>
-                <input type="number" step="0.01" name="karachi_kanta_charges" class="form-control"
-                    value="{{ $freight->karachi_kanta_charges }}" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Other (+)/Labour Charges</label>
-                <input type="number" step="0.01" name="other_labour_charges" class="form-control"
-                    value="{{ $freight->other_labour_charges }}" />
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Godown Penalty</label>
-                <input type="number" step="0.01" name="other_deduction" class="form-control"
-                    value="{{ $freight->other_deduction }}" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label>Unpaid Labor Charges</label>
-                <input type="number" step="0.01" name="unpaid_labor_charges" class="form-control"
-                    value="{{ $freight->unpaid_labor_charges }}" />
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="col-md col-4">
             <div class="form-group">
                 <label>Freight Written on Bilty</label>
                 <input type="number" step="0.01" name="freight_written_on_bilty" class="form-control"
                     value="{{ $freight->freight_written_on_bilty }}" />
             </div>
         </div>
-
+        <div class="col-md col-4">
+            <div class="form-group">
+                <label>Freight per Ton</label>
+                <input type="number" step="0.01" name="freight_per_ton" class="form-control"
+                    value="{{ $freight->freight_per_ton }}" required />
+            </div>
+        </div>
+        <div class="col-md col-4">
+            <div class="form-group">
+                <label>Kanta Loading Charges</label>
+                <input type="number" step="0.01" name="kanta_golarchi_charges" class="form-control"
+                    value="{{ $freight->kanta_golarchi_charges }}" />
+            </div>
+        </div>
+        <div class="col-md col-4">
+            <div class="form-group">
+                <label>Arrived Kanta Charges</label>
+                <input type="number" step="0.01" name="karachi_kanta_charges" class="form-control"
+                    value="{{ $freight->karachi_kanta_charges }}" />
+            </div>
+        </div>
+        <div class="col-md col-4">
+            <div class="form-group">
+                <label>Other (+)/Labour Charges</label>
+                <input type="number" step="0.01" name="other_labour_charges" class="form-control"
+                    value="{{ $freight->other_labour_charges }}" />
+            </div>
+        </div>
+        <div class="col-12" bis_skin_checked="1">
+            <h6 class="header-heading-sepration">
+                Deductions
+            </h6>
+        </div>
         <div class="col-md-6">
+            <div class="form-group">
+                <label>Godown Penalty</label>
+                <input type="number" step="0.01" name="other_deduction" class="form-control"
+                    value="{{ $freight->other_deduction }}" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Unpaid Labor Charges</label>
+                <input type="number" step="0.01" name="unpaid_labor_charges" class="form-control"
+                    value="{{ $freight->unpaid_labor_charges }}" />
+            </div>
+        </div>
+
+        <div class="col-12" bis_skin_checked="1">
+            <h6 class="header-heading-sepration">
+                Sub Total
+            </h6>
+        </div>
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Gross Freight Amount</label>
                 <input type="number" step="0.01" name="gross_freight_amount" class="form-control"
                     value="{{ $freight->gross_freight_amount }}" />
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Penalty</label>
+                <input type="number" step="0.01" name="other_deduction" class="form-control"
+                    value="{{ $freight->other_deduction }}" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Labor Charges</label>
+                <input type="number" step="0.01" name="unpaid_labor_charges" class="form-control"
+                    value="{{ $freight->unpaid_labor_charges }}" />
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Net Freight</label>
                 <input type="number" step="0.01" name="net_freight" class="form-control"
@@ -168,7 +196,7 @@
                 <input type="hidden" name="status" value="approved">
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Attach Bilty</label>
                 <input type="file" name="bilty_document" class="form-control-file" />
@@ -177,7 +205,7 @@
                 @endif
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Attach Loading Weight</label>
                 <input type="file" name="loading_weight_document" class="form-control-file" />
@@ -187,7 +215,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Other Document (Optional)</label>
                 <input type="file" name="other_document" class="form-control-file" />
@@ -196,7 +224,7 @@
                 @endif
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label>Other Document 2 (Optional)</label>
                 <input type="file" name="other_document_2" class="form-control-file" />

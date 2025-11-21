@@ -1058,4 +1058,21 @@ th {
     padding: 3px 3px;
     font-size: 10px;
   }
+  form label,
+  .form-group label {
+    font-size: 0.6rem;
+  }
+
+  .form-control {
+    height: calc(0.85em + 0.75rem + 3px);
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  .form-group {
+    margin-bottom: 0.6rem;
+  }
+  .header-heading-sepration {
+    padding: 6px 6px;
+    font-size: 0.75rem;
+}
 }

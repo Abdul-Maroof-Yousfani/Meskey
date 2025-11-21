@@ -48,44 +48,6 @@ class FreightRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        // $purchaseQuery = PurchaseTicket::where('freight_status', 'completed')
-        //     ->with([
-        //         'paymentRequestData.paymentRequests',
-        //         'paymentRequestData.paymentRequests.approvals',
-        //         'purchaseOrder.supplier',
-        //         'product',
-        //         'qcProduct',
-        //         'purchaseFreight',
-        //         'paymentRequestData' => function ($query) {
-        //             $query->with(['paymentRequests' => function ($q) {
-        //                 $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
-        //                     ->groupBy('payment_request_data_id', 'request_type', 'status');
-        //             }]);
-        //         }
-        //     ])
-        //     ->when($request->filled('company_location_id'), function ($q) use ($request) {
-        //         return $q->whereHas('purchaseOrder', function ($query) use ($request) {
-        //             $query->where('company_location_id', $request->company_location_id);
-        //         });
-        //     })
-        //     ->when($request->filled('supplier_id'), function ($q) use ($request) {
-        //         return $q->whereHas('purchaseOrder', function ($query) use ($request) {
-        //             $query->where('supplier_id', $request->supplier_id);
-        //         });
-        //     })
-        //     ->when($request->filled('daterange'), function ($q) use ($request) {
-        //         $dates = explode(' - ', $request->daterange);
-        //         $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-        //         $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
-
-        //         return $q->whereDate('created_at', '>=', $startDate)
-        //             ->whereDate('created_at', '<=', $endDate);
-        //     });
-
-        // if ($request->has('product_id') && $request->product_id != '') {
-        //     $purchaseQuery->where('qc_product', $request->product_id);
-        // }
-
         // Query for Arrival Tickets (Pohanch requests)
         $arrivalQuery = ArrivalTicket::with([
             'purchaseOrder',
@@ -880,7 +842,7 @@ class FreightRequestController extends Controller
                 }
 
             }
-
+            $counterAccount = $saudaType == "pohouch" ? $purchaseOrder->supplier->account_id : $qcAccountId;
             if ($saudaType == "pohouch") {
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
@@ -943,7 +905,7 @@ class FreightRequestController extends Controller
                             'payment_against' => "pohouch-freight",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Updated Inventory with remaining freight amount ({$request->gross_amount}) for the purchased goods against GRN #{$grnNo}."
-                            ]
+                        ]
                     );
                 }
             }
@@ -962,7 +924,7 @@ class FreightRequestController extends Controller
                 $txnVendor->update([
                     'amount' => $request->net_amount,
                     'account_id' => $vendorAccId,
-                    'counter_account_id' => $purchaseOrder->supplier->account_id,
+                    'counter_account_id' => $counterAccount,
                     'type' => 'credit',
                     'voucher_no' => $purchaseOrder->contract_no,
                     'grn_no' => $grnNo,
@@ -978,7 +940,7 @@ class FreightRequestController extends Controller
                     'no',
                     [
                         'grn_no' => $grnNo,
-                        'counter_account_id' => $purchaseOrder->supplier->account_id,
+                        'counter_account_id' => $counterAccount,
                         'purpose' => "{$saudaType}-freight",
                         'payment_against' => "{$saudaType}-freight",
                         'against_reference_no' => "{$truckNo}/{$biltyNo}",
@@ -992,6 +954,25 @@ class FreightRequestController extends Controller
 
 
                 $vendorLabourAcc = Vendor::where("id", $request->labour_vendor_id)->first();
+                if ($request->request_amount && $request->request_amount > 0) {
+                    PaymentRequest::create([
+
+                        'payment_request_data_id' => $paymentRequestData->id,
+                        'other_deduction_kg' => 0,
+                        'other_deduction_value' => 0,
+                        'request_type' => 'payment',
+                        'module_type' => 'freight_payment',
+                        'status' => 'approved',
+                        'account_id' => $vendorLabourAcc->account_id,
+                        'payment_to_type' => $paymentRequestData->payment_to_type,
+                        'payment_to' => $paymentRequestData->payment_to,
+                        'amount' => $request->request_amount ?? 0
+                    ]);
+                }
+
+
+
+
                 $txnLabour = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-labour")
                     ->first();
@@ -1000,7 +981,7 @@ class FreightRequestController extends Controller
                     $txnLabour->update([
                         'amount' => $request->total_labour,
                         //  'account_id' => $request->labour_vendor_id,
-                        'counter_account_id' => $purchaseOrder->supplier->account_id,
+                        'counter_account_id' => $counterAccount,
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder->contract_no,
                         'grn_no' => $grnNo,
@@ -1016,7 +997,7 @@ class FreightRequestController extends Controller
                         'no',
                         [
                             'grn_no' => $grnNo,
-                            'counter_account_id' => $purchaseOrder->supplier->account_id,
+                            'counter_account_id' => $counterAccount,
                             'purpose' => "{$saudaType}-freight-labour",
                             'payment_against' => "{$saudaType}-freight",
                             'against_reference_no' => "{$truckNo}/{$biltyNo}",
@@ -1038,7 +1019,7 @@ class FreightRequestController extends Controller
                     $txnComm->update([
                         'amount' => $request->total_commision,
                         'account_id' => getAccountDetailsByHierarchyPath('4-1-3')->id,
-                        'counter_account_id' => $purchaseOrder->supplier->account_id,
+                        'counter_account_id' => $counterAccount,
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder->contract_no,
                         'grn_no' => $grnNo,
@@ -1056,7 +1037,7 @@ class FreightRequestController extends Controller
                         'no',
                         [
                             'grn_no' => $grnNo,
-                            'counter_account_id' => $purchaseOrder->supplier->account_id,
+                            'counter_account_id' => $counterAccount,
                             'purpose' => "{$saudaType}-freight-commision",
                             'payment_against' => "{$saudaType}-freight",
                             'against_reference_no' => "{$truckNo}/{$biltyNo}",
@@ -1077,7 +1058,7 @@ class FreightRequestController extends Controller
                     $txnExtraIncome->update([
                         'amount' => $request->godown_penalty,
                         // 'account_id' => $request->penalty_adjust_to,
-                        'counter_account_id' => $qcAccountId,
+                        'counter_account_id' => $counterAccount,
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder->contract_no,
                         'grn_no' => $grnNo,
@@ -1093,7 +1074,7 @@ class FreightRequestController extends Controller
                         'no',
                         [
                             'grn_no' => $grnNo,
-                            'counter_account_id' => $qcAccountId,
+                            'counter_account_id' => $counterAccount,
                             'purpose' => "{$saudaType}-freight-penalty",
                             'payment_against' => "{$saudaType}-freight",
                             'against_reference_no' => "{$truckNo}/{$biltyNo}",

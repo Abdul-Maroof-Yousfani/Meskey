@@ -1775,7 +1775,7 @@
                                                                                             data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                                                                             data-slab-id="{{ $slab->slabType->id }}"
                                                                                             data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
-                                                                                            data-checklist="{{ $displayValue }}" readonly {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                                                            data-checklist="{{ $displayValue }}"  {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                                                                         <div class="input-group-append">
                                                                                             <span
                                                                                                 class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>

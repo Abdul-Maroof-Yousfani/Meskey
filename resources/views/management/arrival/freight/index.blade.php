@@ -10,7 +10,7 @@
                      <h2 class="page-title">Freight Management</h2>
                  </div>
                  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                     <button onclick="openModal(this,'{{ route('freight.create') }}','Add Freight')" type="button"
+                     <button onclick="openModal(this,'{{ route('freight.create') }}','Add Freight',false,'80%')" type="button"
                          class="btn btn-primary position-relative">
                          Add Freight
                      </button>

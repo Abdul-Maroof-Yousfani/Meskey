@@ -28,7 +28,7 @@
                          </span>
                      </td>
                      <td>
-                         <a onclick="openModal(this,'{{ route('freight.edit', $freight->id) }}','View Freight', true)"
+                         <a onclick="openModal(this,'{{ route('freight.edit', $freight->id) }}','View Freight', true, '80%')"
                              class="info p-1 text-center mr-2 position-relative">
                              <i class="ft-eye font-medium-3"></i>
                          </a>

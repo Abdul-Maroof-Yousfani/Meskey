@@ -20,7 +20,7 @@
     $market_comm = $paymentRequestData->market_comm ?? $freightPaymentRequest?->market_comm ?? 0;
     $over_weight_ded = $paymentRequestData->over_weight_ded ?? $freightPaymentRequest?->over_weight_ded ?? 0;
     $godown_penalty = $paymentRequestData->godown_penalty ?? $ticket->freight->other_deduction;
-    $other_minus_labour = $paymentRequestData->other_minus_labour ?? $freightPaymentRequest?->other_minus_labour ?? ($ticket->freight->other_labour_charges ?? '0');
+    $other_minus_labour = $paymentRequestData->other_minus_labour ?? $freightPaymentRequest?->other_minus_labour ?? ($ticket->freight->unpaid_labor_charges ?? '0');
     $extra_minus_ded = $paymentRequestData->extra_minus_ded ?? $freightPaymentRequest?->extra_minus_ded ?? 0;
     $commission_percent_ded = $paymentRequestData->commission_percent_ded ?? $freightPaymentRequest?->commission_percent_ded ?? 0;
     $commission_amount = $paymentRequestData->commission_amount ?? $freightPaymentRequest?->commission_amount ?? 0;

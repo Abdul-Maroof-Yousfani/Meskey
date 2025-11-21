@@ -5,13 +5,10 @@
 // renderLoadingTable("#filteredData table", 12);
 
 function getUniversalNumber(options, callback) {
-
-  $.get('/generate-unique-no', options, function(response) {
-      callback(response.unique_no);
+  $.get("/generate-unique-no", options, function (response) {
+    callback(response.unique_no);
   });
 }
-
-
 
 function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
   renderLoadingTable("#filteredData table", 10);
@@ -156,38 +153,33 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
     window.history.pushState(null, "", newUrl);
   }
 
-
-
-function updateUrlParams(formData) {
+  function updateUrlParams(formData) {
     const urlParams = new URLSearchParams(window.location.search);
     const newParams = new URLSearchParams(formData);
 
-        for (const [key, value] of newParams) {
-       
-                urlParams.delete(key);
-            
-        
+    for (const [key, value] of newParams) {
+      urlParams.delete(key);
     }
     // Handle array parameters like commodity_id[]
     for (const [key, value] of newParams) {
-        if (key.endsWith('[]')) {
-            if (value) {
-                // Add new value to array parameter
-                urlParams.append(key, value);
-            }
-        } else {
-            if (value) {
-                urlParams.set(key, value);
-            } else {
-                urlParams.delete(key);
-            }
+      if (key.endsWith("[]")) {
+        if (value) {
+          // Add new value to array parameter
+          urlParams.append(key, value);
         }
+      } else {
+        if (value) {
+          urlParams.set(key, value);
+        } else {
+          urlParams.delete(key);
+        }
+      }
     }
-    
+
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.pushState(null, "", newUrl);
-}
-  
+  }
+
   // // Load filter values from URL on page load
   // function loadFiltersFromUrl() {
   //   const urlParams = new URLSearchParams(window.location.search);
@@ -273,7 +265,6 @@ if (!SUBMISSION_ON_ENTER) {
 }
 
 $(document).on("submit", "#ajaxSubmit", function (e) {
-
   var formhunyr = $(this);
 
   e.preventDefault(); // Avoid executing the actual submit of the form.
@@ -287,20 +278,16 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
 
   var formData = new FormData(form[0]);
 
+  // Find which submit button was actually clicked
+  var clickedSubmit = $(document.activeElement);
+  if (clickedSubmit.is('input[type="submit"], button[type="submit"]')) {
+    var submitName = clickedSubmit.attr("name");
+    var submitValue = clickedSubmit.val() || clickedSubmit.text() || "";
 
- // Find which submit button was actually clicked
- var clickedSubmit = $(document.activeElement);
- if (clickedSubmit.is('input[type="submit"], button[type="submit"]')) {
-   var submitName = clickedSubmit.attr("name");
-   var submitValue = clickedSubmit.val() || clickedSubmit.text() || "";
-   
-   if (submitName) {
-     formData.append(submitName, submitValue);
-   }
- }
-
-
-
+    if (submitName) {
+      formData.append(submitName, submitValue);
+    }
+  }
 
   // Process 'notes' field if value is '1'
   var notesValue = formData.get("notes");
@@ -415,49 +402,44 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
     },
 
     error: function (xhr, status, error) {
-  Swal.close();
+      Swal.close();
 
-  if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-    let errors = xhr.responseJSON.errors;
-    let message = "";
+      if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+        let errors = xhr.responseJSON.errors;
+        let message = "";
 
-    for (let field in errors) {
-      message += errors[field].join("<br>") + "<br>";
-    }
+        for (let field in errors) {
+          message += errors[field].join("<br>") + "<br>";
+        }
 
-    Swal.fire({
-      title: "Validation Error",
-      html: message,
-      icon: "warning",
-      confirmButtonColor: "#D95000",
-    });
+        Swal.fire({
+          title: "Validation Error",
+          html: message,
+          icon: "warning",
+          confirmButtonColor: "#D95000",
+        });
 
-    printErrorMsg(errors);
-  }
-
-  else if (xhr.responseJSON && xhr.responseJSON.message) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: xhr.responseJSON.message,
-      confirmButtonColor: "#D95000",
-    });
-  }
-
-  else {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: xhr.responseText || "Something went wrong. Please try again.",
-      confirmButtonColor: "#D95000",
-    });
-  }
-},
+        printErrorMsg(errors);
+      } else if (xhr.responseJSON && xhr.responseJSON.message) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: xhr.responseJSON.message,
+          confirmButtonColor: "#D95000",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: xhr.responseText || "Something went wrong. Please try again.",
+          confirmButtonColor: "#D95000",
+        });
+      }
+    },
   });
 });
 
 $(document).on("submit", "#ajaxSubmit2", function (e) {
-
   var formhunyr = $(this);
 
   e.preventDefault(); // Avoid executing the actual submit of the form.
@@ -471,20 +453,16 @@ $(document).on("submit", "#ajaxSubmit2", function (e) {
 
   var formData = new FormData(form[0]);
 
+  // Find which submit button was actually clicked
+  var clickedSubmit = $(document.activeElement);
+  if (clickedSubmit.is('input[type="submit"], button[type="submit"]')) {
+    var submitName = clickedSubmit.attr("name");
+    var submitValue = clickedSubmit.val() || clickedSubmit.text() || "";
 
- // Find which submit button was actually clicked
- var clickedSubmit = $(document.activeElement);
- if (clickedSubmit.is('input[type="submit"], button[type="submit"]')) {
-   var submitName = clickedSubmit.attr("name");
-   var submitValue = clickedSubmit.val() || clickedSubmit.text() || "";
-   
-   if (submitName) {
-     formData.append(submitName, submitValue);
-   }
- }
-
-
-
+    if (submitName) {
+      formData.append(submitName, submitValue);
+    }
+  }
 
   // Process 'notes' field if value is '1'
   var notesValue = formData.get("notes");
@@ -599,44 +577,40 @@ $(document).on("submit", "#ajaxSubmit2", function (e) {
     },
 
     error: function (xhr, status, error) {
-  Swal.close();
+      Swal.close();
 
-  if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-    let errors = xhr.responseJSON.errors;
-    let message = "";
+      if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+        let errors = xhr.responseJSON.errors;
+        let message = "";
 
-    for (let field in errors) {
-      message += errors[field].join("<br>") + "<br>";
-    }
+        for (let field in errors) {
+          message += errors[field].join("<br>") + "<br>";
+        }
 
-    Swal.fire({
-      title: "Validation Error",
-      html: message,
-      icon: "warning",
-      confirmButtonColor: "#D95000",
-    });
+        Swal.fire({
+          title: "Validation Error",
+          html: message,
+          icon: "warning",
+          confirmButtonColor: "#D95000",
+        });
 
-    printErrorMsg(errors);
-  }
-
-  else if (xhr.responseJSON && xhr.responseJSON.message) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: xhr.responseJSON.message,
-      confirmButtonColor: "#D95000",
-    });
-  }
-
-  else {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: xhr.responseText || "Something went wrong. Please try again.",
-      confirmButtonColor: "#D95000",
-    });
-  }
-},
+        printErrorMsg(errors);
+      } else if (xhr.responseJSON && xhr.responseJSON.message) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: xhr.responseJSON.message,
+          confirmButtonColor: "#D95000",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: xhr.responseText || "Something went wrong. Please try again.",
+          confirmButtonColor: "#D95000",
+        });
+      }
+    },
   });
 });
 
@@ -849,18 +823,18 @@ function openImageModal(
 }
 
 function openModal(button, url, title, viewonly = false, drawerWidth = null) {
-  
-
-
-
-   // Auto responsive width if not provided manually
-   if (!drawerWidth) {
+  // Auto responsive width if not provided manually
+  if (!drawerWidth) {
     if (window.innerWidth <= 576) {
-        drawerWidth = "98%";   // Mobile
+      drawerWidth = "98%"; // Mobile
     } else if (window.innerWidth <= 768) {
-        drawerWidth = "70%";    // Tablet
+      drawerWidth = "70%"; // Tablet
     } else {
-        drawerWidth = "50%";    // Desktop
+      drawerWidth = "50%"; // Desktop
+    }
+  } else {
+    if (window.innerWidth <= 576) {
+      drawerWidth = "98%"; // Mobile
     }
   }
 
@@ -890,10 +864,10 @@ function openModal(button, url, title, viewonly = false, drawerWidth = null) {
         $("#modal-sidebar").css("width", drawerWidth);
         $("#modal-sidebar").css("right", `-${drawerWidth}`);
       }
-    //  $('[data-toggle="tooltip"]').tooltip();
+      //  $('[data-toggle="tooltip"]').tooltip();
       $("#modal-sidebar").addClass("open");
       $("body").addClass("drawer-opened");
-    
+
       // Inject modal content into the page
       $("#modal-sidebar .modal-tab-content").html(data);
       $('[data-toggle="tooltip"]').tooltip();
@@ -1309,7 +1283,7 @@ function initializeDynamicDependentCall1Select2(
           targetColumn: targetColumn,
           fetchMode: "target",
           sourceId: $el.val(),
-          ...extraFilters
+          ...extraFilters,
         };
       },
       processResults: function (data) {
@@ -1322,7 +1296,6 @@ function initializeDynamicDependentCall1Select2(
     allowClear: true,
     placeholder: "Select options",
   });
-
 }
 function initializeDynamicDependentCall1Select2All(
   selector,
@@ -1357,7 +1330,7 @@ function initializeDynamicDependentCall1Select2All(
           targetColumn: targetColumn,
           fetchMode: "target",
           sourceId: $el.val(),
-          ...extraFilters
+          ...extraFilters,
         };
       },
       processResults: function (data) {
@@ -1370,7 +1343,6 @@ function initializeDynamicDependentCall1Select2All(
     allowClear: true,
     placeholder: "Select options",
   });
-
 }
 
 // Handle select change event
