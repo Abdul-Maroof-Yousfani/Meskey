@@ -140,7 +140,7 @@
                                         class="form-control gross_amount" readonly>
                                 </td>
 
-                                  <td style="width: 30%">
+                                <td style="width: 30%">
 
 
                                     <input style="width: 100px" type="number" name="discount_id[]"
@@ -188,11 +188,11 @@
                                         class="form-control tax_amount" step="0.01" min="0" readonly>
                                 </td>
 
-                              
 
 
 
-                              
+
+
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="final_amount[]"
@@ -440,41 +440,54 @@
         $('#total_' + num).val(total.toFixed(2));
     }
 
+    function round(num, decimals = 2) {
+        return Number(Math.round(num + "e" + decimals) + "e-" + decimals);
+    }
 
     function calculatePercentage(el) {
-        const gross_amount = $(el).closest("tr").find(".gross_amount");
-        const rate = $(el).closest("tr").find(".rate");
-        const qty = $(el).closest("tr").find(".qty");
-        const discount_percent = $(el).closest("tr").find(".discounts");
-        const final_amount = $(el).closest("tr").find(".final_amount");
-        const tax_amount_input = $(el).closest("tr").find(".tax_amount");
+        const row = $(el).closest("tr");
 
-        const discount_percent_val = discount_percent.val();
-        const discount_amount = $(el).closest("tr").find(".discount_amount");
+        const gross_amount = row.find(".gross_amount");
+        const rate = row.find(".rate");
+        const qty = row.find(".qty");
+        const discount_percent = row.find(".discounts");
+        const final_amount = row.find(".final_amount");
+        const tax_amount_input = row.find(".tax_amount");
+        const discount_amount = row.find(".discount_amount");
+        const tax_percent = row.find(".tax_id");
+        const percent_amount = row.find(".percent_amount");
+        const net_amount = row.find(".net_amount");
 
-        gross_amount.val(rate.val() * qty.val());
-
-        const tax_percent = $(el)
-            .closest("tr")
-            .find(".tax_id");
-
-        const percent_amount = $(el).closest("tr").find(".percent_amount");
-        const net_amount = $(el).closest("tr").find(".net_amount");
-
-
+        const rateVal = parseFloat(rate.val()) || 0;
+        const qtyVal = parseFloat(qty.val()) || 0;
+        const discountPercentVal = parseFloat(discount_percent.val()) || 0;
+        const taxPercentVal = parseFloat(tax_percent.val()) || 0;
 
         const percent_amount_of_gross = 1;
-        const net_amount_value = parseFloat(gross_amount.val()) + parseFloat(percent_amount_of_gross);
-        const discount_amount_value = (parseFloat(discount_percent_val) / 100) * parseFloat(gross_amount.val());
-        const tax_amount = (parseInt(tax_percent.val()) / 100) * (net_amount_value - discount_amount_value);
 
+        // Clean values
+        const gross = rateVal * qtyVal;
+        gross_amount.val(gross);
 
-        tax_amount_input.val(tax_amount);
-        net_amount.val(gross_amount.val() - discount_amount_value);
-        percent_amount.val(percent_amount_of_gross);
-        discount_amount.val((discount_percent_val / 100) * (net_amount_value));
-        console.log(net_amount_value);
-        final_amount.val(parseFloat(net_amount.val()) + parseFloat(tax_amount));
+        const net_amount_value = gross + percent_amount_of_gross;
+        const discount_amount_value =
+            (discountPercentVal / 100) * gross;
+
+        // Tax calculation
+        const tax_amount =
+            (taxPercentVal / 100) * (net_amount_value - discount_amount_value);
+
+        const tax_amount_rounded = round(tax_amount);
+        const net_amount_rounded = round(gross - discount_amount_value);
+
+        // Set values
+        tax_amount_input.val(tax_amount_rounded);
+        net_amount.val(net_amount_rounded);
+        percent_amount.val(round(percent_amount_of_gross));
+        discount_amount.val(round((discountPercentVal / 100) * net_amount_value));
+
+        // IMPORTANT: Use rounded tax value
+        final_amount.val(round(net_amount_rounded + tax_amount_rounded));
 
 
     }
