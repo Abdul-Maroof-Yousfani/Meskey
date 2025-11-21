@@ -31,7 +31,7 @@ class QcController extends Controller
     public function getList(Request $request) {
         
         $PurchaseOrderRaw = PurchaseOrderReceivingData::whereHas("qc", function($query) {
-            return $query->filter();
+            // return $query->filter();
         })
             ->latest()
             ->paginate(request("per_page", 25));

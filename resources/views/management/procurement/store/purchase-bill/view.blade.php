@@ -34,7 +34,8 @@
     <div class="col-md-3">
         <div class="form-group">
             <label>Bill Date:</label>
-            <input type="date" id="purchase_date" value="{{ $purchase_bill->bill_date }}" name="purchase_date" class="form-control" readonly>
+            <input type="date" id="purchase_date" value="{{ $purchase_bill->bill_date }}" name="purchase_date"
+                class="form-control" readonly>
         </div>
     </div>
     <div class="col-md-3">
@@ -89,111 +90,113 @@
                 <tbody id="billBody">
                     @foreach ($purchaseBillData as $key => $data)
                         <tr id="row_{{ $key }}">
-      
-                                <td style="width: 20%">
-                                    <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
-                                        class="form-control item-select select2" data-index="{{ $key }}" disabled>
-                                        @foreach (get_product_by_category($data->category_id) as $item)
-                                            <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
-                                                {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                                                {{ $item->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
 
-                                    <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
-                                </td>
+                            <td style="width: 20%">
+                                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
+                                    class="form-control item-select select2" data-index="{{ $key }}" disabled>
+                                    @foreach (get_product_by_category($data->category_id) as $item)
+                                        <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
+                                            value="{{ $item->id }}"
+                                            {{ $item->id == $data->item_id ? 'selected' : '' }}>
+                                            {{ $item->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
 
-                                <td style="width: 30%">
-                                    <input type="text" style="width: 100%;" readonly name="description[]" value="" id="description_{{ $key }}"
-                                        class="form-control uom">
-                                </td>
-                            
-                                <td style="width: 30%">
-                                    <input
-                                        style="width: 100%"
-                                        type="number"
-                                        onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                        onblur="calc({{ $key }})"
-                                        name="qty[]"
-                                        value="{{ $data->qty }}"
-                                        id="qty_{{ $key }}"
-                                        class="form-control qty"
-                                        step="0.01"
-                                        readonly
-                                        {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}
-                                    >
-                                </td>
+                                <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                            </td>
 
-                                <td style="width: 30%">
-                                    <input 
-                                        style="width: 100px" 
-                                        type="number"
-                                        onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                        onblur="calc({{ $key }})"
-                                        name="rate[]" 
-                                        value="{{ $data->rate }}"
-                                        id="rate_{{ $key }}" 
-                                        class="form-control rate" 
-                                        step="0.01" 
-                                        readonly
-                                        >
-                                </td>
+                            <td style="width: 30%">
+                                <input type="text" style="width: 100%;" name="description[]" value="{{ $data->description }}"
+                                    id="description_{{ $key }}" class="form-control uom" readonly>
+                            </td>
 
-                                <td style="width: 30%">
-                                    <input type="text" style="width: 100px;" name="gross_amount[]" value="{{ $data->gross_amount }}" id="gross_amount{{ $key }}"
-                                        class="form-control gross_amount" readonly>
-                                </td>
+                            <td style="width: 30%">
+                                <input style="width: 100%" type="number"
+                                    onkeyup="calc({{ $key }}); calculatePercentage(this)"
+                                    onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
+                                    {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+                            </td>
+
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number"
+                                    onkeyup="calc({{ $key }}); calculatePercentage(this)"
+                                    onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
+                                    id="rate_{{ $key }}" class="form-control rate" step="0.01" readonly>
+                            </td>
+
+                            <td style="width: 30%">
+                                <input type="text" style="width: 100px;" name="gross_amount[]"
+                                    value="{{ $data->gross_amount }}" id="gross_amount{{ $key }}"
+                                    class="form-control gross_amount" readonly>
+                            </td>
+
+                            <td style="width: 30%">
 
 
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]" value="{{ $data->tax_percent }}"
-                                        id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01" min="0" readonly>
-                                </td>
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number"  readonly onkeyup="calculatePercentage(this)" name="tax_amount[]" value="{{ $data->tax_amount }}"
-                                        id="tax_id_{{ $key }}" class="form-control tax_amount" step="0.01" min="0" readonly>
-                                </td>
+                                <input style="width: 100px" type="number" name="discount_id[]"
+                                    value="{{ $data->discount_percent }}" id="total_{{ $key }}"
+                                    class="form-control discounts" onkeyup="calculatePercentage(this)" step="0.01"
+                                    min="0" readonly>
+                            </td>
 
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="net_amount[]" value="{{ $data->net_amount }}"
-                                        id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0" readonly>
-                                </td>
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" readonly name="discount_amount[]"
+                                    value="{{ $data->discount_amount }}" id="discount_amount_{{ $key }}"
+                                    class="form-control discount_amount" step="0.01" min="0" readonly>
+                            </td>
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
+                                    id="deduction_per_piece_{{ $key }}"
+                                    value="{{ $data->deduction_per_piece }}" class="form-control deduction_per_piece"
+                                    step="0.01" min="0" readonly>
+                            </td>
+
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" readonly name="deduction[]"
+                                    value="{{ $data->deduction }}" id="deduction_{{ $key }}"
+                                    class="form-control deduction" step="0.01" min="0" readonly>
+                            </td>
+
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" readonly name="net_amount[]"
+                                    value="{{ $data->net_amount }}" id="total_{{ $key }}"
+                                    class="form-control net_amount" step="0.01" min="0" readonly>
+                            </td>
+
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)"
+                                    name="tax_id[]" value="{{ $data->tax_percent }}"
+                                    id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01"
+                                    min="0" readonly>
+                            </td>
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" readonly
+                                    onkeyup="calculatePercentage(this)" name="tax_amount[]"
+                                    value="{{ $data->tax_amount }}" id="tax_id_{{ $key }}"
+                                    class="form-control tax_amount" step="0.01" min="0" readonly>
+                            </td>
 
 
-                                
-                                <td style="width: 30%">
-                                
 
-                                    <input style="width: 100px" type="number" name="discount_id[]" value="{{ $data->discount_percent }}"
-                                        id="total_{{ $key }}" class="form-control discounts" onkeyup="calculatePercentage(this)" step="0.01" min="0" readonly>
-                                </td>
 
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="discount_amount[]" value="{{ $data->discount_amount }}"
-                                        id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01" min="0" readonly>
-                                </td>
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
-                                        id="deduction_per_piece_{{ $key }}" value="{{ $data->deduction_per_piece }}" class="form-control deduction_per_piece" step="0.01" min="0" readonly>
-                                </td>
 
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="deduction[]" value="{{ $data->deduction }}"
-                                        id="deduction_{{ $key }}" class="form-control deduction" step="0.01" min="0" readonly>
-                                </td>
 
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="final_amount[]"  value="{{ $data->final_amount }}"
-                                        id="final_amount_{{ $key }}" class="form-control final_amount" step="0.01" min="0" readonly> 
-                                </td>
-                            
 
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove({{ $key }})"
-                                        data-id="{{ $key }}">Remove</button>
-                                </td>
-                            </tr>
+                            <td style="width: 30%">
+                                <input style="width: 100px" type="number" readonly name="final_amount[]"
+                                    value="{{ $data->final_amount }}" id="final_amount_{{ $key }}"
+                                    class="form-control final_amount" step="0.01" min="0" readonly>
+                            </td>
+
+
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                    onclick="remove({{ $key }})"
+                                    data-id="{{ $key }}">Remove</button>
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -252,66 +255,69 @@
             }
         });
 
-    function get_purchase(purchaseOrderReceivingId) {
-        if (!purchaseOrderReceivingId) return;
-        const supplierId = $('#supplier_id').val();
-        $.ajax({
-            url: "{{ route('store.purchase-bill.approve-item') }}",
-            type: "GET",
-            data: { id: purchaseOrderReceivingId, supplier_id: supplierId },
-            cache: false,
-            beforeSend: function () {
-                $('#billBody').html('<p>Loading...</p>');
-            },
-            success: function (response) {
-                $('#billBody').html(response.html);
+        function get_purchase(purchaseOrderReceivingId) {
+            if (!purchaseOrderReceivingId) return;
+            const supplierId = $('#supplier_id').val();
+            $.ajax({
+                url: "{{ route('store.purchase-bill.approve-item') }}",
+                type: "GET",
+                data: {
+                    id: purchaseOrderReceivingId,
+                    supplier_id: supplierId
+                },
+                cache: false,
+                beforeSend: function() {
+                    $('#billBody').html('<p>Loading...</p>');
+                },
+                success: function(response) {
+                    $('#billBody').html(response.html);
 
-            },
-            error: function () {
-                $('#purchaseRequestBody').html('<p>Error loading data.</p>');
-            }
-        });
-    }
+                },
+                error: function() {
+                    $('#purchaseRequestBody').html('<p>Error loading data.</p>');
+                }
+            });
+        }
 
-    function getGrns() {
-        let url = '/procurement/store/get-grns/';
-        const $targetEl = $("#grn_no");
-        $targetEl.select2({
-            ajax: {
-            url: url,
-            dataType: "json",
-            delay: 250,
-            data: function (params) {
-                return {
-                    supplier_id: $("#supplier_id").val()
-                };
-            },
-            processResults: function (data) {
-                console.log(data);
-                return {
-                    results: data,
-                };
-            },
-            },
-            minimumInputLength: 0,
-            allowClear: true,
-            placeholder: "Select options",
-        });
+        function getGrns() {
+            let url = '/procurement/store/get-grns/';
+            const $targetEl = $("#grn_no");
+            $targetEl.select2({
+                ajax: {
+                    url: url,
+                    dataType: "json",
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            supplier_id: $("#supplier_id").val()
+                        };
+                    },
+                    processResults: function(data) {
+                        console.log(data);
+                        return {
+                            results: data,
+                        };
+                    },
+                },
+                minimumInputLength: 0,
+                allowClear: true,
+                placeholder: "Select options",
+            });
 
-        // $.ajax({
-        //     url: url,
-        //     type: 'GET',
-        //     data: {
-        //         supplier_id: $("#supplier_id").val()
-        //     },
-        //     success: function(response) {
-        //         console.log(response);
-        //     },
-        //     error: function(xhr, status, error) {
-        //         $('#reference_no').val('');
-        //     }
-        // });
-    }
+            // $.ajax({
+            //     url: url,
+            //     type: 'GET',
+            //     data: {
+            //         supplier_id: $("#supplier_id").val()
+            //     },
+            //     success: function(response) {
+            //         console.log(response);
+            //     },
+            //     error: function(xhr, status, error) {
+            //         $('#reference_no').val('');
+            //     }
+            // });
+        }
         $(document).on('change', '#supplier_id, [name="grn_no"]', function() {
             getGrns();
             // const supplierId = $('#supplier_id').val();

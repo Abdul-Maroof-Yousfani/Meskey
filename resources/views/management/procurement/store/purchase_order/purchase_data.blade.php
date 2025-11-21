@@ -139,27 +139,27 @@
         </td>
 
          <td style="width: 30%">
-            <input style="width: 100px" type="number" readonly name="min_weight[]" value="{{ $data->purchase_request->min_weight }}"
+            <input style="width: 100px" type="number" readonly name="min_weight[]" value="{{ $data->min_weight ? $data->min_weight : $data->purchase_request->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
         <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="brand[]" value="{{ getBrandById($data->purchase_request->brand_id)?->name ?? null }}"
+            <input style="width: 100px" type="text" readonly name="brand[]" value="{{ getBrandById($data->brand_id ? $data->brand_id : $data->purchase_request->brand_id)?->name ?? null }}"
                 id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="color[]" value="{{ getColorById($data->purchase_request->color)?->color ?? null }}"
+            <input style="width: 100px" type="text" readonly name="color[]" value="{{ getColorById($data->color ? $data->color : $data->purchase_request->color)?->color ?? null }}"
                 id="color_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="construction_per_square_inch[]" value="{{ $data->purchase_request->construction_per_square_inch }}"
+            <input style="width: 100px" type="text" readonly name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch ? $data->construction_per_square_inch : $data->purchase_request->construction_per_square_inch }}"
                 id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="size[]" value="{{ getSizeById($data->purchase_request->size)?->size ?? null }}"
+            <input style="width: 100px" type="text" readonly name="size[]" value="{{ getSizeById($data->size ? $data->size : $data->purchase_request->size)?->size ?? null }}"
                 id="size_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="stitching[]" value="{{ $data->purchase_request->stitching }}"
+            <input style="width: 100px" type="text" readonly name="stitching[]" value="{{ $data->stitching ? $data->stitching : $data->purchase_request->stitching }}"
                 id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
         <td style="width: 5%">
