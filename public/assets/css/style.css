@@ -105,3 +105,52 @@ aside#modal-sidebar.open {
 body.drawer-opened {
     overflow: hidden;
 }
+.clean-sidebar-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: -100%;
+  background: #ffffff;
+  z-index: 1060;
+  box-shadow: -8px 0 30px rgba(0,0,0,0.18);
+  transition: right 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.clean-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+.clean-drawer-title {
+  padding: 20px 56px 12px 24px;   /* space for close button */
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #222;
+  border-bottom: 1px solid #eee;
+}
+
+.clean-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+body.drawer-opened {
+  overflow: hidden;
+}
+
+/* Optional: slightly darken previous drawers */
+.clean-sidebar-drawer ~ .clean-sidebar-drawer {
+  filter: brightness(0.97);
+}

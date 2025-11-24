@@ -164,7 +164,6 @@ class QcController extends Controller
 
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
 
-
         return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id", "type"));
     }
     public function edit(Request $request) {

@@ -16,3 +16,4 @@
 
 @yield('scripts')
 @include('management/layouts/modals')
+@include('management/layouts/secondary-modal')
