@@ -172,7 +172,7 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="net_amount[]"
-                                        value="{{ $data->net_amount }}" id="total_{{ $key }}"
+                                        value="{{ $data->net_amount - $data->deduction }}" id="total_{{ $key }}"
                                         class="form-control net_amount" step="0.01" min="0" readonly>
                                 </td>
 
