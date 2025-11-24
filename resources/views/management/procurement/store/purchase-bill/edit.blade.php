@@ -121,8 +121,8 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100%" type="number"
-                                        onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                        onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
+                                        onkeyup=""
+                                        onblur="" name="qty[]" value="{{ $data->qty }}"
                                         id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
                                 </td>
