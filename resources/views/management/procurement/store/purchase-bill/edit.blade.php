@@ -3,6 +3,12 @@
     body {
         overflow-x: hidden;
     }
+    #purchaseRequestTable input,
+#purchaseRequestTable select {
+    width: 100% !important;
+    min-width: 120px; /* optional: prevents inputs from being too narrow */
+    box-sizing: border-box; /* ensures padding/border don't break width */
+}
 </style>
 
 <form action="{{ route('store.purchase-bill.update', $purchase_bill->id) }}" method="POST" id="ajaxSubmit"
@@ -98,17 +104,9 @@
                             <tr id="row_{{ $key }}">
 
                                 <td style="width: 20%">
-                                    <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
-                                        class="form-control item-select select2" data-index="{{ $key }}"
-                                        disabled>
-                                        @foreach (get_product_by_category($data->category_id) as $item)
-                                            <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
-                                                value="{{ $item->id }}"
-                                                {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                                                {{ $item->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    
+                                    <input type="text" style="width: 100%;" name="item[]" value="{{ getItem($data->item_id)?->name }}"
+                                        id="item_{{ $key }}" class="form-control item" readonly>
 
                                     <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                                     <input type="hidden" name="purchase_order_receiving_data_id[]" value="{{ $data->purchase_order_receiving_data_id }}">

@@ -1,7 +1,15 @@
+
+
 <style>
-    html, body {
+     html, body {
         overflow-x: hidden;
     }
+      #purchaseRequestTable input,
+#purchaseRequestTable select {
+    width: 100% !important;
+    min-width: 120px; /* optional: prevents inputs from being too narrow */
+    box-sizing: border-box; /* ensures padding/border don't break width */
+}
 </style>
 
 <form action="{{ route('store.purchase-bill.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">

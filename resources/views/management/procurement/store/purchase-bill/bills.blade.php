@@ -1,3 +1,4 @@
+
 @foreach ($dataItems ?? [] as $key => $data)
     @php
         $remainingQty = $data->qc?->accepted_quantity;
@@ -98,10 +99,13 @@
                 class="form-control deduction" step="0.01" min="0" readonly>
         </td>
 
+        @php
+            $net_amount = ($remainingQty * $data->purchase_order_data->rate) - (($data->qc?->deduction_per_bag ?? 0) * $remainingQty);
+        @endphp
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="net_amount[]"
-                value="{{ $remainingQty * $data->purchase_order_data->rate }}" id="total_{{ $key }}"
+                value="{{ $net_amount }}" id="total_{{ $key }}"
                 class="form-control net_amount" step="0.01" min="0" readonly>
         </td>
 
@@ -111,20 +115,25 @@
                 value="{{ getTaxPercentageById($data->sales_tax) }}" id="tax_id_{{ $key }}"
                 class="form-control tax_id" step="0.01" min="0" readonly>
         </td>
+        @php
+            $gst_amount = (getTaxPercentageById($data->sales_tax) / 100) * ($net_amount);
+        @endphp
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly onkeyup="calculatePercentage(this)" name="tax_amount[]"
-                value="{{ (getTaxPercentageById($data->sales_tax) / 100) * ($remainingQty * $data->purchase_order_data->rate) }}"
+                value="{{ $gst_amount }}"
                 id="tax_id_{{ $key }}" class="form-control tax_amount" step="0.01" min="0"
                 readonly>
         </td>
 
 
-
+        @php
+            $final_amount = ($remainingQty * $data->purchase_order_data->rate + (getTaxPercentageById($data->sales_tax) / 100) * ($remainingQty * $data->purchase_order_data->rate));
+        @endphp
 
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" readonly name="final_amount[]"
-                value="{{ $remainingQty * $data->purchase_order_data->rate + (getTaxPercentageById($data->sales_tax) / 100) * ($remainingQty * $data->purchase_order_data->rate) }}"
+                value="{{  $net_amount + $gst_amount }}"
                 id="final_amount_{{ $key }}" class="form-control final_amount" step="0.01"
                 min="0" readonly>
         </td>
