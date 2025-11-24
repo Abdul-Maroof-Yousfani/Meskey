@@ -372,10 +372,8 @@
         <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Gross Amount</label>
-                <input type="text"
-                 data-toggle="tooltip"
-                                                            title="Gross = Total Freight + Additions - Total Deduction"
-                 class="form-control bg-light" name="gross_amount" value="0" readonly>
+                <input type="text" data-toggle="tooltip" title="Gross = Total Freight + Additions - Total Deduction"
+                    class="form-control bg-light" name="gross_amount" value="0" readonly>
             </div>
         </div>
         <div class="col-md-2">
@@ -387,7 +385,8 @@
 
                 <div class="form-group">
                     <label class="font-weight-bold">Penalty Adjust To</label>
-                    <select name="penalty_adjust_to" class="form-control select2"  @disabled($parampenalty_adjust_to) required>
+                    <select name="penalty_adjust_to" class="form-control select2" @disabled($parampenalty_adjust_to)
+                        required>
                         <option value="">Select Penalty Adjust To</option>
                         <option {{ getAccountDetailsByHierarchyPath('4-1-2')->id == $paymentRequestData->penalty_adjust_to ? 'selected' : '' }} value="{{ getAccountDetailsByHierarchyPath('4-1-2')->id }}">
                             {{ getAccountDetailsByHierarchyPath('4-1-2')->name }}
@@ -399,12 +398,7 @@
                 </div>
             @endif
         </div>
-        <div class="col-md-2">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Commision</label>
-                <input type="text" class="form-control bg-light" name="total_commision" value="" readonly>
-            </div>
-        </div>
+
         <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Total Labour</label>
@@ -413,7 +407,8 @@
             @if (isset($isRequestApprovalPage) && $isRequestApprovalPage && $other_minus_labour > 0)
                 <div class="form-group">
                     <label class="font-weight-bold">Labour Party</label>
-                    <select class="form-control editable-field select2" required name="labour_vendor_id" @disabled($paramlabour_vendor_id) >
+                    <select class="form-control editable-field select2" required name="labour_vendor_id"
+                        @disabled($paramlabour_vendor_id)>
                         <option value="">Select Labour Party</option>
                         @foreach ($vendors as $vendor)
                             <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id)>
@@ -427,16 +422,17 @@
                 </div>
             @endif
         </div>
-
+        <div class="col-md-2">
+            <div class="form-group">
+                <label class="font-weight-bold">Total Commision</label>
+                <input type="text" class="form-control bg-light" name="total_commision" value="" readonly>
+            </div>
+        </div>
         <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Net Amount</label>
-                <input
-                
-                  data-toggle="tooltip"
-                                                            title="Gross - Penalty - Commision - Labour = Payable of Freight Vendor"
-                
-                 type="text" class="form-control bg-light font-weight-bold" name="net_amount"
+                <input data-toggle="tooltip" title="Gross - Penalty - Commision - Labour = Payable of Freight Vendor"
+                    type="text" class="form-control bg-light font-weight-bold" name="net_amount"
                     value="{{ $paymentRequestData->net_amount ?? '0' }}" readonly>
             </div>
         </div>
@@ -635,15 +631,9 @@
         }
 
         function calculateCommission() {
-            const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
-            const freightRs = parseFloat($('.freight-rs').val()) || 0;
 
-            if (commissionPercent > 0) {
-                const commissionAmount = (freightRs * commissionPercent) / 100;
-                $('.commission-amount').val(commissionAmount.toFixed(2));
-            } else {
-                $('.commission-amount').val('0');
-            }
+
+
 
             calculatePaymentSummary();
         }
@@ -666,7 +656,7 @@
             let contractRate = parseFloat($('.contract-rate').val()) || 0;
             let netShortageDeduction = netShortage * contractRate;
 
-          
+
             // let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
             let totalDeductions =
                 parseFloat(overWeightDed || 0) +
@@ -674,13 +664,26 @@
                 parseFloat(extraMinusDed || 0);
             //  parseFloat(commissionAmount || 0);
 
-  let grossAmount = freightRs + loadingKanta + arrivedKanta + otherPlusLabour + dehariPlusExtra + marketComm - totalDeductions;
+            let grossAmount = freightRs + loadingKanta + arrivedKanta + otherPlusLabour + dehariPlusExtra + marketComm - totalDeductions;
 
             let totalLabour = parseFloat(otherMinusLabour || 0);
             let totalCommision = parseFloat(commissionAmount || 0);
 
 
             let netAmount = grossAmount - godownPenalty - totalCommision - totalLabour;
+
+
+            const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
+            //  const freightRs = parseFloat($('.freight-rs').val()) || 0;
+            let grossAfterDeductAmount = grossAmount - godownPenalty - totalLabour;
+
+            if (commissionPercent > 0) {
+                const commissionAmount = (grossAfterDeductAmount * commissionPercent) / 100;
+                $('.commission-amount').val(commissionAmount.toFixed(2));
+            } else {
+                $('.commission-amount').val('0');
+            }
+
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));

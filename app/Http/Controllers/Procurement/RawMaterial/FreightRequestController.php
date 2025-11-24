@@ -629,7 +629,7 @@ class FreightRequestController extends Controller
                 'payment_request_data_id' => $paymentRequestData->id,
                 'other_deduction_kg' => 0,
                 'other_deduction_value' => 0,
-                'request_type' => 'payment',
+                'request_type' => 'freight_payment',
                 'module_type' => 'freight_payment',
                 'account_id' => $accountId,
                 'payment_to_type' => $paymentRequestData->payment_to_type,
