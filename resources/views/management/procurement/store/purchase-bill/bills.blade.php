@@ -11,7 +11,8 @@
     $currentTotal = ($currentRate !== '' && $currentQty > 0) ? (float)$currentRate * (float)$currentQty : '';
 
    // $currentSupplierId = $quotedSupplierId ?: '';
-    //$currentSupplierName = $quotedSupplierName ?: '';
+    //$currentSupplierName = $quoted
+    <p>test</p>SupplierName ?: '';
 @endphp
 
 
@@ -31,10 +32,9 @@
 @endphp
 @if ($remainingQty <= 0) @continue @endif; --}}
 
-    <tr id="row_{{ $key }}">
+<tr id="row_{{ $key }}">
 
-
-
+      
         <td style="width: 20%">
             <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}" disabled>
@@ -47,6 +47,7 @@
             </select>
 
             <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+            <input type="hidden" name="purchase_order_receiving_data_id[]" value="{{ $data->id }}">
         </td>
 
         <td style="width: 30%">

@@ -16,5 +16,8 @@ class PurchaseBillData extends Model
         "updated_at"
     ];
 
+    public function PurchaseOrderReceivingData() {
+        return $this->belongsTo(PurchaseOrderReceivingData::class, "purchase_order_receiving_data_id");
+    }
 
 }

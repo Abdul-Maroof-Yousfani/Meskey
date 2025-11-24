@@ -107,8 +107,9 @@
                             </td>
 
                             <td style="width: 30%">
-                                <input type="text" style="width: 100%;" name="description[]" value="{{ $data->description }}"
-                                    id="description_{{ $key }}" class="form-control uom" readonly>
+                                <input type="text" style="width: 100%;" name="description[]"
+                                    value="{{ $data->description }}" id="description_{{ $key }}"
+                                    class="form-control uom" readonly>
                             </td>
 
                             <td style="width: 30%">
