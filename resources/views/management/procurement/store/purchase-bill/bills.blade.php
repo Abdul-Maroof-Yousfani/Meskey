@@ -183,7 +183,7 @@
 
     // Tax calculation
     const tax_amount =
-        (taxPercentVal / 100) * (net_amount_value - discount_amount_value);
+        (taxPercentVal / 100) * ((net_amount_value - discount_amount_value) - deduction_amount);
 
     const tax_amount_rounded = round(tax_amount);
     const net_amount_rounded = round(gross - discount_amount_value);
