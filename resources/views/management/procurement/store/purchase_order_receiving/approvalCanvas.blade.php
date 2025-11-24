@@ -4,6 +4,7 @@
     value="{{ optional($purchaseOrderReceiving->orde_data->first())->purchase_request_data_id }}"> --}}
 
  <div class="row form-mar">
+    
      <div class="col-md-4">
          <div class="form-group">
              <label>Purchase Order:</label>
@@ -111,7 +112,9 @@
              <tbody id="purchaseRequestBody">
                
                  @foreach ($purchaseOrderReceivingData ?? [] as $key => $data)
-                       
+                    <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no, 'type' => 'view']) }}', 'View QC', false, '100%')">&nbsp;</button>
+             
+                   
                      <tr id="row_{{ $key }}">
                          <td style="width: 50%">
                              <select id="category_id_{{ $key }}" disabled
@@ -260,6 +263,12 @@
                              <button type="button" class="btn btn-danger btn-sm removeRowBtn"
                                  onclick="remove({{ $key }})" disabled
                                  data-id="{{ $key }}">Remove</button>
+
+                            @if($data->qc)
+                                <button type="button" class="btn btn-success btn-sm"
+                                    onclick="viewQc('{{ $data->id }}', '{{ $key }}')"
+                                    data-id="{{ $key }}">View QC</button>
+                            @endif
                     
                          </td>
                      </tr>

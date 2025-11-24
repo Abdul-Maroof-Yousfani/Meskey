@@ -29,7 +29,6 @@ class QcController extends Controller
         return response()->json("Qc has been updated");
     }
     public function getList(Request $request) {
-        
         $PurchaseOrderRaw = PurchaseOrderReceivingData::whereHas("qc", function($query) {
             // return $query->filter();
         })
@@ -161,11 +160,12 @@ class QcController extends Controller
     public function show(Request $request) {
         $id = $request->id;
         $grn = $request->grn;
+        $type = $request->type;
 
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
 
 
-        return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id"));
+        return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id", "type"));
     }
     public function edit(Request $request) {
         $id = $request->id;
