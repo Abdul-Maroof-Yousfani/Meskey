@@ -2248,6 +2248,9 @@
         $(document).on('change', '#accounts_of', function () {
             $('#accounts_of_hidden').val($(this).val());
         });
+        $(document).on('change', '#product_id', function () {
+            $('#product_id_hidden').val($(this).val());
+        });
 
         $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
             // First reset all form fields
