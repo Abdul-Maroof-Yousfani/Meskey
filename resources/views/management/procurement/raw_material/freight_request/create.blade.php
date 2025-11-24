@@ -639,6 +639,7 @@
         }
 
         function calculatePaymentSummary() {
+            
             let freightRs = parseFloat($('[name="freight_rs"]').val()) || 0;
             let loadingKanta = parseFloat($('[name="loading_kanta"]').val()) || 0;
             let arrivedKanta = parseFloat($('[name="arrived_kanta"]').val()) || 0;
@@ -699,14 +700,16 @@
 
             // Set maximum limit for request amount
             $('[name="request_amount"]').attr('max', Math.max(0, netAmount - paidAmount).toFixed(2));
+            CalPercentageINput();
         }
 
 
-
-
-        // Percentage input handler for multiple requests
         $('.percentage-input').on('input', function () {
-            let percentage = parseFloat($(this).val()) || 0;
+            CalPercentageINput();
+        });
+
+        function CalPercentageINput() {
+            let percentage = parseFloat($('.percentage-input').val()) || 0;
             if (percentage > 100) {
                 percentage = 100;
                 $(this).val(100);
@@ -722,7 +725,10 @@
             // Update remaining amount
             const finalRemaining = netAmount - (paidAmount + amount);
             $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
-        });
+        }
+
+        // Percentage input handler for multiple requests
+
 
         // Request amount input handler
         $('[name="request_amount"]').on('input', function () {
