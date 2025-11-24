@@ -78,6 +78,18 @@ a.modal-sidebar-close.top-wala {
   height: 41px;
   width: 40px !important;
 }
+
+button.new-sidebar {
+  display: inline-flex;
+  background: linear-gradient(135deg, #d3d3d396 0%, #264eab 100%);
+  justify-content: center;
+  align-items: center;
+  color: white !important;
+  border-radius: 50%;
+  height: 41px;
+  width: 40px !important;
+}
+
 .avatar-upload {
   position: relative;
   max-width: 205px;
@@ -282,6 +294,9 @@ select[readonly].select2-hidden-accessible + .select2-container {
   background-color: #fff5f5;
 }
 #modal-sidebar.open {
+  right: 0 !important;
+}
+#modal-sidebar2.open {
   right: 0 !important;
 }
 /* body{overflow-x:hidden;}

@@ -112,7 +112,7 @@
              <tbody id="purchaseRequestBody">
                
                  @foreach ($purchaseOrderReceivingData ?? [] as $key => $data)
-                    <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no, 'type' => 'view']) }}', 'View QC', false, '100%')">&nbsp;</button>
+                    <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModalAndDonotCloseLastModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no, 'type' => 'view']) }}', 'View QC', false, '100%')">&nbsp;</button>
              
                    
                      <tr id="row_{{ $key }}">

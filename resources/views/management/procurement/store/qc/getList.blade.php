@@ -134,10 +134,9 @@
                                         class="info p-1 text-center mr-2 position-relative" title="Approval">
                                         <i class="ft-eye font-medium-3"></i>
                                     </a>
-                                    
-                                    @if($itemGroup["canUserApprove"])
+                                    @if($itemGroup["canUserApprove"] && !$supplierRow["data"]->qc?->is_qc_approved)
                                         <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
-                                            class="danger p-1 text-center mr-2 position-relative ">
+                                            class="danger p-1 text-center mr-2 position-relative">
 
                                             <i class="ft-x font-medium-3"></i>
                                         </a>

@@ -894,6 +894,87 @@ function openModal(button, url, title, viewonly = false, drawerWidth = null) {
   });
 }
 
+function openModalAndDonotCloseLastModal(button, url, title, viewonly = false, drawerWidth = null) {
+  const $button = $(button);
+  const originalText = $button.html();
+
+  // Spinner on button
+  $button.prop("disabled", true).html(
+    `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm"></span></span> ${originalText}`
+  );
+
+  // Responsive width
+  if (!drawerWidth) {
+    if (window.innerWidth <= 576) drawerWidth = "98%";
+    else if (window.innerWidth <= 992) drawerWidth = "70%";
+    else drawerWidth = "50%";
+  }
+
+  const instanceId = 'sidebar-drawer-' + Date.now();
+
+  // Create brand-new drawer (no header bar at all)
+  const $drawer = $(`
+    <div class="clean-sidebar-drawer" id="${instanceId}" style="width:${drawerWidth}; right:-${drawerWidth};">
+      <!-- Tiny close button in top-right corner only -->
+      <button type="button" class="clean-close-btn new-sidebar" data-close="model" aria-label="Close">
+        <svg width="20" height="20" fill="white" viewBox="0 0 24 24" fill="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+
+      <!-- Optional title (just text, no bar) -->
+      ${title ? `<div class="clean-drawer-title">${title}</div>` : ''}
+
+      <div class="clean-drawer-body">
+        <div class="loader-container" style="display:block;text-align:center;padding:60px 20px;">
+          <div class="spinner-border text-secondary" style="width:3rem;height:3rem;"></div>
+        </div>
+        <div class="drawer-content"></div>
+      </div>
+    </div>
+  `);
+
+  $("body").append($drawer).addClass("drawer-opened");
+
+  // Slight visual stacking offset
+  const stackOffset = ($(".clean-sidebar-drawer").length - 1) * 20;
+  setTimeout(() => $drawer.css("right", stackOffset + "px"), 10);
+
+  // Close only this drawer
+  $drawer.on("click", ".clean-close-btn, [data-close='model']", function () {
+    $drawer.css("right", `-${drawerWidth}`);
+    setTimeout(() => {
+      $drawer.remove();
+      if ($(".clean-sidebar-drawer").length === 0) {
+        $("body").removeClass("drawer-opened");
+      }
+    }, 350);
+  });
+
+  // Load content
+  $.ajax({
+    url: url,
+    method: "GET",
+    success: function (data) {
+      $drawer.find(".drawer-content").html(data);
+      $drawer.find(".loader-container").hide();
+      $drawer.find('[data-toggle="tooltip"]').tooltip();
+
+      if (viewonly) {
+        $drawer.find(":input, select, textarea, :checkbox, :file").prop({readonly:true, disabled:true});
+        $drawer.find('[type="submit"]').remove();
+      }
+
+      $button.prop("disabled", false).html(originalText);
+    },
+    error: function (xhr) {
+      $drawer.find(".drawer-content").html(
+        `<div class="alert alert-danger m-4">Failed to load content (${xhr.status})</div>`
+      );
+      $drawer.find(".loader-container").hide();
+      $button.prop("disabled", false).html(originalText);
+    }
+  });
+}
+
 //Handles Errors
 function handleAjaxError(xhr, status, error) {
   console.error("Error loading content:", status);
