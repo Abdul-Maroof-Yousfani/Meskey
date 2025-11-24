@@ -452,6 +452,7 @@
     const tax_percent = row.find(".tax_id");
     const percent_amount = row.find(".percent_amount");
     const net_amount = row.find(".net_amount");
+    const deduction_amount = row.find(".deduction").val();
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;
@@ -477,7 +478,7 @@
 
     // Set values
     tax_amount_input.val(tax_amount_rounded);
-    net_amount.val(net_amount_rounded);
+    net_amount.val((net_amount_rounded - deduction_amount));
     discount_amount.val((discountPercentVal / 100) * net_amount_value);
     console.log(net_amount_value);
     // IMPORTANT: Use rounded tax value
