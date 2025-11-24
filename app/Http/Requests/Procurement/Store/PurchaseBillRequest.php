@@ -28,7 +28,6 @@ class PurchaseBillRequest extends FormRequest
             "grn_no" => "required",
             "reference_no" => "required",
             "description" => "required",
-
             "description.*" => "required",
             "qty.*" => "required",
             "rate.*" => "required",
