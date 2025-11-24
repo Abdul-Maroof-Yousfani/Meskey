@@ -218,7 +218,8 @@ class FreightRequestController extends Controller
             $requestData = $request->all();
             $requestData['module_type'] = 'freight_payment';
             $requestData['total_amount'] = $requestData['net_amount'];
-
+          
+            
             $ticketID = $requestData['ticket_id'];
             $purchaseOrderID = $requestData['purchase_order_id'];
 

@@ -626,7 +626,13 @@ class TicketPaymentRequestController extends Controller
         })
             ->where('request_type', 'freight_payment')
             ->sum('amount');
-
+        
+            $freightPaymentRequestgrossAmount = paymentRequestData::where('ticket_id', $arrivalTicket->id)
+            ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+            ->where('module_type', 'freight_payment')
+            ->latest() // id ya created_at ke hisaab se last record
+            ->value('gross_amount');
+        
         $samplingRequest = null;
         $samplingRequestCompulsuryResults = collect();
         $samplingRequestResults = collect();
@@ -705,6 +711,7 @@ class TicketPaymentRequestController extends Controller
             'otherDeduction' => $otherDeduction,
             'isRequestApprovalPage' => false,
             'isTicketApprovalPage' => false,
+            'freightPaymentRequestgrossAmount' => $freightPaymentRequestgrossAmount,
             'isTicketPage' => true,
         ])->render();
 

@@ -72,6 +72,7 @@ class PaymentRequestData extends Model
         'deduction_contract_rate_for_freight',
         'penalty_adjust_to',
         'labour_vendor_id',
+        'gross_amount',
     ];
 
     protected $casts = [
