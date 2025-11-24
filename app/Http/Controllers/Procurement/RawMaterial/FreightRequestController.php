@@ -954,21 +954,21 @@ class FreightRequestController extends Controller
 
 
                 $vendorLabourAcc = Vendor::where("id", $request->labour_vendor_id)->first();
-                if ($request->request_amount && $request->request_amount > 0) {
-                    PaymentRequest::create([
 
-                        'payment_request_data_id' => $paymentRequestData->id,
-                        'other_deduction_kg' => 0,
-                        'other_deduction_value' => 0,
-                        'request_type' => 'payment',
-                        'module_type' => 'freight_payment',
-                        'status' => 'approved',
-                        'account_id' => $vendorLabourAcc->account_id,
-                        'payment_to_type' => $paymentRequestData->payment_to_type,
-                        'payment_to' => $paymentRequestData->payment_to,
-                        'amount' => $request->request_amount ?? 0
-                    ]);
-                }
+                PaymentRequest::create([
+
+                    'payment_request_data_id' => $paymentRequestData->id,
+                    'other_deduction_kg' => 0,
+                    'other_deduction_value' => 0,
+                    'request_type' => 'payment',
+                    'module_type' => 'freight_payment',
+                    'status' => 'approved',
+                    'account_id' => $vendorLabourAcc->account_id,
+                    'payment_to_type' => $paymentRequestData->payment_to_type,
+                    'payment_to' => $paymentRequestData->payment_to,
+                    'amount' =>$request->total_labour ?? 0
+                ]);
+
 
 
 

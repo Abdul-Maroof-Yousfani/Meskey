@@ -404,7 +404,7 @@
                                     <i class="fa fa-download"></i> Download File
                                </a>`
                                                 : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
-                                    <i class="fa fa-ban"></i> No File
+                                    <i class="fa fa-ban mr-1"></i> No File
                                </button>`
                                             }
                     </td>
