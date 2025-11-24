@@ -538,9 +538,10 @@ class PurchaseOrderReceivingController extends Controller
         $prefix = 'GRN-' . $locationCode . '-' . $date;
 
         // Find latest PO for the same prefix
-        $latestPO = PurchaseOrderReceiving::where('purchase_order_receiving_no', 'like', "$prefix-%")
+        $latestPO = PurchaseOrderReceiving::withTrashed()->where('purchase_order_receiving_no', 'like', "$prefix-%")
             ->orderByDesc('id')
             ->first();
+
 
         if ($latestPO) {
             // Correct field name

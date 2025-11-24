@@ -102,4 +102,7 @@ class PurchaseOrderReceivingData extends Model
     public function qc() {
         return $this->hasOne(QC::class, "purchase_order_receiving_data_id");
     }
+    public function bill() {
+        return $this->hasOne(PurchaseBillData::class, "purchase_order_receiving_data_id");
+    }
 }

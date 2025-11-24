@@ -37,4 +37,5 @@ class PurchaseBill extends Model
     public function bill_data() {
         return $this->hasMany(PurchaseBillData::class, "purchase_bill_id");
     }
+    
 }

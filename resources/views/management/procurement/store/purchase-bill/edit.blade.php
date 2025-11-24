@@ -111,6 +111,7 @@
                                     </select>
 
                                     <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                                    <input type="hidden" name="purchase_order_receiving_data_id[]" value="{{ $data->purchase_order_receiving_data_id }}">
                                 </td>
 
                                 <td style="width: 30%">
@@ -120,16 +121,16 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100%" type="number"
-                                        onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                        onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
+                                        onkeyup=""
+                                        onblur="" name="qty[]" value="{{ $data->qty }}"
                                         id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
                                 </td>
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number"
-                                        onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                        onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
+                                        onkeyup=""
+                                        onblur="" name="rate[]" value="{{ $data->rate }}"
                                         id="rate_{{ $key }}" class="form-control rate" step="0.01"
                                         readonly>
                                 </td>
@@ -171,7 +172,7 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="net_amount[]"
-                                        value="{{ $data->net_amount }}" id="total_{{ $key }}"
+                                        value="{{ $data->net_amount - $data->deduction }}" id="total_{{ $key }}"
                                         class="form-control net_amount" step="0.01" min="0" readonly>
                                 </td>
 
@@ -189,11 +190,6 @@
                                 </td>
 
                               
-
-
-
-                              
-
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="final_amount[]"
                                         value="{{ $data->final_amount }}" id="final_amount_{{ $key }}"
@@ -456,6 +452,7 @@
     const tax_percent = row.find(".tax_id");
     const percent_amount = row.find(".percent_amount");
     const net_amount = row.find(".net_amount");
+    const deduction_amount = row.find(".deduction").val();
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;
@@ -481,7 +478,7 @@
 
     // Set values
     tax_amount_input.val(tax_amount_rounded);
-    net_amount.val(net_amount_rounded);
+    net_amount.val((net_amount_rounded - deduction_amount));
     discount_amount.val((discountPercentVal / 100) * net_amount_value);
     console.log(net_amount_value);
     // IMPORTANT: Use rounded tax value

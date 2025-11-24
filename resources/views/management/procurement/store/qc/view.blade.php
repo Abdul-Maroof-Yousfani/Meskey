@@ -235,7 +235,7 @@
 
         <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit2">
            
-            @if ($purchaseOrderReceivingData->qc->canApprove())
+            @if ($purchaseOrderReceivingData->qc->canApprove() || $type == "view")
                 <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
 
                 <input type="hidden" name="total_bags" id="total_bags"
@@ -248,7 +248,7 @@
                             <label class="form-label">Accepted Qty:</label>
                             <input type="text" name="accepted_quantity" id="accepted_quantity"
                                 value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}"
-                                class="form-control">
+                                class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
 
@@ -257,7 +257,7 @@
                             <label class="form-label">Rejected Qty:</label>
                             <input type="text" name="rejected_quantity" id="rejected_quantity"
                                 value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}"
-                                class="form-control">
+                                class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
 
@@ -266,11 +266,13 @@
                             <label class="form-label">Deduction Per Bag:</label>
                             <input type="text" name="deduction_per_bag" id="deduction_per_bag"
                                 value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}"
-                                class="form-control">
+                                class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Save</button>
+                @if($purchaseOrderReceivingData->qc->canApprove())
+                    <button type="submit" class="btn btn-primary">Save</button>
+                @endif
                 @endif
         </form>
 

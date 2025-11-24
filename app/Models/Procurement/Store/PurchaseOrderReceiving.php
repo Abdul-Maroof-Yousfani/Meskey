@@ -150,4 +150,20 @@ class PurchaseOrderReceiving extends Model
     {
         return $this->remaining_amount <= 0;
     }
+
+    public function bills() {
+        return $this->hasMany(PurchaseBill::class, "purchase_order_receiving_id");
+    }
+
+    public function scopeDoesNotHaveBills($query){
+        return $query->whereRaw("(SELECT COUNT(*) 
+            FROM purchase_order_receiving_data 
+            WHERE purchase_order_receiving_data.purchase_order_receiving_id = purchase_order_receivings.id
+        ) != (
+            SELECT COUNT(*) 
+            FROM purchase_bills 
+            WHERE purchase_bills.purchase_order_receiving_id = purchase_order_receivings.id
+        )");
+    }
+
 }

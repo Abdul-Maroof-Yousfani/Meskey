@@ -35,8 +35,6 @@ class PurchaseBillController extends Controller
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_bills_data WHERE purchase_bills_data.purchase_bill_id = purchase_bills.id)');
             })
             ->get();
-            
-
 
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
@@ -44,37 +42,28 @@ class PurchaseBillController extends Controller
         return view('management.procurement.store.purchase-bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests'));
     }
 
-    public function edit(Request $request, int $id) {
-          $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+    public function edit(Request $request, int $id)
+    {
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         // $job_orders = JobOrder::get();
         // dd($job_orders);
 
-        $purchase_bill = PurchaseBill::with([
-            "bill_data",
-            "grn"
-        ])->findOrFail($id);
-
-       
-
+        $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
 
         $purchaseBillData = PurchaseBillData::where('purchase_bill_id', $id)
-            ->when(
-                $purchase_bill->am_approval_status === 'approved',
-                function ($query) {
-                    $query->where('am_approval_status', 'approved');
-                }
-            )
+            ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
+                $query->where('am_approval_status', 'approved');
+            })
             ->get();
 
         $taxes = Tax::all();
-        
-        
+
         return view('management.procurement.store.purchase-bill.edit', [
             'purchase_bill' => $purchase_bill,
             'categories' => $categories,
             'locations' => $locations,
-            "taxes" => $taxes,
+            'taxes' => $taxes,
             // 'job_orders' => $job_orders,
             'purchaseBillData' => $purchaseBillData,
             'data1' => $purchase_bill,
@@ -109,10 +98,10 @@ class PurchaseBillController extends Controller
                 continue;
             }
 
-            $supplierKey = ($row->supplier->id ?? 'unknown').'_'.$row->id;
+            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
 
             // Initialize main order group
-            if (! isset($groupedData[$orderNo])) {
+            if (!isset($groupedData[$orderNo])) {
                 $groupedData[$orderNo] = [
                     'request_data' => $row->id,
                     'purchase_order_receiving_no' => [],
@@ -120,7 +109,7 @@ class PurchaseBillController extends Controller
             }
 
             // Initialize receiving number group
-            if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo])) {
+            if (!isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo])) {
                 $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo] = [
                     'quotation_data' => $row->purchase_order_receiving->purchase_quotation ?? null,
                     'orders' => [],
@@ -128,10 +117,10 @@ class PurchaseBillController extends Controller
             }
 
             // Initialize specific order group
-            if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo])) {
+            if (!isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo])) {
                 $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo] = [
                     'order_data' => $row->grn,
-                    "row_data" => $row,
+                    'row_data' => $row,
                     'approval_status' => $row->am_approval_status,
                     'row' => $row,
                     'items' => [],
@@ -149,7 +138,7 @@ class PurchaseBillController extends Controller
             foreach ($row->bill_data as $billItem) {
                 $itemId = $billItem->item_id;
                 // Create item group
-                if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId])) {
+                if (!isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId])) {
                     $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId] = [
                         'item_data' => $billItem,
                         'suppliers' => [],
@@ -215,7 +204,7 @@ class PurchaseBillController extends Controller
 
                     $processedData[] = [
                         'request_data' => $orderGroup['order_data'],
-                        "row_data" => $orderGroup["row_data"],
+                        'row_data' => $orderGroup['row_data'],
                         'request_no' => $orderNo,
                         'purchase_request_no' => $originalPurchaseRequestNo,
                         'purchase_order_no' => $originalPurchaseOrderNo,
@@ -242,7 +231,7 @@ class PurchaseBillController extends Controller
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $locationCode = $location->code ?? 'LOC';
-        $prefix = 'BILL-'.$locationCode.'-'.$date;
+        $prefix = 'BILL-' . $locationCode . '-' . $date;
 
         // Find latest PO for the same prefix
         $latestBill = PurchaseBill::where('bill_no', 'like', "$prefix-%")
@@ -258,9 +247,9 @@ class PurchaseBillController extends Controller
             $newNumber = 1;
         }
 
-        $bill_no = 'BILL-'.$locationCode.'-'.$date.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $bill_no = 'BILL-' . $locationCode . '-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        if (! $locationId && ! $contractDate) {
+        if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
                 'purchase_order_no' => $bill_no,
@@ -274,7 +263,25 @@ class PurchaseBillController extends Controller
     {
         $supplier_id = $request->supplier_id;
 
-        $purchase_order_receivings = PurchaseOrderReceiving::select('id', 'purchase_order_receiving_no')->where('supplier_id', $supplier_id)->get();
+        $purchase_order_receivings = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function ($query) {
+            $query->where('is_qc_approved', 'approved');
+        })
+            ->select('id', 'purchase_order_receiving_no')
+            ->where('supplier_id', $supplier_id)
+            ->get()
+            ->filter(function($data) {
+                $purchase_order_receiving_data = PurchaseOrderReceivingData::withCount(["qc" => function($query) {
+                    $query->where("is_qc_approved", "approved");
+                }])->where("purchase_order_receiving_id", $data->id)->get();
+
+                $ids = $purchase_order_receiving_data->pluck("id");
+
+                $bills_count = PurchaseBillData::whereIn("purchase_order_receiving_data_id", $ids)->count();
+
+                return $bills_count != $purchase_order_receiving_data->sum("qc_count");
+            });
+
+            
 
         $results = [];
         foreach ($purchase_order_receivings as $item) {
@@ -297,7 +304,11 @@ class PurchaseBillController extends Controller
         $master = PurchaseOrderReceiving::where('purchase_order_receiving_no', $requestId)->first();
         $dataItems = collect();
 
-        $dataItems = PurchaseOrderReceivingData::with(['purchase_request_data', 'item', 'purchase_order_data'])
+        $dataItems = PurchaseOrderReceivingData::whereHas('qc', function ($query) {
+            $query->where('is_qc_approved', 'approved');
+        })
+            ->whereDoesntHave("bill")
+            ->with(['purchase_request_data', 'item', 'purchase_order_data'])
             ->where('purchase_order_receiving_id', $master->id)
             ->get();
 
@@ -305,11 +316,10 @@ class PurchaseBillController extends Controller
         //     return totalBillQuantityCreated($datum->purchase_order_receiving_id, $datum->item_id) <= 0;
         // });
 
-        $dataItems = $dataItems->map(function($datum) {
+        $dataItems = $dataItems->map(function ($datum) {
             $datum->sales_tax = $datum->purchase_order_data->tax_id;
             return $datum;
         });
-
 
         $purchaseOrderReceivingDataIds = $dataItems->pluck('id');
 
@@ -324,7 +334,8 @@ class PurchaseBillController extends Controller
         ]);
     }
 
-    public function update(PurchaseBillRequest $request, PurchaseBill $purchaseBill) {
+    public function update(PurchaseBillRequest $request, PurchaseBill $purchaseBill)
+    {
         $purchaseOrderReceiving = PurchaseOrderReceiving::where('purchase_order_receiving_no', $request->grn_no)->first();
         $location = $request->company_location;
         $reference_no = $request->reference_no;
@@ -340,6 +351,10 @@ class PurchaseBillController extends Controller
         $discount_amounts = $request->discount_amount;
         $deduction = $request->deduction;
         $final_amount = $request->final_amount;
+        $tax_amount = $request->tax_amount;
+        $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
+        $deduction_per_piece = $request->deduction_per_piece;
+    
 
         DB::beginTransaction();
 
@@ -361,12 +376,14 @@ class PurchaseBillController extends Controller
             foreach ($items as $index => $item) {
                 $purchaseBill->bill_data()->create([
                     'item_id' => $items[$index],
-                    'purchase_order_receiving_data_id' => $purchaseOrderReceiving->id,
+                    'purchase_order_receiving_data_id' => $purchase_order_receiving_data_id[$index],
                     'description' => $descriptions[$index],
                     'qty' => $qty[$index],
                     'rate' => $rate[$index],
                     'gross_amount' => $gross_amount[$index],
-                    'tax_id' => $taxes[$index],
+                    'tax_percent' => $taxes[$index],
+                    'tax_amount' => $tax_amount[$index],
+                    'deduction_per_piece' => $deduction_per_piece[$index],
                     'net_amount' => $net_amount[$index],
                     'discount_percent' => $discounts[$index],
                     'discount_amount' => $discount_amounts[$index],
@@ -407,6 +424,7 @@ class PurchaseBillController extends Controller
         $supplier_id = $request->supplier_id;
         $tax_amount = $request->tax_amount;
         $deduction_per_piece = $request->deduction_per_piece;
+        $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
 
         DB::beginTransaction();
 
@@ -431,7 +449,7 @@ class PurchaseBillController extends Controller
             foreach ($items as $index => $item) {
                 $purchase_bill->bill_data()->create([
                     'item_id' => $items[$index],
-                    'purchase_order_receiving_data_id' => $purchaseOrderReceiving->id,
+                    'purchase_order_receiving_data_id' => $purchase_order_receiving_data_id[$index],
                     'description' => $descriptions[$index],
                     'qty' => $qty[$index],
                     'rate' => $rate[$index],
@@ -458,46 +476,38 @@ class PurchaseBillController extends Controller
             return response()->json($e->getMessage(), 500);
         }
     }
-    public function manageApprovals(int $id) {
-         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+    public function manageApprovals(int $id)
+    {
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         // $job_orders = JobOrder::get();
         // dd($job_orders);
 
-        $purchase_bill = PurchaseBill::with([
-            "bill_data",
-            "grn"
-        ])->findOrFail($id);
-
-       
-
+        $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
 
         $purchaseBillData = PurchaseBillData::where('purchase_bill_id', $id)
-            ->when(
-                $purchase_bill->am_approval_status === 'approved',
-                function ($query) {
-                    // $query->where('am_approval_status', 'approved');
-                }
-            )
+            ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
+                // $query->where('am_approval_status', 'approved');
+            })
             ->get();
 
         $taxes = Tax::all();
-        
-        
+
         return view('management.procurement.store.purchase-bill.view', [
             'purchase_bill' => $purchase_bill,
             'categories' => $categories,
             'locations' => $locations,
-            "taxes" => $taxes,
+            'taxes' => $taxes,
             'purchaseBillData' => $purchaseBillData,
             'data1' => $purchase_bill,
         ]);
     }
 
-    public function destroy(PurchaseBill $purchase_bill) {
+    public function destroy(PurchaseBill $purchase_bill)
+    {
         $purchase_bill->bill_data()->delete();
         $purchase_bill->delete();
 
-        return response()->json("Purchase bill has been deleted!");
+        return response()->json('Purchase bill has been deleted!');
     }
 }

@@ -144,7 +144,7 @@ if(!function_exists("totalBillQuantityCreated")) {
 if(!function_exists("getTaxById")) {
     function getTaxPercentageById($tax_id) {
         $tax = Tax::find($tax_id);
-        return $tax->percentage;
+        return $tax->percentage ?? 0;
     }
 }
 

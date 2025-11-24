@@ -75,14 +75,14 @@
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Gross Amount</th>
-                        <th>GST %</th>
-                        <th>GST Amount</th>
-                        <th>Net Amount</th>
                         <th>Discount %</th>
                         <th>Discount Amount</th>
                         <th>Deduction Per Piece</th>
                         <th>Deduction</th>
-                        <th>Final Amount</th>
+                        <th>Amount</th>
+                        <th>GST %</th>
+                        <th>GST Amount</th>
+                        <th>Net Amount</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -107,8 +107,9 @@
                             </td>
 
                             <td style="width: 30%">
-                                <input type="text" style="width: 100%;" name="description[]" value="{{ $data->description }}"
-                                    id="description_{{ $key }}" class="form-control uom" readonly>
+                                <input type="text" style="width: 100%;" name="description[]"
+                                    value="{{ $data->description }}" id="description_{{ $key }}"
+                                    class="form-control uom" readonly>
                             </td>
 
                             <td style="width: 30%">
