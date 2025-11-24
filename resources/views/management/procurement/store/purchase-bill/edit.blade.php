@@ -129,8 +129,8 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number"
-                                        onkeyup="calc({{ $key }});"
-                                        onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
+                                        onkeyup=""
+                                        onblur="" name="rate[]" value="{{ $data->rate }}"
                                         id="rate_{{ $key }}" class="form-control rate" step="0.01"
                                         readonly>
                                 </td>
@@ -190,11 +190,6 @@
                                 </td>
 
                               
-
-
-
-                              
-
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="final_amount[]"
                                         value="{{ $data->final_amount }}" id="final_amount_{{ $key }}"
