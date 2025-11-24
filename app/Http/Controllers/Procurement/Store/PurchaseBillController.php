@@ -339,7 +339,7 @@ class PurchaseBillController extends Controller
         $purchaseOrderReceiving = PurchaseOrderReceiving::where('purchase_order_receiving_no', $request->grn_no)->first();
         $location = $request->company_location;
         $reference_no = $request->reference_no;
-        $description = $request->description;
+        $description = $request->purchase_bill_description;
         $items = $request->item_id;
         $descriptions = $request->description;
         $qty = $request->qty;
@@ -366,7 +366,7 @@ class PurchaseBillController extends Controller
                 'created_by' => auth()->user()->id,
                 'status' => 'active',
                 'location_id' => $location,
-                'description' => 'Description',
+                'description' => $description,
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1,
             ]);
@@ -408,7 +408,7 @@ class PurchaseBillController extends Controller
         $purchaseOrderReceiving = PurchaseOrderReceiving::where('purchase_order_receiving_no', $request->grn_no)->first();
         $location = $request->company_location;
         $reference_no = $request->reference_no;
-        $description = $request->description;
+        $description = $request->purchase_bill_description;
         $items = $request->item_id;
         $descriptions = $request->description;
         $qty = $request->qty;
@@ -426,6 +426,7 @@ class PurchaseBillController extends Controller
         $deduction_per_piece = $request->deduction_per_piece;
         $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
 
+
         DB::beginTransaction();
 
         try {
@@ -439,7 +440,7 @@ class PurchaseBillController extends Controller
                 'created_by' => auth()->user()->id,
                 'status' => 'active',
                 'location_id' => $location,
-                'description' => 'Description',
+                'description' => $description,
                 'company_id' => 1,
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1,
