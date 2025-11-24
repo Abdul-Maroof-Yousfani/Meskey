@@ -86,13 +86,17 @@
                                 </p>
                             </td>
                             <td>
+                                @php
+                                    $rate = $supplierRow["data"]?->purchase_order_data?->rate ?? 0;
+                                    $qty = $supplierRow["data"]?->purchase_order_data?->qty ?? 0;
+                                @endphp
                                 <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->rate }}
+                                    {{ $rate }}
                                 </p>
                             </td>
                             <td>
                                 <p class="m-0 text-right">
-                                    {{ $supplierRow['data']->total }}
+                                    {{ $qty * $rate }}
                                 </p>
                             </td>
                             <td>

@@ -141,7 +141,7 @@
 
         <td>
             <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove({{ $key }})"
-                data-id="{{ $key }}">Remove</button>
+                data-id="{{ $key }}" disabled>Remove</button>
         </td>
     </tr>
 @endforeach
