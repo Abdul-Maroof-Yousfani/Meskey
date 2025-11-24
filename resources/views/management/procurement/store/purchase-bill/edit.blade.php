@@ -482,7 +482,7 @@
     discount_amount.val((discountPercentVal / 100) * net_amount_value);
     console.log(net_amount_value);
     // IMPORTANT: Use rounded tax value
-    final_amount.val(round(net_amount_rounded + tax_amount_rounded));
+    final_amount.val(round((net_amount_rounded - deduction_amount) + tax_amount_rounded));
 
 
     }
