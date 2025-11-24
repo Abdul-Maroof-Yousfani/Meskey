@@ -351,6 +351,10 @@ class PurchaseBillController extends Controller
         $discount_amounts = $request->discount_amount;
         $deduction = $request->deduction;
         $final_amount = $request->final_amount;
+        $tax_amount = $request->tax_amount;
+        $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
+        $deduction_per_piece = $request->deduction_per_piece;
+    
 
         DB::beginTransaction();
 
@@ -372,12 +376,14 @@ class PurchaseBillController extends Controller
             foreach ($items as $index => $item) {
                 $purchaseBill->bill_data()->create([
                     'item_id' => $items[$index],
-                    'purchase_order_receiving_data_id' => $purchaseOrderReceiving->id,
+                    'purchase_order_receiving_data_id' => $purchase_order_receiving_data_id[$index],
                     'description' => $descriptions[$index],
                     'qty' => $qty[$index],
                     'rate' => $rate[$index],
                     'gross_amount' => $gross_amount[$index],
-                    'tax_id' => $taxes[$index],
+                    'tax_percent' => $taxes[$index],
+                    'tax_amount' => $tax_amount[$index],
+                    'deduction_per_piece' => $deduction_per_piece[$index],
                     'net_amount' => $net_amount[$index],
                     'discount_percent' => $discounts[$index],
                     'discount_amount' => $discount_amounts[$index],

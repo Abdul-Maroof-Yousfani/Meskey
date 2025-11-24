@@ -111,6 +111,7 @@
                                     </select>
 
                                     <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                                    <input type="hidden" name="purchase_order_receiving_data_id[]" value="{{ $data->purchase_order_receiving_data_id }}">
                                 </td>
 
                                 <td style="width: 30%">
