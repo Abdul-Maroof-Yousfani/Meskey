@@ -2,14 +2,14 @@
     <aside class="modal-sidebar d-block d-sm-block d-md-block" id="modal-sidebar2">
         <div class="side-nav modal-sidebar-content">
             <div class="row w-100 mx-auto align-items-center">
-                <div class="col-10 ">
+                {{-- <div class="col-10 ">
                     <h4 class="modal-title my-3">8888</h4>
-                </div>
-                <div class="col-2 text-right">
+                </div> --}}
+                {{-- <div class="col-2 text-right">
                     <a class="modal-sidebar-close top-wala position-relative top-1">
                         <i class="ft-x font-medium-3  darken-1"></i>
                     </a>
-                </div>
+                </div> --}}
                 <div class="col-12 modal-tab-content">
 
                 </div>
