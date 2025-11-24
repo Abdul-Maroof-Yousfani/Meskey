@@ -187,7 +187,7 @@
                 </td>
     <td style="width: 30%">
                                     <select style="width: 100px;" id="tax_id_{{ $key }}" name="tax_id[]"
-                                        onchange="calculatePercentage(this)" class="form-control item-select select2">
+                                        onchange="calculatePercentage(this)" class="form-control item-select select2" readonly>
                                         <option value="">Select Tax</option>
                                         @foreach ($taxes as $tax)
                                             <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}" {{ $tax->id == $data->tax_id ? 'selected' : '' }}>
@@ -199,7 +199,7 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="number" onkeyup="calc({{ $key }})"
-                                        onblur="calc({{ $key }})" name="rate[]" value="{{ ($tax->percentage / 100) * ($data->rate * $data->qty) }}" disabled
+                                        onblur="calc({{ $key }})" name="rate[]" value="{{ (getTaxPercentageById($data->tax_id) / 100) * ($data->rate * $data->qty) }}" disabled
                                         id="rate_{{ $key }}" class="form-control percent_amount" step="0.01" min="{{ $key }}">
                                 </td>
 
