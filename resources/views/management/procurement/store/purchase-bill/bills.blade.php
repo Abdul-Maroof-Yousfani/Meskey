@@ -152,8 +152,7 @@
     }
 
     function calculatePercentage(el) {
-  
-            const row = $(el).closest("tr");
+       const row = $(el).closest("tr");
 
     const gross_amount = row.find(".gross_amount");
     const rate = row.find(".rate");
@@ -184,7 +183,7 @@
 
     // Tax calculation
     const tax_amount =
-        (taxPercentVal / 100) * (net_amount_value - discount_amount_value);
+        (taxPercentVal / 100) * ((net_amount_value - discount_amount_value) - deduction_amount);
 
     const tax_amount_rounded = round(tax_amount);
     const net_amount_rounded = round(gross - discount_amount_value);
@@ -195,8 +194,7 @@
     discount_amount.val((discountPercentVal / 100) * net_amount_value);
     console.log(net_amount_value);
     // IMPORTANT: Use rounded tax value
-    final_amount.val(round(net_amount_rounded + tax_amount_rounded));
-
+    final_amount.val(round((net_amount_rounded - deduction_amount) + tax_amount_rounded));
     }
 
 </script>

@@ -172,7 +172,7 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="net_amount[]"
-                                        value="{{ $data->net_amount - $data->deduction }}" id="total_{{ $key }}"
+                                        value="{{ $data->net_amount }}" id="total_{{ $key }}"
                                         class="form-control net_amount" step="0.01" min="0" readonly>
                                 </td>
 
@@ -482,7 +482,7 @@
     discount_amount.val((discountPercentVal / 100) * net_amount_value);
     console.log(net_amount_value);
     // IMPORTANT: Use rounded tax value
-    final_amount.val(round(net_amount_rounded + tax_amount_rounded));
+    final_amount.val(round((net_amount_rounded - deduction_amount) + tax_amount_rounded));
 
 
     }
