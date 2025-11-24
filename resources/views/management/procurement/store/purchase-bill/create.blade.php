@@ -68,7 +68,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12 row">
             <div class="form-group col-6">
                 <label>Description (Optional):</label>
-                <textarea name="description" id="description" placeholder="Description" class="form-control"></textarea>
+                <textarea name="purchase_bill_description" id="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
     </div>

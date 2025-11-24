@@ -72,7 +72,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12 row">
             <div class="form-group col-6">
                 <label>Description (Optional):</label>
-                <textarea name="description" id="description" placeholder="Description" class="form-control">{{ $purchase_bill->description }}</textarea>
+                <textarea name="purchase_bill_description" id="description" placeholder="Description" class="form-control">{{ $purchase_bill->description }}</textarea>
             </div>
         </div>
     </div>
@@ -198,7 +198,7 @@
                                 <td>
                                     <button type="button" class="btn btn-danger btn-sm removeRowBtn"
                                         onclick="remove({{ $key }})"
-                                        data-id="{{ $key }}">Remove</button>
+                                        data-id="{{ $key }}" disabled>Remove</button>
                                 </td>
                             </tr>
                         @endforeach

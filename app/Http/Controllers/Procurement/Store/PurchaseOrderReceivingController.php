@@ -36,6 +36,7 @@ class PurchaseOrderReceivingController extends Controller
     {
         $PurchaseOrderRaw = PurchaseOrderReceivingData::with(
             'qc',
+            'purchase_order_data',
             'purchase_order_receiving.purchase_order.purchase_request',
             'category',
             'item',
