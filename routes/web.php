@@ -28,6 +28,12 @@ use App\Http\Controllers\Reports\{
     TransactionController
 };
 
+Route::get("/table-names", function() {
+   $tables = DB::select('SHOW TABLES');
+
+dd($tables);
+});
+
 Route::get("/restore-db", function() {
 
     DB::statement('SET FOREIGN_KEY_CHECKS=0;');
