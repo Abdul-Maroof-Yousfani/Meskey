@@ -199,7 +199,7 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <input type="hidden" name="accounts_of" id="accounts_of_hidden">
+                                            <input type="hidden" name="accounts_of" value="{{ $arrivalTicket->accounts_of_name }}" id="accounts_of_hidden">
 
 
                                         </div>
