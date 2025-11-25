@@ -28,6 +28,40 @@ use App\Http\Controllers\Reports\{
     TransactionController
 };
 
+use Illuminate\Support\Facades\DB;
+
+Route::get('/delete-migration/{filename}', function ($filename) {
+
+    $record = DB::table('migrations')
+        ->where('migration', 'like', "%{$filename}%")
+        ->first();
+
+    if (! $record) {
+        return [
+            'status' => 'not_found',
+            'message' => 'No matching migration found. It has NOT been executed yet.',
+        ];
+    }
+
+    // Delete the record
+    DB::table('migrations')
+        ->where('id', $record->id)
+        ->delete();
+
+    return [
+        'status' => 'deleted',
+        'message' => "Migration '{$record->migration}' deleted from migrations table.",
+        'deleted_record' => $record,
+    ];
+});
+
+
+Route::get("/table-names", function() {
+   $tables = DB::select('SHOW TABLES');
+
+dd($tables);
+});
+
 Route::get("/restore-db", function() {
 
     DB::statement('SET FOREIGN_KEY_CHECKS=0;');
