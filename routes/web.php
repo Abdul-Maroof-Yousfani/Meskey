@@ -28,25 +28,33 @@ use App\Http\Controllers\Reports\{
     TransactionController
 };
 
-Route::get('/check-migration/{filename}', function ($filename) {
+use Illuminate\Support\Facades\DB;
+
+Route::get('/delete-migration/{filename}', function ($filename) {
 
     $record = DB::table('migrations')
         ->where('migration', 'like', "%{$filename}%")
         ->first();
 
-    if ($record) {
+    if (! $record) {
         return [
-            'status' => 'already_ran',
-            'message' => 'This migration has already been executed.',
-            'migration_record' => $record,
+            'status' => 'not_found',
+            'message' => 'No matching migration found. It has NOT been executed yet.',
         ];
     }
 
+    // Delete the record
+    DB::table('migrations')
+        ->where('id', $record->id)
+        ->delete();
+
     return [
-        'status' => 'not_ran',
-        'message' => 'This migration has NOT been executed yet.',
+        'status' => 'deleted',
+        'message' => "Migration '{$record->migration}' deleted from migrations table.",
+        'deleted_record' => $record,
     ];
 });
+
 
 Route::get("/table-names", function() {
    $tables = DB::select('SHOW TABLES');
