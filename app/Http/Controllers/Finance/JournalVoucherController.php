@@ -210,7 +210,7 @@ class JournalVoucherController extends Controller
             //             });
             //     })
             //     ->get()
-            'accounts' => Account::where("is_operational", "yes")
+            'accounts' => Account::where("is_operational", "yes")->get()
         ];
 
         return view('management.finance.journal_voucher.edit', $data);
