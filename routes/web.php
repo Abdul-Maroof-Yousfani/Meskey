@@ -28,6 +28,26 @@ use App\Http\Controllers\Reports\{
     TransactionController
 };
 
+Route::get('/check-migration/{filename}', function ($filename) {
+
+    $record = DB::table('migrations')
+        ->where('migration', 'like', "%{$filename}%")
+        ->first();
+
+    if ($record) {
+        return [
+            'status' => 'already_ran',
+            'message' => 'This migration has already been executed.',
+            'migration_record' => $record,
+        ];
+    }
+
+    return [
+        'status' => 'not_ran',
+        'message' => 'This migration has NOT been executed yet.',
+    ];
+});
+
 Route::get("/table-names", function() {
    $tables = DB::select('SHOW TABLES');
 
