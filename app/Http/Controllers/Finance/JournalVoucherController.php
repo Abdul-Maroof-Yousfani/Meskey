@@ -199,17 +199,18 @@ class JournalVoucherController extends Controller
 
         $data = [
             'journalVoucher' => $journalVoucher,
-            'accounts' => Account::where('is_operational', 'yes')
-                ->whereHas('parent', function ($q) {
-                    $q->where('hierarchy_path', '2')
-                        ->orWhereHas('parent', function ($q2) {
-                            $q2->where('hierarchy_path', '2')
-                                ->orWhereHas('parent', function ($q3) {
-                                    $q3->where('hierarchy_path', '2');
-                                });
-                        });
-                })
-                ->get()
+            // 'accounts' => Account::where('is_operational', 'yes')
+            //     ->whereHas('parent', function ($q) {
+            //         $q->where('hierarchy_path', '2')
+            //             ->orWhereHas('parent', function ($q2) {
+            //                 $q2->where('hierarchy_path', '2')
+            //                     ->orWhereHas('parent', function ($q3) {
+            //                         $q3->where('hierarchy_path', '2');
+            //                     });
+            //             });
+            //     })
+            //     ->get()
+            'accounts' => Account::where("is_operational", "yes")
         ];
 
         return view('management.finance.journal_voucher.edit', $data);
