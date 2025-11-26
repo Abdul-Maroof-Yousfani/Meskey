@@ -51,7 +51,7 @@ class PurchaseBillController extends Controller
 
         $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
 
-        $purchaseBillData = PurchaseBillData::where('purchase_bill_id', $id)
+        $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->where('purchase_bill_id', $id)
             ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
                 $query->where('am_approval_status', 'approved');
             })
@@ -485,7 +485,7 @@ class PurchaseBillController extends Controller
 
         $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
 
-        $purchaseBillData = PurchaseBillData::where('purchase_bill_id', $id)
+        $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->where('purchase_bill_id', $id)
             ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
                 // $query->where('am_approval_status', 'approved');
             })

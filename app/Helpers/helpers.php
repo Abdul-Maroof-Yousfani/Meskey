@@ -772,6 +772,12 @@ if (!function_exists('createStockTransaction')) {
     }
 }
 
+if(!function_exists("get_grn")) {
+    function get_grn($grn_id) {
+        return PurchaseOrderReceiving::where("id", $grn_id)->value("purchase_order_receiving_no");
+    }
+}
+
 if (!function_exists('getTicketDeductions')) {
     function getTicketDeductions($ticket)
     {

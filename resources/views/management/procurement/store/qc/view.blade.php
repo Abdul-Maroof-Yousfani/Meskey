@@ -270,16 +270,13 @@
                         </div>
                     </div>
                 </div>
-                @if($purchaseOrderReceivingData->qc->canApprove())
-                    <button type="submit" class="btn btn-primary">Save</button>
-                @endif
                 @endif
         </form>
 
 
         <div class="row">
             <div class="col-12">
-                <x-approval-status :model="$purchaseOrderReceivingData->qc" />
+                <x-approval-status-and-saved :model="$purchaseOrderReceivingData->qc" />
             </div>
         </div>
         <div class="row bottom-button-bar" style="padding-bottom: 20px;">

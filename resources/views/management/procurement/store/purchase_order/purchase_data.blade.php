@@ -162,17 +162,21 @@
             <input style="width: 100px" type="text" readonly name="stitching[]" value="{{ $data->stitching ? $data->stitching : $data->purchase_request->stitching }}"
                 id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
+         <td style="width: 30%">
+            <input style="width: 100px" type="text" readonly name="micron[]" value="{{ $data->micron ? $data->micron : $data->purchase_request->micron }}"
+                id="micron_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
         <td style="width: 5%">
             <div class="loop-fields">
                 <div class="form-group mb-0">
                     {{-- <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}"
                         class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample"> --}}
-                     <input type="hidden" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ $data->printing_sample }}"
+                     <input type="hidden" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ $data->printing_sample ? $data->printing_sample : $data->purchase_request->printing_sample}}"
                                             class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
 
-                    @if (!empty($data->printing_sample))
+                    @if (!empty(($data->printing_sample ? $data->printing_sample : $data->purchase_request->printing_sample)))
                         <small>
-                            <a href="{{ asset('storage/' . $data->printing_sample) }}" target="_blank">
+                            <a href="{{ asset('storage/' . ($data->printing_sample ? $data->printing_sample : $data->purchase_request->printing_sample)) }}" target="_blank">
                                 View existing file
                             </a>
                         </small>

@@ -114,6 +114,7 @@
                             <th>Cons./sq. in.</th>
                             <th>Size</th>
                             <th>Stitching</th>
+                            <th>Micron</th>
                             <th>Printing Sample</th>
                             <th>Remarks</th>
                             <th>Action</th>

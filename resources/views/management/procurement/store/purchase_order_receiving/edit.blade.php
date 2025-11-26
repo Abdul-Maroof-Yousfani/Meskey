@@ -79,6 +79,19 @@
                     class="form-control">
             </div>
         </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Truck No:</label>
+                <input type="text" name="truck_no" value="{{ optional($purchaseOrderReceiving)->truck_no }}" id="truck_no" class="form-control" placeholder="Truck No">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>DC No:</label>
+                <input type="text" name="dc_no" id="dc_no" value="{{ optional($purchaseOrderReceiving)->dc_no }}" class="form-control" placeholder="DC NO">
+            </div>
+        </div>
        
         {{-- <div class="col-md-3">
             <div class="form-group">
@@ -113,6 +126,7 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
+                     <th>Receive Weight</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
@@ -122,6 +136,8 @@
                     <th>Cons./sq. in.</th>
                     <th>Size</th>
                     <th>Stitching</th>
+                    <th>Micron</th>
+                    <th>Printing Sample</th>
                      {{-- <th>Rate</th>
                      <th>Total Amount</th> --}}
                      <th>Remarks</th>
@@ -174,6 +190,12 @@
                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
                                     id="qty_{{ $key }}" class="form-control" @readonly($data->qc?->is_qc_approved == "approved") step="0.01" min="0" max="{{ $data->qty }}"
+                                   >
+                            </td>
+                            <td style="width: 10%">
+                                <input style="width: 100px" onkeyup="calc({{ $key }})"
+                                    onblur="calc({{ $key }})" name="receive_weight[]" value="{{ $data->receive_weight }}"
+                                    id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc?->is_qc_approved == "approved")
                                    >
                             </td>
                             <td style="width: 10%">
@@ -249,6 +271,26 @@
                                 </div>
                             </td>
 
+
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" @readonly($data->qc?->is_qc_approved == "approved") name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
+                                            step="0.01" min="0" placeholder="Stitching">
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td style="width:150px;">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                @if (!empty($data->purchase_order_data->printing_sample))
+                                    <small>
+                                        <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
+                                            View existing file
+                                        </a>
+                                    </small>
+                                @endif
+                            </td>
 
                             {{-- <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly onkeyup="calc({{ $key }})"

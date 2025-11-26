@@ -93,6 +93,7 @@ class PurchaseOrderReceivingController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
+                    "item_qc" => $row->qc,
                     'qc_status' => $row->qc?->is_qc_approved,
                     'suppliers' => []
                 ];
@@ -273,6 +274,8 @@ class PurchaseOrderReceivingController extends Controller
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
+                'truck_no' => $request->truck_no,
+                "dc_no" => $request->dc_no,
                 'created_by' => auth()->user()->id,
             ]);
             foreach ($request->item_id as $index => $itemId) {
@@ -285,6 +288,7 @@ class PurchaseOrderReceivingController extends Controller
                     'rate' => $request->rate[$index] ?? 0,
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
+                    'receive_weight' => $request->receive_weight[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
@@ -384,6 +388,8 @@ class PurchaseOrderReceivingController extends Controller
     {
         // dd($request->all());
         $validated = $request->validate([
+            'truck_no' => "required",
+            "dc_no" => "required",
             'receiving_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'location_id' => 'required|exists:company_locations,id',
@@ -407,6 +413,10 @@ class PurchaseOrderReceivingController extends Controller
 
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
+
+            'receive_weight' => 'nullable|array',
+            'receive_weight.*' => 'nullable|string|max:1000',
+
         ]);
 
 
@@ -416,6 +426,8 @@ class PurchaseOrderReceivingController extends Controller
         try {
             $PurchaseOrderReceiving = PurchaseOrderReceiving::findOrFail($id);
             $PurchaseOrderReceiving->update([
+                "truck_no" => $request->truck_no,
+                "dc_no" => $request->dc_no,
                 "description" => $request->description
             ]);
 
@@ -432,6 +444,7 @@ class PurchaseOrderReceivingController extends Controller
                     'rate' => $request->rate[$index] ?? 0,
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
+                    'receive_weight' => $request->receive_weight[$index],
                     "accepted_qty" => $request->accepted_qty[$index] ?? 0,
                     "rejected_qty" => $request->rejected_qty[$index] ?? 0,
                     'remarks' => $request->remarks[$index] ?? null,

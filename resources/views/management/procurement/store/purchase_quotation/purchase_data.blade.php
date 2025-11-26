@@ -77,6 +77,23 @@
             
             <input type="hidden" name="stitching[]" value="{{ $data->stitching }}">
          </td>
+         <td style="width: 30%">
+            
+            <input style="width: 100px" type="text" id="micron{{ $key }}" class="form-control size"
+                value="{{ $data->micron }}" disabled readonly>
+            
+            <input type="hidden" name="micron[]" value="{{ $data->micron }}">
+         </td>
+         <td style="width:150px;">
+                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                @if (!empty($data->printing_sample))
+                    <small>
+                        <a href="{{ asset('storage/' . $data->printing_sample) }}" target="_blank">
+                            View existing file
+                        </a>
+                    </small>
+                @endif
+            </td>
         
          {{-- <td style="width: 20%">
              <div class="loop-fields">

@@ -95,4 +95,8 @@ class PurchaseOrderData extends Model
     {
         return $this->belongsTo(Tax::class, 'tax_id');
     }
+
+    public function job_orders() {
+        return $this->hasMany(PurchaseAgainstJobOrder::class, "purchase_request_data_id", "purchase_request_data_id");
+    }
 }

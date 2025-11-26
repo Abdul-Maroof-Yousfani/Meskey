@@ -9,6 +9,7 @@
             <th class="col-sm-1">Qty</th>
             <th class="col-sm-1">Rate</th>
             <th class="col-sm-1">Total Amount</th>
+            <th class="col-sm-1">QC</th>
             <th class="col-sm-1">QC Status</th>
             <th class="col-sm-1">Item Status</th>
             <th class="col-sm-1">Action</th>
@@ -18,18 +19,23 @@
     <tbody>
         {{-- @php dd($GroupedPurchaseOrderReceiving); @endphp --}}
         @if (count($GroupedPurchaseOrderReceiving) != 0)
-            @foreach ($GroupedPurchaseOrderReceiving as $requestGroup)
+            @foreach ($GroupedPurchaseOrderReceiving as $itemKey => $requestGroup)
                 @php $isFirstRequestRow = true; @endphp
                 @foreach ($requestGroup['items'] as $itemGroup)
                     @php $isFirstItemRow = true; @endphp
-                    @foreach ($itemGroup['suppliers'] as $supplierRow)
-                        @php
+                    
+                    @foreach ($itemGroup['suppliers'] as $supplierKeys => $supplierRow)
+                    @php
                             $approvalDataStatus = ucwords(
                                 $supplierRow['data']
-                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'N/A'
+                                ?->{$supplierRow['data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'N/A'
                             );
                             $approvalStatus = ucwords($requestGroup['request_status'] ?? 'N/A');
-                        @endphp
+                            @endphp
+
+                                      <button style="visibility: hidden;" id="modalButton{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id)]) }}', 'Add QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
+                          <button style="visibility: hidden;" id="modalButtonQc{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id)]) }}', 'Edit QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
+                      
                         <tr>
                             {{-- Purchase Order No --}}
                             @if ($isFirstRequestRow)
@@ -98,6 +104,14 @@
                                 <p class="m-0 text-right">
                                     {{ $qty * $rate }}
                                 </p>
+                            </td>
+
+                            <td>
+                                @if($itemGroup["qc_status"] != 'pending' && $itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
+                                    <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                @else
+                                    <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')"  style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                @endif
                             </td>
                             <td>
                                 <p class="m-0 text-right">
@@ -236,6 +250,14 @@
         {{ $PurchaseOrderReceiving->links() }}
     </div>
 </div>
+<script>
+    function createQc(id, key) {
+        $("#modalButton" + key).trigger("click");
+    }
+    function editQc(id, key) {
+        $("#modalButtonQc" + key).trigger("click");
+    }
+</script>
 <script>
     function approveItem(url) {
         Swal.fire({

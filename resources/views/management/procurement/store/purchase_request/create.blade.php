@@ -61,6 +61,7 @@
                 <th>Cons./sq. in.</th>
                 <th>Size</th>
                 <th>Stitching</th>
+                <th>Micron</th>
                 <th>Printing Sample</th>
                 <th>Remarks</th>
                 <th>Action</th>
@@ -80,6 +81,7 @@
                         class="form-control item-select" data-index="0" style="width:180px;">
                         <option value="">Select Item</option>
                     </select></td>
+
 
                 <td><input type="text" name="uom[]" id="uom_0" class="form-control uom" readonly style="width:120px;"></td>
 
@@ -123,6 +125,10 @@
                 <td><input type="text" name="stitching[]" id="stitching_0" class="form-control"
                         step="0.01" min="0" placeholder="Stitching" style="width:120px;"></td>
 
+                
+                 <td>
+                    <input type="text" name="micron[]" id="micron" placeholder="Micron" class="form-control micron" style="width:120px;">
+                 </td>
                 <td><input type="file" name="printing_sample[]" id="printing_sample_0"
                         class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample" style="width:180px;"></td>
 
@@ -293,6 +299,14 @@
                             <div class="form-group mb-0">
                                 <input type="text" name="stitching[]" id="stitching_${index}" class="form-control"
                                     step="0.01" min="0" placeholder="Stitching">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 6%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="micron[]" id="micron_${index}" class="form-control"
+                                    step="0.01" min="0" placeholder="Micron">
                             </div>
                         </div>
                     </td>

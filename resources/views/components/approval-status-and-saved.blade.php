@@ -200,6 +200,8 @@
                                 : 'approval.approve';
                         @endphp
 
+                        
+
                         <form id="ajaxSubmit" method="POST"
                             action="{{ route($routeName, ['modelType' => class_basename($model), 'id' => $model->id]) }}">
 
@@ -227,7 +229,7 @@
                                 </button>
 
                                 <button type="button" class="btn btn-success w-50 fw-semibold"
-                                    onclick="confirmApproval('approve')">
+                                    onclick="submitData('approve')">
                                     <i class="fa fa-check me-2"></i>
                                     Grant Approval
                                 </button>
@@ -358,7 +360,41 @@
 @endif
 
     <script>
+        
+        $("#ajaxSubmit2").on("submit", function(e) {
+            e.preventDefault();
+
+            // Submit the first form with AJAX
+            $.ajax({
+                url: $("#ajaxSubmit").attr("action"),
+                type: "POST",
+                data: $("#ajaxSubmit").serialize(),
+
+                success: function (response) {
+                    console.log("First form success");
+
+                    // 🔥 Only run this if success (status 200)
+                    $("#ajaxSubmit2_actual").submit();  // or any action you want
+                },
+
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        console.log("Validation failed (422)");
+                        // ❌ Do NOT submit second form
+                    } else {
+                        console.log("Other error");
+                    }
+                }
+            });
+        });
+
+
+        function submitData() {
+            $("#ajaxSubmit2").submit();
+        }
+
         function confirmApproval(type) {
+            $("#ajaxSubmit2").submit();
             let msg =
                 type === 'approve'
                     ? 'Are you sure you want to grant approval?'

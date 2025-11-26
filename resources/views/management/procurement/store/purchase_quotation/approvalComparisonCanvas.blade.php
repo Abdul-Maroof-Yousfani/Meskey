@@ -74,6 +74,8 @@
                          <th class="col-sm-3">Cons./sq. in.</th>
                          <th class="col-sm-3">Size</th>
                          <th class="col-sm-3">Stitching</th>
+                         <th class="col-sm-3">Micron</th>
+                         <th class="col-sm-3">Printing Sample</th>
                          {{-- <th>Item UOM</th> --}}
                          <th>Qty</th>
                          <th>Rate</th>
@@ -181,6 +183,26 @@
                                  <input type="hidden" name="stitch[]"
                                      value="{{ $data->purchase_request?->stitching ?? null }}">
                              </td>
+
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="text" onkeyup="calc({{ $key }})"
+                                     disabled onblur="calc({{ $key }})"
+                                     value="{{ $data->purchase_request?->micron ?? null }}"
+                                     id="qty_{{ $key }}" class="form-control" step="0.01"
+                                     min="0">
+                                 <input type="hidden" name="stitch[]"
+                                     value="{{ $data->purchase_request?->micron ?? null }}">
+                             </td>
+                            <td style="width:150px;">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                @if (!empty($data->purchase_request->printing_sample))
+                                    <small>
+                                        <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
+                                            View existing file
+                                        </a>
+                                    </small>
+                                @endif
+                            </td>
                              <td style="width: 30%">
                                  <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                      disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"

@@ -92,6 +92,7 @@
                             <th>Deduction Per Piece</th>
                             <th>Deduction</th>
                             <th>Amount</th>
+                            <th>Printing Samples</th>
                             <th>GST %</th>
                             <th>GST Amount</th>
                             <th>Net Amount</th>
@@ -172,6 +173,17 @@
                                     <input style="width: 100px" type="number" readonly name="net_amount[]"
                                         value="{{ $data->net_amount }}" id="total_{{ $key }}"
                                         class="form-control net_amount" step="0.01" min="0" readonly>
+                                </td>
+
+                                <td style="width:150px;">
+                                    <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                    @if (!empty($data->PurchaseOrderReceivingData->purchase_order_data->printing_sample))
+                                        <small>
+                                            <a href="{{ asset('storage/' . $data->PurchaseOrderReceivingData->purchase_order_data->printing_sample) }}" target="_blank">
+                                                View existing file
+                                            </a>
+                                        </small>
+                                    @endif
                                 </td>
 
                                 <td style="width: 30%">

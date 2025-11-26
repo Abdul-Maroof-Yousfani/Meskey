@@ -66,6 +66,7 @@
                 <th>Cons./sq. in.</th>
                 <th>Size</th>
                 <th>Stitching</th>
+                <th>Micron</th>
                 <th>Printing Sample</th>
                 <th>Remarks</th>
                 <th>Action</th>
@@ -158,6 +159,10 @@
 
                 <td><input type="text" name="stitching[]" id="stitching_0" class="form-control" step="0.01"
                         min="0" value="{{ $item->stitching }}" placeholder="Stitching" style="width:120px;"></td>
+
+
+                <td><input type="text" name="micron[]" id="micron_0" class="form-control" 
+                        min="0" value="{{ $item->micron }}" placeholder="Micron" style="width:120px;"></td>
 
                 <td>
                     <input type="file" name="printing_sample[]" id="printing_sample_{{ $loop->index }}"
@@ -334,6 +339,8 @@
                             </div>
                         </div>
                     </td>
+
+                <td><input type="text" name="micron[]" id="micron_${index}" class="form-control" placeholder="Micron" style="width:120px;"></td>
                     <td style="width: 8%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -357,6 +364,7 @@
         $('#purchaseRequestBody').append(row);
 
         $('#color_' + index).select2();
+        $('#size_' + index).select2();
         $('#brands_' + index).select2();
         $('#category_id_' + index).select2();
         $('#job_order_id_' + index).select2({

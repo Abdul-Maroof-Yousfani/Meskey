@@ -1,5 +1,5 @@
 <form action="{{ route('store.qc.store') }}" id="ajaxSubmit">
-    <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}">
+    <input type="text" name="purchase_receiving_data_id" value="{{ $id }}">
     <div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
             <div class="col-md-6">
@@ -24,8 +24,9 @@
                             <th>Size</th>
                             <th>Brand</th>
                             <th>Job Order</th>
-                            <th>Required Weight Per Bag</th>
-                            <th>Average Weight of 1 Bag</th>
+                            <th>DC No</th>
+                            <th>Required Weight Per Bag (grams)</th>
+                            <th>Average Weight of 1 Bag (grams)</th>
                             <th>Total Bags</th>
                             <th>Total Weight Required (Kg)</th>
                             <th>Total Weight Received (Kg)</th>
@@ -50,28 +51,34 @@
                                 <input type="text" name="job_order" id="job_order" value="JOB-KHI-11-2025-0001" readonly
                                     class="form-control">
                             </td>
+
+                            <td>
+                                <input type="text" name="dc_no" id="dc_no" value="{{ $purchaseOrderReceivingData->purchase_order_receiving->dc_no }}" readonly
+                                    class="form-control">
+                            </td>
+
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                     class="form-control" placeholder="Average Weight of One Bag">
+                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 2)) * 1000 }}" readonly>
                             </td>
 
                             <td>
-                                <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
+                                <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData->qty }}" readonly
                                     class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_received" id="total_weight_received" value="Total Weight Received"
-                                    readonly class="form-control">
+                                <input type="text" name="total_weight_received" id="total_weight_received"
+                                    class="form-control" value="{{ $purchaseOrderReceivingData->receive_weight }}" readonly>
                             </td>
 
                         </tr>
@@ -80,15 +87,16 @@
             </div>
         </div>
 
-        <p style="margin-top: 20px; font-size: 20px;">Weight of randomly-selected 10-bags sets</p>
+        <p style="margin-top: 20px; font-size: 20px;">Weight of randomly-selected bags sets</p>
         <div class="row" style="margin-top: 10px;">
             <div class="col-md-6" style="padding: 0px; padding-left: 10px;">
                 <table class="table table-bordered" id="purchaseRequestTable">
                     <thead>
                         <tr>
                             <th>S.#</th>
-                            <th>Net Weight</th>
-                            <th>Bag Weight</th>
+                            <th>Net Weight (grams)</th>
+                            <th>Number of bags</th>
+                            <th>Average weight of 1 bag (grams)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -99,11 +107,16 @@
                                         value="{{ $i + 1 }}" readonly class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="net_weight[]" id="net_weight[]" placeholder="Net Weight"
+                                    <input type="text" name="net_weight[]" onkeyup="calculateTotalWeight(this)" id="net_weight" placeholder="Net Weight"
                                         class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_weight[]" id="bag_weight[]" placeholder="Bag Weight"
+                                    <input type="text" name="bag_weight[]" onkeyup="calculateTotalWeight(this)" id="bag_weight" placeholder="Number of bags"
+                                        class="form-control">
+                                </td>
+
+                                <td>
+                                    <input type="text" name="total_weight[]" id="total_weight" placeholder="Average weight of one bag"
                                         class="form-control">
                                 </td>
                             </tr>
@@ -117,8 +130,9 @@
                     <thead>
                         <tr>
                             <th>S.#</th>
-                            <th>Net Weight</th>
-                            <th>Bag Weight</th>
+                            <th>Net Weight (grams)</th>
+                            <th>Number of bags</th>
+                            <th>Average weight of 1 bag (grams)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -129,11 +143,17 @@
                                         value="{{ $i + 1 }}" readonly class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="net_weight[]" id="net_weight" placeholder="Net Weight"
+                                    <input type="text" name="net_weight[]" onkeyup="calculateTotalWeight(this)" id="net_weight" placeholder="Net Weight"
                                         class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_weight[]" id="bag_weight" placeholder="Bag Weight"
+                                    <input type="text" name="bag_weight[]" onkeyup="calculateTotalWeight(this)" id="bag_weight" placeholder="Number of bags"
+                                        class="form-control">
+                                </td>
+
+
+                                <td>
+                                    <input type="text" name="total_weight[]" id="total_weight" placeholder="Average weight of one bag"
                                         class="form-control">
                                 </td>
                             </tr>
@@ -247,6 +267,22 @@
     </div>
 </form>
 <script>
+    function calculateTotalWeight(element) {
+        const el = $(element);
+        
+        const net_weight = el.closest("tr").find("#net_weight");
+        const bag_weight = el.closest("tr").find("#bag_weight");
+
+        if(!net_weight.val() || !bag_weight.val()) return;
+
+        const total_weight = el.closest("tr").find("#total_weight");
+
+        const result =  (parseFloat(net_weight.val()) / parseFloat(bag_weight.val())).toFixed(2);
+
+        total_weight.val(result);
+
+
+    }
     function calculate_total_recieved_weight(el) {
         const average_weight = $(el).val();
         const total_bags = $("#total_bags").val();

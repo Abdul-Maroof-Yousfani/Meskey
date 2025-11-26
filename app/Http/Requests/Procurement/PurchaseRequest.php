@@ -64,6 +64,9 @@ class PurchaseRequest extends FormRequest
 
             'remarks'               => 'nullable|array',
             'remarks.*'             => 'nullable|string|max:1000',
+
+            'micron' => "required",
+            'micron.*' => "required", 
         ];
     }
 

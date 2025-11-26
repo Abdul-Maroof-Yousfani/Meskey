@@ -29,7 +29,8 @@ class PurchaseRequestData extends Model
         'am_approval_status',
         'po_status',
         'status',
-        'brand_id'
+        'brand_id',
+        'micron'
     ];
 
     protected $casts = [
