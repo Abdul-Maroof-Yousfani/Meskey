@@ -361,20 +361,22 @@
 
     <script>
         
+
+        let request_type = "";
         $("#ajaxSubmit2").on("submit", function(e) {
             e.preventDefault();
 
             // Submit the first form with AJAX
             $.ajax({
-                url: $("#ajaxSubmit").attr("action"),
+                url: $("#ajaxSubmit2").attr("action"),
                 type: "POST",
-                data: $("#ajaxSubmit").serialize(),
+                data: $("#ajaxSubmit2").serialize(),
 
                 success: function (response) {
                     console.log("First form success");
 
                     // 🔥 Only run this if success (status 200)
-                    $("#ajaxSubmit2_actual").submit();  // or any action you want
+                    $("#ajaxSubmit").submit();
                 },
 
                 error: function (xhr) {
@@ -389,12 +391,11 @@
         });
 
 
-        function submitData() {
+        function submitData(type) {
             $("#ajaxSubmit2").submit();
         }
 
         function confirmApproval(type) {
-            $("#ajaxSubmit2").submit();
             let msg =
                 type === 'approve'
                     ? 'Are you sure you want to grant approval?'
