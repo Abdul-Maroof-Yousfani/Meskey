@@ -1,5 +1,5 @@
 <form action="{{ route('store.qc.update') }}" id="ajaxSubmit">
-    <input type="text" name="purchase_receiving_data_id" value="{{ $id }}">
+    <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}">
     <div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
             <div class="col-md-6">
@@ -114,11 +114,11 @@
                                     $bag_weight = $bags[$i]["bag_weight"] ?? 0;
                                 @endphp
                                 <td>
-                                    <input type="text" value="{{ $net_weight == 0 ? '' : $net_weight }}" name="net_weight[]" id="net_weight" placeholder="Net Weight"
+                                    <input type="text" onkeyup="calculateTotalWeight(this)" value="{{ $net_weight == 0 ? '' : $net_weight }}" name="net_weight[]" id="net_weight" placeholder="Net Weight"
                                         class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_weight[]" value="{{ $bag_weight == 0 ? '' : $bag_weight }}" id="bag_weight" placeholder="Bag Weight"
+                                    <input type="text" onkeyup="calculateTotalWeight(this)" name="bag_weight[]" value="{{ $bag_weight == 0 ? '' : $bag_weight }}" id="bag_weight" placeholder="Bag Weight"
                                         class="form-control">
                                 </td>
 
@@ -145,16 +145,25 @@
                     <tbody id="purchaseOrderBody">
                         @for ($i = 5; $i < 10; $i++)
                             <tr>
-                                <td style="width: 100px; text-align: center;">
-                                    <input type="text" name="item" onkeyup="calculateTotalWeight(this)" style="text-align: center" id="item"
+                                <td style="width: 100px;">
+                                    <input type="text" name="item" style="text-align: center" id="item"
                                         value="{{ $i + 1 }}" readonly class="form-control">
                                 </td>
+                                @php
+                                    $net_weight = $bags[$i]["net_weight"] ?? 0;
+                                    $bag_weight = $bags[$i]["bag_weight"] ?? 0;
+                                @endphp
                                 <td>
-                                    <input type="text" name="net_weight[]" onkeyup="calculateTotalWeight(this)" id="net_weight" placeholder="Net Weight"
+                                    <input type="text" onkeyup="calculateTotalWeight(this)" value="{{ $net_weight == 0 ? '' : $net_weight }}" name="net_weight[]" id="net_weight" placeholder="Net Weight"
                                         class="form-control">
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_weight[]" id="bag_weight" placeholder="Bag Weight"
+                                    <input type="text" onkeyup="calculateTotalWeight(this)" name="bag_weight[]" value="{{ $bag_weight == 0 ? '' : $bag_weight }}" id="bag_weight" placeholder="Bag Weight"
+                                        class="form-control">
+                                </td>
+
+                                <td>
+                                    <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
                                         class="form-control">
                                 </td>
                             </tr>

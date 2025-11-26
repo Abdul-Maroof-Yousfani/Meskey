@@ -1,5 +1,5 @@
 <form action="{{ route('store.qc.store') }}" id="ajaxSubmit">
-    <input type="text" name="purchase_receiving_data_id" value="{{ $id }}">
+    <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}">
     <div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
             <div class="col-md-6">
