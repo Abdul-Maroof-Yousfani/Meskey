@@ -30,6 +30,10 @@ use App\Http\Controllers\Reports\{
 
 use Illuminate\Support\Facades\DB;
 
+Route::get("checking-data", function() {
+    dd(QC::all());
+});
+
 Route::get('/delete-migration/{filename}', function ($filename) {
 
     $record = DB::table('migrations')
