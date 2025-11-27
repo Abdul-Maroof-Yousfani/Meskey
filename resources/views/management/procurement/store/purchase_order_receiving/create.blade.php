@@ -5,7 +5,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Purchase Order:</label>
-                <select class="form-control select2" name="purchase_order_id">
+                <select class="form-control select2" name="purchase_order_id" id="purchase_order_id">
                     <option value="">Select Purchase Order</option>
                     @foreach ($approvedPurchaseOrders ?? [] as $value)
                         <option value="{{ $value->id }}">
@@ -34,7 +34,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Receiving Date:</label>
-                <input type="date" id="receiving_date" name="receiving_date" class="form-control">
+                <input type="date" id="receiving_date" name="receiving_date" value="{{ now()->toDateString() }}" class="form-control" readonly>
             </div>
         </div>
         <div class="col-md-4">
@@ -49,6 +49,18 @@
                 <label>Location:</label>
                 <input type="hidden" name="location_id" id="location_id">
                 <input type="text" name="location_name" id="location_name" class="form-control" readonly>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Truck No:</label>
+                <input type="text" name="truck_no" id="truck_no" class="form-control" placeholder="Truck No">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>DC No:</label>
+                <input type="text" name="dc_no" id="dc_no" class="form-control" placeholder="DC NO">
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -68,12 +80,15 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th>Qty</th>
+                        <th>Receive Weight</th>
                         <th>Min Weight</th>
                         <th>Brands</th>
                         <th>Color</th>
                         <th>Cons./sq. in.</th>
                         <th>Size</th>
                         <th>Stitching</th>
+                        <th>Micron</th>
+                        <th>Printing Sample</th>
                         {{-- <th>Rate</th>
                         <th>Amount</th> --}}
                         <th>Remarks</th>
@@ -98,6 +113,7 @@
 
 <script>
     $(".select2").select2();
+    
 
     rowIndex = 1;
 
@@ -186,6 +202,7 @@
         let locationId = $('#location_id').val();
         let contractDate = $('#receiving_date').val();
 
+
         if (locationId && contractDate) {
             let url = '/procurement/store/get-unique-number-order-receiving/' + locationId + '/' + contractDate;
 
@@ -207,10 +224,15 @@
             $('#reference_no').val('');
         }
     }
-    $('#receiving_date').on('change', function () {
-        fetchUniqueNumber();
-    });
+    
+    // $('#purchase_order_id').on('change', function () {
+    //     fetchUniqueNumber()
+    //     $("#location_name").trigger("change");
+    // });
 
+    $('#location_name').on('change', function () {
+        fetchUniqueNumber()
+    });
 
     function get_purchase(purchaseOrderId = null) {
         const supplierId = $('#supplier_id').val();
@@ -245,6 +267,7 @@
                 $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
                 $('#location_name').val(master.location?.name);
+                $("#location_name").trigger("change");
 
                 // $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);

@@ -112,6 +112,7 @@
                         <th>Cons./sq. in.</th>
                         <th>Size</th>
                         <th>Stitching</th>
+                        <th>Micron</th>
                         <th>Printing Sample</th>
                         <th>Remarks</th>
                         <th>Action</th>
@@ -234,6 +235,10 @@
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="text" readonly name="stitching[]" value="{{ $data->stitching }}"
                                         id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
+                                </td>
+                                 <td style="width: 30%">
+                                    <input style="width: 100px;" type="text" readonly name="micron[]" value="{{ $data->micron }}"
+                                        id="micron_{{ $key }}" class="form-control" step="0.01" min="0">
                                 </td>
                                 <td style="width: 5%">
                                     <div class="loop-fields">

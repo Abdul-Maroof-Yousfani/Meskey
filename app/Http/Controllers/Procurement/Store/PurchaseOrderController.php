@@ -308,6 +308,7 @@ class PurchaseOrderController extends Controller
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
+                    'micron' => $request->micron[$index],
                     'brand' => $request->brand[$index],
                     'printing_sample' => $request->printing_sample[$index],
 
@@ -451,6 +452,9 @@ class PurchaseOrderController extends Controller
 
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
+
+            'micron' => 'nullable|array',
+            'micron.*' => 'nullable|string|max:1000',
         ]);
 
 
@@ -482,6 +486,7 @@ class PurchaseOrderController extends Controller
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index],
                     'size' => $request->size[$index],
                     'stitching' => $request->stitching[$index],
+                    'micron' => $request->micron[$index],
                     'printing_sample' => $request->printing_sample[$index],
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);

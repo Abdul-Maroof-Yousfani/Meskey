@@ -109,6 +109,16 @@
                 class="form-control net_amount" step="0.01" min="0" readonly>
         </td>
 
+        <td style="width:150px;">
+            <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+            @if (!empty($data->purchase_order_data->printing_sample))
+                <small>
+                    <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
+                        View existing file
+                    </a>
+                </small>
+            @endif
+        </td>
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]"

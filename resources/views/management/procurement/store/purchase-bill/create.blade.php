@@ -88,6 +88,7 @@
                             <th>Deduction Per Piece</th>
                             <th>Deduction</th>
                             <th>Amount</th>
+                            <th>Printing Samples</th>
                             <th>GST %</th>
                             <th>GST Amount</th>
                             <th>Net Amount</th>

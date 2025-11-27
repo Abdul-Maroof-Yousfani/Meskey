@@ -100,6 +100,8 @@
                             <th class="col-sm-3">Cons./sq. in.</th>
                             <th class="col-sm-3">Size</th>
                             <th class="col-sm-3">Stitching</th>
+                            <th class="col-sm-3">Micron</th>
+                            <th class="col-sm-3">Printing Sample</th>
                             <th>Qty</th>
                             <th>Rate</th>
                             <th>Total Amount</th>
@@ -212,6 +214,25 @@
                                 </td>
 
                                 <td style="width: 30%">
+                                    <input style="width: 100px" type="text" disabled
+                                        value="{{ $data->purchase_request?->micron ?? null }}"
+                                        id="micron_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="stitch[]"
+                                        value="{{ $data->purchase_request?->micron ?? null }}">
+                                </td>
+
+                                <td style="width:150px;">
+                                    <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                    @if (!empty($data->purchase_request->printing_sample))
+                                        <small>
+                                            <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
+                                                View existing file
+                                            </a>
+                                        </small>
+                                    @endif
+                                </td>
+
+                                <td style="width: 30%">
                                     <input style="width: 100px" name="qty[]" type="number"
                                         value="{{ $data->qty }}" id="qty_{{ $key }}"
                                         class="form-control" step="0.01" min="0"
@@ -232,7 +253,7 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="text" value="{{ $data->remarks }}"
-                                        id="remark_{{ $key }}" class="form-control" readonly>
+                                        id="remark_{{ $key }}" class="form-control">
                                     <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                                 </td>
 

@@ -60,6 +60,7 @@
                 <th>Cons./sq. in.</th>
                 <th>Size</th>
                 <th>Stitching</th>
+                <th>Micron</th>
                 <th>Printing Sample</th>
                 <th>Remarks</th>
                 <th>Action</th>
@@ -132,6 +133,10 @@
 
                     <td style="width:120px;">
                         <input type="text" name="stitching[]" id="stitching_{{ $index }}" disabled class="form-control" value="{{ $item->stitching }}" placeholder="Stitching">
+                    </td>
+
+                    <td style="width:120px;">
+                        <input type="text" name="micron[]" id="micron_{{ $index }}" disabled class="form-control" value="{{ $item->micron }}" placeholder="Micron">
                     </td>
 
                     <td style="width:150px;">

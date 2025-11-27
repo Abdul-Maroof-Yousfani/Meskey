@@ -30,6 +30,8 @@ class PurchaseOrderReceivingRequest extends FormRequest
             'supplier_id' => 'required|exists:suppliers,id',
             'reference_no' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'dc_no' => "required",
+            "truck_no" => "required",
 
             'category_id' => 'required|array|min:1',
             'category_id.*' => 'required|exists:categories,id',
@@ -66,6 +68,8 @@ class PurchaseOrderReceivingRequest extends FormRequest
         return [
             'receiving_date.required' => 'The purchase order receiving date field is required.',
             'receiving_date.date' => 'The purchase order date receiving must be a valid date.',
+            'dc_no.required' => "The DC No field is required",
+            "truck_no" => "The Truck No field is required",
 
             'purchase_request_id.required' => 'The purchase request field is required.',
             'purchase_request_id.exists' => 'The selected purchase request is invalid.',
@@ -111,6 +115,8 @@ class PurchaseOrderReceivingRequest extends FormRequest
             'rate.*.required' => 'Each rate is required.',
             'rate.*.numeric' => 'Each rate must be a number.',
             'rate.*.min' => 'Each rate must be at least 0.01.',
+
+            'receive_weight.*.required' => "Each Receive Weight is required",
 
             'remarks.array' => 'The remarks must be in array format.',
             'remarks.*.string' => 'Each remark must be a string.',

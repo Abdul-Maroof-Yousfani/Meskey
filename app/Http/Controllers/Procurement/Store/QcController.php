@@ -79,7 +79,7 @@ class QcController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
-                    'qc_status' => $row->qc?->is_qc_approved,
+                    'qc_status' => $row->qc?->am_approval_status,
                     'canUserApprove' => $row->qc?->canUserApprove(),
                     'suppliers' => []
                 ];
@@ -164,7 +164,13 @@ class QcController extends Controller
 
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
 
-        return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id", "type"));
+        $job_orders = [];
+
+        foreach($purchaseOrderReceivingData->purchase_order_data->job_orders as $j_order) {
+            $job_orders[] = $j_order->job_order_data->job_order_no;
+        }
+
+        return view("management.procurement.store.qc.view", compact("grn", "purchaseOrderReceivingData", "id", "type", "job_orders"));
     }
     public function edit(Request $request) {
         $id = $request->id;
@@ -178,6 +184,7 @@ class QcController extends Controller
     public function create(Request $request) {
         $id = $request->id;
         $grn = $request->grn;
+     
 
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data", 'purchase_order_data.purchase_request_data.JobOrder')->find($id);
         

@@ -68,6 +68,7 @@
              </select>
          </div>
      </div>
+     
        <div class="col-md-4">
             <div class="form-group">
                 <label>>Reference No:</label>
@@ -76,7 +77,18 @@
                     class="form-control">
             </div>
         </div>
-
+<div class="col-md-4">
+            <div class="form-group">
+                <label>Truck No:</label>
+                <input type="text" name="truck_no" id="truck_no" class="form-control" value="{{ $purchaseOrderReceiving->truck_no }}" placeholder="Truck No">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>DC No:</label>
+                <input type="text" name="dc_no" id="dc_no" class="form-control" value="{{ $purchaseOrderReceiving->dc_no }}" placeholder="DC NO">
+            </div>
+        </div>
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>
@@ -93,7 +105,7 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
-
+                    <th>Recieve Weight</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
@@ -103,6 +115,8 @@
                      <th>Cons./sq. in.</th>
                      <th>Size</th>
                      <th>Stitching</th>
+                     <th>Micron</th>
+                     <th>Printing Sample</th>
                      {{-- <th>Rate</th>
                      <th>Total Amount</th> --}}
                      <th>Remarks</th>
@@ -158,6 +172,13 @@
                                  onblur="calc({{ $key }})" value="{{ $data->qty }}"
                                  id="qty_{{ $key }}" class="form-control" step="0.01" min="0">
                              <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+                         </td>
+
+                         <td style="width: 30%">
+                             <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                 onblur="calc({{ $key }})" value="{{ $data->receive_weight }}"
+                                 id="qty_{{ $key }}" class="form-control" step="0.01" min="0" readonly>
+                             <input type="hidden" name="receive_weight[]" value="{{ $data->receive_weight }}">
                          </td>
 
                           <td style="width: 10%">
@@ -240,6 +261,26 @@
                                  </div>
                              </div>
                          </td>
+                         <td style="width: 30%">
+                             <div class="loop-fields">
+                                 <div class="form-group mb-0">
+                                     <input type="text" name="stitching[]" style="width: 100px;" id="stitching_0"
+                                         value="{{ $data->purchase_order_data->micron }}" class="form-control"
+                                         step="0.01" min="0" placeholder="Stitching">
+                                 </div>
+                             </div>
+                         </td>
+
+                         	<td style="width:150px;">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                @if (!empty($data->purchase_order_data->printing_sample))
+                                    <small>
+                                        <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
+                                            View existing file
+                                        </a>
+                                    </small>
+                                @endif
+                            </td>
 
                          {{-- <td style="width: 30%">
                              <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"

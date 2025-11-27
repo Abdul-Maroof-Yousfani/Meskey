@@ -82,6 +82,14 @@
 <td style="width: 30%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
+                                        <input type="number" style="width: 100px;" name="receive_weight[]" id="receive_weight_0" class="form-control"
+                                            step="0.01" min="0" value="" placeholder="Receive Weight">
+                                    </div>
+                                </div>
+                            </td>
+<td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
                                         <input type="number" style="width: 100px;" name="min_weight[]" id="min_weight_0" class="form-control"
                                             step="0.01" min="0" value="{{ $data->min_weight }}" placeholder="Min Weight">
                                     </div>
@@ -130,6 +138,26 @@
                                             step="0.01" min="0" placeholder="Stitching">
                                     </div>
                                 </div>
+                            </td>
+
+                            <td style="width: 30%">
+                                <div class="loop-fields">
+                                    <div class="form-group mb-0">
+                                        <input type="text" name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->micron }}" class="form-control"
+                                            step="0.01" min="0" placeholder="Micron">
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td style="width:150px;">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                @if (!empty($data->printing_sample))
+                                    <small>
+                                        <a href="{{ asset('storage/' . $data->printing_sample) }}" target="_blank">
+                                            View existing file
+                                        </a>
+                                    </small>
+                                @endif
                             </td>
 
       {{-- <td style="width: 20%">

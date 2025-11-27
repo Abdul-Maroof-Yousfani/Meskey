@@ -31,6 +31,8 @@ class PurchaseOrderReceiving extends Model
         'reference_no',
         'description',
         'created_by',
+        'truck_no',
+        'dc_no',
         'am_approval_status',
         'am_change_made',
     ];

@@ -90,6 +90,8 @@
                         <th class="col-sm-2">Cons./sq. in.</th>
                         <th class="col-sm-2">Size</th>
                         <th class="col-sm-2">Stitching</th>
+                        <th class="col-sm-2">Micron</th>
+                        <th class="col-sm-2">Printing Sample</th>
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Total Amount</th>

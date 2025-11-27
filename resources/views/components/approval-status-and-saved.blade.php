@@ -200,6 +200,8 @@
                                 : 'approval.approve';
                         @endphp
 
+                        
+
                         <form id="ajaxSubmit" method="POST"
                             action="{{ route($routeName, ['modelType' => class_basename($model), 'id' => $model->id]) }}">
 
@@ -227,7 +229,7 @@
                                 </button>
 
                                 <button type="button" class="btn btn-success w-50 fw-semibold"
-                                    onclick="confirmApproval('approve')">
+                                    onclick="submitData('approve')">
                                     <i class="fa fa-check me-2"></i>
                                     Grant Approval
                                 </button>
@@ -358,6 +360,40 @@
 @endif
 
     <script>
+        
+
+        let request_type = "";
+        $("#ajaxSubmit2").on("submit", function(e) {
+            e.preventDefault();
+
+            // Submit the first form with AJAX
+            $.ajax({
+                url: $("#ajaxSubmit2").attr("action"),
+                type: "POST",
+                data: $("#ajaxSubmit2").serialize(),
+
+                success: function (response) {
+                    console.log("First form success");
+
+                    $("#ajaxSubmit").submit();
+                },
+
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        console.log("Validation failed (422)");
+                        // ❌ Do NOT submit second form
+                    } else {
+                        console.log("Other error");
+                    }
+                }
+            });
+        });
+
+
+        function submitData(type) {
+            $("#ajaxSubmit2").submit();
+        }
+
         function confirmApproval(type) {
             let msg =
                 type === 'approve'

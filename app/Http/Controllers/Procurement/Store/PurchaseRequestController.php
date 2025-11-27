@@ -149,9 +149,11 @@ class PurchaseRequestController extends Controller
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                     'size' => $request->size[$index] ?? null,
                     'stitching' => $request->stitching[$index] ?? null,
+                    'micron' => $request->micron[$index] ?? null,
                     'printing_sample' => $printingSamplePath,
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
+                    
                 ]);
                 if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
                     foreach ($request->job_order_id[$index] as $jobOrderId) {
@@ -262,6 +264,7 @@ class PurchaseRequestController extends Controller
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
                             'brand_id' => $request->brands[$index],
+                            'micron' => $request->micron[$index]
                         ]);
                         $submittedItems[] = $requestData->id;
 
@@ -298,6 +301,7 @@ class PurchaseRequestController extends Controller
                         'printing_sample' => $printingSamplePath,
                         'brand_id' => $request->brands[$index],
                         'remarks' => $request->remarks[$index] ?? null,
+                        'micron' => $request->micron[$index]
                     ]);
 
                     $submittedItems[] = $requestData->id;
