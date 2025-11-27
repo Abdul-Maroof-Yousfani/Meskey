@@ -135,7 +135,6 @@
                                         </a> --}}
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
 
-                                            
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
                                                 <a onclick="openModal(this, '{{ route('store.purchase-bill.edit', $requestGroup["row_data"] ? $requestGroup["row_data"]["id"] : 0) }}', 'Edit Purchase Bill', false, '100%')"
                                                     class="info p-1 text-center mr-2 position-relative">

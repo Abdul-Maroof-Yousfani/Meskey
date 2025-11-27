@@ -120,6 +120,7 @@ class PurchaseBillController extends Controller
             if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo])) {
                 $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo] = [
                     'order_data' => $row->grn,
+                    "created_by_id" => $row->created_by,
                     'row_data' => $row,
                     'approval_status' => $row->am_approval_status,
                     'row' => $row,
@@ -209,7 +210,7 @@ class PurchaseBillController extends Controller
                         'purchase_request_no' => $originalPurchaseRequestNo,
                         'purchase_order_no' => $originalPurchaseOrderNo,
                         'quotation_no' => $purchaseOrderReceivingNo,
-                        'created_by_id' => $orderGroup['order_data']->created_by ?? null,
+                        'created_by_id' => $orderGroup['created_by_id'] ?? null,
                         'request_status' => $orderGroup['approval_status'] ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,

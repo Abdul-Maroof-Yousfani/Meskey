@@ -15,6 +15,7 @@
 <form action="{{ route('store.purchase-bill.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-bill') }}" />
+    
     <div class="row form-mar">
         <div class="col-md-3">
             <div class="form-group">
