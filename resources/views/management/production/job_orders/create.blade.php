@@ -7,7 +7,7 @@
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <fieldset>
                         <label>Job Order No#</label>
                         <div class="input-group">
@@ -19,7 +19,7 @@
                         </div>
                     </fieldset>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <div class="form-group">
                         <label>Company Location:</label>
                         <select name="company_location_id" id="company_location_id" class="form-control">
@@ -30,17 +30,17 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
+                </div> -->
 
 
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label>Job Order Date:</label>
                         <input type="date" name="job_order_date" class="form-control">
                     </div>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label>Ref No:</label>
                         <input type="text" name="ref_no" class="form-control">
@@ -52,7 +52,7 @@
                         <select name="attention_to[]" class="form-control select2" multiple>
                             <option value="">Select Users</option>
                             @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -127,8 +127,32 @@
                 <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
                     <div class="col-md-2">
                         <div class="form-group">
+                            <label>Company Location:</label>
+                            <select name="packing_items[0][company_location_id]" class="form-control select2">
+                                <option value="">Select Location</option>
+                                @foreach($companyLocations as $location)
+                                    <option data-code="{{ $location->code }}" value="{{ $location->id }}">
+                                        {{ $location->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Brand:</label>
+                            <select name="packing_items[0][brand_id]" class="form-control select2">
+                                <option value="">Select Brand</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
                             <label>Bag Type:</label>
-                            <select name="packing_items[0][bag_type_id]" class="form-control">
+                            <select name="packing_items[0][bag_type_id]" class="form-control select2">
                                 <option value="">Select Bag Type</option>
                                 @foreach($bagTypes as $bagType)
                                     <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
@@ -139,10 +163,33 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Condition:</label>
-                            <select name="packing_items[0][bag_condition_id]" class="form-control">
+                            <select name="packing_items[0][bag_condition_id]" class="form-control select2">
                                 <option value="">Select Condition</option>
                                 @foreach($bagConditions as $condition)
                                     <option value="{{ $condition->id }}">{{ $condition->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Color:</label>
+                            <select name="packing_items[0][bag_color_id]" class="form-control select2">
+                                <option value="">Select Color</option>
+                                @foreach($bagColors as $color)
+                                    <option value="{{ $color->id }}">{{ $color->color }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Thread Color:</label>
+                            <select name="packing_items[0][thread_color_id]" class="form-control select2">
+                                <option value="">Select Color</option>
+                                @foreach($bagColors as $color)
+                                    <option value="{{ $color->id }}">{{ $color->color }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -177,8 +224,8 @@
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Total Bags:</label>
-                            <input type="number" min="0" name="packing_items[0][total_bags]" class="form-control total-bags"
-                                readonly>
+                            <input type="number" min="0" name="packing_items[0][total_bags]"
+                                class="form-control total-bags" readonly>
                         </div>
                     </div>
                     <div class="col-md-1">
@@ -211,6 +258,31 @@
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
+                            <label>Min Weight Empty Bags (g):</label>
+                            <input type="number" name="packing_items[0][min_weight_empty_bags]"
+                                class="form-control min-weight" value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Delivery Date:</label>
+                            <input type="date" name="packing_items[0][delivery_date]" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Fumigation By:</label>
+                            <select name="packing_items[0][fumigation_company_id][]" class="form-control select2"
+                                multiple>
+                                <option value="">Select Fumigation Company</option>
+                                @foreach($fumigationCompanies as $company)
+                                    <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <!-- <div class="col-md-2">
+                        <div class="form-group">
                             <label>Brand:</label>
                             <select name="packing_items[0][brand_id]" class="form-control">
                                 <option value="">Select Brand</option>
@@ -230,14 +302,15 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
-                    <div class="col-md-2">
+                    </div> -->
+
+                    <!-- <div class="col-md-1">
                         <div class="form-group">
-                            <label>Min Weight Empty Bags (g):</label>
-                            <input type="number" name="packing_items[0][min_weight_empty_bags]"
-                                class="form-control min-weight" value="0" min="0" step="0.01">
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                class="btn btn-sm btn-info duplicate-packing-item form-control">Duplicate</button>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>&nbsp;</label>
@@ -264,7 +337,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <!-- <div class="col-md-4">
                     <div class="form-group">
                         <label>Fumigation By:</label>
                         <select name="fumigation_company_id[]" class="form-control select2" multiple>
@@ -274,7 +347,7 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
+                </div> -->
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Load From/Location:</label>
@@ -285,22 +358,22 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <!-- <div class="col-md-4">
                     <div class="form-group">
                         <label>Delivery Date:</label>
                         <input type="date" name="delivery_date" class="form-control">
                     </div>
-                </div>
+                </div> -->
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Loading Date:</label>
                         <input type="date" name="loading_date" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-12">
                     <div class="form-group">
                         <label>Packing Description:</label>
-                        <textarea name="packing_description" class="form-control" rows="1"></textarea>
+                        <textarea name="packing_description" class="form-control" rows="4"></textarea>
                     </div>
                 </div>
             </div>
@@ -314,7 +387,6 @@
         </div>
     </div>
 </form>
-
 
 <script>
     $(document).ready(function () {
@@ -336,6 +408,11 @@
 
         // Add more packing items using clone
         $('#addPackingItem').click(function () {
+            addNewPackingItem();
+        });
+
+        // Add new packing item function
+        function addNewPackingItem() {
             var firstItem = $('.packing-item').first();
             var newItem = firstItem.clone();
 
@@ -355,12 +432,80 @@
             newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
             newItem.find('select').prop('selectedIndex', 0);
 
+            // Reset select fields
+            newItem.find('select').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    // Remove Select2 initialization
+                    $(this).siblings('.select2-container').remove();
+                    $(this).show().removeClass('select2-hidden-accessible');
+                    $(this).next('.select2-container').remove();
+                }
+                $(this).prop('selectedIndex', 0);
+            });
+
             // Add to container
             $('#packingItems').append(newItem);
+            newItem.find('select[name*="fumigation_company_id"]').val([]);
 
             // Re-initialize Select2 for new selects
             newItem.find('select').select2();
+            firstItem.find('select').select2();
+        }
+
+        // Duplicate packing item - PROPERLY FIXED VERSION
+        $(document).on('click', '.duplicate-packing-item', function () {
+            var currentItem = $(this).closest('.packing-item');
+
+            // Pehle original item ki values capture karo BEFORE destroying Select2
+            var originalValues = {};
+            currentItem.find('select').each(function () {
+                var $select = $(this);
+                originalValues[$select.attr('name')] = $select.val();
+            });
+
+            // Ab clone karo WITHOUT destroying Select2 first
+            var newItem = currentItem.clone();
+
+            // Update indexes for new item
+            var newIndex = $('.packing-item').length;
+            newItem.find('input, select').each(function () {
+                var name = $(this).attr('name');
+                if (name) {
+                    name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
+                    $(this).attr('name', name);
+                }
+            });
+
+            // New item ke Select2 containers ko properly handle karo
+            newItem.find('select').each(function () {
+                var $select = $(this);
+
+                // Select2 container remove karo
+                $select.siblings('.select2-container').remove();
+                $select.show().removeClass('select2-hidden-accessible');
+                $select.next('.select2-container').remove();
+            });
+
+            // Insert after current item
+            currentItem.after(newItem);
+
+            // Re-initialize Select2 for duplicated item with ORIGINAL values
+            newItem.find('select').each(function () {
+                var $select = $(this);
+                var originalName = $select.attr('name').replace(/\[\d+\]/, '[0]'); // Get original name
+                var preservedValue = originalValues[originalName];
+
+                $select.select2();
+                if (preservedValue) {
+                    $select.val(preservedValue).trigger('change');
+                }
+            });
+            currentItem.find('select').select2();
+
+            // Re-index all items
+            reindexPackingItems();
         });
+
 
         // Remove packing item
         $(document).on('click', '.remove-packing-item', function () {
@@ -376,7 +521,6 @@
             var item = $(this).closest('.packing-item');
             calculateTotals(item);
         });
-
 
         // Auto-calculate stuffing based on metric tons and containers
         $(document).on('input', '.metric-tons, .containers', function () {
@@ -410,7 +554,6 @@
             }
         }
 
-        // Modified existing calculateTotals function to include stuffing calculation
         function calculateTotals(item) {
             var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
             var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
@@ -434,25 +577,6 @@
             }
         }
 
-
-
-        function calculateTotalsbk(item) {
-            var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
-            var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
-            var extraBags = parseInt(item.find('.extra-bags').val()) || 0;
-            var emptyBags = parseInt(item.find('.empty-bags').val()) || 0;
-
-            // Calculate totals
-            var totalBags = noOfBags + extraBags + emptyBags;
-            var totalKgs = noOfBags * bagSize;
-            var metricTons = totalKgs / 1000;
-
-            // Update fields
-            item.find('.total-bags').val(totalBags);
-            item.find('.total-kgs').val(totalKgs.toFixed(2));
-            item.find('.metric-tons').val(metricTons.toFixed(3));
-        }
-
         function reindexPackingItems() {
             $('.packing-item').each(function (index) {
                 $(this).find('input, select').each(function () {
@@ -467,19 +591,15 @@
 
         // Initial calculation for first item
         calculateTotals($('.packing-item').first());
-
-
-
-
     });
-    $('#company_location_id, input[name="job_order_date"]').on('change', function () {
+
+    $('input[name="job_order_date"]').on('change', function () {
         let locationCode = $("#company_location_id option:selected").data('code');
-        let selectedDate = $('input[name="job_order_date"]').val(); // yahan se date le lo
+        let selectedDate = $('input[name="job_order_date"]').val();
 
         getUniversalNumber({
             table: 'job_orders',
             prefix: 'JOB',
-            location: locationCode,
             with_date: 1,
             column: 'job_order_no',
             custom_date: selectedDate,
@@ -489,5 +609,4 @@
             $('input[name="job_order_no"]').val(no);
         });
     });
-
 </script>

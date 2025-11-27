@@ -20,7 +20,7 @@ class JobOrder extends Model
         'remarks',
         'order_description',
         'inspection_company_id',
-        'fumigation_company_id',
+    // 'fumigation_company_id',
         'delivery_date',
         'loading_date',
         'arrival_locations',
@@ -35,15 +35,15 @@ class JobOrder extends Model
         'fumigation_company_id' => 'array',
         'arrival_locations' => 'array',
         'job_order_date' => 'date',
-        'delivery_date' => 'date',
+        // 'delivery_date' => 'date',
         'loading_date' => 'date'
     ];
 
 
-    public function companyLocation()
-    {
-        return $this->belongsTo(CompanyLocation::class, 'company_location_id');
-    }
+    // public function companyLocation()
+    // {
+    //     return $this->belongsTo(CompanyLocation::class, 'company_location_id');
+    // }
 
     public function product()
     {
@@ -58,10 +58,10 @@ class JobOrder extends Model
         return InspectionCompany::whereIn('id', $this->inspection_company_id ?? []);
     }
 
-    public function fumigationCompanies()
-    {
-        return FumigationCompany::whereIn('id', $this->fumigation_company_id ?? []);
-    }
+    // public function fumigationCompanies()
+    // {
+    //     return FumigationCompany::whereIn('id', $this->fumigation_company_id ?? []);
+    // }
 
     public function arrivalLocationRecords()
     {
@@ -103,4 +103,20 @@ class JobOrder extends Model
     {
         return $this->packingItems->sum('no_of_containers');
     }
+
+      // Get all company locations from packing items (sorted and unique)
+      public function getCompanyLocationsAttribute()
+      {
+          return CompanyLocation::whereIn('id', $this->packingItems->pluck('company_location_id')->unique()->toArray())
+              ->orderBy('name')
+              ->get();
+      }
+  
+      // Get company locations as comma separated string
+      public function getCompanyLocationsStringAttribute()
+      {
+        // company_locations_string
+          $locations = $this->company_locations;
+          return $locations->pluck('name')->implode(', ');
+      }
 }

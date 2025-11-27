@@ -26,7 +26,7 @@
                     </td>
                     <td>{{ \Carbon\Carbon::parse($job_order->job_order_date)->format('d/m/Y') }}</td>
                     <td>
-                        <span class="badge badge-light">{{ $job_order->companyLocation->name ?? 'N/A' }}</span>
+                        <span class="badge badge-light">{{ $job_order->company_locations_string ?? 'N/A' }}</span>
                     </td>
                     <td>
                         <span class="text-primary">{{ Str::limit($job_order->product->name ?? 'N/A', 20) }}</span>
@@ -41,7 +41,7 @@
                         <span class="badge badge-secondary">{{ $job_order->total_containers }}</span>
                     </td>
                     <td>
-                        @php
+                        <!-- @php
                             $status = 'primary';
                             if($job_order->loading_date && now()->gt($job_order->loading_date)) {
                                 $status = 'success';
@@ -51,7 +51,7 @@
                         @endphp
                         <span class="badge badge-{{ $status }}">
                             {{ $status == 'success' ? 'Completed' : ($status == 'warning' ? 'In Progress' : 'Active') }}
-                        </span>
+                        </span> -->
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">

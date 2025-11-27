@@ -24,7 +24,7 @@ class JobOrderController extends Controller
 
     public function getList(Request $request)
     {
-        $job_orders = JobOrder::with(['product', 'companyLocation'])
+        $job_orders = JobOrder::with(['product'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -78,7 +78,7 @@ class JobOrderController extends Controller
 
             $uniqueJobNo = generateUniversalUniqueNo('job_orders', [
                 'prefix' => 'JOB',
-                'location' => $locationCode,
+                // 'location' => $locationCode,
                 'column' => 'job_order_no',
                 'with_date' => 1,
                 'custom_date' => $request->job_order_date,
@@ -93,7 +93,7 @@ class JobOrderController extends Controller
                 'product_id',
                 'remarks',
                 'order_description',
-                'delivery_date',
+                // 'delivery_date',
                 'loading_date',
                 'packing_description',
                 'crop_year_id',
@@ -102,10 +102,10 @@ class JobOrderController extends Controller
 
             $jobOrderData['company_id'] = $request->company_id;
             $jobOrderData['job_order_no'] = $uniqueJobNo;
-            $jobOrderData['company_location_id'] = $request->company_location_id;
+            // $jobOrderData['company_location_id'] = $request->company_location_id;
             $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []);
             $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
-            $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
+            // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
 
             $jobOrder = JobOrder::create($jobOrderData);
@@ -184,7 +184,7 @@ class JobOrderController extends Controller
                 'product_id',
                 'remarks',
                 'order_description',
-                'delivery_date',
+                // 'delivery_date',
                 'loading_date',
                 'packing_description',
                 'crop_year_id',

@@ -15,7 +15,7 @@
                             value="{{ $jobOrder->job_order_no }}">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <div class="form-group">
                         <label>Location:</label>
                         <select name="company_location_id" class="form-control" disabled>
@@ -28,7 +28,7 @@
                         </select>
                         <input type="hidden" value="{{ $jobOrder->company_location_id }}" name="company_location_id">
                     </div>
-                </div>
+                </div> -->
 
                 <div class="col-md-3">
                     <div class="form-group">
@@ -182,6 +182,33 @@
             <div id="packingItems">
                 @foreach($jobOrder->packingItems as $packingIndex => $packingItem)
                     <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Location:</label>
+                            <select name="packing_items[{{ $packingIndex }}][company_location_id]" disabled class="form-control" >
+                                <option value="">Select Location</option>
+                                @foreach($companyLocations as $location)
+                                    <option value="{{ $location->id }}" {{ $packingItem->company_location_id == $location->id ? 'selected' : '' }}>
+                                        {{ $location->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" value="{{ $packingItem->company_location_id }}" name="packing_items[{{ $packingIndex }}][company_location_id]">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Brand:</label>
+                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control">
+                                    <option value="">Select Brand</option>
+                                    @foreach($brands as $brand)
+                                        <option value="{{ $brand->id }}" {{ $packingItem->brand_id == $brand->id ? 'selected' : '' }}>
+                                            {{ $brand->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Type:</label>
@@ -203,6 +230,32 @@
                                     @foreach($bagConditions as $condition)
                                         <option value="{{ $condition->id }}" {{ $packingItem->bag_condition_id == $condition->id ? 'selected' : '' }}>
                                             {{ $condition->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Bag Color:</label>
+                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control">
+                                    <option value="">Select Color</option>
+                                    @foreach($bagColors as $color)
+                                        <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
+                                            {{ $color->color }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Thread Color:</label>
+                                <select name="packing_items[{{ $packingIndex }}][thread_color_id]" class="form-control">
+                                    <option value="">Select Color</option>
+                                    @foreach($bagColors as $color)
+                                        <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
+                                            {{ $color->color }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -274,38 +327,34 @@
                                     class="form-control containers" value="{{ $packingItem->no_of_containers }}">
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Brand:</label>
-                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control">
-                                    <option value="">Select Brand</option>
-                                    @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}" {{ $packingItem->brand_id == $brand->id ? 'selected' : '' }}>
-                                            {{ $brand->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Bag Color:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control">
-                                    <option value="">Select Color</option>
-                                    @foreach($bagColors as $color)
-                                        <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
-                                            {{ $color->color }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+                       
+                       
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Min Weight Empty Bags (g):</label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][min_weight_empty_bags]"
                                     class="form-control min-weight" step="0.01"
                                     value="{{ $packingItem->min_weight_empty_bags }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Delivery Date:</label>
+                                <input type="date" name="packing_items[{{ $packingIndex }}][delivery_date]" class="form-control"
+                                    value="{{ $packingItem->delivery_date ? $packingItem->delivery_date->format('Y-m-d') : '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fumigation By:</label>
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_company_id][]" class="form-control select2" multiple>
+                                    <option value="">Select Fumigation Company</option>
+                                    @foreach($fumigationCompanies as $company)
+                                        <option value="{{ $company->id }}" {{ in_array($company->id, $packingItem->fumigation_company_id ?? []) ? 'selected' : '' }}>
+                                            {{ $company->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-1">
@@ -337,7 +386,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <!-- <div class="col-md-4">
                     <div class="form-group">
                         <label>Fumigation By:</label>
                         <select name="fumigation_company_id[]" class="form-control select2" multiple>
@@ -349,7 +398,7 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
+                </div> -->
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Load From/Location:</label>
@@ -362,13 +411,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Delivery Date:</label>
-                        <input type="date" name="delivery_date" class="form-control"
-                            value="{{ $jobOrder->delivery_date ? $jobOrder->delivery_date->format('Y-m-d') : '' }}">
-                    </div>
-                </div>
+                
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Loading Date:</label>
@@ -376,10 +419,10 @@
                             value="{{ $jobOrder->loading_date ? $jobOrder->loading_date->format('Y-m-d') : '' }}">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-12">
                     <div class="form-group">
                         <label>Packing Description:</label>
-                        <textarea name="packing_description" class="form-control"
+                        <textarea name="packing_description" class="form-control" rows="4"
                             rows="1">{{ $jobOrder->packing_description }}</textarea>
                     </div>
                 </div>

@@ -35,10 +35,6 @@ class JobOrderRequest extends FormRequest
                 'date',
                 'before_or_equal:today'
             ],
-            'company_location_id' => [
-                'required',
-                'exists:company_locations,id'
-            ],
             'crop_year_id' => [
                 'required',
                 'exists:crop_years,id'
@@ -154,12 +150,12 @@ class JobOrderRequest extends FormRequest
                 'min:0'
             ],
             'packing_items.*.stuffing_in_container' => [
-                'nullable',
+                'required',
                 'numeric',
                 'min:0'
             ],
             'packing_items.*.no_of_containers' => [
-                'nullable',
+                'required',
                 'integer',
                 'min:0',
                 'max:100'
@@ -179,8 +175,23 @@ class JobOrderRequest extends FormRequest
                 'numeric',
                 'min:0'
             ],
+            'packing_items.*.company_location_id' => [
+                'required',
+                'exists:company_locations,id'
+            ],
+            // Delivery Date moved to packing items
+            'packing_items.*.delivery_date' => [
+                'required',
+                'date',
+                'after_or_equal:job_order_date'
+            ],
+            // Fumigation Company moved to packing items
+            'packing_items.*.fumigation_company_id' => [
+                'nullable',
+                'exists:fumigation_companies,id'
+            ],
 
-            // Operational Details Validation
+            // Operational Details Validation (without delivery_date and fumigation_company_id)
             'inspection_company_id' => [
                 'nullable',
                 'array'
@@ -188,24 +199,12 @@ class JobOrderRequest extends FormRequest
             'inspection_company_id.*' => [
                 'exists:inspection_companies,id'
             ],
-            'fumigation_company_id' => [
-                'nullable',
-                'array'
-            ],
-            'fumigation_company_id.*' => [
-                'exists:fumigation_companies,id'
-            ],
             'arrival_locations' => [
                 'nullable',
                 'array'
             ],
             'arrival_locations.*' => [
                 'exists:arrival_locations,id'
-            ],
-            'delivery_date' => [
-                'nullable',
-                'date',
-                'after_or_equal:job_order_date'
             ],
             'loading_date' => [
                 'nullable',
@@ -233,8 +232,6 @@ class JobOrderRequest extends FormRequest
             'job_order_no.unique' => 'This job order number already exists',
             'job_order_date.required' => 'Job order date is required',
             'job_order_date.before_or_equal' => 'Job order date cannot be in the future',
-            'company_location_id.required' => 'Location is required',
-            'company_location_id.exists' => 'Selected location does not exist',
             'crop_year_id.required' => 'Crop Year is required',
             'crop_year_id.exists' => 'Selected Crop Year does not exist',
 
@@ -252,23 +249,27 @@ class JobOrderRequest extends FormRequest
             // Packing Items Messages
             'packing_items.required' => 'At least one packing item is required',
             'packing_items.min' => 'At least one packing item is required',
-            'packing_items.*.bag_type.required' => 'Bag type is required for all packing items',
-            'packing_items.*.bag_condition.required' => 'Bag condition is required for all packing items',
+            'packing_items.*.bag_type_id.required' => 'Bag type is required for all packing items',
+            'packing_items.*.bag_condition_id.required' => 'Bag condition is required for all packing items',
             'packing_items.*.bag_size.required' => 'Bag size is required for all packing items',
             'packing_items.*.bag_size.min' => 'Bag size must be at least 0.1 kg',
             'packing_items.*.no_of_bags.required' => 'Number of bags is required for all packing items',
             'packing_items.*.no_of_bags.min' => 'Number of bags must be at least 1',
-            'packing_items.*.brand.required' => 'Brand is required for all packing items',
-            'packing_items.*.bag_color.required' => 'Bag color is required for all packing items',
+            'packing_items.*.brand_id.required' => 'Brand is required for all packing items',
+            'packing_items.*.bag_color_id.required' => 'Bag color is required for all packing items',
+            'packing_items.*.company_location_id.required' => 'Company location is required for all packing items',
+            'packing_items.*.company_location_id.exists' => 'Selected company location does not exist',
+            'packing_items.*.min_weight_empty_bags.required' => 'Minimum weight for empty bags is required',
+            // New packing items messages for delivery_date and fumigation_company_id
+            'packing_items.*.delivery_date.after_or_equal' => 'Delivery date must be on or after job order date',
+            'packing_items.*.fumigation_company_id.exists' => 'Selected fumigation company does not exist',
 
             // Operational Details Messages
-            'delivery_date.after_or_equal' => 'Delivery date must be on or after job order date',
             'loading_date.after_or_equal' => 'Loading date must be on or after job order date',
 
             // Array Validation Messages
             'attention_to.*.exists' => 'One or more selected users do not exist',
             'inspection_company_id.*.exists' => 'One or more selected inspection companies do not exist',
-            'fumigation_company_id.*.exists' => 'One or more selected fumigation companies do not exist',
             'arrival_locations.*.exists' => 'One or more selected arrival locations do not exist',
         ];
     }
@@ -281,14 +282,16 @@ class JobOrderRequest extends FormRequest
         return [
             'job_order_no' => 'job order number',
             'job_order_date' => 'job order date',
-            'company_location_id' => 'location',
+            'crop_year_id' => 'crop year',
             'product_id' => 'product',
             'specifications' => 'specifications',
             'packing_items' => 'packing items',
             'attention_to' => 'attention to',
             'inspection_company_id' => 'inspection company',
-            'fumigation_company_id' => 'fumigation company',
             'arrival_locations' => 'arrival locations',
+            'packing_items.*.company_location_id' => 'company location',
+            'packing_items.*.delivery_date' => 'delivery date',
+            'packing_items.*.fumigation_company_id' => 'fumigation company',
         ];
     }
 
@@ -301,10 +304,19 @@ class JobOrderRequest extends FormRequest
         $this->merge([
             'attention_to' => $this->attention_to ?? [],
             'inspection_company_id' => $this->inspection_company_id ?? [],
-            'fumigation_company_id' => $this->fumigation_company_id ?? [],
             'arrival_locations' => $this->arrival_locations ?? [],
             'specifications' => $this->specifications ?? [],
             'packing_items' => $this->packing_items ?? [],
         ]);
+
+        // Ensure each packing item has delivery_date and fumigation_company_id
+        if ($this->has('packing_items')) {
+            $packingItems = $this->packing_items;
+            foreach ($packingItems as &$item) {
+                $item['delivery_date'] = $item['delivery_date'] ?? null;
+                $item['fumigation_company_id'] = $item['fumigation_company_id'] ?? null;
+            }
+            $this->merge(['packing_items' => $packingItems]);
+        }
     }
 }
