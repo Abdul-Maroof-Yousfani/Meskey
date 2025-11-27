@@ -53,7 +53,7 @@
                 <label>Receiving Date:</label>
                 <input readonly type="date" id="receiving_date"
                     value="{{ optional($purchaseOrderReceiving)->order_receiving_date }}" name="receiving_date"
-                    class="form-control">
+                    class="form-control" readonly>
             </div>
         </div>
         <div class="col-md-4">

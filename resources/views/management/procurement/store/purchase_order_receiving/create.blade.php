@@ -34,7 +34,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Receiving Date:</label>
-                <input type="date" id="receiving_date" name="receiving_date" value="{{ now()->toDateString() }}" class="form-control">
+                <input type="date" id="receiving_date" name="receiving_date" value="{{ now()->toDateString() }}" class="form-control" disabled>
             </div>
         </div>
         <div class="col-md-4">

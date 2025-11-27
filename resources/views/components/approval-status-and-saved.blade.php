@@ -375,7 +375,6 @@
                 success: function (response) {
                     console.log("First form success");
 
-                    // 🔥 Only run this if success (status 200)
                     $("#ajaxSubmit").submit();
                 },
 
