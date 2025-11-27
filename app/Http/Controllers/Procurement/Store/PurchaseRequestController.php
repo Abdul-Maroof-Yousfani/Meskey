@@ -246,7 +246,6 @@ class PurchaseRequestController extends Controller
 
             $updateData = [
                 'purchase_date' => $request->purchase_date,
-                'location_id' => $request->company_location_id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
