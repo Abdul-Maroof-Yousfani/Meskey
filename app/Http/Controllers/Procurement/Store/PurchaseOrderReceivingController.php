@@ -94,7 +94,7 @@ class PurchaseOrderReceivingController extends Controller
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
                     "item_qc" => $row->qc,
-                    'qc_status' => $row->qc?->is_qc_approved,
+                    'qc_status' => $row->qc?->am_approval_status,
                     'suppliers' => []
                 ];
             }
@@ -157,7 +157,7 @@ class PurchaseOrderReceivingController extends Controller
                         'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
-                        'qc_status' => $orderGroup['row']->qc?->is_qc_approved ?? null,
+                        'qc_status' => $orderGroup['row']->qc?->am_approval_status ?? null,
                         'has_approved_item' => $hasApprovedItem,
                     ];
                     // dd($processedData);

@@ -79,7 +79,7 @@ class QcController extends Controller
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
                     'item_data' => $row,
-                    'qc_status' => $row->qc?->is_qc_approved,
+                    'qc_status' => $row->qc?->am_approval_status,
                     'canUserApprove' => $row->qc?->canUserApprove(),
                     'suppliers' => []
                 ];
