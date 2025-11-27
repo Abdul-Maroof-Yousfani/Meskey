@@ -58,17 +58,20 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
-                    <option value="">Select Location</option>
-                    @foreach (get_locations() as $loc)
-                        <option {{ optional($purchaseOrderReceiving)->location_id == $loc->id ? 'selected' : '' }}
-                            value="{{ $loc->id }}">{{ $loc->name }}</option>
-                    @endforeach
-                    <input type="hidden" name="location_id" value="{{ optional($purchaseOrderReceiving)->location_id }}"
-                        id="location_id">
-                </select>
-            </div>
+             <label>Location:</label>
+             @php
+                 $locations_id = optional($purchaseOrderReceiving->purchase_request)->locations->pluck("location_id")->toArray();
+             @endphp
+             <select disabled name="company_location" id="company_location_id" class="form-control select2" multiple>
+                 <option value="">Select Location</option>
+                 @foreach (get_locations() as $loc)
+                     <option
+                         value="{{ $loc->id }}" @selected(in_array($loc->id, $locations_id))>{{ $loc->name }}</option>
+                 @endforeach
+                 <input type="hidden" name="location_id" value="{{ optional($purchaseOrderReceiving)->location_id }}"
+                     id="location_id">
+             </select>
+         </div>
             {{-- reference_no --}}
         </div>
          <div class="col-md-4">

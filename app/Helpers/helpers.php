@@ -499,6 +499,10 @@ function get_locations()
     return $CompanyLocation;
 }
 
+function get_location_name_by_id($company_location_id) {
+    return CompanyLocation::where("id", $company_location_id)->value("name");
+}
+
 function get_supplier()
 {
     $Supplier = Supplier::whereType('store_supplier')->get();

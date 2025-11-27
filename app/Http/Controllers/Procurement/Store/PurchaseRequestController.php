@@ -120,16 +120,25 @@ class PurchaseRequestController extends Controller
     {
         DB::beginTransaction();
         try {
+            $company_locations = $request->company_location_id;
+          
             $purchaseRequest = PurchaseRequest::create([
                 'purchase_request_no' => self::getNumber($request, $request->company_location_id, $request->purchase_date),
                 'purchase_date' => $request->purchase_date,
-                'location_id' => $request->company_location_id,
+                'location_id' => (CompanyLocation::first())->id,
                 'company_id' => $request->company_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
             ]);
-             $purchase_request_data_ids = [];
+
+            foreach($company_locations as $company_location) {
+                $purchaseRequest->locations()->create([
+                    'location_id' => $company_location
+                ]);
+            }
+
+            $purchase_request_data_ids = [];
             foreach ($request->item_id as $index => $itemId) {
                 $printingSamplePath = null;
 
@@ -189,18 +198,28 @@ class PurchaseRequestController extends Controller
     public function edit($id)
     {
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
-        $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $purchaseRequest = PurchaseRequest::with(['locations', 'PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $locations_id = $purchaseRequest->locations->pluck("location_id")->toArray();
+        $location_names = [];
+        foreach($locations_id as $location_id) {
+            $location_names[] = get_location_name_by_id($location_id);
+        }
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
 
-        return view('management.procurement.store.purchase_request.edit', compact('purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
+        return view('management.procurement.store.purchase_request.edit', compact('locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
     }
 
     public function manageApprovals($id)
     {
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
-        $purchaseRequest = PurchaseRequest::with(['PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $purchaseRequest = PurchaseRequest::with(["locations", 'PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $locations_id = $purchaseRequest->locations->pluck("location_id")->toArray();
+        $location_names = [];
+        foreach($locations_id as $location_id) {
+            $location_names[] = get_location_name_by_id($location_id);
+        }
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
@@ -212,6 +231,9 @@ class PurchaseRequestController extends Controller
             'categories' => $categories,
             'job_orders' => $job_orders,
             'locations' => $locations,
+            "locations_id" => $locations_id,
+            "location_names" => $location_names
+
         ]);
     }
 
@@ -355,13 +377,12 @@ class PurchaseRequestController extends Controller
         $location = CompanyLocation::find($locationId ?? $request->company_location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'PR-' . $location->code . '-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'PR-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = PurchaseRequest::where('purchase_request_no', 'like', "$prefix-%")
             ->latest()
             ->first();
 
-        $locationCode = $location->code ?? 'LOC';
         $datePart = Carbon::parse($date)->format('Y-m-d');
 
         if ($latestContract) {
@@ -372,7 +393,7 @@ class PurchaseRequestController extends Controller
             $newNumber = 1;
         }
 
-        $purchase_request_no = 'PR-' . $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_request_no = 'PR-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([

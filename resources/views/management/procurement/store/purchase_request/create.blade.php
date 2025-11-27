@@ -10,9 +10,8 @@
     <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Location:</label>
-                <select name="company_location_id" id="company_location_id" class="form-control">
-                    <option value="">Select Location</option>
+                <label class="form-label">Locations:</label>
+                <select name="company_location_id[]" id="company_location_id" class="form-control">
                 </select>
             </div>
         </div>
@@ -169,7 +168,7 @@
             width: '100%'
         });
 
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, true);
 
         function fetchUniqueNumber() {
             let locationId = $('#company_location_id').val();

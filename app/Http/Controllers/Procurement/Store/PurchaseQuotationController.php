@@ -599,7 +599,12 @@ class PurchaseQuotationController extends Controller
         $requestId = $request->id;
         $supplierId = $request->supplier_id;
 
-        $master = PurchaseRequest::find($requestId);
+        $master = PurchaseRequest::with("locations")->find($requestId);
+        $locations_id = $master->locations->pluck("location_id")->toArray();
+        $location_names = [];
+        foreach($locations_id as $location_id) {
+            $location_names[] = get_location_name_by_id($location_id);
+        }
 
         $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
             ->where('purchase_request_id', $requestId)
@@ -654,7 +659,9 @@ class PurchaseQuotationController extends Controller
             'allowed_categories' => $categoryIds,
             'allowed_items' => $itemIds,
             'purchaseRequestDataCount' => $purchaseRequestDataCount,
-            "quantities" => $quantities
+            "quantities" => $quantities,
+            'locations_id' => $locations_id,
+            'location_names' => $location_names
         ]);
     }
 
@@ -762,7 +769,8 @@ class PurchaseQuotationController extends Controller
             ->get();
 
         $purchaseRequest = $purchaseQuotation->purchase_request;
-
+        $locations_id = $purchaseRequest->locations->pluck("location_id")->toArray();
+      
         $allowedCategoryIds = [];
         $allowedItemIds = [];
 
@@ -791,7 +799,8 @@ class PurchaseQuotationController extends Controller
             'items',
             'locations',
             'job_orders',
-            'purchaseQuotationDataCount'
+            'purchaseQuotationDataCount',
+            'locations_id'
         ));
     }
 
@@ -811,6 +820,8 @@ class PurchaseQuotationController extends Controller
         $requestId = $request->id;
 
         $master = PurchaseQuotation::find($requestId);
+        $locations_id = $master->locations->pluck("location_id")->toArray();
+       
 
         $dataItems = PurchaseQuotationData::with(['purchase_quotation', 'item', 'category'])
             ->where('purchase_quotation_id', $requestId)
@@ -830,6 +841,7 @@ class PurchaseQuotationController extends Controller
             'master' => $master,
             'allowed_categories' => $categoryIds,
             'allowed_items' => $itemIds,
+            "locations_id" => $locations_id 
         ]);
     }
     /**
@@ -1016,7 +1028,7 @@ class PurchaseQuotationController extends Controller
         $location = CompanyLocation::find($locationId ?? $request->location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'PQ-' . $location->code . '-' . $date;
+        $prefix = 'PQ-' . $date;
 
 
         // Find latest quotation with the same prefix
@@ -1036,7 +1048,7 @@ class PurchaseQuotationController extends Controller
             $newNumber = 1;
         }
 
-        $purchase_quotation_no = 'PQ-' . $locationCode . '-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_quotation_no = 'PQ-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([

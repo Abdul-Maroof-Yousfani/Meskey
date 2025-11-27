@@ -28,7 +28,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
+                <select disabled name="company_location[]" id="company_location_id" class="form-control select2" multiple>
                     <option value="">Select Location</option>
                     @foreach (get_locations() as $value)
                         <option value="{{ $value->id }}">{{ $value->name }}</option>
@@ -359,7 +359,8 @@
                 $('#location_id').val(master.location_id);
                 // $('#purchase_date').val(master.purchase_date);
                 // $('#description').val(master.description);
-                $('#company_location_id').val(master.location_id).trigger('change');
+
+                $('#company_location_id').val(response.locations_id).trigger('change');
 
                 // Load table HTML
                 $('#purchaseRequestBody').html(html);

@@ -47,8 +47,13 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Location:</label>
-                <input type="hidden" name="location_id" id="location_id">
-                <input type="text" name="location_name" id="location_name" class="form-control" readonly>
+                <select disabled name="company_location[]" id="company_location_id" class="form-control select2" multiple>
+                    <option value="">Select Location</option>
+                    @foreach (get_locations() as $value)
+                        <option value="{{ $value->id }}">{{ $value->name }}</option>
+                    @endforeach
+                    <input type="hidden" name="location_id" id="location_id">
+                </select>
             </div>
         </div>
         <div class="col-md-4">
@@ -264,14 +269,14 @@
                 $('#purchase_request_id').val(master.purchase_request_id || '');
                 $('#purchase_request_no').val(master.purchase_request?.purchase_request_no || '');
 
-                $('#company_location_id').val(master.location_id);
                 $('#location_id').val(master.location_id);
                 $('#location_name').val(master.location?.name);
                 $("#location_name").trigger("change");
 
                 // $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
-                $('#company_location_id').val(master.location_id).trigger('change');
+                $('#company_location_id').val(response.locations_id).trigger('change');
+                fetchUniqueNumber();
 
 
 

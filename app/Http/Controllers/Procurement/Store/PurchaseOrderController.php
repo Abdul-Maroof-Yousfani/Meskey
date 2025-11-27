@@ -169,7 +169,9 @@ class PurchaseOrderController extends Controller
         $quotationNo = $request->quotation_no;
         $supplierId = $request->supplier_id;
 
-        $master = PurchaseRequest::find($requestId);
+        $master = PurchaseRequest::with("locations")->find($requestId);
+        $locations_id = $master->locations->pluck("location_id")->toArray();
+       
         $quotation = null;
         $dataItems = collect();
        
@@ -232,7 +234,8 @@ class PurchaseOrderController extends Controller
         return response()->json([
             'html' => $html,
             'master' => $master,
-            'quotation' => $quotation
+            'quotation' => $quotation,
+            'locations_id' => $locations_id
         ]);
     }
 
@@ -547,6 +550,7 @@ class PurchaseOrderController extends Controller
             )
             ->get();
 
+     
        
         return view('management.procurement.store.purchase_order.approvalCanvas', [
             'purchaseOrder' => $purchaseOrder,
@@ -594,7 +598,7 @@ class PurchaseOrderController extends Controller
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $locationCode = $location->code ?? 'LOC';
-        $prefix = 'PO-' . $locationCode . '-' . $date;
+        $prefix = 'PO-' . $date;
 
         // Find latest PO for the same prefix
         $latestPO = PurchaseOrder::where('purchase_order_no', 'like', "$prefix-%")
@@ -610,7 +614,7 @@ class PurchaseOrderController extends Controller
             $newNumber = 1;
         }
 
-        $purchase_order_no = 'PO-' . $locationCode . '-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_order_no = 'PO-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (!$locationId && !$contractDate) {
             return response()->json([
