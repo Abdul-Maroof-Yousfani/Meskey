@@ -185,7 +185,7 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Location:</label>
-                            <select name="packing_items[{{ $packingIndex }}][company_location_id]" disabled class="form-control" >
+                            <select name="packing_items[{{ $packingIndex }}][company_location_id]"  class="form-control" >
                                 <option value="">Select Location</option>
                                 @foreach($companyLocations as $location)
                                     <option value="{{ $location->id }}" {{ $packingItem->company_location_id == $location->id ? 'selected' : '' }}>
@@ -193,7 +193,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <input type="hidden" value="{{ $packingItem->company_location_id }}" name="packing_items[{{ $packingIndex }}][company_location_id]">
+                            <!-- <input type="hidden" value="{{ $packingItem->company_location_id }}" name="packing_items[{{ $packingIndex }}][company_location_id]"> -->
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -477,8 +477,26 @@
             newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
             newItem.find('select').prop('selectedIndex', 0);
 
+            // Reset select fields
+            newItem.find('select').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    // Remove Select2 initialization
+                    $(this).siblings('.select2-container').remove();
+                    $(this).show().removeClass('select2-hidden-accessible');
+                    $(this).next('.select2-container').remove();
+                }
+                $(this).prop('selectedIndex', 0);
+            });
+
+
             // Add to container
             $('#packingItems').append(newItem);
+            newItem.find('select[name*="fumigation_company_id"]').val([]);
+
+            // Re-initialize Select2 for new selects
+            newItem.find('select').select2();
+            firstItem.find('select').select2();
+
 
             // Re-initialize Select2 for new selects
             newItem.find('select').select2();
