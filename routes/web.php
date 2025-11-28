@@ -29,9 +29,19 @@ use App\Http\Controllers\Reports\{
 };
 
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
 
 Route::get("checking-data", function() {
     dd(QC::all());
+});
+
+
+Route::get("add-permission", function() {
+    $permission = Permission::create([
+        "parent_id" =>  78,
+        'name' => 'procurement-raw-purchase-order',
+        'guard_name' => 'web'
+    ]);
 });
 
 Route::get('/delete-migration/{filename}', function ($filename) {
