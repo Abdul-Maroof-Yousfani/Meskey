@@ -37,9 +37,14 @@ Route::get("checking-data", function() {
 
 
 Route::get("add-permission", function() {
-    $permission = Permission::create([
+    Permission::create([
         "parent_id" =>  78,
-        'name' => 'procurement-raw-purchase-order',
+        'name' => 'procurement-gate-buying',
+        'guard_name' => 'web'
+    ]);
+    Permission::create([
+        "parent_id" =>  78,
+        'name' => 'procurement-purchase-sampling',
         'guard_name' => 'web'
     ]);
 });
