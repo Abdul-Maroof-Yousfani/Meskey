@@ -8,6 +8,7 @@ use App\Models\Master\Customer;
 use App\Models\Product;
 use App\Models\Sales\SalesInquiry;
 use Carbon\Carbon;
+use DB;
 use Illuminate\Http\Request;
 
 class SalesInquiryController extends Controller
@@ -104,34 +105,45 @@ class SalesInquiryController extends Controller
 
     public function store(SalesInquiryRequest $request) {
         
-        $sales_inquiry = SalesInquiry::create([
-            "inquiry_no" => $request->reference_no,
-            "date" => $request->inquiry_date,
-            "customer" => $request->customer,
-            "contract_type" => $request->contract_type,
-            "status" => "pending",
-            "contact_person" => $request->contact_person,
-            "remarks" => $request->remarks,
-            "created_by" => auth()->user()->id
-        ]);
+        try {
+            DB::beginTransaction();
         
-
-        foreach($request->item_id as $index => $item) {
-            $sales_inquiry->sales_inquiry_data()->create([
-                "item_id" => $request->item_id[$index],
-                "qty" => $request->qty[$index],
-                "rate" => $request->rate[$index],
-                "description" => $request->desc[$index],
+            $sales_inquiry = SalesInquiry::create([
+                "inquiry_no" => $request->reference_no,
+                "date" => $request->inquiry_date,
+                "customer" => $request->customer,
+                "contract_type" => $request->contract_type,
+                "status" => "pending",
+                "contact_person" => $request->contact_person,
+                "remarks" => $request->remarks,
+                "created_by" => auth()->user()->id,
+                "company_id" => $request->company_id
             ]);
-        }
+            
 
-        $locations = $request->locations;
+            foreach($request->item_id as $index => $item) {
+                $sales_inquiry->sales_inquiry_data()->create([
+                    "item_id" => $request->item_id[$index],
+                    "qty" => $request->qty[$index],
+                    "rate" => $request->rate[$index],
+                    "description" => $request->desc[$index],
+                ]);
+            }
 
-        foreach($locations as $location) {
-            $sales_inquiry->locations()->create([
-                "location_id" => $location
-            ]);
+            $locations = $request->locations;
+
+            foreach($locations as $location) {
+                $sales_inquiry->locations()->create([
+                    "location_id" => $location
+                ]);
+            }
+
+            DB::commit();
+        } catch(\Exception $e) {
+            DB::rollBack();
+            dd($e->getMessage());
         }
+        
 
 
         return response()->json("Sales Inquiry has been added");

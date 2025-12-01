@@ -462,12 +462,10 @@
                 </ul>
             </li>
             @endcanAccess
-            @canAccess('sales')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Sales</span></a>
                 <ul class="dropdown-menu">
-                    @canAccess('sales-inquiry')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-inquiry.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-inquiry.index') }}')"
@@ -482,8 +480,7 @@
                             <span data-i18n="Task Board">Sale Orders</span>
                         </a>
                     </li>
-                    @endcanAccess
-
+               
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
@@ -492,7 +489,6 @@
                     </li> --}}
                 </ul>
             </li>
-            @endcanAccess
             @canAccess('access-control')
             <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"

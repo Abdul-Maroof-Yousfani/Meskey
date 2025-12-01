@@ -85,18 +85,18 @@
                                         <div class="btn-group" role="group">
 
                                             <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry')" title="View" style="margin-right: 10px;">
+                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sale-order.view', ['id' => $group['id']]) }}','View Sales Inquiry')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
                                             @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
                                                 <button 
-                                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry')"
+                                                    onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order')"
                                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                     <i class="ft-edit"></i>
                                                 </button>
 
                                                 
-                                            <button onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')" type="button"
+                                            <button onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')" type="button"
                                                     onclick="confirmDelete(this.closest('form'))"
                                                     class="btn btn-sm btn-danger" title="Delete">
                                                 <i class="ft-trash-2"></i>

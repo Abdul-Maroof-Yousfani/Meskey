@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Sales Inquiry
+    Sales Order
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('sales.sales-inquiry.create') }}','Create Sales Inquiry',false,'100%')"
+                        onclick="openModal(this,'{{ route('sales.sale-order.create') }}','Create Sale Order',false,'100%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Sale Order
                     </button>

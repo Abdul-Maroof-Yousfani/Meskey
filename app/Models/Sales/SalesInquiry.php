@@ -21,4 +21,8 @@ class SalesInquiry extends Model
     public function locations() {
         return $this->morphMany(Location::class, 'locationable');
     }
+
+    public function sale_order() {
+        return $this->hasOne(SalesOrder::class, "inquiry_id", "id");
+    }
 }

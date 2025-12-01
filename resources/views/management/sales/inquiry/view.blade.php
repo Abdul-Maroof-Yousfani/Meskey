@@ -4,7 +4,7 @@
     }
 </style>
 
-<form action="{{ route('sales.sales-inquiry.update', ['sales_inquiry' => $sales_inquiry->id]) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('sales.sales-inquiry.update', ['sales_inquiry' => $sales_inquiry->id]) }}" method="POST" id="ajaxSubmit2" autocomplete="off">
     @csrf
     {{ method_field("PUT") }}
 
@@ -128,12 +128,11 @@
                     </tbody>
                 </table>
             </div>
-            <x-approval-status :model="$sales_inquiry" />
         </div>
     </div>
-
+    
     <input type="hidden" id="rowCount" value="0">
-
+    
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
@@ -141,6 +140,7 @@
         </div>
     </div>
 </form>
+<x-approval-status :model="$sales_inquiry" />
 
 <script>
 let salesInquiryRowIndex = "{{ $i }}";

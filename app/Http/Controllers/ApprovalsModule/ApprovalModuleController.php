@@ -48,9 +48,13 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Procurement\Store\PurchaseBill',
                 'label' => 'Purchase Bill'
             ],
-             [
+            [
                 'value' => 'App\Models\Sales\SalesInquiry',
                 'label' => 'Sales Inquiry'
+            ],
+            [
+                'value' => 'App\Models\Sales\SalesOrder',
+                'label' => 'Sales Order'
             ]
         ];
 
