@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use App\Events\RefreshArrivalDashboard
+use App\Events\RefreshArrivalDashboard;
 
 class SendArrivalDashboardStats
 {

@@ -1,0 +1,225 @@
+<?php
+
+namespace App\Http\Controllers\Sales;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Sales\SalesOrderRequest;
+use App\Models\Master\Customer;
+use App\Models\PaymentTerm;
+use App\Models\Product;
+use App\Models\Sales\SalesInquiry;
+use App\Models\Sales\SalesOrder;
+use Carbon\Carbon;
+use DB;
+use Illuminate\Http\Request;
+
+class SaleOrderController extends Controller
+{
+    public function index() {
+        return view("management.sales.orders.index");
+    }
+
+    public function create() {
+        $payment_terms = PaymentTerm::all();
+        $customers = Customer::all();
+        $inquiries = SalesInquiry::all();
+        $items = Product::all();
+        
+
+        return view("management.sales.orders.create", compact("payment_terms", "customers", "inquiries", "items"));
+    }
+
+    public function edit(int $id) {
+        $sale_order = SalesOrder::with("locations", "sales_order_data")->find($id);
+        $payment_terms = PaymentTerm::all();
+        $customers = Customer::all();
+        $inquiries = SalesInquiry::all();
+        $items = Product::all();
+
+        return view("management.sales.orders.edit", compact("payment_terms", "customers", "inquiries", "items", "sale_order"));
+    }
+
+    public function view(Request $request, int $id) {
+        $sale_order = SalesOrder::with("sales_order_data", "locations")->find($id);
+        $payment_terms = PaymentTerm::all();
+        $customers = Customer::all();
+        $inquiries = SalesInquiry::all();
+        $items = Product::all();
+
+        return view("management.sales.orders.view", compact("payment_terms", "customers", "inquiries", "items", "sale_order"));
+    }
+
+    public function store(SalesOrderRequest $request) {
+
+        $locations = $request->locations;
+
+        DB::beginTransaction();
+        try {
+            $sales_order = SalesOrder::create($request->validated());
+    
+            foreach($locations as $location) {
+                $sales_order->locations()->create([
+                    'location_id' => $location
+                ]);
+            }
+
+            foreach($request->item_id as $index => $item) {
+                $sales_order->sales_order_data()->create([
+                    "item_id" => $request->item_id[$index],
+                    "qty" => $request->qty[$index],
+                    "rate" => $request->rate[$index],  
+                ]);
+            }
+            DB::commit();
+        } catch(\Exception $e) {
+            DB::rollBack();
+            dd($e);
+        }
+
+        return response()->json(["data" => "Sale Order has been created"]);
+    }
+
+    public function update(SalesOrderRequest $request, int $id) {
+
+        $locations = $request->locations;
+        DB::beginTransaction();
+        try {
+            $sales_order = SalesOrder::find($id);
+        
+
+            $sales_order->sales_order_data()->delete();
+    
+            foreach($request->item_id as $index => $item) {
+                $sales_order->sales_order_data()->create([
+                    "item_id" => $request->item_id[$index],
+                    "qty" => $request->qty[$index],
+                    "rate" => $request->rate[$index],  
+                ]);
+            }
+            DB::commit();
+        } catch(\Exception $e) {
+            DB::rollBack();
+            dd($e);
+        }
+
+        return response()->json(["data" => "Sale Order has been created"]);
+    }
+
+    public function destroy(int $id) {
+        $sales_order = SalesOrder::find($id);
+        $sales_order->sales_order_data()->delete();
+        $sales_order->delete();
+
+        return response()->json(["data" => "Sale Order has been deleted"]);
+    }
+
+    public function getList(Request $request) {
+        $perPage = $request->get('per_page', 25);
+
+    // Eager load the inquiry + all its items + related product
+    $SalesOrders = SalesOrder::latest()
+        ->paginate($perPage);
+
+    
+    $groupedData = [];
+
+    foreach ($SalesOrders as $SaleOrder) {
+        $so_no = $SaleOrder->reference_no;
+        $items = $SaleOrder->sales_order_data;
+        
+        if ($items->isEmpty()) continue;
+
+        $itemRows = [];
+        foreach ($items as $itemData) {
+            $itemRows[] = [
+                'item_data' => $itemData,
+            ];
+        }
+
+        $groupedData[] = [
+                'sale_order' => $SaleOrder,
+                'so_no' => $so_no,
+                'created_by_id' => 1,
+                'delivery_date' => $SaleOrder->delivery_date,
+                'id' => $SaleOrder->id,
+                'customer_id' => $SaleOrder->customer_id,
+                'status' => $SaleOrder->am_approval_status,
+                'created_at' => $SaleOrder->created_at,
+                'customer' => $SaleOrder->customer,
+                'rowspan' => count($itemRows),
+                'items' => $itemRows,
+            ];
+        }
+    return view('management.sales.orders.getList', [
+        'SalesOrders' => $SalesOrders,           // for pagination
+        'groupedSalesOrders' => $groupedData,  // our grouped data
+    ]);
+    }
+
+    public function get_inquiries(Request $request) {
+        $customer_id = $request->customer_id;
+
+        $sale_inquiries = SalesInquiry::where("am_approval_status", "approved")
+                                        ->whereDoesntHave("sale_order")
+                                        ->where("customer", $customer_id)
+                                        ->select("inquiry_no", "id")
+                                        ->get();
+
+        $data = [];
+
+        foreach($sale_inquiries as $sale_inquiry) {
+            $data[] = [
+                "text" => $sale_inquiry->inquiry_no,
+                "id" => $sale_inquiry->id
+            ];
+        }
+
+        return $data;
+    }
+
+
+    public function get_inquiry_data(Request $request) {
+        $inquiry_id = $request->inquiry_id;
+
+        $items = Product::select("name", "id")->get();
+        $inquiry = SalesInquiry::with("sales_inquiry_data")->where("id", $inquiry_id)->first();
+
+        return view("management.sales.orders.getItems", compact("inquiry", "items"));
+    }
+
+    public function getNumber(Request $request, $locationId = null, $contractDate = null)
+    {
+
+        $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+
+        $prefix = 'SO-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+
+        $latestContract = SalesOrder::where('reference_no', 'like', "$prefix-%")
+            ->latest()
+            ->first();
+
+
+
+        $datePart = Carbon::parse($date)->format('Y-m-d');
+
+        if ($latestContract) {
+            $parts = explode('-', $latestContract->inquiry_no);
+            $lastNumber = (int) end($parts);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+
+        $so_no = 'SO-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        if (!$locationId && !$contractDate) {
+            return response()->json([
+                'success' => true,
+                'so_no' => $so_no
+            ]);
+        }
+
+        return $so_no;
+    }
+}

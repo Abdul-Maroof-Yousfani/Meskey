@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{Category, Master\Tax, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, User};
+use App\Models\{Category, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Sales\SalesInquiry, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -155,6 +155,15 @@ if (!function_exists("getItem")) {
         return $product;
     }
 }
+
+
+if (!function_exists("getAllItems")) {
+    function getAllItems()
+    {
+        return Product::all();
+    }
+}
+
 
 
 if (!function_exists("getAllColors")) {
@@ -490,6 +499,18 @@ function get_product_by_category($id)
     $Product = Product::with('unitOfMeasure')->where('category_id', $id)->get();
 
     return $Product;
+}
+
+function get_customer_name($customer_id) {
+    return Customer::find($customer_id)->value("name");
+}
+
+function get_inquiry_reference_number($inquiry_id) {
+    return SalesInquiry::find($inquiry_id)->value("inquiry_no");
+}
+
+function get_payment_term($payment_term_id) {
+    return PaymentTerm::select("id", "desc")->where('status', 'active')->where("id", $payment_term_id)->first();
 }
 
 function get_locations()
