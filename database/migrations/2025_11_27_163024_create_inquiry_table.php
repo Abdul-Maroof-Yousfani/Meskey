@@ -22,8 +22,8 @@ return new class extends Migration
             $table->integer("created_by");
             $table->string("contact_person");
             $table->string("remarks");
-            $table->string("am_approval_status");
-            $table->string("am_change_made");
+            $table->string("am_approval_status")->default("pending");
+            $table->string("am_change_made")->default(1);
             $table->timestamps();
         });
     }
