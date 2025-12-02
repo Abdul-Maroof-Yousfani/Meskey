@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\JobOrderRequest;
+use App\Http\Requests\Production\JobOrderRequest;
 use App\Models\Master\CropYear;
 use App\Models\Production\JobOrder\{
     JobOrderPackingItem,
@@ -191,10 +191,10 @@ class JobOrderController extends Controller
                 'other_specifications',
             ]);
 
-            $jobOrderData['location'] = $request->location;
+            // $jobOrderData['location'] = $request->location;
             $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []);
             $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
-            $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
+            // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
 
             $jobOrder->update($jobOrderData);

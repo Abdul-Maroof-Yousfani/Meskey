@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Job Orders
+    Job Order RM QC
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -12,7 +12,7 @@
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button onclick="openModal(this,'{{ route('job-order-rm-qc.create') }}','Add Job Order',false,'90%')" type="button"
                         class="btn btn-primary position-relative">
-                        Create Job Order
+                        Create Job Order RM QC
                     </button>
                 </div>
             </div>
@@ -62,7 +62,9 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('get.job_orders') }}`)
+           // filterationCommon(`{{ route('get.job_orders') }}`)
+            filterationCommon(`{{ route('get.job_order_rm_qc') }}`)
+
         });
     </script>
 @endsection

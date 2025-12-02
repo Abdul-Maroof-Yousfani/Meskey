@@ -88,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
                     'PurchaseOrderController' => \App\Http\Requests\ArrivalPurchaseOrderRequest::class,
                     'PurchaseFreightController' => \App\Http\Requests\Procurement\PurchaseFreightRequest::class,
                     'TicketContractController' => \App\Http\Requests\Procurement\TicketContractRequest::class,
+                    // 'JobOrderController' => \App\Http\Requests\JobOrderRequest::class,
                 ];
 
                 $routeAction = request()->route()?->getAction();

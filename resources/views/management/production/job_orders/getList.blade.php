@@ -54,22 +54,23 @@
                         </span> -->
                     </td>
                     <td>
-                        <div class="btn-group btn-group-sm" role="group">
+                        <div class="" role="group">
                             <button type="button" 
                                 onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',false,'90%')"
-                                class="btn btn-outline-primary" title="Edit">
+                                class="btn btn-outline-primary  position-relative" title="Edit">
                                 <i class="ft-edit"></i>
                             </button>
                             <button type="button" 
                                 onclick="deletemodal('{{ route('job-orders.destroy', $job_order->id) }}','{{ route('get.job_orders') }}')"
-                                class="btn btn-outline-danger" title="Delete">
+                                class="btn btn-outline-danger position-relative" title="Delete">
                                 <i class="ft-trash"></i>
                             </button>
                             <button type="button" 
-                                onclick="window.open('{{ route('job-orders.show', $job_order->id) }}', '_blank')"
-                                class="btn btn-outline-info" title="View">
+                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',true,'90%')"
+                                class="btn btn-outline-info position-relative" title="View">
                                 <i class="ft-eye"></i>
                             </button>
+                           
                         </div>
                     </td>
                 </tr>

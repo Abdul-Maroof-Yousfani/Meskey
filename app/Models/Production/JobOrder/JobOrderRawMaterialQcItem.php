@@ -2,6 +2,8 @@
 
 namespace App\Models\Production\JobOrder;
 
+use App\Models\Master\ArrivalSubLocation;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,9 +12,9 @@ class JobOrderRawMaterialQcItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'job_order_raw_material_qc_id',
+        'job_order_rm_qc_id',
         'product_id',
-        'arrival_sublocation_id',
+        'arrival_sub_location_id',
         'suggested_quantity'
     ];
 
@@ -28,11 +30,11 @@ class JobOrderRawMaterialQcItem extends Model
 
     public function sublocation()
     {
-        return $this->belongsTo(ArrivalSublocation::class, 'arrival_sublocation_id');
+        return $this->belongsTo(ArrivalSubLocation::class, 'arrival_sublocation_id');
     }
 
     public function parameters()
     {
-        return $this->hasMany(JobOrderRawMaterialQcParameter::class);
+        return $this->hasMany(JobOrderRawMaterialQcParameter::class,'job_order_qc_item_id','id');
     }
 }

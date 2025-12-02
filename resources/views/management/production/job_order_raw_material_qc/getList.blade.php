@@ -1,74 +1,75 @@
 <table class="table table-hover m-0">
     <thead class="thead-light">
         <tr>
-            <th width="15%">Job Order</th>
-            <th width="10%">Date</th>
-            <th width="15%">Location</th>
-            <th width="15%">Product</th>
-            <th width="12%">Quantity</th>
-            <th width="10%">Containers</th>
-            <th width="8%">Status</th>
-            <th width="15%">Actions</th>
+            <th>QC No</th>
+            <th>Date</th>
+            <th>Job Order</th>
+            <th>Location</th>
+            <!-- <th>Mill</th> -->
+            <th>Commodities</th>
+            <th>Total Qty (kgs)</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($job_orders) != 0)
-            @foreach ($job_orders as $job_order)
-
+        @if (count($qcs) != 0)
+            @foreach ($qcs as $qc)
                 <tr>
                     <td>
-                        <div>
-                            <strong class="d-block">{{ $job_order->job_order_no }}</strong>
-                            @if($job_order->ref_no)
-                                <small class="text-muted">Ref: {{ $job_order->ref_no }}</small>
-                            @endif
-                        </div>
+                        <strong class="d-block">{{ $qc->qc_no }}</strong>
+                        <small class="text-muted">Ref: {{ $qc->jobOrder->ref_no ?? 'N/A' }}</small>
                     </td>
-                    <td>{{ \Carbon\Carbon::parse($job_order->job_order_date)->format('d/m/Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($qc->qc_date)->format('M d, Y') }}</td>
                     <td>
-                        <span class="badge badge-light">{{ $job_order->companyLocation->name ?? 'N/A' }}</span>
+                        <span class="badge badge-primary">{{ $qc->jobOrder->job_order_no }}</span>
                     </td>
                     <td>
-                        <span class="text-primary">{{ Str::limit($job_order->product->name ?? 'N/A', 20) }}</span>
+                        {{ $qc->location->name ?? 'N/A' }}
                     </td>
+                    <!-- <td>{{ $qc->mill }}</td> -->
                     <td>
-                        <div>
-                            <strong>{{ number_format($job_order->total_kgs) }} KG</strong>
-                            <small class="d-block text-muted">{{ number_format($job_order->total_metric_tons, 1) }} MT</small>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge badge-secondary">{{ $job_order->total_containers }}</span>
+                        @php
+                            $commodityIds = json_decode($qc->commodities, true) ?? [];
+                            $commodityNames = \App\Models\Product::whereIn('id', $commodityIds)
+                                ->pluck('name')
+                                ->toArray();
+                        @endphp
+                        @foreach(array_slice($commodityNames, 0, 2) as $name)
+                            <span class="badge badge-secondary mr-1">{{ $name }}</span>
+                        @endforeach
+                        @if(count($commodityNames) > 2)
+                            <span class="badge badge-light">+{{ count($commodityNames) - 2 }} more</span>
+                        @endif
                     </td>
                     <td>
                         @php
-                            $status = 'primary';
-                            if($job_order->loading_date && now()->gt($job_order->loading_date)) {
-                                $status = 'success';
-                            } elseif($job_order->delivery_date && now()->gt($job_order->delivery_date)) {
-                                $status = 'warning';
-                            }
+                            $totalQuantity = $qc->items->sum('suggested_quantity');
                         @endphp
-                        <span class="badge badge-{{ $status }}">
-                            {{ $status == 'success' ? 'Completed' : ($status == 'warning' ? 'In Progress' : 'Active') }}
-                        </span>
+                        <strong>{{ number_format($totalQuantity) }}</strong> kgs
+                        <br>
+                        <small class="text-muted">{{ number_format($totalQuantity / 1000, 2) }} MT</small>
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" 
-                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',false,'90%')"
+                                onclick="openModal(this,'{{ route('job-order-rm-qc.edit', $qc->id) }}','Edit Raw Material QC',false,'80%')"
                                 class="btn btn-outline-primary" title="Edit">
                                 <i class="ft-edit"></i>
                             </button>
                             <button type="button" 
-                                onclick="deletemodal('{{ route('job-orders.destroy', $job_order->id) }}','{{ route('get.job_orders') }}')"
+                                onclick="deletemodal('{{ route('job-order-rm-qc.destroy', $qc->id) }}','{{ route('get.job_order_rm_qc') }}')"
                                 class="btn btn-outline-danger" title="Delete">
                                 <i class="ft-trash"></i>
                             </button>
                             <button type="button" 
-                                onclick="window.open('{{ route('job-orders.show', $job_order->id) }}', '_blank')"
-                                class="btn btn-outline-info" title="View">
+                                onclick="viewQcDetails({{ $qc->id }})"
+                                class="btn btn-outline-info" title="View Details">
                                 <i class="ft-eye"></i>
+                            </button>
+                            <button type="button" 
+                                onclick="printQcReport({{ $qc->id }})"
+                                class="btn btn-outline-success" title="Print Report">
+                                <i class="ft-printer"></i>
                             </button>
                         </div>
                     </td>
@@ -78,12 +79,12 @@
             <tr>
                 <td colspan="8" class="text-center py-4">
                     <div class="empty-state">
-                        <i class="ft-briefcase ft-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No Job Orders Found</h5>
-                        <p class="text-muted mb-3">Get started by creating your first job order</p>
-                        <button onclick="openModal(this,'{{ route('job-orders.create') }}','Create Job Order',false,'90%')" 
+                        <i class="ft-clipboard ft-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Raw Material QC Found</h5>
+                        <p class="text-muted mb-3">Get started by creating your first QC record</p>
+                        <button onclick="openModal(this,'{{ route('job-order-rm-qc.create') }}','Create Raw Material QC')" 
                                 class="btn btn-primary">
-                            <i class="ft-plus mr-1"></i> Create Job Order
+                            <i class="ft-plus mr-1"></i> Create QC
                         </button>
                     </div>
                 </td>
@@ -91,13 +92,3 @@
         @endif
     </tbody>
 </table>
-
-@if (count($job_orders) != 0)
-<div class="row mt-3">
-    <div class="col-md-12">
-        <div class="float-right" id="paginationLinks">
-            {{ $job_orders->links() }}
-        </div>
-    </div>
-</div>
-@endif

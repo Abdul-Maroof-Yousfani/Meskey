@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models\Production\JobOrder;
+use App\Models\Master\CropYear;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -48,6 +49,10 @@ class JobOrder extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+    public function cropYear()
+    {
+        return $this->belongsTo(CropYear::class);
     }
     public function attentionUsers()
     {
