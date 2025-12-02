@@ -277,7 +277,7 @@ class JobOrderRawMaterialQcController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => 'Job Order created successfully.',
+                'success' => 'Raw Material QC created successfully.',
                 'data' => []
             ], 201);
 

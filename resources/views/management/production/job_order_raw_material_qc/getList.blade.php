@@ -56,12 +56,12 @@
                                 class="btn btn-outline-primary" title="Edit">
                                 <i class="ft-edit"></i>
                             </button>
-                            <button type="button" 
+                            <!-- <button type="button" 
                                 onclick="deletemodal('{{ route('job-order-rm-qc.destroy', $qc->id) }}','{{ route('get.job_order_rm_qc') }}')"
                                 class="btn btn-outline-danger" title="Delete">
                                 <i class="ft-trash"></i>
-                            </button>
-                            <button type="button" 
+                            </button> -->
+                            <!-- <button type="button" 
                                 onclick="viewQcDetails({{ $qc->id }})"
                                 class="btn btn-outline-info" title="View Details">
                                 <i class="ft-eye"></i>
@@ -70,7 +70,7 @@
                                 onclick="printQcReport({{ $qc->id }})"
                                 class="btn btn-outline-success" title="Print Report">
                                 <i class="ft-printer"></i>
-                            </button>
+                            </button> -->
                         </div>
                     </td>
                 </tr>
