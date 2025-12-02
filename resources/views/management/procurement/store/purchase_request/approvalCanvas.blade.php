@@ -6,11 +6,9 @@
     <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Location:</label>
-                <input type="text" name="company_location_display" disabled class="form-control"
-                    id="company_location_id" readonly value="{{ $purchaseRequest->location->name }}">
-                <input type="hidden" name="company_location_id" class="form-control" readonly
-                    value="{{ $purchaseRequest->location_id }}">
+                <label class="form-label">Locations:</label>
+                <select name="company_location_id[]" id="company_location_id" class="form-control" readonly>
+                </select>
             </div>
         </div>
         <div class="col-md-4">
@@ -185,6 +183,9 @@
 </div>
 
 <script>
+    var selectedLocations = @json($locations_id);
+    var locationNames = @json($location_names);
+
     purchaseRequestRowIndex = {{ count($purchaseRequest->PurchaseData) }};
 
     $(document).ready(function() {
@@ -203,6 +204,21 @@
             @endif
         @endforeach
     });
+
+
+    
+
+    initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, true);
+
+    // WAIT a bit for AJAX load then set values
+    setTimeout(() => {
+        selectedLocations.forEach(function (id, index) {
+            let option = new Option(locationNames[index], id, true, true);
+            $('#company_location_id').append(option);
+        });
+
+        $('#company_location_id').trigger('change');
+    }, 0);
 
     function addRow() {
         let index = purchaseRequestRowIndex++;

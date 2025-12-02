@@ -48,10 +48,13 @@
     <div class="col-md-3">
         <div class="form-group">
             <label>Location:</label>
-            <select name="company_location" id="company_location_id" class="form-control select2" readonly>
+            @php
+                $locations = $purchase_bill?->grn?->purchase_order?->purchase_request?->locations?->pluck("location_id")?->toArray() ?? []; 
+            @endphp
+            <select name="company_location" id="company_location_id" class="form-control select2" multiple readonly>
                 <option value="">Select Location</option>
                 @foreach (get_locations() as $value)
-                    <option value="{{ $value->id }}" @selected($value->id == $purchase_bill->location_id)>{{ $value->name }}</option>
+                    <option value="{{ $value->id }}" @selected(in_array($value->id, $locations))>{{ $value->name }}</option>
                 @endforeach
                 <input type="hidden" name="location_id" id="location_id">
             </select>

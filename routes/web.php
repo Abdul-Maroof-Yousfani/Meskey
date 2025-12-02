@@ -3,6 +3,7 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
 use App\Models\Procurement\Store\PurchaseOrder;
@@ -29,9 +30,28 @@ use App\Http\Controllers\Reports\{
 };
 
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
 
-Route::get("checking-data", function() {
-    dd(QC::all());
+Route::get("add-customer", function() {
+    Customer::create([
+        "name" => "Hashim",
+        "company_id" => 1,
+        "status" => "active"
+    ]);
+});
+
+
+Route::get("add-permission", function() {
+    Permission::create([
+        "parent_id" =>  78,
+        'name' => 'procurement-gate-buying',
+        'guard_name' => 'web'
+    ]);
+    Permission::create([
+        "parent_id" =>  78,
+        'name' => 'procurement-purchase-sampling',
+        'guard_name' => 'web'
+    ]);
 });
 
 Route::get('/delete-migration/{filename}', function ($filename) {

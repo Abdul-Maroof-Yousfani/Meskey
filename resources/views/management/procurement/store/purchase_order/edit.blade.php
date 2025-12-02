@@ -23,14 +23,17 @@
                 </select>
             </div>
         </div>
+        @php  
+            $locations = $purchaseOrder?->purchase_request?->locations?->pluck("location_id")?->toArray() ?? [];
+        @endphp
         <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
+                <select disabled name="company_location" id="company_location_id" class="form-control select2" multiple>
                     <option value="">Select Location</option>
                     @foreach (get_locations() as $loc)
-                        <option {{ optional($purchaseOrder)->location_id == $loc->id ? 'selected' : '' }}
-                            value="{{ $loc->id }}">{{ $loc->name }}</option>
+                        <option
+                            value="{{ $loc->id }}" @selected(in_array($loc->id, $locations))>{{ $loc->name }}</option>
                     @endforeach
                     <input type="hidden" name="location_id" value="{{ optional($purchaseOrder)->location_id }}"
                         id="location_id">

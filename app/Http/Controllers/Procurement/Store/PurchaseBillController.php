@@ -120,6 +120,7 @@ class PurchaseBillController extends Controller
             if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo])) {
                 $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo] = [
                     'order_data' => $row->grn,
+                    "created_by_id" => $row->created_by,
                     'row_data' => $row,
                     'approval_status' => $row->am_approval_status,
                     'row' => $row,
@@ -209,7 +210,7 @@ class PurchaseBillController extends Controller
                         'purchase_request_no' => $originalPurchaseRequestNo,
                         'purchase_order_no' => $originalPurchaseOrderNo,
                         'quotation_no' => $purchaseOrderReceivingNo,
-                        'created_by_id' => $orderGroup['order_data']->created_by ?? null,
+                        'created_by_id' => $orderGroup['created_by_id'] ?? null,
                         'request_status' => $orderGroup['approval_status'] ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
@@ -231,7 +232,7 @@ class PurchaseBillController extends Controller
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $locationCode = $location->code ?? 'LOC';
-        $prefix = 'BILL-'.$locationCode.'-'.$date;
+        $prefix = 'BILL-' . $date;
 
         // Find latest PO for the same prefix
         $latestBill = PurchaseBill::where('bill_no', 'like', "$prefix-%")
@@ -247,7 +248,7 @@ class PurchaseBillController extends Controller
             $newNumber = 1;
         }
 
-        $bill_no = 'BILL-'.$locationCode.'-'.$date.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $bill_no = 'BILL-'.$date.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         if (! $locationId && ! $contractDate) {
             return response()->json([
@@ -264,14 +265,14 @@ class PurchaseBillController extends Controller
         $supplier_id = $request->supplier_id;
 
         $purchase_order_receivings = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function ($query) {
-            $query->where('is_qc_approved', 'approved');
+            $query->where('am_approval_status', 'approved');
         })
             ->select('id', 'purchase_order_receiving_no')
             ->where('supplier_id', $supplier_id)
             ->get()
             ->filter(function ($data) {
                 $purchase_order_receiving_data = PurchaseOrderReceivingData::withCount(['qc' => function ($query) {
-                    $query->where('is_qc_approved', 'approved');
+                    $query->where('am_approval_status', 'approved');
                 }])->where('purchase_order_receiving_id', $data->id)->get();
 
                 $ids = $purchase_order_receiving_data->pluck('id');
@@ -299,11 +300,14 @@ class PurchaseBillController extends Controller
         $requestId = $request->id;
         $supplierId = $request->supplier_id;
 
-        $master = PurchaseOrderReceiving::where('purchase_order_receiving_no', $requestId)->first();
+        $master = PurchaseOrderReceiving::with("purchase_request")->where('purchase_order_receiving_no', $requestId)->first();
+        $locations = $master?->purchase_request?->locations;
+        $location_ids = $locations->pluck("location_id")->toArray();
+        
         $dataItems = collect();
 
         $dataItems = PurchaseOrderReceivingData::whereHas('qc', function ($query) {
-            $query->where('is_qc_approved', 'approved');
+            $query->where('am_approval_status', 'approved');
         })
             ->whereDoesntHave('bill')
             ->with(['purchase_request_data', 'item', 'purchase_order_data'])
@@ -330,6 +334,7 @@ class PurchaseBillController extends Controller
         return response()->json([
             'html' => $html,
             'master' => $master,
+            "location_ids" => $location_ids
         ]);
     }
 

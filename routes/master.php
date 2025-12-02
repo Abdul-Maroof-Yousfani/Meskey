@@ -29,7 +29,8 @@ use App\Http\Controllers\Master\{
     InspectionCompanyController,
     BrandsController,
     SizeController,
-    PaymentTermController
+    PaymentTermController,
+    PayTypeController
 };
 
 
@@ -45,6 +46,9 @@ Route::post("/get-payment-terms", [PaymentTermController::class, "getList"])->na
 
 Route::resource("size", SizeController::class);
 Route::post("/get-sizes", [SizeController::class, "getList"])->name("get.sizes");
+
+Route::resource("pay-type", PayTypeController::class);
+Route::post("/get-pay-type", [PayTypeController::class, "getList"])->name("get.pay-type");
 
 Route::resource('category', CategoryController::class);
 Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');

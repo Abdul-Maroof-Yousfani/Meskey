@@ -25,14 +25,11 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2">
+                <select disabled name="company_location[]" id="company_location_id" class="form-control select2" multiple>
                     <option value="">Select Location</option>
-                    @foreach (get_locations() as $loc)
-                        <option {{ optional($purchaseQuotation)->location_id == $loc->id ? 'selected' : '' }}
-                            value="{{ $loc->id }}">{{ $loc->name }}</option>
+                    @foreach (get_locations() as $value)
+                        <option value="{{ $value->id }}" @selected(in_array($value->id, $locations_id))>{{ $value->name }}</option>
                     @endforeach
-                    <input type="hidden" name="location_id" value="{{ optional($purchaseQuotation)->location_id }}"
-                        id="location_id">
                 </select>
             </div>
         </div>
@@ -421,7 +418,9 @@
                 $('#vendor_id').val(master.supplier_id);
                 $('#purchase_date').val(master.quotation_date);
                 $('#description').val(master.description);
-                $('#company_location_id').val(master.location_id).trigger('change');
+
+                console.log(response.locations_id)
+                $('#company_location_id').val(response.locations_id).trigger('change');
                 $('#vendor_id').val(master.supplier_id).trigger('change');
 
                 // Load table HTML

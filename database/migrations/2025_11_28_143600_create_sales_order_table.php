@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('sales_orders', function (Blueprint $table) {
+            $table->id();
+            $table->date("delivery_date");
+            $table->date("expiry_date");
+            $table->string("reference_no");
+            $table->foreignId("customer_id")->constrained("customers")->cascadeOnDelete();
+            $table->foreignId("inquiry_id")->nullable()->constrained("sales_inquiries")->cascadeOnDelete();
+            $table->enum("sauda_type", ["pohanch", "X-mill"]);
+            $table->foreignId("payment_term_id")->constrained("payment_terms");
+            $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
+            $table->string("status")->default("pending");
+            $table->string("am_approval_status")->default("pending");
+            $table->string("am_change_made")->default(1);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('sales_order');
+    }
+};

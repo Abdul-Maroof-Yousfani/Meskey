@@ -297,7 +297,7 @@ class UserController extends Controller
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
-                $sq->where('email', 'like', $searchTerm);
+                $sq->orWhere('email', 'like', $searchTerm);
             });
         })
             ->latest()

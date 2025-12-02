@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        
-        Schema::rename('bill', 'bills');
+        Schema::create('model_location', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId("location_id")->constrained("company_locations")->cascadeOnDelete();
+            $table->morphs("locationable");
+            $table->timestamps();
+        });
     }
 
     /**
@@ -20,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('bills', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('model_location');
     }
 };

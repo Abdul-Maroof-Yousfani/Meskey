@@ -34,6 +34,10 @@ class PurchaseRequest extends Model
         return $this->belongsTo(CompanyLocation::class, 'location_id');
     }
 
+    public function locations() {
+        return $this->morphMany(Location::class, 'locationable');
+    }
+
     public function PurchaseData()
     {
         return $this->hasMany(PurchaseRequestData::class);

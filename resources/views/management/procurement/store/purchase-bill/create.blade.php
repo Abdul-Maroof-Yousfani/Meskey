@@ -15,6 +15,7 @@
 <form action="{{ route('store.purchase-bill.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-bill') }}" />
+    
     <div class="row form-mar">
         <div class="col-md-3">
             <div class="form-group">
@@ -56,13 +57,13 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
-                <select name="company_location" id="company_location_id" class="form-control select2">
-                    <option value="">Select Location</option>
+                <select disabled name="company_location[]" id="company_location_id" class="form-control select2" multiple>
                     @foreach (get_locations() as $value)
                         <option value="{{ $value->id }}">{{ $value->name }}</option>
                     @endforeach
                     <input type="hidden" name="location_id" id="location_id">
                 </select>
+                <input type="hidden" name="company_location" value="1"/>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 row">
@@ -158,6 +159,7 @@
                 $('#billBody').html('<p>Loading...</p>');
             },
             success: function (response) {
+                $('#company_location_id').val(response.location_ids).trigger('change');
                 $('#billBody').html(response.html);
               
             },
@@ -181,7 +183,8 @@
                 };
             },
             processResults: function (data) {
-                console.log(data);
+                $('#company_location_id').val(data.locations_id).trigger('change');
+              
                 return {
                     results: data,
                 };
