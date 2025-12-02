@@ -480,6 +480,14 @@
                             <span data-i18n="Task Board">Sale Orders</span>
                         </a>
                     </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.sale-order.index') }}"
+                            onclick="loadPageContent('{{ route('sales.sale-order.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Delivery Order</span>
+                        </a>
+                    </li>
                
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
@@ -783,6 +791,15 @@
                         </a>
                     </li>
                     @endcanAccess
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('pay-type.index') }}"
+                            onclick="loadPageContent('{{ route('pay-type.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Pay Types</span>
+                        </a>
+                    </li>
+
                     @canAccess('raw-material-broker')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('broker.index') }}"
