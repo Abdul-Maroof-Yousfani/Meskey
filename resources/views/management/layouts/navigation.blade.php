@@ -405,9 +405,18 @@
                     @canAccess('production-job-order')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('job-orders.index') }}"
-                            onclick="loadPageContent('{{ route('account.index') }}')" data-toggle="dropdown"><i
+                            onclick="loadPageContent('{{ route('job-orders.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Job Order</span>
+                        </a>
+                    </li>
+                    @endcanAccess
+                    @canAccess('production-job-order-rm-qc')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('job-order-rm-qc.index') }}"
+                            onclick="loadPageContent('{{ route('job-order-rm-qc.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Job Order RM QC</span>
                         </a>
                     </li>
                     @endcanAccess

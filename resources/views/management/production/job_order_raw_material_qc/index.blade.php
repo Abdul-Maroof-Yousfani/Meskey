@@ -10,8 +10,8 @@
                     <h2 class="page-title">Job Order RM QC</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('job-order-rm-qc.create') }}','Add Job Order',false,'90%')" type="button"
-                        class="btn btn-primary position-relative">
+                    <button onclick="openModal(this,'{{ route('job-order-rm-qc.create') }}','Add Job Order',false,'90%')"
+                        type="button" class="btn btn-primary position-relative">
                         Create Job Order RM QC
                     </button>
                 </div>
@@ -41,12 +41,14 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">image.</th>
-                                            <th class="col-sm-3">Name & Email</th>
-                                            <th class="col-sm-4">Address</th>
-                                            <th class="col-sm-2">Status</th>
-                                            <th class="col-sm-1">Created</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th>QC No</th>
+                                            <th>Date</th>
+                                            <th>Job Order</th>
+                                            <th>Location</th>
+                                            <!-- <th>Mill</th> -->
+                                            <th>Commodities</th>
+                                            <th>Total Qty (kgs)</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -62,9 +64,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-           // filterationCommon(`{{ route('get.job_orders') }}`)
             filterationCommon(`{{ route('get.job_order_rm_qc') }}`)
-
         });
     </script>
 @endsection

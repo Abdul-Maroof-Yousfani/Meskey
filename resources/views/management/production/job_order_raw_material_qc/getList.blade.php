@@ -92,3 +92,14 @@
         @endif
     </tbody>
 </table>
+
+@if (count($qcs) != 0)
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="float-right" id="paginationLinks">
+            {{ $qcs->links() }}
+        </div>
+    </div>
+</div>
+@endif
+
