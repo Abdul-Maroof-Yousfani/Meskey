@@ -17,7 +17,7 @@
                 <tr>
                     <td>
                         <strong class="d-block">{{ $qc->qc_no }}</strong>
-                        <small class="text-muted">Ref: {{ $qc->jobOrder->ref_no ?? 'N/A' }}</small>
+                        <!-- <small class="text-muted">Ref: {{ $qc->jobOrder->ref_no ?? 'N/A' }}</small> -->
                     </td>
                     <td>{{ \Carbon\Carbon::parse($qc->qc_date)->format('M d, Y') }}</td>
                     <td>
