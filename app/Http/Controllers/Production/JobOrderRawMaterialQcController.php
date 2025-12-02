@@ -14,7 +14,7 @@ use App\Models\Product;
 use App\Models\Master\{
     ProductSlab,
     CompanyLocation,
-    ArrivalSublocation
+    ArrivalSubLocation
 };
 
 use Illuminate\Http\Request;
@@ -172,7 +172,7 @@ class JobOrderRawMaterialQcController extends Controller
         $commodities = $request->get('commodities', []);
 
         $products = Product::whereIn('id', $commodities)->get();
-        $sublocations = ArrivalSublocation::where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::where('status', 1)->get();
 
         // Get QC parameters for each commodity separately
         $commodityParameters = [];
@@ -304,7 +304,7 @@ class JobOrderRawMaterialQcController extends Controller
         $jobOrders = JobOrder::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 1)->get();
         $products = Product::where('status', 1)->get();
-        $sublocations = ArrivalSublocation::where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::where('status', 1)->get();
 
         return view('management.production.job_order_raw_material_qc.edit', compact(
             'qc',
