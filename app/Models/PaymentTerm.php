@@ -15,6 +15,7 @@ class PaymentTerm extends Model
         'company_id',
         'desc',
         'status',
+        'title'
     ];
 
     public function company()
