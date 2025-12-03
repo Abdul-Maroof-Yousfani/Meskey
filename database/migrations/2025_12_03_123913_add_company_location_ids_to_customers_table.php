@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
-            $table->id();
-            $table->string("name");
-            $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
-            $table->enum("status", ["active", "pending", "approved"]);
-            $table->timestamps();
+        Schema::table('customers', function (Blueprint $table) {
+            $table->json('company_location_ids')->nullable()->after('address');
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customers');
+        Schema::table('customers', function (Blueprint $table) {
+            $table->dropColumn('company_location_ids');
+        });
     }
 };
