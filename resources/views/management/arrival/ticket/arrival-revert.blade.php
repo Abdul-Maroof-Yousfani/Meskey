@@ -1439,7 +1439,7 @@
                                                                             class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                                                         <div class="col-md-3 QcResult">
                                                                             <div class="input-group mb-0">
-                                                                                <input type="text" readonly
+                                                                                <input type="text" 
                                                                                     class="form-control {{ $comparisonClass }}"
                                                                                     value="{{ $slab->checklist_value }}">
                                                                                 <div class="input-group-append">
@@ -1738,7 +1738,7 @@
                                                                                             class="form-control {{ $comparisonClass }}"
                                                                                             name="checklist_value[]"
                                                                                             value="{{ $displayValue }}" placeholder="%"
-                                                                                            readonly>
+                                                                                            >
                                                                                         <div class="input-group-append">
                                                                                             <span
                                                                                                 class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
