@@ -1,6 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
+            <th class="col-sm-4">Title</th>
             <th class="col-sm-4">Payment Term</th>
             <th class="col-sm-4">Status</th>
             <th class="col-sm-2">Action</th>
@@ -10,6 +11,11 @@
         @if (count($payment_terms) != 0)
             @foreach ($payment_terms as $key => $row)
                 <tr>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->title ? $row->title : "N/A" }} <br>
+                        </p>
+                    </td>
                     <td>
                         <p class="m-0">
                             {{ $row->desc }} <br>
