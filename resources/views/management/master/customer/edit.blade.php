@@ -29,8 +29,8 @@
                  <label><span class="text-danger required-asterisk">*</span>Customer Type</label>
                  <select class="form-control" name="type">
                      <option value="">Select Customer Type</option>
-                     <option {{ $customer->type == 'abc' ? 'selected' : '' }} value="abc" selected>Abc</option>
-                     <option {{ $customer->type == 'xyz' ? 'selected' : '' }} value="xyz">Xyz</option>
+                     <option {{ $customer->type == 'local' ? 'selected' : '' }} value="local" selected>Local</option>
+                     <option {{ $customer->type == 'international' ? 'selected' : '' }} value="international">International</option>
                  </select>
              </div>
          </div>

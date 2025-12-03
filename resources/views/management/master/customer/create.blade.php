@@ -26,8 +26,8 @@
                 <label><span class="text-danger required-asterisk">*</span>Customer Type</label>
                 <select class="form-control" name="type">
                     <option value="">Select Customer Type</option>
-                    <option value="abc" selected>Abc</option>
-                    <option value="xyz">Xyz</option>
+                    <option value="local" selected>Local</option>
+                    <option value="international">International</option>
                 </select>
             </div>
         </div>
