@@ -801,6 +801,16 @@
                     </li>
                     @endcanAccess
 
+                    @canAccess('raw-material-customer')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('customer.index') }}"
+                            onclick="loadPageContent('{{ route('customer.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Customers</span>
+                        </a>
+                    </li>
+                    @endcanAccess
+
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('pay-type.index') }}"
                             onclick="loadPageContent('{{ route('pay-type.index') }}')" data-toggle="dropdown"><i
