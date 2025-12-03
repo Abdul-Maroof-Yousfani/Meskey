@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th class="col-sm-4">Payment Term</th>
+            <th class="col-sm-4">Status</th>
             <th class="col-sm-2">Action</th>
         </tr>
     </thead>
@@ -13,6 +14,13 @@
                         <p class="m-0">
                             {{ $row->desc }} <br>
                         </p>
+                    </td>
+                     <td>
+                        @if($row->status == 'active')
+                            <span class="badge badge-success">Active</span>
+                        @else
+                            <span class="badge badge-danger">Inactive</span>
+                        @endif
                     </td>
 
                     <td>

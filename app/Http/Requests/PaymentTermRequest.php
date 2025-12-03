@@ -22,7 +22,9 @@ class PaymentTermRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "desc" => ["required"]
+            "title" => ["required"],
+            "desc" => ["required"],
+            "status" => ["required"],
         ];
     }
 

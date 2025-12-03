@@ -3,11 +3,29 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.payment-terms') }}" />
 
     <div class="row form-mar">
+       
         
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
-                <label>Payment Term:</label>
-                <input type="text" name="desc" placeholder="Payment Term" class="form-control" autocomplete="off" />
+                <label>Title:</label>
+                <input type="text" name="title" placeholder="Title" class="form-control" autocomplete="off" />
+            </div>
+        </div>
+        
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Description:</label>
+                <textarea name="desc" placeholder="Payment Term Descsription" class="form-control" autocomplete="off"></textarea>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Status</label>
+                <select name="status" class="select2 form-control">
+                    <option value="active">Active</option>
+                    <option value="inactive">In-active</option>
+                </select>
             </div>
         </div>
 

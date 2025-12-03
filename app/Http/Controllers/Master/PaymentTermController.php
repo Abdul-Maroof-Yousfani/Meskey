@@ -46,7 +46,7 @@ class PaymentTermController extends Controller
     {
         
         $data = $request->validated();
-        $color = PaymentTerm::create($request->all());
+        $color = PaymentTerm::create([...$data, "company_id" => $request->company_id]);
 
         return response()->json(['success' => 'Payment Term created successfully.', 'data' => $color], 201);
     }
@@ -81,7 +81,7 @@ class PaymentTermController extends Controller
         $data = $request->validated();
         $paymentTerm->update($data);
 
-        return response()->json(['success' => 'Category updated successfully.', 'data' => $paymentTerm], 200);
+        return response()->json(['success' => 'Payment Term updated successfully.', 'data' => $paymentTerm], 200);
     }
 
     /**
