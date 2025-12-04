@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payment_terms', function (Blueprint $table) {
+        Schema::create('delivery_order_transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('desc');
-            $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->unsignedBigInteger('company_id');
-            $table->softDeletes(); 
+            $table->float("so_amount");
+            $table->float("percentage")->nullable();
+            $table->float("advance_amount");
+            $table->foreignId("sale_order_id")->constrained("sales_orders")->cascadeOnDelete();
             $table->timestamps();
-
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });
     }
 
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payment_terms');
+        Schema::dropIfExists('delivery_order_transactions');
     }
 };

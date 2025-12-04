@@ -13,8 +13,8 @@ use App\Models\Procurement\Store\PurchaseQuotation;
 use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
-use App\Models\Procurement\Store\QC;
-use App\Models\Procurement\Store\QCBags;
+use App\Models\Procurement\Store\PurchaseBagQC;
+use App\Models\Procurement\Store\QCItems;
 use App\Models\Production\JobOrder\JobOrder;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 Route::get("checking-data", function() {
-    dd(QC::all());
+    dd(PurchaseBagQC::all());
 });
 
 
@@ -94,8 +94,8 @@ Route::get("/restore-db", function() {
     $purchase_order = PurchaseOrder::query()->delete();
     $purchase_order_data = PurchaseOrderData::query()->delete();
     $purchase_receive_data = PurchaseOrderReceivingData::query()->delete();
-    $qc = QC::query()->delete();
-    $qc_bags = QCBags::query()->delete();
+    $qc = PurchaseBagQC::query()->delete();
+    $qc_bags = QCItems::query()->delete();
     $purchase_bill_data = PurchaseBillData::query()->delete();
 
     DB::statement('SET FOREIGN_KEY_CHECKS=1;');

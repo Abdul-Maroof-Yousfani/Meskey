@@ -6,14 +6,14 @@ use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class QC extends Model
+class PurchaseBagQC extends Model
 {
     use HasFactory, HasApproval;
-    protected $table = "qc";
+    protected $table = "purchase_bag_qc";
     protected $guarded = ["id", "created", "updated_at"];
 
     public function bags() {
-        return $this->hasMany(QCBags::class, "qc_id");
+        return $this->hasMany(QCItems::class, "qc_id");
     }
 
     public function scopeFilter($query)

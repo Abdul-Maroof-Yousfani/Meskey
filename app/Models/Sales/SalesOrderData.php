@@ -12,10 +12,20 @@ class SalesOrderData extends Model
         "item_id",
         "qty",
         "rate",
-        "sale_order_id"
+        "sale_order_id",
+        "pack_size",
+        "brand_id",
+        "sales_inquiry_id",
+        "bag_type",
+        "bag_size",
+        "no_of_bags"
     ];
 
     public function sales_order() {
         return $this->belongsTo(SalesOrder::class, "sale_order_id");
+    }
+
+    public function sale_inquiry_data() {
+        return $this->belongsTo(SalesInquiryData::class, "sales_inquiry_id");
     }
 }

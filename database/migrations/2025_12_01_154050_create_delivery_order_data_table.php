@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales_order_data', function (Blueprint $table) {
+        Schema::create('delivery_order_data', function (Blueprint $table) {
             $table->id();
             $table->foreignId("item_id")->constrained("products")->cascadeOnDelete();
             $table->float("qty");
             $table->float("rate");
             $table->foreignId("brand_id")->constrained("brands")->cascadeOnDelete();
-            $table->string("pack_size");
-            $table->foreignId("bag_type")->constrained("bag_types")->cascadeOnDelete();
-            $table->string("bag_size");
+            $table->string("pack_size")->nullable();
+            $table->foreignId("delivery_order_id")->constrained("delivery_order")->cascadeOnDelete();
             $table->string("no_of_bags");
-            $table->foreignId("sale_order_id")->constrained("sales_orders")->cascadeOnDelete();
+            $table->string("bag_size");
+            $table->foreignId("bag_type")->constrained("bag_types")->cascadeOnDelete();
+            $table->foreignId("so_data_id")->constrained("sales_order_data")->cascadeOnDelete();
+            $table->string("desc");
             $table->timestamps();
         });
     }
@@ -31,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sale_order_data');
+        Schema::dropIfExists('delivery_order_data');
     }
 };

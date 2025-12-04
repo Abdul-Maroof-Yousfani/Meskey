@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('inquiry_no')->unique();
             $table->date("date");
             $table->string("customer");
+            $table->string("required_date");
+            $table->string("reference_number");
             $table->enum("contract_type", ["thadda", "pohanch"])->default("thadda");
             $table->enum("status", ["pending", "approved", "rejected"])->default("pending");
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();

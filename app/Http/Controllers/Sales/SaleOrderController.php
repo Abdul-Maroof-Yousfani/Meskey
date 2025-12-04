@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesOrderRequest;
+use App\Models\BagType;
 use App\Models\Master\Customer;
+use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
 use App\Models\Product;
 use App\Models\Sales\SalesInquiry;
@@ -24,23 +26,26 @@ class SaleOrderController extends Controller
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
-        
+        $pay_types = PayType::select("id", "name")->where("status", "active")->get();
+        $bag_types = BagType::select("id", "name")->where("status", 1)->get();
 
-        return view("management.sales.orders.create", compact("payment_terms", "customers", "inquiries", "items"));
+        return view("management.sales.orders.create", compact("payment_terms", "customers", "inquiries", "items", "pay_types", "bag_types"));
     }
 
     public function edit(int $id) {
-        $sale_order = SalesOrder::with("locations", "sales_order_data")->find($id);
+        $sale_order = SalesOrder::with("locations", "sales_order_data", "pay_type", "sales_order_data.sale_inquiry_data")->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
-
-        return view("management.sales.orders.edit", compact("payment_terms", "customers", "inquiries", "items", "sale_order"));
+        $pay_types = PayType::select("id", "name")->where("status", "active")->get();
+        $bag_types = BagType::select("id", "name")->where("status", 1)->get();
+    
+        return view("management.sales.orders.edit", compact("payment_terms", "customers", "inquiries", "items", "sale_order", "pay_types", 'bag_types'));
     }
 
     public function view(Request $request, int $id) {
-        $sale_order = SalesOrder::with("sales_order_data", "locations")->find($id);
+        $sale_order = SalesOrder::with("sales_order_data", "locations", "sales_order_data.sale_inquiry_data")->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
@@ -50,9 +55,7 @@ class SaleOrderController extends Controller
     }
 
     public function store(SalesOrderRequest $request) {
-
         $locations = $request->locations;
-
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($request->validated());
@@ -62,12 +65,17 @@ class SaleOrderController extends Controller
                     'location_id' => $location
                 ]);
             }
-
             foreach($request->item_id as $index => $item) {
                 $sales_order->sales_order_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],  
+                    "pack_size" => $request->pack_size[$index],
+                    "brand_id" => $request->brand_id[$index],
+                    "sales_inquiry_id" => $request->sales_inquiry_id[$index],
+                    "bag_type" => $request->bag_type[$index],
+                    "bag_size" => $request->bag_size[$index],
+                    "no_of_bags" => $request->no_of_bags[$index],
                 ]);
             }
             DB::commit();
@@ -81,19 +89,23 @@ class SaleOrderController extends Controller
 
     public function update(SalesOrderRequest $request, int $id) {
 
-        $locations = $request->locations;
+        // $locations = $request->locations;
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
-        
 
             $sales_order->sales_order_data()->delete();
-    
             foreach($request->item_id as $index => $item) {
                 $sales_order->sales_order_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],  
+                    'pack_size' => $request->pack_size[$index],
+                    'brand_id' => $request->brand_id[$index],
+                    'sales_inquiry_id' => $request->sales_inquiry_id[$index],
+                    "bag_type" => $request->bag_type_id[$index],
+                    "bag_size" => $request->bag_size[$index],
+                    "no_of_bags" => $request->no_of_bags[$index]
                 ]);
             }
             DB::commit();

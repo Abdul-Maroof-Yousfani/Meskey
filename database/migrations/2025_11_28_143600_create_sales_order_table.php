@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId("inquiry_id")->nullable()->constrained("sales_inquiries")->cascadeOnDelete();
             $table->enum("sauda_type", ["pohanch", "X-mill"]);
             $table->foreignId("payment_term_id")->constrained("payment_terms");
+            $table->foreignId("pay_type_id")->constrained("pay_types")->cascadeOnDelete();
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
             $table->string("status")->default("pending");
             $table->timestamps();

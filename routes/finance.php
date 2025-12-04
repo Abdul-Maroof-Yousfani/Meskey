@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Finance\PaymentVoucherController;
 use App\Http\Controllers\Finance\JournalVoucherController;
+use App\Http\Controllers\Finance\ReceiptVoucherController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('payment-voucher')->group(function () {
@@ -13,6 +14,9 @@ Route::prefix('payment-voucher')->group(function () {
 
 Route::resource('payment-voucher', PaymentVoucherController::class);
 Route::post('get-payment-voucher', [PaymentVoucherController::class, 'getList'])->name('get.payment-vouchers');
+
+Route::resource('receipt-voucher', ReceiptVoucherController::class);
+Route::post('get-receipt-voucher', [ReceiptVoucherController::class, 'getList'])->name('get.receipt-vouchers');
 
 Route::prefix('journal-voucher')->group(function () {
     Route::post('generate-jv-number', [JournalVoucherController::class, 'generateJvNumber'])->name('journal-voucher.generate-jv-number');

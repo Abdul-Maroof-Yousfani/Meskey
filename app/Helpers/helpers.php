@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{Category, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Sales\SalesInquiry, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Sales\DeliveryOrderData, Sales\SalesInquiry, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -125,6 +125,12 @@ if (!function_exists("isBag")) {
         $product = Product::select("is_bag")->find($item_id);
         return $product->is_bag;
     }
+}
+
+function bag_type_name($bag_type_id) {
+    $bag_type = BagType::select("id", "name")->where("id", $bag_type_id)->first();
+
+    return $bag_type->name;
 }
 
 if(!function_exists("totalBillQuantityCreated")) {
@@ -520,8 +526,44 @@ function get_locations()
     return $CompanyLocation;
 }
 
+function get_arrivals_by($location_id) {
+    $arrivals = ArrivalLocation::where("company_location_id", $location_id)->get();
+    return $arrivals;
+}
+
+
+function get_arrival($arrival_id) {
+    $arrival = ArrivalLocation::find($arrival_id);
+    return $arrival;
+}
+
+function get_sub_arrivals_by($arrival_id) {
+    $sub_arrival = ArrivalSubLocation::where("arrival_location_id", $arrival_id)->get();
+    return $sub_arrival;
+}
+
 function get_location_name_by_id($company_location_id) {
     return CompanyLocation::where("id", $company_location_id)->value("name");
+}
+
+
+function get_arrival_name_by_id($arrival_id) {
+    return ArrivalLocation::where("id", $arrival_id)->value("name");
+}
+
+
+function get_storage_name_by_id($storage_id) {
+    return ArrivalSubLocation::where("id", $storage_id)->value("name");
+}
+
+function delivery_order_balance($sale_order_data_id) {
+    $data = DeliveryOrderData::where("so_data_id", $sale_order_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    $able_to_spend = SalesOrderData::find($sale_order_data_id)->value("no_of_bags");
+    $balance = (int)$able_to_spend - (int)$spent;
+
+    return $balance;
 }
 
 function get_supplier()
@@ -1072,5 +1114,12 @@ if (!function_exists('getUserMissingInfoAlert')) {
     Please contact your administrator to assign the following:
     <strong>{$missingText}</strong>.
 </div>";
+    }
+}
+
+if(!function_exists("getArrivalLocationsOfCompany")) {
+    function getArrivalLocationsOfCompany($company_id) {
+        $arrival_locations = ArrivalLocation::where("company_location_id", $company_id)->get();
+        return $arrival_locations;
     }
 }

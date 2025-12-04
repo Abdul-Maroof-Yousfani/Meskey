@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('qc_bags', function (Blueprint $table) {
+        Schema::create('qc_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId("qc_id")->constrained("qc")->cascadeOnDelete();
             $table->string("net_weight")->nullable();

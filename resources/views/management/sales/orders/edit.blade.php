@@ -5,75 +5,99 @@
     }
 </style>
 
-<form action="{{ route('sales.sale-order.update', [ 'sale_order' => $sale_order->id ]) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('sales.sale-order.update', ['sale_order' => $sale_order->id]) }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
-    {{ method_field("PUT") }}
+    {{ method_field('PUT') }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
     <div class="row form-mar">
-        
+
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" onchange="getNumber()" value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
+                <input type="date" name="delivery_date" onchange="getNumber()"
+                    value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Expiry Date:</label>
-                <input type="date" name="expiry_date" id="expiry_date" value="{{ $sale_order->expiry_date }}" class="form-control" readonly>
+                <input type="date" name="expiry_date" id="expiry_date" value="{{ $sale_order->expiry_date }}"
+                    class="form-control" readonly>
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">So No:</label>
-                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
+                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}"
+                    class="form-control" readonly>
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Customer:</label>
-                <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
+                <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control"
+                    readonly>
                 <input type="hidden" name="customer_id" id="customer_id" value="{{ $sale_order->customer_id }}" />
-       
+
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Inquiries:</label>
-                <input type="text" value="{{ $sale_order->inquiry_id ? get_inquiry_reference_number($sale_order->inquiry_id) : ''}}" class="form-control" readonly>
+                <input type="text"
+                    value="{{ $sale_order->inquiry_id ? get_inquiry_reference_number($sale_order->inquiry_id) : '' }}"
+                    class="form-control" readonly>
                 <input type="hidden" name="inquiry_id" id="inquiry_id" value="{{ $sale_order->inquiry_id }}" />
 
-            
+
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Sauda Type:</label>
-                <input type="text" name="sauda_type" value="{{ $sale_order->sauda_type }}" class="form-control" readonly>
+                <input type="text" name="sauda_type" value="{{ $sale_order->sauda_type }}" class="form-control"
+                    readonly>
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Contract Terms:</label>
-                <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc  }}" class="form-control" readonly>
-                <input type="hidden" name="payment_term_id" id="payment_term_id" value="{{ $sale_order->payment_term_id  }}" class="form-control" readonly>
-            
+                <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc }}"
+                    class="form-control" readonly>
+                <input type="hidden" name="payment_term_id" id="payment_term_id"
+                    value="{{ $sale_order->payment_term_id }}" class="form-control" readonly>
+
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
+                <select name="locations[]" id="locations" class="form-control select2" multiple>
                     <option value="">Select Locations</option>
-                    @foreach(get_locations() as $location)
-                        <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
+                    @foreach (get_locations() as $location)
+                        <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck('location_id')->toArray()))>{{ $location->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Pay Types:</label>
+                <select name="pay_type_id" id="pay_type_id" class="form-control select2">
+                    <option value="">Select Pay Type</option>
+                    @foreach ($pay_types as $pay_type)
+                        <option value="{{ $pay_type->id }}" @selected($sale_order->pay_type_id == $pay_type->id)>{{ $pay_type->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -83,8 +107,8 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn" disabled>
+            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
+                disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div>
@@ -95,33 +119,87 @@
                     <thead>
                         <tr>
                             <th>Item</th>
+                            <th>Bag Type</th>
+                            <th>Bag Size</th>
+                            <th>No of Bags</th>
                             <th>Quantity</th>
                             <th>Rate</th>
                             <th>Amount</th>
+                            <th>Brand</th>
+                            <th style="display: none;">Pack Size</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="salesInquiryBody">
-                        @foreach($sale_order->sales_order_data as $index => $data)
+                        @foreach ($sale_order->sales_order_data as $index => $data)
                             <tr id="row_{{ $index }}">
                                 <td>
-                                    <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2">
+                                    <select name="item_id[]" id="item_id_{{ $index }}"
+                                        class="form-control select2">
                                         <option value="">Select Item</option>
                                         @foreach ($items ?? [] as $item)
-                                            <option value="{{ $item->id }}" @selected($data->item_id == $item->id)>{{ $item->name }}</option>
+                                            <option value="{{ $item->id }}" @selected($data->item_id == $item->id)>
+                                                {{ $item->name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
-                                        min="0">
+                                    <select name="bag_type_id[]" id="bag_type_id_{{ $index }}"
+                                        class="form-control select2">
+                                        <option value="">Select Bag Type</option>
+                                        @foreach ($bag_types ?? [] as $bag_type)
+                                            <option value="{{ $bag_type->id }}" @selected($bag_type->id == $data->bag_type)>
+                                                {{ $bag_type->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </td>
                                 <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
-                                        min="0">
+                                    <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
+                                        value="{{ $data->bag_size }}" onkeyup="calcBagTypes(this)" class="form-control bag_size"
+                                        step="0.01" min="0">
+                                    <input type="hidden" name="sales_inquiry_id[]"
+                                        id="sales_inquiry_id_{{ $index }}" value="{{ $data->id }}"
+                                        class="form-control qty" step="0.01" min="0"
+                                        readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * $data->qty }}" class="form-control amount" readonly>
+                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
+                                        value="{{ $data->no_of_bags }}" onkeyup="calcBagTypes(this)" class="form-control no_of_bags"
+                                        step="0.01" min="0">
+                                    <input type="hidden" name="sales_inquiry_id[]"
+                                        id="sales_inquiry_id_{{ $index }}" value="{{ $data->id }}"
+                                        class="form-control qty" step="0.01" min="0"
+                                        readonly>
+                                </td>
+                                <td>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->no_of_bags * $data->bag_size }}" class="form-control qty"
+                                        step="0.01" min="0">
+                                </td>
+                                <td>
+                                    <input type="number" name="rate[]" id="rate_{{ $index }}"
+                                        value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
+                                        step="0.01" min="0">
+                                </td>
+
+                                <td>
+                                    <input type="number" name="amount[]" id="amount_{{ $index }}"
+                                        value="{{ $data->rate * ($data->bag_size * $data->no_of_bags) }}" onkeyup="calc(this)"
+                                        class="form-control amount" step="0.01" min="0">
+                                </td>
+                                <td>
+                                    <select name="brand_id[]" id="brand_id_{{ $index }}"
+                                        class="form-control select2">
+                                        <option value="">Select Brands</option>
+                                        @foreach (getAllBrands() ?? [] as $brand)
+                                            <option value="{{ $brand->id }}" @selected($data->brand_id == $brand->id)>
+                                                {{ $brand->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td style="display: none;">
+                                    <input type="text" value="0" name="pack_size[]" id="pack_size_{{ $index }}"
+                                        value="{{ $data->pack_size }}" class="form-control pack-size">
                                 </td>
                                 <td>
                                     <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
@@ -149,7 +227,7 @@
 </form>
 
 <script>
-    let salesInquiryRowIndex = 1;
+    salesInquiryRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();
@@ -196,17 +274,31 @@
         }
     }
 
-function calc(el) {
-    const element = $(el).closest("tr");
+    function calc(el) {
+        const element = $(el).closest("tr");
 
-    const rate = parseFloat($(element).find(".rate").val()) || 0;
-    const qty = parseFloat($(element).find(".qty").val()) || 0;
+        const rate = parseFloat($(element).find(".rate").val()) || 0;
+        const qty = parseFloat($(element).find(".qty").val()) || 0;
+        console.log(qty);
 
-    const amount = $(element).find(".amount");
+        const amount = $(element).find(".amount");
 
-    amount.val(rate * qty);
-}
+        amount.val(rate * qty);
+    }
 
+    function calcBagTypes(el) {
+        const element = $(el).closest("tr");
+        const bag_size = $(element).find(".bag_size");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty = $(element).find(".qty");
+        
+        if (!(bag_size.val() && no_of_bags.val())) return;
+        
+        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
+        
+        qty.val(result);
+        calc(el);
+    }
 
     function getNumber() {
         $.ajax({

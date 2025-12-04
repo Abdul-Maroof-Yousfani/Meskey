@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesInquiryRequest;
+use App\Models\BagType;
 use App\Models\Master\Customer;
 use App\Models\Product;
 use App\Models\Sales\SalesInquiry;
@@ -20,8 +21,9 @@ class SalesInquiryController extends Controller
     public function create() {
         $customers = Customer::all();
         $items = Product::all();
+        $bag_types = BagType::select("id", "name")->where("status", 1)->get();
 
-        return view("management.sales.inquiry.create", compact("customers", "items"));
+        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types"));
     }
 
     public function getList(Request $request)
@@ -117,16 +119,21 @@ class SalesInquiryController extends Controller
                 "contact_person" => $request->contact_person,
                 "remarks" => $request->remarks,
                 "created_by" => auth()->user()->id,
-                "company_id" => $request->company_id
+                "company_id" => $request->company_id,
+                "required_date" => $request->required_date,
+                "reference_number" => $request->reference_number
             ]);
-            
-
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "description" => $request->desc[$index],
+                    "bag_size" => $request->bag_size[$index],
+                    "no_of_bags" => $request->no_of_bags[$index],
+                    "bag_type" => $request->bag_type[$index],
+                    "brand_id" => $request->brand_id[$index],
+                    "pack_size" => $request->pack_size[$index]
                 ]);
             }
 
@@ -159,6 +166,8 @@ class SalesInquiryController extends Controller
             "status" => "pending",
             "contact_person" => $request->contact_person,
             "remarks" => $request->remarks,
+            "reference_number" => $request->reference_number,
+            "required_date" => $request->required_date,
             "created_by" => auth()->user()->id
         ]);
 
@@ -172,6 +181,11 @@ class SalesInquiryController extends Controller
                 "qty" => $request->qty[$index],
                 "rate" => $request->rate[$index],
                 "description" => $request->desc[$index],
+                "bag_type" => $request->bag_type[$index],
+                "bag_size" => $request->bag_size[$index],
+                "no_of_bags" => $request->no_of_bags[$index],
+                "brand_id" => $request->brand_id[$index],
+                "pack_size" => $request->pack_size[$index]
             ]);
         }
 
@@ -191,16 +205,19 @@ class SalesInquiryController extends Controller
         $sales_inquiry->load("sales_inquiry_data");
         $customers = Customer::all();
         $items = Product::all();
+        $bag_types = BagType::select("id", "name")->where("status", 1)->get();
 
-        return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items"));
+
+        return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items", "bag_types"));
     }
 
     public function edit(SalesInquiry $sales_inquiry) {
         $sales_inquiry->load("sales_inquiry_data", "locations");
         $customers = Customer::all();
         $items = Product::all();
+        $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 
 
-        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry"));
+        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types"));
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {

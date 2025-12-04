@@ -26,6 +26,10 @@ class SalesInquiryRequest extends FormRequest
             "locations" => "required|array",
             "inquiry_date" => "required|date",
             "customer" => "required",
+            "reference_number" => "required",
+
+            "required_date" => "required|date",
+
             "contract_type" => "required|in:thadda,pohanch",
             "contact_person" => "required",
             "remarks" => "required",
@@ -42,6 +46,23 @@ class SalesInquiryRequest extends FormRequest
 
             "desc" => "nullable|array",
             "desc.*" => "required",
+
+            "bag_size" => "nullable|array",
+            "bag_size.*" => "required",
+
+            "no_of_bags" => "nullable|array",
+            "no_of_bags.*" => "required",
+
+            "bag_type" => "nullable|array",
+            "bag_type.*" => "required",
+
+            "brand_id" => "nullable|array",
+            "brand_id.*" => "required",
+
+            "pack_size" => "nullable|array",
+            "pack_size.*" => "required",
+
+
         ];
     }
 
