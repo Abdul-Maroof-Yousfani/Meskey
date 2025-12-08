@@ -122,7 +122,8 @@ class SalesInquiryController extends Controller
                 "company_id" => $request->company_id,
                 "required_date" => $request->required_date,
                 "reference_number" => $request->reference_number,
-                "am_approval_status" => "pending"
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
             ]);
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
