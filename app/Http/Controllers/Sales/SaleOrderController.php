@@ -77,7 +77,7 @@ class SaleOrderController extends Controller
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index],
                     'brand_id' => $request->brand_id[$index],
-                    'sales_inquiry_id' => $request->sales_inquiry_id[$index],
+                    // 'sales_inquiry_id' => $request->sales_inquiry_id[$index],
                     'bag_type' => $request->bag_type[$index],
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
