@@ -31,7 +31,7 @@
                                     </td>
 
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
-                                        <strong>{{ get_customer_name($group['customer']) }}</strong>
+                                        <strong>{{  $group['customer'] ? get_customer_name($group['customer']) : 'N/A' }}</strong>
                                         <br>
                                         <small class="text-muted">
                                             {{ $group['contact_person'] }}<br>
