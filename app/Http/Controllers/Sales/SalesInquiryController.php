@@ -121,7 +121,8 @@ class SalesInquiryController extends Controller
                 "created_by" => auth()->user()->id,
                 "company_id" => $request->company_id,
                 "required_date" => $request->required_date,
-                "reference_number" => $request->reference_number
+                "reference_number" => $request->reference_number,
+                "am_approval_status" => "pending"
             ]);
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
