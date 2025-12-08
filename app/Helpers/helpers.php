@@ -130,7 +130,7 @@ if (!function_exists("isBag")) {
 function bag_type_name($bag_type_id) {
     $bag_type = BagType::select("id", "name")->where("id", $bag_type_id)->first();
 
-    return $bag_type->name;
+    return $bag_type?->name ?? '';
 }
 
 if(!function_exists("totalBillQuantityCreated")) {
