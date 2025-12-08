@@ -3,18 +3,19 @@
             <table class="table table-hover m-0">
                 <thead class="bg-light">
                     <tr>
-                        <th width="12%">Inquiry No</th>
+                        <th width="12%">Do No</th>
                         <th width="18%">Customer</th>
                         <th width="25%">Item Description</th>
                         <th width="10%" class="text-right">Qty</th>
                         <th width="10%" class="text-right">Rate</th>
+                        <th width="10%" class="text-right">Amount</th>
                         <th width="10%">Date</th>
                         <th width="8%">Status</th>
                         <th width="7%">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($groupedInquiries as $group)
+                    @forelse($groupedDeliveryChallans as $group)
                         @php $isFirstRow = true; @endphp
                         @foreach($group['items'] as $itemRow)
                             <tr>
@@ -22,7 +23,7 @@
                                 @if($isFirstRow)
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold" style="background-color: #e3f2fd;">
                                         <div class="p-2">
-                                            #{{ $group['inquiry_no'] }}
+                                            #{{ $group['so_no'] }}
                                             <br>
                                             <small class="text-muted">
                                                 {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
@@ -31,18 +32,14 @@
                                     </td>
 
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
-                                        <strong>{{ get_customer_name($group['customer']) }}</strong>
-                                        <br>
-                                        <small class="text-muted">
-                                            {{ $group['contact_person'] }}<br>
-                                            <em>{{ ucfirst($group['contract_type']) }}</em>
-                                        </small>
+                                        <strong>{{ get_customer_name($group["customer_id"]) }}</strong>
+                                        
                                     </td>
                                 @endif
 
                                 {{-- Item Details --}}
                                 <td class="align-middle" style="background-color: #f8fff8;">
-                                    <strong>{{ $itemRow['item']->name ?? 'N/A' }}</strong>
+                                    <strong>{{ getItem($itemRow["item_data"]->item_id)?->name ?? 'N/A' }}</strong>
                                     @if($itemRow['item_data']->description)
                                         <br><small class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
                                     @endif
@@ -57,10 +54,14 @@
                                     {{ number_format($itemRow['item_data']->rate, 2) }}
                                 </td>
 
+                                <td class="text-right align-middle">
+                                    {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 2) }}
+                                </td>
+
                                 {{-- Date & Status - Show only on first row --}}
                                 @if($isFirstRow)
                                     <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
-                                        {{ \Carbon\Carbon::parse($group['date'])->format('d M Y') }}
+                                        {{ \Carbon\Carbon::parse($group['delivery_date'])->format('d M Y') }}
                                         <br>
                                         <small class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
                                     </td>
@@ -84,18 +85,18 @@
                                         <div class="btn-group" role="group">
 
                                             <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')" title="View" style="margin-right: 10px;">
+                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
                                             @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
                                                 <button 
-                                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
+                                                    onclick="openModal(this,'{{ route('sales.delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Delivery Challan', false, '100%')"
                                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                     <i class="ft-edit"></i>
                                                 </button>
 
                                                 
-                                            <button onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')" type="button"
+                                            <button onclick="deletemodal('{{ route('sales.delivery-challan.destroy', ['delivery_challan' => $group['id']]) }}', '{{ route('sales.get.delivery-challan.list') }}')" type="button"
                                                     onclick="confirmDelete(this.closest('form'))"
                                                     class="btn btn-sm btn-danger" title="Delete">
                                                 <i class="ft-trash-2"></i>
@@ -120,7 +121,7 @@
                                             </g>
                                         </g>
                                     </svg>
-                                    <p class="text-muted mt-3">No sales inquiries found</p>
+                                    <p class="text-muted mt-3">No Sale Order found</p>
                                 </div>
                             </td>
                         </tr>

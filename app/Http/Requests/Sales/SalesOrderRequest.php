@@ -30,6 +30,7 @@ class SalesOrderRequest extends FormRequest
             "sauda_type" => "required|in:pohanch,x-mill",
             "payment_term_id" => "required|numeric",
             "company_id" => "required",
+            'pay_type_id' => 'required',
 
             "item_id" => "required",
             "item_id.*" => "required",
@@ -39,6 +40,15 @@ class SalesOrderRequest extends FormRequest
 
             "rate" => "required",
             "rate.*" => "required",
+
+            "brand_id" => "required",
+            "brand_id.*" => "required",
+
+            "pack_size" => "required",
+            "pack_size.*" => "required",
+
+            "sales_inquiry_id" => "required",
+            "sales_inquiry_id.*" => "required"
         ];
     }
 
@@ -46,7 +56,8 @@ class SalesOrderRequest extends FormRequest
         return [
             "item_id.required" => "Each item is required",
             "qty.required" => "Each quantity is required",
-            "rate.required" => "Each rate is required"
+            "rate.required" => "Each rate is required",
+            'pay_type_id' => "Pay Type is required"
         ];
     }
 }

@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('qc_bags', function (Blueprint $table) {
+        Schema::create('delivery_challan_delivery_order', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("qc_id")->constrained("qc")->cascadeOnDelete();
-            $table->string("net_weight")->nullable();
-            $table->string("bag_weight")->nullable();
+            $table->foreignId("delivery_challan_id")->constrained("delivery_challans")->cascadeOnDelete();
+            $table->foreignId("delivery_order_id")->constrained("delivery_order")->cascadeOnDelete();
+            $table->float("qty")->default(0);
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('qc_bags');
+        Schema::dropIfExists('delivery_challan_delivery_order');
     }
 };

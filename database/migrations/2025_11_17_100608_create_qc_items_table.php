@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payment_terms', function (Blueprint $table) {
+        Schema::create('qc_items', function (Blueprint $table) {
             $table->id();
-            $table->string('desc');
-            $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->unsignedBigInteger('company_id');
-            $table->softDeletes(); 
+            $table->foreignId("qc_id")->constrained("qc")->cascadeOnDelete();
+            $table->string("net_weight")->nullable();
+            $table->string("bag_weight")->nullable();
             $table->timestamps();
-
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });
     }
 
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payment_terms');
+        Schema::dropIfExists('qc_bags');
     }
 };

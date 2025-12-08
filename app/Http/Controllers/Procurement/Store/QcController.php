@@ -11,7 +11,7 @@ use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Procurement\Store\PurchaseOrderReceivingData;
-use App\Models\Procurement\Store\QC;
+use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Sales\JobOrder;
 use DB;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class QcController extends Controller
     }
     public function updateAmounts(QCAmountRequest $request) {
         $id  = $request->id;
-        $qc = QC::find($id);
+        $qc = PurchaseBagQC::find($id);
         $qc->update($request->validated());
 
         return response()->json("Qc has been updated");
