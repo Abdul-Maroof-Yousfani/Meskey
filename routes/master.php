@@ -28,6 +28,7 @@ use App\Http\Controllers\Master\{
     FumigationCompanyController,
     InspectionCompanyController,
     BrandsController,
+    CustomerController,
     SizeController,
     PaymentTermController,
     PayTypeController
@@ -69,6 +70,9 @@ Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.item
 
 Route::resource('supplier', SupplierController::class);
 Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
+
+Route::resource('customer', CustomerController::class);
+Route::post('/get-customer', [CustomerController::class, 'getList'])->name('get.customer');
 
 Route::resource('vendor', VendorsController::class);
 Route::post('/get-vendor', [VendorsController::class, 'getList'])->name('get.vendor');

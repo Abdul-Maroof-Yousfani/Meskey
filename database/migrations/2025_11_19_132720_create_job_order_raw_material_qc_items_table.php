@@ -14,6 +14,7 @@ return new class extends Migration {
                 ->onDelete('cascade');
             $table->foreignId('product_id')->constrained();
             $table->foreignId('arrival_sub_location_id')->constrained();
+            $table->boolean('fumigation_required')->default(false);
             $table->decimal('suggested_quantity', 12, 2);
             $table->timestamps();
         });

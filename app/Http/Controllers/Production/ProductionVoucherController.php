@@ -20,11 +20,11 @@ use App\Models\Master\{
 use Illuminate\Http\Request;
 use App\Http\Requests\Production\JobOrderRawMaterialQcRequest;
 use Illuminate\Support\Facades\DB;
-class JobOrderRawMaterialQcController extends Controller
+class ProductionVoucherController extends Controller
 {
     public function index()
     {
-        return view('management.production.job_order_raw_material_qc.index');
+        return view('management.production.production_voucher.index');
     }
 
     public function getList(Request $request)
@@ -102,7 +102,7 @@ class JobOrderRawMaterialQcController extends Controller
         $qcs = $query->paginate(request('per_page', 25))->withQueryString();
 
         // Return view with data
-        return view('management.production.job_order_raw_material_qc.getList', compact(
+        return view('management.production.production_voucher.getList', compact(
             'qcs',
             'jobOrders'
         ));

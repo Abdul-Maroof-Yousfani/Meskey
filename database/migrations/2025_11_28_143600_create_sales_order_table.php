@@ -23,6 +23,8 @@ return new class extends Migration
             $table->foreignId("pay_type_id")->constrained("pay_types")->cascadeOnDelete();
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
             $table->string("status")->default("pending");
+            $table->string("am_approval_status")->default("pending");
+            $table->string("am_change_made")->default(1);
             $table->timestamps();
         });
     }

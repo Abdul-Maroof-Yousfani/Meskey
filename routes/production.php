@@ -3,6 +3,7 @@
 use App\Http\Controllers\Finance\PaymentVoucherController;
 use App\Http\Controllers\Production\JobOrderController;
 use App\Http\Controllers\Production\JobOrderRawMaterialQcController;
+use App\Http\Controllers\Production\ProductionVoucherController;
 use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,9 @@ Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProd
 
 Route::resource('job-order-rm-qc', JobOrderRawMaterialQcController::class);
 Route::post('get-job-order-rm-qc', [JobOrderRawMaterialQcController::class, 'getList'])->name('get.job_order_rm_qc');
-// Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProductSpecs'])->name('get.product_specs');
-Route::get('get-job-order-details/{jobOrderId}', [JobOrderRawMaterialQcController::class, 'getJobOrderDetails'])->name('get.job_order_details');
+Route::post('get-job-order-detail-for-rm-qc', [JobOrderRawMaterialQcController::class, 'getJobOrderDetails'])->name('get.job_order_details');
 Route::get('load-qc-commodities-tables', [JobOrderRawMaterialQcController::class, 'loadQcCommoditiesTables'])->name('load_qc_commodities_tables');
+
+
+Route::resource('production-voucher', ProductionVoucherController::class);
+Route::post('get-production-voucher', [ProductionVoucherController::class, 'getList'])->name('get.production-voucher');

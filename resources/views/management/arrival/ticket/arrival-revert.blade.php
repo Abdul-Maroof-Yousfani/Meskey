@@ -176,7 +176,7 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            
+
                                         </div>
                                     </div>
                                     <!-- <div class="col-xs-6 col-sm-6 col-md-4">
@@ -190,7 +190,8 @@
                                     <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Accounts Of:</label>
-                                            <select name="accounts_of_display" id="accounts_of" class="form-control select2">
+                                            <select name="accounts_of_display" id="accounts_of"
+                                                class="form-control select2">
                                                 <option value="" hidden>Accounts Of</option>
                                                 @foreach ($suppliers as $supplier)
                                                     <option value="{{ $supplier->name }}"
@@ -199,7 +200,8 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <input type="hidden" name="accounts_of" value="{{ $arrivalTicket->accounts_of_name }}" id="accounts_of_hidden">
+                                            <input type="hidden" name="accounts_of"
+                                                value="{{ $arrivalTicket->accounts_of_name }}" id="accounts_of_hidden">
 
 
                                         </div>
@@ -563,12 +565,12 @@
                                                             value="{{ $arrivalTicket->approvals->total_bags }}"
                                                             autocomplete="off"
                                                             mddax="{{ $arrivalTicket->document_approval_status == 'half_approved' ? $arrivalTicket->bags : '' }}"" required />
-                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                </div>
 
-                                                                                                                                                                                                <div
-                                                                                                                                                                                                    class="
+                                                                                                                                                                                                                <div
+                                                                                                                                                                                                                    class="
                                                             row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
 
                                                         <div class="col-12">
@@ -980,42 +982,54 @@
                                                         </select>
                                                 </div>
                                             </div>
-                                            <div class="col-xs-6 col-sm-6 col-md-6 full">
-                                                <div class="form-group ">
-                                                    <label>Status:</label>
-                                                    <!-- @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
-                                                        <input type="hidden" name="stage_status"
-                                                            value="{{ $arrivalSamplingRequest->approved_status }}">
-                                                    @endif -->
-                                                    @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered')
 
-                                                        <input type="hidden" name="stage_status"
-                                                            value="{{ $arrivalSamplingRequest->approved_status }}">
-                                                    @endif
-                                                    <select @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered') disabled
-                                                    @elseif($arrivalSamplingRequest->sampling_type == 'inner' && $arrivalTicket->document_approval_status != null) disabled @endif
-                                                        name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status' : 'stage_status' }}"
-                                                        id="stage_status" class="form-control select2" <option value=""
-                                                        hidden>Choose Status</option>
-                                                        <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }} value="approved">
-                                                            Approved</option>
-                                                        <!-- <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }} value="resampling">Request Resampling
-                                                        </option> -->
-                                                        <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }} value="rejected">
-                                                            Rejected</option>
-                                                    </select>
-                                                    @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered')
-                                                        <div class="col-12 alert bg-light-danger">To make changes in status,
-                                                            you must revert the ticket back up to the location transfer
-                                                            step.</div>
-                                                    @elseif($arrivalSamplingRequest->sampling_type == 'inner' && $arrivalTicket->document_approval_status != null)
-                                                        <div class="col-12 alert bg-light-danger">To make changes in
-                                                            QC,
-                                                            you must revert the ticket back up to the Half/Full Approved
-                                                            step.</div>
-                                                    @endif
-                                                </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6 full">
+                                                @if($arrivalSamplingRequest->is_done == 'yes' && $arrivalSamplingRequest->approved_status == 'pending')
+                                                    <div class="col-12 alert bg-light-danger">Sampling has been
+                                                        completed
+                                                        and
+                                                        is awaiting purchaser approval. Updates are not allowed at
+                                                        this
+                                                        stage.
+                                                    </div>
+                                                @else
+                                                    <div class="form-group ">
+                                                        <label>Status:</label>
+                                                        <!-- @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
+                                                                    <input type="hidden" name="stage_status"
+                                                                        value="{{ $arrivalSamplingRequest->approved_status }}">
+                                                                @endif -->
+                                                        @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered')
+
+                                                            <input type="hidden" name="stage_status"
+                                                                value="{{ $arrivalSamplingRequest->approved_status }}">
+                                                        @endif
+                                                        <select @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered') disabled
+                                                        @elseif($arrivalSamplingRequest->sampling_type == 'inner' && $arrivalTicket->document_approval_status != null) disabled @endif
+                                                            name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status' : 'stage_status' }}"
+                                                            id="stage_status" class="form-control select2" <option value=""
+                                                            hidden>Choose Status</option>
+                                                            <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }} value="approved">
+                                                                Approved</option>
+                                                            <!-- <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }} value="resampling">Request Resampling
+                                                                    </option> -->
+                                                            <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }} value="rejected">
+                                                                Rejected</option>
+                                                        </select>
+                                                        @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered')
+                                                            <div class="col-12 alert bg-light-danger">To make changes in status,
+                                                                you must revert the ticket back up to the location transfer
+                                                                step.</div>
+                                                        @elseif($arrivalSamplingRequest->sampling_type == 'inner' && $arrivalTicket->document_approval_status != null)
+                                                            <div class="col-12 alert bg-light-danger">To make changes in
+                                                                QC,
+                                                                you must revert the ticket back up to the Half/Full Approved
+                                                                step.</div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
+
                                         </div>
                                         <div class="row">
                                             <div class="col-12">
@@ -1439,7 +1453,7 @@
                                                                             class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                                                         <div class="col-md-3 QcResult">
                                                                             <div class="input-group mb-0">
-                                                                                <input type="text" readonly
+                                                                                <input type="text"
                                                                                     class="form-control {{ $comparisonClass }}"
                                                                                     value="{{ $slab->checklist_value }}">
                                                                                 <div class="input-group-append">
@@ -1737,8 +1751,7 @@
                                                                                         <input type="text"
                                                                                             class="form-control {{ $comparisonClass }}"
                                                                                             name="checklist_value[]"
-                                                                                            value="{{ $displayValue }}" placeholder="%"
-                                                                                            readonly>
+                                                                                            value="{{ $displayValue }}" placeholder="%">
                                                                                         <div class="input-group-append">
                                                                                             <span
                                                                                                 class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
@@ -1775,7 +1788,7 @@
                                                                                             data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                                                                             data-slab-id="{{ $slab->slabType->id }}"
                                                                                             data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
-                                                                                            data-checklist="{{ $displayValue }}"  {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                                                            data-checklist="{{ $displayValue }}" {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
                                                                                         <div class="input-group-append">
                                                                                             <span
                                                                                                 class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
@@ -1974,15 +1987,16 @@
                                                                 <div class="row mt-2 w-100 mx-auto d-one">
 
 
-                                                                    @if($arrivalSamplingRequest->is_done == 'yes' && $arrivalSamplingRequest->approved_status == 'pending')
-                                                                        <div class="col-12 alert bg-light-danger">Sampling has been
-                                                                            completed
-                                                                            and
-                                                                            is awaiting purchaser approval. Updates are not allowed at
-                                                                            this
-                                                                            stage.</div>
+                                                                    <!-- @if($arrivalSamplingRequest->is_done == 'yes' && $arrivalSamplingRequest->approved_status == 'pending')
+                                                                                                            <div class="col-12 alert bg-light-danger">Sampling has been
+                                                                                                                completed
+                                                                                                                and
+                                                                                                                is awaiting purchaser approval. Updates are not allowed at
+                                                                                                                this
+                                                                                                                stage.</div>
+                                                                                                        @endif -->
 
-                                                                    @elseif($arrivalTicket->bilty_return_confirmation == 1)
+                                                                    @if($arrivalTicket->bilty_return_confirmation == 1)
                                                                         <div class="col-12 alert bg-light-danger">Editing is disabled
                                                                             because
                                                                             the Bilty return has already been confirmed.</div>

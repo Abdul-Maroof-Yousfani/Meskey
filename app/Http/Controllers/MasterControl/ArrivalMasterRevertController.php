@@ -720,7 +720,7 @@ class ArrivalMasterRevertController extends Controller
     {
         $id = $request->arrivalSamplingRequestid;
         $validated = $request->validate([
-            'stage_status' => 'required',
+            // 'stage_status' => 'required',
             'sauda_type_id' => 'required'
         ]);
 

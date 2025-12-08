@@ -19,7 +19,8 @@ return new class extends Migration {
             $table->string('ref_no')->nullable();
             $table->json('attention_to')->nullable(); // JSON for multiple users
             $table->foreignId('product_id')->constrained();
-            $table->foreignId('crop_year_id')->nullable()->constrained('crop_years')->onDelete('set null');
+
+            $table->unsignedBigInteger('crop_year_id');
             $table->longText('other_specifications')->nullable();
             $table->text('remarks')->nullable();
             $table->text('order_description')->nullable();
@@ -35,7 +36,7 @@ return new class extends Migration {
 
 
             // Add long text for other specifications
-
+            $table->foreign('crop_year_id')->references('id')->on('crop_years');
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();

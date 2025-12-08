@@ -5,6 +5,7 @@ namespace App\Models\Master;
 use App\Models\Acl\Company;
 use App\Models\City;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Production\JobOrder\JobOrderPackingItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -87,5 +88,35 @@ class CompanyLocation extends Model
     public function city()
     {
         return $this->belongsTo(City::class);
+    }
+
+
+    // Relationship with packing items
+    public function packingItems()
+    {
+        return $this->hasMany(JobOrderPackingItem::class, 'company_location_id');
+    }
+
+    // Relationship with job orders through packing items
+    public function jobOrders()
+    {
+        return $this->hasManyThrough(
+            JobOrder::class,
+            JobOrderPackingItem::class,
+            'company_location_id', // Foreign key on packing_items table
+            'id', // Foreign key on job_orders table
+            'id', // Local key on company_locations table
+            'job_order_id' // Local key on packing_items table
+        );
+    }
+
+    // Get total kgs for a specific job order number in this location
+    public function getTotalKgsForJobOrder($jobOrderID)
+    {
+        return $this->packingItems()
+            ->whereHas('jobOrder', function ($query) use ($jobOrderID) {
+                $query->where('id', $jobOrderID);
+            })
+            ->sum('total_kgs');
     }
 }

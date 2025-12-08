@@ -1,18 +1,18 @@
 @extends('management.layouts.master')
 @section('title')
-    Job Order RM QC
+    Production Voucher
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Job Order RM QC</h2>
+                    <h2 class="page-title">Production Voucher</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button onclick="openModal(this,'{{ route('job-order-rm-qc.create') }}','Add Job Order',false,'90%')"
                         type="button" class="btn btn-primary position-relative">
-                        Create Job Order RM QC
+                        Create Production Voucher
                     </button>
                 </div>
             </div>

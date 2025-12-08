@@ -38,7 +38,7 @@ class AccountController extends Controller
                 });
             })
            // ->whereNull('parent_id')
-            ->paginate(request('per_page', 25));
+            ->paginate(request('per_page', 10000));
 
         return view('management.master.account.getList', compact('accounts'));
     }

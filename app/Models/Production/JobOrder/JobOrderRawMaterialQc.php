@@ -2,6 +2,7 @@
 
 namespace App\Models\Production\JobOrder;
 
+use App\Models\Master\CompanyLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,7 @@ class JobOrderRawMaterialQc extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'company_id',
         'qc_no',
         'qc_date',
         'job_order_id',
@@ -37,7 +39,7 @@ class JobOrderRawMaterialQc extends Model
 
     public function items()
     {
-        return $this->hasMany(JobOrderRawMaterialQcItem::class);
+        return $this->hasMany(JobOrderRawMaterialQcItem::class,'job_order_rm_qc_id','id');
     }
 
     public function getWeightedAveragesAttribute()
