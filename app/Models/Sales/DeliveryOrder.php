@@ -30,4 +30,8 @@ class DeliveryOrder extends Model
      public function locations() {
         return $this->morphMany(Location::class, 'locationable');
     }
+
+    public function delivery_challans() {
+        return $this->belongsToMany(DeliveryChallan::class, "delivery_challan_delivery_order", "delivery_order_id", "delivery_challan_id");
+    }
 }

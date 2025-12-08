@@ -11,17 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('delivery_challan', function (Blueprint $table) {
+        Schema::create('delivery_challans', function (Blueprint $table) {
             $table->id();
             $table->foreignId("customer_id")->constrained("customers")->cascadeOnDelete();
-            $table->foreignId("delivery_order_id")->constrained("delivery_order")->cascadeOnDelete();
+            // $table->foreignId("delivery_order_id")->constrained("delivery_order")->cascadeOnDelete();
             $table->string("reference_number");
             $table->date("dispatch_date");
             $table->string("dc_no");
             $table->enum("sauda_type", ["pohanch", "x-mill"]);
-            $table->foreignId("location_id")->constrained("locations")->cascadeOnDelete();
+            $table->foreignId("location_id")->constrained("company_locations")->cascadeOnDelete();
             $table->foreignId("arrival_id")->constrained("arrival_locations")->cascadeOnDelete();
+            $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
+            $table->string("labour");
+            $table->float("labour_amount");
+            $table->string("transporter");
+            $table->float("transporter_amount");
+            $table->string("inhouse-weighbridge");
+            $table->string("weighbridge-amount");
             $table->string("remarks");
+            $table->foreignId("created_by_id")->constrained("users")->cascadeOnDelete();
+            $table->string("am_approval_status")->default("pending");
+            $table->string("am_change_made")->default(1);
             $table->timestamps();
         });
     }

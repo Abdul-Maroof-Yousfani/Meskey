@@ -499,8 +499,8 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.delivery-order.index') }}"
-                            onclick="loadPageContent('{{ route('sales.delivery-order.index') }}')"
+                            href="{{ route('sales.delivery-challan.index') }}"
+                            onclick="loadPageContent('{{ route('sales.delivery-challan.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Delivery Challan</span>
                         </a>

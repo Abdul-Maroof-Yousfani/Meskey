@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mt-3">
+        <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Contract Type:</label>
                 <select name="contract_type" id="contract_type" class="form-control select2" readonly>
@@ -69,7 +69,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mt-3">
+        <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Contact Person:</label>
                 <input type="text" name="contact_person" id="contact_person"
@@ -77,7 +77,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mt-3">
+        <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Locations:</label>
                 <select name="locations[]" id="locations" class="form-control select2" multiple>
@@ -130,7 +130,7 @@
                             <tr id="row_{{ $index }}">
                                 <td>
                                     <select name="item_id[]" id="item_id_{{ $i }}"
-                                        class="form-control select2" readonly>
+                                        class="form-control select2" disabled>
                                         <option value="">Select Item</option>
                                         @foreach ($items ?? [] as $item)
                                             <option value="{{ $item->id }}" @selected($data->item_id == $item->id)>
@@ -150,17 +150,17 @@
                                 <td>
                                     <input type="text" name="bag_size[]" id="bag_size_0"
                                         value="{{ $data->bag_size }}" class="form-control bag_size"
-                                        onkeyup="calc(this)" step="0.01" min="0">
+                                        onkeyup="calc(this)" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_0"
                                         value="{{ $data->no_of_bags }}" class="form-control no_of_bags"
-                                        onkeyup="calc(this)" step="0.01" min="0">
+                                        onkeyup="calc(this)" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $i }}"
                                         value="{{ $data->qty }}" class="form-control" step="0.01"
-                                        min="0" readonly>
+                                        min="0" readonly readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $i }}"

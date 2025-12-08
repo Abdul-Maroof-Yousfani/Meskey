@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId("location_id")->constrained("company_locations")->cascadeOnDelete();
             $table->foreignId("arrival_id")->constrained("company_location_id")->cascadeOnDelete();
             $table->foreignId("subarrival_id")->constrained("arrival_sub_locations")->cascadeOnDelete();
+            $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
             $table->string("reference_no");
             $table->enum("sauda_type", ["pohanch", "x-mill"]);
             $table->string("line_desc")->nullable();

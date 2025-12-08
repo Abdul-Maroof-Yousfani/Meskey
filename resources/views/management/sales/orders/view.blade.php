@@ -94,7 +94,7 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Bag Size</th>
+                            <th>Pack Size</th>
                             <th>Quantity</th>
                             <th>Rate</th>
                             <th>Amount</th>
@@ -117,14 +117,6 @@
                                 <td>
                                     <input type="text" name="bag_type[]" id="bag_type_{{ $index }}" value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
                                         min="0" readonly>
-
-
-                                    <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2" readonly>
-                                        <option value="">Select Item</option>
-                                        @foreach ($items ?? [] as $item)
-                                            <option value="{{ $item->id }}" @selected($data->item_id == $item->id)>{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
                                 </td>
                                   <td>
                                     <input type="text" name="bag_size[]" id="bag_type_{{ $index }}" value="{{ $data->bag_size }}" onkeyup="calc(this)" class="form-control qty" step="0.01"

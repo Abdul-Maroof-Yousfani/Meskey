@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Delivery Order
+    Delivery Challan
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('sales.delivery-order.create') }}','Create Delivery Order',false,'100%')"
+                        onclick="openModal(this,'{{ route('sales.delivery-challan.create') }}','Create Delivery Challan',false,'100%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Delivery Challan
                     </button>
@@ -68,7 +68,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('sales.get.delivery-order.list') }}`)
+            filterationCommon(`{{ route('sales.get.delivery-challan.list') }}`)
         });
     </script>
 @endsection

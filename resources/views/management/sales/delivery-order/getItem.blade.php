@@ -28,10 +28,13 @@
                 onkeyup="calc(this)" class="form-control bag_size" step="0.01" min="0">
         </td>
         <td>
-            <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" onkeyup="is_able_to_submit(this); calc(this)" value="{{ $balance }}" class="form-control no_of_bags" step="0.01" min="0">
+            <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" onkeyup="is_able_to_submit(this); calc(this)" value="{{ $balance }}" class="form-control no_of_bags" step="0.01" min="0">
+            <span style="font-size: 14px;;">Used Quantity: {{ $data->no_of_bags - $balance}}</span>
+            <br />
+            <span style="font-size: 14px;">Total Quantity: {{ $data->no_of_bags }}</span>
         </td>
         <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->bag_size * $balance }}" class="form-control qty" step="0.01" min="0">
+            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->bag_size * $balance }}" class="form-control qty" step="0.01" min="0" readonly>
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0">

@@ -3,8 +3,7 @@
             <table class="table table-hover m-0">
                 <thead class="bg-light">
                     <tr>
-                        <th width="12%">So No</th>
-                        <th width="12%">Sale Inquiry No</th>
+                        <th width="12%">Do No</th>
                         <th width="18%">Customer</th>
                         <th width="25%">Item Description</th>
                         <th width="10%" class="text-right">Qty</th>
@@ -16,7 +15,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($groupedSalesOrders as $group)
+                    @forelse($groupedDeliveryChallans as $group)
                         @php $isFirstRow = true; @endphp
                         @foreach($group['items'] as $itemRow)
                             <tr>
@@ -32,14 +31,11 @@
                                         </div>
                                     </td>
 
-                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold">{{ $group["inquiry_no"] }}</td>
-
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
                                         <strong>{{ get_customer_name($group["customer_id"]) }}</strong>
                                         
                                     </td>
                                 @endif
-                                
 
                                 {{-- Item Details --}}
                                 <td class="align-middle" style="background-color: #f8fff8;">
@@ -89,18 +85,18 @@
                                         <div class="btn-group" role="group">
 
                                             <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sale-order.view', ['id' => $group['id']]) }}','View Sales Order', false, '100%')" title="View" style="margin-right: 10px;">
+                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
                                             @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
                                                 <button 
-                                                    onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order', false, '100%')"
+                                                    onclick="openModal(this,'{{ route('sales.delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Delivery Challan', false, '100%')"
                                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                     <i class="ft-edit"></i>
                                                 </button>
 
                                                 
-                                            <button onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')" type="button"
+                                            <button onclick="deletemodal('{{ route('sales.delivery-challan.destroy', ['delivery_challan' => $group['id']]) }}', '{{ route('sales.get.delivery-challan.list') }}')" type="button"
                                                     onclick="confirmDelete(this.closest('form'))"
                                                     class="btn btn-sm btn-danger" title="Delete">
                                                 <i class="ft-trash-2"></i>

@@ -265,7 +265,6 @@
         </div>
     </div>
 
-
     <input type="hidden" id="rowCount" value="0">
 
     <div class="row bottom-button-bar">

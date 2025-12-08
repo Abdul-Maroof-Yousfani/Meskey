@@ -31,4 +31,11 @@ Route::name("sales.")->group(function () {
     Route::get("/get-storage-locations-against-arrival-location", [DeliveryOrderController::class, "get_storages"])->name("get.storage-locations");
 
     Route::resource("delivery-challan", DeliveryChallanController::class);
+    Route::post("get-delivery-challan", [DeliveryChallanController::class, "getList"])->name("get.delivery-challan.list");
+    Route::get("/get/dc-no", [DeliveryChallanController::class, "getNumber"])->name("get.delivery-challan.getNumber");
+    Route::get("get-do-against-customer", [DeliveryChallanController::class, "get_delivery_orders"])->name("get.delivery-challan.get-do");
+    Route::get("/get-delivery-order-items",  [DeliveryChallanController::class, "getItems"])->name("get.delivery-challan.get-items");
+    Route::get("/delivery-challan/{delivery_challan}/view", [DeliveryChallanController::class, "view"])->name("get.delivery-challan.view");
+    
+
 });

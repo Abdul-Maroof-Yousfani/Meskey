@@ -9,7 +9,7 @@
     @csrf
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-inquiry.list') }}" />
-    <div class="row form-mar">
+    <div class="row">
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Inquiry Number:</label>
@@ -30,6 +30,8 @@
                 <input type="date" name="inquiry_date" onchange="getNumber()" id="inquiry_date" class="form-control">
             </div>
         </div>
+    </div>
+    <div class="row">
 
         <div class="col-md-4">
             <div class="form-group">
@@ -50,7 +52,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mt-3">
+        <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Contract Type:</label>
                 <select name="contract_type" id="contract_type" class="form-control select2">
@@ -60,7 +62,9 @@
                 </select>
             </div>
         </div>
+    </div>
 
+    <div class="row">
         <div class="col-md-4 mt-3">
             <div class="form-group">
                 <label class="form-label">Contact Person:</label>
@@ -79,12 +83,14 @@
             </div>
         </div>
 
-        <div class="col-md-12 mt-3">
+        <div class="col-md-4 mt-3">
             <div class="form-group">
                 <label class="form-label">Remarks:</label>
                 <textarea name="remarks" id="remarks" class="form-control" rows="2"></textarea>
             </div>
         </div>
+    </div>
+
     </div>
 
     <div class="row form-mar">
@@ -102,9 +108,9 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Bag Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
+                            <th>Quantity (Kg)</th>
                             <th>Rate</th>
                             <th>Brands</th>
                             <th style="display: none">Pack Size</th>
@@ -131,20 +137,22 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="text" name="bag_size[]" id="bag_size_0" class="form-control bag_size" onkeyup="calc(this)" step="0.01"
+                                <input type="text" name="bag_size[]" id="bag_size_0"
+                                    class="form-control bag_size" onkeyup="calc(this)" step="0.01"
                                     min="0">
                             </td>
                             <td>
-                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" class="form-control no_of_bags" onkeyup="calc(this)" step="0.01"
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_0"
+                                    class="form-control no_of_bags" onkeyup="calc(this)" step="0.01"
                                     min="0">
                             </td>
                             <td>
-                                <input type="number" name="qty[]" id="qty_0" class="form-control qty" step="0.01"
-                                    min="0">
+                                <input type="number" name="qty[]" id="qty_0" class="form-control qty"
+                                    step="0.01" min="0" readonly>
                             </td>
                             <td>
-                                <input type="number" name="rate[]" id="rate_0" class="form-control" step="0.01"
-                                    min="0">
+                                <input type="number" name="rate[]" id="rate_0" class="form-control"
+                                    step="0.01" min="0">
                             </td>
                             <td>
                                 <select name="brand_id[]" id="brand_id_0" class="form-control select2">
@@ -155,8 +163,8 @@
                                 </select>
                             </td>
                             <td style="display: none;">
-                                <input type="text" value="0" name="pack_size[]" id="pack_size_0" class="form-control" step="0.01"
-                                    min="0">
+                                <input type="text" value="0" name="pack_size[]" id="pack_size_0"
+                                    class="form-control" step="0.01" min="0">
                             </td>
                             <td>
                                 <input type="text" name="desc[]" id="desc_0" class="form-control">
@@ -193,15 +201,15 @@
     });
 
     function calc(el) {
-        const element  = $(el).closest("tr");
+        const element = $(el).closest("tr");
         const bag_size = $(element).find(".bag_size");
         const no_of_bags = $(element).find(".no_of_bags");
         const qty = $(element).find(".qty");
 
-        if(!(bag_size.val() && no_of_bags.val())) return;
+        if (!(bag_size.val() && no_of_bags.val())) return;
 
         const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-  
+
         qty.val(result);
     }
 

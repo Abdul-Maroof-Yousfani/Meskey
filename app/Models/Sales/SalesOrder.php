@@ -31,7 +31,7 @@ class SalesOrder extends Model
 
 
     public function sale_inquiry() {
-        return $this->belongsTo(SalesOrder::class, "inquiry_id", "id");
+        return $this->belongsTo(SalesInquiry::class, "inquiry_id", "id");
     }
 
      public function locations() {

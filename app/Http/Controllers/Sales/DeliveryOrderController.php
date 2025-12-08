@@ -70,6 +70,7 @@ class DeliveryOrderController extends Controller
                 'arrival_location_id' => $request->arrival_id,
                 'sub_arrival_location_id' => $request->storage_id,
                 'line_desc' => $request->line_desc,
+                'company_id' => $request->company_id
             ]);
 
             // foreach ($locations as $location) {
@@ -369,6 +370,7 @@ class DeliveryOrderController extends Controller
                 'location_id' => $request->location_id,
                 'arrival_location_id' => $request->arrival_id,
                 'sub_arrival_location_id' => $request->storage_id,
+                'company_id' => $request->company_id
             ]);
 
             // $delivery_order->locations()->delete();
@@ -385,7 +387,6 @@ class DeliveryOrderController extends Controller
             foreach ($receipt_vouchers as $rv) {
                 $last_withheld_amount = $rv->withhold_amount;
 
-                // Now this sum does NOT include this delivery order anymore
                 $spent_amount = $rv->delivery_orders?->sum(fn ($do) => $do->pivot->amount) ?? 0;
                 $remaining_amount = $rv->total_amount - $spent_amount;
 
@@ -415,7 +416,7 @@ class DeliveryOrderController extends Controller
                     'bag_size' => $request->bag_size[$key],
                     'bag_type' => $request->bag_type[$key],
                     "so_data_id" => $request->so_data_id[$key],
-                    "description" => $request->desc[$key]
+                    "description" => $request->desc[$key] ?? ""
                 ]);
             }
 
