@@ -68,7 +68,7 @@ class DeliveryOrderController extends Controller
                 'sauda_type' => $request->sauda_type,
                 'location_id' => $request->location_id,
                 'arrival_location_id' => $request->arrival_id,
-                'sub_arrival_location_id' => $request->storage_id,
+                'sub_arrival_location_id' => $request->storage_id ?? (ArrivalSubLocation::first())->id,
                 'line_desc' => $request->line_desc,
                 'company_id' => $request->company_id
             ]);
