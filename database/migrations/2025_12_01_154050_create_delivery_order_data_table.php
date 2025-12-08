@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string("bag_size");
             $table->foreignId("bag_type")->constrained("bag_types")->cascadeOnDelete();
             $table->foreignId("so_data_id")->constrained("sales_order_data")->cascadeOnDelete();
-            $table->string("desc");
+            $table->string("description");
             $table->timestamps();
         });
     }

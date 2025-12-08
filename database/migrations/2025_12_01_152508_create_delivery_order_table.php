@@ -20,8 +20,8 @@ return new class extends Migration
             $table->float("withhold_for_rv_id")->nullable()->constrained("receipt_vouchers")->cascadeOnDelete();
             $table->date("dispatch_date");
             $table->foreignId("location_id")->constrained("company_locations")->cascadeOnDelete();
-            $table->foreignId("arrival_id")->constrained("company_location_id")->cascadeOnDelete();
-            $table->foreignId("subarrival_id")->constrained("arrival_sub_locations")->cascadeOnDelete();
+            $table->foreignId("arrival_location_id")->constrained("company_location_id")->cascadeOnDelete();
+            $table->foreignId("sub_arrival_location_id")->constrained("arrival_sub_locations")->cascadeOnDelete();
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
             $table->string("reference_no");
             $table->enum("sauda_type", ["pohanch", "x-mill"]);
@@ -30,6 +30,9 @@ return new class extends Migration
             // $table->float("so_amount");
             // $table->float("percentage")->nullable();
             $table->string("am_approval_status")->default("pending");
+
+            $table->foreignId("payment_term_id")->constrained("payment_terms")->cascadeOnDelete();
+
             $table->string("am_change_made")->default(1);            
             $table->timestamps();
         });
