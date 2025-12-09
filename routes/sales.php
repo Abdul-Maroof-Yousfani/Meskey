@@ -4,6 +4,7 @@ use App\Http\Controllers\Sales\DeliveryChallanController;
 use App\Http\Controllers\Sales\DeliveryOrderController;
 use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\SalesInquiryController;
+use App\Http\Controllers\Sales\SalesInvoiceController;
 
 
 Route::name("sales.")->group(function () {
@@ -36,6 +37,13 @@ Route::name("sales.")->group(function () {
     Route::get("get-do-against-customer", [DeliveryChallanController::class, "get_delivery_orders"])->name("get.delivery-challan.get-do");
     Route::get("/get-delivery-order-items",  [DeliveryChallanController::class, "getItems"])->name("get.delivery-challan.get-items");
     Route::get("/delivery-challan/{delivery_challan}/view", [DeliveryChallanController::class, "view"])->name("get.delivery-challan.view");
-    
+
+    // Sales Invoice Routes
+    Route::resource("sales-invoice", SalesInvoiceController::class);
+    Route::post("get-sales-invoice", [SalesInvoiceController::class, "getList"])->name("get.sales-invoice.list");
+    Route::get("/get/si-no", [SalesInvoiceController::class, "getNumber"])->name("get.sales-invoice.getNumber");
+    Route::get("get-dc-for-invoice", [SalesInvoiceController::class, "get_delivery_challans"])->name("get.sales-invoice.get-dc");
+    Route::get("/get-sales-invoice-items", [SalesInvoiceController::class, "getItems"])->name("get.sales-invoice.get-items");
+    Route::get("/sales-invoice/{sales_invoice}/view", [SalesInvoiceController::class, "view"])->name("get.sales-invoice.view");
 
 });

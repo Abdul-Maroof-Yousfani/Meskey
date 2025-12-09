@@ -64,6 +64,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Sales\DeliveryChallan',
                 'label' => 'Delivery Challan'
             ],
+            [
+                'value' => 'App\Models\Sales\SalesInvoice',
+                'label' => 'Sales Invoice'
+            ],
             
         ];
 
