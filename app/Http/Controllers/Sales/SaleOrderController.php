@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesOrderRequest;
+use App\Models\BagType;
 use App\Models\Master\Customer;
+use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
 use App\Models\Product;
 use App\Models\Sales\SalesInquiry;
@@ -15,131 +17,151 @@ use Illuminate\Http\Request;
 
 class SaleOrderController extends Controller
 {
-    public function index() {
-        return view("management.sales.orders.index");
+    public function index()
+    {
+        return view('management.sales.orders.index');
     }
 
-    public function create() {
+    public function create()
+    {
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
-        
+        $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
+        $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
 
-        return view("management.sales.orders.create", compact("payment_terms", "customers", "inquiries", "items"));
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types'));
     }
 
-    public function edit(int $id) {
-        $sale_order = SalesOrder::with("locations", "sales_order_data")->find($id);
+    public function edit(int $id)
+    {
+        $sale_order = SalesOrder::with('locations', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data')->find($id);
+        $payment_terms = PaymentTerm::all();
+        $customers = Customer::all();
+        $inquiries = SalesInquiry::all();
+        $items = Product::all();
+        $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
+        $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
+
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types'));
+    }
+
+    public function view(Request $request, int $id)
+    {
+        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'sales_order_data.sale_inquiry_data')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
 
-        return view("management.sales.orders.edit", compact("payment_terms", "customers", "inquiries", "items", "sale_order"));
+        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order'));
     }
 
-    public function view(Request $request, int $id) {
-        $sale_order = SalesOrder::with("sales_order_data", "locations")->find($id);
-        $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
-        $inquiries = SalesInquiry::all();
-        $items = Product::all();
-
-        return view("management.sales.orders.view", compact("payment_terms", "customers", "inquiries", "items", "sale_order"));
-    }
-
-    public function store(SalesOrderRequest $request) {
-
+    public function store(SalesOrderRequest $request)
+    {
         $locations = $request->locations;
-
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($request->validated());
-    
-            foreach($locations as $location) {
+
+            foreach ($locations as $location) {
                 $sales_order->locations()->create([
-                    'location_id' => $location
+                    'location_id' => $location,
                 ]);
             }
-
-            foreach($request->item_id as $index => $item) {
+            foreach ($request->item_id as $index => $item) {
                 $sales_order->sales_order_data()->create([
-                    "item_id" => $request->item_id[$index],
-                    "qty" => $request->qty[$index],
-                    "rate" => $request->rate[$index],  
+                    'item_id' => $request->item_id[$index],
+                    'qty' => $request->qty[$index],
+                    'rate' => $request->rate[$index],
+                    'pack_size' => $request->pack_size[$index],
+                    'brand_id' => $request->brand_id[$index],
+                    // 'sales_inquiry_id' => $request->sales_inquiry_id[$index],
+                    'bag_type' => $request->bag_type[$index],
+                    'bag_size' => $request->bag_size[$index],
+                    'no_of_bags' => $request->no_of_bags[$index],
                 ]);
             }
             DB::commit();
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             dd($e);
         }
 
-        return response()->json(["data" => "Sale Order has been created"]);
+        return response()->json(['data' => 'Sale Order has been created']);
     }
 
-    public function update(SalesOrderRequest $request, int $id) {
+    public function update(SalesOrderRequest $request, int $id)
+    {
 
-        $locations = $request->locations;
+        // $locations = $request->locations;
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
-        
 
             $sales_order->sales_order_data()->delete();
-    
-            foreach($request->item_id as $index => $item) {
+            foreach ($request->item_id as $index => $item) {
                 $sales_order->sales_order_data()->create([
-                    "item_id" => $request->item_id[$index],
-                    "qty" => $request->qty[$index],
-                    "rate" => $request->rate[$index],  
+                    'item_id' => $request->item_id[$index],
+                    'qty' => $request->qty[$index],
+                    'rate' => $request->rate[$index],
+                    'pack_size' => $request->pack_size[$index],
+                    'brand_id' => $request->brand_id[$index],
+                    'sales_inquiry_id' => $request->sales_inquiry_id[$index],
+                    'bag_type' => $request->bag_type_id[$index],
+                    'bag_size' => $request->bag_size[$index],
+                    'no_of_bags' => $request->no_of_bags[$index],
                 ]);
             }
             DB::commit();
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             dd($e);
         }
 
-        return response()->json(["data" => "Sale Order has been created"]);
+        return response()->json(['data' => 'Sale Order has been created']);
     }
 
-    public function destroy(int $id) {
+    public function destroy(int $id)
+    {
         $sales_order = SalesOrder::find($id);
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
 
-        return response()->json(["data" => "Sale Order has been deleted"]);
+        return response()->json(['data' => 'Sale Order has been deleted']);
     }
 
-    public function getList(Request $request) {
+    public function getList(Request $request)
+    {
         $perPage = $request->get('per_page', 25);
 
-    // Eager load the inquiry + all its items + related product
-    $SalesOrders = SalesOrder::latest()
-        ->paginate($perPage);
+        // Eager load the inquiry + all its items + related product
+        $SalesOrders = SalesOrder::with('sale_inquiry')->latest()
+            ->paginate($perPage);
+       
+        $groupedData = [];
 
-    
-    $groupedData = [];
+        foreach ($SalesOrders as $SaleOrder) {
+            $so_no = $SaleOrder->reference_no;
+            $items = $SaleOrder->sales_order_data;
 
-    foreach ($SalesOrders as $SaleOrder) {
-        $so_no = $SaleOrder->reference_no;
-        $items = $SaleOrder->sales_order_data;
-        
-        if ($items->isEmpty()) continue;
+            if ($items->isEmpty()) {
+                continue;
+            }
 
-        $itemRows = [];
-        foreach ($items as $itemData) {
-            $itemRows[] = [
-                'item_data' => $itemData,
-            ];
-        }
+            $itemRows = [];
+            foreach ($items as $itemData) {
+                $itemRows[] = [
+                    'item_data' => $itemData,
+                ];
+            }
 
-        $groupedData[] = [
+            $groupedData[] = [
                 'sale_order' => $SaleOrder,
                 'so_no' => $so_no,
                 'created_by_id' => 1,
+                'inquiry_no' => $SaleOrder?->sale_inquiry?->inquiry_no ?? "N/A",
                 'delivery_date' => $SaleOrder->delivery_date,
                 'id' => $SaleOrder->id,
                 'customer_id' => $SaleOrder->customer_id,
@@ -149,42 +171,46 @@ class SaleOrderController extends Controller
                 'rowspan' => count($itemRows),
                 'items' => $itemRows,
             ];
+
         }
-    return view('management.sales.orders.getList', [
-        'SalesOrders' => $SalesOrders,           // for pagination
-        'groupedSalesOrders' => $groupedData,  // our grouped data
-    ]);
+
+
+        return view('management.sales.orders.getList', [
+            'SalesOrders' => $SalesOrders,           // for pagination
+            'groupedSalesOrders' => $groupedData,  // our grouped data
+        ]);
     }
 
-    public function get_inquiries(Request $request) {
+    public function get_inquiries(Request $request)
+    {
         $customer_id = $request->customer_id;
 
-        $sale_inquiries = SalesInquiry::where("am_approval_status", "approved")
-                                        ->whereDoesntHave("sale_order")
-                                        ->where("customer", $customer_id)
-                                        ->select("inquiry_no", "id")
-                                        ->get();
+        $sale_inquiries = SalesInquiry::where('am_approval_status', 'approved')
+            ->whereDoesntHave('sale_order')
+            ->where('customer', $customer_id)
+            ->select('inquiry_no', 'id')
+            ->get();
 
         $data = [];
 
-        foreach($sale_inquiries as $sale_inquiry) {
+        foreach ($sale_inquiries as $sale_inquiry) {
             $data[] = [
-                "text" => $sale_inquiry->inquiry_no,
-                "id" => $sale_inquiry->id
+                'text' => $sale_inquiry->inquiry_no,
+                'id' => $sale_inquiry->id,
             ];
         }
 
         return $data;
     }
 
-
-    public function get_inquiry_data(Request $request) {
+    public function get_inquiry_data(Request $request)
+    {
         $inquiry_id = $request->inquiry_id;
 
-        $items = Product::select("name", "id")->get();
-        $inquiry = SalesInquiry::with("sales_inquiry_data")->where("id", $inquiry_id)->first();
+        $items = Product::select('name', 'id')->get();
+        $inquiry = SalesInquiry::with('sales_inquiry_data')->where('id', $inquiry_id)->first();
 
-        return view("management.sales.orders.getItems", compact("inquiry", "items"));
+        return view('management.sales.orders.getItems', compact('inquiry', 'items'));
     }
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
@@ -192,13 +218,11 @@ class SaleOrderController extends Controller
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'SO-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'SO-'.Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = SalesOrder::where('reference_no', 'like', "$prefix-%")
             ->latest()
             ->first();
-
-
 
         $datePart = Carbon::parse($date)->format('Y-m-d');
 
@@ -210,13 +234,12 @@ class SaleOrderController extends Controller
             $newNumber = 1;
         }
 
+        $so_no = 'SO-'.$datePart.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        $so_no = 'SO-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-
-        if (!$locationId && !$contractDate) {
+        if (! $locationId && ! $contractDate) {
             return response()->json([
                 'success' => true,
-                'so_no' => $so_no
+                'so_no' => $so_no,
             ]);
         }
 

@@ -264,9 +264,13 @@ class PurchaseOrderReceivingController extends Controller
     {
         // dd($request->all());
         DB::beginTransaction();
+        
         try {
+
+             
+            $grn = self::getNumber($request, $request->location_id, $request->receiving_date);
             $PurchaseOrderReceiving = PurchaseOrderReceiving::create([
-                'purchase_order_receiving_no' => self::getNumber($request, $request->location_id, $request->receiving_date),
+                'purchase_order_receiving_no' => $grn,
                 'purchase_request_id' => $request->purchase_request_id,
                 'purchase_order_id' => $request->purchase_order_id,
                 'order_receiving_date' => $request->receiving_date,
@@ -278,6 +282,12 @@ class PurchaseOrderReceivingController extends Controller
                 'truck_no' => $request->truck_no,
                 "dc_no" => $request->dc_no,
                 'created_by' => auth()->user()->id,
+            ]);
+            $grnNumber = GrnNumber::create([
+                'model_id' => $PurchaseOrderReceiving->id,
+                'model_type' => 'purchase-order-receiving',
+                'location_id' => $request->location_id,
+                'unique_no' => $grn
             ]);
             foreach ($request->item_id as $index => $itemId) {
                 $requestData = PurchaseOrderReceivingData::create([
@@ -546,36 +556,41 @@ class PurchaseOrderReceivingController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
+
+        
+        // $location = CompanyLocation::find($locationId ?? $request->location_id);
+        // $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        
+        // $locationCode = $location->code ?? 'LOC';
+        // $prefix = 'GRN-' . $date;
+
+        // // Find latest PO for the same prefix
+        // $latestPO = PurchaseOrderReceiving::withTrashed()->where('purchase_order_receiving_no', 'like', "$prefix-%")
+        //     ->orderByDesc('id')
+        //     ->first();
+
+
+        // if ($latestPO) {
+        //     // Correct field name
+        //     $parts = explode('-', $latestPO->purchase_order_receiving_no);
+        //     $lastNumber = (int) end($parts);
+        //     $newNumber = $lastNumber + 1;
+        // } else {
+        //     $newNumber = 1;
+        // }
+        
+        // $purchase_order_receiving_no = 'GRN-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
         $location = CompanyLocation::find($locationId ?? $request->location_id);
-        $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
-
-        $locationCode = $location->code ?? 'LOC';
-        $prefix = 'GRN-' . $date;
-
-        // Find latest PO for the same prefix
-        $latestPO = PurchaseOrderReceiving::withTrashed()->where('purchase_order_receiving_no', 'like', "$prefix-%")
-            ->orderByDesc('id')
-            ->first();
-
-
-        if ($latestPO) {
-            // Correct field name
-            $parts = explode('-', $latestPO->purchase_order_receiving_no);
-            $lastNumber = (int) end($parts);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        $purchase_order_receiving_no = 'GRN-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-
+        $grn = generateLocationBasedCode('grn_numbers', $location->code);
+        
         if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
-                'purchase_order_receiving_no' => $purchase_order_receiving_no,
+                'purchase_order_receiving_no' => $grn,
             ]);
         }
 
-        return $purchase_order_receiving_no;
+        return $grn;
     }
 }

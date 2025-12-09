@@ -453,6 +453,15 @@
                         </a>
                     </li>
                     @endcanAccess
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('payment-voucher.index') }}"
+                            onclick="loadPageContent('{{ route('payment-voucher.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Receipt Vouchers</span>
+                        </a>
+                    </li>
+
                     @canAccess('journal-voucher')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('journal-voucher.index') }}"
@@ -491,10 +500,26 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.sale-order.index') }}"
-                            onclick="loadPageContent('{{ route('sales.sale-order.index') }}')"
+                            href="{{ route('sales.delivery-order.index') }}"
+                            onclick="loadPageContent('{{ route('sales.delivery-order.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Delivery Order</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.delivery-challan.index') }}"
+                            onclick="loadPageContent('{{ route('sales.delivery-challan.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Delivery Challan</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.sales-invoice.index') }}"
+                            onclick="loadPageContent('{{ route('sales.sales-invoice.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Sales Invoice</span>
                         </a>
                     </li>
                

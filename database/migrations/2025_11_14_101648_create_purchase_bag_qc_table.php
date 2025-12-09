@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('qc', function (Blueprint $table) {
+        Schema::create('purchase_bag_qc', function (Blueprint $table) {
             $table->id();
             $table->foreignId("purchase_order_receiving_data_id")->constrained("purchase_order_receiving_data")->cascadeOnDelete();
             $table->float("accepted_quantity")->default(0)->nullable();

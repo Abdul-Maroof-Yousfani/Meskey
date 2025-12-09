@@ -31,7 +31,7 @@
                                     </td>
 
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
-                                        <strong>{{ get_customer_name($group['customer']) }}</strong>
+                                        <strong>{{  $group['customer'] ? get_customer_name($group['customer']) : 'N/A' }}</strong>
                                         <br>
                                         <small class="text-muted">
                                             {{ $group['contact_person'] }}<br>
@@ -84,12 +84,12 @@
                                         <div class="btn-group" role="group">
 
                                             <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry')" title="View" style="margin-right: 10px;">
+                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
                                             @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
                                                 <button 
-                                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry')"
+                                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
                                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                     <i class="ft-edit"></i>
                                                 </button>

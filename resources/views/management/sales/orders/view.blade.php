@@ -93,9 +93,13 @@
                     <thead>
                         <tr>
                             <th>Item</th>
+                            <th>Bag Type</th>
+                            <th>Pack Size</th>
                             <th>Quantity</th>
                             <th>Rate</th>
                             <th>Amount</th>
+                            <th>Brand</th>
+                            <th style="display: none;">Pack Size</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -111,6 +115,14 @@
                                     </select>
                                 </td>
                                 <td>
+                                    <input type="text" name="bag_type[]" id="bag_type_{{ $index }}" value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
+                                        min="0" readonly>
+                                </td>
+                                  <td>
+                                    <input type="text" name="bag_size[]" id="bag_type_{{ $index }}" value="{{ $data->bag_size }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
+                                        min="0" readonly>
+                                </td>
+                                <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
                                         min="0" readonly>
                                 </td>
@@ -120,6 +132,14 @@
                                 </td>
                                 <td>
                                     <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * $data->qty }}" class="form-control amount" readonly>
+                                </td>
+
+                                <td>
+                                    <input type="text" name="brand_id[]" id="brand_id{{ $index }}" value="{{ getBrandById($data->brand_id)?->name }}" class="form-control brand_id" readonly>
+                                </td>
+
+                                <td style="display: none;">
+                                    <input type="text" name="pack_size[]" value="0" id="pack_size{{ $index }}" value="{{ $data->pack_size }}" class="form-control pack_size" readonly>
                                 </td>
                                 <td>
                                     <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
@@ -153,7 +173,7 @@
 </div>
 
 <script>
-    let salesInquiryRowIndex = 1;
+    salesInquiryRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();
