@@ -249,7 +249,7 @@ class DeliveryOrderController extends Controller
             $data[] = [
                 'text' => $saleOrder->reference_no,
                 'id' => $saleOrder->id,
-                'type' => $saleOrder->payment_term_id,
+                'type' => $saleOrder->pay_type_id,
             ];
         }
 

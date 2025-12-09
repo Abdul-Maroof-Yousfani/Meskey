@@ -377,7 +377,9 @@ class SalesInvoiceController extends Controller
         $arrival_location_id = $request->arrival_location_id;
         $exclude_sales_invoice_id = $request->exclude_sales_invoice_id;
 
-        $delivery_challans = DeliveryChallan::with("delivery_challan_data")
+        $delivery_challans = DeliveryChallan::whereHas("receivingRequest", function($query) {
+                $query->where("am_approval_status", "approved");
+            })->with("delivery_challan_data")
             ->where("customer_id", $customer_id)
             ->where("location_id", $location_id)
             ->where("arrival_id", $arrival_location_id)
