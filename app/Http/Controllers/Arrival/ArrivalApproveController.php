@@ -97,7 +97,8 @@ class ArrivalApproveController extends Controller
                     ->from('arrival_sampling_requests')
                     ->whereColumn('arrival_ticket_id', 'arrival_tickets.id')
                     ->where('sampling_type', 'inner')
-                    ->where('approved_status', 'pending');
+                    ->where('approved_status', 'pending')
+                    ->where('arrival_sampling_requests.deleted_at', null);
             })
             ->first();
 
