@@ -230,19 +230,20 @@
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div>
-
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
                             <th>Item</th>
-                            <th>Bag type</th>
-                            <th>Bag size</th>
+                            <th>Bag Type</th>
+                            <th>Pack Size</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
+                            <th>Quantity (Kg)</th>
                             <th>Rate</th>
+                            <th>Amount</th>
                             <th>Brand</th>
+                            <th>Desc</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Action</th>
                         </tr>
@@ -253,10 +254,10 @@
                                 $balance = delivery_order_balance($data->so_data_id);
                                 $allowed_value = (int)$balance + (int)$data->no_of_bags;
                             @endphp
+
                             <tr id="row_{{ $index }}">
                                 <td>
-
-                                    <select name="item_id[]" id="item_id" class="form-control select2" readonly>
+                                    <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2">
                                         <option value="">Select Item</option>
                                         @foreach ($items as $item)
                                             <option value="{{ $item->id }}" @selected($item->id == $data->item_id)>
@@ -265,18 +266,14 @@
                                     </select>
                                 </td>
                                 <td>
+                                    <input type="text" id="bag_type_display_{{ $index }}"
+                                        value="{{ bag_type_name($data->bag_type) }}"
+                                        class="form-control" readonly>
 
-                                    <input type="text" name="" id="bag_type_{{ $index }}"
-                                        value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0">
+                                    <input type="hidden" name="bag_type[]" value="{{ $data->bag_type }}">
 
-                                    <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}"
-                                        value="{{ $data->bag_type }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0">
-
-                                        <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
-                                        value="{{ $data->so_data_id }}" onkeyup="calc(this)"
-                                        class="form-control so_data_id" step="0.01" min="0">
+                                    <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
+                                        value="{{ $data->so_data_id }}">
                                 </td>
                                 <td>
                                     <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
@@ -285,25 +282,28 @@
                                 </td>
                                 <td>
                                     <input type="hidden" class="allowed_value" value="{{ $allowed_value }}" />
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
+                                    <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         value="{{ $data->no_of_bags }}" onkeyup="calc(this); is_allowed(this)"
                                         class="form-control no_of_bags" step="0.01" min="0">
+                                    <span style="font-size: 14px;">Available: {{ $allowed_value }}</span>
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}"
-                                        onkeyup="calc(this)" value="{{ $data->qty }}" class="form-control qty"
+                                    <input type="text" name="qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->bag_size * $data->no_of_bags }}" class="form-control qty"
                                         step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $index }}"
+                                    <input type="text" name="rate[]" id="rate_{{ $index }}"
                                         value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
-                                        step="0.01" min="0" readonly>
+                                        step="0.01" min="0">
                                 </td>
-
-
                                 <td>
-
-                                    <select name="brand_id[]" id="brand_id" class="form-control select2" readonly>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}"
+                                        value="{{ $data->rate * ($data->bag_size * $data->no_of_bags) }}"
+                                        class="form-control amount" readonly>
+                                </td>
+                                <td>
+                                    <select name="brand_id[]" id="brand_id_{{ $index }}" class="form-control select2">
                                         <option value="">Select Brand</option>
                                         @foreach (getAllBrands() as $brand)
                                             <option value="{{ $brand->id }}" @selected($brand->id == $data->brand_id)>
@@ -311,13 +311,14 @@
                                         @endforeach
                                     </select>
                                 </td>
-
+                                <td>
+                                    <input type="text" name="desc[]" id="desc_{{ $index }}"
+                                        value="{{ $data->description }}" class="form-control">
+                                </td>
                                 <td style="display: none;">
                                     <input type="text" name="pack_size[]" id="pack_size_{{ $index }}"
-                                        class="form-control pack_size" value="{{ 0 }}" readonly>
+                                        class="form-control pack_size" value="{{ $data->pack_size ?? 0 }}" readonly>
                                 </td>
-
-
                                 <td>
                                     <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
                                         style="width:60px;">
@@ -510,13 +511,42 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
+                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                    <option value="">Select Bag Type</option>
+                    @foreach ($bag_types ?? [] as $bag_type)
+                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="so_data_id[]" value="">
             </td>
             <td>
-                <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
+                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calc(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" onkeyup="calc(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="text" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" readonly>
+            </td>
+            <td>
+                <input type="text" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
+            </td>
+            <td>
+                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                    <option value="">Select Brand</option>
+                    @foreach (getAllBrands() ?? [] as $brand)
+                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <input type="text" name="desc[]" id="desc_${index}" class="form-control">
+            </td>
+            <td style="display: none;">
+                <input type="text" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack_size" readonly>
             </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
@@ -525,29 +555,34 @@
             </td>
         </tr>
     `;
-        $('#salesInquiryBody').append(row);
+        $('#soTableBody').append(row);
         $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
+        $(`#bag_type_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
     }
 
     function calc(el) {
         const element = $(el).closest("tr");
-
-
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
-
+        const bag_size = $(element).find(".bag_size");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty = $(element).find(".qty");
+        const rate = $(element).find(".rate");
         const amount = $(element).find(".amount");
 
-        amount.val(rate * qty);
+        // Calculate qty from bag_size * no_of_bags
+        if (bag_size.val() && no_of_bags.val()) {
+            const qtyResult = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
+            qty.val(qtyResult);
+        }
+
+        // Calculate amount from qty * rate
+        const qtyVal = parseFloat(qty.val()) || 0;
+        const rateVal = parseFloat(rate.val()) || 0;
+        amount.val((qtyVal * rateVal).toFixed(2));
     }
 
     function get_sale_orders() {

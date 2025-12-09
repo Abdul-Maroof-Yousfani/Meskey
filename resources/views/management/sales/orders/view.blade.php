@@ -13,8 +13,29 @@
         
         <div class="col-md-4">
             <div class="form-group">
+                <label class="form-label">So No:</label>
+                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Date:</label>
+                <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}" class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Reference Number:</label>
+                <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" onchange="getNumber()" id="delivery_date" class="form-control" readonly>
+                <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
             </div>
         </div>
 
@@ -22,13 +43,6 @@
             <div class="form-group">
                 <label class="form-label">Expiry Date:</label>
                 <input type="date" name="expiry_date" id="expiry_date" value="{{ $sale_order->expiry_date }}" class="form-control" readonly>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">So No:</label>
-                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
             </div>
         </div>
 
@@ -69,12 +83,26 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple>
+                <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
                     <option value="">Select Locations</option>
                     @foreach(get_locations() as $location)
                         <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
                     @endforeach
                 </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Pay Type:</label>
+                <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Token Money:</label>
+                <input type="text" value="{{ $sale_order->token_money ?? 'N/A' }}" class="form-control" readonly>
             </div>
         </div>
     </div>

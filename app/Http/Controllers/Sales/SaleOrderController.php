@@ -26,7 +26,10 @@ class SaleOrderController extends Controller
     {
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
-        $inquiries = SalesInquiry::all();
+        $inquiries = SalesInquiry::where('am_approval_status', 'approved')
+            ->whereDoesntHave('sale_order')
+            ->select('id', 'inquiry_no')
+            ->get();
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
         $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
@@ -36,7 +39,7 @@ class SaleOrderController extends Controller
 
     public function edit(int $id)
     {
-        $sale_order = SalesOrder::with('locations', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data')->find($id);
+        $sale_order = SalesOrder::with(['locations', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
@@ -49,7 +52,7 @@ class SaleOrderController extends Controller
 
     public function view(Request $request, int $id)
     {
-        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'sales_order_data.sale_inquiry_data')->find($id);
+        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'sales_order_data.sale_inquiry_data', 'pay_type')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
@@ -77,8 +80,7 @@ class SaleOrderController extends Controller
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index],
                     'brand_id' => $request->brand_id[$index],
-                    'sales_inquiry_id' => $request->sales_inquiry_id[$index],
-                    'bag_type' => $request->bag_type[$index],
+                     'bag_type' => $request->bag_type[$index],
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
                 ]);
@@ -86,7 +88,7 @@ class SaleOrderController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
 
         return response()->json(['data' => 'Sale Order has been created']);
@@ -94,22 +96,33 @@ class SaleOrderController extends Controller
 
     public function update(SalesOrderRequest $request, int $id)
     {
-
-        // $locations = $request->locations;
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
 
+            // Update parent sale order data
+            $sales_order->update($request->validated());
+
+            // Update locations
+            if ($request->has('locations')) {
+                $sales_order->locations()->delete();
+                foreach ($request->locations as $location) {
+                    $sales_order->locations()->create([
+                        'location_id' => $location,
+                    ]);
+                }
+            }
+
+            // Update line items
             $sales_order->sales_order_data()->delete();
             foreach ($request->item_id as $index => $item) {
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
-                    'pack_size' => $request->pack_size[$index],
+                    'pack_size' => $request->pack_size[$index] ?? 0,
                     'brand_id' => $request->brand_id[$index],
-                    'sales_inquiry_id' => $request->sales_inquiry_id[$index],
-                    'bag_type' => $request->bag_type_id[$index],
+                    'bag_type' => $request->bag_type[$index] ?? $request->bag_type_id[$index] ?? null,
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
                 ]);
@@ -117,10 +130,10 @@ class SaleOrderController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
 
-        return response()->json(['data' => 'Sale Order has been created']);
+        return response()->json(['data' => 'Sale Order has been updated']);
     }
 
     public function destroy(int $id)
@@ -137,7 +150,14 @@ class SaleOrderController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $SalesOrders = SalesOrder::with('sale_inquiry')->latest()
+        $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search) . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm]);
+                });
+            })
+            ->latest()
             ->paginate($perPage);
        
         $groupedData = [];
@@ -146,21 +166,25 @@ class SaleOrderController extends Controller
             $so_no = $SaleOrder->reference_no;
             $items = $SaleOrder->sales_order_data;
 
-            if ($items->isEmpty()) {
-                continue;
-            }
-
             $itemRows = [];
-            foreach ($items as $itemData) {
+            if ($items->isEmpty()) {
                 $itemRows[] = [
-                    'item_data' => $itemData,
+                    'item_data' => (object)['item_id' => null, 'qty' => 0, 'rate' => 0, 'description' => 'No items'],
+                    'item' => (object)['name' => 'N/A', 'unitOfMeasure' => (object)['name' => '']],
                 ];
+            } else {
+                foreach ($items as $itemData) {
+                    $itemRows[] = [
+                        'item_data' => $itemData,
+                        'item' => $itemData->item,
+                    ];
+                }
             }
 
             $groupedData[] = [
                 'sale_order' => $SaleOrder,
                 'so_no' => $so_no,
-                'created_by_id' => 1,
+                'created_by_id' => $SaleOrder->created_by_id ?? 1,
                 'inquiry_no' => $SaleOrder?->sale_inquiry?->inquiry_no ?? "N/A",
                 'delivery_date' => $SaleOrder->delivery_date,
                 'id' => $SaleOrder->id,
@@ -168,12 +192,10 @@ class SaleOrderController extends Controller
                 'status' => $SaleOrder->am_approval_status,
                 'created_at' => $SaleOrder->created_at,
                 'customer' => $SaleOrder->customer,
-                'rowspan' => count($itemRows),
+                'rowspan' => max(count($itemRows), 1),
                 'items' => $itemRows,
             ];
-
         }
-
 
         return view('management.sales.orders.getList', [
             'SalesOrders' => $SalesOrders,           // for pagination
@@ -208,7 +230,18 @@ class SaleOrderController extends Controller
         $inquiry_id = $request->inquiry_id;
 
         $items = Product::select('name', 'id')->get();
-        $inquiry = SalesInquiry::with('sales_inquiry_data')->where('id', $inquiry_id)->first();
+        $inquiry = SalesInquiry::with(['sales_inquiry_data', 'locations'])->where('id', $inquiry_id)->first();
+
+        // Return inquiry details along with the items view
+        if ($request->ajax() && $request->has('get_details')) {
+            return response()->json([
+                'required_date' => $inquiry->required_date,
+                'customer_id' => $inquiry->customer,
+                'contract_type' => $inquiry->contract_type,
+                'locations' => $inquiry->locations->pluck('location_id')->toArray(),
+                'token_money' => $inquiry->token_money,
+            ]);
+        }
 
         return view('management.sales.orders.getItems', compact('inquiry', 'items'));
     }
@@ -227,7 +260,7 @@ class SaleOrderController extends Controller
         $datePart = Carbon::parse($date)->format('Y-m-d');
 
         if ($latestContract) {
-            $parts = explode('-', $latestContract->inquiry_no);
+            $parts = explode('-', $latestContract->reference_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {

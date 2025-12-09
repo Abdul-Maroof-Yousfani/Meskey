@@ -16,97 +16,162 @@
                 <tbody>
                     @forelse($groupedInquiries as $group)
                         @php $isFirstRow = true; @endphp
-                        @foreach($group['items'] as $itemRow)
-                            <tr>
-                                {{-- Inquiry No & Customer - Show only on first row --}}
-                                @if($isFirstRow)
-                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold" style="background-color: #e3f2fd;">
-                                        <div class="p-2">
-                                            #{{ $group['inquiry_no'] }}
+                        @if(count($group['items']) > 0)
+                            @foreach($group['items'] as $itemRow)
+                                <tr>
+                                    {{-- Inquiry No & Customer - Show only on first row --}}
+                                    @if($isFirstRow)
+                                        <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold" style="background-color: #e3f2fd;">
+                                            <div class="p-2">
+                                                #{{ $group['inquiry_no'] }}
+                                                <br>
+                                                <small class="text-muted">
+                                                    {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
+                                                </small>
+                                            </div>
+                                        </td>
+
+                                        <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
+                                            <strong>{{ get_customer_name($group['customer']) }}</strong>
                                             <br>
                                             <small class="text-muted">
-                                                {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
+                                                {{ $group['contact_person'] }}<br>
+                                                <em>{{ ucfirst($group['contract_type']) }}</em>
                                             </small>
-                                        </div>
+                                        </td>
+                                    @endif
+
+                                    {{-- Item Details --}}
+                                    <td class="align-middle" style="background-color: #f8fff8;">
+                                        <strong>{{ $itemRow['item']->name ?? 'N/A' }}</strong>
+                                        @if($itemRow['item_data']->description)
+                                            <br><small class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
+                                        @endif
                                     </td>
 
-                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
-                                        <strong>{{ get_customer_name($group['customer']) }}</strong>
+                                    <td class="text-right align-middle">
+                                        {{ number_format($itemRow['item_data']->qty, 2) }}
+                                        <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
+                                    </td>
+
+                                    <td class="text-right align-middle">
+                                        {{ number_format($itemRow['item_data']->rate, 2) }}
+                                    </td>
+
+                                    {{-- Date & Status - Show only on first row --}}
+                                    @if($isFirstRow)
+                                        <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
+                                            {{ \Carbon\Carbon::parse($group['date'])->format('d M Y') }}
+                                            <br>
+                                            <small class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
+                                        </td>
+
+                                        <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
+                                            @php
+                                                $status = $group['status'];
+                                                $badge = match(strtolower($status)) {
+                                                    'approved' => 'badge-success',
+                                                    'rejected' => 'badge-danger',
+                                                    'pending'  => 'badge-warning',
+                                                    default    => 'badge-secondary',
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $badge }} px-3 py-2">
+                                                {{ ucfirst($status) }}
+                                            </span>
+                                        </td>
+
+                                        <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
+                                            <div class="btn-group" role="group">
+                                                <a class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')" title="View" style="margin-right: 10px;">
+                                                    <i class="ft-eye"></i>
+                                                </a>
+                                                @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
+                                                    <button 
+                                                        onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
+                                                        class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                                                        <i class="ft-edit"></i>
+                                                    </button>
+
+                                                    <button onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')" type="button"
+                                                            class="btn btn-sm btn-danger" title="Delete">
+                                                        <i class="ft-trash-2"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    @endif
+                                </tr>
+                                @php $isFirstRow = false @endphp
+                            @endforeach
+                        @else
+                            {{-- No items, show single row --}}
+                            <tr>
+                                <td class="align-middle text-center font-weight-bold" style="background-color: #e3f2fd;">
+                                    <div class="p-2">
+                                        #{{ $group['inquiry_no'] }}
                                         <br>
                                         <small class="text-muted">
-                                            {{ $group['contact_person'] }}<br>
-                                            <em>{{ ucfirst($group['contract_type']) }}</em>
+                                            {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
                                         </small>
-                                    </td>
-                                @endif
-
-                                {{-- Item Details --}}
-                                <td class="align-middle" style="background-color: #f8fff8;">
-                                    <strong>{{ $itemRow['item']->name ?? 'N/A' }}</strong>
-                                    @if($itemRow['item_data']->description)
-                                        <br><small class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
-                                    @endif
+                                    </div>
                                 </td>
 
-                                <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->qty, 2) }}
-                                    <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
+                                <td class="align-middle" style="background-color: #e3f2fd;">
+                                    <strong>{{ get_customer_name($group['customer']) }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ $group['contact_person'] }}<br>
+                                        <em>{{ ucfirst($group['contract_type']) }}</em>
+                                    </small>
                                 </td>
 
-                                <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->rate, 2) }}
+                                <td class="align-middle text-center text-muted" colspan="3">
+                                    <em>No items</em>
                                 </td>
 
-                                {{-- Date & Status - Show only on first row --}}
-                                @if($isFirstRow)
-                                    <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
-                                        {{ \Carbon\Carbon::parse($group['date'])->format('d M Y') }}
-                                        <br>
-                                        <small class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
-                                    </td>
+                                <td class="text-center align-middle">
+                                    {{ \Carbon\Carbon::parse($group['date'])->format('d M Y') }}
+                                    <br>
+                                    <small class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
+                                </td>
 
-                                    <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
-                                        @php
-                                            $status = $group['status'];
-                                            $badge = match(strtolower($status)) {
-                                                'approved' => 'badge-success',
-                                                'rejected' => 'badge-danger',
-                                                'pending'  => 'badge-warning',
-                                                default    => 'badge-secondary',
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $badge }} px-3 py-2">
-                                            {{ ucfirst($status) }}
-                                        </span>
-                                    </td>
+                                <td class="text-center align-middle">
+                                    @php
+                                        $status = $group['status'];
+                                        $badge = match(strtolower($status)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'pending'  => 'badge-warning',
+                                            default    => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badge }} px-3 py-2">
+                                        {{ ucfirst($status) }}
+                                    </span>
+                                </td>
 
-                                    <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
-                                        <div class="btn-group" role="group">
+                                <td class="text-center align-middle">
+                                    <div class="btn-group" role="group">
+                                        <a class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')" title="View" style="margin-right: 10px;">
+                                            <i class="ft-eye"></i>
+                                        </a>
+                                        @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
+                                            <button 
+                                                onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
+                                                class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                                                <i class="ft-edit"></i>
+                                            </button>
 
-                                            <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')" title="View" style="margin-right: 10px;">
-                                                <i class="ft-eye"></i>
-                                            </a>
-                                            @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
-                                                <button 
-                                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
-                                                    class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
-                                                    <i class="ft-edit"></i>
-                                                </button>
-
-                                                
                                             <button onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')" type="button"
-                                                    onclick="confirmDelete(this.closest('form'))"
                                                     class="btn btn-sm btn-danger" title="Delete">
                                                 <i class="ft-trash-2"></i>
                                             </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                @endif
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
-                            @php $isFirstRow = false @endphp
-                        @endforeach
+                        @endif
                     @empty
                         <tr>
                             <td colspan="8" class="text-center py-5">
@@ -128,6 +193,12 @@
                 </tbody>
             </table>
    
+
+<div class="row d-flex" id="paginationLinks">
+    <div class="col-md-12 text-right">
+        {{ $inquiries->links() }}
+    </div>
+</div>
 
 <script>
     function confirmDelete(form) {

@@ -43,14 +43,14 @@
 
                                 {{-- Item Details --}}
                                 <td class="align-middle" style="background-color: #f8fff8;">
-                                    <strong>{{ getItem($itemRow["item_data"]->item_id)?->name ?? 'N/A' }}</strong>
-                                    @if($itemRow['item_data']->description)
+                                    <strong>{{ $itemRow['item']->name ?? 'N/A' }}</strong>
+                                    @if($itemRow['item_data']->description ?? null)
                                         <br><small class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
                                     @endif
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->qty, 2) }}
+                                    {{ number_format($itemRow['item_data']->qty ?? 0, 2) }}
                                     <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                                 </td>
 
@@ -101,7 +101,6 @@
 
                                                 
                                             <button onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')" type="button"
-                                                    onclick="confirmDelete(this.closest('form'))"
                                                     class="btn btn-sm btn-danger" title="Delete">
                                                 <i class="ft-trash-2"></i>
                                             </button>
@@ -114,7 +113,7 @@
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="10" class="text-center py-5">
                                 <div class="my-5">
                                     <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                                         <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -132,22 +131,9 @@
                     @endforelse
                 </tbody>
             </table>
-   
 
-<script>
-    function confirmDelete(form) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "This inquiry will be deleted permanently!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    }
-</script>
+<div class="row d-flex" id="paginationLinks">
+    <div class="col-md-12 text-right">
+        {{ $SalesOrders->links() }}
+    </div>
+</div>

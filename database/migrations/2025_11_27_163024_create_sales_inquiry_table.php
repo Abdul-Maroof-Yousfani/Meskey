@@ -24,6 +24,7 @@ return new class extends Migration
             $table->integer("created_by");
             $table->string("contact_person");
             $table->string("remarks");
+            $table->decimal('token_money', 15, 2)->nullable();
             $table->string("am_approval_status");
             $table->string("am_change_made");
             $table->timestamps();

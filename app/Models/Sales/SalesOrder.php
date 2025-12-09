@@ -14,15 +14,18 @@ class SalesOrder extends Model
 
     protected $fillable = [
         "delivery_date",
+        "order_date",
         "expiry_date",
         "reference_no",
+        "so_reference_no",
         "customer_id",
         "inquiry_id",
         "sauda_type",
         "payment_term_id",
         "company_id",
         "am_approval_status",
-        "pay_type_id"
+        "pay_type_id",
+        "token_money"
     ];
 
     public function sales_order_data() {

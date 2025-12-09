@@ -13,9 +13,29 @@
 
         <div class="col-md-4">
             <div class="form-group">
+                <label class="form-label">So No:</label>
+                <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Date:</label>
+                <input type="date" name="order_date" id="order_date" onchange="getNumber()" class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Reference Number:</label>
+                <input type="text" name="so_reference_no" id="so_reference_no" class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" onchange="getNumber()" id="delivery_date"
-                    class="form-control">
+                <input type="date" name="delivery_date" id="delivery_date" class="form-control">
             </div>
         </div>
 
@@ -28,8 +48,13 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">So No:</label>
-                <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                <label class="form-label">Inquiries:</label>
+                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
+                    <option value="">Select Inquiry (Optional)</option>
+                    @foreach ($inquiries ?? [] as $inquiry)
+                        <option value="{{ $inquiry->id }}">{{ $inquiry->inquiry_no }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
@@ -47,20 +72,12 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Inquiries:</label>
-                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
-                    <option value="">Select Inquiry</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Sauda Type:</label>
+                <label class="form-label">Contract Type:</label>
                 <select name="sauda_type" id="sauda_type" class="form-control select2">
-                    <option value="">Select Sauda Type</option>
+                    <option value="">Select Contract Type</option>
                     <option value="pohanch">Pohanch</option>
                     <option value="x-mill">X-mill</option>
+                
                 </select>
             </div>
         </div>
@@ -98,6 +115,13 @@
                         <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
                     @endforeach
                 </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Token Money:</label>
+                <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
             </div>
         </div>
 
@@ -159,8 +183,8 @@
                             </td>
 
                             <td>
-                                <input type="number" name="qty[]" id="qty_0" onkeyup="calc(this)"
-                                    class="form-control qty" step="0.01" min="0">
+                                <input type="number" name="qty[]" id="qty_0"
+                                    class="form-control qty" step="0.01" min="0" readonly>
                             </td>
                             <td>
                                 <input type="number" name="rate[]" id="rate_0" onkeyup="calc(this)"
@@ -210,35 +234,34 @@
 <script>
     salesInquiryRowIndex = 1;
 
-    function calc(el) {
-        const element  = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
-        const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
-
-        if(!(bag_size.val() && no_of_bags.val())) return;
-
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-        alert(result);
-  
-        qty.val(result);
-    }
-
     $(document).ready(function() {
         $('.select2').select2();
     });
 
     function calcBagTypes(el) {
-        const element  = $(el).closest("tr");
+        const element = $(el).closest("tr");
         const bag_size = $(element).find(".bag_size");
         const no_of_bags = $(element).find(".no_of_bags");
         const qty = $(element).find(".qty");
 
-        if(!(bag_size.val() && no_of_bags.val())) return;
+        if (!(bag_size.val() && no_of_bags.val())) return;
 
         const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-  
         qty.val(result);
+        
+        // Also calculate amount
+        calc(el);
+    }
+
+    function calc(el) {
+        const element = $(el).closest("tr");
+
+        const rate = parseFloat($(element).find(".rate").val()) || 0;
+        const qty = parseFloat($(element).find(".qty").val()) || 0;
+
+        const amount = $(element).find(".amount");
+
+        amount.val(rate * qty);
     }
 
     function addRow() {
@@ -254,10 +277,36 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
+                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                    <option value="">Select Bag Type</option>
+                    @foreach ($bag_types ?? [] as $bag_type)
+                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calcBagTypes(this)" step="0.01" min="0">
+                <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_${index}" value="" class="form-control">
+            </td>
+            <td>
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" onkeyup="calcBagTypes(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0" readonly>
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
+            </td>
+            <td>
+                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                    <option value="">Select Brands</option>
+                    @foreach (getAllBrands() ?? [] as $brand)
+                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td style="display: none;">
+                <input type="number" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack_size" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
@@ -271,26 +320,12 @@
     `;
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
+        $(`#bag_type_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
-    }
-
-    function calc(el) {
-        const element = $(el).closest("tr");
-
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
-
-        const amount = $(element).find(".amount");
-
-        amount.val(rate * qty);
     }
 
     function get_inquiries() {
@@ -320,6 +355,57 @@
     function get_inquiry_data() {
         const inquiry_id = $("#inquiry_id").val();
 
+        if (!inquiry_id) {
+            // If no inquiry selected, make fields editable
+            enableInquiryFields();
+            return;
+        }
+
+        // First, get the inquiry details
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiry-data') }}",
+            method: "GET",
+            data: {
+                inquiry_id: inquiry_id,
+                get_details: true
+            },
+            dataType: "json",
+            success: function(res) {
+                // Fill delivery date with required_date
+                if (res.required_date) {
+                    $("#delivery_date").val(res.required_date);
+                    getNumber(); // Generate SO number based on date
+                }
+
+                // Fill customer
+                if (res.customer_id) {
+                    $("#customer_id").val(res.customer_id).trigger('change.select2');
+                }
+
+                // Fill contract type (sauda_type)
+                if (res.contract_type) {
+                    $("#sauda_type").val(res.contract_type).trigger('change.select2');
+                }
+
+                // Fill locations
+                if (res.locations && res.locations.length > 0) {
+                    $("#locations").val(res.locations).trigger('change.select2');
+                }
+
+                // Fill token money
+                if (res.token_money !== null && res.token_money !== undefined) {
+                    $("#token_money").val(res.token_money);
+                }
+
+                // Make fields readonly
+                disableInquiryFields();
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+
+        // Then, get the line items
         $.ajax({
             url: "{{ route('sales.get-sale-inquiry-data') }}",
             method: "GET",
@@ -328,15 +414,87 @@
             },
             dataType: "html",
             success: function(res) {
-                console.log("success");
-                $("#alesInquiryBody").empty();
                 $("#salesInquiryBody").html(res);
             },
             error: function(error) {
                 console.log(error);
             }
         });
+    }
 
+    function disableInquiryFields() {
+        // Disable fields when inquiry is selected
+        $("#delivery_date").prop('readonly', true);
+        $("#customer_id").prop('disabled', true);
+        $("#sauda_type").prop('disabled', true);
+        $("#locations").prop('disabled', true);
+        $("#token_money").prop('readonly', true);
+
+        // Add hidden input for customer_id
+        if (!$('#customer_id_hidden').length) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'customer_id',
+                id: 'customer_id_hidden',
+                value: $("#customer_id").val()
+            }).appendTo('form');
+        } else {
+            $('#sauda_type_hidden').val(
+                $("#sauda_type").val().toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
+            );
+        }
+
+        // Add hidden input for sauda_type (contract type)
+        if (!$('#sauda_type_hidden').length) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'sauda_type',
+                id: 'sauda_type_hidden',
+                value: $("#sauda_type").val()
+            }).appendTo('form');
+        } else {
+            $('#sauda_type_hidden').val(
+                $("#sauda_type").val().toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
+            );
+        }
+
+        // Add hidden inputs for locations (multiple)
+        $('.locations_hidden').remove(); // Remove existing hidden inputs first
+        var selectedLocations = $("#locations").val();
+        if (selectedLocations && selectedLocations.length > 0) {
+            selectedLocations.forEach(function(loc) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'locations[]',
+                    class: 'locations_hidden',
+                    value: loc
+                }).appendTo('form');
+            });
+        }
+
+        // Remove the name from disabled selects to avoid conflict
+        $("#customer_id").removeAttr('name');
+        $("#sauda_type").removeAttr('name');
+        $("#locations").removeAttr('name');
+    }
+
+    function enableInquiryFields() {
+        // Enable fields when no inquiry selected
+        $("#delivery_date").prop('readonly', false);
+        $("#customer_id").prop('disabled', false);
+        $("#sauda_type").prop('disabled', false);
+        $("#locations").prop('disabled', false);
+        $("#token_money").prop('readonly', false);
+        $("#token_money").val(''); // Clear token money when no inquiry
+
+        // Restore name attributes and remove hidden inputs
+        $("#customer_id").attr('name', 'customer_id');
+        $("#sauda_type").attr('name', 'sauda_type');
+        $("#locations").attr('name', 'locations[]');
+        
+        $('#customer_id_hidden').remove();
+        $('#sauda_type_hidden').remove();
+        $('.locations_hidden').remove();
     }
 
     function getNumber() {
@@ -344,7 +502,7 @@
             url: "{{ route('sales.get.sales-order.getnumber') }}",
             method: "GET",
             data: {
-                contract_date: $("#delivery_date").val()
+                contract_date: $("#order_date").val()
             },
             dataType: "json",
             success: function(res) {

@@ -25,6 +25,9 @@ return new class extends Migration
             $table->string("status")->default("pending");
             $table->string("am_approval_status")->default("pending");
             $table->string("am_change_made")->default(1);
+            $table->date('order_date')->nullable();
+            $table->decimal('token_money', 15, 2)->nullable();
+            $table->string('so_reference_no');
             $table->timestamps();
         });
     }

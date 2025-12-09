@@ -57,7 +57,7 @@
                 <label class="form-label">Contract Type:</label>
                 <select name="contract_type" id="contract_type" class="form-control select2">
                     <option value="">Select Contract Type</option>
-                    <option value="thadda">Thadda</option>
+                    <option value="x-mill">X-Mill</option>
                     <option value="pohanch">Pohanch</option>
                 </select>
             </div>
@@ -87,6 +87,13 @@
             <div class="form-group">
                 <label class="form-label">Remarks:</label>
                 <textarea name="remarks" id="remarks" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="form-group">
+                <label class="form-label">Token Money:</label>
+                <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
             </div>
         </div>
     </div>

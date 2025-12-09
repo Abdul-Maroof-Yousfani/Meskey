@@ -30,7 +30,7 @@ class SalesInquiryRequest extends FormRequest
 
             "required_date" => "required|date",
 
-            "contract_type" => "required|in:thadda,pohanch",
+            "contract_type" => "required|in:pohanch,x-mill",
             "contact_person" => "required",
             "remarks" => "required",
 
@@ -62,6 +62,7 @@ class SalesInquiryRequest extends FormRequest
             "pack_size" => "nullable|array",
             "pack_size.*" => "required",
 
+            "token_money" => "nullable|numeric",
 
         ];
     }

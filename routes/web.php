@@ -17,6 +17,9 @@ use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Procurement\Store\QCItems;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\SalesInquiry;
+use App\Models\Sales\SalesOrder;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -33,7 +36,11 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 Route::get("checking-data", function() {
-    dd(PurchaseBagQC::all());
+    SalesInquiry::query()->delete();
+    SalesOrder::query()->delete();
+    DeliveryOrder::query()->delete();
+    App\Models\Sales\DeliveryChallanData::query()->delete();
+    App\Models\Sales\SalesInvoice::query()->delete();
 });
 
 

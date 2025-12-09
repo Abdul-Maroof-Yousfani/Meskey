@@ -88,10 +88,17 @@
             </div>
         </div>
 
-        <div class="col-md-12 mt-3">
+        <div class="col-md-8 mt-3">
             <div class="form-group">
                 <label class="form-label">Remarks:</label>
                 <textarea name="remarks" id="remarks" class="form-control" rows="2">{{ $sales_inquiry->remarks }}</textarea>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="form-group">
+                <label class="form-label">Token Money:</label>
+                <input type="number" name="token_money" id="token_money" value="{{ $sales_inquiry->token_money }}" class="form-control" step="0.01" min="0">
             </div>
         </div>
     </div>
@@ -158,8 +165,8 @@
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $i }}"
-                                        value="{{ $data->qty }}" class="form-control" step="0.01"
-                                        min="0">
+                                        value="{{ $data->bag_size * $data->no_of_bags }}" class="form-control qty" step="0.01"
+                                        min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $i }}"
@@ -215,14 +222,27 @@
 </form>
 
 <script>
-    salesInquiryRowIndex = "{{ $i }}";
+    salesInquiryRowIndex = {{ $i }};
 
     $(document).ready(function() {
         $('.select2').select2();
     });
 
+    function calc(el) {
+        const element = $(el).closest("tr");
+        const bag_size = $(element).find(".bag_size");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty = $(element).find(".qty");
+
+        if (!(bag_size.val() && no_of_bags.val())) return;
+
+        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
+
+        qty.val(result);
+    }
+
     function addRow() {
-        let index = "{{ $i }}";
+        let index = salesInquiryRowIndex++;
         let row = `
         <tr id="row_${index}">
             <td>
@@ -234,10 +254,35 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0">
+                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                    <option value="">Select Bag Type</option>
+                    @foreach ($bag_types ?? [] as $bag_type)
+                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calc(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" onkeyup="calc(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" readonly>
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0">
+            </td>
+            <td>
+                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                    <option value="">Select Brand</option>
+                    @foreach (getAllBrands() ?? [] as $brand)
+                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td style="display: none;">
+                <input type="text" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="desc[]" id="desc_${index}" class="form-control">
@@ -251,17 +296,13 @@
     `;
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
+        $(`#bag_type_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
     }
-
 
     function getNumber() {
         $.ajax({

@@ -27,50 +27,57 @@ class SalesInquiryController extends Controller
     }
 
     public function getList(Request $request)
-{
-    $perPage = $request->get('per_page', 25);
+    {
+        $perPage = $request->get('per_page', 25);
 
-    // Eager load the inquiry + all its items + related product
-    $inquiries = SalesInquiry::latest()
-        ->paginate($perPage);
+        // Eager load the inquiry + all its items + related product
+        $inquiries = SalesInquiry::with(['sales_inquiry_data.item'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search) . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->whereRaw('LOWER(`inquiry_no`) LIKE ?', [$searchTerm])
+                        ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm]);
+                });
+            })
+            ->latest()
+            ->paginate($perPage);
 
-    $groupedData = [];
+        $groupedData = [];
 
-    foreach ($inquiries as $inquiry) {
-        $inquiryNo = $inquiry->inquiry_no;
-        $items = $inquiry->sales_inquiry_data;
+        foreach ($inquiries as $inquiry) {
+            $inquiryNo = $inquiry->inquiry_no;
+            $items = $inquiry->sales_inquiry_data;
 
-        if ($items->isEmpty()) continue;
+            $itemRows = [];
+            foreach ($items as $itemData) {
+                $itemRows[] = [
+                    'item_data' => $itemData,
+                    'item' => $itemData->item,
+                ];
+            }
 
-        $itemRows = [];
-        foreach ($items as $itemData) {
-            $itemRows[] = [
-                'item_data' => $itemData,
-                'item' => $itemData->item,
+            $groupedData[] = [
+                'inquiry' => $inquiry,
+                'inquiry_no' => $inquiryNo,
+                'created_by_id' => $inquiry->created_by,
+                'date' => $inquiry->date,
+                'id' => $inquiry->id,
+                'customer' => $inquiry->customer,
+                'status' => $inquiry->am_approval_status,
+                'contact_person' => $inquiry->contact_person,
+                'contract_type' => $inquiry->contract_type,
+                'remarks' => $inquiry->remarks,
+                'created_at' => $inquiry->created_at,
+                'rowspan' => max(count($itemRows), 1),
+                'items' => $itemRows,
             ];
         }
 
-        $groupedData[] = [
-            'inquiry' => $inquiry,
-            'inquiry_no' => $inquiryNo,
-            'created_by_id' => $inquiry->created_by,
-            'date' => $inquiry->date,
-            'id' => $inquiry->id,
-            'customer' => $inquiry->customer,
-            'status' => $inquiry->am_approval_status,
-            'contact_person' => $inquiry->contact_person,
-            'contract_type' => $inquiry->contract_type,
-            'remarks' => $inquiry->remarks,
-            'created_at' => $inquiry->created_at,
-            'rowspan' => count($itemRows),
-            'items' => $itemRows,
-        ];
+        return view('management.sales.inquiry.getList', [
+            'inquiries' => $inquiries,
+            'groupedInquiries' => $groupedData,
+        ]);
     }
-   return view('management.sales.inquiry.getList', [
-    'inquiries' => $inquiries,           // for pagination
-    'groupedInquiries' => $groupedData,  // our grouped data
-]);
-}
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
@@ -121,7 +128,8 @@ class SalesInquiryController extends Controller
                 "created_by" => auth()->user()->id,
                 "company_id" => $request->company_id,
                 "required_date" => $request->required_date,
-                "reference_number" => $request->reference_number
+                "reference_number" => $request->reference_number,
+                'token_money' => $request->token_money
             ]);
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
@@ -148,7 +156,7 @@ class SalesInquiryController extends Controller
             DB::commit();
         } catch(\Exception $e) {
             DB::rollBack();
-            dd($e->getMessage());
+            return response()->json(["error" => $e->getMessage()], 500);
         }
         
 

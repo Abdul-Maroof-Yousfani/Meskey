@@ -14,9 +14,33 @@
 
         <div class="col-md-4">
             <div class="form-group">
+                <label class="form-label">So No:</label>
+                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}"
+                    class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Date:</label>
+                <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
+                    class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Reference Number:</label>
+                <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}"
+                    class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" onchange="getNumber()"
-                    value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
+                <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" 
+                    id="delivery_date" class="form-control" readonly>
             </div>
         </div>
 
@@ -24,14 +48,6 @@
             <div class="form-group">
                 <label class="form-label">Expiry Date:</label>
                 <input type="date" name="expiry_date" id="expiry_date" value="{{ $sale_order->expiry_date }}"
-                    class="form-control" readonly>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">So No:</label>
-                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}"
                     class="form-control" readonly>
             </div>
         </div>
@@ -103,6 +119,13 @@
             </div>
         </div>
 
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Token Money:</label>
+                <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0">
+            </div>
+        </div>
+
     </div>
 
     <div class="row form-mar">
@@ -158,23 +181,18 @@
                                         value="{{ $data->bag_size }}" onkeyup="calcBagTypes(this)" class="form-control bag_size"
                                         step="0.01" min="0">
                                     <input type="hidden" name="sales_inquiry_id[]"
-                                        id="sales_inquiry_id_{{ $index }}" value="{{ $data->id }}"
-                                        class="form-control qty" step="0.01" min="0"
-                                        readonly>
+                                        id="sales_inquiry_id_{{ $index }}" value="{{ $data->sales_inquiry_id }}"
+                                        class="form-control">
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         value="{{ $data->no_of_bags }}" onkeyup="calcBagTypes(this)" class="form-control no_of_bags"
                                         step="0.01" min="0">
-                                    <input type="hidden" name="sales_inquiry_id[]"
-                                        id="sales_inquiry_id_{{ $index }}" value="{{ $data->id }}"
-                                        class="form-control qty" step="0.01" min="0"
-                                        readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->no_of_bags * $data->bag_size }}" class="form-control qty"
-                                        step="0.01" min="0">
+                                        step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}"
@@ -227,7 +245,7 @@
 </form>
 
 <script>
-    salesInquiryRowIndex = 1;
+    salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
 
     $(document).ready(function() {
         $('.select2').select2();
@@ -246,13 +264,39 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
+                <select name="bag_type_id[]" id="bag_type_id_${index}" class="form-control select2">
+                    <option value="">Select Bag Type</option>
+                    @foreach ($bag_types ?? [] as $bag_type)
+                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calcBagTypes(this)" step="0.01" min="0">
+                <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_${index}" value="" class="form-control">
+            </td>
+            <td>
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" onkeyup="calcBagTypes(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" readonly>
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
+            </td>
+            <td>
+                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                    <option value="">Select Brands</option>
+                    @foreach (getAllBrands() ?? [] as $brand)
+                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td style="display: none;">
+                <input type="text" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack-size">
             </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
@@ -263,15 +307,12 @@
     `;
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
+        $(`#bag_type_id_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
     }
 
     function calc(el) {
@@ -279,7 +320,6 @@
 
         const rate = parseFloat($(element).find(".rate").val()) || 0;
         const qty = parseFloat($(element).find(".qty").val()) || 0;
-        console.log(qty);
 
         const amount = $(element).find(".amount");
 
@@ -312,7 +352,6 @@
                 $("#reference_no").val(res.so_no)
             },
             error: function(error) {
-                // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
