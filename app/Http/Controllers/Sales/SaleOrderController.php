@@ -80,7 +80,7 @@ class SaleOrderController extends Controller
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index],
                     'brand_id' => $request->brand_id[$index],
-                     'bag_type' => $request->bag_type[$index],
+                    'bag_type' => $request->bag_type[$index],
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
                 ]);
@@ -175,9 +175,9 @@ class SaleOrderController extends Controller
             } else {
                 foreach ($items as $itemData) {
                     $itemRows[] = [
-                        'item_data' => $itemData,
+                    'item_data' => $itemData,
                         'item' => $itemData->item,
-                    ];
+                ];
                 }
             }
 

@@ -37,24 +37,24 @@
             <!-- Row 1: Dispatch Date, Do No -->
             <div class="row">
 
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Customer:</label>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Customer:</label>
                         <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers()"
                             class="form-control select2">
-                            <option value="">Select Customer</option>
-                            @foreach ($customers ?? [] as $customer)
-                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Sale Orders:</label>
+                    <option value="">Select Customer</option>
+                    @foreach ($customers ?? [] as $customer)
+                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
                             onchange="get_so_detail(), get_so_items(), check_so_type()" class="form-control select2">
-                            <option value="">Select SO</option>
+                    <option value="">Select SO</option>
                         </select>
                     </div>
                 </div>
@@ -149,32 +149,32 @@
                             <option value="">Select Storage</option>
                             @foreach (get_locations() as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
-                        </select>
+                    @endforeach
+                </select>
                     </div>
-                </div>
             </div>
+        </div>
 
             <!-- Row 2: Sale Orders, Sauda Type -->
             <div class="row">
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Sauda Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch">Pohanch</option>
-                            <option value="x-mill">X-mill</option>
-                        </select>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label class="form-label">Sauda Type:</label>
+                <select name="sauda_type" id="sauda_type" class="form-control select2">
+                    <option value="">Select Sauda Type</option>
+                    <option value="pohanch">Pohanch</option>
+                    <option value="x-mill">X-mill</option>
+                </select>
+            </div>
+        </div>
 
 
                 <div class="col-md-6">
-                    <div class="form-group">
+            <div class="form-group">
                         <label class="form-label">Line Description:</label>
                         <textarea name="line_desc" id="line_desc" class="form-control"></textarea>
-                    </div>
-                </div>
+            </div>
+        </div>
 
             </div>
         </div>
@@ -191,7 +191,7 @@
     </div>
 
     <div class="row form-mar">
-
+        
         <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
@@ -427,30 +427,33 @@
         }
     }
 
-    function calc(el) {
-        const element = $(el).closest("tr");
+function calc(el) {
+    const element = $(el).closest("tr");
 
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
+    const rate = parseFloat($(element).find(".rate").val()) || 0;
+    const qty = parseFloat($(element).find(".qty").val()) || 0;
 
-        const amount = $(element).find(".amount");
+    const amount = $(element).find(".amount");
 
-        amount.val(rate * qty);
-    }
+    amount.val(rate * qty);
+}
 
     function get_sale_orders() {
-        const customer_id = $("#customer_id").val();
-        // get-sale-inquiries-against-customer
+    const customer_id = $("#customer_id").val();
+    // get-sale-inquiries-against-customer
 
-        $.ajax({
+    $.ajax({
             url: "{{ route('sales.get.delivery-order.getSoAgainstCustomer') }}",
-            method: "GET",
-            data: {
-                customer_id: customer_id
-            },
-            dataType: "json",
-            success: function(res) {
+        method: "GET",
+        data: {
+            customer_id: customer_id
+        },
+        dataType: "json",
+        success: function(res) {
                 $("#sale_order").empty();
+
+                // Add default "Select Sale Order" option first
+                $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
 
                 res.forEach(item => {
                     $("#sale_order").append(`
@@ -462,36 +465,36 @@
                 });
 
                 $("#sale_order").select2();
-            },
-            error: function(error) {
+        },
+        error: function(error) {
+        
+        }
+    });
 
-            }
-        });
+    // get-sale-inquiry-data
+}
 
-        // get-sale-inquiry-data
-    }
+function get_inquiry_data() {
+    const inquiry_id = $("#inquiry_id").val();
 
-    function get_inquiry_data() {
-        const inquiry_id = $("#inquiry_id").val();
+    $.ajax({
+        url: "{{ route('sales.get-sale-inquiry-data') }}",
+        method: "GET",
+        data: {
+            inquiry_id: inquiry_id
+        },
+        dataType: "html",
+        success: function(res) {
+            console.log("success");
+            $("#alesInquiryBody").empty();
+            $("#salesInquiryBody").html(res);
+        },
+        error: function(error) {
+            console.log(error);
+        }
+    });
 
-        $.ajax({
-            url: "{{ route('sales.get-sale-inquiry-data') }}",
-            method: "GET",
-            data: {
-                inquiry_id: inquiry_id
-            },
-            dataType: "html",
-            success: function(res) {
-                console.log("success");
-                $("#alesInquiryBody").empty();
-                $("#salesInquiryBody").html(res);
-            },
-            error: function(error) {
-                console.log(error);
-            }
-        });
-
-    }
+}
 
     function getNumber() {
         $.ajax({

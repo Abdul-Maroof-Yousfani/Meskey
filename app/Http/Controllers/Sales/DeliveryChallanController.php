@@ -10,6 +10,8 @@ use App\Models\PaymentTerm;
 use App\Models\Product;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\ReceivingRequest;
+use App\Models\Sales\ReceivingRequestItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,8 +57,10 @@ class DeliveryChallanController extends Controller
 
             $delivery_challan->delivery_order()->sync($do_ids);
 
+            // Store delivery challan data items
+            $createdItems = [];
             foreach($request->item_id as $index => $item) {
-                $delivery_challan->delivery_challan_data()->create([
+                $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
@@ -68,15 +72,47 @@ class DeliveryChallanController extends Controller
                     "bilty_no" => $request->bilty_no[$index],
                     "do_data_id" => $request->do_data_id[$index],
                     "bag_type" => $request->bag_type[$index],
-                    
+                ]);
+                $createdItems[] = $dcData;
+            }
+
+            // Create Receiving Request after DC data is created
+            $receivingRequest = ReceivingRequest::create([
+                'delivery_challan_id' => $delivery_challan->id,
+                'dc_no' => $delivery_challan->dc_no,
+                'dc_date' => $delivery_challan->dispatch_date,
+                'truck_number' => $request->truck_no[0] ?? null,
+                'bilty' => $request->bilty_no[0] ?? null,
+                'labour' => $delivery_challan->labour,
+                'transporter' => $delivery_challan->transporter,
+                'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                'company_id' => $delivery_challan->company_id,
+                'created_by_id' => $delivery_challan->created_by_id,
+            ]);
+
+            // Create Receiving Request Items for each DC item
+            foreach ($createdItems as $dcData) {
+                $product = Product::find($dcData->item_id);
+                ReceivingRequestItem::create([
+                    'receiving_request_id' => $receivingRequest->id,
+                    'delivery_challan_data_id' => $dcData->id,
+                    'item_id' => $dcData->item_id,
+                    'item_name' => $product?->name ?? 'N/A',
+                    'dispatch_weight' => $dcData->qty ?? 0,
+                    'receiving_weight' => 0,
+                    'difference_weight' => $dcData->qty ?? 0,
+                    'seller_portion' => 0,
+                    'remaining_amount' => $dcData->qty ?? 0,
                 ]);
             }
 
-
-
             DB::commit();
         } catch(\Exception $e) {
-            dd($e);
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
 
         return response()->json(["Delivery Challan has been created"]);

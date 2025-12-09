@@ -40,5 +40,9 @@ class DeliveryChallan extends Model
     public function delivery_order() {
         return $this->belongsToMany(DeliveryOrder::class, "delivery_challan_delivery_order", "delivery_challan_id", "delivery_order_id");
     }
+
+    public function receivingRequest() {
+        return $this->hasOne(ReceivingRequest::class, "delivery_challan_id");
+    }
     
 }

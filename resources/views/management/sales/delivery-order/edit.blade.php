@@ -272,7 +272,7 @@
 
                                     <input type="hidden" name="bag_type[]" value="{{ $data->bag_type }}">
 
-                                    <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
+                                        <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
                                         value="{{ $data->so_data_id }}">
                                 </td>
                                 <td>
@@ -597,9 +597,21 @@
             },
             dataType: "json",
             success: function(res) {
-                $("#sale_order").select2({
-                    data: res
+                $("#sale_order").empty();
+
+                // Add default "Select Sale Order" option first
+                $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
+
+                res.forEach(item => {
+                    $("#sale_order").append(`
+                        <option value="${item.id}" 
+                                data-type="${item.type || ''}">
+                            ${item.text}
+                        </option>
+                    `);
                 });
+
+                $("#sale_order").select2();
             },
             error: function(error) {
 

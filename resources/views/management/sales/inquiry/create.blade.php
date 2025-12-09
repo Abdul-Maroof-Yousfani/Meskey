@@ -61,8 +61,8 @@
                     <option value="pohanch">Pohanch</option>
                 </select>
             </div>
+            </div>
         </div>
-    </div>
 
     <div class="row">
         <div class="col-md-4 mt-3">
@@ -223,13 +223,13 @@
     function addRow() {
         let index = salesInquiryRowIndex++;
         let row = `
-        <tr id="row_${index}">
+                <tr id="row_${index}">
             <td>
                 <select name="item_id[]" id="item_id_${index}" class="form-control select2">
-                    <option value="">Select Item</option>
+                        <option value="">Select Item</option>
                     @foreach ($items ?? [] as $item)
-                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                    @endforeach
+                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                        @endforeach
                 </select>
             </td>
             <td>
@@ -238,12 +238,12 @@
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0">
             </td>
-            <td>
+                <td>
                 <input type="text" name="desc[]" id="desc_${index}" class="form-control">
-            </td>
+                </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
-                    <i class="fa fa-trash"></i>
+                        <i class="fa fa-trash"></i>
                 </button>
             </td>
         </tr>

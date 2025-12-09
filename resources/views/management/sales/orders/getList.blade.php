@@ -131,7 +131,7 @@
                     @endforelse
                 </tbody>
             </table>
-
+   
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         {{ $SalesOrders->links() }}
