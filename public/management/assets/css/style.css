@@ -1067,6 +1067,10 @@ th {
   background: #10101057;
 }
 
+.select2-selection__rendered.select2-selection__rendered {
+  line-height: 26px !important;
+}
+
 @media (max-width: 575.98px) {
   .sticky-table th,
   .sticky-table td {

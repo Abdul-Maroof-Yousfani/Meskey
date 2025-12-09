@@ -10,7 +10,7 @@
                     <h2 class="page-title">Production Voucher</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('job-order-rm-qc.create') }}','Add Job Order',false,'90%')"
+                    <button onclick="openModal(this,'{{ route('production-voucher.create') }}','Add Production Voucher',false,'90%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Production Voucher
                     </button>
@@ -64,7 +64,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('get.job_order_rm_qc') }}`)
+            filterationCommon(`{{ route('get.production-voucher') }}`)
         });
     </script>
 @endsection

@@ -22,3 +22,12 @@ Route::get('load-qc-commodities-tables', [JobOrderRawMaterialQcController::class
 
 Route::resource('production-voucher', ProductionVoucherController::class);
 Route::post('get-production-voucher', [ProductionVoucherController::class, 'getList'])->name('get.production-voucher');
+Route::post('production-voucher-get-job-orders-by-location', [ProductionVoucherController::class, 'getJobOrdersByLocation'])->name('production-voucher.get-job-orders-by-location');
+Route::get('production-voucher/{id}/input-form', [ProductionVoucherController::class, 'getInputForm'])->name('production-voucher.input.form');
+Route::get('production-voucher/{id}/output-form', [ProductionVoucherController::class, 'getOutputForm'])->name('production-voucher.output.form');
+Route::post('production-voucher/{id}/input', [ProductionVoucherController::class, 'storeInput'])->name('production-voucher.input.store');
+Route::put('production-voucher/{id}/input/{inputId}', [ProductionVoucherController::class, 'updateInput'])->name('production-voucher.input.update');
+Route::delete('production-voucher/{id}/input/{inputId}', [ProductionVoucherController::class, 'destroyInput'])->name('production-voucher.input.destroy');
+Route::post('production-voucher/{id}/output', [ProductionVoucherController::class, 'storeOutput'])->name('production-voucher.output.store');
+Route::put('production-voucher/{id}/output/{outputId}', [ProductionVoucherController::class, 'updateOutput'])->name('production-voucher.output.update');
+Route::delete('production-voucher/{id}/output/{outputId}', [ProductionVoucherController::class, 'destroyOutput'])->name('production-voucher.output.destroy');
