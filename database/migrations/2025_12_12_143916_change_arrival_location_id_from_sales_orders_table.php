@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales_orders', function (Blueprint $table) {
-            $table->foreignId('arrival_location_id')->nullable()->constrained('arrival_locations')->change();
-            $table->foreignId('arrival_sub_location_id')->nullable()->constrained('arrival_sub_locations')->change();
+            $table->dropForeign(['arrival_location_id']);
+            $table->dropForeign(['arrival_sub_location_id']);
+
+            $table->foreignId('arrival_location_id')->nullable()->change();
+            $table->foreignId('arrival_sub_location_id')->nullable()->change();
+            
+            $table->foreign('arrival_location_id')->references('id')->on('arrival_locations');
+            $table->foreign('arrival_sub_location_id')->references('id')->on('arrival_sub_locations');
+
         });
     }
 
