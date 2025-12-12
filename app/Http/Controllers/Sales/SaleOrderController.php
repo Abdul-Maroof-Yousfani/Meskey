@@ -75,8 +75,8 @@ class SaleOrderController extends Controller
         $factoryIds = $request->arrival_location_id ?? [];
         $sectionIds = $request->arrival_sub_location_id ?? [];
         $payload = $request->validated();
-        $payload['arrival_location_id'] = $factoryIds[0] ?? 0;
-        $payload['arrival_sub_location_id'] = $sectionIds[0] ?? 0;
+        $payload['arrival_location_id'] = $factoryIds[0] ?? null;
+        $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($payload);
@@ -126,8 +126,8 @@ class SaleOrderController extends Controller
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $payload = $request->validated();
-            $payload['arrival_location_id'] = $factoryIds[0] ?? 0;
-            $payload['arrival_sub_location_id'] = $sectionIds[0] ?? 0;
+            $payload['arrival_location_id'] = $factoryIds[0] ?? null;
+            $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
 
             // Update parent sale order data
             $sales_order->update($payload);
