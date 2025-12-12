@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::rename("qc_bags", "qc_items");
+        Schema::rename("qc_bag", "qc_items");
     }
 
     /**
