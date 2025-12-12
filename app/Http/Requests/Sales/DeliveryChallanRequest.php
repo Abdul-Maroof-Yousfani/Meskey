@@ -26,8 +26,6 @@ class DeliveryChallanRequest extends FormRequest
             "date" => [ "required", "date" ],
             "customer_id" => [ "required", "numeric" ],
             "reference_number" => [ "required" ],
-            "locations" => [ "required", "numeric" ],
-            "arrival_locations" => [ "required", "numeric" ],
             "labour" => [ "required" ],
             "labour_amount" => [ "required" ],
             "transporter" => [ "required" ],
@@ -36,7 +34,6 @@ class DeliveryChallanRequest extends FormRequest
             "weighbridge_amount" => [ "required" ],
             "sauda_type" => [ "required" ],
             "remarks" => [ "required" ],
-            "storage_id" => [ "required", "numeric" ]
         ];
     }
 }

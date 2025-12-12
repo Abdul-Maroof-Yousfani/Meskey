@@ -39,9 +39,9 @@ class DeliveryChallanController extends Controller
             $delivery_challan = DeliveryChallan::create([
                 "customer_id" => $request->customer_id,
                 "reference_number" => $request->reference_number,
-                "location_id" => $request->locations,
-                "arrival_id" => $request->arrival_locations,
-                'subarrival_id' => $request->storage_id,
+                // "location_id" => $request->locations,
+                // "arrival_id" => $request->arrival_locations,
+                // 'subarrival_id' => $request->storage_id,
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
@@ -134,8 +134,8 @@ class DeliveryChallanController extends Controller
             $delivery_challan->update([
                 "customer_id" => $request->customer_id,
                 "reference_number" => $request->reference_number,
-                "location_id" => $request->locations,
-                "arrival_id" => $request->arrival_locations,
+                // "location_id" => $request->locations,
+                // "arrival_id" => $request->arrival_locations,
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
