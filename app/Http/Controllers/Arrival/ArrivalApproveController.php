@@ -60,7 +60,8 @@ class ArrivalApproveController extends Controller
             ->leftJoin('arrival_sampling_requests', function ($join) {
                 $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
                     ->where('sampling_type', 'inner')
-                    ->where('approved_status', 'pending');
+                    ->where('approved_status', 'pending')
+                    ->where('arrival_sampling_requests.deleted_at', null);
             })
             ->whereNull('arrival_sampling_requests.id')
             ->when(!$isSuperAdmin, function ($q) use ($authUser) {
@@ -96,7 +97,8 @@ class ArrivalApproveController extends Controller
                     ->from('arrival_sampling_requests')
                     ->whereColumn('arrival_ticket_id', 'arrival_tickets.id')
                     ->where('sampling_type', 'inner')
-                    ->where('approved_status', 'pending');
+                    ->where('approved_status', 'pending')
+                    ->where('arrival_sampling_requests.deleted_at', null);
             })
             ->first();
 

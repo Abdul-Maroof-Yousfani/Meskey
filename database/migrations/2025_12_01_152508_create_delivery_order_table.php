@@ -32,6 +32,9 @@ return new class extends Migration
             // $table->float("so_amount");
             // $table->float("percentage")->nullable();
             $table->string("am_approval_status")->default("pending");
+
+            $table->foreignId("payment_term_id")->constrained("payment_terms")->cascadeOnDelete();
+
             $table->string("am_change_made")->default(1);            
             $table->timestamps();
         });

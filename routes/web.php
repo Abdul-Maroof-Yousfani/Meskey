@@ -17,6 +17,7 @@ use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Procurement\Store\QCItems;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesInquiry;
 use App\Models\Sales\SalesOrder;
@@ -39,8 +40,7 @@ Route::get("checking-data", function() {
     SalesInquiry::query()->delete();
     SalesOrder::query()->delete();
     DeliveryOrder::query()->delete();
-    App\Models\Sales\DeliveryChallanData::query()->delete();
-    App\Models\Sales\SalesInvoice::query()->delete();
+    DeliveryChallan::query()->delete();
 });
 
 

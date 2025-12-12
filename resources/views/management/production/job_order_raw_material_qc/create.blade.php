@@ -24,8 +24,8 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order No:</label>
-                        <select name="job_order_id" onchange="loadData()" class="form-control" id="jobOrderSelect"
-                            required>
+                        <select name="job_order_id" onchange="loadData()" class="form-control select2"
+                            id="jobOrderSelect" required>
                             <option value="">Select Job Order</option>
                             @foreach($jobOrders as $jobOrder)
                                 <option {{ json_encode($jobOrder->company_locations->pluck('id')->toArray()) }}
@@ -85,6 +85,11 @@
 </form>
 
 <script>
+
+    $(document).ready(function () {
+        // Initialize Select2 for all multi-selects
+        $('.select2').select2();
+    });
     function loadData() {
         const jobOrderId = $('[name="job_order_id"]').val();
         const company_location_id = $('[name="company_location_id"]').val();
@@ -95,32 +100,31 @@
                 company_location_id: company_location_id
             }, { method: 'POST' });
         }
-             // Run on page load
-      
+        // Run on page load
+
     }
 
-</script>
-<script>
 
 
-        function updateJobOrderQty() {
-            var selected = $('#locationSelect').find(':selected');
-            var totalKg = selected.data('totalkg');
 
-            if (totalKg) {
-                $('#jobOrderQty').val(totalKg + ' Kgs');
-            } else {
-                $('#jobOrderQty').val('');
-            }
+    function updateJobOrderQty() {
+        var selected = $('#locationSelect').find(':selected');
+        var totalKg = selected.data('totalkg');
+
+        if (totalKg) {
+            $('#jobOrderQty').val(totalKg + ' Kgs');
+        } else {
+            $('#jobOrderQty').val('');
         }
+    }
 
-        // Run on page load
+    // Run on page load
+    updateJobOrderQty();
+
+    // Run on location change
+    $('body').on('change', '#locationSelect', function () {
         updateJobOrderQty();
-
-        // Run on location change
-        $('body').on('change', '#locationSelect', function () {
-            updateJobOrderQty();
-        });
+    });
 
 
 </script>

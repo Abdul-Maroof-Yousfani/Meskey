@@ -69,7 +69,7 @@ class DeliveryOrderController extends Controller
                 'withhold_for_rv_id' => $request->withhold_for_rv,
                 'dispatch_date' => $request->dispatch_date,
                 'reference_no' => $request->reference_no,
-                'payment_term_id' => $request->payment_term_id,
+                'payment_term_id' => $request->payment_term_id ?? (PaymentTerm::first())->id,
                 'sauda_type' => $request->sauda_type,
                 'location_id' => $request->location_id,
                 'arrival_location_id' => $request->arrival_id ?: 0,

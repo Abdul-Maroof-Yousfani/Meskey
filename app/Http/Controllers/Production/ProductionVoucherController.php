@@ -2,24 +2,20 @@
 
 namespace App\Http\Controllers\Production;
 
-
 use App\Http\Controllers\Controller;
-use App\Models\Production\JobOrder\{
-    JobOrder,
-    JobOrderRawMaterialQc,
-    JobOrderRawMaterialQcItem,
-    JobOrderRawMaterialQcParameter
-};
+use App\Http\Requests\Production\ProductionVoucherRequest;
+use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Production\ProductionVoucher;
+use App\Models\Production\ProductionInput;
+use App\Models\Production\ProductionOutput;
 use App\Models\Product;
-use App\Models\Master\{
-    ProductSlab,
-    CompanyLocation,
-    ArrivalSubLocation
-};
-
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\ArrivalSubLocation;
+use App\Models\Master\Brands;
+use App\Models\User;
 use Illuminate\Http\Request;
-use App\Http\Requests\Production\JobOrderRawMaterialQcRequest;
 use Illuminate\Support\Facades\DB;
+
 class ProductionVoucherController extends Controller
 {
     public function index()
@@ -29,24 +25,25 @@ class ProductionVoucherController extends Controller
 
     public function getList(Request $request)
     {
-        // Start query with relationships
-        $query = JobOrderRawMaterialQc::with([
+        $query = ProductionVoucher::with([
             'jobOrder',
             'location',
-            'items.product'
+            'supervisor'
         ]);
 
         // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('qc_no', 'like', '%' . $search . '%')
-                    ->orWhere('mill', 'like', '%' . $search . '%')
+                $q->where('prod_no', 'like', '%' . $search . '%')
                     ->orWhereHas('jobOrder', function ($q) use ($search) {
                         $q->where('job_order_no', 'like', '%' . $search . '%')
                             ->orWhere('ref_no', 'like', '%' . $search . '%');
                     })
                     ->orWhereHas('location', function ($q) use ($search) {
+                        $q->where('name', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('supervisor', function ($q) use ($search) {
                         $q->where('name', 'like', '%' . $search . '%');
                     });
             });
@@ -59,11 +56,11 @@ class ProductionVoucherController extends Controller
 
         // Filter by date range
         if ($request->filled('date_from')) {
-            $query->whereDate('qc_date', '>=', $request->date_from);
+            $query->whereDate('prod_date', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('qc_date', '<=', $request->date_to);
+            $query->whereDate('prod_date', '<=', $request->date_to);
         }
 
         // Filter by location
@@ -71,214 +68,120 @@ class ProductionVoucherController extends Controller
             $query->where('location_id', $request->location_id);
         }
 
-        // Filter by mill
-        if ($request->filled('mill')) {
-            $query->where('mill', 'like', '%' . $request->mill . '%');
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        // Filter by commodity
-        if ($request->filled('commodity_id')) {
-            $query->whereHas('items', function ($q) use ($request) {
-                $q->where('product_id', $request->commodity_id);
-            });
+        // Apply sorting
+        $sortField = $request->get('sort', 'prod_date');
+        $sortDirection = $request->get('direction', 'desc');
+
+        if (in_array($sortField, ['prod_no', 'prod_date', 'status'])) {
+            $query->orderBy($sortField, $sortDirection);
+        } else {
+            $query->orderBy('prod_date', 'desc')->orderBy('created_at', 'desc');
         }
+
+        // Paginate results
+        $productionVouchers = $query->paginate(request('per_page', 25));
 
         // Get job orders for filter dropdown
         $jobOrders = JobOrder::where('status', 1)
             ->orderBy('job_order_no', 'desc')
             ->get();
 
-        // Apply sorting
-        $sortField = $request->get('sort', 'qc_date');
-        $sortDirection = $request->get('direction', 'desc');
-
-        if (in_array($sortField, ['qc_no', 'qc_date', 'mill'])) {
-            $query->orderBy($sortField, $sortDirection);
-        } else {
-            $query->orderBy('qc_date', 'desc')->orderBy('created_at', 'desc');
-        }
-
-        // Paginate results
-        $qcs = $query->paginate(request('per_page', 25))->withQueryString();
-
         // Return view with data
         return view('management.production.production_voucher.getList', compact(
-            'qcs',
+            'productionVouchers',
             'jobOrders'
         ));
     }
 
     public function create()
     {
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $supervisors = User::where('status', 1)->get();
+
+        return view('management.production.production_voucher.create', compact(
+            'companyLocations',
+            'supervisors'
+        ));
+    }
+
+    public function getJobOrdersByLocation(Request $request)
+    {
+        $locationId = $request->location_id;
+        
+        if (!$locationId) {
+            return response()->json(['jobOrders' => []]);
+        }
+
         $user = auth()->user();
 
         $jobOrders = JobOrder::with('product')
             ->where('status', 1)
+            ->whereHas('packingItems', function ($q) use ($locationId) {
+                $q->where('company_location_id', $locationId);
+            })
             ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
                 return $query->whereHas('packingItems', function ($q) use ($user) {
                     $q->where('company_location_id', $user->company_location_id);
                 });
             })
-            ->get();
-
-        $products = Product::where('status', 1)->get();
-
-        $qcParameters = [];
-        // $qcParameters = [
-        //     'Broken %',
-        //     'Chalky %',
-        //     'Damaged %',
-        //     'Moisture %',
-        //     'Yellow Kernels %',
-        //     'Foreign Matter %'
-        // ];
-
-        return view('management.production.job_order_raw_material_qc.create', compact(
-            'jobOrders',
-            // 'companyLocations',
-            'products',
-            'qcParameters'
-        ));
-    }
-
-    public function getJobOrderDetails(Request $request)
-    {
-        // dd($request);
-        // $companyLocations = CompanyLocation::where('status', 1)->get();
-        $jobOrder = JobOrder::with(['product'])->findOrFail($request->job_order_id);
-
-        $user = auth()->user();
-        $companyLocations = $jobOrder->company_locations
-            ->when($user->user_type !== 'super-admin', function ($collection) use ($user) {
-                return $collection->filter(function ($location) use ($user) {
-                    return $location->id == $user->company_location_id;
-                });
+            ->get()
+            ->map(function ($jobOrder) {
+                return [
+                    'id' => $jobOrder->id,
+                    'job_order_no' => $jobOrder->job_order_no,
+                    'ref_no' => $jobOrder->ref_no,
+                    'product_name' => $jobOrder->product->name ?? 'N/A'
+                ];
             });
 
-        $products = Product::where('status', 1)->get();
-
-        return view('management.production.job_order_raw_material_qc.partials.job_order_detail', compact(
-            'companyLocations',
-            'jobOrder',
-            'products',
-            // 'sublocations',
-            // 'commodityParameters'
-        ));
+        return response()->json(['jobOrders' => $jobOrders]);
     }
 
-    public function loadQcCommoditiesTables(Request $request)
+    public function store(ProductionVoucherRequest $request)
     {
-
-        $commodities = $request->get('commodities', []);
-
-        $products = Product::whereIn('id', $commodities)->get();
-        $sublocations = ArrivalSubLocation::where('status', 1)->get();
-
-        // Get QC parameters for each commodity separately
-        $commodityParameters = [];
-
-        foreach ($commodities as $commodityId) {
-            $specs = ProductSlab::with('slabType')
-                ->where('product_id', $commodityId)
-                ->where('status', 1)
-                ->get()
-                ->groupBy('product_slab_type_id')
-                ->map(function ($slabs) {
-                    $firstSlab = $slabs->first();
-                    return [
-                        'id' => $firstSlab->slabType->id,
-                        'spec_name' => $firstSlab->slabType->name ?? '',
-                        'spec_value' => $firstSlab->deduction_value ?? 0,
-                        'uom' => $firstSlab->slabType->qc_symbol ?? ''
-                    ];
-                })
-                ->values();
-
-            // Extract parameter names
-            $parameters = $specs->pluck('spec_name')->toArray();
-
-            $commodityParameters[$commodityId] = [
-                'parameters' => $parameters,
-                'specs_data' => $specs
-            ];
-            // dd($commodityParameters);
-            // If no parameters found for this commodity, use default
-            if (empty($commodityParameters[$commodityId]['parameters'])) {
-                $commodityParameters[$commodityId]['parameters'] = [
-
-                ];
-            }
-        }
-
-        return view('management.production.job_order_raw_material_qc.partials.qc_commodities_tables', compact(
-            'commodities',
-            'products',
-            'sublocations',
-            'commodityParameters'
-        ));
-    }
-
-    public function store(JobOrderRawMaterialQcRequest $request)
-    {
-
-        // dd($request->all());
-        // $request->validate([
-        //     'qc_no' => 'required|unique:job_order_raw_material_qcs',
-        //     'qc_date' => 'required|date',
-        //     'job_order_id' => 'required|exists:job_orders,id',
-        //     'company_location_id' => 'required|exists:company_locations,id',
-        //     // 'mill' => 'required|string',
-        //     'commodities' => 'required|array|min:1',
-        //     'commodities.*' => 'exists:products,id',
-        //     'qc_data' => 'required|array'
-        // ]);
         DB::beginTransaction();
 
         try {
-
-
-            // Create QC record
-            $qc = JobOrderRawMaterialQc::create([
-                'company_id' => $request->company_id,
-                'qc_no' => $request->qc_no,
-                'qc_date' => $request->qc_date,
-                'job_order_id' => $request->job_order_id,
-                'location_id' => $request->company_location_id,
-                'mill' => $request->mill,
-                'commodities' => json_encode($request->commodities)
+            $uniqueProdNo = generateUniversalUniqueNo('production_vouchers', [
+                'prefix' => 'PRO',
+                'column' => 'prod_no',
+                'with_date' => 1,
+                'custom_date' => $request->prod_date,
+                'date_format' => 'm-Y',
+                'serial_at_end' => 1,
             ]);
 
-            // Create QC items and parameters
-            foreach ($request->qc_data as $productId => $productData) {
-                foreach ($productData['locations'] as $locationIndex => $locationData) {
-                    // Create QC item
-                    $qcItem = JobOrderRawMaterialQcItem::create([
-                        'job_order_rm_qc_id' => $qc->id,
-                        'product_id' => $productId,
-                        'arrival_sub_location_id' => $locationData['sublocation_id'],
-                        'suggested_quantity' => $locationData['suggested_quantity']
-                    ]);
+            $productionVoucherData = $request->only([
+                'prod_date',
+                'location_id',
+                'produced_qty_kg',
+                'supervisor_id',
+                'labor_cost_per_kg',
+                'overhead_cost_per_kg',
+                'status',
+                'remarks'
+            ]);
 
-                    // Create parameters for this item
-                    foreach ($locationData['parameters'] as $paramName => $paramValue) {
-                        if (!empty($paramValue)) {
-                            JobOrderRawMaterialQcParameter::create([
-                                'job_order_qc_item_id' => $qcItem->id,
-                                'product_slab_type_id' => $paramName,
-                                'parameter_name' => $paramName,
-                                'parameter_value' => $paramValue,
-                                'uom' => '%'
-                            ]);
-                        }
-                    }
-                }
-            }
+            // Handle multiple job orders - take first one or store as JSON
+            $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : [$request->job_order_id];
+            $productionVoucherData['job_order_id'] = $jobOrderIds[0]; // Store first job order ID
+
+            $productionVoucherData['company_id'] = $request->company_id;
+            $productionVoucherData['prod_no'] = $uniqueProdNo;
+
+            $productionVoucher = ProductionVoucher::create($productionVoucherData);
 
             DB::commit();
 
             return response()->json([
-                'success' => 'Raw Material QC created successfully.',
-                'data' => []
+                'success' => 'Production Voucher created successfully.',
+                'redirect' => route('production-voucher.edit', $productionVoucher->id),
+                'data' => $productionVoucher
             ], 201);
 
         } catch (\Throwable $e) {
@@ -289,180 +192,227 @@ class ProductionVoucherController extends Controller
         }
     }
 
-
     public function edit($id)
     {
-        $qc = JobOrderRawMaterialQc::with([
-            'items',
-            'items.parameters',
-            'items.product',
-            'items.sublocation',
+        $productionVoucher = ProductionVoucher::with([
             'jobOrder',
-            'location'
+            'location',
+            'supervisor',
+            'inputs.product',
+            'inputs.location',
+            'outputs.product',
+            'outputs.storageLocation',
+            'outputs.brand'
         ])->findOrFail($id);
 
         $jobOrders = JobOrder::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 1)->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $supervisors = User::where('status', 1)->get();
+        $products = Product::where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+
+        return view('management.production.production_voucher.edit', compact(
+            'productionVoucher',
+            'jobOrders',
+            'companyLocations',
+            'supervisors',
+            'products',
+            'sublocations',
+            'brands'
+        ));
+    }
+
+    public function update(ProductionVoucherRequest $request, $id)
+    {
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            $productionVoucherData = $request->only([
+                'prod_date',
+                'job_order_id',
+                'location_id',
+                'produced_qty_kg',
+                'supervisor_id',
+                'labor_cost_per_kg',
+                'overhead_cost_per_kg',
+                'status',
+                'remarks'
+            ]);
+
+            $productionVoucher->update($productionVoucherData);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Production Voucher updated successfully.',
+                'data' => $productionVoucher
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+        $productionVoucher->delete();
+
+        return response()->json([
+            'success' => 'Production Voucher deleted successfully.'
+        ], 200);
+    }
+
+    // Production Input Form
+    public function getInputForm($id)
+    {
+        $productionVoucher = ProductionVoucher::findOrFail($id);
         $products = Product::where('status', 1)->get();
         $sublocations = ArrivalSubLocation::where('status', 1)->get();
 
-        return view('management.production.job_order_raw_material_qc.edit', compact(
-            'qc',
-            'jobOrders',
-            'companyLocations',
+        return view('management.production.production_voucher.partials.production_input_form', compact(
+            'productionVoucher',
             'products',
             'sublocations'
         ));
     }
 
-    public function update(JobOrderRawMaterialQcRequest $request, $id)
+    // Production Output Form
+    public function getOutputForm($id)
     {
-        $jobOrderRawMaterialQc = JobOrderRawMaterialQc::findorfail($id);
-        // $request->validate([
-        //     'qc_no' => 'required|unique:job_order_raw_material_qcs,qc_no,' . $jobOrderRawMaterialQc->id,
-        //     'qc_date' => 'required|date',
-        //     'job_order_id' => 'required|exists:job_orders,id',
-        //     'company_location_id' => 'required|exists:company_locations,id',
-        //     // 'mill' => 'required|string',
-        //     'commodities' => 'required|array|min:1',
-        //     'commodities.*' => 'exists:products,id',
-        //     'qc_data' => 'required|array'
-        // ]);
-
-        // Update QC record
-        $jobOrderRawMaterialQc->update([
-            'qc_no' => $request->qc_no,
-            'qc_date' => $request->qc_date,
-            'job_order_id' => $request->job_order_id,
-            'location_id' => $request->company_location_id,
-            'mill' => $request->mill,
-            'commodities' => json_encode($request->commodities)
-        ]);
-
-        // Delete old items and parameters
-        $jobOrderRawMaterialQc->items()->delete();
-
-        // Create new QC items and parameters
-        foreach ($request->qc_data as $productId => $productData) {
-            foreach ($productData['locations'] as $locationIndex => $locationData) {
-                // Create QC item
-                $qcItem = JobOrderRawMaterialQcItem::create([
-                    'job_order_rm_qc_id' => $jobOrderRawMaterialQc->id,
-                    'product_id' => $productId,
-                    'arrival_sub_location_id' => $locationData['sublocation_id'],
-                    'suggested_quantity' => $locationData['suggested_quantity']
-                ]);
-
-                // Create parameters for this item
-                foreach ($locationData['parameters'] as $paramName => $paramValue) {
-                    if (!empty($paramValue)) {
-                        JobOrderRawMaterialQcParameter::create([
-                            'job_order_qc_item_id' => $qcItem->id,
-                            'parameter_name' => $paramName,
-                            'product_slab_type_id' => $paramName,
-                            'parameter_value' => $paramValue,
-                            'uom' => '%'
-                        ]);
-                    }
-                }
-            }
-        }
-
-        return response()->json([
-            'success' => 'Raw Material QC updated successfully.',
-            'data' => $jobOrderRawMaterialQc
-        ], 200);
-    }
-    public function editbk($id)
-    {
-        $qc = JobOrderRawMaterialQc::with(['items', 'items.parameters', 'items.product', 'items.sublocation'])->findOrFail($id);
-
-        $jobOrders = JobOrder::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 1)->get();
+        $productionVoucher = ProductionVoucher::findOrFail($id);
         $products = Product::where('status', 1)->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $brands = Brands::where('status', 1)->get();
 
-        $qcParameters = [
-            'Broken %',
-            'Chalky %',
-            'Damaged %',
-            'Moisture %',
-            'Yellow Kernels %',
-            'Foreign Matter %'
-        ];
-
-        return view('management.job_order_raw_material_qc.edit', compact(
-            'qc',
-            'jobOrders',
-            'companyLocations',
+        return view('management.production.production_voucher.partials.production_output_form', compact(
+            'productionVoucher',
             'products',
-            'qcParameters'
+            'companyLocations',
+            'brands'
         ));
     }
 
-    public function updatebk(Request $request, JobOrderRawMaterialQc $jobOrderRawMaterialQc)
+    // Production Input Methods
+    public function storeInput(Request $request, $id)
     {
         $request->validate([
-            'qc_no' => 'required|unique:job_order_raw_material_qcs,qc_no,' . $jobOrderRawMaterialQc->id,
-            'qc_date' => 'required|date',
-            'job_order_id' => 'required|exists:job_orders,id',
-            'location_id' => 'required|exists:company_locations,id',
-            'mill' => 'required|string',
-            'commodities' => 'required|array|min:1',
-            'commodities.*' => 'exists:products,id',
-            'qc_data' => 'required|array'
+            'product_id' => 'required|exists:products,id',
+            'location_id' => 'required|exists:arrival_sub_locations,id',
+            'qty' => 'required|numeric|min:0.01',
+            'remarks' => 'nullable|string|max:1000'
         ]);
 
-        // Update QC record
-        $jobOrderRawMaterialQc->update([
-            'qc_no' => $request->qc_no,
-            'qc_date' => $request->qc_date,
-            'job_order_id' => $request->job_order_id,
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+
+        $input = ProductionInput::create([
+            'production_voucher_id' => $productionVoucher->id,
+            'product_id' => $request->product_id,
             'location_id' => $request->location_id,
-            'mill' => $request->mill,
-            'commodities' => json_encode($request->commodities)
+            'qty' => $request->qty,
+            'remarks' => $request->remarks
         ]);
-
-        // Delete old items and parameters
-        $jobOrderRawMaterialQc->items()->delete();
-
-        // Create new QC items and parameters
-        foreach ($request->qc_data as $productId => $productData) {
-            foreach ($productData['locations'] as $locationIndex => $locationData) {
-                // Create QC item
-                $qcItem = JobOrderRawMaterialQcItem::create([
-                    'job_order_raw_material_qc_id' => $jobOrderRawMaterialQc->id,
-                    'product_id' => $productId,
-                    'arrival_sublocation_id' => $locationData['sublocation_id'],
-                    'suggested_quantity' => $locationData['suggested_quantity']
-                ]);
-
-                // Create parameters for this item
-                foreach ($locationData['parameters'] as $paramName => $paramValue) {
-                    if (!empty($paramValue)) {
-                        JobOrderRawMaterialQcParameter::create([
-                            'job_order_raw_material_qc_item_id' => $qcItem->id,
-                            'parameter_name' => $paramName,
-                            'parameter_value' => $paramValue,
-                            'uom' => '%'
-                        ]);
-                    }
-                }
-            }
-        }
 
         return response()->json([
-            'success' => 'Raw Material QC updated successfully.',
-            'data' => $jobOrderRawMaterialQc
+            'success' => 'Production Input added successfully.',
+            'data' => $input->load('product', 'location')
+        ], 201);
+    }
+
+    public function updateInput(Request $request, $id, $inputId)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'location_id' => 'required|exists:arrival_sub_locations,id',
+            'qty' => 'required|numeric|min:0.01',
+            'remarks' => 'nullable|string|max:1000'
+        ]);
+
+        $input = ProductionInput::where('production_voucher_id', $id)
+            ->findOrFail($inputId);
+
+        $input->update($request->only(['product_id', 'location_id', 'qty', 'remarks']));
+
+        return response()->json([
+            'success' => 'Production Input updated successfully.',
+            'data' => $input->load('product', 'location')
         ], 200);
     }
 
-    public function destroy($id)
+    public function destroyInput($id, $inputId)
     {
-        $qc = JobOrderRawMaterialQc::findOrFail($id);
-        $qc->delete();
+        $input = ProductionInput::where('production_voucher_id', $id)
+            ->findOrFail($inputId);
+        $input->delete();
 
         return response()->json([
-            'success' => 'Raw Material QC deleted successfully.'
+            'success' => 'Production Input deleted successfully.'
+        ], 200);
+    }
+
+    // Production Output Methods
+    public function storeOutput(Request $request, $id)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'qty' => 'required|numeric|min:0.01',
+            'storage_location_id' => 'required|exists:company_locations,id',
+            'brand_id' => 'nullable|exists:brands,id',
+            'remarks' => 'nullable|string|max:1000'
+        ]);
+
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+
+        $output = ProductionOutput::create([
+            'production_voucher_id' => $productionVoucher->id,
+            'product_id' => $request->product_id,
+            'qty' => $request->qty,
+            'storage_location_id' => $request->storage_location_id,
+            'brand_id' => $request->brand_id,
+            'remarks' => $request->remarks
+        ]);
+
+        return response()->json([
+            'success' => 'Production Output added successfully.',
+            'data' => $output->load('product', 'storageLocation', 'brand')
+        ], 201);
+    }
+
+    public function updateOutput(Request $request, $id, $outputId)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'qty' => 'required|numeric|min:0.01',
+            'storage_location_id' => 'required|exists:company_locations,id',
+            'brand_id' => 'nullable|exists:brands,id',
+            'remarks' => 'nullable|string|max:1000'
+        ]);
+
+        $output = ProductionOutput::where('production_voucher_id', $id)
+            ->findOrFail($outputId);
+
+        $output->update($request->only(['product_id', 'qty', 'storage_location_id', 'brand_id', 'remarks']));
+
+        return response()->json([
+            'success' => 'Production Output updated successfully.',
+            'data' => $output->load('product', 'storageLocation', 'brand')
+        ], 200);
+    }
+
+    public function destroyOutput($id, $outputId)
+    {
+        $output = ProductionOutput::where('production_voucher_id', $id)
+            ->findOrFail($outputId);
+        $output->delete();
+
+        return response()->json([
+            'success' => 'Production Output deleted successfully.'
         ], 200);
     }
 }

@@ -124,14 +124,6 @@ class JobOrderRawMaterialQcController extends Controller
         $products = Product::where('status', 1)->get();
 
         $qcParameters = [];
-        // $qcParameters = [
-        //     'Broken %',
-        //     'Chalky %',
-        //     'Damaged %',
-        //     'Moisture %',
-        //     'Yellow Kernels %',
-        //     'Foreign Matter %'
-        // ];
 
         return view('management.production.job_order_raw_material_qc.create', compact(
             'jobOrders',

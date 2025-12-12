@@ -1,126 +1,185 @@
-<form action="{{ route('job-order-rm-qc.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('production-voucher.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.job_order_rm_qc') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.production-voucher') }}" />
 
     <div class="row form-mar">
         <!-- Basic Information -->
         <div class="col-md-12">
-            <h6 class="header-heading-sepration">Basic Information</h6>
+            <h6 class="header-heading-sepration">Production Voucher</h6>
             <div class="row">
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label>QC No:</label>
-                        <input type="text" name="qc_no" class="form-control"
-                            value="RMQC-{{ \Carbon\Carbon::now()->format('YmdHis') }}" readonly>
-                    </div>
+                    <fieldset>
+                        <label>Prod. No:</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <button class="btn btn-primary" type="button">Prod. No</button>
+                            </div>
+                            <input type="text" readonly name="prod_no" class="form-control">
+                        </div>
+                    </fieldset>
                 </div>
+
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>QC Date:</label>
-                        <input type="date" name="qc_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        <label>Prod. Date:</label>
+                        <input type="date" name="prod_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Job Order No:</label>
-                        <select name="job_order_id" onchange="loadData()" class="form-control" id="jobOrderSelect"
-                            required>
+                        <label>Location:</label>
+                        <select name="location_id" id="location_id" class="form-control select2" required onchange="loadJobOrdersByLocation()">
+                            <option value="">Select Location</option>
+                            @foreach($companyLocations as $location)
+                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Job Ord. No:</label>
+                        <select name="job_order_id[]" id="job_order_id" class="form-control select2" multiple required>
                             <option value="">Select Job Order</option>
-                            @foreach($jobOrders as $jobOrder)
-                                <option {{ json_encode($jobOrder->company_locations->pluck('id')->toArray()) }}
-                                    value="{{ $jobOrder->id }}">{{ $jobOrder->job_order_no }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Produced QTY (kg):</label>
+                        <input type="number" name="produced_qty_kg" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Supervisor:</label>
+                        <select name="supervisor_id" id="supervisor_id" class="form-control select2">
+                            <option value="">Select Supervisor</option>
+                            @foreach($supervisors as $supervisor)
+                                <option value="{{ $supervisor->id }}">{{ $supervisor->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-12">
-                    <h6 class="header-heading-sepration">Job Order Detail</h6>
-                </div>
-            </div>
-            <div id="JobOrderDetail">
-                <div class="alert bg-light-warning mb-2 alert-light-warning" role="alert">
-                    <i class="ft-info mr-1"></i>
-                    <strong>Select Job Order!</strong> Please select a Job Order to fetch the details.
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            </div>
 
-            <div class="row">
-                <!-- <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="form-group">
-                        <label>Mill:</label>
-                        <input type="text" name="mill" class="form-control" placeholder="e.g., A-45" required>
+                        <label>Labor (per kg):</label>
+                        <input type="number" name="labor_cost_per_kg" class="form-control" step="0.0001" min="0" value="0.4">
                     </div>
-                </div> -->
-                <!-- <div class="col-md-6">
+                </div>
+
+                <div class="col-md-3">
                     <div class="form-group">
-                        <label>Commodities:</label>
-                        <select name="commodities[]" class="form-control select2" multiple id="commoditiesSelect"
-                            required>
-                            <option value="">Select Commodities</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }}</option>
-                            @endforeach
+                        <label>Overhead (per kg):</label>
+                        <input type="number" name="overhead_cost_per_kg" class="form-control" step="0.0001" min="0" value="0.2">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Status:</label>
+                        <select name="status" id="status" class="form-control select2" required>
+                            <option value="draft">Draft</option>
+                            <option value="completed">Completed</option>
+                            <option value="approved">Approved</option>
                         </select>
                     </div>
-                </div> -->
-            </div>
-        </div>
+                </div>
 
-        <!-- QC Commodities Section -->
-        <div class="col-md-12" id="qcCommoditiesSection">
-            <!-- Partial will be loaded here via AJAX -->
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Remarks:</label>
+                        <textarea name="remarks" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save QC</button>
+            <button type="submit" class="btn btn-primary submitbutton">Save Production Voucher</button>
         </div>
     </div>
 </form>
 
 <script>
-    function loadData() {
-        const jobOrderId = $('[name="job_order_id"]').val();
-        const company_location_id = $('[name="company_location_id"]').val();
+    $(document).ready(function () {
+        // Initialize Select2 for all selects
+        $('.select2').select2();
 
-        if (jobOrderId) {
-            fetchDynamicHTML('{{ route('get.job_order_details') }}', 'JobOrderDetail', {
-                job_order_id: jobOrderId,
-                company_location_id: company_location_id
-            }, { method: 'POST' });
-        }
-             // Run on page load
-      
-    }
+        // Generate production number on date change
+        $('input[name="prod_date"]').on('change', function () {
+            let selectedDate = $(this).val();
 
-</script>
-<script>
-
-
-        function updateJobOrderQty() {
-            var selected = $('#locationSelect').find(':selected');
-            var totalKg = selected.data('totalkg');
-
-            if (totalKg) {
-                $('#jobOrderQty').val(totalKg + ' Kgs');
-            } else {
-                $('#jobOrderQty').val('');
-            }
-        }
-
-        // Run on page load
-        updateJobOrderQty();
-
-        // Run on location change
-        $('body').on('change', '#locationSelect', function () {
-            updateJobOrderQty();
+            getUniversalNumber({
+                table: 'production_vouchers',
+                prefix: 'PRO',
+                with_date: 1,
+                column: 'prod_no',
+                custom_date: selectedDate,
+                date_format: 'm-Y',
+                serial_at_end: 1,
+            }, function (no) {
+                $('input[name="prod_no"]').val(no);
+            });
         });
 
+        // Generate production number on page load
+        if ($('input[name="prod_date"]').val()) {
+            $('input[name="prod_date"]').trigger('change');
+        }
+    });
 
+    function loadJobOrdersByLocation() {
+        const locationId = $('#location_id').val();
+        const jobOrderSelect = $('#job_order_id');
+
+        // Clear existing options
+        jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
+
+        if (!locationId) {
+            jobOrderSelect.trigger('change');
+            return;
+        }
+
+        // Show loading
+        jobOrderSelect.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("production-voucher.get-job-orders-by-location") }}',
+            method: 'POST',
+            data: {
+                location_id: locationId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.jobOrders && response.jobOrders.length > 0) {
+                    $.each(response.jobOrders, function(index, jobOrder) {
+                        jobOrderSelect.append(
+                            $('<option></option>')
+                                .attr('value', jobOrder.id)
+                                .text(jobOrder.job_order_no + (jobOrder.ref_no ? ' (' + jobOrder.ref_no + ')' : ''))
+                        );
+                    });
+                } else {
+                    jobOrderSelect.append('<option value="">No Job Orders Found</option>');
+                }
+                jobOrderSelect.trigger('change');
+            },
+            error: function(xhr) {
+                console.error('Error loading job orders:', xhr);
+                jobOrderSelect.append('<option value="">Error loading job orders</option>');
+            },
+            complete: function() {
+                jobOrderSelect.prop('disabled', false);
+            }
+        });
+    }
 </script>

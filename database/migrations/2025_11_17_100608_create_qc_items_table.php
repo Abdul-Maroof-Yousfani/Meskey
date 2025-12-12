@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('qc_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("qc_id")->constrained("qc")->cascadeOnDelete();
+            $table->foreignId("qc_id")->constrained("purchase_bag_qc")->cascadeOnDelete();
             $table->string("net_weight")->nullable();
             $table->string("bag_weight")->nullable();
             $table->timestamps();
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('qc_bags');
+        Schema::dropIfExists('qc_items');
     }
 };
