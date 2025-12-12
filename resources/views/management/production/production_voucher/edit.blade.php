@@ -376,20 +376,7 @@
             <h6 class="header-heading-sepration">Production Inputs</h6>
   
                             <div id="productionInputsFilterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                               
                             </div>
             <div class="table-responsive" id="productionInputsTable">
                 <table class="table table-bordered" >
@@ -415,20 +402,7 @@
         <div class="col-md-12 mt-4">
             <h6 class="header-heading-sepration">Production Outputs</h6>
             <div id="productionOutputsFilterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                
                             </div>
                                     <div id="productionOutputsTable">
                                                 @include('management.production.production_voucher.output.getList', [
@@ -455,20 +429,7 @@
                                     </div>
             <div class="table-responsive">
             <div id="productionOutputsFilterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                               
                             </div>
                 <table class="table table-bordered" id="productionSlotsTable">
                     <thead>
