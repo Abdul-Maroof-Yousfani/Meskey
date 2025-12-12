@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\DeliveryChallanRequest;
 use App\Models\Master\Customer;
 use App\Models\Master\PayType;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 use App\Models\PaymentTerm;
 use App\Models\Product;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\ReceivingRequest;
+use App\Models\Sales\ReceivingRequestItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,8 +42,9 @@ class DeliveryChallanController extends Controller
             $delivery_challan = DeliveryChallan::create([
                 "customer_id" => $request->customer_id,
                 "reference_number" => $request->reference_number,
-                "location_id" => $request->locations,
-                "arrival_id" => $request->arrival_locations,
+                // "location_id" => $request->locations,
+                // "arrival_id" => $request->arrival_locations,
+                // 'subarrival_id' => $request->storage_id,
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
@@ -55,8 +61,10 @@ class DeliveryChallanController extends Controller
 
             $delivery_challan->delivery_order()->sync($do_ids);
 
+            // Store delivery challan data items
+            $createdItems = [];
             foreach($request->item_id as $index => $item) {
-                $delivery_challan->delivery_challan_data()->create([
+                $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
@@ -68,15 +76,47 @@ class DeliveryChallanController extends Controller
                     "bilty_no" => $request->bilty_no[$index],
                     "do_data_id" => $request->do_data_id[$index],
                     "bag_type" => $request->bag_type[$index],
-                    
+                ]);
+                $createdItems[] = $dcData;
+            }
+
+            // Create Receiving Request after DC data is created
+            $receivingRequest = ReceivingRequest::create([
+                'delivery_challan_id' => $delivery_challan->id,
+                'dc_no' => $delivery_challan->dc_no,
+                'dc_date' => $delivery_challan->dispatch_date,
+                'truck_number' => $request->truck_no[0] ?? null,
+                'bilty' => $request->bilty_no[0] ?? null,
+                'labour' => $delivery_challan->labour,
+                'transporter' => $delivery_challan->transporter,
+                'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                'company_id' => $delivery_challan->company_id,
+                'created_by_id' => $delivery_challan->created_by_id,
+            ]);
+
+            // Create Receiving Request Items for each DC item
+            foreach ($createdItems as $dcData) {
+                $product = Product::find($dcData->item_id);
+                ReceivingRequestItem::create([
+                    'receiving_request_id' => $receivingRequest->id,
+                    'delivery_challan_data_id' => $dcData->id,
+                    'item_id' => $dcData->item_id,
+                    'item_name' => $product?->name ?? 'N/A',
+                    'dispatch_weight' => $dcData->qty ?? 0,
+                    'receiving_weight' => 0,
+                    'difference_weight' => $dcData->qty ?? 0,
+                    'seller_portion' => 0,
+                    'remaining_amount' => $dcData->qty ?? 0,
                 ]);
             }
 
-
-
             DB::commit();
         } catch(\Exception $e) {
-            dd($e);
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
 
         return response()->json(["Delivery Challan has been created"]);
@@ -97,8 +137,8 @@ class DeliveryChallanController extends Controller
             $delivery_challan->update([
                 "customer_id" => $request->customer_id,
                 "reference_number" => $request->reference_number,
-                "location_id" => $request->locations,
-                "arrival_id" => $request->arrival_locations,
+                // "location_id" => $request->locations,
+                // "arrival_id" => $request->arrival_locations,
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
@@ -147,15 +187,29 @@ class DeliveryChallanController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->get();
+        $delivery_orders = $delivery_challan->delivery_order;
+        $locationIds = $delivery_orders->pluck('location_id')->filter()->unique();
 
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->where("customer_id", $delivery_challan->customer_id)
-                                            ->where("location_id", $delivery_challan->location_id)
-                                            ->where("arrival_location_id", $delivery_challan->arrival_id)
-                                            ->where("am_approval_status", "approved")
-                                            ->get();
 
-        return view("management.sales.delivery-challan.edit", compact("customers", "delivery_orders", "delivery_challan"));
+        $arrivalLocationIds = $delivery_orders->pluck('arrival_location_id')->filter()->unique();
+        
+        $sectionIds = $delivery_orders->pluck('sub_arrival_location_id')->filter()->unique();
+
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
+        $arrivalLocations = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+        $sections = ArrivalSubLocation::whereIn('id', $sectionIds)->get();
+
+        return view("management.sales.delivery-challan.edit", [
+            "customers" => $customers,
+            "delivery_orders" => $delivery_orders,
+            "delivery_challan" => $delivery_challan,
+            "locations" => $locations,
+            "arrivalLocations" => $arrivalLocations,
+            "sections" => $sections,
+            "locationIds" => $locationIds,
+            "arrivalLocationIds" => $arrivalLocationIds,
+            "sectionIds" => $sectionIds,
+        ]);
     }
 
     public function view(DeliveryChallan $delivery_challan) {
@@ -164,15 +218,31 @@ class DeliveryChallanController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->get();
 
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->where("customer_id", $delivery_challan->customer_id)
-                                            ->where("location_id", $delivery_challan->location_id)
-                                            ->where("arrival_location_id", $delivery_challan->arrival_id)
-                                            ->where("am_approval_status", "approved")
-                                            ->get();
+        $delivery_orders = $delivery_challan->delivery_order;
 
-        return view("management.sales.delivery-challan.view", compact("customers", "delivery_orders", "delivery_challan"));
+        $locationIds = $delivery_orders->pluck('location_id')->filter()->unique();
+
+
+        $arrivalLocationIds = $delivery_orders->pluck('arrival_location_id')->filter()->unique();
+        
+        $sectionIds = $delivery_orders->pluck('sub_arrival_location_id')->filter()->unique();
+
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
+        $arrivalLocations = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+        $sections = ArrivalSubLocation::whereIn('id', $sectionIds)->get();
+
+        return view("management.sales.delivery-challan.view", [
+            "customers" => $customers,
+            "delivery_orders" => $delivery_orders,
+            "delivery_challan" => $delivery_challan,
+            "locations" => $locations,
+            "arrivalLocations" => $arrivalLocations,
+            "sections" => $sections,
+            "locationIds" => $locationIds,
+            "arrivalLocationIds" => $arrivalLocationIds,
+            "sectionIds" => $sectionIds,
+        ]);
     }
 
     public function getList(Request $request) {
@@ -255,32 +325,36 @@ class DeliveryChallanController extends Controller
 
     public function get_delivery_orders(Request $request) {
         $customer_id = $request->customer_id;
-        $location_id = $request->company_location_id;
-        $arrival_location_id = $request->arrival_location_id;
+
+        if (!$customer_id) {
+            return [];
+        }
 
         $delivery_orders = DeliveryOrder::with("delivery_order_data")
-                                            ->where("customer_id", $customer_id)
-                                            ->where("location_id", $location_id)
-                                            ->where("arrival_location_id", $arrival_location_id)
-                                            ->where("am_approval_status", "approved")
-                                            ->get()
-                                            ->filter(function ($saleOrder) {
-                                                foreach ($saleOrder->delivery_order_data as $data) {
-                                                    $balance = delivery_challan_balance($data->id);
-                                                    if ($balance > 0) {
-                                                        return true;
-                                                    }
-                                                }
-
-                                                return false;
-                                            });
+            ->where("customer_id", $customer_id)
+            ->where("am_approval_status", "approved")
+            ->get()
+            ->filter(function ($deliveryOrder) {
+                foreach ($deliveryOrder->delivery_order_data as $data) {
+                    if (delivery_challan_balance($data->id) > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            });
 
         $data = [];
 
         foreach($delivery_orders as $delivery_order) {
             $data[] = [
                 "id" => $delivery_order->id,
-                "text" => $delivery_order->reference_no
+                "text" => $delivery_order->reference_no,
+                "location_id" => $delivery_order->location_id,
+                "arrival_location_id" => $delivery_order->arrival_location_id,
+                "sub_arrival_location_id" => $delivery_order->sub_arrival_location_id,
+                "location_name" => get_location_name_by_id($delivery_order->location_id),
+                "arrival_name" => get_arrival_name_by_id($delivery_order->arrival_location_id),
+                "section_name" => get_storage_name_by_id($delivery_order->sub_arrival_location_id),
             ];
         }
 

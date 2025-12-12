@@ -762,7 +762,7 @@ class PurchaseQuotationController extends Controller
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->where('am_approval_status', 'pending')
+            // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
             // })

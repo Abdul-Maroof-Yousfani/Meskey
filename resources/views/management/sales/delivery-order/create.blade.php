@@ -34,9 +34,36 @@
     <div class="row form-mar">
         <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
-            <!-- Row 1: Dispatch Date, Do No -->
             <div class="row">
 
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Do No:</label>
+                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Do Date:</label>
+                        <input type="date" name="dispatch_date" onchange="getNumber()" id="dispatch_date"
+                            class="form-control">
+                    </div>
+                </div>
+
+                <div class="col-md-4 advanced">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <input type="hidden" name="sauda_type" id="sauda_type_hidden">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Contract Type</option>
+                            <option value="pohanch">Pohanch</option>
+                            <option value="x-mill">X-mill</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
@@ -49,6 +76,7 @@
                         </select>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
@@ -92,34 +120,30 @@
                 <div class="col-md-4 advanced">
                     <div class="form-group">
                         <label class="form-label">Withhold for RV:</label>
-                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2">
+                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
                             <option value="">Select Receipt Vouchers</option>
                         </select>
                     </div>
                 </div>
-
-
             </div>
 
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Dispatch Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber()" id="dispatch_date"
-                            class="form-control">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="line_desc" id="line_desc" class="form-control">
                     </div>
                 </div>
-
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
                     </div>
                 </div>
             </div>
 
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="location_id" id="locations" onchange="selectLocation(this)"
@@ -131,22 +155,23 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Arrival:</label>
-                        <select name="arrival_id" id="arrivals" onchange="selectStorage(this)" class="form-control select2" disabled>
-                            <option value="">Select Arrival </option>
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_id" id="arrivals" onchange="selectStorage(this)"
+                            class="form-control select2" disabled>
+                            <option value="">Select Factory </option>
                             @foreach (get_locations() as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4" style="display: none;">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Storage:</label>
+                        <label class="form-label">Section:</label>
                         <select name="storage_id" id="storages" class="form-control select2" disabled>
-                            <option value="">Select Storage</option>
+                            <option value="">Select Section</option>
                             @foreach (get_locations() as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
                             @endforeach
@@ -155,27 +180,13 @@
                 </div>
             </div>
 
-            <!-- Row 2: Sale Orders, Sauda Type -->
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group">
-                        <label class="form-label">Sauda Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch">Pohanch</option>
-                            <option value="x-mill">X-mill</option>
-                        </select>
+                        <label class="form-label">Remarks:</label>
+                        <textarea name="remarks" id="remarks" class="form-control"></textarea>
                     </div>
                 </div>
-
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Line Description:</label>
-                        <textarea name="line_desc" id="line_desc" class="form-control"></textarea>
-                    </div>
-                </div>
-
             </div>
         </div>
 
@@ -192,12 +203,12 @@
 
     <div class="row form-mar">
 
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -206,15 +217,14 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Pack Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
                             <th>Quantity (Kg)</th>
-                            <th>Rate</th>
+                            <th>Rate per Kg</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Desc</th>
                             <th style="display: none">Pack Size</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="soTableBody">
@@ -241,16 +251,50 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+        $('#sauda_type').prop('disabled', true);
     });
 
 
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
+    soFactoryMap = {};
+    soSectionMap = {};
+
+    function applySaudaType(saudaType) {
+        const normalized = (saudaType || '').toLowerCase();
+        $('#sauda_type').val(normalized).trigger('change');
+        $('#sauda_type_hidden').val(normalized);
+        $('#sauda_type').prop('disabled', true);
+    }
+
+    function updateLocations(locations) {
+        const select = $("#locations");
+        const current = select.val();
+        select.empty();
+        select.append('<option value="">Select Locations</option>');
+
+        (locations || []).forEach(loc => {
+            select.append(`<option value="${loc.id}">${loc.text}</option>`);
+        });
+
+        if (current && locations.find?.(l => String(l.id) === String(current))) {
+            select.val(current);
+        } else {
+            select.val('');
+        }
+
+        select.prop('disabled', false).trigger('change');
+        select.select2();
+
+        // Reset dependent dropdowns
+        $("#arrivals").empty().append('<option value=\"\">Select Factory</option>').prop('disabled', true).trigger('change.select2');
+        $("#storages").empty().append('<option value=\"\">Select Section</option>').prop('disabled', true).trigger('change.select2');
+    }
 
     function check_so_type() {
         const type = $("#sale_order").find("option:selected").data("type");
-        if (type == 8) {
+        if (type == 3) {
             $(".advanced").css("display", "block");
         } else {
             $(".advanced").css("display", "none");
@@ -259,13 +303,35 @@
 
     function selectLocation(el) {
         const company = $(el).val();
+        const allowedFactories = soFactoryMap[String(company)] || [];
 
         if (!company) {
             $("#arrivals").prop("disabled", true);
             $("#arrivals").empty();
+            $("#storages").prop("disabled", true);
+            $("#storages").empty();
             return;
+        }
+
+        // Prefer SO-selected factories; fallback to all factories for the location
+        if (allowedFactories.length > 0) {
+            $("#arrivals").prop("disabled", false).empty().append('<option value=\"\">Select Factory</option>');
+            allowedFactories.forEach(loc => {
+                $("#arrivals").append(`<option value="${loc.id}">${loc.text}</option>`);
+            });
+            $("#arrivals").val('').select2();
+
+            // Auto-select the first factory for the chosen location (per sale order mapping)
+            const firstFactoryId = allowedFactories?.[0]?.id;
+            if (firstFactoryId) {
+                $("#arrivals").val(String(firstFactoryId)).trigger('change.select2');
+                // Populate sections for that factory immediately
+                selectStorage(document.getElementById("arrivals"));
+            } else {
+                // Clear sections whenever factory list refreshes
+                $("#storages").prop("disabled", true).empty().append('<option value=\"\">Select Section</option>').trigger('change.select2');
+            }
         } else {
-            // get.arrival-locations; send request to this url
             $("#arrivals").prop("disabled", false);
             $.ajax({
                 url: "{{ route('sales.get.arrival-locations') }}",
@@ -277,7 +343,7 @@
                 success: function(res) {
                     $("#arrivals").empty();
                     $("#arrivals").append(`<option value=''>Select Arrivals</option>`)
-                
+
                     res.forEach(loc => {
                         $("#arrivals").append(`
                         <option value="${loc.id}" >
@@ -297,11 +363,26 @@
 
     function selectStorage(el) {
         const arrival = $(el).val();
+        const allowedSections = soSectionMap[String(arrival)] || [];
         console.log(arrival);
         if (!arrival) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
             return;
+        }
+
+        if (allowedSections.length > 0) {
+            $("#storages").prop("disabled", false).empty().append('<option value=\"\">Select Section</option>');
+            allowedSections.forEach(loc => {
+                $("#storages").append(`<option value="${loc.id}">${loc.text}</option>`);
+            });
+            $("#storages").val('').select2();
+
+            // Auto-select the first section for the chosen factory (per sale order mapping)
+            const firstSectionId = allowedSections?.[0]?.id;
+            if (firstSectionId) {
+                $("#storages").val(String(firstSectionId)).trigger('change.select2');
+            }
         } else {
             // get.arrival-locations; send request to this url
             $("#storages").prop("disabled", false);
@@ -356,9 +437,36 @@
     }
 
     function change_withhold_amount() {
-        remaining_amount = parseFloat($("#advance_amount").val() ?? 0) - parseFloat($("#withhold_amount").val() ?? 0);
+
+
+
+        const withhold = parseFloat($("#withhold_amount").val()) || 0;
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+        remaining_amount = advance - withhold;
+        receipt_vouchers = $("#receipt_vouchers");
+       
+        bag_size = $("#bag_size_0").val();
         rate = $("#rate_0").val();
-        $("#qty_0").val((remaining_amount / rate).toFixed(2));
+        const qtyVal = ((remaining_amount / rate)).toFixed(2);
+        $("#qty_0").val(qtyVal);
+        no_of_bags = Math.round(parseFloat(bag_size) * parseFloat(qtyVal));
+        if(isNaN(no_of_bags)) {
+            $("#no_of_bags_0").val(0);
+        } else {
+            $("#no_of_bags_0").val(no_of_bags);
+        }
+
+
+        if($("#withhold_amount").val() > 0 && receipt_vouchers.val()) {
+            $("#withhold_for_rv").prop("disabled", false);
+        } else {
+
+            $("#withhold_for_rv").prop("disabled", true);
+        }
+
+
+
+
 
         $("withhold_for_rv").val("").trigger("change");
         $('#withhold_for_rv').select2({
@@ -429,14 +537,74 @@
 
     function calc(el) {
         const element = $(el).closest("tr");
-
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
-
+        const bag_size = $(element).find(".bag_size");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty = $(element).find(".qty");
+        const rate = $(element).find(".rate");
         const amount = $(element).find(".amount");
 
-        amount.val(rate * qty);
+        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) || null;
+
+        // Calculate no_of_bags from bag_size * qty
+        if (bag_size.val() && qty.val()) {
+            let bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+
+            if (balance && bagsResult > balance) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Limit Exceeded',
+                    text: 'No of bags cannot exceed available balance (' + balance + ').',
+                });
+                bagsResult = balance;
+                // adjust qty to match the capped bags
+                const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
+                qty.val(limitedQty.toFixed(2));
+            }
+
+            no_of_bags.val(bagsResult);
+        } else {
+            no_of_bags.val('');
+        }
+
+        // Calculate amount from qty * rate
+        const qtyVal = parseFloat(qty.val()) || 0;
+        const rateVal = parseFloat(rate.val()) || 0;
+        amount.val((qtyVal * rateVal).toFixed(2));
     }
+
+    function validateBagsBeforeSubmit() {
+        let valid = true;
+        $("#soTableBody tr").each(function() {
+            const row = $(this);
+            const no_of_bags = row.find(".no_of_bags");
+            const bag_size = row.find(".bag_size");
+            const qty = row.find(".qty");
+            const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value").val()) || null;
+
+            if (balance) {
+                // Ensure latest calc
+                if (bag_size.val() && qty.val()) {
+                    const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+                    if (bagsResult > balance) {
+                        valid = false;
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Limit Exceeded',
+                            text: 'No of bags cannot exceed available balance (' + balance + ').',
+                        });
+                        return false; // break .each
+                    }
+                }
+            }
+        });
+        return valid;
+    }
+
+    $("#ajaxSubmit").on("submit", function(e) {
+        if (!validateBagsBeforeSubmit()) {
+            e.preventDefault();
+        }
+    });
 
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
@@ -450,9 +618,15 @@
             },
             dataType: "json",
             success: function(res) {
+                const data = res.processedData;
+                const rawData = res.rawData;
+        
                 $("#sale_order").empty();
 
-                res.forEach(item => {
+                // Add default "Select Sale Order" option first
+                $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
+                
+                data.forEach(item => {
                     $("#sale_order").append(`
                         <option value="${item.id}" 
                                 data-type="${item.type}">
@@ -561,11 +735,18 @@
 
 
     function get_so_detail() {
+        const soId = $("#sale_order").val();
+        if (!soId) {
+            applySaudaType('');
+            updateLocations([]);
+            return;
+        }
+
         $.ajax({
             url: "{{ route('sales.get.delivery-order.details') }}",
             method: "GET",
             data: {
-                so_id: $("#sale_order").val(),
+                so_id: soId,
             },
             dataType: "json",
             success: function(res) {
@@ -573,8 +754,10 @@
                 // $("#so_amount").val(res.so_amount)
                 // $("#unused_amount").val(res.unused_amount)
 
-                // $("#sauda_type").val(res.sauda_type)
-                // $("#sauda_type").trigger("change");
+                applySaudaType(res.sauda_type);
+                updateLocations(res.locations || []);
+                soFactoryMap = res.factory_map || {};
+                soSectionMap = res.section_map || {};
 
                 // $("#payment_term_id").val(res.payment_term_id);
                 // $("#payment_term_id").trigger("change");

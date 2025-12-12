@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesInquiryRequest;
 use App\Models\BagType;
 use App\Models\Master\Customer;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 use App\Models\Product;
 use App\Models\Sales\SalesInquiry;
 use Carbon\Carbon;
@@ -22,55 +24,64 @@ class SalesInquiryController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
+        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types"));
+        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations"));
     }
 
     public function getList(Request $request)
-{
-    $perPage = $request->get('per_page', 25);
+    {
+        $perPage = $request->get('per_page', 25);
 
-    // Eager load the inquiry + all its items + related product
-    $inquiries = SalesInquiry::latest()
-        ->paginate($perPage);
+        // Eager load the inquiry + all its items + related product
+        $inquiries = SalesInquiry::with(['sales_inquiry_data.item'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search) . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->whereRaw('LOWER(`inquiry_no`) LIKE ?', [$searchTerm])
+                        ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm]);
+                });
+            })
+            ->latest()
+            ->paginate($perPage);
 
-    $groupedData = [];
+        $groupedData = [];
 
-    foreach ($inquiries as $inquiry) {
-        $inquiryNo = $inquiry->inquiry_no;
-        $items = $inquiry->sales_inquiry_data;
+        foreach ($inquiries as $inquiry) {
+            $inquiryNo = $inquiry->inquiry_no;
+            $items = $inquiry->sales_inquiry_data;
 
-        if ($items->isEmpty()) continue;
+            $itemRows = [];
+            foreach ($items as $itemData) {
+                $itemRows[] = [
+                    'item_data' => $itemData,
+                    'item' => $itemData->item,
+                ];
+            }
 
-        $itemRows = [];
-        foreach ($items as $itemData) {
-            $itemRows[] = [
-                'item_data' => $itemData,
-                'item' => $itemData->item,
+            $groupedData[] = [
+                'inquiry' => $inquiry,
+                'inquiry_no' => $inquiryNo,
+                'created_by_id' => $inquiry->created_by,
+                'date' => $inquiry->date,
+                'id' => $inquiry->id,
+                'customer' => $inquiry->customer,
+                'status' => $inquiry->am_approval_status,
+                'contact_person' => $inquiry->contact_person,
+                'contract_type' => $inquiry->contract_type,
+                'remarks' => $inquiry->remarks,
+                'created_at' => $inquiry->created_at,
+                'rowspan' => max(count($itemRows), 1),
+                'items' => $itemRows,
             ];
         }
 
-        $groupedData[] = [
-            'inquiry' => $inquiry,
-            'inquiry_no' => $inquiryNo,
-            'created_by_id' => $inquiry->created_by,
-            'date' => $inquiry->date,
-            'id' => $inquiry->id,
-            'customer' => $inquiry->customer,
-            'status' => $inquiry->am_approval_status,
-            'contact_person' => $inquiry->contact_person,
-            'contract_type' => $inquiry->contract_type,
-            'remarks' => $inquiry->remarks,
-            'created_at' => $inquiry->created_at,
-            'rowspan' => count($itemRows),
-            'items' => $itemRows,
-        ];
+        return view('management.sales.inquiry.getList', [
+            'inquiries' => $inquiries,
+            'groupedInquiries' => $groupedData,
+        ]);
     }
-   return view('management.sales.inquiry.getList', [
-    'inquiries' => $inquiries,           // for pagination
-    'groupedInquiries' => $groupedData,  // our grouped data
-]);
-}
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
@@ -110,6 +121,8 @@ class SalesInquiryController extends Controller
         try {
             DB::beginTransaction();
         
+            $factoryIds = $request->arrival_location_id ?? [];
+            $sectionIds = $request->arrival_sub_location_id ?? [];
             $sales_inquiry = SalesInquiry::create([
                 "inquiry_no" => $request->reference_no,
                 "date" => $request->inquiry_date,
@@ -117,11 +130,14 @@ class SalesInquiryController extends Controller
                 "contract_type" => $request->contract_type,
                 "status" => "pending",
                 "contact_person" => $request->contact_person,
-                "remarks" => $request->remarks,
+                "remarks" => $request->remarks ?? "",
                 "created_by" => auth()->user()->id,
                 "company_id" => $request->company_id,
                 "required_date" => $request->required_date,
                 "reference_number" => $request->reference_number,
+                'token_money' => $request->token_money,
+                'arrival_location_id' => $factoryIds[0] ?? null,
+                'arrival_sub_location_id' => $sectionIds[0] ?? null,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
@@ -146,11 +162,21 @@ class SalesInquiryController extends Controller
                     "location_id" => $location
                 ]);
             }
+            foreach ($factoryIds as $factoryId) {
+                $sales_inquiry->factories()->create([
+                    'arrival_location_id' => $factoryId,
+                ]);
+            }
+            foreach ($sectionIds as $sectionId) {
+                $sales_inquiry->sections()->create([
+                    'arrival_sub_location_id' => $sectionId,
+                ]);
+            }
 
             DB::commit();
         } catch(\Exception $e) {
             DB::rollBack();
-            dd($e->getMessage());
+            return response()->json(["error" => $e->getMessage()], 500);
         }
         
 
@@ -160,6 +186,8 @@ class SalesInquiryController extends Controller
     }
 
     public function update(SalesInquiryRequest $request, SalesInquiry $sales_inquiry) {
+        $factoryIds = $request->arrival_location_id ?? [];
+        $sectionIds = $request->arrival_sub_location_id ?? [];
         $sales_inquiry->update([
             "inquiry_no" => $request->reference_no,
             "date" => $request->inquiry_date,
@@ -167,14 +195,18 @@ class SalesInquiryController extends Controller
             "contract_type" => $request->contract_type,
             "status" => "pending",
             "contact_person" => $request->contact_person,
-            "remarks" => $request->remarks,
+            "remarks" => $request->remarks ?? "",
             "reference_number" => $request->reference_number,
             "required_date" => $request->required_date,
-            "created_by" => auth()->user()->id
+            "created_by" => auth()->user()->id,
+            'arrival_location_id' => $factoryIds[0] ?? null,
+            'arrival_sub_location_id' => $sectionIds[0] ?? null,
         ]);
 
         $sales_inquiry->sales_inquiry_data()->delete();
         $sales_inquiry->locations()->delete();
+        $sales_inquiry->factories()->delete();
+        $sales_inquiry->sections()->delete();
       
 
         foreach($request->item_id as $index => $item) {
@@ -198,6 +230,16 @@ class SalesInquiryController extends Controller
                 "location_id" => $location
             ]);
         }
+        foreach ($factoryIds as $factoryId) {
+            $sales_inquiry->factories()->create([
+                'arrival_location_id' => $factoryId,
+            ]);
+        }
+        foreach ($sectionIds as $sectionId) {
+            $sales_inquiry->sections()->create([
+                'arrival_sub_location_id' => $sectionId,
+            ]);
+        }
 
 
         return response()->json("Sales Inquiry has been updated");
@@ -208,18 +250,22 @@ class SalesInquiryController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
+        $arrivalLocations = ArrivalLocation::select('id', 'name')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
 
-        return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items", "bag_types"));
+        return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations"));
     }
 
     public function edit(SalesInquiry $sales_inquiry) {
-        $sales_inquiry->load("sales_inquiry_data", "locations");
+        $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections");
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 
+        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types"));
+        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types", "arrivalLocations", "arrivalSubLocations"));
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {

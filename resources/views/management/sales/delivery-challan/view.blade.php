@@ -52,6 +52,18 @@
                     </div>
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">Contract Types:</label>
+                    <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                        <option value="">Select Contract type</option>
+                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
+                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4">
                     <label class="form-label">Customer:</label>
                     <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
                         class="form-control select2" disabled>
@@ -63,106 +75,6 @@
                     </select>
                 </div>
 
-            </div>
-
-            <div class="row">
-
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Reference Number:</label>
-                        <input type="text" name="reference_number" id="reference_number"
-                            value="{{ $delivery_challan->reference_number }}" class="form-control" readonly>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Locations:</label>
-                    <select name="locations" id="locations" onchange="get_delivery_orders()"
-                        class="form-control select2" disabled>
-                        <option value="">Select Locations</option>
-                        @foreach (get_locations() ?? [] as $location)
-                            <option value="{{ $location->id }}" @selected($delivery_challan->location_id == $location->id)>{{ $location->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Arrival Location:</label>
-                    <select name="arrival_locations" id="arrival_locations" onchange="get_delivery_orders()"
-                        class="form-control select2" disabled>
-                        <option value="">Select Arrivals Locations</option>
-                        @foreach (get_arrival_locations() ?? [] as $location)
-                            <option value="{{ $location->id }}" @selected($delivery_challan->arrival_id == $location->id)>{{ $location->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Labour:</label>
-                        <select name="labour" id="labour" onchange="" class="form-control select2" disabled>
-                            <option value="">Select Labours</option>
-                            <option value="1" @selected($delivery_challan->labour == 1)>Labour 1</option>
-                            <option value="2" @selected($delivery_challan->labour == 2)>Labour 2</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Labour Amount:</label>
-                        <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
-                            onchange="" id="labour_amount" class="form-control" readonly>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Transporter:</label>
-                        <select name="transporter" id="transporter" onchange="" class="form-control select2" disabled>
-                            <option value="">Select Transporter</option>
-                            <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
-                            <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount" onchange=""
-                            value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
-                            class="form-control" readonly>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">In-house Weighbridge:</label>
-                        <select name="weighbridge" id="weighbridge" onchange="" class="form-control select2" disabled>
-                            <option value="">Select Weighbridge</option>
-                            <option value="1" @selected($delivery_challan->{'inhouse-weighbridge'} == 1)>Weighbridge 1</option>
-                            <option value="2" @selected($delivery_challan->{"inhouse-weighbridge"} == 2)>Weighbridge 2</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Weighbridge Amount:</label>
-                        <input type="number" name="weighbridge_amount"
-                            value="{{ $delivery_challan->{"weighbridge-amount"} }}" onchange=""
-                            id="weighbridge_amount" class="form-control" readonly>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="row" style="margin-top: 10px;">
                 <div class="col-md-4">
                     <label class="form-label">DO Numbers:</label>
                     <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
@@ -175,14 +87,121 @@
 
                     </select>
                 </div>
+
                 <div class="col-md-4">
-                    <label class="form-label">Sauda Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
-                        <option value="">Select Sauda types</option>
-                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
-                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
-                    </select>
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="reference_number" id="reference_number"
+                            value="{{ $delivery_challan->reference_number }}" class="form-control" readonly>
+                    </div>
                 </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Locations:</label>
+                    <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
+                        <option value="">Select Locations</option>
+                        @foreach (($locations ?? collect()) as $location)
+                            <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id))>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="locations_hidden"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Factory:</label>
+                    <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
+                        <option value="">Select Factory</option>
+                        @foreach (($arrivalLocations ?? collect()) as $location)
+                            <option value="{{ $location->id }}" @selected(($arrivalLocationIds ?? collect())->contains($location->id))>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="arrivals_hidden"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Section:</label>
+                    <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
+                        <option value="">Select Section</option>
+                        @foreach (($sections ?? collect()) as $section)
+                            <option value="{{ $section->id }}" @selected(($sectionIds ?? collect())->contains($section->id))>
+                                {{ $section->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="storages_hidden"></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour:</label>
+                        <select name="labour" id="labour" onchange="" class="form-control select2" disabled>
+                            <option value="">Select Labours</option>
+                            <option value="1" @selected($delivery_challan->labour == 1)>Labour 1</option>
+                            <option value="2" @selected($delivery_challan->labour == 2)>Labour 2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Transporter:</label>
+                        <select name="transporter" id="transporter" onchange="" class="form-control select2" disabled>
+                            <option value="">Select Transporter</option>
+                            <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
+                            <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">In-house Weighbridge:</label>
+                        <select name="weighbridge" id="weighbridge" onchange="" class="form-control select2" disabled>
+                            <option value="">Select Weighbridge</option>
+                            <option value="1" @selected($delivery_challan->{'inhouse-weighbridge'} == 1)>Weighbridge 1</option>
+                            <option value="2" @selected($delivery_challan->{"inhouse-weighbridge"} == 2)>Weighbridge 2</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Amount:</label>
+                        <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
+                            onchange="" id="labour_amount" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Transporter Amount:</label>
+                        <input type="number" name="transporter_amount" onchange=""
+                            value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
+                            class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Weighbridge Amount:</label>
+                        <input type="number" name="weighbridge_amount"
+                            value="{{ $delivery_challan->{"weighbridge-amount"} }}" onchange=""
+                            id="weighbridge_amount" class="form-control" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-4">
                     <label class="form-label">Remarks:</label>
                     <textarea name="remarks" id="remarks" class="form-control" readonly>{{ $delivery_challan->remarks }}</textarea>
@@ -434,7 +453,7 @@
 
         const customer_id = $("#customer_id").val();
         const location_id = $("#locations").val();
-        const arrival_location_id = $("#arrival_locations").val();
+        const arrival_location_id = $("#arrivals").val();
 
         if (!customer_id || !location_id || !arrival_location_id) return;
 
@@ -444,7 +463,7 @@
             data: {
                 customer_id: $("#customer_id").val(),
                 company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrival_locations").val()
+                arrival_location_id: $("#arrivals").val()
             },
             dataType: "json",
             success: function(res) {

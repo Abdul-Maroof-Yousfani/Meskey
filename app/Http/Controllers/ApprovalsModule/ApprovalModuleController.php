@@ -40,7 +40,7 @@ class ApprovalModuleController extends Controller
                 'label' => 'Purchase Quotation Item',
             ],
             [
-                'value' => 'App\Models\Procurement\Store\QC',
+                'value' => 'App\Models\Procurement\Store\PurchaseBagQC',
                 'label' => 'QC data'
             ],
 
@@ -68,7 +68,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Sales\SalesInvoice',
                 'label' => 'Sales Invoice'
             ],
-            
+            [
+                'value' => 'App\Models\Sales\ReceivingRequest',
+                'label' => 'Receiving Request'
+            ],
         ];
 
         $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {

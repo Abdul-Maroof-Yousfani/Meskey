@@ -18,14 +18,17 @@ return new class extends Migration
             $table->string("customer");
             $table->string("required_date");
             $table->string("reference_number");
-            $table->enum("contract_type", ["thadda", "pohanch"])->default("thadda");
+            $table->enum("contract_type", ["thadda", "pohanch", "x-mill"])->default("thadda");
             $table->enum("status", ["pending", "approved", "rejected"])->default("pending");
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
             $table->integer("created_by");
             $table->string("contact_person");
             $table->string("remarks");
-            $table->string("am_approval_status");
-            $table->string("am_change_made");
+            $table->decimal('token_money', 15, 2)->nullable();
+            $table->foreignId('arrival_location_id')->nullable()->constrained('arrival_locations');
+            $table->foreignId('arrival_sub_location_id')->nullable()->constrained('arrival_sub_locations');
+            $table->string("am_approval_status")->default("pending");
+            $table->string("am_change_made")->default(1);
             $table->timestamps();
         });
     }

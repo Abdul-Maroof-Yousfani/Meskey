@@ -23,14 +23,22 @@ class SalesOrderRequest extends FormRequest
     {
         return [
             "delivery_date" => "required|date",
-            "expiry_date" => "required|date",
+            "order_date" => "nullable|date",
             "reference_no" => "required",
+            "so_reference_no" => "nullable|string|max:255",
             "customer_id" => "required|numeric",
             "inquiry_id" => "nullable|numeric",
-            "sauda_type" => "required|in:pohanch,x-mill",
+            "sauda_type" => "required|in:pohanch,x-mill,thadda",
             "payment_term_id" => "required|numeric",
             "company_id" => "required",
             'pay_type_id' => 'required',
+            'token_money' => 'required|numeric',
+            "remarks" => "nullable",
+            "contact_person" => "nullable|string|max:255",
+            "arrival_location_id" => "nullable|array",
+            "arrival_location_id.*" => "integer|exists:arrival_locations,id",
+            "arrival_sub_location_id" => "nullable|array",
+            "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "item_id" => "required",
             "item_id.*" => "required",
@@ -47,8 +55,9 @@ class SalesOrderRequest extends FormRequest
             "pack_size" => "required",
             "pack_size.*" => "required",
 
-            "sales_inquiry_id" => "required",
-            "sales_inquiry_id.*" => "required"
+            "sales_inquiry_id" => "nullable",
+            "sales_inquiry_id.*" => "nullable",
+            
         ];
     }
 

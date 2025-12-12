@@ -2,6 +2,7 @@
 
 namespace App\Models\Sales;
 
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,5 +28,9 @@ class SalesOrderData extends Model
 
     public function sale_inquiry_data() {
         return $this->belongsTo(SalesInquiryData::class, "sales_inquiry_id");
+    }
+
+    public function item() {
+        return $this->belongsTo(Product::class, "item_id");
     }
 }
