@@ -138,6 +138,7 @@ class SalesInquiryController extends Controller
                 'token_money' => $request->token_money,
                 'arrival_location_id' => $factoryIds[0] ?? null,
                 'arrival_sub_location_id' => $sectionIds[0] ?? null,
+                "am_approval_status" => "pending"
             ]);
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
