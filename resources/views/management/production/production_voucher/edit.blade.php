@@ -122,6 +122,26 @@
                 </div>
             </div>
             <div class="row">
+                 <!-- Production Input and Output Buttons -->
+        <div class="col-md-12 mt-3">
+            <div class="row">
+                <div class="col-md-4">
+                                            <button type="button" class="btn btn-success btn-block" onclick="openModal(this, '{{ route('production-voucher.input.form', $productionVoucher->id) }}', 'Create Production Input', false, '50%')">
+                        <i class="ft-plus"></i> Create Production Input
+                    </button>
+                </div>
+                <div class="col-md-4">
+                                            <button type="button" class="btn btn-info btn-block" onclick="openModal(this, '{{ route('production-voucher.output.form', $productionVoucher->id) }}', 'Create Production Output', false, '50%')">
+                        <i class="ft-plus"></i> Create Production Output
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-warning btn-block" onclick="openModal(this, '{{ route('production-voucher.slot.form', $productionVoucher->id) }}', 'Create Production Slot', false, '50%')">
+                        <i class="ft-plus"></i> Create Production Slot
+                    </button>
+                </div>
+            </div>
+        </div>
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
@@ -134,6 +154,7 @@
                                 <input type="hidden" id="url" value="{{ route('production-voucher.edit', $productionVoucher->id) }}" />
 
     <div class="row form-mar">
+        
         <!-- Basic Information -->
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Production Voucher</h6>
@@ -355,25 +376,20 @@
         </div>
         @endif
 
-        <!-- Production Input and Output Buttons -->
-        <div class="col-md-12 mt-3">
-            <div class="row">
-                <div class="col-md-6">
-                                            <button type="button" class="btn btn-success btn-block" onclick="openModal(this, '{{ route('production-voucher.input.form', $productionVoucher->id) }}', 'Create Production Input', false, '50%')">
-                        <i class="ft-plus"></i> Create Production Input
-                    </button>
-                </div>
-                <div class="col-md-6">
-                                            <button type="button" class="btn btn-info btn-block" onclick="openModal(this, '{{ route('production-voucher.output.form', $productionVoucher->id) }}', 'Create Production Output', false, '50%')">
-                        <i class="ft-plus"></i> Create Production Output
-                    </button>
-                </div>
-            </div>
-        </div>
+       
 
         <!-- Production Inputs List -->
         <div class="col-md-12 mt-4">
-            <h6 class="header-heading-sepration">Production Inputs</h6>
+            <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
+                <div class="col-md-6">
+                    <h6 class="m-0">Production Inputs</h6>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="openModal(this, '{{ route('production-voucher.input.form', $productionVoucher->id) }}', 'Create Production Input', false, '50%')">
+                        <i class="ft-plus"></i> Create Production Input
+                    </button>
+                </div>
+            </div>
   
                             <div id="productionInputsFilterForm" class="form">
                                
@@ -400,7 +416,16 @@
 
         <!-- Production Outputs List -->
         <div class="col-md-12 mt-4">
-            <h6 class="header-heading-sepration">Production Outputs</h6>
+            <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
+                <div class="col-md-6">
+                    <h6 class="m-0">Production Outputs</h6>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="openModal(this, '{{ route('production-voucher.output.form', $productionVoucher->id) }}', 'Create Production Output', false, '50%')">
+                        <i class="ft-plus"></i> Create Production Output
+                    </button>
+                </div>
+            </div>
             <div id="productionOutputsFilterForm" class="form">
                                 
                             </div>
@@ -417,9 +442,9 @@
 
                                 <!-- Production Slots Section -->
                                 <div class="col-md-12 mt-4">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="header-heading-sepration">Production Slots</h6>
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
+                                            <div class="col-md-6">
+                                            <h6 class="m-0">Production Slots</h6>
                                         </div>
                                         <div class="col-md-6 text-right">
                                             <button type="button" class="btn btn-warning btn-sm" onclick="openModal(this, '{{ route('production-voucher.slot.form', $productionVoucher->id) }}', 'Create Production Slot', false, '70%')">
