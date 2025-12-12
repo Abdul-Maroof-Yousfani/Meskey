@@ -1,0 +1,42 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('your_table_name', function (Blueprint $table) {
+        // Drop constraints first
+        $table->dropForeign(['arrival_location_id']);
+        $table->dropForeign(['arrival_sub_location_id']);
+    });
+
+    Schema::table('your_table_name', function (Blueprint $table) {
+        // Make columns nullable
+        $table->foreignId('arrival_location_id')->nullable()->change();
+        $table->foreignId('arrival_sub_location_id')->nullable()->change();
+    });
+
+    Schema::table('your_table_name', function (Blueprint $table) {
+        // Add constraints back
+        $table->foreign('arrival_location_id')->references('id')->on('arrival_locations');
+        $table->foreign('arrival_sub_location_id')->references('id')->on('arrival_sub_locations');
+    });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('sales_orders', function (Blueprint $table) {
+            //
+        });
+    }
+};
