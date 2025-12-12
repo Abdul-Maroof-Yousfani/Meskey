@@ -2,113 +2,7 @@
 @section('title')
     Edit Production Voucher
 @endsection
-@section('styles')
-
-@endsection
-
 @section('content')
-<style>
-    /* Production Voucher Input/Output List Styles */
-    .slot-header-row {
-        background-color: #d1ecf1 !important;
-        /* border-top: 5px solid white !important; */
-    }
-    .slot-header-cell {
-        font-weight: bold;
-    }
-    
-    .head-product-row {
-        background-color: #cce5ff !important;
-    }
-    .head-product-cell {
-        font-weight: bold;
-    }
-    .by-product-row {
-        background-color: #d1ecf1 !important;
-    }
-    .by-product-cell {
-        font-weight: bold;
-    }
-    .commodity-total-row {
-        /* background-color: #fff3cd !important; */
-    }
-    .commodity-total-cell {
-        font-weight: bold;
-        padding-left: 30px;
-    }
-    .commodity-total-qty {
-        /* font-weight: bold; */
-        /* text-align: right; */
-    }
-    .grand-total-row {
-        background-color: #d4edda !important;
-    }
-    .grand-total-cell {
-        font-weight: bold;
-        text-align: center;
-    }
-    .grand-total-commodity-row {
-        background-color: #fff3cd !important;
-    }
-    .grand-total-commodity-cell {
-        font-weight: bold;
-    }
-    .bg-light-warning {
-        background-color: #fff3cd !important;
-    }
-
-    /* Grand Total Summary Dashboard Cards */
-    .dashboard-card.summary-box {
-        background: #f8f9fa!important;
-        border-radius: 8px;
-        padding: 20px;
-        position: relative;
-        transition: all 0.2s ease;
-        border: 1px solid #e5e7eb;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .summary-box-info {
-        background: #e7f3ff;
-    }
-
-    .summary-box-success {
-        background: #e8f5e9;
-    }
-
-    .summary-box-primary {
-        background: #e3f2fd;
-    }
-
-    .dashboard-card.summary-box:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .dashboard-card.summary-box .card-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 8px;
-        margin-top: 0;
-    }
-
-    .dashboard-card.summary-box .card-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 8px;
-        line-height: 1.2;
-    }
-
-    .dashboard-card.summary-box .card-subtitle {
-        font-size: 14px;
-        color: #6b7280;
-        margin-bottom: 0;
-        line-height: 1.3;
-    }
-</style>
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
@@ -390,12 +284,10 @@
                     </button>
                 </div>
             </div>
-  
                             <div id="productionInputsFilterForm" class="form">
-                               
                             </div>
             <div class="table-responsive" id="productionInputsTable">
-                <table class="table table-bordered" >
+                <table class="table table-bordered">
                      <thead>
                         <tr>
                             <th>Commodity</th>
@@ -406,11 +298,10 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody >
+                    <tbody>
                     </tbody>
                 </table>
                 <!-- @include('management.production.production_voucher.input.getList', ['inputs' => $productionVoucher->inputs, 'outputs' => $productionVoucher->outputs, 'productionVoucher' => $productionVoucher]) -->
-
             </div>
         </div>
 
@@ -427,7 +318,6 @@
                 </div>
             </div>
             <div id="productionOutputsFilterForm" class="form">
-                                
                             </div>
                                     <div id="productionOutputsTable">
                                                 @include('management.production.production_voucher.output.getList', [
@@ -453,8 +343,7 @@
                                         </div>
                                     </div>
             <div class="table-responsive">
-            <div id="productionOutputsFilterForm" class="form">
-                               
+                <div id="productionSlotsFilterForm" class="form">
                             </div>
                 <table class="table table-bordered" id="productionSlotsTable">
                     <thead>
@@ -468,16 +357,16 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                                            <tbody id="productionSlotsTable">
+                    <tbody id="productionSlotsTableBody">
                                                 @include('management.production.production_voucher.slot.getList', ['slots' => $productionVoucher->slots, 'productionVoucher' => $productionVoucher])
                     </tbody>
                 </table>
         </div>
     </div>
 
-                                <div class="row bottom-button-bar mt-4">
+        <div class="row bottom-button-bar mt-4 w-100 mx-auto">
                                     <div class="col-12 text-right">
-                                        <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a>
+                                        <!-- <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a> -->
             <button type="submit" class="btn btn-primary submitbutton">Update Production Voucher</button>
         </div>
     </div>
@@ -494,7 +383,7 @@
 <script>
 filterationCommon('{{ route("get.production-voucher-outputs", $productionVoucher->id) }}', false, 'productionOutputsTable', 'productionOutputsFilterForm');
 filterationCommon('{{ route("get.production-voucher-inputs", $productionVoucher->id) }}', false, 'productionInputsTable', 'productionInputsFilterForm');
-filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->id) }}', false, 'productionSlotsFilterForm', 'productionSlotsTable');
+filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->id) }}', false, 'productionSlotsTableBody', 'productionSlotsFilterForm');
 
     function loadCommoditiesByLocation(triggerChange = true) {
         const locationId = $('#location_id').val();
@@ -672,66 +561,171 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
     });
 
     function deleteProductionInput(voucherId, inputId) {
-        if (confirm('Are you sure you want to delete this production input?')) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            preConfirm: () => {
+                Swal.fire({
+                    title: 'Processing...',
+                    text: 'Please wait while we process your request.',
+                    icon: 'question',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
             $.ajax({
                 url: '{{ route("production-voucher.input.destroy", [":id", ":inputId"]) }}'
                     .replace(':id', voucherId)
                     .replace(':inputId', inputId),
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    method: 'POST',
+                    data: {
+                        _method: 'DELETE',
+                        _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
-                    // Refresh inputs list directly (arrival_location pattern - getList route)
+                        Swal.fire(
+                            'Deleted!',
+                            'Your record has been deleted.',
+                            'success'
+                        ).then(() => {
                     $.post('{{ route("get.production-voucher-inputs", ":id") }}'.replace(':id', voucherId), {}, function(data) {
                         $('#productionInputsTable').html(data);
                     });
-                    showNotification('success', response.success);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error deleting content:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error ' + status,
+                            html: `<p>${xhr.responseJSON?.error || 'An error occurred'}</p><small>${xhr.responseJSON?.details || ''}</small>`
+                        });
                 }
             });
         }
+        });
     }
 
     function deleteProductionOutput(voucherId, outputId) {
-        if (confirm('Are you sure you want to delete this production output?')) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            preConfirm: () => {
+                Swal.fire({
+                    title: 'Processing...',
+                    text: 'Please wait while we process your request.',
+                    icon: 'question',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
             $.ajax({
                 url: '{{ route("production-voucher.output.destroy", [":id", ":outputId"]) }}'
                     .replace(':id', voucherId)
                     .replace(':outputId', outputId),
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    method: 'POST',
+                    data: {
+                        _method: 'DELETE',
+                        _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
-                    // Refresh outputs list directly (arrival_location pattern - getList route)
+                        Swal.fire(
+                            'Deleted!',
+                            'Your record has been deleted.',
+                            'success'
+                        ).then(() => {
                     $.post('{{ route("get.production-voucher-outputs", ":id") }}'.replace(':id', voucherId), {}, function(data) {
                         $('#productionOutputsTable').html(data);
                     });
-                    showNotification('success', response.success);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error deleting content:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error ' + status,
+                            html: `<p>${xhr.responseJSON?.error || 'An error occurred'}</p><small>${xhr.responseJSON?.details || ''}</small>`
+                        });
                 }
             });
         }
+        });
     }
 
     function deleteProductionSlot(voucherId, slotId) {
-        if (confirm('Are you sure you want to delete this production slot?')) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            preConfirm: () => {
+                Swal.fire({
+                    title: 'Processing...',
+                    text: 'Please wait while we process your request.',
+                    icon: 'question',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
             $.ajax({
                 url: '{{ route("production-voucher.slot.destroy", [":id", ":slotId"]) }}'
                     .replace(':id', voucherId)
                     .replace(':slotId', slotId),
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    method: 'POST',
+                    data: {
+                        _method: 'DELETE',
+                        _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
-                    // Refresh slots list directly (arrival_location pattern - getList route)
+                        Swal.fire(
+                            'Deleted!',
+                            'Your record has been deleted.',
+                            'success'
+                        ).then(() => {
                     $.post('{{ route("get.production-voucher-slots", ":id") }}'.replace(':id', voucherId), {}, function(data) {
-                        $('#productionSlotsTable').html(data);
+                                $('#productionSlotsTableBody').html(data);
                     });
-                    showNotification('success', response.success);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error deleting content:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error ' + status,
+                            html: `<p>${xhr.responseJSON?.error || 'An error occurred'}</p><small>${xhr.responseJSON?.details || ''}</small>`
+                        });
                 }
             });
         }
+        });
     }
 </script>
 @endsection
