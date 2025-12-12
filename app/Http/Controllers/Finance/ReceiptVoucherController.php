@@ -3,24 +3,29 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\ReceiptVoucherRequest;
+use App\Models\Master\Account\Account;
+use App\Models\Master\Customer;
+use App\Models\Master\Tax;
+use App\Models\ReceiptVoucher;
+use App\Models\ReceiptVoucherItem;
+use App\Models\Sales\SalesInvoice;
+use App\Models\Sales\SalesOrder;
+use App\Models\Master\Account\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReceiptVoucherController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return view('management.finance.receipt_voucher.index');
     }
 
-    /**
-     * Get list of payment vouchers.
-     */
     public function getList(Request $request)
     {
-        $paymentVouchers = PaymentVoucher::with(['account'])
+        $receiptVouchers = ReceiptVoucher::with(['account', 'customer'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -32,741 +37,449 @@ class ReceiptVoucherController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.finance.payment_voucher.getList', compact('paymentVouchers'));
+        return view('management.finance.receipt_voucher.getList', compact('receiptVouchers'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        // $data['accounts'] = Account::where('is_operational', 'yes')->get();
+        $customers = Customer::select('id', 'name')->get();
 
-        $data['suppliers'] = Supplier::whereHas('arrivalPurchaseOrders', function ($query) {
-            $query->whereHas('paymentRequestData.paymentRequests', function ($q) {
-                $q->where('status', 'approved')
-                    ->whereDoesntHave('paymentVoucherData');
-            });
-        })->latest()->get();
+        $saleOrders = SalesOrder::with('customer')
+            ->where('am_approval_status', 'approved')
+            ->latest()
+            ->get(['id', 'reference_no', 'order_date', 'customer_id']);
 
-        $data['accounts'] = Account::whereHas('parent', function ($query) {
-            $query->where('name', 'Liabilities');
-        })->where('is_operational', 'no')->get()->pluck('name');
+        $salesInvoices = SalesInvoice::with(['customer', 'delivery_challans.receivingRequest'])
+            ->where('am_approval_status', 'approved')
+            ->whereHas('delivery_challans.receivingRequest')
+            ->latest()
+            ->get(['id', 'si_no', 'invoice_date', 'customer_id']);
 
-        $data['accounts'] = Account::where('is_operational', 'yes')
-            ->whereHas('parent', function ($q) {
-                $q->where('hierarchy_path', '2')
-                    ->orWhereHas('parent', function ($q2) {
-                        $q2->where('hierarchy_path', '2')
-                            ->orWhereHas('parent', function ($q3) {
-                                $q3->where('hierarchy_path', '2');
-                            });
+        $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+
+        return view('management.finance.receipt_voucher.create', compact('customers', 'saleOrders', 'salesInvoices', 'taxes'));
+    }
+
+    public function edit($id)
+    {
+        $receiptVoucher = ReceiptVoucher::with(['items', 'account', 'customer'])->findOrFail($id);
+
+        $customers = Customer::select('id', 'name')->get();
+        $accounts = Account::whereHas('parent', function ($q) {
+            $q->whereIn('hierarchy_path', ['1-1', '1-4']);
+        })->get();
+        $saleOrders = SalesOrder::with('customer')
+            ->where('am_approval_status', 'approved')
+            ->latest()
+            ->get(['id', 'reference_no', 'order_date', 'customer_id']);
+
+        $salesInvoices = SalesInvoice::with(['customer', 'delivery_challans.receivingRequest'])
+            ->where('am_approval_status', 'approved')
+            ->whereHas('delivery_challans.receivingRequest')
+            ->latest()
+            ->get(['id', 'si_no', 'invoice_date', 'customer_id', 'reference_number']);
+
+        $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+
+        $selectedReferences = [];
+        $initialItems = $receiptVoucher->items->map(function ($item) use (&$selectedReferences) {
+            $selectedReferences[] = (string) $item->reference_id;
+            $docNo = '';
+            $customerName = '';
+            $date = now()->format('Y-m-d');
+            $amountFromSource = $item->amount;
+            $quantityFromSource = 0;
+
+            if ($item->reference_type === 'sale_order') {
+                $so = SalesOrder::with(['customer', 'sales_order_data'])->find($item->reference_id);
+                if ($so) {
+                    $docNo = $so->so_reference_no ?? $so->reference_no ?? $so->so_no ?? ('SO-' . $so->id);
+                    $customerName = $so->customer->name ?? '';
+                    $date = $so->order_date ? Carbon::parse($so->order_date)->format('Y-m-d') : optional($so->created_at)->format('Y-m-d');
+                    $quantityFromSource = $so->sales_order_data->sum(function ($row) {
+                        return (float) ($row->qty ?? 0);
                     });
-            })
-            ->get();
+                    $amountFromSource = $quantityFromSource;
+                }
+            } else {
+                $inv = SalesInvoice::with(['customer', 'sales_invoice_data'])->find($item->reference_id);
+                if ($inv) {
+                    $docNo = $inv->si_no ?? ('INV-' . $inv->id);
+                    if ($inv->reference_number) {
+                        $docNo .= ' | Ref: ' . $inv->reference_number;
+                    }
+                    $customerName = $inv->customer->name ?? '';
+                    $date = $inv->invoice_date ? Carbon::parse($inv->invoice_date)->format('Y-m-d') : optional($inv->created_at)->format('Y-m-d');
+                    $quantityFromSource = $inv->sales_invoice_data->sum(function ($row) {
+                        return (float) ($row->qty ?? 0);
+                    });
+                    $amountFromSource = $quantityFromSource;
+                }
+            }
 
-        return view('management.finance.payment_voucher.create', $data);
-    }
+            $netAmount = $amountFromSource + (float) ($item->tax_amount ?? 0);
 
-    /**
-     * Show the specified payment voucher.
-     */
-    public function show($id)
-    {
-        $paymentVoucher = PaymentVoucher::with([
-            'paymentVoucherData',
-            'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
-            'account',
-            'supplier'
-        ])->findOrFail($id);
+            return [
+                'reference_id' => $item->reference_id,
+                'reference_type' => $item->reference_type,
+                'number' => $docNo,
+                'date' => $date,
+                'customer_name' => $customerName,
+                'amount' => $amountFromSource,
+                'quantity' => $quantityFromSource,
+                'tax_id' => $item->tax_id,
+                'tax_amount' => $item->tax_amount,
+                'net_amount' => $netAmount,
+                'line_desc' => $item->line_desc,
+            ];
+        })->values();
 
-        $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
-            ->get();
+        $isAdvance = $receiptVoucher->items->contains(function ($item) {
+            return $item->reference_type === 'sale_order';
+        });
 
-        $bankAccount = null;
-        if ($paymentVoucher->bank_account_type === 'company') {
-            $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
-        } elseif ($paymentVoucher->bank_account_type === 'owner') {
-            $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
-        }
-
-        return view('management.finance.payment_voucher.show', [
-            'paymentVoucher' => $paymentVoucher,
-            'transactions' => $transactions,
-            'bankAccount' => $bankAccount
+        return view('management.finance.receipt_voucher.edit', [
+            'receiptVoucher' => $receiptVoucher,
+            'customers' => $customers,
+            'accounts' => $accounts,
+            'saleOrders' => $saleOrders,
+            'salesInvoices' => $salesInvoices,
+            'taxes' => $taxes,
+            'initialItems' => $initialItems,
+            'selectedReferences' => $selectedReferences,
+            'isAdvance' => $isAdvance,
         ]);
     }
 
-    public function manageApprovals($id)
+    public function store(ReceiptVoucherRequest $request)
     {
-        $paymentVoucher = PaymentVoucher::with([
-            'paymentVoucherData',
-            'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
-            'account',
-            'supplier'
-        ])->findOrFail($id);
+        $payload = $request->validated();
+        $items = collect($payload['items'] ?? [])
+            ->filter(function ($item) {
+                return !empty($item['reference_id']) && !empty($item['reference_type']);
+            });
 
-        $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
-            ->get();
+        DB::beginTransaction();
+        try {
+            $totalAmount = $items->sum(function ($item) {
+                return (float) ($item['amount'] ?? 0);
+            });
+            $totalNetAmount = $items->sum(function ($item) {
+                $amount = (float) ($item['amount'] ?? 0);
+                $taxAmount = (float) ($item['tax_amount'] ?? 0);
+                return $item['net_amount'] ?? ($amount + $taxAmount);
+            });
 
-        $bankAccount = null;
-        if ($paymentVoucher->bank_account_type === 'company') {
-            $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
-        } elseif ($paymentVoucher->bank_account_type === 'owner') {
-            $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            $customer = Customer::with('account')->findOrFail($payload['customer_id']);
+            $customerAccountId = $customer->account_id;
+            if (!$customerAccountId) {
+                throw new \Exception('Selected customer has no linked account.');
+            }
+
+            $receiptVoucher = ReceiptVoucher::create([
+                'unique_no' => $payload['unique_no'],
+                'rv_date' => $payload['rv_date'],
+                'ref_bill_no' => $payload['ref_bill_no'] ?? null,
+                'bill_date' => $payload['bill_date'] ?? null,
+                'cheque_no' => $payload['cheque_no'] ?? null,
+                'cheque_date' => $payload['cheque_date'] ?? null,
+                'account_id' => $payload['account_id'],
+                'customer_id' => $payload['customer_id'] ?? null,
+                'voucher_type' => $payload['voucher_type'],
+                'remarks' => $payload['remarks'] ?? null,
+                'total_amount' => $totalNetAmount,
+            ]);
+
+            foreach ($items as $item) {
+                ReceiptVoucherItem::create([
+                    'receipt_voucher_id' => $receiptVoucher->id,
+                    'reference_type' => $item['reference_type'],
+                    'reference_id' => $item['reference_id'],
+                    'amount' => $item['amount'] ?? 0,
+                    'tax_id' => $item['tax_id'] ?? null,
+                    'tax_amount' => $item['tax_amount'] ?? 0,
+                    'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
+                    'line_desc' => $item['line_desc'] ?? null,
+                ]);
+            }
+
+            // Create transactions (debit bank/cash, credit customer)
+            $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+            $remarks = $payload['remarks'] ?? null;
+
+            createTransaction(
+                $totalNetAmount,
+                $payload['account_id'],
+                1,
+                $receiptVoucher->unique_no,
+                'debit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $receiptVoucher->unique_no,
+                    'counter_account_id' => $customerAccountId,
+                    'remarks' => $remarks
+                ]
+            );
+
+            createTransaction(
+                $totalNetAmount,
+                $customerAccountId,
+                1,
+                $receiptVoucher->unique_no,
+                'credit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $receiptVoucher->unique_no,
+                    'counter_account_id' => $payload['account_id'],
+                    'remarks' => $remarks
+                ]
+            );
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
         }
 
-        return view('management.finance.payment_voucher.approvalCanvas', [
-            'paymentVoucher' => $paymentVoucher,
-            'data' => $paymentVoucher,
-            'transactions' => $transactions,
-            'bankAccount' => $bankAccount
+        return response()->json([
+            'success' => 'Receipt voucher created successfully!',
+            'redirect' => route('receipt-voucher.index')
         ]);
     }
 
-    /**
-     * Generate PV number
-     */
-    public function generatePvNumber(Request $request)
+    public function generateRvNumber(Request $request)
     {
         $request->validate([
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
-            'pv_date' => 'nullable|date'
+            'rv_date' => 'nullable|date'
         ]);
 
-        $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+        $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BRV' : 'CRV';
         $prefixForAccounts = $request->voucher_type === 'bank_payment_voucher' ? '1-1' : '1-4';
 
         $accounts = Account::whereHas('parent', function ($query) use ($prefixForAccounts) {
             $query->where('hierarchy_path', $prefixForAccounts);
         })->get();
 
-        $pvDate = $request->pv_date ? date('m-d-Y', strtotime($request->pv_date)) : date('m-d-Y');
-        $datePrefix = $prefix . '-' . $pvDate . '-';
-        $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
+        $rvDate = $request->rv_date ? date('m-d-Y', strtotime($request->rv_date)) : date('m-d-Y');
+        $datePrefix = $prefix . '-' . $rvDate . '-';
+        $uniqueNo = generateUniqueNumberByDate('receipt_vouchers', $datePrefix, null, 'unique_no', false);
 
         return response()->json([
             'success' => true,
-            'pv_number' => $uniqueNo,
+            'rv_number' => $uniqueNo,
             'accounts' => $accounts
         ]);
     }
 
-    /**
-     * Get payment requests for purchase order
-     */
-    public function getPaymentRequests($supplierId)
+    public function getReferenceDetails(Request $request)
     {
-        $supplier = Supplier::with(['companyBankDetails', 'ownerBankDetails'])->findOrFail($supplierId);
-
-        $companyBankAccounts = $supplier->companyBankDetails ?? collect();
-        $ownerBankAccounts = $supplier->ownerBankDetails ?? collect();
-
-        $bankAccounts = collect();
-
-        if ($companyBankAccounts) {
-            foreach ($companyBankAccounts as $bank) {
-                $bankAccounts->push([
-                    'id' => $bank->id,
-                    'type' => 'company',
-                    'title' => $bank->supplier->name ?? '',
-                    'account_title' => $bank->account_title ?? '',
-                    'account_number' => $bank->account_number ?? '',
-                    'bank_name' => $bank->bank_name ?? '',
-                    'branch_name' => $bank->branch_name ?? '',
-                    'branch_code' => $bank->branch_code ?? '',
-                ]);
-            }
-        }
-
-        if ($ownerBankAccounts) {
-            foreach ($ownerBankAccounts as $bank) {
-                $bankAccounts->push([
-                    'id' => $bank->id,
-                    'type' => 'owner',
-                    'title' => $bank->supplier->name ?? '',
-                    'account_title' => $bank->account_title ?? '',
-                    'account_number' => $bank->account_number ?? '',
-                    'bank_name' => $bank->bank_name ?? '',
-                    'branch_name' => $bank->branch_name ?? '',
-                    'branch_code' => $bank->branch_code ?? '',
-                ]);
-            }
-        }
-        $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
-            ->whereHas('paymentRequestData.purchaseOrder', function ($q) use ($supplierId) {
-                $q->where('supplier_id', $supplierId);
-            })
-            ->whereDoesntHave('paymentVoucherData')
-            ->where('status', 'approved')
-            ->get()
-            ->map(function ($request) {
-                return [
-                    'id' => $request->id,
-                    'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                    'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                    'truck_no' => $request->paymentRequestData->truck_no ?? '-',
-                    'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
-                    'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
-                        ? $request->paymentRequestData->loading_date->format('Y-m-d')
-                        : '-',
-                    'no_of_bags' => $request->paymentRequestData->no_of_bags,
-                    'loading_weight' => $request->paymentRequestData->loading_weight,
-                    'module_type' => $request->paymentRequestData->module_type,
-                    'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
-                    'amount' => $request->amount,
-                    'purpose' => $request->paymentRequestData->notes ?? 'No description',
-                    'status' => $request->approval_status,
-                    'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
-                    'type' => ($request->request_type),
-                    'request_date' => $request->created_at
-                        ? $request->created_at->format('Y-m-d')
-                        : ''
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'payment_requests' => $paymentRequests,
-            'bank_accounts' => $bankAccounts->values()
+        $request->validate([
+            'reference_type' => 'required|in:sale_order,sales_invoice',
+            'reference_ids' => 'required|array|min:1',
+            'reference_ids.*' => 'integer'
         ]);
-    }
 
-    /**
-     * Get payment requests for account
-     */
-    public function getAccountPaymentRequests($accountId)
-    {
-        $account = Account::findOrFail($accountId);
+        $referenceType = $request->reference_type;
+        $ids = $request->reference_ids;
+        $items = collect();
 
-        $tableName = $account->table_name;
-
-        $bankAccounts = collect();
-        $paymentRequests = collect();
-        $modelId = null;
-
-        if ($tableName === 'suppliers') {
-
-            $supplier = Supplier::with(['companyBankDetails', 'ownerBankDetails'])
-                ->where('account_id', $account->id)
-                ->first();
-
-            if ($supplier) {
-                $modelId = $supplier->id;
-                $companyBankAccounts = $supplier->companyBankDetails ?? collect();
-                $ownerBankAccounts = $supplier->ownerBankDetails ?? collect();
-
-                if ($companyBankAccounts) {
-                    foreach ($companyBankAccounts as $bank) {
-                        $bankAccounts->push([
-                            'id' => $bank->id,
-                            'type' => 'company',
-                            'title' => $bank->supplier->name ?? '',
-                            'account_title' => $bank->account_title ?? '',
-                            'account_number' => $bank->account_number ?? '',
-                            'bank_name' => $bank->bank_name ?? '',
-                            'branch_name' => $bank->branch_name ?? '',
-                            'branch_code' => $bank->branch_code ?? '',
-                        ]);
-                    }
-                }
-
-                if ($ownerBankAccounts) {
-                    foreach ($ownerBankAccounts as $bank) {
-                        $bankAccounts->push([
-                            'id' => $bank->id,
-                            'type' => 'owner',
-                            'title' => $bank->supplier->name ?? '',
-                            'account_title' => $bank->account_title ?? '',
-                            'account_number' => $bank->account_number ?? '',
-                            'bank_name' => $bank->bank_name ?? '',
-                            'branch_name' => $bank->branch_name ?? '',
-                            'branch_code' => $bank->branch_code ?? '',
-                        ]);
-                    }
-                }
-
-                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
-                    ->where('account_id', $accountId)
-                    ->whereDoesntHave('paymentVoucherData')
-                    ->where('status', 'approved')
-                    ->get()
-                    ->map(function ($request) {
-                        return [
-                            'id' => $request->id,
-                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
-                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
-                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
-                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
-                                : '-',
-                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
-                            'loading_weight' => $request->paymentRequestData->loading_weight,
-                            'module_type' => $request->paymentRequestData->module_type,
-                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
-                            'amount' => $request->amount,
-                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
-                            'status' => $request->approval_status,
-                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
-                            'type' => ($request->request_type??null),
-                            'file' => ($request->paymentRequestData->attachment ?? null),
-                            'request_date' => $request->created_at
-                                ? $request->created_at->format('Y-m-d')
-                                : ''
-                        ];
+        if ($referenceType === 'sale_order') {
+            $items = SalesOrder::with(['customer', 'sales_order_data'])
+                ->whereIn('id', $ids)
+                ->get()
+                ->map(function ($order) {
+                    $quantity = $order->sales_order_data->sum(function ($row) {
+                        return (float) ($row->qty ?? 0);
                     });
 
-
-            }
-        } elseif ($tableName === 'brokers') {
-            $broker = Broker::with(['companyBankDetails', 'ownerBankDetails'])
-                ->where('account_id', $account->id)
-                ->first();
-
-            if ($broker) {
-                $modelId = $broker->id;
-                $companyBankAccounts = $broker->companyBankDetails ?? collect();
-                $ownerBankAccounts = $broker->ownerBankDetails ?? collect();
-
-                if ($companyBankAccounts) {
-                    foreach ($companyBankAccounts as $bank) {
-                        $bankAccounts->push([
-                            'id' => $bank->id,
-                            'type' => 'company',
-                            'title' => $bank->broker->name ?? '',
-                            'account_title' => $bank->account_title ?? '',
-                            'account_number' => $bank->account_number ?? '',
-                            'bank_name' => $bank->bank_name ?? '',
-                            'branch_name' => $bank->branch_name ?? '',
-                            'branch_code' => $bank->branch_code ?? '',
-                        ]);
-                    }
-                }
-
-                if ($ownerBankAccounts) {
-                    foreach ($ownerBankAccounts as $bank) {
-                        $bankAccounts->push([
-                            'id' => $bank->id,
-                            'type' => 'owner',
-                            'title' => $bank->broker->name ?? '',
-                            'account_title' => $bank->account_title ?? '',
-                            'account_number' => $bank->account_number ?? '',
-                            'bank_name' => $bank->bank_name ?? '',
-                            'branch_name' => $bank->branch_name ?? '',
-                            'branch_code' => $bank->branch_code ?? '',
-                        ]);
-                    }
-                }
-
-                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
-                    ->where('account_id', $accountId)
-                    ->whereDoesntHave('paymentVoucherData')
-                    ->where('status', 'approved')
-                    ->get()
-                    ->map(function ($request) {
-                        return [
-                            'id' => $request->id,
-                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
-                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
-                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
-                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
-                                : '-',
-                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
-                            'loading_weight' => $request->paymentRequestData->loading_weight,
-                            'module_type' => $request->paymentRequestData->module_type,
-                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
-                            'amount' => $request->amount,
-                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
-                            'status' => $request->approval_status,
-                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
-                            'type' => ($request->request_type),
-                            'request_date' => $request->created_at
-                                ? $request->created_at->format('Y-m-d')
-                                : ''
-                        ];
+                    return [
+                        'reference_id' => $order->id,
+                        'reference_type' => 'sale_order',
+                        'number' => $order->so_no ?? ('SO-' . $order->id),
+                        'date' => $order->order_date
+                            ? Carbon::parse($order->order_date)->format('Y-m-d')
+                            : optional($order->created_at)->format('Y-m-d'),
+                        'customer' => $order->customer->name ?? 'N/A',
+                        'customer_name' => $order->customer->name ?? 'N/A',
+                        'amount' => round($quantity, 2),
+                        'quantity' => round($quantity, 2),
+                    ];
+                });
+        } else {
+            $items = SalesInvoice::with(['customer', 'sales_invoice_data'])
+                ->whereIn('id', $ids)
+                ->get()
+                ->map(function ($invoice) {
+                    $quantity = $invoice->sales_invoice_data->sum(function ($row) {
+                        return (float) ($row->qty ?? 0);
                     });
-            }
-        }
-         elseif ($tableName === 'vendors') {
-            $broker = Vendor::with(['companyBankDetails', 'ownerBankDetails'])
-                ->where('account_id', $account->id)
-                ->first();
 
-            if ($broker) {
-                $modelId = $broker->id;
-                $companyBankAccounts = $broker->companyBankDetails ?? collect();
-                $ownerBankAccounts = $broker->ownerBankDetails ?? collect();
-
-                if ($companyBankAccounts) {
-                    foreach ($companyBankAccounts as $bank) {
-                        $bankAccounts->push([
-                            'id' => $bank->id,
-                            'type' => 'company',
-                            'title' => $bank->broker->name ?? '',
-                            'account_title' => $bank->account_title ?? '',
-                            'account_number' => $bank->account_number ?? '',
-                            'bank_name' => $bank->bank_name ?? '',
-                            'branch_name' => $bank->branch_name ?? '',
-                            'branch_code' => $bank->branch_code ?? '',
-                        ]);
-                    }
-                }
-
-                if ($ownerBankAccounts) {
-                    foreach ($ownerBankAccounts as $bank) {
-                        $bankAccounts->push([
-                            'id' => $bank->id,
-                            'type' => 'owner',
-                            'title' => $bank->broker->name ?? '',
-                            'account_title' => $bank->account_title ?? '',
-                            'account_number' => $bank->account_number ?? '',
-                            'bank_name' => $bank->bank_name ?? '',
-                            'branch_name' => $bank->branch_name ?? '',
-                            'branch_code' => $bank->branch_code ?? '',
-                        ]);
-                    }
-                }
-
-                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
-                    ->where('account_id', $accountId)
-                    ->whereDoesntHave('paymentVoucherData')
-                    ->where('status', 'approved')
-                    ->get()
-                    ->map(function ($request) {
-                        return [
-                            'id' => $request->id,
-                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
-                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
-                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
-                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
-                                : '-',
-                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
-                            'loading_weight' => $request->paymentRequestData->loading_weight,
-                            'module_type' => $request->paymentRequestData->module_type,
-                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
-                            'amount' => $request->amount,
-                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
-                            'status' => $request->approval_status,
-                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
-                            'type' => ($request->request_type),
-                            'request_date' => $request->created_at
-                                ? $request->created_at->format('Y-m-d')
-                                : ''
-                        ];
-                    });
-            }
+                    return [
+                        'reference_id' => $invoice->id,
+                        'reference_type' => 'sales_invoice',
+                        'number' => $invoice->si_no ?? ('INV-' . $invoice->id),
+                        'date' => $invoice->invoice_date
+                            ? Carbon::parse($invoice->invoice_date)->format('Y-m-d')
+                            : optional($invoice->created_at)->format('Y-m-d'),
+                        'customer' => $invoice->customer->name ?? 'N/A',
+                        'customer_name' => $invoice->customer->name ?? 'N/A',
+                        'amount' => round($quantity, 2),
+                        'quantity' => round($quantity, 2),
+                    ];
+                });
         }
 
         return response()->json([
             'success' => true,
-            'payment_requests' => $paymentRequests,
-            'model_id' => $modelId,
-            'bank_accounts' => $bankAccounts->values()
+            'items' => $items
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        $request->validate([
-            'unique_no' => 'required',
-            'pv_date' => 'required|date',
-            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
-            'account_id' => 'required|exists:accounts,id',
-            'request_account_id' => 'required|exists:accounts,id',
-            'model_id' => 'required',
-            'payment_requests' => 'required|array',
-            'payment_requests.*' => 'exists:payment_requests,id',
-            'ref_bill_no' => 'nullable|string',
-            'bill_date' => 'nullable|date',
-            'model_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
-            'remarks' => 'nullable|string'
-        ]);
+        $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items'])->findOrFail($id);
 
-        DB::transaction(function () use ($request) {
-            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
-
-            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
-            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
-            // dd($request->all());
-            $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
-                ->find($request->payment_requests[0]);
-
-            $bankAccount = null;
-            $bankName = '';
-            $accountNumber = '';
-            if ($request->bank_account_type === 'company') {
-                $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id);
-            } elseif ($request->bank_account_type === 'owner') {
-                $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id);
-            }
-            if ($bankAccount) {
-                $bankName = $bankAccount->bank_name ?? '';
-                $accountNumber = $bankAccount->account_number ?? '';
+        // resolve reference labels
+        $items = $receiptVoucher->items->map(function ($item) {
+            $docNo = '';
+            $customer = '';
+            if ($item->reference_type === 'sale_order') {
+                $so = SalesOrder::with('customer')->find($item->reference_id);
+                $docNo = $so->so_reference_no ?? $so->reference_no ?? $so->so_no ?? ('SO-' . $item->reference_id);
+                $customer = $so->customer->name ?? '';
+            } else {
+                $inv = SalesInvoice::with('customer')->find($item->reference_id);
+                $docNo = $inv->si_no ?? ('INV-' . $item->reference_id);
+                if ($inv && $inv->reference_number) {
+                    $docNo .= ' | Ref: ' . $inv->reference_number;
+                }
+                $customer = $inv->customer->name ?? '';
             }
 
-            $paymentVoucher = PaymentVoucher::create([
-                'unique_no' => $uniqueNo,
-                'pv_date' => $request->pv_date,
-                'ref_bill_no' => $request->ref_bill_no,
-                'bill_date' => $request->bill_date,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'account_id' => $request->account_id,
-                'bank_account_id' => $request->bank_account_id,
-                'bank_account_type' => $request->bank_account_type,
-                'request_account_id' => $request->request_account_id,
-                'model_id' => $request->model_id,
-                'module_id' => $firstRequest->paymentRequestData->purchase_order_id ?? null,
-                // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
-                'module_type' => 'raw_material_purchase',
-                'voucher_type' => $request->voucher_type,
-                'remarks' => $request->remarks,
-                'total_amount' => 0
-            ]);
-
-            $totalAmount = 0;
-
-            foreach ($request->payment_requests as $requestId) {
-                $paymentRequest = PaymentRequest::findOrFail($requestId);
-
-                $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' || $paymentRequest->paymentRequestData->module_type == 'freight_payment' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
-                $truckNo = $paymentRequest->paymentRequestData->truck_no;
-                $biltyNo = $paymentRequest->paymentRequestData->bilty_no;
-                // $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
-                $amount = number_format($paymentRequest->amount, 2);
-
-                $remarks = "A payment of Rs. {$amount} has been made.";
-                if ($bankName) {
-                    $remarks .= " against bank '{$bankName}'";
-                }
-                if ($accountNumber) {
-                    $remarks .= " with account number '{$accountNumber}'";
-                }
-                if ($request->voucher_type === 'bank_payment_voucher') {
-                    $remarks .= " through bank transfer.";
-                } else {
-                    $remarks .= " in cash.";
-                }
-
-                $paymentRequestDataId = $paymentRequest->paymentRequestData->id;
-
-                createTransaction(
-                    $paymentRequest->amount,
-                    $request->account_id,
-                    1,
-                    $uniqueNo,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ticketNo-$paymentRequestDataId",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'counter_account_id' => $request->request_account_id,
-                        'remarks' => $remarks
-                    ]
-                );
-
-                createTransaction(
-                    $paymentRequest->amount,
-                    $request->request_account_id,
-                    1,
-                    $uniqueNo,
-                    'debit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ticketNo-$paymentRequestDataId",
-                        'counter_account_id' => $request->account_id,
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => $remarks
-                    ]
-                );
-
-                PaymentVoucherData::create([
-                    'payment_voucher_id' => $paymentVoucher->id,
-                    'payment_request_id' => $requestId,
-                    'amount' => $paymentRequest->amount,
-                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description'
-                ]);
-
-                $totalAmount += $paymentRequest->amount;
-            }
-            // dd($ticketNo);
-
-            $paymentVoucher->update(['total_amount' => $totalAmount]);
+            return [
+                'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : 'Sales Invoice',
+                'doc_no' => $docNo,
+                'customer' => $customer,
+                'amount' => $item->amount,
+                'tax_amount' => $item->tax_amount,
+                'net_amount' => $item->net_amount ?: ($item->amount + $item->tax_amount),
+                'line_desc' => $item->line_desc,
+            ];
         });
 
-        return response()->json([
-            'success' => 'Payment voucher created successfully!',
-            'redirect' => route('payment-voucher.index')
+        return view('management.finance.receipt_voucher.show', [
+            'receiptVoucher' => $receiptVoucher,
+            'items' => $items
         ]);
     }
 
-    public function _store(Request $request)
-    {
-        $request->validate([
-            'unique_no' => 'required',
-            'pv_date' => 'required|date',
-            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
-            'account_id' => 'required|exists:accounts,id',
-            'module_id' => 'required|exists:arrival_purchase_orders,id',
-            'payment_requests' => 'required|array',
-            'payment_requests.*' => 'exists:payment_requests,id',
-            'ref_bill_no' => 'nullable|string',
-            'bill_date' => 'nullable|date',
-            'supplier_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
-            'remarks' => 'nullable|string'
-        ]);
-        // dd($request->all());
-        DB::transaction(function () use ($request) {
-            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+   
 
-            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
-            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
-
-            $paymentVoucher = PaymentVoucher::create([
-                'unique_no' => $uniqueNo,
-                'pv_date' => $request->pv_date,
-                'ref_bill_no' => $request->ref_bill_no,
-                'bill_date' => $request->bill_date,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'account_id' => $request->account_id,
-                'bank_account_id' => $request->bank_account_id,
-                'bank_account_type' => $request->bank_account_type,
-                'supplier_id' => $request->supplier_id,
-                'module_id' => $request->module_id,
-                'module_type' => 'raw_material_purchase',
-                'voucher_type' => $request->voucher_type,
-                'remarks' => $request->remarks,
-                'total_amount' => 0
-            ]);
-
-            $totalAmount = 0;
-
-            foreach ($request->payment_requests as $requestId) {
-                $paymentRequest = PaymentRequest::findOrFail($requestId);
-
-                PaymentVoucherData::create([
-                    'payment_voucher_id' => $paymentVoucher->id,
-                    'payment_request_id' => $requestId,
-                    'amount' => $paymentRequest->amount,
-                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description'
-                ]);
-
-                $totalAmount += $paymentRequest->amount;
-            }
-
-            $paymentVoucher->update(['total_amount' => $totalAmount]);
-        });
-
-        return response()->json([
-            'success' => 'Payment voucher created successfully!',
-            'redirect' => route('payment-voucher.index')
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        $paymentVoucher = PaymentVoucher::with(['paymentVoucherData.paymentRequest.paymentRequestData'])->findOrFail($id);
-
-        $data = [
-            'paymentVoucher' => $paymentVoucher,
-            'accounts' => Account::all(),
-            'purchaseOrders' => ArrivalPurchaseOrder::with(['product'])->latest()->get(),
-            'selectedRequests' => $paymentVoucher->paymentVoucherData->pluck('payment_request_id')->toArray()
-        ];
-
-        return view('management.finance.payment_voucher.edit', $data);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
-        $paymentVoucher = PaymentVoucher::findOrFail($id);
+        $receiptVoucher = ReceiptVoucher::findOrFail($id);
 
-        $request->validate([
-            'pv_date' => 'required|date',
-            'account_id' => 'required|exists:accounts,id',
-            'module_id' => 'required|exists:arrival_purchase_orders,id',
-            'payment_requests' => 'required|array',
-            'payment_requests.*' => 'exists:payment_requests,id',
-            'ref_bill_no' => 'nullable|string',
-            'bill_date' => 'nullable|date',
-            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
-            'remarks' => 'nullable|string'
-        ]);
+        $payload = app(ReceiptVoucherRequest::class)->validated();
+        $items = collect($payload['items'] ?? [])
+            ->filter(function ($item) {
+                return !empty($item['reference_id']) && !empty($item['reference_type']);
+            });
 
-        DB::transaction(function () use ($request, $paymentVoucher) {
-            $paymentVoucher->update([
-                'pv_date' => $request->pv_date,
-                'ref_bill_no' => $request->ref_bill_no,
-                'bill_date' => $request->bill_date,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'account_id' => $request->account_id,
-                'module_id' => $request->module_id,
-                'remarks' => $request->remarks
-            ]);
+        DB::beginTransaction();
+        try {
+            $totalNetAmount = $items->sum(function ($item) {
+                $amount = (float) ($item['amount'] ?? 0);
+                $taxAmount = (float) ($item['tax_amount'] ?? 0);
+                return $item['net_amount'] ?? ($amount + $taxAmount);
+            });
 
-            PaymentVoucherData::where('payment_voucher_id', $paymentVoucher->id)->delete();
-
-            $totalAmount = 0;
-
-            foreach ($request->payment_requests as $requestId) {
-                $paymentRequest = PaymentRequest::findOrFail($requestId);
-
-                PaymentVoucherData::create([
-                    'payment_voucher_id' => $paymentVoucher->id,
-                    'payment_request_id' => $requestId,
-                    'amount' => $paymentRequest->amount,
-                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description'
-                ]);
-
-                $totalAmount += $paymentRequest->amount;
+            $customer = Customer::with('account')->findOrFail($payload['customer_id']);
+            $customerAccountId = $customer->account_id;
+            if (!$customerAccountId) {
+                throw new \Exception('Selected customer has no linked account.');
             }
 
-            $paymentVoucher->update(['total_amount' => number_format($totalAmount, 2, '.', '')]);
-        });
+            $receiptVoucher->update([
+                'rv_date' => $payload['rv_date'],
+                'ref_bill_no' => $payload['ref_bill_no'] ?? null,
+                'bill_date' => $payload['bill_date'] ?? null,
+                'cheque_no' => $payload['cheque_no'] ?? null,
+                'cheque_date' => $payload['cheque_date'] ?? null,
+                'account_id' => $payload['account_id'],
+                'customer_id' => $payload['customer_id'] ?? null,
+                'voucher_type' => $payload['voucher_type'],
+                'remarks' => $payload['remarks'] ?? null,
+                'total_amount' => $totalNetAmount,
+            ]);
+
+            ReceiptVoucherItem::where('receipt_voucher_id', $receiptVoucher->id)->delete();
+
+            foreach ($items as $item) {
+                ReceiptVoucherItem::create([
+                    'receipt_voucher_id' => $receiptVoucher->id,
+                    'reference_type' => $item['reference_type'],
+                    'reference_id' => $item['reference_id'],
+                    'amount' => $item['amount'] ?? 0,
+                    'tax_id' => $item['tax_id'] ?? null,
+                    'tax_amount' => $item['tax_amount'] ?? 0,
+                    'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
+                    'line_desc' => $item['line_desc'] ?? null,
+                ]);
+            }
+
+            // remove old transactions for this voucher
+            Transaction::where('voucher_no', $receiptVoucher->unique_no)->delete();
+
+            $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+            $remarks = $payload['remarks'] ?? null;
+
+            createTransaction(
+                $totalNetAmount,
+                $payload['account_id'],
+                1,
+                $receiptVoucher->unique_no,
+                'debit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $receiptVoucher->unique_no,
+                    'counter_account_id' => $customerAccountId,
+                    'remarks' => $remarks
+                ]
+            );
+
+            createTransaction(
+                $totalNetAmount,
+                $customerAccountId,
+                1,
+                $receiptVoucher->unique_no,
+                'credit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $receiptVoucher->unique_no,
+                    'counter_account_id' => $payload['account_id'],
+                    'remarks' => $remarks
+                ]
+            );
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
 
         return response()->json([
-            'success' => 'Payment voucher updated successfully!',
-            'redirect' => route('payment-voucher.index')
+            'success' => 'Receipt voucher updated successfully!',
+            'redirect' => route('receipt-voucher.index')
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $paymentVoucher = PaymentVoucher::findOrFail($id);
-        $paymentVoucher->delete();
-
-        return response()->json([
-            'success' => 'Payment voucher deleted successfully!'
-        ]);
+        abort(404);
     }
 }

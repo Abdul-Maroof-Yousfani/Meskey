@@ -24,7 +24,6 @@ class SalesOrderRequest extends FormRequest
         return [
             "delivery_date" => "required|date",
             "order_date" => "nullable|date",
-            "expiry_date" => "required|date",
             "reference_no" => "required",
             "so_reference_no" => "nullable|string|max:255",
             "customer_id" => "required|numeric",
@@ -33,7 +32,13 @@ class SalesOrderRequest extends FormRequest
             "payment_term_id" => "required|numeric",
             "company_id" => "required",
             'pay_type_id' => 'required',
-            'token_money' => 'nullable|numeric',
+            'token_money' => 'required|numeric',
+            "remarks" => "nullable",
+            "contact_person" => "nullable|string|max:255",
+            "arrival_location_id" => "nullable|array",
+            "arrival_location_id.*" => "integer|exists:arrival_locations,id",
+            "arrival_sub_location_id" => "nullable|array",
+            "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "item_id" => "required",
             "item_id.*" => "required",
@@ -51,7 +56,8 @@ class SalesOrderRequest extends FormRequest
             "pack_size.*" => "required",
 
             "sales_inquiry_id" => "nullable",
-            "sales_inquiry_id.*" => "nullable"
+            "sales_inquiry_id.*" => "nullable",
+            
         ];
     }
 

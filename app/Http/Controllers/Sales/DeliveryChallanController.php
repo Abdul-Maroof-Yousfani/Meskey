@@ -41,6 +41,7 @@ class DeliveryChallanController extends Controller
                 "reference_number" => $request->reference_number,
                 "location_id" => $request->locations,
                 "arrival_id" => $request->arrival_locations,
+                'subarrival_id' => $request->storage_id,
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
@@ -291,32 +292,36 @@ class DeliveryChallanController extends Controller
 
     public function get_delivery_orders(Request $request) {
         $customer_id = $request->customer_id;
-        $location_id = $request->company_location_id;
-        $arrival_location_id = $request->arrival_location_id;
+
+        if (!$customer_id) {
+            return [];
+        }
 
         $delivery_orders = DeliveryOrder::with("delivery_order_data")
-                                            ->where("customer_id", $customer_id)
-                                            ->where("location_id", $location_id)
-                                            ->where("arrival_location_id", $arrival_location_id)
-                                            ->where("am_approval_status", "approved")
-                                            ->get()
-                                            ->filter(function ($saleOrder) {
-                                                foreach ($saleOrder->delivery_order_data as $data) {
-                                                    $balance = delivery_challan_balance($data->id);
-                                                    if ($balance > 0) {
-                                                        return true;
-                                                    }
-                                                }
-
-                                                return false;
-                                            });
+            ->where("customer_id", $customer_id)
+            ->where("am_approval_status", "approved")
+            ->get()
+            ->filter(function ($deliveryOrder) {
+                foreach ($deliveryOrder->delivery_order_data as $data) {
+                    if (delivery_challan_balance($data->id) > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            });
 
         $data = [];
 
         foreach($delivery_orders as $delivery_order) {
             $data[] = [
                 "id" => $delivery_order->id,
-                "text" => $delivery_order->reference_no
+                "text" => $delivery_order->reference_no,
+                "location_id" => $delivery_order->location_id,
+                "arrival_location_id" => $delivery_order->arrival_location_id,
+                "sub_arrival_location_id" => $delivery_order->sub_arrival_location_id,
+                "location_name" => get_location_name_by_id($delivery_order->location_id),
+                "arrival_name" => get_arrival_name_by_id($delivery_order->arrival_location_id),
+                "section_name" => get_storage_name_by_id($delivery_order->sub_arrival_location_id),
             ];
         }
 

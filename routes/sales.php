@@ -6,6 +6,7 @@ use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\SalesInquiryController;
 use App\Http\Controllers\Sales\SalesInvoiceController;
+use App\Http\Controllers\Sales\SalesReturnController;
 
 
 Route::name("sales.")->group(function () {
@@ -52,4 +53,5 @@ Route::name("sales.")->group(function () {
     Route::get("/get-sales-invoice-items", [SalesInvoiceController::class, "getItems"])->name("get.sales-invoice.get-items");
     Route::get("/sales-invoice/{sales_invoice}/view", [SalesInvoiceController::class, "view"])->name("get.sales-invoice.view");
 
+    Route::resource("sales-return", SalesReturnController::class);
 });

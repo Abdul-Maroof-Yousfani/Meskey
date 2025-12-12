@@ -147,6 +147,20 @@ if(!function_exists("totalBillQuantityCreated")) {
     }
 }
 
+
+if(!function_exists("arrival_name_by_id")) {
+    function arrival_name_by_id($arrival_id) {
+        $arrival = ArrivalLocation::find($arrival_id);
+        return $arrival->name;
+    }
+}
+if(!function_exists("sub_arrival_name_by_id")) {
+    function sub_arrival_name_by_id($sub_arrival_id) {
+        $sub_arrival = ArrivalSubLocation::find($sub_arrival_id);
+        return $sub_arrival->name;
+    }
+}
+
 if(!function_exists("getTaxById")) {
     function getTaxPercentageById($tax_id) {
         $tax = Tax::find($tax_id);
@@ -536,7 +550,8 @@ function get_product_by_category($id)
 }
 
 function get_customer_name($customer_id) {
-    return Customer::find($customer_id)->value("name");
+    $customer = Customer::where("id", $customer_id)->first();
+    return $customer?->name ?? "";
 }
 
 function get_inquiry_reference_number($inquiry_id) {

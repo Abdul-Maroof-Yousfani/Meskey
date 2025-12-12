@@ -40,7 +40,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">DC NO:</label>
-                        <input type="text" name="dc_no" id="dc_no" id="text" class="form-control">
+                        <input type="text" name="dc_no" id="dc_no" id="text" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -49,6 +49,30 @@
                         <input type="date" name="date" onchange="getNumber()" id="date" class="form-control">
                     </div>
                 </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Contract Types:</label>
+                    <select name="sauda_type" id="sauda_type" class="form-control select2">
+                        <option value="">Select Contract type</option>
+                        <option value="pohanch">Pohanch</option>
+                        <option value="x-mill">X-mill</option>
+                    </select>
+                </div>
+                {{-- <div class="col-md-4">
+                    <label class="form-label">Customer:</label>
+                    <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
+                        class="form-control select2">
+                        <option value="">Select Customer</option>
+                        @foreach ($customers ?? [] as $customer)
+                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                        @endforeach
+                    </select>
+                </div> --}}
+
+            </div>
+
+            <div class="row">
+
                 <div class="col-md-4">
                     <label class="form-label">Customer:</label>
                     <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
@@ -60,9 +84,14 @@
                     </select>
                 </div>
 
-            </div>
+                <div class="col-md-4">
+                    <label class="form-label">DO Numbers:</label>
+                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
+                        multiple>
+                        <option value="">Select Delivery Orders</option>
 
-            <div class="row">
+                    </select>
+                </div>
 
                 <div class="col-md-4">
                     <div class="form-group">
@@ -70,26 +99,31 @@
                         <input type="text" name="reference_number" id="reference_number" class="form-control">
                     </div>
                 </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-4">
                     <label class="form-label">Locations:</label>
-                    <select name="locations" id="locations" onchange="selectLocation(this); get_delivery_orders()"
-                        class="form-control select2">
+                    <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
                         <option value="">Select Locations</option>
-                        @foreach (get_locations() ?? [] as $location)
-                            <option value="{{ $location->id }}">{{ $location->name }}</option>
-                        @endforeach
                     </select>
+                    <div id="locations_hidden"></div>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Arrival Location:</label>
-                    <select name="arrival_locations" id="arrivals"
-                        class="form-control select2" onchange="get_delivery_orders()">
-                        <option value="">Select Arrivals Locations</option>
-                        {{-- @foreach (get_arrival_locations() ?? [] as $location)
-                            <option value="{{ $location->id }}">{{ $location->name }}</option>
-                        @endforeach --}}
+                    <label class="form-label">Factory:</label>
+                    <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
+                        <option value="">Select Factory</option>
                     </select>
+                    <div id="arrivals_hidden"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Section:</label>
+                    <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
+                        <option value="">Select Section</option>
+                    </select>
+                    <div id="storages_hidden"></div>
                 </div>
             </div>
 
@@ -104,24 +138,8 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Labour Amount:</label>
-                        <input type="number" name="labour_amount" onchange="" id="labour_amount"
-                            class="form-control">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Sauda Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2">
-                        <option value="">Select Sauda types</option>
-                        <option value="pohanch">Pohanch</option>
-                        <option value="x-mill">X-mill</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="row">
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
@@ -132,24 +150,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount" onchange="" id="transporter_amount"
-                            class="form-control">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">DO Numbers:</label>
-                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
-                        multiple>
-                        <option value="">Select Delivery Orders</option>
 
-                    </select>
-                </div>
-            </div>
-
-            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">In-house Weighbridge:</label>
@@ -160,6 +161,26 @@
                         </select>
                     </div>
                 </div>
+            </div>
+
+            <div class="row">
+                
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Amount:</label>
+                        <input type="number" name="labour_amount" onchange="" id="labour_amount"
+                            class="form-control">
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Transporter Amount:</label>
+                        <input type="number" name="transporter_amount" onchange="" id="transporter_amount"
+                            class="form-control">
+                    </div>
+                </div>
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Weighbridge Amount:</label>
@@ -167,6 +188,46 @@
                             class="form-control">
                     </div>
                 </div>
+                {{-- <div class="col-md-4">
+                    <label class="form-label">Sauda Types:</label>
+                    <select name="sauda_type" id="sauda_type" class="form-control select2">
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Labour:</label>
+                    <select name="labour" id="labour" onchange="" class="form-control select2">
+                        <option value="">Select Labours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Labour Amount:</label>
+                    <input type="number" name="labour_amount" onchange="" id="labour_amount" class="form-control">
+                </div>
+            </div>
+
+                        <option value="pohanch">Pohanch</option>
+                        <option value="x-mill">X-mill</option>
+                    </select>
+                </div> --}}
+            </div>
+
+            <div class="row">
+                
+              
+                {{-- <div class="col-md-4">
+                    <label class="form-label">DO Numbers:</label>
+                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
+                        multiple>
+                        <option value="">Select Delivery Orders</option>
+
+                    </select>
+                </div> --}}
+            </div>
+
+            <div class="row">
+                
+                
                 <div class="col-md-4">
                     <label class="form-label">Remarks:</label>
                     <textarea name="remarks" id="remarks" class="form-control"></textarea>
@@ -204,16 +265,16 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Pack Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity (Kg)</th>
-                            <th>Rate</th>
+                            <th>Quantity (kg)</th>
+                            <th>Rate per Kg</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
                             <th>Bilty No.</th>
                             <th>Desc</th>
-                            <th style="display: none">Pack Size</th>
+                            <th style="display: none">Packing</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -247,6 +308,62 @@
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
+    let doMeta = {};
+
+    function setHidden(name, values) {
+        const container = $(`#${name}_hidden`);
+        container.empty();
+        (values || []).forEach(v => {
+            container.append(`<input type="hidden" name="${name}[]" value="${v}">`);
+        });
+    }
+
+    function hydrateLocationsFromDos(selectedIds) {
+        const locSet = new Set();
+        const arrSet = new Set();
+        const secSet = new Set();
+        const locOptions = [];
+        const arrOptions = [];
+        const secOptions = [];
+
+        (selectedIds || []).forEach(id => {
+            const meta = doMeta[id];
+            if (!meta) return;
+            if (meta.location_id && !locSet.has(meta.location_id)) {
+                locSet.add(meta.location_id);
+                locOptions.push({ id: meta.location_id, text: meta.location_name || meta.location_id });
+            }
+            if (meta.arrival_location_id && !arrSet.has(meta.arrival_location_id)) {
+                arrSet.add(meta.arrival_location_id);
+                arrOptions.push({ id: meta.arrival_location_id, text: meta.arrival_name || meta.arrival_location_id });
+            }
+            if (meta.sub_arrival_location_id && !secSet.has(meta.sub_arrival_location_id)) {
+                secSet.add(meta.sub_arrival_location_id);
+                secOptions.push({ id: meta.sub_arrival_location_id, text: meta.section_name || meta.sub_arrival_location_id });
+            }
+        });
+
+        // Locations (readonly)
+        const locSelect = $("#locations");
+        locSelect.empty().append(`<option value=''>Select Locations</option>`);
+        locOptions.forEach(o => locSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
+        locSelect.prop("disabled", true).select2();
+        setHidden("locations", Array.from(locSet));
+
+        // Factories (readonly)
+        const arrSelect = $("#arrivals");
+        arrSelect.empty().append(`<option value=''>Select Factory</option>`);
+        arrOptions.forEach(o => arrSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
+        arrSelect.prop("disabled", true).select2();
+        setHidden("arrival_locations", Array.from(arrSet));
+
+        // Sections (readonly)
+        const secSelect = $("#storages");
+        secSelect.empty().append(`<option value=''>Select Section</option>`);
+        secOptions.forEach(o => secSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
+        secSelect.prop("disabled", true).select2();
+        setHidden("storage_id", Array.from(secSet));
+    }
 
     function check_so_type() {
         const type = $("#sale_order").find("option:selected").data("type");
@@ -260,45 +377,47 @@
     function selectLocation(el) {
         const company = $(el).val();
 
-        if (!company) {
-            alert("no");
-            $("#arrivals").prop("disabled", true);
-            $("#arrivals").empty();
-            return;
-        } else {
-            // get.arrival-locations; send request to this url
-            $("#arrivals").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.arrival-locations') }}",
-                method: "GET",
-                data: {
-                    location_id: company
-                },
-                dataType: "json",
-                success: function(res) {
-                    $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrival Locations</option>`)
+        // reset downstream selects
+        $("#arrivals").prop("disabled", true).empty().append(`<option value=''>Select Factory</option>`);
+        $("#storages").prop("disabled", true).empty().append(`<option value=''>Select Section</option>`);
 
-                    res.forEach(delivery_order => {
-                        $("#arrivals").append(`
+        if (!company) {
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('sales.get.arrival-locations') }}",
+            method: "GET",
+            data: {
+                location_id: company
+            },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty();
+                $("#arrivals").append(`<option value=''>Select Factory</option>`)
+
+                res.forEach(delivery_order => {
+                    $("#arrivals").append(`
                         <option value="${delivery_order.id}" >
                             ${delivery_order.text}
                         </option>
                     `);
-                    });
+                });
 
-                    $("#arrivals").select2();
-                },
-                error: function(error) {
+                $("#arrivals").prop("disabled", false).select2();
+            },
+            error: function(error) {
 
-                }
-            });
-        }
+            }
+        });
     }
 
     function get_items(el) {
         // get.delivery-challan.get-items
         const delivery_orders = $(el).val();
+
+        // Update readonly multi-selects for location/factory/section
+        hydrateLocationsFromDos(delivery_orders || []);
 
         $.ajax({
             url: "{{ route('sales.get.delivery-challan.get-items') }}",
@@ -321,24 +440,24 @@
     function get_delivery_orders() {
 
         const customer_id = $("#customer_id").val();
-        const location_id = $("#locations").val();
-        const arrival_location_id = $("#arrivals").val();
 
-        if (!customer_id || !location_id || !arrival_location_id) return;
+        if (!customer_id) {
+            $("#do_no").empty().append(`<option value=''>Select Delivery Order</option>`);
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.delivery-challan.get-do') }}",
             method: "GET",
             data: {
-                customer_id: $("#customer_id").val(),
-                company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrivals").val()
+                customer_id: customer_id
             },
             dataType: "json",
             success: function(res) {
-                console.log(res);
                 $("#do_no").empty();
                 $("#do_no").append(`<option value=''>Select Delivery Order</option>`)
+
+                doMeta = {};
 
                 res.forEach(delivery_order => {
                     $("#do_no").append(`
@@ -346,9 +465,18 @@
                         ${delivery_order.text}
                     </option>
                 `);
+
+                    doMeta[delivery_order.id] = {
+                        location_id: delivery_order.location_id || null,
+                        arrival_location_id: delivery_order.arrival_location_id || null,
+                        sub_arrival_location_id: delivery_order.sub_arrival_location_id || null,
+                        location_name: delivery_order.location_name || "",
+                        arrival_name: delivery_order.arrival_name || "",
+                        section_name: delivery_order.section_name || "",
+                    };
                 });
 
-                $("#arrivals").select2();
+                $("#do_no").select2();
             },
             error: function(error) {
 

@@ -5,6 +5,7 @@
             <th>DC No</th>
             <th>DC Date</th>
             <th>Items Count</th>
+            <th>Status</th>
             <th>Created At</th>
             <th>Action</th>
         </tr>
@@ -19,6 +20,20 @@
                 <td>{{ $request->dc_date ? $request->dc_date->format('d M Y') : 'N/A' }}</td>
                 <td>
                     <span class="badge badge-info px-2 py-1">{{ $request->items->count() }} items</span>
+                </td>
+                <td>
+                    @php
+                        $status = $request->am_approval_status;
+                        $badge = match(strtolower($status)) {
+                            'approved' => 'badge-success',
+                            'rejected' => 'badge-danger',
+                            'pending'  => 'badge-warning',
+                            default    => 'badge-secondary',
+                        };
+                    @endphp
+                    <span class="badge {{ $badge }} px-3 py-2">
+                        {{ ucfirst($status) }}
+                    </span>
                 </td>
                 <td>{{ $request->created_at->format('d M Y H:i') }}</td>
                 <td>

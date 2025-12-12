@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Sales;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesOrderRequest;
 use App\Models\BagType;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\Customer;
 use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
@@ -28,49 +30,70 @@ class SaleOrderController extends Controller
         $customers = Customer::all();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
             ->whereDoesntHave('sale_order')
-            ->select('id', 'inquiry_no')
+            ->select('id', 'inquiry_no', 'contact_person')
             ->get();
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
         $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
+        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types'));
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations'));
     }
 
     public function edit(int $id)
     {
-        $sale_order = SalesOrder::with(['locations', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
+        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
         $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
+        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types'));
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations'));
     }
 
     public function view(Request $request, int $id)
     {
-        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'sales_order_data.sale_inquiry_data', 'pay_type')->find($id);
+        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
+        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order'));
+        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations'));
     }
 
     public function store(SalesOrderRequest $request)
     {
-        $locations = $request->locations;
+        $locations = $request->locations ?? [];
+        $factoryIds = $request->arrival_location_id ?? [];
+        $sectionIds = $request->arrival_sub_location_id ?? [];
+        $payload = $request->validated();
+        $payload['arrival_location_id'] = $factoryIds[0] ?? 0;
+        $payload['arrival_sub_location_id'] = $sectionIds[0] ?? 0;
         DB::beginTransaction();
         try {
-            $sales_order = SalesOrder::create($request->validated());
+            $sales_order = SalesOrder::create($payload);
 
             foreach ($locations as $location) {
                 $sales_order->locations()->create([
                     'location_id' => $location,
+                ]);
+            }
+            foreach ($factoryIds as $factoryId) {
+                $sales_order->factories()->create([
+                    'arrival_location_id' => $factoryId,
+                ]);
+            }
+            foreach ($sectionIds as $sectionId) {
+                $sales_order->sections()->create([
+                    'arrival_sub_location_id' => $sectionId,
                 ]);
             }
             foreach ($request->item_id as $index => $item) {
@@ -100,8 +123,14 @@ class SaleOrderController extends Controller
         try {
             $sales_order = SalesOrder::find($id);
 
+            $factoryIds = $request->arrival_location_id ?? [];
+            $sectionIds = $request->arrival_sub_location_id ?? [];
+            $payload = $request->validated();
+            $payload['arrival_location_id'] = $factoryIds[0] ?? 0;
+            $payload['arrival_sub_location_id'] = $sectionIds[0] ?? 0;
+
             // Update parent sale order data
-            $sales_order->update($request->validated());
+            $sales_order->update($payload);
 
             // Update locations
             if ($request->has('locations')) {
@@ -111,6 +140,21 @@ class SaleOrderController extends Controller
                         'location_id' => $location,
                     ]);
                 }
+            }
+            // Update factories
+            $sales_order->factories()->delete();
+            foreach ($factoryIds as $factoryId) {
+                $sales_order->factories()->create([
+                    'arrival_location_id' => $factoryId,
+                ]);
+            }
+
+            // Update sections
+            $sales_order->sections()->delete();
+            foreach ($sectionIds as $sectionId) {
+                $sales_order->sections()->create([
+                    'arrival_sub_location_id' => $sectionId,
+                ]);
             }
 
             // Update line items
@@ -191,7 +235,7 @@ class SaleOrderController extends Controller
                 'customer_id' => $SaleOrder->customer_id,
                 'status' => $SaleOrder->am_approval_status,
                 'created_at' => $SaleOrder->created_at,
-                'customer' => $SaleOrder->customer,
+                'customer' => 2,
                 'rowspan' => max(count($itemRows), 1),
                 'items' => $itemRows,
             ];
@@ -240,6 +284,11 @@ class SaleOrderController extends Controller
                 'contract_type' => $inquiry->contract_type,
                 'locations' => $inquiry->locations->pluck('location_id')->toArray(),
                 'token_money' => $inquiry->token_money,
+                'contact_person' => $inquiry->contact_person,
+                'arrival_location_id' => $inquiry->arrival_location_id,
+                'arrival_sub_location_id' => $inquiry->arrival_sub_location_id,
+                'arrival_locations' => $inquiry->arrival_location_id ? [$inquiry->arrival_location_id] : [],
+                'arrival_sub_locations' => $inquiry->arrival_sub_location_id ? [$inquiry->arrival_sub_location_id] : [],
             ]);
         }
 

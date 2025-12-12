@@ -1,17 +1,17 @@
  @extends('management.layouts.master')
- @section('title')
-     Payment Voucher
- @endsection
+@section('title')
+    Receipt Voucher
+@endsection
  @section('content')
      <div class="content-wrapper">
          <section id="extended">
              <div class="row w-100 mx-auto">
                  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                     <h2 class="page-title">Bank/Cash Receipt Voucher</h2>
+                    <h2 class="page-title">Bank/Cash Receipt Voucher</h2>
                  </div>
                  <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                     <a href="{{ route('payment-voucher.create') }}" class="btn btn-primary position-relative ">
-                         Create Receipt Voucher
+                    <a href="{{ route('receipt-voucher.create') }}" class="btn btn-primary position-relative ">
+                        Create Receipt Voucher
                      </a>
                  </div>
              </div>
@@ -39,20 +39,7 @@
                          </div>
                          <div class="card-content">
                              <div class="card-body table-responsive" id="filteredData">
-                                 <table class="table m-0">
-                                     <thead>
-                                         <tr>
-                                             <th>RV No</th>
-                                             <th>Date</th>
-                                             <th>Type</th>
-                                             <th>Account</th>
-                                             <th>Bill/Ref No</th>
-                                             <th>Cheque No</th>
-                                             <th>Amount</th>
-                                             <th>Actions</th>
-                                         </tr>
-                                     </thead>
-                                 </table>
+                                 {{-- Filled via AJAX --}}
                              </div>
                          </div>
                      </div>
@@ -65,7 +52,7 @@
  @section('script')
      <script>
          $(document).ready(function() {
-             filterationCommon(`{{ route('get.payment-vouchers') }}`)
+            filterationCommon(`{{ route('get.receipt-vouchers') }}`)
          });
      </script>
  @endsection

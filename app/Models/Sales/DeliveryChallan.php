@@ -26,6 +26,7 @@ class DeliveryChallan extends Model
         "transporter_amount",
         "inhouse-weighbridge",
         "weighbridge-amount",
+        "subarrival_id",
         "created_by_id",
         "am_approval_status",
         "am_change_made"

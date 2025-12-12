@@ -19,33 +19,25 @@
                     class="form-control" readonly>
             </div>
         </div>
-
-
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Reference Number:</label>
-                <input type="text" name="reference_number" id="reference_number"
-                    value="{{ $sales_inquiry->reference_number }}" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Date:</label>
+                <label class="form-label">Inquiry Date:</label>
                 <input type="date" name="inquiry_date" onchange="getNumber()" id="inquiry_date"
                     value="{{ $sales_inquiry->date }}" class="form-control">
             </div>
         </div>
-
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Required Date:</label>
-                <input type="date" name="required_date" id="required_date"
-                    value="{{ $sales_inquiry->required_date }}" class="form-control">
+                <label class="form-label">Contract Type:</label>
+                <select name="contract_type" id="contract_type" class="form-control select2">
+                    <option value="">Select Contract Type</option>
+                     <option value="x-mill" @selected($sales_inquiry->contract_type == 'x-mill')>X-Mill</option>
+                     <option value="pohanch" @selected($sales_inquiry->contract_type == 'pohanch')>Pohanch</option>
+                </select>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-4 mt-3">
             <div class="form-group">
                 <label class="form-label">Customer:</label>
                 <select name="customer" id="customer" class="form-control select2">
@@ -56,18 +48,6 @@
                 </select>
             </div>
         </div>
-
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Contract Type:</label>
-                <select name="contract_type" id="contract_type" class="form-control select2">
-                    <option value="">Select Contract Type</option>
-                    <option value="thadda" @selected($sales_inquiry->contract_type == 'thadda')>Thadda</option>
-                    <option value="pohanch" @selected($sales_inquiry->contract_type == 'pohanch')>Pohanch</option>
-                </select>
-            </div>
-        </div>
-
         <div class="col-md-4 mt-3">
             <div class="form-group">
                 <label class="form-label">Contact Person:</label>
@@ -75,6 +55,40 @@
                     value="{{ $sales_inquiry->contact_person }}" class="form-control">
             </div>
         </div>
+        <div class="col-md-4 mt-3">
+            <div class="form-group">
+                <label class="form-label">Delivery Date:</label>
+                <input type="date" name="required_date" id="required_date"
+                    value="{{ $sales_inquiry->required_date }}" class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-6 mt-3">
+            <div class="form-group">
+                <label class="form-label">Reference Number:</label>
+                <input type="text" name="reference_number" id="reference_number"
+                    value="{{ $sales_inquiry->reference_number }}" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-6 mt-3">
+            <div class="form-group">
+                <label class="form-label">Token Money:</label>
+                <input type="number" name="token_money" id="token_money" value="{{ $sales_inquiry->token_money }}" class="form-control" step="0.01" min="0">
+            </div>
+        </div>
+
+        @php
+            $selectedFactories = $sales_inquiry->factories?->pluck('arrival_location_id')->toArray() ?? [];
+            if (empty($selectedFactories) && $sales_inquiry->arrival_location_id) {
+                $selectedFactories = [$sales_inquiry->arrival_location_id];
+            }
+            $selectedSections = $sales_inquiry->sections?->pluck('arrival_sub_location_id')->toArray() ?? [];
+            if (empty($selectedSections) && $sales_inquiry->arrival_sub_location_id) {
+                $selectedSections = [$sales_inquiry->arrival_sub_location_id];
+            }
+            $oldFactories = old('arrival_location_id', $selectedFactories);
+            $oldSections = old('arrival_sub_location_id', $selectedSections);
+        @endphp
 
         <div class="col-md-4 mt-3">
             <div class="form-group">
@@ -87,29 +101,44 @@
                 </select>
             </div>
         </div>
+        <div class="col-md-4 mt-3">
+            <div class="form-group">
+                <label class="form-label">Factory:</label>
+                <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                    <option value="">Select Factory</option>
+                    @foreach ($arrivalLocations as $factory)
+                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $oldFactories))>{{ $factory->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4 mt-3">
+            <div class="form-group">
+                <label class="form-label">Section:</label>
+                <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                    <option value="">Select Section</option>
+                    @foreach ($arrivalSubLocations as $section)
+                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $oldSections))>{{ $section->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
 
-        <div class="col-md-8 mt-3">
+        <div class="col-md-12 mt-3">
             <div class="form-group">
                 <label class="form-label">Remarks:</label>
                 <textarea name="remarks" id="remarks" class="form-control" rows="2">{{ $sales_inquiry->remarks }}</textarea>
             </div>
         </div>
-
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Token Money:</label>
-                <input type="number" name="token_money" id="token_money" value="{{ $sales_inquiry->token_money }}" class="form-control" step="0.01" min="0">
-            </div>
-        </div>
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -121,11 +150,10 @@
                             <th>Bag Size</th>
                             <th>No of Bags</th>
                             <th>Quantity</th>
-                            <th>Rate</th>
+                            <th>Rate per Kg</th>
                             <th>Brands</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Description</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="salesInquiryBody">
@@ -145,7 +173,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="bag_type[]" id="bag_type_0" class="form-control select2">
+                                    <select name="bag_type[]" id="bag_type_{{ $i }}" class="form-control select2">
                                         <option value="">Select Bag Type</option>
                                         @foreach ($bag_types ?? [] as $bag_type)
                                             <option value="{{ $bag_type->id }}" @selected($bag_type->id == $data->bag_type)>
@@ -154,19 +182,19 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_size[]" id="bag_size_0"
+                                    <input type="text" name="bag_size[]" id="bag_size_{{ $i }}"
                                         value="{{ $data->bag_size }}" class="form-control bag_size"
                                         onkeyup="calc(this)" step="0.01" min="0">
                                 </td>
                                 <td>
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_0"
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $i }}"
                                         value="{{ $data->no_of_bags }}" class="form-control no_of_bags"
-                                        onkeyup="calc(this)" step="0.01" min="0">
+                                        readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $i }}"
-                                        value="{{ $data->bag_size * $data->no_of_bags }}" class="form-control qty" step="0.01"
-                                        min="0" readonly>
+                                        value="{{ $data->qty ?? ($data->bag_size * $data->no_of_bags) }}" class="form-control qty" step="0.01"
+                                        min="0" onkeyup="calc(this)" onchange="calc(this)">
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $i }}"
@@ -175,7 +203,7 @@
                                 </td>
 
                                 <td>
-                                    <select name="brand_id[]" id="brand_id_0" class="form-control select2">
+                                    <select name="brand_id[]" id="brand_id_{{ $i }}" class="form-control select2">
                                         <option value="">Select Brand</option>
                                         @foreach (getAllBrands() ?? [] as $brand)
                                             <option value="{{ $brand->id }}" @selected($data->brand_id == $brand->id)>
@@ -185,19 +213,13 @@
                                 </td>
                                 <td style="display: none;">
                                     <input type="text" name="pack_size[]" value="{{ $data->pack_size }}"
-                                        id="pack_size_0" value="0" class="form-control" step="0.01" min="0"
+                                        id="pack_size_{{ $i }}" value="0" class="form-control" step="0.01" min="0"
                                         >
                                 </td>
 
                                 <td>
                                     <input type="text" name="desc[]" id="desc_{{ $i }}"
                                         value="{{ $data->description }}" class="form-control">
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                        onclick="removeRow({{ $i }})" style="width:60px;">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
                                 </td>
                             </tr>
                             @php
@@ -226,19 +248,67 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+
+        const factories = @json($arrivalLocations);
+        const sections = @json($arrivalSubLocations);
+        const initialFactories = @json($oldFactories ?? []);
+        const initialSections = @json($oldSections ?? []);
+
+        function populateFactories() {
+            const selectedLocations = $('#locations').val() || [];
+            const currentValues = $('#arrival_location_id').val() || initialFactories;
+            $('#arrival_location_id').empty().append('<option value=\"\">Select Factory</option>');
+
+            factories
+                .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
+                .forEach(f => {
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name}</option>`);
+                });
+
+            $('#arrival_location_id').val(currentValues).trigger('change.select2');
+        }
+
+        function populateSections() {
+            const factoryIds = $('#arrival_location_id').val() || initialFactories;
+            const currentSections = $('#arrival_sub_location_id').val() || initialSections;
+            $('#arrival_sub_location_id').empty().append('<option value=\"\">Select Section</option>');
+
+            sections
+                .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
+                .forEach(s => {
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name}</option>`);
+                });
+
+            $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
+        }
+
+        $('#locations').on('change', function() {
+            populateFactories();
+            populateSections();
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            populateSections();
+        });
+
+        populateFactories();
+        populateSections();
     });
 
     function calc(el) {
         const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
+        const bag_size = parseFloat($(element).find(".bag_size").val());
+        const qty = parseFloat($(element).find(".qty").val());
         const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
 
-        if (!(bag_size.val() && no_of_bags.val())) return;
+        if (isNaN(bag_size) || isNaN(qty)) {
+            no_of_bags.val('');
+            return;
+        }
 
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-
-        qty.val(result);
+        // No of bags = bag size * quantity (per requirement)
+        const result = bag_size * qty;
+        no_of_bags.val(result);
     }
 
     function addRow() {
@@ -265,10 +335,10 @@
                 <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calc(this)" step="0.01" min="0">
             </td>
             <td>
-                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" onkeyup="calc(this)" step="0.01" min="0">
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" readonly>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" readonly>
+                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" onkeyup="calc(this)" onchange="calc(this)">
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0">

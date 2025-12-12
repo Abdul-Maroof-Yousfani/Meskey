@@ -217,21 +217,25 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Pack Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity (Kg)</th>
-                            <th>Rate</th>
+                            <th>Quantity (kg)</th>
+                            <th>Rate per Kg</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
                             <th>Bilty No.</th>
                             <th>Desc</th>
-                            <th style="display: none">Pack Size</th>
+                            <th style="display: none">Packing</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="dcTableBody">
                         @foreach ($delivery_challan->delivery_challan_data as $index => $data)
+                            @php
+                                $doData = $delivery_challan->delivery_order->flatMap->delivery_order_data->firstWhere('id', $data->do_data_id);
+                                $brandId = $doData->brand_id ?? $data->brand_id;
+                            @endphp
                             @php
                                 $balance = $data->no_of_bags;
                             @endphp
@@ -268,36 +272,36 @@
                               
                                 <td>
                                     <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
-                                        value="{{ $data->bag_size }}" onkeyup="calc(this)"
-                                        class="form-control bag_size" step="0.01" min="0">
+                                        value="{{ $data->bag_size }}"
+                                        class="form-control bag_size" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        onkeyup="calc(this)" value="{{ $balance }}"
-                                        class="form-control no_of_bags" step="0.01" min="0">
+                                        value="{{ $balance }}"
+                                        class="form-control no_of_bags" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->bag_size * $balance }}" class="form-control qty"
-                                        step="0.01" min="0" readonly>
+                                        value="{{ $data->qty }}"
+                                        class="form-control qty" step="0.01" min="0" oninput="calc(this)">
                                 </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"
                                         value="{{ $data->rate }}" class="form-control rate" step="0.01"
-                                        min="0">
+                                        min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * ($data->bag_size * $balance) }}"
+                                        value="{{ $data->rate * ($data->qty ?? 0) }}"
                                         class="form-control amount" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="" id="brand_id_read_only{{ $index }}"
-                                        value="{{ getBrandById($data->brand_id)?->name }}" onkeyup="calc(this)"
+                                        value="{{ getBrandById($brandId)?->name }}" onkeyup="calc(this)"
                                         class="form-control brand_id" step="0.01" min="0" readonly>
 
                                     <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}"
-                                        value="{{ $data->brand_id }}" onkeyup="calc(this)"
+                                        value="{{ $brandId }}" onkeyup="calc(this)"
                                         class="form-control item_id" step="0.01" min="0">
                                 </td>
                                 <td>
@@ -364,40 +368,38 @@
     function selectLocation(el) {
         const company = $(el).val();
 
-        if (!company) {
-            alert("no");
-            $("#arrivals").prop("disabled", true);
-            $("#arrivals").empty();
-            return;
-        } else {
-            // get.arrival-locations; send request to this url
-            $("#arrivals").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.arrival-locations') }}",
-                method: "GET",
-                data: {
-                    location_id: company
-                },
-                dataType: "json",
-                success: function(res) {
-                    $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrival Locations</option>`)
+        $("#arrivals").prop("disabled", true).empty().append(`<option value=''>Select Arrival Locations</option>`);
+        $("#storages").prop("disabled", true).empty().append(`<option value=''>Select Section</option>`);
 
-                    res.forEach(delivery_order => {
-                        $("#arrivals").append(`
+        if (!company) {
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('sales.get.arrival-locations') }}",
+            method: "GET",
+            data: {
+                location_id: company
+            },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty();
+                $("#arrivals").append(`<option value=''>Select Arrival Locations</option>`)
+
+                res.forEach(delivery_order => {
+                    $("#arrivals").append(`
                         <option value="${delivery_order.id}" >
                             ${delivery_order.text}
                         </option>
                     `);
-                    });
+                });
 
-                    $("#arrivals").select2();
-                },
-                error: function(error) {
+                $("#arrivals").prop("disabled", false).select2();
+            },
+            error: function(error) {
 
-                }
-            });
-        }
+            }
+        });
     }
 
     function get_items(el) {
@@ -425,22 +427,20 @@
     function get_delivery_orders() {
 
         const customer_id = $("#customer_id").val();
-        const location_id = $("#locations").val();
-        const arrival_location_id = $("#arrivals").val();
 
-        if (!customer_id || !location_id || !arrival_location_id) return;
+        if (!customer_id) {
+            $("#do_no").empty().append(`<option value=''>Select Delivery Order</option>`);
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.delivery-challan.get-do') }}",
             method: "GET",
             data: {
-                customer_id: $("#customer_id").val(),
-                company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrivals").val()
+                customer_id: customer_id
             },
             dataType: "json",
             success: function(res) {
-                console.log(res);
                 $("#do_no").empty();
                 $("#do_no").append(`<option value=''>Select Delivery Order</option>`)
 
@@ -452,7 +452,7 @@
                 `);
                 });
 
-                $("#arrivals").select2();
+                $("#do_no").select2();
             },
             error: function(error) {
 
@@ -623,11 +623,18 @@
         const no_of_bags = $(element).find(".no_of_bags");
         const qty = $(element).find(".qty");
 
-        if (!(bag_size.val() && no_of_bags.val())) return;
+        const bagSizeVal = parseFloat(bag_size.val());
+        const qtyVal = parseFloat(qty.val());
 
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
+        if (!bagSizeVal || !qtyVal) {
+            no_of_bags.val("");
+            calcAmount(el);
+            return;
+        }
 
-        qty.val(result);
+        const bagsResult = bagSizeVal * qtyVal;
+
+        no_of_bags.val(bagsResult);
         calcAmount(el);
     }
 

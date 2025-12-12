@@ -29,10 +29,14 @@ class SalesInquiryRequest extends FormRequest
             "reference_number" => "required",
 
             "required_date" => "required|date",
+            "arrival_location_id" => "required|array|min:1",
+            "arrival_location_id.*" => "integer|exists:arrival_locations,id",
+            "arrival_sub_location_id" => "required|array|min:1",
+            "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "contract_type" => "required|in:pohanch,x-mill",
             "contact_person" => "required",
-            "remarks" => "required",
+            "remarks" => "nullable",
 
             "item_id" => "nullable|array",
             "item_id.*" => "required",
@@ -62,7 +66,7 @@ class SalesInquiryRequest extends FormRequest
             "pack_size" => "nullable|array",
             "pack_size.*" => "required",
 
-            "token_money" => "nullable|numeric",
+            "token_money" => "required|numeric",
 
         ];
     }

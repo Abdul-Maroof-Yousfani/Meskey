@@ -10,45 +10,18 @@
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
     <div class="row form-mar">
-
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">So No:</label>
+                <label class="form-label">SO No:</label>
                 <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
             </div>
         </div>
+    </div>
 
+    <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Date:</label>
-                <input type="date" name="order_date" id="order_date" onchange="getNumber()" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Reference Number:</label>
-                <input type="text" name="so_reference_no" id="so_reference_no" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" id="delivery_date" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Expiry Date:</label>
-                <input type="date" name="expiry_date" id="expiry_date" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Inquiries:</label>
+                <label class="form-label">Inquiry No:</label>
                 <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
                     <option value="">Select Inquiry (Optional)</option>
                     @foreach ($inquiries ?? [] as $inquiry)
@@ -57,7 +30,25 @@
                 </select>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Date:</label>
+                <input type="date" name="order_date" id="order_date" onchange="getNumber()" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Contract Type:</label>
+                <select name="sauda_type" id="sauda_type" class="form-control select2">
+                    <option value="">Select Contract Type</option>
+                    <option value="pohanch">Pohanch</option>
+                    <option value="x-mill">X-mill</option>
+                </select>
+            </div>
+        </div>
+    </div>
 
+    <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Customer:</label>
@@ -69,19 +60,38 @@
                 </select>
             </div>
         </div>
-
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Contract Type:</label>
-                <select name="sauda_type" id="sauda_type" class="form-control select2">
-                    <option value="">Select Contract Type</option>
-                    <option value="pohanch">Pohanch</option>
-                    <option value="x-mill">X-mill</option>
-                
+                <label class="form-label">Contact Person:</label>
+                <input type="text" name="contact_person" id="contact_person" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Delivery Date:</label>
+                <input type="date" name="delivery_date" id="delivery_date" class="form-control">
+            </div>
+        </div>
+    </div>
+
+    <div class="row form-mar">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Reference Number:</label>
+                <input type="text" name="so_reference_no" id="so_reference_no" class="form-control">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Pay Type:</label>
+                <select name="pay_type_id" id="pay_type_id" class="form-control select2">
+                    <option value="">Select Pay Type</option>
+                    @foreach ($pay_types as $pay_type)
+                        <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
-
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Payment Terms:</label>
@@ -93,7 +103,13 @@
                 </select>
             </div>
         </div>
+    </div>
 
+    <div class="row form-mar">
+        @php
+            $selectedFactories = old('arrival_location_id', []);
+            $selectedSections = old('arrival_sub_location_id', []);
+        @endphp
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Locations:</label>
@@ -105,35 +121,52 @@
                 </select>
             </div>
         </div>
-
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Pay Types:</label>
-                <select name="pay_type_id" id="pay_type_id" class="form-control select2">
-                    <option value="">Select Pay Type</option>
-                    @foreach ($pay_types as $pay_type)
-                        <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
+                <label class="form-label">Factory:</label>
+                <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                    <option value="">Select Factory</option>
+                    @foreach ($arrivalLocations as $factory)
+                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Section:</label>
+                <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                    <option value="">Select Section</option>
+                    @foreach ($arrivalSubLocations as $section)
+                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
 
+    <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Token Money:</label>
                 <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
             </div>
         </div>
-
+        <div class="col-md-8">
+            <div class="form-group">
+                <label class="form-label">Remarks:</label>
+                <textarea name="remarks" id="remarks"  class="form-control"></textarea>
+            </div>
+        </div>
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
-                disabled>
+            >
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -142,10 +175,10 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Bag Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
+                            <th>Quantity (kg)</th>
+                            <th>Rate per Kg</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Amount</th>
@@ -178,13 +211,12 @@
                                     min="0">
                             </td>
                             <td>
-                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" value="{{ $item->no_of_bags }}" class="form-control no_of_bags" onkeyup="calcBagTypes(this)" step="0.01"
-                                    min="0">
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" value="{{ $item->no_of_bags }}" class="form-control no_of_bags" readonly>
                             </td>
 
                             <td>
                                 <input type="number" name="qty[]" id="qty_0"
-                                    class="form-control qty" step="0.01" min="0" readonly>
+                                    class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
                             </td>
                             <td>
                                 <input type="number" name="rate[]" id="rate_0" onkeyup="calc(this)"
@@ -236,18 +268,67 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+
+        const factories = @json($arrivalLocations);
+        const sections = @json($arrivalSubLocations);
+        const initialFactories = @json($selectedFactories ?? []);
+        const initialSections = @json($selectedSections ?? []);
+
+        function populateFactories() {
+            const selectedLocations = $('#locations').val() || [];
+            const currentValues = $('#arrival_location_id').val() || initialFactories;
+            $('#arrival_location_id').empty().append('<option value="">Select Factory</option>');
+
+            factories
+                .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
+                .forEach(f => {
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name}</option>`);
+                });
+
+            $('#arrival_location_id').val(currentValues).trigger('change.select2');
+        }
+
+        function populateSections() {
+            const factoryIds = $('#arrival_location_id').val() || initialFactories;
+            const currentSections = $('#arrival_sub_location_id').val() || initialSections;
+            $('#arrival_sub_location_id').empty().append('<option value="">Select Section</option>');
+
+            sections
+                .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
+                .forEach(s => {
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name}</option>`);
+                });
+
+            $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
+        }
+
+        $('#locations').on('change', function() {
+            populateFactories();
+            populateSections();
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            populateSections();
+        });
+
+        populateFactories();
+        populateSections();
     });
 
     function calcBagTypes(el) {
         const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
+        const bag_size = parseFloat($(element).find(".bag_size").val());
+        const qty = parseFloat($(element).find(".qty").val());
         const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
 
-        if (!(bag_size.val() && no_of_bags.val())) return;
+        if (isNaN(bag_size) || isNaN(qty)) {
+            no_of_bags.val('');
+            return;
+        }
 
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-        qty.val(result);
+        // No of bags = bag size * quantity
+        const result = bag_size * qty;
+        no_of_bags.val(result);
         
         // Also calculate amount
         calc(el);
@@ -289,10 +370,10 @@
                 <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_${index}" value="" class="form-control">
             </td>
             <td>
-                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" onkeyup="calcBagTypes(this)" step="0.01" min="0">
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" readonly>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0" readonly>
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)" class="form-control qty" step="0.01" min="0">
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
@@ -387,6 +468,19 @@
                     $("#sauda_type").val(res.contract_type).trigger('change.select2');
                 }
 
+                if (res.contact_person) {
+                    $("#contact_person").val(res.contact_person).prop('readonly', true);
+                }
+                const inquiryFactories = res.arrival_locations || (res.arrival_location_id ? [res.arrival_location_id] : []);
+                const inquirySections = res.arrival_sub_locations || (res.arrival_sub_location_id ? [res.arrival_sub_location_id] : []);
+
+                if (inquiryFactories.length > 0) {
+                    $("#arrival_location_id").val(inquiryFactories).trigger('change.select2');
+                }
+                if (inquirySections.length > 0) {
+                    $("#arrival_sub_location_id").val(inquirySections).trigger('change.select2');
+                }
+
                 // Fill locations
                 if (res.locations && res.locations.length > 0) {
                     $("#locations").val(res.locations).trigger('change.select2');
@@ -429,6 +523,9 @@
         $("#sauda_type").prop('disabled', true);
         $("#locations").prop('disabled', true);
         $("#token_money").prop('readonly', true);
+        $("#contact_person").prop('readonly', true);
+        $("#arrival_location_id").prop('disabled', true);
+        $("#arrival_sub_location_id").prop('disabled', true);
 
         // Add hidden input for customer_id
         if (!$('#customer_id_hidden').length) {
@@ -472,10 +569,36 @@
             });
         }
 
+        // Add hidden for arrival_location_id (multiple)
+        $('.arrival_location_hidden').remove();
+        const selectedFactories = $("#arrival_location_id").val() || [];
+        selectedFactories.forEach(function(id) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'arrival_location_id[]',
+                class: 'arrival_location_hidden',
+                value: id
+            }).appendTo('form');
+        });
+
+        // Add hidden for arrival_sub_location_id (multiple)
+        $('.arrival_sub_location_hidden').remove();
+        const selectedSections = $("#arrival_sub_location_id").val() || [];
+        selectedSections.forEach(function(id) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'arrival_sub_location_id[]',
+                class: 'arrival_sub_location_hidden',
+                value: id
+            }).appendTo('form');
+        });
+
         // Remove the name from disabled selects to avoid conflict
         $("#customer_id").removeAttr('name');
         $("#sauda_type").removeAttr('name');
         $("#locations").removeAttr('name');
+        $("#arrival_location_id").removeAttr('name');
+        $("#arrival_sub_location_id").removeAttr('name');
     }
 
     function enableInquiryFields() {
@@ -485,16 +608,23 @@
         $("#sauda_type").prop('disabled', false);
         $("#locations").prop('disabled', false);
         $("#token_money").prop('readonly', false);
+        $("#contact_person").prop('readonly', false).val('');
+        $("#arrival_location_id").prop('disabled', false).val('').trigger('change.select2');
+        $("#arrival_sub_location_id").prop('disabled', false).val('').trigger('change.select2');
         $("#token_money").val(''); // Clear token money when no inquiry
 
         // Restore name attributes and remove hidden inputs
         $("#customer_id").attr('name', 'customer_id');
         $("#sauda_type").attr('name', 'sauda_type');
         $("#locations").attr('name', 'locations[]');
+        $("#arrival_location_id").attr('name', 'arrival_location_id[]');
+        $("#arrival_sub_location_id").attr('name', 'arrival_sub_location_id[]');
         
         $('#customer_id_hidden').remove();
         $('#sauda_type_hidden').remove();
         $('.locations_hidden').remove();
+        $('.arrival_location_hidden').remove();
+        $('.arrival_sub_location_hidden').remove();
     }
 
     function getNumber() {

@@ -455,8 +455,8 @@
                     @endcanAccess
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('payment-voucher.index') }}"
-                            onclick="loadPageContent('{{ route('payment-voucher.index') }}')"
+                            href="{{ route('receipt-voucher.index') }}"
+                            onclick="loadPageContent('{{ route('receipt-voucher.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Receipt Vouchers</span>
                         </a>
