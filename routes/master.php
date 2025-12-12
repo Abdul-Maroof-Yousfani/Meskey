@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
+use App\Http\Controllers\Master\CountryCityController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Master\{
@@ -28,10 +29,13 @@ use App\Http\Controllers\Master\{
     FumigationCompanyController,
     InspectionCompanyController,
     BrandsController,
+    CountryController,
     CustomerController,
+    HsCodeController,
     SizeController,
     PaymentTermController,
-    PayTypeController
+    PayTypeController,
+    PortController
 };
 
 
@@ -130,3 +134,19 @@ Route::prefix('qc-relief')->group(function () {
     Route::get('/get-parameters', [QcReliefController::class, 'getParameters'])->name('qc-relief.get-parameters');
     Route::post('/save-parameters', [QcReliefController::class, 'saveParameters'])->name('qc-relief.save-parameters');
 });
+
+// hscodes
+Route::resource('hs-code', HsCodeController::class);
+Route::post('/get-hscode', [HsCodeController::class, 'getHsCodeTable'])->name('get.hscode');
+
+// countries
+Route::resource('country', CountryController::class);
+Route::post('/get-country', [CountryController::class, 'getCountryTable'])->name('get.country');
+// cities
+Route::resource('cities', CountryCityController::class);
+Route::post('/get-city', [CountryCityController::class, 'getCountryCityTable'])->name('get.city');
+
+// ports
+Route::resource('ports', PortController::class);
+Route::post('/get-port', [PortController::class, 'getPortTable'])->name('get.port');
+Route::get('/get-cities/{country_id}', [PortController::class, 'getCities']);
