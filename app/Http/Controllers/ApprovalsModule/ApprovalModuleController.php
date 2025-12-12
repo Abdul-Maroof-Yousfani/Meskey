@@ -40,7 +40,7 @@ class ApprovalModuleController extends Controller
                 'label' => 'Purchase Quotation Item',
             ],
             [
-                'value' => 'App\Models\Procurement\Store\QC',
+                'value' => 'App\Models\Procurement\Store\PurchaseBagQC',
                 'label' => 'QC data'
             ],
 
