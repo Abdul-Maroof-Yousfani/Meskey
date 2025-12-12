@@ -16,7 +16,7 @@ return new class extends Migration
 
             DB::statement("ALTER TABLE `delivery_challans` 
             MODIFY `location_id` BIGINT UNSIGNED NULL,
-            MODIFY `arrival_id` BIGINT UNSIGNED NULL);
+            MODIFY `arrival_id` BIGINT UNSIGNED NULL");
         });
     }
 
