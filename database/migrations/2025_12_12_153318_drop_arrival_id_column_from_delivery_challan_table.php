@@ -12,9 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('delivery_challans', function (Blueprint $table) {
-            $table->dropColumn("location_id");
-            $table->dropColumn("arrival_id");
-            $table->dropColumn("subarrival_id");
+          
+
+            DB::statement("ALTER TABLE `delivery_challans` 
+            MODIFY `location_id` BIGINT UNSIGNED NULL,
+            MODIFY `arrival_id` BIGINT UNSIGNED NULL,
+            MODIFY `subarrival_id` BIGINT UNSIGNED NULL");
         });
     }
 

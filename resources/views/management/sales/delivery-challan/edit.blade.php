@@ -52,6 +52,18 @@
                     </div>
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">Contract Types:</label>
+                    <select name="sauda_type" id="sauda_type" class="form-control select2">
+                        <option value="">Select Contract type</option>
+                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
+                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4">
                     <label class="form-label">Customer:</label>
                     <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
                         class="form-control select2">
@@ -63,9 +75,18 @@
                     </select>
                 </div>
 
-            </div>
+                <div class="col-md-4">
+                    <label class="form-label">DO Numbers:</label>
+                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
+                        multiple>
+                        <option value="">Select Delivery Orders</option>
+                        @foreach ($delivery_orders as $delivery_order)
+                            <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
+                                {{ $delivery_order->reference_no }}</option>
+                        @endforeach
 
-            <div class="row">
+                    </select>
+                </div>
 
                 <div class="col-md-4">
                     <div class="form-group">
@@ -74,28 +95,46 @@
                             value="{{ $delivery_challan->reference_number }}" class="form-control">
                     </div>
                 </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-4">
                     <label class="form-label">Locations:</label>
-                    <select name="locations" id="locations" onchange="selectLocation(this); get_delivery_orders()"
-                        class="form-control select2">
+                    <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
                         <option value="">Select Locations</option>
-                        @foreach (get_locations() ?? [] as $location)
-                            <option value="{{ $location->id }}" @selected($delivery_challan->location_id == $location->id)>{{ $location->name }}
+                        @foreach (($locations ?? collect()) as $location)
+                            <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id))>
+                                {{ $location->name }}
                             </option>
                         @endforeach
                     </select>
+                    <div id="locations_hidden"></div>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Arrival Location:</label>
-                    <select name="arrival_locations" id="arrivals" onchange="get_delivery_orders()"
-                        class="form-control select2">
-                        <option value="">Select Arrivals Locations</option>
-                        @foreach (get_arrivals_by($delivery_challan->location_id) ?? [] as $location)
-                            <option value="{{ $location->id }}" @selected($delivery_challan->arrival_id == $location->id)>{{ $location->name }}
+                    <label class="form-label">Factory:</label>
+                    <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
+                        <option value="">Select Factory</option>
+                        @foreach (($arrivalLocations) as $location)
+                            <option value="{{ $location->id }}" @selected(($arrivalLocationIds ?? collect())->contains($location->id))>
+                                {{ $location->name }}
                             </option>
                         @endforeach
                     </select>
+                    <div id="arrivals_hidden"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Section:</label>
+                    <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
+                        <option value="">Select Section</option>
+                        @foreach (($sections ?? collect()) as $section)
+                            <option value="{{ $section->id }}" @selected(($sectionIds ?? collect())->contains($section->id))>
+                                {{ $section->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="storages_hidden"></div>
                 </div>
             </div>
 
@@ -110,25 +149,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Labour Amount:</label>
-                        <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
-                            onchange="" id="labour_amount" class="form-control">
-                    </div>
-                </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Sauda Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2">
-                        <option value="">Select Sauda types</option>
-                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
-                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
@@ -139,29 +160,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount" onchange=""
-                            value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
-                            class="form-control">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">DO Numbers:</label>
-                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
-                        multiple>
-                        <option value="">Select Delivery Orders</option>
-                        @foreach ($delivery_orders as $delivery_order)
-                            <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
-                                {{ $delivery_order->reference_no }}</option>
-                        @endforeach
 
-                    </select>
-                </div>
-            </div>
-
-            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">In-house Weighbridge:</label>
@@ -172,6 +171,26 @@
                         </select>
                     </div>
                 </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Amount:</label>
+                        <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
+                            onchange="" id="labour_amount" class="form-control">
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Transporter Amount:</label>
+                        <input type="number" name="transporter_amount" onchange=""
+                            value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
+                            class="form-control">
+                    </div>
+                </div>
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Weighbridge Amount:</label>
@@ -180,6 +199,9 @@
                             id="weighbridge_amount" class="form-control">
                     </div>
                 </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-4">
                     <label class="form-label">Remarks:</label>
                     <textarea name="remarks" id="remarks" class="form-control">{{ $delivery_challan->remarks }}</textarea>
@@ -349,12 +371,89 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+        // hydrateLocationsFromDos(initialSelectedDos);
     });
 
 
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
+    @php
+        $initialDoMeta = [];
+        foreach ($delivery_orders as $delivery_order) {
+            $initialDoMeta[$delivery_order->id] = [
+                "location_id" => $delivery_order->location_id,
+                "arrival_location_id" => $delivery_order->arrival_id,
+                "arrival_id" => $delivery_order->arrival_id,
+                "sub_arrival_location_id" => $delivery_order->subarrival_id,
+                "subarrival_id" => $delivery_order->subarrival_id,
+                "location_name" => get_location_name_by_id($delivery_order->location_id),
+                "arrival_name" => get_arrival_name_by_id($delivery_order->arrival_id),
+                "section_name" => get_storage_name_by_id($delivery_order->subarrival_id),
+            ];
+        }
+    @endphp
+
+    const initialDoMeta = @json($initialDoMeta);
+    const initialSelectedDos = @json($delivery_challan->delivery_order->pluck('id'));
+    doMeta = initialDoMeta || {};
+
+    function setHidden(name, values) {
+        const container = $(`#${name}_hidden`);
+        container.empty();
+        (values || []).forEach(v => {
+            container.append(`<input type="hidden" name="${name}[]" value="${v}">`);
+        });
+    }
+
+    function hydrateLocationsFromDos(selectedIds) {
+        const locSet = new Set();
+        const arrSet = new Set();
+        const secSet = new Set();
+        const locOptions = [];
+        const arrOptions = [];
+        const secOptions = [];
+
+        (selectedIds || []).forEach(id => {
+            const meta = doMeta[id];
+            if (!meta) return;
+
+            const locationId = meta.location_id;
+            const arrivalId = meta.arrival_location_id ?? meta.arrival_id;
+            const sectionId = meta.sub_arrival_location_id ?? meta.subarrival_id;
+
+            if (locationId && !locSet.has(locationId)) {
+                locSet.add(locationId);
+                locOptions.push({ id: locationId, text: meta.location_name || locationId });
+            }
+            if (arrivalId && !arrSet.has(arrivalId)) {
+                arrSet.add(arrivalId);
+                arrOptions.push({ id: arrivalId, text: meta.arrival_name || arrivalId });
+            }
+            if (sectionId && !secSet.has(sectionId)) {
+                secSet.add(sectionId);
+                secOptions.push({ id: sectionId, text: meta.section_name || sectionId });
+            }
+        });
+
+        const locSelect = $("#locations");
+        locSelect.empty().append(`<option value=''>Select Locations</option>`);
+        locOptions.forEach(o => locSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
+        locSelect.prop("disabled", true).select2();
+        setHidden("locations", Array.from(locSet));
+
+        const arrSelect = $("#arrivals");
+        arrSelect.empty().append(`<option value=''>Select Factory</option>`);
+        arrOptions.forEach(o => arrSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
+        arrSelect.prop("disabled", true).select2();
+        setHidden("arrival_locations", Array.from(arrSet));
+
+        const secSelect = $("#storages");
+        secSelect.empty().append(`<option value=''>Select Section</option>`);
+        secOptions.forEach(o => secSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
+        secSelect.prop("disabled", true).select2();
+        setHidden("storage_id", Array.from(secSet));
+    }
 
     function check_so_type() {
         const type = $("#sale_order").find("option:selected").data("type");
@@ -406,6 +505,8 @@
         // get.delivery-challan.get-items
         const delivery_orders = $(el).val();
 
+        hydrateLocationsFromDos(delivery_orders || []);
+
         $.ajax({
             url: "{{ route('sales.get.delivery-challan.get-items') }}",
             method: "GET",
@@ -444,15 +545,29 @@
                 $("#do_no").empty();
                 $("#do_no").append(`<option value=''>Select Delivery Order</option>`)
 
+                doMeta = {};
+
                 res.forEach(delivery_order => {
                     $("#do_no").append(`
                     <option value="${delivery_order.id}" >
                         ${delivery_order.text}
                     </option>
                 `);
+
+                    doMeta[delivery_order.id] = {
+                        location_id: delivery_order.location_id || null,
+                        arrival_location_id: delivery_order.arrival_location_id ?? delivery_order.arrival_id,
+                        arrival_id: delivery_order.arrival_id || delivery_order.arrival_location_id,
+                        sub_arrival_location_id: delivery_order.sub_arrival_location_id ?? delivery_order.subarrival_id,
+                        subarrival_id: delivery_order.subarrival_id ?? delivery_order.sub_arrival_location_id,
+                        location_name: delivery_order.location_name || "",
+                        arrival_name: delivery_order.arrival_name || "",
+                        section_name: delivery_order.section_name || "",
+                    };
                 });
 
                 $("#do_no").select2();
+                hydrateLocationsFromDos($("#do_no").val() || []);
             },
             error: function(error) {
 

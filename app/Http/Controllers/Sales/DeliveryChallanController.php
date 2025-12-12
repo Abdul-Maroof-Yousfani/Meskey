@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\DeliveryChallanRequest;
 use App\Models\Master\Customer;
 use App\Models\Master\PayType;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 use App\Models\PaymentTerm;
 use App\Models\Product;
 use App\Models\Sales\DeliveryChallan;
@@ -184,15 +187,29 @@ class DeliveryChallanController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->get();
+        $delivery_orders = $delivery_challan->delivery_order;
+        $locationIds = $delivery_orders->pluck('location_id')->filter()->unique();
 
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->where("customer_id", $delivery_challan->customer_id)
-                                            ->where("location_id", $delivery_challan->location_id)
-                                            ->where("arrival_location_id", $delivery_challan->arrival_id)
-                                            ->where("am_approval_status", "approved")
-                                            ->get();
 
-        return view("management.sales.delivery-challan.edit", compact("customers", "delivery_orders", "delivery_challan"));
+        $arrivalLocationIds = $delivery_orders->pluck('arrival_location_id')->filter()->unique();
+        
+        $sectionIds = $delivery_orders->pluck('sub_arrival_location_id')->filter()->unique();
+
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
+        $arrivalLocations = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+        $sections = ArrivalSubLocation::whereIn('id', $sectionIds)->get();
+
+        return view("management.sales.delivery-challan.edit", [
+            "customers" => $customers,
+            "delivery_orders" => $delivery_orders,
+            "delivery_challan" => $delivery_challan,
+            "locations" => $locations,
+            "arrivalLocations" => $arrivalLocations,
+            "sections" => $sections,
+            "locationIds" => $locationIds,
+            "arrivalLocationIds" => $arrivalLocationIds,
+            "sectionIds" => $sectionIds,
+        ]);
     }
 
     public function view(DeliveryChallan $delivery_challan) {
@@ -201,15 +218,31 @@ class DeliveryChallanController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->get();
 
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->where("customer_id", $delivery_challan->customer_id)
-                                            ->where("location_id", $delivery_challan->location_id)
-                                            ->where("arrival_location_id", $delivery_challan->arrival_id)
-                                            ->where("am_approval_status", "approved")
-                                            ->get();
+        $delivery_orders = $delivery_challan->delivery_order;
 
-        return view("management.sales.delivery-challan.view", compact("customers", "delivery_orders", "delivery_challan"));
+        $locationIds = $delivery_orders->pluck('location_id')->filter()->unique();
+
+
+        $arrivalLocationIds = $delivery_orders->pluck('arrival_location_id')->filter()->unique();
+        
+        $sectionIds = $delivery_orders->pluck('sub_arrival_location_id')->filter()->unique();
+
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
+        $arrivalLocations = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+        $sections = ArrivalSubLocation::whereIn('id', $sectionIds)->get();
+
+        return view("management.sales.delivery-challan.view", [
+            "customers" => $customers,
+            "delivery_orders" => $delivery_orders,
+            "delivery_challan" => $delivery_challan,
+            "locations" => $locations,
+            "arrivalLocations" => $arrivalLocations,
+            "sections" => $sections,
+            "locationIds" => $locationIds,
+            "arrivalLocationIds" => $arrivalLocationIds,
+            "sectionIds" => $sectionIds,
+        ]);
     }
 
     public function getList(Request $request) {
