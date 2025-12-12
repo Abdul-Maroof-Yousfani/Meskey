@@ -29,7 +29,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Location:</label>
-                        <select name="location_id" id="location_id" class="form-control select2" required onchange="loadJobOrdersByLocation()">
+                        <select name="location_id" id="location_id" class="form-control select2" required onchange="loadCommoditiesByLocation()">
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -40,8 +40,17 @@
 
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label>Commodity:</label>
+                        <select name="product_id" id="product_id" class="form-control select2" required onchange="loadJobOrdersByLocation()">
+                            <option value="">Select Commodity</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label>Job Ord. No:</label>
-                        <select name="job_order_id[]" id="job_order_id" class="form-control select2" multiple required>
+                        <select name="job_order_id[]" id="job_order_id" class="form-control select2" multiple required onchange="loadPackingItems()">
                             <option value="">Select Job Order</option>
                         </select>
                     </div>
@@ -99,6 +108,14 @@
                 </div>
             </div>
         </div>
+
+        <!-- Packing Items Display Section -->
+        <div class="col-md-12 mt-3" id="packingItemsSection" style="display: none;">
+            <h6 class="header-heading-sepration">Packing Items</h6>
+            <div id="packingItemsContainer">
+                <!-- Packing items will be loaded here via fetchDynamicHTML -->
+            </div>
+        </div>
     </div>
 
     <div class="row bottom-button-bar">
@@ -137,14 +154,68 @@
         }
     });
 
+    function loadCommoditiesByLocation() {
+        const locationId = $('#location_id').val();
+        const commoditySelect = $('#product_id');
+        const jobOrderSelect = $('#job_order_id');
+
+        // Clear commodity and job order dropdowns
+        commoditySelect.empty().append('<option value="">Select Commodity</option>');
+        jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
+        $('#packingItemsSection').hide();
+        $('#packingItemsBody').empty();
+
+        if (!locationId) {
+            commoditySelect.trigger('change');
+            jobOrderSelect.trigger('change');
+            return;
+        }
+
+        // Show loading
+        commoditySelect.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("production-voucher.get-commodities-by-location") }}',
+            method: 'POST',
+            data: {
+                location_id: locationId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.commodities && response.commodities.length > 0) {
+                    $.each(response.commodities, function(index, commodity) {
+                        commoditySelect.append(
+                            $('<option></option>')
+                                .attr('value', commodity.id)
+                                .text(commodity.name)
+                        );
+                    });
+                } else {
+                    commoditySelect.append('<option value="">No Commodities Found</option>');
+                }
+                commoditySelect.trigger('change');
+            },
+            error: function(xhr) {
+                console.error('Error loading commodities:', xhr);
+                commoditySelect.append('<option value="">Error loading commodities</option>');
+            },
+            complete: function() {
+                commoditySelect.prop('disabled', false);
+            }
+        });
+    }
+
     function loadJobOrdersByLocation() {
         const locationId = $('#location_id').val();
+        const productId = $('#product_id').val();
         const jobOrderSelect = $('#job_order_id');
 
         // Clear existing options
         jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
+        $('#packingItemsSection').hide();
+        $('#packingItemsContainer').empty();
 
-        if (!locationId) {
+        if (!locationId || !productId) {
             jobOrderSelect.trigger('change');
             return;
         }
@@ -157,6 +228,7 @@
             method: 'POST',
             data: {
                 location_id: locationId,
+                product_id: productId,
                 _token: '{{ csrf_token() }}'
             },
             success: function(response) {
@@ -181,5 +253,33 @@
                 jobOrderSelect.prop('disabled', false);
             }
         });
+    }
+
+    function loadPackingItems() {
+        const jobOrderIds = $('#job_order_id').val();
+        const locationId = $('#location_id').val();
+
+        if (!jobOrderIds || !locationId || jobOrderIds.length === 0) {
+            $('#packingItemsSection').hide();
+            $('#packingItemsContainer').empty();
+            return;
+        }
+
+        $('#packingItemsSection').show();
+
+        // Use fetchDynamicHTML to load packing items with produced quantity
+        fetchDynamicHTML(
+            '{{ route("production-voucher.get-packing-items-with-produced") }}',
+            'packingItemsContainer',
+            {
+                job_order_ids: jobOrderIds,
+                location_id: locationId
+            },
+            {
+                method: 'POST',
+                loader: true,
+                loadingText: 'Loading packing items...'
+            }
+        );
     }
 </script>

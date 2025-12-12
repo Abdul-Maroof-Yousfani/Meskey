@@ -1,16 +1,14 @@
-<form method="POST" action="{{ isset($productionInput) ? route('production-voucher.input.update', [$productionVoucher->id, $productionInput->id]) : route('production-voucher.input.store', $productionVoucher->id) }}" id="ajaxSubmit" autocomplete="off">
+<form method="POST" action="{{ route('production-voucher.input.update', [$productionVoucher->id, $productionInput->id]) }}" id="ajaxSubmit" autocomplete="off">
     @csrf
-    @if(isset($productionInput))
-        @method('PUT')
-    @endif
+    @method('PUT')
     <input type="hidden" name="production_voucher_id" id="production_voucher_id" value="{{ $productionVoucher->id ?? '' }}">
     <input type="hidden" name="input_id" id="input_id" value="{{ $productionInput->id ?? '' }}">
-    <input type="hidden" id="listRefresh" value="{{ route('get.production-voucher-inputs', $productionVoucher->id) }}" />
+    <!-- <input type="hidden" id="listRefresh" value="{{ route('get.production-voucher-inputs', $productionVoucher->id) }}" /> -->
+    <input type="hidden" id="listRefresh" value="{{ route('get.production-voucher-inputs', $productionVoucher->id) }}" data-url="{{ route('get.production-voucher-inputs', $productionVoucher->id) }}" data-appenddiv="productionInputsTable" data-formid="productionInputsFilterForm" data-loadmore="false" />
 
     <div class="row form-mar">
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Production Input</h6>
-            
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -19,7 +17,7 @@
                             <option value="">Select Commodity</option>
                             @if(isset($products))
                                 @foreach($products as $product)
-                                    <option value="{{ $product->id }}" {{ isset($productionInput) && $productionInput->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
+                                    <option value="{{ $product->id }}" {{ $productionInput->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
                                 @endforeach
                             @endif
                         </select>
@@ -33,7 +31,7 @@
                             <option value="">Select Location</option>
                             @if(isset($sublocations))
                                 @foreach($sublocations as $sublocation)
-                                    <option value="{{ $sublocation->id }}" {{ isset($productionInput) && $productionInput->location_id == $sublocation->id ? 'selected' : '' }}>{{ $sublocation->name }}</option>
+                                    <option value="{{ $sublocation->id }}" {{ $productionInput->location_id == $sublocation->id ? 'selected' : '' }}>{{ $sublocation->name }}</option>
                                 @endforeach
                             @endif
                         </select>
@@ -47,6 +45,26 @@
                     </div>
                 </div>
 
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Production Slot:</label>
+                        <select name="slot_id" id="input_slot_id" class="form-control select2">
+                            <option value="">Select Slot (Optional)</option>
+                            @if(isset($slots))
+                                @foreach($slots as $slot)
+                                    <option value="{{ $slot->id }}" {{ $productionInput->slot_id == $slot->id ? 'selected' : '' }}>
+                                        {{ $slot->date ? $slot->date->format('Y-m-d') : '' }} - 
+                                        {{ $slot->start_time ?? '' }} 
+                                        @if($slot->end_time)
+                                            to {{ $slot->end_time }}
+                                        @endif
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+                </div>
+
                 <div class="col-md-12">
                     <div class="form-group">
                         <label>Remarks:</label>
@@ -55,7 +73,6 @@
                 </div>
             </div>
 
-            <!-- Listings Table (for refresh functionality) -->
             <div class="row mt-3">
                 <div class="col-md-12">
                     <h6 class="header-heading-sepration">Available Listings</h6>
@@ -88,7 +105,7 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">{{ isset($productionInput) ? 'Update' : 'Save' }} Production Input</button>
+            <button type="submit" class="btn btn-primary submitbutton">Update Production Input</button>
         </div>
     </div>
 </form>
@@ -108,7 +125,6 @@
             return;
         }
 
-        // AJAX call to refresh listings
         $.ajax({
             url: '{{ route("get.production-voucher") }}',
             method: 'POST',
@@ -119,12 +135,9 @@
                 action: 'refresh_input_listings'
             },
             success: function(response) {
-                // Update listings table
                 $('#inputListingsTable tbody').html(response.html);
             }
         });
     }
-
-    // Note: listRefresh is handled automatically by scripts.js for refresh-inputs-outputs route
 </script>
 

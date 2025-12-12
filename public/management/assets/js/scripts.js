@@ -10,7 +10,11 @@ function getUniversalNumber(options, callback) {
   });
 }
 
-function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
+function filterationCommonoldat12Dec2025(
+  url,
+  loadmore = false,
+  appenddiv = "filteredData"
+) {
   renderLoadingTable("#filteredData table", 10);
 
   var url = url;
@@ -255,6 +259,294 @@ function filterationCommon(url, loadmore = false, appenddiv = "filteredData") {
   }
 }
 
+function filterationCommon(
+  url,
+  loadmore = false,
+  appenddiv = "filteredData",
+  formId = "filterForm"
+) {
+  // Get the container element
+  var $container = $("#" + appenddiv);
+
+  // Fallback to filteredData if specified container doesn't exist
+  if ($container.length === 0) {
+    console.warn(
+      `Container with ID "${appenddiv}" not found. Falling back to "filteredData".`
+    );
+    appenddiv = "filteredData";
+    $container = $("#" + appenddiv);
+
+    // If still not found, try to find common container alternatives
+    if ($container.length === 0) {
+      $container = $(
+        "[data-filter-container], .filtered-data, .data-container, .ajax-content"
+      ).first();
+      if ($container.length > 0) {
+        appenddiv = $container.attr("id") || "filteredData";
+        console.warn(
+          `Using container with ID "${appenddiv}" for filtered data.`
+        );
+      } else {
+        console.error("No suitable container found for filtered data!");
+        return;
+      }
+    }
+  }
+
+  // Start with loading state if container exists
+  if ($container.length) {
+    console.log($container);
+    renderLoadingTable($container.find("table") || $container, $container.find("tr").length || 10);
+  }
+
+  var url = url;
+  var loadmore = loadmore;
+  var appenddiv = appenddiv;
+  var formId = formId;
+
+  // Get the form element
+  var $form = $("#" + formId);
+
+  // Fallback to filterForm if specified form doesn't exist
+  if ($form.length === 0) {
+    console.warn(
+      `Form with ID "${formId}" not found. Falling back to "filterForm".`
+    );
+    formId = "filterForm";
+    $form = $("#" + formId);
+
+    // If still not found, try to find any form with filter classes or attributes
+    if ($form.length === 0) {
+      $form = $(
+        "form[data-filter-form], .filter-form, form:has([name^='filter'])"
+      ).first();
+      if ($form.length > 0) {
+        formId = $form.attr("id") || "filterForm";
+        console.warn(`Using form with ID "${formId}" for filtering.`);
+      } else {
+        console.error("No suitable form found for filtering!");
+        return;
+      }
+    }
+  }
+
+  // Initialize Daterangepicker
+  initializeDaterangepicker();
+
+  $.ajaxSetup({
+    headers: {
+      "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+    },
+  });
+
+  // Debounce function to optimize input change handling
+  function debounce(func, delay) {
+    let timer;
+    return function (...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => func.apply(this, args), delay);
+    };
+  }
+
+  $('input[name="daterange"]').daterangepicker(
+    {
+      opens: "left",
+      // autoUpdateInput: false,
+      locale: {
+        cancelLabel: "Clear",
+      },
+    },
+    function (start, end, label) {
+      console.log(
+        "A new date selection was made: " +
+          start.format("YYYY-MM-DD") +
+          "  -  " +
+          start +
+          " to " +
+          end.format("YYYY-MM-DD")
+      );
+      $("[name='daterange']").val(
+        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
+      );
+
+      if ($("#" + appenddiv).length) {
+        renderLoadingTable(
+          $("#" + appenddiv).find("table") || $("#" + appenddiv),
+          12
+        );
+      }
+      var formData = $("#" + formId).serialize();
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    }
+  );
+
+  // Handle form input changes
+  $("#" + formId + " input, #" + formId + " select")
+    .off("change keyup")
+    .on(
+      "change keyup",
+      debounce(function (event) {
+        var $this = $(this);
+
+        // If the input has the class 'only-keypress', skip change event
+        if ($this.attr("type") === "text" && event.type !== "keyup") {
+          return;
+        }
+
+        if ($("#" + appenddiv).length) {
+          renderLoadingTable(
+            $("#" + appenddiv).find("table") || $("#" + appenddiv),
+            12
+          );
+        }
+        var formData = $("#" + formId).serialize();
+        updateUrlParams(formData);
+        fetch_data(formData);
+      }, 300)
+    );
+
+  // Handle pagination
+  $(document).on("click", "#paginationLinks a", function (e) {
+    if ($("#" + appenddiv).length) {
+      renderLoadingTable(
+        $("#" + appenddiv).find("table") || $("#" + appenddiv),
+        12
+      );
+    }
+    e.preventDefault();
+    var page = $(this).attr("href").split("page=")[1];
+    var formData = $("#" + formId).serialize() + "&page=" + page;
+    updateUrlParams(formData);
+    fetch_data(formData);
+  });
+
+  $(document).on("change", "#per_page ", function (e) {
+    if ($("#" + appenddiv).length) {
+      renderLoadingTable(
+        $("#" + appenddiv).find("table") || $("#" + appenddiv),
+        12
+      );
+    }
+    e.preventDefault();
+    var page = $(this).val();
+    var formData = $("#" + formId).serialize() + "&per_page=" + page;
+    updateUrlParams(formData);
+    fetch_data(formData);
+  });
+
+  // Fetch data with AJAX
+  function fetch_data(formData) {
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: formData,
+      success: function (data) {
+        // Update the container with the new data
+        $("#" + `${appenddiv}`).html(data);
+        $(".selectWithoutAjax").select2();
+        // Reinitialize Daterangepicker after AJAX content is loaded
+        initializeDaterangepicker();
+      },
+      error: function (xhr, status, error) {
+        console.error(error);
+        handleAjaxError(xhr, status, error);
+
+        // Swal.fire({
+        //   icon: "error",
+        //   title: "Error",
+        //   text: "Something went wrong: " + xhr.status + " " + error,
+        //   confirmButtonColor: "#3085d6",
+        // });
+      },
+    });
+  }
+
+  function updateUrlParams(formData) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const newParams = new URLSearchParams(formData);
+
+    for (const [key, value] of newParams) {
+      urlParams.delete(key);
+    }
+    // Handle array parameters like commodity_id[]
+    for (const [key, value] of newParams) {
+      if (key.endsWith("[]")) {
+        if (value) {
+          // Add new value to array parameter
+          urlParams.append(key, value);
+        }
+      } else {
+        if (value) {
+          urlParams.set(key, value);
+        } else {
+          urlParams.delete(key);
+        }
+      }
+    }
+
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.pushState(null, "", newUrl);
+  }
+
+  // Initialize filters on page load
+  fetch_data($("#" + formId).serialize());
+
+  // Initialize Daterangepicker
+  function initializeDaterangepicker() {
+    try {
+      if ($("#date_range").length) {
+        var currentDate = moment().add(1, "days");
+        var startDate = moment().subtract(28, "days");
+
+        $("#date_range").daterangepicker({
+          startDate: startDate,
+          endDate: currentDate,
+          autoUpdateInput: false,
+          locale: {
+            cancelLabel: "Clear Date & All",
+          },
+        });
+
+        $("#date_range").val(
+          startDate.format("YYYY-MM-DD") +
+            " - " +
+            currentDate.format("YYYY-MM-DD")
+        );
+
+        $("#date_range").on("apply.daterangepicker", function (ev, picker) {
+          $(this).val(
+            picker.startDate.format("YYYY-MM-DD") +
+              " - " +
+              picker.endDate.format("YYYY-MM-DD")
+          );
+          var formData = $("#" + formId).serialize();
+          updateUrlParams(formData);
+          fetch_data(formData);
+        });
+
+        $("#date_range").on("cancel.daterangepicker", function (ev, picker) {
+          $(this).val("");
+          var formData = $("#" + formId).serialize();
+          updateUrlParams(formData);
+          fetch_data(formData);
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "Initialization Error",
+        text:
+          "An error occurred while initializing the date range picker: " +
+          error.message,
+        confirmButtonColor: "#3085d6",
+      });
+    }
+  }
+}
+
 if (!SUBMISSION_ON_ENTER) {
   $(document).on("keypress", "#ajaxSubmit input", function (e) {
     if (e.which === 13) {
@@ -342,7 +634,8 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
           }
 
           var url = form.find("#url").val();
-          var listRefresh = form.find("#listRefresh").val();
+          var listRefresh = form.find("#listRefresh");
+          // var listRefresh = form.find("#listRefresh").val();
           var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
           $(formhunyr).parents(".modal-sidebar").removeClass("open");
           $(".main-content").css("cursor", "auto");
@@ -387,13 +680,32 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
           if (url) {
             window.location.href = url;
           }
-          if (listRefresh) {
-            filterationCommon(listRefresh);
+          // if (listRefresh) {
+          //   filterationCommon(listRefresh);
+          //   $(formhunyr).parents(".model").slideUp();
+          // }
+
+          if (listRefresh.length > 0 && listRefresh.val()) {
+            // Get all configuration from data-attributes
+            var refreshUrl = listRefresh.val();
+            console.log(refreshUrl);
+            var appenddiv = listRefresh.data("appenddiv") || "filteredData";
+            var formId = listRefresh.data("formid") || "filterForm";
+            var loadmore = listRefresh.data("loadmore") || false;
+
+            // Call filterationCommon with all parameters
+            filterationCommon(refreshUrl, loadmore, appenddiv, formId);
             $(formhunyr).parents(".model").slideUp();
           }
+
           if (ajaxLoadFlag == 1) {
             getAjaxDataOnEditColumns();
           }
+
+          if (data && data.redirect) {
+            window.location.href = data.redirect;
+          }
+          $("body").removeClass("drawer-opened");
           // }
         });
       } else {
@@ -564,6 +876,9 @@ $(document).on("submit", "#ajaxSubmit2", function (e) {
           }
           if (listRefresh) {
             filterationCommon(listRefresh);
+            // filterationCommon(listRefresh, false, 'productionInputsFilterForm', 'productionInputsTable');
+            // filterationCommon(listRefresh, false, 'productionOutputsTable', 'productionOutputsFilterForm');
+            // filterationCommon(listRefresh, false, 'productionSlotsFilterForm', 'productionSlotsTable');
             $(formhunyr).parents(".model").slideUp();
           }
           if (ajaxLoadFlag == 1) {
@@ -894,14 +1209,22 @@ function openModal(button, url, title, viewonly = false, drawerWidth = null) {
   });
 }
 
-function openModalAndDonotCloseLastModal(button, url, title, viewonly = false, drawerWidth = null) {
+function openModalAndDonotCloseLastModal(
+  button,
+  url,
+  title,
+  viewonly = false,
+  drawerWidth = null
+) {
   const $button = $(button);
   const originalText = $button.html();
 
   // Spinner on button
-  $button.prop("disabled", true).html(
-    `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm"></span></span> ${originalText}`
-  );
+  $button
+    .prop("disabled", true)
+    .html(
+      `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm"></span></span> ${originalText}`
+    );
 
   // Responsive width
   if (!drawerWidth) {
@@ -910,7 +1233,7 @@ function openModalAndDonotCloseLastModal(button, url, title, viewonly = false, d
     else drawerWidth = "50%";
   }
 
-  const instanceId = 'sidebar-drawer-' + Date.now();
+  const instanceId = "sidebar-drawer-" + Date.now();
 
   // Create brand-new drawer (no header bar at all)
   const $drawer = $(`
@@ -921,7 +1244,7 @@ function openModalAndDonotCloseLastModal(button, url, title, viewonly = false, d
       </button>
 
       <!-- Optional title (just text, no bar) -->
-      ${title ? `<div class="clean-drawer-title">${title}</div>` : ''}
+      ${title ? `<div class="clean-drawer-title">${title}</div>` : ""}
 
       <div class="clean-drawer-body">
         <div class="loader-container" style="display:block;text-align:center;padding:60px 20px;">
@@ -959,19 +1282,23 @@ function openModalAndDonotCloseLastModal(button, url, title, viewonly = false, d
       $drawer.find('[data-toggle="tooltip"]').tooltip();
 
       if (viewonly) {
-        $drawer.find(":input, select, textarea, :checkbox, :file").prop({readonly:true, disabled:true});
+        $drawer
+          .find(":input, select, textarea, :checkbox, :file")
+          .prop({ readonly: true, disabled: true });
         $drawer.find('[type="submit"]').remove();
       }
 
       $button.prop("disabled", false).html(originalText);
     },
     error: function (xhr) {
-      $drawer.find(".drawer-content").html(
-        `<div class="alert alert-danger m-4">Failed to load content (${xhr.status})</div>`
-      );
+      $drawer
+        .find(".drawer-content")
+        .html(
+          `<div class="alert alert-danger m-4">Failed to load content (${xhr.status})</div>`
+        );
       $drawer.find(".loader-container").hide();
       $button.prop("disabled", false).html(originalText);
-    }
+    },
   });
 }
 

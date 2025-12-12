@@ -8,6 +8,8 @@ use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Production\ProductionVoucher;
 use App\Models\Production\ProductionInput;
 use App\Models\Production\ProductionOutput;
+use App\Models\Production\ProductionSlot;
+use App\Models\Production\ProductionSlotBreak;
 use App\Models\Product;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ArrivalSubLocation;
@@ -15,6 +17,7 @@ use App\Models\Master\Brands;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductionVoucherController extends Controller
 {
@@ -27,8 +30,11 @@ class ProductionVoucherController extends Controller
     {
         $query = ProductionVoucher::with([
             'jobOrder',
+            'jobOrders.packingItems.companyLocation',
+            'jobOrders.product',
             'location',
-            'supervisor'
+            'supervisor',
+            'outputs.jobOrder'
         ]);
 
         // Apply search filter
@@ -49,9 +55,14 @@ class ProductionVoucherController extends Controller
             });
         }
 
-        // Filter by job order
+        // Filter by job order (check both old job_order_id and pivot table)
         if ($request->filled('job_order_id')) {
-            $query->where('job_order_id', $request->job_order_id);
+            $query->where(function($q) use ($request) {
+                $q->where('job_order_id', $request->job_order_id)
+                  ->orWhereHas('jobOrders', function($q) use ($request) {
+                      $q->where('job_orders.id', $request->job_order_id);
+                  });
+            });
         }
 
         // Filter by date range
@@ -86,6 +97,49 @@ class ProductionVoucherController extends Controller
         // Paginate results
         $productionVouchers = $query->paginate(request('per_page', 25));
 
+        // Calculate job order-wise allocated and produced quantities for each voucher
+        foreach ($productionVouchers as $voucher) {
+            $jobOrderData = [];
+            $voucher->producedByJobOrder = []; // Initialize as empty array
+            
+            // Get all job orders for this voucher
+            $jobOrders = $voucher->jobOrders->count() > 0 ? $voucher->jobOrders : collect([$voucher->jobOrder])->filter();
+            
+            // Get allocated quantities from packing items (only for this voucher's location)
+            foreach ($jobOrders as $jobOrder) {
+                if (!$jobOrder) continue;
+                
+                $allocatedQty = 0;
+                // Only count packing items for this voucher's location
+                foreach ($jobOrder->packingItems as $packingItem) {
+                    if ($packingItem->company_location_id == $voucher->location_id) {
+                        $allocatedQty += $packingItem->total_kgs ?? 0;
+                    }
+                }
+                
+                $jobOrderData[$jobOrder->id] = [
+                    'job_order_no' => $jobOrder->job_order_no,
+                    'job_order_ref_no' => $jobOrder->ref_no ?? null,
+                    'allocated_qty' => $allocatedQty,
+                    'produced_qty' => 0
+                ];
+            }
+            
+            // Get produced quantities from production outputs (grouped by job order)
+            foreach ($voucher->outputs as $output) {
+                if ($output->job_order_id && isset($jobOrderData[$output->job_order_id])) {
+                    $jobOrderData[$output->job_order_id]['produced_qty'] += $output->qty ?? 0;
+                }
+            }
+            
+            // Calculate remaining for each job order
+            foreach ($jobOrderData as &$data) {
+                $data['remaining_qty'] = $data['allocated_qty'] - $data['produced_qty'];
+            }
+            
+            $voucher->producedByJobOrder = $jobOrderData;
+        }
+
         // Get job orders for filter dropdown
         $jobOrders = JobOrder::where('status', 1)
             ->orderBy('job_order_no', 'desc')
@@ -101,7 +155,7 @@ class ProductionVoucherController extends Controller
     public function create()
     {
         $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $supervisors = User::where('status', 1)->get();
+        $supervisors = User::where('status', 'active')->get();
 
         return view('management.production.production_voucher.create', compact(
             'companyLocations',
@@ -112,6 +166,7 @@ class ProductionVoucherController extends Controller
     public function getJobOrdersByLocation(Request $request)
     {
         $locationId = $request->location_id;
+        $productId = $request->product_id; // Optional commodity filter
         
         if (!$locationId) {
             return response()->json(['jobOrders' => []]);
@@ -124,6 +179,9 @@ class ProductionVoucherController extends Controller
             ->whereHas('packingItems', function ($q) use ($locationId) {
                 $q->where('company_location_id', $locationId);
             })
+            ->when($productId, function ($query) use ($productId) {
+                return $query->where('product_id', $productId);
+            })
             ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
                 return $query->whereHas('packingItems', function ($q) use ($user) {
                     $q->where('company_location_id', $user->company_location_id);
@@ -135,11 +193,186 @@ class ProductionVoucherController extends Controller
                     'id' => $jobOrder->id,
                     'job_order_no' => $jobOrder->job_order_no,
                     'ref_no' => $jobOrder->ref_no,
-                    'product_name' => $jobOrder->product->name ?? 'N/A'
+                    'product_name' => $jobOrder->product->name ?? 'N/A',
+                    'product_id' => $jobOrder->product_id
                 ];
             });
 
         return response()->json(['jobOrders' => $jobOrders]);
+    }
+
+    public function getPackingItemsByJobOrder(Request $request)
+    {
+        $jobOrderIds = $request->job_order_ids; // Array of job order IDs
+        $locationId = $request->location_id;
+        
+        if (!$jobOrderIds || !$locationId) {
+            return response()->json(['packingItems' => []]);
+        }
+
+        $packingItems = \App\Models\Production\JobOrder\JobOrderPackingItem::with([
+            'jobOrder',
+            'bagType',
+            'bagCondition',
+            'companyLocation',
+            'brand',
+            'jobOrder.product'
+        ])
+            ->whereIn('job_order_id', is_array($jobOrderIds) ? $jobOrderIds : [$jobOrderIds])
+            ->where('company_location_id', $locationId)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'job_order_no' => $item->jobOrder->job_order_no ?? 'N/A',
+                    'product_name' => $item->jobOrder->product->name ?? 'N/A',
+                    'bag_type' => $item->bagType->name ?? 'N/A',
+                    'bag_condition' => $item->bagCondition->name ?? 'N/A',
+                    'bag_size' => $item->bag_size,
+                    'no_of_bags' => $item->no_of_bags,
+                    'total_bags' => $item->total_bags,
+                    'total_kgs' => $item->total_kgs,
+                    'metric_tons' => $item->metric_tons,
+                    'brand' => $item->brand->name ?? 'N/A',
+                    'delivery_date' => $item->delivery_date ? $item->delivery_date->format('Y-m-d') : null,
+                ];
+            });
+
+        return response()->json(['packingItems' => $packingItems]);
+    }
+
+    public function getPackingItemsWithProduced(Request $request)
+    {
+        $jobOrderIds = $request->job_order_ids; // Array of job order IDs
+        $locationId = $request->location_id;
+        $currentProductionVoucherId = $request->current_production_voucher_id ?? null;
+        
+        if (!$jobOrderIds || !$locationId) {
+            return view('management.production.production_voucher.partials.packing_items_table', [
+                'packingItems' => [],
+                'producedByJobOrder' => [],
+                'producedDetailsByJobOrder' => [],
+                'locationId' => $locationId ?? null,
+                'currentProductionVoucherId' => $currentProductionVoucherId
+            ]);
+        }
+
+        // Get packing items
+        $packingItems = \App\Models\Production\JobOrder\JobOrderPackingItem::with([
+            'jobOrder',
+            'bagType',
+            'bagCondition',
+            'companyLocation',
+            'brand',
+            'jobOrder.product'
+        ])
+            ->whereIn('job_order_id', is_array($jobOrderIds) ? $jobOrderIds : [$jobOrderIds])
+            ->where('company_location_id', $locationId)
+            ->get();
+
+        // Get production outputs with details for each job order (location-wise)
+        $producedByJobOrder = [];
+        $producedDetailsByJobOrder = [];
+        
+        foreach ($jobOrderIds as $jobOrderId) {
+            $outputs = \App\Models\Production\ProductionOutput::with([
+                'productionVoucher',
+                'productionVoucher.location',
+                'storageLocation',
+                'storageLocation.arrivalLocation',
+                'product',
+                'brand'
+            ])
+                ->where('job_order_id', $jobOrderId)
+                ->whereHas('productionVoucher', function($q) use ($locationId) {
+                    $q->where('location_id', $locationId);
+                })
+                ->get();
+            
+            $producedQty = $outputs->sum('qty');
+            $producedByJobOrder[$jobOrderId] = $producedQty ?? 0;
+            $producedDetailsByJobOrder[$jobOrderId] = $outputs;
+        }
+
+        return view('management.production.production_voucher.partials.packing_items_table', [
+            'packingItems' => $packingItems,
+            'producedByJobOrder' => $producedByJobOrder,
+            'producedDetailsByJobOrder' => $producedDetailsByJobOrder,
+            'locationId' => $locationId,
+            'currentProductionVoucherId' => $currentProductionVoucherId
+        ]);
+    }
+
+    public function getBrandsByJobOrders(Request $request)
+    {
+        $jobOrderIds = $request->job_order_ids; // Array of job order IDs
+
+        // if (!$jobOrderIds || (is_array($jobOrderIds) && count($jobOrderIds) == 0)) {
+        //     return response()->json(['brands' => []]);
+        // }
+
+
+        
+        $brandIds = \App\Models\Production\JobOrder\JobOrderPackingItem::
+        when($jobOrderIds != null, function($query) use ($jobOrderIds) {
+            $query->whereIn('job_order_id', is_array($jobOrderIds) ? $jobOrderIds : [$jobOrderIds]);
+        })
+        ->whereNotNull('brand_id')
+        ->where('company_location_id', $request->location_id)
+        ->distinct()
+        ->pluck('brand_id')
+        ->toArray();
+
+        $brands = Brands::where('status', 1)
+            ->whereIn('id', $brandIds)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($brand) {
+                return [
+                    'id' => $brand->id,
+                    'name' => $brand->name
+                ];
+            });
+
+        return response()->json(['brands' => $brands]);
+    }
+
+    public function getCommoditiesByLocation(Request $request)
+    {
+        $locationId = $request->location_id;
+        
+        if (!$locationId) {
+            return response()->json(['commodities' => []]);
+        }
+
+        $user = auth()->user();
+
+        // Get unique products from job orders that have packing items for this location
+        $commodities = JobOrder::with('product')
+            ->where('status', 1)
+            ->whereHas('packingItems', function ($q) use ($locationId) {
+                $q->where('company_location_id', $locationId);
+            })
+            ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
+                return $query->whereHas('packingItems', function ($q) use ($user) {
+                    $q->where('company_location_id', $user->company_location_id);
+                });
+            })
+            ->get()
+            ->pluck('product_id')
+            ->unique()
+            ->filter()
+            ->map(function ($productId) {
+                $product = \App\Models\Product::find($productId);
+                return $product ? [
+                    'id' => $product->id,
+                    'name' => $product->name
+                ] : null;
+            })
+            ->filter()
+            ->values();
+
+        return response()->json(['commodities' => $commodities]);
     }
 
     public function store(ProductionVoucherRequest $request)
@@ -159,6 +392,7 @@ class ProductionVoucherController extends Controller
             $productionVoucherData = $request->only([
                 'prod_date',
                 'location_id',
+                'product_id',
                 'produced_qty_kg',
                 'supervisor_id',
                 'labor_cost_per_kg',
@@ -167,14 +401,19 @@ class ProductionVoucherController extends Controller
                 'remarks'
             ]);
 
-            // Handle multiple job orders - take first one or store as JSON
-            $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : [$request->job_order_id];
-            $productionVoucherData['job_order_id'] = $jobOrderIds[0]; // Store first job order ID
+            // Handle multiple job orders - store first one in job_order_id for backward compatibility
+            $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
+            $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null; // Store first job order ID for backward compatibility
 
             $productionVoucherData['company_id'] = $request->company_id;
             $productionVoucherData['prod_no'] = $uniqueProdNo;
 
             $productionVoucher = ProductionVoucher::create($productionVoucherData);
+
+            // Sync job orders to pivot table
+            if (!empty($jobOrderIds)) {
+                $productionVoucher->jobOrders()->sync($jobOrderIds);
+            }
 
             DB::commit();
 
@@ -195,19 +434,22 @@ class ProductionVoucherController extends Controller
     public function edit($id)
     {
         $productionVoucher = ProductionVoucher::with([
-            'jobOrder',
+            'jobOrder.product',
+            'jobOrders.product',
             'location',
+            'product',
             'supervisor',
             'inputs.product',
             'inputs.location',
             'outputs.product',
             'outputs.storageLocation',
-            'outputs.brand'
+            'outputs.brand',
+            'slots.breaks'
         ])->findOrFail($id);
 
         $jobOrders = JobOrder::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $supervisors = User::where('status', 1)->get();
+        $supervisors = User::where('status', 'active')->get();
         $products = Product::where('status', 1)->get();
         $sublocations = ArrivalSubLocation::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
@@ -232,7 +474,6 @@ class ProductionVoucherController extends Controller
         try {
             $productionVoucherData = $request->only([
                 'prod_date',
-                'job_order_id',
                 'location_id',
                 'produced_qty_kg',
                 'supervisor_id',
@@ -242,7 +483,18 @@ class ProductionVoucherController extends Controller
                 'remarks'
             ]);
 
+            // Handle multiple job orders
+            $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
+            $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null; // Store first for backward compatibility
+
             $productionVoucher->update($productionVoucherData);
+
+            // Sync job orders to pivot table
+            if (!empty($jobOrderIds)) {
+                $productionVoucher->jobOrders()->sync($jobOrderIds);
+            } else {
+                $productionVoucher->jobOrders()->sync([]);
+            }
 
             DB::commit();
 
@@ -270,32 +522,119 @@ class ProductionVoucherController extends Controller
     }
 
     // Production Input Form
-    public function getInputForm($id)
+    public function getInputForm($id, $inputId = null)
     {
         $productionVoucher = ProductionVoucher::findOrFail($id);
         $products = Product::where('status', 1)->get();
-        $sublocations = ArrivalSubLocation::where('status', 1)->get();
+        
+        // Get arrival sub locations filtered by production voucher's location
+        $sublocationsQuery = ArrivalSubLocation::where('status', 'active');
+        if ($productionVoucher->location_id) {
+            // Filter by company location through arrival locations
+            $sublocationsQuery->whereHas('arrivalLocation', function($q) use ($productionVoucher) {
+                $q->where('company_location_id', $productionVoucher->location_id);
+            });
+        }
+        $sublocations = $sublocationsQuery->get();
+        
+        // Get slots for this production voucher
+        $slots = ProductionSlot::where('production_voucher_id', $id)
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('date', 'desc')
+            ->orderBy('start_time', 'desc')
+            ->get();
 
-        return view('management.production.production_voucher.partials.production_input_form', compact(
+        $productionInput = null;
+        $view = 'management.production.production_voucher.input.create';
+
+        if ($inputId) {
+            $productionInput = ProductionInput::where('production_voucher_id', $id)
+                ->findOrFail($inputId);
+            $view = 'management.production.production_voucher.input.edit';
+        }
+
+        return view($view, compact(
             'productionVoucher',
             'products',
-            'sublocations'
+            'sublocations',
+            'slots',
+            'productionInput'
         ));
     }
 
     // Production Output Form
-    public function getOutputForm($id)
+    public function getOutputForm($id, $outputId = null)
     {
-        $productionVoucher = ProductionVoucher::findOrFail($id);
-        $products = Product::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $brands = Brands::where('status', 1)->get();
+        $productionVoucher = ProductionVoucher::with(['jobOrder.product', 'jobOrders.product'])->findOrFail($id);
+        
+        // Get head product (from first job order - backward compatibility)
+        $headProductId = $productionVoucher->jobOrder->product_id ?? ($productionVoucher->jobOrders->first()->product_id ?? null);
+        $headProduct = $headProductId ? Product::find($headProductId) : null;
+        
+        // Filter products based on parent_id logic
+        $productsQuery = Product::where('status', 1);
+        
+        if ($headProduct) {
+            if ($headProduct->parent_id) {
+                // Head product has a parent - show all products with same parent_id (including head product if it's a child)
+                $productsQuery->where(function($q) use ($headProduct) {
+                    $q->where('parent_id', $headProduct->parent_id)
+                      ->orWhere('id', $headProduct->parent_id); // Include parent itself
+                });
+            } else {
+                // Head product is itself a parent (parent_id is null) - show all its children + itself
+                $productsQuery->where(function($q) use ($headProductId) {
+                    $q->where('parent_id', $headProductId)
+                      ->orWhere('id', $headProductId); // Include head product itself
+                });
+            }
+        }
+        
+        $products = $productsQuery->orderBy('name')->get();
+        
+        // Get arrival sub locations filtered by production voucher's location
+        $arrivalSubLocationsQuery = \App\Models\Master\ArrivalSubLocation::with('arrivalLocation')
+            ->where('status', 'active');
+        
+        if ($productionVoucher->location_id) {
+            // Filter by company location through arrival locations
+            $arrivalSubLocationsQuery->whereHas('arrivalLocation', function($q) use ($productionVoucher) {
+                $q->where('company_location_id', $productionVoucher->location_id);
+            });
+        }
+        
+        $arrivalSubLocations = $arrivalSubLocationsQuery->orderBy('name')->get();
+        
+        // Get all brands (will be filtered dynamically by job order via JavaScript)
+        $brands = Brands::where('status', 1)->orderBy('name')->get();
+        
+        // Get slots for this production voucher
+        $slots = ProductionSlot::where('production_voucher_id', $id)
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('date', 'desc')
+            ->orderBy('start_time', 'desc')
+            ->get();
+        
+        // Get all job orders for this production voucher
+        $jobOrders = $productionVoucher->jobOrders;
 
-        return view('management.production.production_voucher.partials.production_output_form', compact(
+        $productionOutput = null;
+        $view = 'management.production.production_voucher.output.create';
+
+        if ($outputId) {
+            $productionOutput = ProductionOutput::where('production_voucher_id', $id)
+                ->findOrFail($outputId);
+            $view = 'management.production.production_voucher.output.edit';
+        }
+
+        return view($view, compact(
             'productionVoucher',
             'products',
-            'companyLocations',
-            'brands'
+            'arrivalSubLocations',
+            'brands',
+            'slots',
+            'jobOrders',
+            'productionOutput'
         ));
     }
 
@@ -305,6 +644,7 @@ class ProductionVoucherController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'location_id' => 'required|exists:arrival_sub_locations,id',
+            'slot_id' => 'required|exists:production_slots,id',
             'qty' => 'required|numeric|min:0.01',
             'remarks' => 'nullable|string|max:1000'
         ]);
@@ -315,6 +655,7 @@ class ProductionVoucherController extends Controller
             'production_voucher_id' => $productionVoucher->id,
             'product_id' => $request->product_id,
             'location_id' => $request->location_id,
+            'slot_id' => $request->slot_id,
             'qty' => $request->qty,
             'remarks' => $request->remarks
         ]);
@@ -330,6 +671,7 @@ class ProductionVoucherController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'location_id' => 'required|exists:arrival_sub_locations,id',
+            'slot_id' => 'required|exists:production_slots,id',
             'qty' => 'required|numeric|min:0.01',
             'remarks' => 'nullable|string|max:1000'
         ]);
@@ -337,7 +679,7 @@ class ProductionVoucherController extends Controller
         $input = ProductionInput::where('production_voucher_id', $id)
             ->findOrFail($inputId);
 
-        $input->update($request->only(['product_id', 'location_id', 'qty', 'remarks']));
+        $input->update($request->only(['product_id', 'location_id', 'slot_id', 'qty', 'remarks']));
 
         return response()->json([
             'success' => 'Production Input updated successfully.',
@@ -362,8 +704,13 @@ class ProductionVoucherController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'qty' => 'required|numeric|min:0.01',
-            'storage_location_id' => 'required|exists:company_locations,id',
+            'no_of_bags' => 'nullable|integer|min:0',
+            'bag_size' => 'nullable|string|in:100g,1kg,5kg,10kg,15kg,25kg,50kg',
+            'avg_weight_per_bag' => 'nullable|numeric|min:0',
+            'arrival_sub_location_id' => 'required|exists:arrival_sub_locations,id',
             'brand_id' => 'nullable|exists:brands,id',
+            'slot_id' => 'required|exists:production_slots,id',
+            'job_order_id' => 'nullable|exists:job_orders,id',
             'remarks' => 'nullable|string|max:1000'
         ]);
 
@@ -373,8 +720,13 @@ class ProductionVoucherController extends Controller
             'production_voucher_id' => $productionVoucher->id,
             'product_id' => $request->product_id,
             'qty' => $request->qty,
-            'storage_location_id' => $request->storage_location_id,
+            'no_of_bags' => $request->no_of_bags,
+            'bag_size' => $request->bag_size,
+            'avg_weight_per_bag' => $request->avg_weight_per_bag,
+            'arrival_sub_location_id' => $request->arrival_sub_location_id,
             'brand_id' => $request->brand_id,
+            'slot_id' => $request->slot_id,
+            'job_order_id' => $request->job_order_id,
             'remarks' => $request->remarks
         ]);
 
@@ -389,15 +741,20 @@ class ProductionVoucherController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'qty' => 'required|numeric|min:0.01',
-            'storage_location_id' => 'required|exists:company_locations,id',
+            'no_of_bags' => 'nullable|integer|min:0',
+            'bag_size' => 'nullable|string|in:100g,1kg,5kg,10kg,15kg,25kg,50kg',
+            'avg_weight_per_bag' => 'nullable|numeric|min:0',
+            'arrival_sub_location_id' => 'required|exists:arrival_sub_locations,id',
             'brand_id' => 'nullable|exists:brands,id',
+            'slot_id' => 'required|exists:production_slots,id',
+            'job_order_id' => 'nullable|exists:job_orders,id',
             'remarks' => 'nullable|string|max:1000'
         ]);
 
         $output = ProductionOutput::where('production_voucher_id', $id)
             ->findOrFail($outputId);
 
-        $output->update($request->only(['product_id', 'qty', 'storage_location_id', 'brand_id', 'remarks']));
+        $output->update($request->only(['product_id', 'qty', 'no_of_bags', 'bag_size', 'avg_weight_per_bag', 'arrival_sub_location_id', 'brand_id', 'slot_id', 'job_order_id', 'remarks']));
 
         return response()->json([
             'success' => 'Production Output updated successfully.',
@@ -414,5 +771,285 @@ class ProductionVoucherController extends Controller
         return response()->json([
             'success' => 'Production Output deleted successfully.'
         ], 200);
+    }
+
+    // Get Inputs List (arrival_location pattern)
+    public function getInputsList(Request $request, $id)
+    {
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+        $inputs = ProductionInput::with(['product', 'location', 'slot'])
+            ->where('production_voucher_id', $id)
+            ->get()
+            ->sortByDesc(function($input) {
+                if ($input->slot) {
+                    return $input->slot->date . ' ' . ($input->slot->start_time ?? '00:00:00');
+                }
+                return '1900-01-01 00:00:00';
+            })
+            ->values();
+
+        // Load outputs for yield calculation
+        $outputs = ProductionOutput::where('production_voucher_id', $id)->get();
+
+        return view('management.production.production_voucher.input.getList', compact('inputs', 'outputs', 'productionVoucher'));
+    }
+
+    // Get Outputs List (arrival_location pattern)
+    public function getOutputsList(Request $request, $id)
+    {
+        $productionVoucher = ProductionVoucher::with(['jobOrder.product', 'jobOrders.product'])->findOrFail($id);
+        
+        // Get head product from first job order (for backward compatibility)
+        $headProductId = $productionVoucher->jobOrder->product_id ?? ($productionVoucher->jobOrders->first()->product_id ?? null);
+        
+        $allOutputs = ProductionOutput::with(['product', 'storageLocation.arrivalLocation', 'brand', 'slot', 'jobOrder'])
+            ->where('production_voucher_id', $id)
+            ->get()
+            ->sortByDesc(function($output) {
+                if ($output->slot) {
+                    return $output->slot->date . ' ' . ($output->slot->start_time ?? '00:00:00');
+                }
+                return '1900-01-01 00:00:00';
+            })
+            ->values();
+
+        // Separate outputs by head product
+        $headProductOutputs = $allOutputs->where('product_id', $headProductId);
+        $otherProductOutputs = $allOutputs->where('product_id', '!=', $headProductId);
+
+        // Load inputs for yield calculation
+        $inputs = ProductionInput::where('production_voucher_id', $id)->get();
+
+        return view('management.production.production_voucher.output.getList', compact(
+            'headProductOutputs', 
+            'otherProductOutputs', 
+            'productionVoucher',
+            'headProductId',
+            'inputs'
+        ));
+    }
+
+    // Production Slot Form
+    public function getSlotForm($id, $slotId = null)
+    {
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+
+        $productionSlot = null;
+        $view = 'management.production.production_voucher.slot.create';
+
+        if ($slotId) {
+            $productionSlot = ProductionSlot::with('breaks')
+                ->where('production_voucher_id', $id)
+                ->findOrFail($slotId);
+            $view = 'management.production.production_voucher.slot.edit';
+        }
+
+        return view($view, compact('productionVoucher', 'productionSlot'));
+    }
+
+    // Production Slot Methods
+    public function storeSlot(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'nullable|after:start_time',
+            'status' => 'nullable|in:active,completed,cancelled',
+            'description' => 'nullable|string|max:5000',
+            'remarks' => 'nullable|string|max:1000',
+            'attachment' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
+            'breaks' => 'nullable|array',
+            'breaks.*.break_in' => 'nullable|after:start_time',
+            'breaks.*.break_out' => 'nullable|after:break_in',
+            'breaks.*.reason' => 'nullable|string|max:500'
+        ], [
+            'end_time.after' => 'The end time must be after the start time',
+            'breaks.*.break_in.after' => 'The break in time must be after the start time',
+            'breaks.*.break_out.after' => 'The break out time must be after the break in time',
+            'attachment.max' => 'Attachment size should not exceed 10MB'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $slotData = $request->only([
+                'date',
+                'start_time',
+                'end_time',
+                'status',
+                'description',
+                'remarks'
+            ]);
+
+            // Handle file upload
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $fileName = 'production_slots/' . time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public', $fileName);
+                $slotData['attachment'] = $fileName;
+            }
+
+            $slotData['production_voucher_id'] = $id;
+            $slotData['status'] = $slotData['status'] ?? 'active';
+
+            $productionSlot = ProductionSlot::create($slotData);
+
+            // Save breaks if provided and not empty
+            if ($request->has('breaks') && is_array($request->breaks) && count($request->breaks) > 0) {
+                foreach ($request->breaks as $breakData) {
+                    if (!empty($breakData['break_in']) && trim($breakData['break_in']) !== '') {
+                        ProductionSlotBreak::create([
+                            'production_slot_id' => $productionSlot->id,
+                            'break_in' => trim($breakData['break_in']),
+                            'break_out' => !empty($breakData['break_out']) ? trim($breakData['break_out']) : null,
+                            'reason' => !empty($breakData['reason']) ? trim($breakData['reason']) : null
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Production Slot created successfully.',
+                'data' => $productionSlot->load('breaks')
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateSlot(Request $request, $id, $slotId)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'start_time' => 'required|after:date',
+            'end_time' => 'nullable|after:start_time',
+            'status' => 'nullable|in:active,completed,cancelled',
+            'description' => 'nullable|string|max:5000',
+            'remarks' => 'nullable|string|max:1000',
+            'attachment' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
+            'breaks' => 'nullable|array',
+            'breaks.*.id' => 'nullable|exists:production_slot_breaks,id',
+            'breaks.*.break_in' => 'required_with:breaks|after:start_time',
+            'breaks.*.break_out' => 'nullable|after:break_in',
+            'breaks.*.reason' => 'nullable|string|max:500'
+        ], [
+            'end_time.after' => 'The end time must be after the start time',
+            'breaks.*.break_in.after' => 'The break in time must be after the start time',
+            'breaks.*.break_out.after' => 'The break out time must be after the break in time',
+            'attachment.max' => 'Attachment size should not exceed 10MB'
+        ]);
+
+        $productionSlot = ProductionSlot::where('production_voucher_id', $id)
+            ->findOrFail($slotId);
+
+        DB::beginTransaction();
+
+        try {
+            $slotData = $request->only([
+                'date',
+                'start_time',
+                'end_time',
+                'status',
+                'description',
+                'remarks'
+            ]);
+
+            // Handle file upload - delete old file if new one is uploaded
+            if ($request->hasFile('attachment')) {
+                // Delete old attachment if exists
+                if ($productionSlot->attachment && Storage::exists('public/' . $productionSlot->attachment)) {
+                    Storage::delete('public/' . $productionSlot->attachment);
+                }
+                
+                $file = $request->file('attachment');
+                $fileName = 'production_slots/' . time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public', $fileName);
+                $slotData['attachment'] = $fileName;
+            }
+
+            $productionSlot->update($slotData);
+
+            // Handle breaks - update existing, create new, delete removed
+            if ($request->has('breaks') && is_array($request->breaks)) {
+                $existingBreakIds = [];
+                
+                foreach ($request->breaks as $breakData) {
+                    if (!empty($breakData['break_in']) && trim($breakData['break_in']) !== '') {
+                        if (isset($breakData['id']) && $breakData['id']) {
+                            // Update existing break
+                            $break = ProductionSlotBreak::where('production_slot_id', $productionSlot->id)
+                                ->find($breakData['id']);
+                            if ($break) {
+                                $break->update([
+                                    'break_in' => trim($breakData['break_in']),
+                                    'break_out' => !empty($breakData['break_out']) ? trim($breakData['break_out']) : null,
+                                    'reason' => !empty($breakData['reason']) ? trim($breakData['reason']) : null
+                                ]);
+                                $existingBreakIds[] = $break->id;
+                            }
+                        } else {
+                            // Create new break
+                            $newBreak = ProductionSlotBreak::create([
+                                'production_slot_id' => $productionSlot->id,
+                                'break_in' => trim($breakData['break_in']),
+                                'break_out' => !empty($breakData['break_out']) ? trim($breakData['break_out']) : null,
+                                'reason' => !empty($breakData['reason']) ? trim($breakData['reason']) : null
+                            ]);
+                            $existingBreakIds[] = $newBreak->id;
+                        }
+                    }
+                }
+
+                // Delete breaks that are not in the request
+                ProductionSlotBreak::where('production_slot_id', $productionSlot->id)
+                    ->whereNotIn('id', $existingBreakIds)
+                    ->delete();
+            } else {
+                // If no breaks array, delete all breaks
+                ProductionSlotBreak::where('production_slot_id', $productionSlot->id)->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Production Slot updated successfully.',
+                'data' => $productionSlot->load('breaks')
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroySlot($id, $slotId)
+    {
+        $productionSlot = ProductionSlot::where('production_voucher_id', $id)
+            ->findOrFail($slotId);
+        $productionSlot->delete();
+
+        return response()->json([
+            'success' => 'Production Slot deleted successfully.'
+        ], 200);
+    }
+
+    // Get Slots List (arrival_location pattern)
+    public function getSlotsList(Request $request, $id)
+    {
+        $productionVoucher = ProductionVoucher::findOrFail($id);
+        $slots = ProductionSlot::with('breaks')
+            ->where('production_voucher_id', $id)
+            ->latest()
+            ->get();
+
+        return view('management.production.production_voucher.slot.getList', compact('slots', 'productionVoucher'));
     }
 }

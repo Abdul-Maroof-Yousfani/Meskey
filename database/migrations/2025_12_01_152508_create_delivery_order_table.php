@@ -20,7 +20,7 @@ return new class extends Migration
             $table->float("withhold_for_rv_id")->nullable()->constrained("receipt_vouchers")->cascadeOnDelete();
             $table->date("dispatch_date");
             $table->foreignId("location_id")->constrained("company_locations")->cascadeOnDelete();
-            $table->foreignId("arrival_location_id")->constrained("company_location_id")->cascadeOnDelete();
+            $table->foreignId("arrival_location_id")->constrained("arrival_locations")->cascadeOnDelete();
             $table->foreignId("sub_arrival_location_id")->constrained("arrival_sub_locations")->cascadeOnDelete();
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
             $table->string("reference_no");

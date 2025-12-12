@@ -24,7 +24,7 @@ class JobOrderController extends Controller
 
     public function getList(Request $request)
     {
-        $job_orders = JobOrder::with(['product'])
+        $job_orders = JobOrder::with(['product', 'productionOutputs.productionVoucher.location', 'packingItems'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -35,6 +35,67 @@ class JobOrderController extends Controller
             })
             ->latest()
             ->paginate(request('per_page', 25));
+
+        // Calculate location-wise allocated and produced quantities for each job order
+        foreach ($job_orders as $job_order) {
+            $producedByLocation = [];
+            
+            // First, get allocated quantities from packing items (grouped by location)
+            $allocatedByLocation = [];
+            foreach ($job_order->packingItems as $packingItem) {
+                if ($packingItem->company_location_id) {
+                    $locationId = $packingItem->company_location_id;
+                    if (!isset($allocatedByLocation[$locationId])) {
+                        $allocatedByLocation[$locationId] = [
+                            'location_name' => $packingItem->companyLocation->name ?? 'N/A',
+                            'allocated_qty' => 0
+                        ];
+                    }
+                    $allocatedByLocation[$locationId]['allocated_qty'] += $packingItem->total_kgs ?? 0;
+                }
+            }
+            
+            // Now, get produced quantities (only matching product outputs)
+            foreach ($job_order->productionOutputs->where('product_id', $job_order->product_id) as $output) {
+                if ($output->productionVoucher && $output->productionVoucher->location) {
+                    $locationId = $output->productionVoucher->location->id;
+                    
+                    if (!isset($producedByLocation[$locationId])) {
+                        $producedByLocation[$locationId] = [
+                            'location_name' => $output->productionVoucher->location->name,
+                            'produced_qty' => 0
+                        ];
+                    }
+                    $producedByLocation[$locationId]['produced_qty'] += $output->qty ?? 0;
+                }
+            }
+            
+            // Merge allocated and produced data
+            $locationData = [];
+            foreach ($allocatedByLocation as $locationId => $allocatedData) {
+                $producedQty = $producedByLocation[$locationId]['produced_qty'] ?? 0;
+                $locationData[$locationId] = [
+                    'location_name' => $allocatedData['location_name'],
+                    'allocated_qty' => $allocatedData['allocated_qty'],
+                    'produced_qty' => $producedQty,
+                    'remaining_qty' => $allocatedData['allocated_qty'] - $producedQty
+                ];
+            }
+            
+            // Also include locations that have production but no allocation (if any)
+            foreach ($producedByLocation as $locationId => $producedData) {
+                if (!isset($locationData[$locationId])) {
+                    $locationData[$locationId] = [
+                        'location_name' => $producedData['location_name'],
+                        'allocated_qty' => 0,
+                        'produced_qty' => $producedData['produced_qty'],
+                        'remaining_qty' => -$producedData['produced_qty']
+                    ];
+                }
+            }
+            
+            $job_order->producedByLocation = $locationData;
+        }
 
         return view('management.production.job_orders.getList', compact('job_orders'));
     }

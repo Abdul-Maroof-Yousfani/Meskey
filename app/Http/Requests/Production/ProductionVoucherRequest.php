@@ -22,7 +22,8 @@ class ProductionVoucherRequest extends FormRequest
      */
     public function rules(): array
     {
-        $productionVoucherId = $this->route('production-voucher');
+        $productionVoucherId = $this->route('production_voucher');
+
         
         return [
             'prod_no' => [

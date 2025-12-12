@@ -2,6 +2,10 @@
 
 namespace App\Models\Production\JobOrder;
 use App\Models\Master\FumigationCompany;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\Brands;
+use App\Models\BagType;
+use App\Models\BagCondition;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -66,5 +70,20 @@ class JobOrderPackingItem extends Model
     public function companyLocation()
     {
         return $this->belongsTo(CompanyLocation::class, 'company_location_id');
+    }
+
+    public function bagType()
+    {
+        return $this->belongsTo(BagType::class, 'bag_type_id');
+    }
+
+    public function bagCondition()
+    {
+        return $this->belongsTo(BagCondition::class, 'bag_condition_id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brands::class, 'brand_id');
     }
 }

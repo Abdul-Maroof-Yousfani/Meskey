@@ -420,6 +420,15 @@
                         </a>
                     </li>
                     @endcanAccess
+                    @canAccess('production-production-voucher-management')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('production-voucher.index') }}"
+                            onclick="loadPageContent('{{ route('production-voucher.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Production Voucher</span>
+                        </a>
+                    </li>
+                    @endcanAccess
 
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"

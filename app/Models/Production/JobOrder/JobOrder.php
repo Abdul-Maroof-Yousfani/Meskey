@@ -77,6 +77,11 @@ class JobOrder extends Model
     {
         return $this->hasMany(JobOrderPackingItem::class);
     }
+
+    public function productionOutputs()
+    {
+        return $this->hasMany(\App\Models\Production\ProductionOutput::class);
+    }
     // New relationship for specifications
     public function specifications()
     {

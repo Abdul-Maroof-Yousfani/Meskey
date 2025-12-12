@@ -15,15 +15,21 @@ class ProductionOutput extends Model
 
     protected $fillable = [
         'production_voucher_id',
+        'slot_id',
+        'job_order_id',
         'product_id',
         'qty',
-        'storage_location_id',
+        'no_of_bags',
+        'bag_size',
+        'avg_weight_per_bag',
+        'arrival_sub_location_id',
         'brand_id',
         'remarks'
     ];
 
     protected $casts = [
         'qty' => 'decimal:2',
+        'avg_weight_per_bag' => 'decimal:3',
     ];
 
     public function productionVoucher()
@@ -38,11 +44,21 @@ class ProductionOutput extends Model
 
     public function storageLocation()
     {
-        return $this->belongsTo(CompanyLocation::class, 'storage_location_id');
+        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, 'arrival_sub_location_id');
     }
 
     public function brand()
     {
         return $this->belongsTo(Brands::class, 'brand_id');
+    }
+
+    public function slot()
+    {
+        return $this->belongsTo(ProductionSlot::class);
+    }
+
+    public function jobOrder()
+    {
+        return $this->belongsTo(\App\Models\Production\JobOrder\JobOrder::class);
     }
 }

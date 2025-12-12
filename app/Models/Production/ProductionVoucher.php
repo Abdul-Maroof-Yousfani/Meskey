@@ -19,6 +19,7 @@ class ProductionVoucher extends Model
         'prod_date',
         'job_order_id',
         'location_id',
+        'product_id',
         'produced_qty_kg',
         'supervisor_id',
         'labor_cost_per_kg',
@@ -39,9 +40,19 @@ class ProductionVoucher extends Model
         return $this->belongsTo(JobOrder::class);
     }
 
+    public function jobOrders()
+    {
+        return $this->belongsToMany(JobOrder::class, 'production_voucher_job_orders');
+    }
+
     public function location()
     {
         return $this->belongsTo(CompanyLocation::class, 'location_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(\App\Models\Product::class);
     }
 
     public function supervisor()
@@ -62,5 +73,10 @@ class ProductionVoucher extends Model
     public function outputs()
     {
         return $this->hasMany(ProductionOutput::class);
+    }
+
+    public function slots()
+    {
+        return $this->hasMany(ProductionSlot::class);
     }
 }
