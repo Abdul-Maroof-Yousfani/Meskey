@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('sales_orders', function (Blueprint $table) {
             $table->id();
             $table->date("delivery_date");
-            $table->date("expiry_date");
             $table->string("reference_no");
             $table->foreignId("customer_id")->constrained("customers")->cascadeOnDelete();
             $table->foreignId("inquiry_id")->nullable()->constrained("sales_inquiries")->cascadeOnDelete();
@@ -22,9 +21,16 @@ return new class extends Migration
             $table->foreignId("payment_term_id")->constrained("payment_terms");
             $table->foreignId("pay_type_id")->constrained("pay_types")->cascadeOnDelete();
             $table->foreignId("company_id")->constrained("companies")->cascadeOnDelete();
+            $table->string("contact_person")->nullable();
+            $table->foreignId('arrival_location_id')->nullable()->constrained('arrival_locations');
+            $table->foreignId('arrival_sub_location_id')->nullable()->constrained('arrival_sub_locations');
             $table->string("status")->default("pending");
             $table->string("am_approval_status")->default("pending");
             $table->string("am_change_made")->default(1);
+            $table->date('order_date')->nullable();
+            $table->decimal('token_money', 15, 2)->nullable();
+            $table->string('so_reference_no');
+            $table->string("remarks");
             $table->timestamps();
         });
     }

@@ -15,6 +15,10 @@ Route::prefix('payment-voucher')->group(function () {
 Route::resource('payment-voucher', PaymentVoucherController::class);
 Route::post('get-payment-voucher', [PaymentVoucherController::class, 'getList'])->name('get.payment-vouchers');
 
+Route::prefix('receipt-voucher')->group(function () {
+    Route::post('generate-rv-number', [ReceiptVoucherController::class, 'generateRvNumber'])->name('receipt-voucher.generate-rv-number');
+    Route::post('reference-details', [ReceiptVoucherController::class, 'getReferenceDetails'])->name('receipt-voucher.reference-details');
+});
 Route::resource('receipt-voucher', ReceiptVoucherController::class);
 Route::post('get-receipt-voucher', [ReceiptVoucherController::class, 'getList'])->name('get.receipt-vouchers');
 

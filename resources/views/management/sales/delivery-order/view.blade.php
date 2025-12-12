@@ -44,49 +44,54 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Receipt Vouchers:</label>
-                        <select name="receipt_vouchers[]" id="receipt_vouchers"
-                            onchange="add_advance_amount(); change_withhold_amount()" class="form-control select2"
-                            multiple disabled>
-                            @foreach ($receipt_vouchers as $receipt_voucher)
-                                <option value="{{ $receipt_voucher->id }}" selected>{{ $receipt_voucher->unique_no }}
-                                </option>
-                            @endforeach
-                        </select>
+                @if ($sale_order_of_delivery_order->pay_type_id == 3)
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Receipt Vouchers:</label>
+                            <select name="receipt_vouchers[]" id="receipt_vouchers"
+                                onchange="add_advance_amount(); change_withhold_amount()" class="form-control select2"
+                                multiple disabled>
+                                @foreach ($receipt_vouchers as $receipt_voucher)
+                                    <option value="{{ $receipt_voucher->id }}" selected>
+                                        {{ $receipt_voucher->unique_no }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
 
             <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Advance Amount:</label>
-                        <input type="number" name="advance_amount" value="{{ $delivery_order->advance_amount }}"
-                            onchange="" id="advance_amount" class="form-control" readonly>
+                @if($sale_order_of_delivery_order->pay_type_id == 3)
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Advance Amount:</label>
+                            <input type="number" name="advance_amount" value="{{ $delivery_order->advance_amount }}"
+                                onchange="" id="advance_amount" class="form-control" readonly>
+                        </div>
                     </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Withhold Amount:</label>
-                        <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                            value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control"
-                            readonly>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Withhold Amount:</label>
+                            <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
+                                value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control"
+                                readonly>
 
+                        </div>
                     </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Withhold for RV:</label>
-                        <input type="text" name="withhold_for_rv"
-                            value="{{ $delivery_order->withheld_receipt_voucher?->unique_no }}" value="0"
-                            onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control" readonly>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Withhold for RV:</label>
+                            <input type="text" name="withhold_for_rv"
+                                value="{{ $delivery_order->withheld_receipt_voucher?->unique_no }}" value="0"
+                                onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control" readonly>
 
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <div class="col-md-6">
                     <div class="form-group">
@@ -108,35 +113,32 @@
             </div>
 
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Locations:</label>
-                        <input type="text" name="reference_no" id="reference_no"
-                            value="{{ get_location_name_by_id($delivery_order->location_id) }}" class="form-control"
-                            readonly>
+                        <label class="form-label">Location:</label>
+                        <input type="text" class="form-control"
+                            value="{{ get_location_name_by_id($delivery_order->location_id) }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Arrival Locations:</label>
-                        <input type="text" name="reference_no" id="reference_no"
-                            value="{{ get_arrival_name_by_id($delivery_order->arrival_location_id) }}" class="form-control"
-                            readonly>
+                        <label class="form-label">Factory:</label>
+                        <input type="text" class="form-control"
+                            value="{{ arrival_name_by_id($delivery_order->arrival_location_id) }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-4" style="display: none">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Storage:</label>
-                        <input type="text" name="reference_no" id="reference_no"
-                            value="{{ get_storage_name_by_id($delivery_order->sub_arrival_location_id) }}" class="form-control"
-                            readonly>
+                        <label class="form-label">Section:</label>
+                        <input type="text" class="form-control"
+                            value="{{ sub_arrival_name_by_id($delivery_order->sub_arrival_location_id) }}" readonly>
                     </div>
                 </div>
             </div>
 
             <!-- Row 2: Sale Orders, Sauda Type -->
             <div class="row">
-                <div class="col-md-6">
+                {{-- <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Payment Terms:</label>
                         <select name="payment_term_id" id="payment_term_id" class="form-control select2" disabled>
@@ -147,7 +149,7 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
+                </div> --}}
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Sauda Type:</label>
@@ -156,6 +158,12 @@
                             <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
                             <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Description:</label>
+                        <textarea name="line_desc" id="line_desc" class="form-control" readonly>{{ $delivery_order->line_desc }}</textarea>
                     </div>
                 </div>
             </div>
@@ -170,12 +178,7 @@
 
 
 
-        <div class="col-md-12">
-            <div class="form-group">
-                <label class="form-label">Line Description:</label>
-                <textarea name="line_desc" id="line_desc" class="form-control">{{ $delivery_order->line_desc }}</textarea>
-            </div>
-        </div>
+
 
     </div>
 
@@ -195,10 +198,10 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag type</th>
-                            <th>Bag size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
+                            <th>Quantity (kg)</th>
+                            <th>Rate per Kg</th>
                             <th>Brand</th>
                             <th style="display: none">Pack Size</th>
                             <th>Action</th>
@@ -216,7 +219,7 @@
 
                                     <input type="text" name="" id="bag_type_{{ $index }}"
                                         value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0">
+                                        class="form-control bag_type" step="0.01" min="0" readonly>
 
                                     <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}"
                                         value="{{ $data->bag_type }}" onkeyup="calc(this)"
@@ -225,12 +228,12 @@
                                 <td>
                                     <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
                                         value="{{ $data->bag_size }}" onkeyup="calc(this)"
-                                        class="form-control bag_size" step="0.01" min="0">
+                                        class="form-control bag_size" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         value="{{ $data->no_of_bags }}" onkeyup="calc(this)"
-                                        class="form-control no_of_bags" step="0.01" min="0">
+                                        class="form-control no_of_bags" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}"

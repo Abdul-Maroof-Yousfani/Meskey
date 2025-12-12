@@ -35,7 +35,8 @@ class DeliveryChallanRequest extends FormRequest
             "weighbridge" => [ "required" ],  
             "weighbridge_amount" => [ "required" ],
             "sauda_type" => [ "required" ],
-            "remarks" => [ "required" ]
+            "remarks" => [ "required" ],
+            "storage_id" => [ "required", "numeric" ]
         ];
     }
 }

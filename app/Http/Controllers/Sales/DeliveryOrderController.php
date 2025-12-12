@@ -7,6 +7,7 @@ use App\Http\Requests\Sales\DeliveryOrderRequest;
 use App\Models\BagType;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\ArrivalSubLocation;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Customer;
 use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
@@ -33,8 +34,12 @@ class DeliveryOrderController extends Controller
         $delivery_order = DeliveryOrder::with('delivery_order_data', 'receipt_vouchers', 'withheld_receipt_voucher')->find($id);
         $sales_orders = SalesOrder::where('customer_id', $delivery_order->customer_id)->where('am_approval_status', 'approved')->get();
         $receipt_vouchers = $delivery_order->receipt_vouchers;
+        
+        $sale_order_of_delivery_order = $sales_orders->filter(function($sale_order) use ($delivery_order) {
+            return $delivery_order->so_id == $sale_order->id;
+        })->first();
 
-        return view('management.sales.delivery-order.view', compact('payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers'));
+        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers'));
     }
 
     public function create()
@@ -67,9 +72,11 @@ class DeliveryOrderController extends Controller
                 'payment_term_id' => $request->payment_term_id ?? (PaymentTerm::first())->id,
                 'sauda_type' => $request->sauda_type,
                 'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_id,
-                'sub_arrival_location_id' => $request->storage_id ?? (ArrivalSubLocation::first())->id,
+                'arrival_location_id' => $request->arrival_id ?: 0,
+                'sub_arrival_location_id' => $request->storage_id ?: 0,
                 'line_desc' => $request->line_desc,
+                'delivery_date' => $request->delivery_date,
+                'remarks' => $request->remarks ?? "",
                 'company_id' => $request->company_id
             ]);
 
@@ -82,7 +89,7 @@ class DeliveryOrderController extends Controller
             // Run it if user intends to apply withhold amounts
 
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            if ($salesOrder->payment_term_id == 8) {
+            if ($salesOrder->pay_type_id == 3) {
                 foreach ($receipt_vouchers as $rv) {
                     $last_withheld_amount = $rv->withhold_amount;
 
@@ -115,6 +122,7 @@ class DeliveryOrderController extends Controller
 
                 $delivery_order->receipt_vouchers()->syncWithoutDetaching($syncData);
             }
+
 
             foreach ($request->item_id as $key => $item) {
                 $delivery_order->delivery_order_data()->create([
@@ -228,7 +236,8 @@ class DeliveryOrderController extends Controller
     {
         $customer_id = $request->customer_id;
 
-        $saleOrders = SalesOrder::select('reference_no', 'id', 'payment_term_id')
+        $saleOrders = SalesOrder::with("locations")
+            ->select('reference_no', 'id', 'pay_type_id')
             ->where('am_approval_status', 'approved')
             ->where('customer_id', $customer_id)
             ->get()
@@ -244,24 +253,76 @@ class DeliveryOrderController extends Controller
             });
 
         $data = [];
-
+     
         foreach ($saleOrders as $saleOrder) {
             $data[] = [
                 'text' => $saleOrder->reference_no,
                 'id' => $saleOrder->id,
-                'type' => $saleOrder->payment_term_id,
+                'type' => $saleOrder->pay_type_id,
             ];
         }
 
-        return $data;
+
+
+        return [
+            "rawData" => $saleOrders,
+            "processedData" => $data
+        ];
+        
     }
 
     public function getDetails(Request $request)
     {
         $so_id = $request->so_id;
 
-        $sale_order = SalesOrder::with('sales_order_data', 'delivery_order_transactions', 'locations')
+        $sale_order = SalesOrder::with([
+            'sales_order_data',
+            'delivery_order_transactions',
+            'locations',
+            'factories.factory',
+            'sections.section',
+        ])
             ->find($so_id);
+
+        $locationIds = $sale_order->locations()->pluck('location_id')->toArray();
+        $locations = CompanyLocation::whereIn('id', $locationIds)
+            ->select('id', 'name')
+            ->get()
+            ->map(function ($loc) {
+                return [
+                    'id' => $loc->id,
+                    'text' => $loc->name,
+                ];
+            })
+            ->values();
+
+        // Map selected factories grouped by company_location_id (location)
+        $factoryMap = [];
+        foreach ($sale_order->factories as $factoryPivot) {
+            $factory = $factoryPivot->factory;
+            if (! $factory) {
+                continue;
+            }
+            $companyLocationId = $factory->company_location_id;
+            $factoryMap[$companyLocationId][] = [
+                'id' => $factory->id,
+                'text' => $factory->name,
+            ];
+        }
+
+        // Map selected sections grouped by arrival_location_id (factory)
+        $sectionMap = [];
+        foreach ($sale_order->sections as $sectionPivot) {
+            $section = $sectionPivot->section;
+            if (! $section) {
+                continue;
+            }
+            $factoryId = $section->arrival_location_id;
+            $sectionMap[$factoryId][] = [
+                'id' => $section->id,
+                'text' => $section->name,
+            ];
+        }
 
         $data = [
             'unused_amount' => $sale_order->sales_order_data()->sum(DB::raw('qty * rate')) - $sale_order->delivery_order_transactions()->sum(DB::raw('advance_amount')),
@@ -269,7 +330,9 @@ class DeliveryOrderController extends Controller
             'amount_received' => $sale_order->delivery_order_transactions()->sum(DB::raw('advance_amount')),
             'sauda_type' => strtolower($sale_order->sauda_type),
             'payment_term_id' => $sale_order->payment_term_id,
-            'locations' => $sale_order->locations()->pluck('location_id')->toArray(),
+            'locations' => $locations,
+            'factory_map' => $factoryMap,
+            'section_map' => $sectionMap,
         ];
 
         return $data;
@@ -332,20 +395,36 @@ class DeliveryOrderController extends Controller
 
     public function edit(DeliveryOrder $delivery_order)
     {
-        $sale_orders = SalesOrder::select('reference_no', 'id')->where('am_approval_status', 'approved')->get();
+        $delivery_order->load('receipt_vouchers');
+        $sale_orders = SalesOrder::select('reference_no', 'id', 'pay_type_id')->where('am_approval_status', 'approved')->get();
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select('id', 'name')->get();
+           
+        $sale_order_of_delivery_order = $sale_orders->filter(function($sale_order) use ($delivery_order) {
+            return $delivery_order->so_id == $sale_order->id;
+        })->first();
 
-        $receipt_vouchers = ReceiptVoucher::select('total_amount', 'id', 'unique_no', 'withhold_amount')
-            ->whereIn('ref_bill_no', $sale_orders->pluck('reference_no')->toArray())
+
+        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')
+            ->select('total_amount', 'id', 'unique_no', 'withhold_amount', 'ref_bill_no', 'customer_id')
+            ->where('customer_id', $delivery_order->customer_id)
             ->get()
-            ->reject(function ($receipt_voucher) {
-                return $receipt_voucher->withhold_amount <= 0;
-            });
+            ->map(function ($receipt_voucher) {
+                $spent_amount = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
+                $receipt_voucher->remaining_amount = $receipt_voucher->total_amount - $spent_amount;
 
-        return view('management.sales.delivery-order.edit', compact('payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types'));
+                return $receipt_voucher;
+            })
+            ->filter(function ($receipt_voucher) use ($delivery_order) {
+                return $receipt_voucher->remaining_amount > 0
+                    || $delivery_order->receipt_vouchers->contains('id', $receipt_voucher->id)
+                    || $receipt_voucher->id == $delivery_order->withhold_for_rv_id;
+            })
+            ->values();
+
+        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types'));
 
     }
 
@@ -368,9 +447,10 @@ class DeliveryOrderController extends Controller
                 'sauda_type' => $request->sauda_type,
                 'line_desc' => $request->line_desc,
                 'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_id,
-                'sub_arrival_location_id' => $request->storage_id ?? (ArrivalSubLocation::first())->id,
-                'company_id' => $request->company_id
+                'arrival_location_id' => $request->arrival_id ?: 0,
+                'sub_arrival_location_id' => $request->storage_id ?: 0,
+                'company_id' => $request->company_id,
+                'remarks' => $request->remarks ?? ""
             ]);
 
             // $delivery_order->locations()->delete();

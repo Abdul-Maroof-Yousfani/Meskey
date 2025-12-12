@@ -26,10 +26,12 @@ class DeliveryOrderRequest extends FormRequest
             'customer_id' => 'required|numeric',
             'sale_order_id' => 'required|numeric',
             'dispatch_date' => 'required|date',
+            'delivery_date' => 'required|date',
             'reference_no' => 'required',
             'payment_term_id' => 'nullable',
             'sauda_type' => 'required|in:pohanch,x-mill',
             'line_desc' => 'required',
+            'remarks' => 'nullable|string',
 
             'item_id' => 'required',
             'item_id.*' => 'required',
@@ -52,19 +54,19 @@ class DeliveryOrderRequest extends FormRequest
             'bag_size.*' => 'required',
 
 
-            'no_of_bags' => 'required',
-            'no_of_bags.*' => 'required',
+            'no_of_bags' => "required",
+            'no_of_bags.*' => 'required|numeric',
 
         ];
 
         $saleOrder = SalesOrder::find(request()->sale_order_id);
-
-        if($saleOrder && $saleOrder->payment_term_id == 8) {
-            $rules[] = [
-                'advance_amount' => 'required|numeric',
-                'withhold_amount' => 'nullable|numeric',
+       
+        if($saleOrder && $saleOrder->pay_type_id == 3) {
+              $rules = array_merge($rules, [
+                'advance_amount'   => 'required|numeric',
+                'withhold_amount'  => 'nullable|numeric',
                 'withhold_for_rv_id' => 'nullable|numeric',
-            ];
+            ]);
         }
       
 
