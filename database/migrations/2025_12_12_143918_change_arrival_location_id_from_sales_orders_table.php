@@ -11,19 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('your_table_name', function (Blueprint $table) {
+        Schema::table('sales_orders', function (Blueprint $table) {
         // Drop constraints first
         $table->dropForeign(['arrival_location_id']);
         $table->dropForeign(['arrival_sub_location_id']);
     });
 
-    Schema::table('your_table_name', function (Blueprint $table) {
+    Schema::table('sales_orders', function (Blueprint $table) {
         // Make columns nullable
         $table->foreignId('arrival_location_id')->nullable()->change();
         $table->foreignId('arrival_sub_location_id')->nullable()->change();
     });
 
-    Schema::table('your_table_name', function (Blueprint $table) {
+    Schema::table('sales_orders', function (Blueprint $table) {
         // Add constraints back
         $table->foreign('arrival_location_id')->references('id')->on('arrival_locations');
         $table->foreign('arrival_sub_location_id')->references('id')->on('arrival_sub_locations');
