@@ -150,7 +150,9 @@ class DeliveryChallanController extends Controller
                 "inhouse-weighbridge" => $request->weighbridge,
                 "weighbridge-amount" => $request->weighbridge_amount,
                 "remarks" => $request->remarks,
-                "created_by_id" => auth()->user()->id
+                "created_by_id" => auth()->user()->id,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
             ]);
 
             $delivery_challan->delivery_order()->sync($do_ids);
