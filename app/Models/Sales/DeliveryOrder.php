@@ -32,6 +32,6 @@ class DeliveryOrder extends Model
     }
 
     public function delivery_challans() {
-        return $this->belongsToMany(DeliveryChallan::class, "delivery_challan_delivery_order", "delivery_order_id", "delivery_challan_id");
+        return $this->belongsToMany(DeliveryChallan::class, "delivery_challan_delivery_order", "delivery_order_id", "delivery_challan_id")->withPivot("qty");
     }
 }

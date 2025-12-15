@@ -59,7 +59,16 @@ class DeliveryChallanController extends Controller
                 "created_by_id" => auth()->user()->id,
             ]);
 
-            $delivery_challan->delivery_order()->sync($do_ids);
+            $syncData = [];
+
+            foreach ($do_ids as $index => $id) {
+                $syncData[$id] = [
+                    'qty' => $request->qty[$index],
+                ];
+            }
+
+
+            $delivery_challan->delivery_order()->sync($syncData);
 
             // Store delivery challan data items
             $createdItems = [];
@@ -367,6 +376,14 @@ class DeliveryChallanController extends Controller
         $delivery_order_ids = $request->delivery_order_ids;
         $delivery_orders = DeliveryOrder::with("delivery_order_data")->whereIn("id", $delivery_order_ids)->get();
         $items = Product::select("id", "name")->get();
+
+        $delivery_orders = $delivery_orders->map(function($delivery_order) {
+            $delivery_challan = $delivery_order->delivery_challans;
+            $spent = $delivery_challan->sum("pivot.qty");
+            $delivery_order->spent = $spent;
+            return $delivery_order;
+        });
+
 
         return view("management.sales.delivery-challan.getItem", compact("delivery_orders", "items"));
     }
