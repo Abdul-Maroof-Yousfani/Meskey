@@ -97,6 +97,13 @@ if (!function_exists('getCurrentCompany')) {
         return Company::find($user->current_company_id);
     }
 }
+
+if(!function_exists("createdBy")) {
+    function createdBy($createdByUserId) {
+        return User::select("id", "name")->find($createdByUserId);
+    }
+}
+
 //GetUser'sAllCompanies
 if (!function_exists('getUserAllCompanies')) {
     function getUserAllCompanies($id)
