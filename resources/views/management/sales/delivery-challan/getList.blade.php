@@ -88,19 +88,22 @@
                                                class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
-                                            @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
-                                                <button 
-                                                    onclick="openModal(this,'{{ route('sales.delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Delivery Challan', false, '100%')"
-                                                    class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
-                                                    <i class="ft-edit"></i>
-                                                </button>
+                                            @if(auth()->user()->id == $group['created_by_id'])
+                                                @if($group['status'] === 'pending' || $group['status'] === 'reverted')
+                                        
+                                                    <button 
+                                                        onclick="openModal(this,'{{ route('sales.delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Delivery Challan', false, '100%')"
+                                                        class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                                                        <i class="ft-edit"></i>
+                                                    </button>
 
-                                                
-                                            <button onclick="deletemodal('{{ route('sales.delivery-challan.destroy', ['delivery_challan' => $group['id']]) }}', '{{ route('sales.get.delivery-challan.list') }}')" type="button"
-                                                    onclick="confirmDelete(this.closest('form'))"
-                                                    class="btn btn-sm btn-danger" title="Delete">
-                                                <i class="ft-trash-2"></i>
-                                            </button>
+                                                    
+                                                    <button onclick="deletemodal('{{ route('sales.delivery-challan.destroy', ['delivery_challan' => $group['id']]) }}', '{{ route('sales.get.delivery-challan.list') }}')" type="button"
+                                                            onclick="confirmDelete(this.closest('form'))"
+                                                            class="btn btn-sm btn-danger" title="Delete">
+                                                        <i class="ft-trash-2"></i>
+                                                    </button>
+                                                @endif
                                             @endif
                                         </div>
                                     </td>
