@@ -24,7 +24,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Inquiry No:</label>
-                <select name="inquiry_id" id="inquiry_id" class="form-control select2">
+                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
                     <option value="">Select Inquiry</option>
                     @foreach ($inquiries ?? [] as $inquiry)
                         <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
@@ -251,7 +251,7 @@
 
                                 <td>
                                     <input type="number" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * ($data->bag_size * $data->no_of_bags) }}" onkeyup="calc(this)"
+                                        value="{{ $data->rate * $data->qty }}" onkeyup="calc(this)"
                                         class="form-control amount" step="0.01" min="0">
                                 </td>
                                 <td>
@@ -295,7 +295,114 @@
 
 <script>
     salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
+    function enableInquiryFields() {
+        // Enable fields when no inquiry selected
+        $("#delivery_date").prop('readonly', false);
+        $("#customer_id").prop('disabled', false);
+        $("#sauda_type").prop('disabled', false);
+        $("#locations").prop('disabled', false);
+        $("#token_money").prop('readonly', false);
+        $("#contact_person").prop('readonly', false).val('');
+        $("#arrival_location_id").prop('disabled', false).val('').trigger('change.select2');
+        $("#arrival_sub_location_id").prop('disabled', false).val('').trigger('change.select2');
+        $("#token_money").val(''); // Clear token money when no inquiry
 
+        // Restore name attributes and remove hidden inputs
+        $("#customer_id").attr('name', 'customer_id');
+        $("#sauda_type").attr('name', 'sauda_type');
+        $("#locations").attr('name', 'locations[]');
+        $("#arrival_location_id").attr('name', 'arrival_location_id[]');
+        $("#arrival_sub_location_id").attr('name', 'arrival_sub_location_id[]');
+        
+        $('#customer_id_hidden').remove();
+        $('#sauda_type_hidden').remove();
+        $('.locations_hidden').remove();
+        $('.arrival_location_hidden').remove();
+        $('.arrival_sub_location_hidden').remove();
+    }
+    function get_inquiry_data() {
+        
+        const inquiry_id = $("#inquiry_id").val();
+
+        if (!inquiry_id) {
+            // If no inquiry selected, make fields editable
+            enableInquiryFields();
+            return;
+        }
+
+        // First, get the inquiry details
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiry-data') }}",
+            method: "GET",
+            data: {
+                inquiry_id: inquiry_id,
+                get_details: true
+            },
+            dataType: "json",
+            success: function(res) {
+                // Fill delivery date with required_date
+                if (res.required_date) {
+                    $("#delivery_date").val(res.required_date);
+                    getNumber(); // Generate SO number based on date
+                }
+
+                // Fill customer
+                if (res.customer_id) {
+                    $("#customer_id").val(res.customer_id).trigger('change.select2');
+                }
+
+                // Fill contract type (sauda_type)
+                if (res.contract_type) {
+                    $("#sauda_type").val(res.contract_type).trigger('change.select2');
+                }
+
+                if (res.contact_person) {
+                    $("#contact_person").val(res.contact_person).prop('readonly', true);
+                }
+                const inquiryFactories = res.arrival_locations || (res.arrival_location_id ? [res.arrival_location_id] : []);
+                const inquirySections = res.arrival_sub_locations || (res.arrival_sub_location_id ? [res.arrival_sub_location_id] : []);
+
+                if (inquiryFactories.length > 0) {
+                    $("#arrival_location_id").val(inquiryFactories).trigger('change.select2');
+                }
+                if (inquirySections.length > 0) {
+                    $("#arrival_sub_location_id").val(inquirySections).trigger('change.select2');
+                }
+
+                // Fill locations
+                if (res.locations && res.locations.length > 0) {
+                    $("#locations").val(res.locations).trigger('change.select2');
+                }
+
+                // Fill token money
+                if (res.token_money !== null && res.token_money !== undefined) {
+                    $("#token_money").val(res.token_money);
+                }
+
+                // Make fields readonly
+                disableInquiryFields();
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+
+        // Then, get the line items
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiry-data') }}",
+            method: "GET",
+            data: {
+                inquiry_id: inquiry_id
+            },
+            dataType: "html",
+            success: function(res) {
+                $("#salesInquiryBody").html(res);
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    }
     $(document).ready(function() {
         $('.select2').select2();
 

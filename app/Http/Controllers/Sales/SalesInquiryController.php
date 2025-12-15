@@ -146,7 +146,7 @@ class SalesInquiryController extends Controller
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
-                    "description" => $request->desc[$index],
+                    "description" => $request->desc[$index] ?? "",
                     "bag_size" => $request->bag_size[$index],
                     "no_of_bags" => $request->no_of_bags[$index],
                     "bag_type" => $request->bag_type[$index],
@@ -188,7 +188,8 @@ class SalesInquiryController extends Controller
     public function update(SalesInquiryRequest $request, SalesInquiry $sales_inquiry) {
         $factoryIds = $request->arrival_location_id ?? [];
         $sectionIds = $request->arrival_sub_location_id ?? [];
-        $sales_inquiry->update([
+
+        $data = [
             "inquiry_no" => $request->reference_no,
             "date" => $request->inquiry_date,
             "customer" => $request->customer,
@@ -198,10 +199,16 @@ class SalesInquiryController extends Controller
             "remarks" => $request->remarks ?? "",
             "reference_number" => $request->reference_number,
             "required_date" => $request->required_date,
-            "created_by" => auth()->user()->id,
             'arrival_location_id' => $factoryIds[0] ?? null,
             'arrival_sub_location_id' => $sectionIds[0] ?? null,
-        ]);
+            'am_change_made' => 1
+        ];
+
+        if($sales_inquiry->am_approval_status === 'reverted') {
+            $data["am_approval_status"] = "pending";
+        }
+
+        $sales_inquiry->update($data);
 
         $sales_inquiry->sales_inquiry_data()->delete();
         $sales_inquiry->locations()->delete();

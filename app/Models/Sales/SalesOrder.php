@@ -31,7 +31,9 @@ class SalesOrder extends Model
         "remarks",
         "contact_person",
         "arrival_location_id",
-        "arrival_sub_location_id"
+        "arrival_sub_location_id",
+        "created_by",
+        "am_change_made"
     ];
 
     public function sales_order_data() {

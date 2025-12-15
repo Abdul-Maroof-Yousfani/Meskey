@@ -77,6 +77,7 @@ class SaleOrderController extends Controller
         $payload = $request->validated();
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
+        $payload['created_by'] = auth()->user()->id;
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($payload);
@@ -128,6 +129,8 @@ class SaleOrderController extends Controller
             $payload = $request->validated();
             $payload['arrival_location_id'] = $factoryIds[0] ?? null;
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
+            $payload['am_approval_status'] = 'pending';
+            $payload['am_change_made'] = 1;
 
             // Update parent sale order data
             $sales_order->update($payload);
@@ -228,7 +231,7 @@ class SaleOrderController extends Controller
             $groupedData[] = [
                 'sale_order' => $SaleOrder,
                 'so_no' => $so_no,
-                'created_by_id' => $SaleOrder->created_by_id ?? 1,
+                'created_by_id' => $SaleOrder->created_by ?? 1,
                 'inquiry_no' => $SaleOrder?->sale_inquiry?->inquiry_no ?? "N/A",
                 'delivery_date' => $SaleOrder->delivery_date,
                 'id' => $SaleOrder->id,

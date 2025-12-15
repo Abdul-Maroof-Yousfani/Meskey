@@ -434,6 +434,7 @@
     }
 
     function get_inquiry_data() {
+        
         const inquiry_id = $("#inquiry_id").val();
 
         if (!inquiry_id) {

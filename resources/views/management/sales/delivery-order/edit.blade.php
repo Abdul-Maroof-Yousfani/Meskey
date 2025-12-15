@@ -123,7 +123,6 @@
                             <label class="form-label">Withhold Amount:</label>
                             <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
                                 value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control">
-
                         </div>
                     </div>
 
@@ -325,7 +324,6 @@
                                     <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         value="{{ round($data->bag_size * ($data->qty ?? 0)) }}" readonly
                                         class="form-control no_of_bags" step="0.01" min="0">
-                                    <span style="font-size: 14px;">Available: {{ $allowed_value }}</span>
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"

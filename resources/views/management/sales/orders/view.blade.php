@@ -22,7 +22,12 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Inquiry No:</label>
-                <input type="text" value="{{ $sale_order->inquiry_id ? get_inquiry_reference_number($sale_order->inquiry_id) : '' }}" class="form-control" readonly>
+                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2" disabled>
+                    <option value="">Select Inquiry</option>
+                    @foreach ($inquiries ?? [] as $inquiry)
+                        <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
         <div class="col-md-4">
@@ -36,8 +41,8 @@
                 <label class="form-label">Contract Type:</label>
                 <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
                     <option value="">Select Contract Type</option>
-                    <option value="pohanch" @selected($sale_order->sauda_type == 'pohanch')>Pohanch</option>
-                    <option value="x-mill" @selected($sale_order->sauda_type == 'x-mill')>X-mill</option>
+                    <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
+                    <option value="x-mill" @selected(strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
                 </select>
             </div>
         </div>

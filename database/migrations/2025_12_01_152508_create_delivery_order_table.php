@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string("line_desc")->nullable();
             $table->date("delivery_date")->nullable();
             $table->text("remarks")->nullable();
+            $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
 
             // $table->float("so_amount");
             // $table->float("percentage")->nullable();

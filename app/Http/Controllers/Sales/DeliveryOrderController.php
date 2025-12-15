@@ -77,7 +77,9 @@ class DeliveryOrderController extends Controller
                 'line_desc' => $request->line_desc,
                 'delivery_date' => $request->delivery_date,
                 'remarks' => $request->remarks ?? "",
-                'company_id' => $request->company_id
+                'company_id' => $request->company_id,
+                'created_by' => auth()->user()->id,
+                'am_approval_status' => 'pending',
             ]);
 
             // foreach ($locations as $location) {
@@ -181,7 +183,7 @@ class DeliveryOrderController extends Controller
             $groupedData[] = [
                 'sale_order' => $delivery_order,
                 'so_no' => $so_no,
-                'created_by_id' => 1,
+                'created_by_id' => $delivery_order->created_by,
                 'delivery_date' => $delivery_order->delivery_date,
                 'id' => $delivery_order->id,
                 'customer_id' => $delivery_order->customer_id,
@@ -450,7 +452,9 @@ class DeliveryOrderController extends Controller
                 'arrival_location_id' => $request->arrival_id ?: 0,
                 'sub_arrival_location_id' => $request->storage_id ?: 0,
                 'company_id' => $request->company_id,
-                'remarks' => $request->remarks ?? ""
+                'remarks' => $request->remarks ?? "",
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1
             ]);
 
             // $delivery_order->locations()->delete();

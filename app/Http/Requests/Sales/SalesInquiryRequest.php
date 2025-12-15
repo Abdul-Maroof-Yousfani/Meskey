@@ -48,8 +48,8 @@ class SalesInquiryRequest extends FormRequest
             "rate" => "nullable|array",
             "rate.*" => "required",
 
-            "desc" => "nullable|array",
-            "desc.*" => "required",
+            // "desc" => "nullable|array",
+            // "desc.*" => "nullable|required",
 
             "bag_size" => "nullable|array",
             "bag_size.*" => "required",

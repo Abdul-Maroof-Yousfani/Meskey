@@ -88,7 +88,9 @@
                                                class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-order.view', ['id' => $group['id']]) }}','View Delivery Order', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
-                                            @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
+                                            @if(auth()->user()->id == $group['created_by_id'])
+                                            @if($group['status'] === 'pending' || $group['status'] === 'reverted')
+                                        
                                                 <button 
                                                     onclick="openModal(this,'{{ route('sales.delivery-order.edit', ['delivery_order' => $group['id']]) }}','Edit Delivery Order', false, '100%')"
                                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
@@ -102,6 +104,7 @@
                                                 <i class="ft-trash-2"></i>
                                             </button>
                                             @endif
+                                        @endif
                                         </div>
                                     </td>
                                 @endif

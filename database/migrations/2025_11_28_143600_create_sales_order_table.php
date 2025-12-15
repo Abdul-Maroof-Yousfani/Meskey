@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string("am_change_made")->default(1);
             $table->date('order_date')->nullable();
             $table->decimal('token_money', 15, 2)->nullable();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->string('so_reference_no');
             $table->string("remarks");
             $table->timestamps();

@@ -37,10 +37,13 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 Route::get("checking-data", function() {
-    SalesInquiry::query()->delete();
-    SalesOrder::query()->delete();
-    DeliveryOrder::query()->delete();
-    DeliveryChallan::query()->delete();
+    // SalesInquiry::query()->delete();
+    // SalesOrder::query()->delete();
+    // DeliveryOrder::query()->delete();
+    // DeliveryChallan::query()->delete();
+
+    
+
 });
 
 
