@@ -4,7 +4,7 @@
             <th>Commodity</th>
             <th>Location</th>
             <th>Qty (kg)</th>
-            <th>%</th>
+            <th>Yield %</th>
             <th>Remarks</th>
             <th>Actions</th>
         </tr>
