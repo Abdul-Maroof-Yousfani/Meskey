@@ -541,8 +541,8 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.sales-invoice.index') }}"
-                            onclick="loadPageContent('{{ route('sales.sales-invoice.index') }}')"
+                            href="{{ route('sales.sales-return.index') }}"
+                            onclick="loadPageContent('{{ route('sales.sales-return.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Sales Return</span>
                         </a>

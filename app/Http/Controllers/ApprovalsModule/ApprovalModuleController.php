@@ -72,6 +72,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Sales\ReceivingRequest',
                 'label' => 'Receiving Request'
             ],
+            [
+                'value' => 'App\Models\Sales\SalesReturn',
+                'label' => 'Sales Return'
+            ],
         ];
 
         $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {

@@ -42,11 +42,11 @@ class SalesInvoiceController extends Controller
                         $requestedBags = $request->no_of_bags[$index] ?? 0;
                         $availableBalance = $this->getAvailableBalance($dc_data_id);
                         
-                        if ($requestedBags > $availableBalance) {
-                            return response()->json([
-                                "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
-                            ], 422);
-                        }
+                        // if ($requestedBags > $availableBalance) {
+                        //     return response()->json([
+                        //         "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
+                        //     ], 422);
+                        // }
                     }
                 }
             }
@@ -145,11 +145,11 @@ class SalesInvoiceController extends Controller
                         // Exclude current invoice when calculating balance
                         $availableBalance = $this->getAvailableBalance($dc_data_id, $sales_invoice->id);
                         
-                        if ($requestedBags > $availableBalance) {
-                            return response()->json([
-                                "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
-                            ], 422);
-                        }
+                        // if ($requestedBags > $availableBalance) {
+                        //     return response()->json([
+                        //         "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
+                        //     ], 422);
+                        // }
                     }
                 }
             }
@@ -381,8 +381,8 @@ class SalesInvoiceController extends Controller
                 $query->where("am_approval_status", "approved");
             })->with("delivery_challan_data")
             ->where("customer_id", $customer_id)
-            ->where("location_id", $location_id)
-            ->where("arrival_id", $arrival_location_id)
+            // ->where("location_id", $location_id)
+            // ->where("arrival_id", $arrival_location_id)
             ->where("am_approval_status", "approved")
             ->get();
 
@@ -408,6 +408,7 @@ class SalesInvoiceController extends Controller
                 ];
             }
         }
+
 
         return $data;
     }

@@ -11,7 +11,7 @@
             
             $packing = $data->bag_size ?? 0;
             $noOfBags = $balance; // Use available balance as default
-            $qty = $packing * $noOfBags;
+            $qty = $data->qty;
             $rate = $data->rate ?? 0;
             $grossAmount = $qty * $rate;
             $discountPercent = 0;
@@ -35,13 +35,13 @@
                 <input type="hidden" class="max_balance" value="{{ $balance }}">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="packing[]" id="packing_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control packing" step="0.01" min="0" value="{{ $packing }}" readonly>
+                <input type="number" name="packing[]" id="packing_{{ $rowIndex }}" onkeyup="" class="form-control packing" step="0.01" min="0" value="{{ $packing }}" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="calculateRow(this); validateBalance(this)" class="form-control no_of_bags" step="0.01" min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" readonly step="0.01" min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" class="form-control qty" step="0.01" min="0" readonly value="{{ $qty }}">
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" class="form-control qty"  onkeyup="calculateRow(this)" step="0.01" min="0" value="{{ $qty }}">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">

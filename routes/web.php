@@ -19,8 +19,11 @@ use App\Models\Procurement\Store\QCItems;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\SaleReturnData;
 use App\Models\Sales\SalesInquiry;
+use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesOrder;
+use App\Models\Sales\SalesReturn;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -37,13 +40,13 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 Route::get("checking-data", function() {
-    // SalesInquiry::query()->delete();
-    // SalesOrder::query()->delete();
-    // DeliveryOrder::query()->delete();
-    // DeliveryChallan::query()->delete();
+    SalesInquiry::query()->delete();
+    SalesOrder::query()->delete();
+    DeliveryOrder::query()->delete();
+    DeliveryChallan::query()->delete();
 
-    
-
+    SalesInvoice::query()->delete();
+    SalesReturn::query()->delete();
 });
 
 

@@ -255,7 +255,7 @@
         const location_id = $("#locations").val();
         const arrival_location_id = $("#arrivals").val();
 
-        if (!customer_id || !location_id || !arrival_location_id) return;
+        // if (!customer_id || !location_id || !arrival_location_id) return;
 
         $.ajax({
             url: "{{ route('sales.get.sales-invoice.get-dc') }}",
@@ -358,8 +358,7 @@
     }
 
     function calculateRow(el) {
-        const row = $(el).closest("tr");
-
+          const row = $(el).closest("tr");
         // Get input elements
         const packingInput = row.find(".packing");
         const noOfBagsInput = row.find(".no_of_bags");
@@ -381,11 +380,11 @@
         const gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
         // Calculate Qty = Packing * No of Bags
-        const qty = packing * noOfBags;
-        qtyInput.val(round(qty));
-
+        const result = parseFloat(parseFloat(packingInput.val() / qtyInput.val()) );
+        noOfBagsInput.val(result);
+      
         // Calculate Gross Amount = Qty * Rate
-        const grossAmount = qty * rate;
+        const grossAmount = result * rate;
         grossAmountInput.val(round(grossAmount));
 
         // Calculate Discount Amount = (Discount % / 100) * Gross Amount

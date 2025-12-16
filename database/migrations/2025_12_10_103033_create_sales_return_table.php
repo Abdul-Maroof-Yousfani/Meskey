@@ -13,12 +13,20 @@ return new class extends Migration
     {
         Schema::create('sales_return', function (Blueprint $table) {
             $table->id();
-            // $table->foreignId("customer_id")->constrained("costumers")->cascadeOnDelete();
-            // $table->string("sr_no");
-            // $table->date("date");
-            // $table->foreignId("company_location_id")->constrained("company_locations")->cascadeOnDelete();
-            // $table->foreignId("arrival_location_id")->constrained("arrival_sub_locations")->cascadeOnDelete();
-            // $table->enum
+            $table->foreignId("customer_id")->constrained("customers")->cascadeOnDelete();
+            // $table->foreignId("si_id")->constrained("sales_invoices")->cascadeOnDelete();
+            $table->string("sr_no");
+            $table->date("date");
+            $table->string("reference_number");
+         
+            $table->enum("contract_type", ["x-mill", "pohanch"]);
+            $table->foreignId("company_location_id")->constrained("company_locations")->cascadeOnDelete();
+            $table->foreignId("arrival_location_id")->constrained("arrival_locations")->cascadeOnDelete();
+            $table->foreignId("storage_location_id")->constrained("arrival_sub_locations")->cascadeOnDelete();
+            $table->foreignId("created_by")->nullable()->constrained("users")->cascadeOnDelete();
+            $table->string("am_approval_status")->default("pending");
+            $table->string("am_change_made")->default(1);
+            $table->string("remarks")->nullable();
             $table->timestamps();
         });
     }

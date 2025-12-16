@@ -581,6 +581,10 @@ function get_arrival_locations() {
     return $ArrivalLocations;
 }
 
+function get_sub_arrival_locations() {
+    return ArrivalSubLocation::all();
+}
+
 
 function get_arrivals_by($location_id) {
     $arrivals = ArrivalLocation::where("company_location_id", $location_id)->get();

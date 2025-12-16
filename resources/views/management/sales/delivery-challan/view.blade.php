@@ -294,12 +294,12 @@
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        onkeyup="is_able_to_submit(this); calc(this)" value="{{ $balance }}"
+                                        onkeyup="is_able_to_submit(this); calc(this)" value="{{ $data->no_of_bags }}"
                                         class="form-control no_of_bags" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->bag_size * $balance }}" class="form-control qty"
+                                        value="{{ $data->qty }}" class="form-control qty"
                                         step="0.01" min="0" readonly>
                                 </td>
                                 <td>

@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Sales Order
+    Sales Return
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('sales.sale-order.create') }}','Create Sale Order',false,'100%')"
+                        onclick="openModal(this,'{{ route('sales.sales-return.create') }}','Create Sale Return',false,'100%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Sales Return
                     </button>
@@ -44,7 +44,7 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-3">SO NO</th>
+                                            <th class="col-3">SR NO</th>
                                             {{-- <th class="col-2">Location</th> --}}
                                             <th class="col-4">Customer</th>
                                             <th class="col-2 text-right">Qty</th>
@@ -68,7 +68,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('sales.get.sales-order.list') }}`)
+            filterationCommon(`{{ route('sales.get.sales-return.list') }}`)
         });
     </script>
 @endsection

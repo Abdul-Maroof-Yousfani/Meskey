@@ -61,5 +61,9 @@ class SalesInvoice extends Model
     {
         return $this->belongsTo(User::class, 'created_by_id');
     }
+
+    public function scopeApproved($query) {
+        return $query->where("am_approval_status", "approved");
+    }
 }
 

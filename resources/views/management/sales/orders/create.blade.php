@@ -327,7 +327,7 @@
         }
 
         // No of bags = bag size * quantity
-        const result = bag_size * qty;
+        const result = bag_size / qty;
         no_of_bags.val(result);
         
         // Also calculate amount
@@ -341,7 +341,7 @@
         const qty = parseFloat($(element).find(".qty").val()) || 0;
 
         const amount = $(element).find(".amount");
-
+      
         amount.val(rate * qty);
     }
 

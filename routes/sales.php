@@ -54,4 +54,10 @@ Route::name("sales.")->group(function () {
     Route::get("/sales-invoice/{sales_invoice}/view", [SalesInvoiceController::class, "view"])->name("get.sales-invoice.view");
 
     Route::resource("sales-return", SalesReturnController::class);
+    Route::get("/get/sale-invoices", [SalesReturnController::class, "get_sale_invoices"])->name("get.invoice-numbers");
+    Route::get("/get/sale-invoice-items", [SalesReturnController::class, "getitems"])->name("get.invoice-items");
+    Route::get("/get/sr-no", [SalesReturnController::class, "getNumber"])->name("get.sales-return.getNumber");
+    Route::post("get-sale-returns", [SalesReturnController::class, "getList"])->name("get.sales-return.list");
+    Route::get("sales-return/{id}/view", [SalesReturnController::class, "view"])->name("sales-return.view");
+  
 });

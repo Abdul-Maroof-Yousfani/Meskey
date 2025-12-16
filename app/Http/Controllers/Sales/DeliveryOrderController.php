@@ -345,12 +345,16 @@ class DeliveryOrderController extends Controller
         $so_id = $request->so_id;
 
         $items = Product::select('id', 'name')->get();
-        $sale_order = SalesOrder::with('delivery_order_transactions', 'locations')
+        $sale_order = SalesOrder::with('delivery_order_transactions', 'locations', 'delivery_orders')
             ->find($so_id);
 
+        $spent = $sale_order->delivery_orders
+            ->flatMap->delivery_order_data
+            ->sum('qty');
+       
         $bag_types = BagType::select('id', 'name')->get();
 
-        return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types'));
+        return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent'));
     }
 
     public function get_receipt_vouchers(Request $request)

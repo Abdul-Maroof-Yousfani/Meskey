@@ -69,7 +69,7 @@ class SalesOrder extends Model
         return $this->belongsTo(PayType::class, "pay_type_id");
     }
     public function delivery_order_data() {
-        return $this->hasOne(DeliveryOrderData::class, "so_data_id");
+        return $this->hasMany(DeliveryOrderData::class, "so_data_id");
     }
 
     public function customer() {

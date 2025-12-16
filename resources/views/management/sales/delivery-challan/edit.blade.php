@@ -747,7 +747,7 @@
             return;
         }
 
-        const bagsResult = bagSizeVal * qtyVal;
+        const bagsResult = bagSizeVal / qtyVal;
 
         no_of_bags.val(bagsResult);
         calcAmount(el);

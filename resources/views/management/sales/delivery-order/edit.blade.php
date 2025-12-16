@@ -322,7 +322,7 @@
                                 <td>
                                     <input type="hidden" class="allowed_value" value="{{ $allowed_value }}" />
                                     <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        value="{{ round($data->bag_size * ($data->qty ?? 0)) }}" readonly
+                                        value="{{ round($data->bag_size / ($data->qty ?? 0)) }}" readonly
                                         class="form-control no_of_bags" step="0.01" min="0">
                                 </td>
                                 <td>
@@ -608,7 +608,7 @@
         rate = $("#rate_0").val();
         const qtyVal = ((remaining_amount / rate)).toFixed(2);
         $("#qty_0").val(qtyVal);
-        no_of_bags = Math.round(parseFloat(bag_size) * parseFloat(qtyVal));
+        no_of_bags = Math.round(parseFloat(bag_size) / parseFloat(qtyVal));
 
         if(isNaN(no_of_bags)) {
             $("#no_of_bags_0").val(0);
@@ -733,17 +733,17 @@
         const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) || null;
 
         if (bag_size.val() && qty.val()) {
-            let bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+            let bagsResult = Math.round(parseFloat(bag_size.val()) / parseFloat(qty.val()));
 
             if (balance && bagsResult > balance) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Limit Exceeded',
-                    text: 'No of bags cannot exceed available balance (' + balance + ').',
-                });
-                bagsResult = balance;
-                const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
-                qty.val(limitedQty.toFixed(2));
+                // Swal.fire({
+                //     icon: 'warning',
+                //     title: 'Limit Exceeded',
+                //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                // });
+                // bagsResult = balance;
+                // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
+                // qty.val(limitedQty.toFixed(2));
             }
 
             no_of_bags.val(bagsResult);

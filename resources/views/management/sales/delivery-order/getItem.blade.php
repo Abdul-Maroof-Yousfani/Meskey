@@ -27,13 +27,13 @@
                 onkeyup="calc(this)" class="form-control bag_size" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" data-balance="{{ $balance }}" value="{{ $balance }}" class="form-control no_of_bags" step="0.01" min="0" readonly>
+            <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" data-balance="{{ $balance }}" value="{{ $data->bag_size / ($data->qty - $spent) }}" class="form-control no_of_bags" step="0.01" min="0" readonly>
             <span style="font-size: 14px;;">Used Quantity: {{ $data->no_of_bags - $balance}}</span>
             <br />
             <span style="font-size: 14px;">Total Quantity: {{ $data->no_of_bags }}</span>
         </td>
         <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
+            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty - $spent }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>
@@ -111,7 +111,7 @@
             return;
         }
 
-        let bagsResult = Math.round(bagSizeVal * qtyVal);
+        let bagsResult = Math.round(bagSizeVal / qtyVal);
 
         if (balance && bagsResult > balance) {
             Swal.fire({
