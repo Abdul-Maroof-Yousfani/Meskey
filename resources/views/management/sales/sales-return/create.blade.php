@@ -405,6 +405,7 @@
       
         // Calculate Gross Amount = Qty * Rate
         const grossAmount = result * rate;
+        
         grossAmountInput.val(round(grossAmount));
 
         // Calculate Discount Amount = (Discount % / 100) * Gross Amount
