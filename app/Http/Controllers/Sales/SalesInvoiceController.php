@@ -164,6 +164,8 @@ class SalesInvoiceController extends Controller
                 "reference_number" => $request->reference_number,
                 "sauda_type" => $request->sauda_type,
                 "remarks" => $request->remarks,
+                'am_approval_status' => "pending",
+                "am_change_made" => 1
             ]);
 
             // Sync delivery challans

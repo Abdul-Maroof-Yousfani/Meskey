@@ -83,8 +83,9 @@
                                        title="View" style="margin-right: 10px;">
                                         <i class="ft-eye"></i>
                                     </a>
-                                    @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
-                                        <button 
+                                    @if(auth()->user()->id == $group['created_by_id'])
+                                      @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
+                                          <button 
                                             onclick="openModal(this,'{{ route('sales.sales-invoice.edit', ['sales_invoice' => $group['id']]) }}','Edit Sales Invoice', false, '100%')"
                                             class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                             <i class="ft-edit"></i>
@@ -95,6 +96,7 @@
                                                 class="btn btn-sm btn-danger" title="Delete">
                                             <i class="ft-trash-2"></i>
                                         </button>
+                                    @endif
                                     @endif
                                 </div>
                             </td>
