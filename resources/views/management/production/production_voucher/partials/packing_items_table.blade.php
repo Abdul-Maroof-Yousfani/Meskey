@@ -2,24 +2,34 @@
     .produced-qty-badge {
         cursor: pointer;
         transition: all 0.3s ease;
+        display: inline-block;
     }
+
     .produced-qty-badge:hover {
         transform: scale(1.05);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
+
     .chevron-icon {
         transition: transform 0.3s ease;
         display: inline-block;
         margin-left: 5px;
     }
+
     .chevron-icon.rotated {
         transform: rotate(180deg);
     }
+
     .produced-detail-row {
         background-color: #f8f9fa;
     }
+
     .produced-detail-container {
         padding: 15px;
+    }
+
+    .job-order-group {
+        position: relative;
     }
 </style>
 
@@ -42,44 +52,80 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $processedJobOrders = [];
+                $groupedPackingItems = $packingItems->groupBy('job_order_id');
+            @endphp
+
             @if($packingItems && $packingItems->count() > 0)
-                @foreach($packingItems as $index => $item)
+                @foreach($groupedPackingItems as $jobOrderId => $items)
                     @php
-                        $jobOrderId = $item->job_order_id;
+                        $jobOrderNo = $items->first()->jobOrder->job_order_no ?? 'N/A';
                         $producedQty = $producedByJobOrder[$jobOrderId] ?? 0;
                         $producedDetails = $producedDetailsByJobOrder[$jobOrderId] ?? collect();
-                        $detailRowId = 'produced-detail-' . $jobOrderId . '-' . $index;
+                        $detailRowId = 'produced-detail-' . $jobOrderId;
                         $hasProduced = $producedQty > 0 && $producedDetails->count() > 0;
+                        $itemCount = count($items);
                     @endphp
-                    <tr>
-                        <td>{{ $item->jobOrder->job_order_no ?? 'N/A' }}</td>
-                        <td>{{ $item->jobOrder->product->name ?? 'N/A' }}</td>
-                        <td>{{ $item->bagType->name ?? 'N/A' }}</td>
-                        <td>{{ $item->bagCondition->name ?? 'N/A' }}</td>
-                        <td>{{ $item->bag_size ?? '0' }}</td>
-                        <td>{{ $item->no_of_bags ?? '0' }}</td>
-                        <td>{{ $item->total_bags ?? '0' }}</td>
-                        <td>{{ number_format($item->total_kgs ?? 0, 2) }}</td>
-                        <td>{{ number_format($item->metric_tons ?? 0, 3) }}</td>
-                        <td>{{ $item->brand->name ?? 'N/A' }}</td>
-                        <td>{{ $item->delivery_date ? $item->delivery_date->format('Y-m-d') : 'N/A' }}</td>
-                        <td>
-                            @if($hasProduced)
-                                <span class="badge badge-info produced-qty-badge" 
-                                      onclick="toggleProducedDetails('{{ $detailRowId }}', this)"
-                                      style="cursor: pointer;">
-                                    {{ number_format($producedQty, 2) }} kg
-                                    <i class="ft-chevron-down chevron-icon"></i>
-                                </span>
-                            @else
-                                <span class="badge badge-secondary">{{ number_format($producedQty, 2) }} kg</span>
+
+                    @foreach($items as $index => $item)
+                        <tr>
+                            @if($index === 0)
+                                <td rowspan="{{ $itemCount }}">
+                                    {{ $jobOrderNo }} <br>
+                                    <button type="button"
+                                            onclick="openModal(this,'{{ route('job-orders.edit', $item->job_order_id) }}?company_location_id={{ $item->company_location_id }}','Edit Job Order',true,'90%')"
+                                            class="btn btn-sm btn-outline-info position-relative" title="View">
+                                            <i class="ft-eye mr-1"></i> <span class="text-sm">View Job Order</span>
+                                        </button>
+                                        @php
+                                            $rawMaterialQc = $item->jobOrder->rawMaterialQcs->where('location_id', $item->company_location_id)->last();
+                                        @endphp
+                                        @if($rawMaterialQc != null)
+                                            <button type="button"
+                                                onclick="openModal(this,'{{ route('job-order-rm-qc.edit', $rawMaterialQc->id) }}','Edit Raw Material QC',true,'90%')"
+                                                class="btn btn-sm btn-outline-info position-relative" title="View">
+                                                <i class="ft-eye mr-1"></i> <span class="text-sm">View Raw Material QC</span>
+                                            </button>
+                                        @endif
+                                </td>
                             @endif
-                        </td>
-                    </tr>
+                            <td>{{ $item->jobOrder->product->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagType->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagCondition->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bag_size ?? '0' }}</td>
+                            <td>{{ $item->no_of_bags ?? '0' }}</td>
+                            <td>{{ $item->total_bags ?? '0' }}</td>
+                            <td>{{ number_format($item->total_kgs ?? 0, 2) }}</td>
+                            <td>{{ number_format($item->metric_tons ?? 0, 3) }}</td>
+                            <td>{{ $item->brand->name ?? 'N/A' }}</td>
+                            <td>{{ $item->delivery_date ? $item->delivery_date->format('Y-m-d') : 'N/A' }}</td>
+                            @if($index === 0)
+                                <td rowspan="{{ $itemCount }}" style="vertical-align: middle;">
+                                    @if($hasProduced)
+                                        <span class="badge badge-info produced-qty-badge"
+                                            onclick="toggleProducedDetails('{{ $detailRowId }}', this)" style="cursor: pointer;">
+                                            {{ number_format($producedQty, 2) }} kg
+                                            <i class="ft-chevron-down chevron-icon"></i>
+                                        </span>
+                                    @else
+                                        <span class="badge badge-secondary">{{ number_format($producedQty, 2) }} kg</span>
+                                        
+                                    @endif
+                                </td>
+                            @endif
+                        </tr>
+                    @endforeach
+
                     @if($hasProduced)
                         <tr id="{{ $detailRowId }}" class="produced-detail-row" style="display: none;">
                             <td colspan="12">
                                 <div class="produced-detail-container">
+                                    <h6 class="mb-3">
+                                        <i class="ft-package"></i>
+                                        Produced Details for Job Order: {{ $jobOrderNo }}
+                                        <small class="text-muted ml-2">(Total: {{ number_format($producedQty, 2) }} kg)</small>
+                                    </h6>
                                     <table class="table table-bordered table-sm table-hover" style="margin-bottom: 0;">
                                         <thead class="thead-light">
                                             <tr>
@@ -103,7 +149,8 @@
                                                     <td>
                                                         {{ $output->storageLocation->name ?? 'N/A' }}
                                                         @if($output->storageLocation && $output->storageLocation->arrivalLocation)
-                                                            <br><small class="text-muted">({{ $output->storageLocation->arrivalLocation->name ?? '' }})</small>
+                                                            <br><small
+                                                                class="text-muted">({{ $output->storageLocation->arrivalLocation->name ?? '' }})</small>
                                                         @endif
                                                     </td>
                                                     <td>{{ $output->product->name ?? 'N/A' }}</td>
@@ -135,6 +182,14 @@
                                                 </tr>
                                             @endforeach
                                         </tbody>
+                                        <tfoot>
+                                            <tr class="table-info">
+                                                <td colspan="9" class="text-right font-weight-bold">Total Produced:</td>
+                                                <td class="font-weight-bold">
+                                                    {{ number_format($producedQty, 2) }} kg
+                                                </td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </td>
@@ -154,7 +209,7 @@
     function toggleProducedDetails(detailRowId, badgeElement) {
         const detailRow = document.getElementById(detailRowId);
         const chevron = badgeElement.querySelector('.chevron-icon');
-        
+
         if (detailRow.style.display === 'none' || !detailRow.style.display) {
             detailRow.style.display = 'table-row';
             if (chevron) {
@@ -168,4 +223,3 @@
         }
     }
 </script>
-

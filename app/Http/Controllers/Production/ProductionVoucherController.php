@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Production;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Production\ProductionVoucherRequest;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
 use App\Models\Production\ProductionVoucher;
 use App\Models\Production\ProductionInput;
 use App\Models\Production\ProductionOutput;
@@ -446,6 +447,8 @@ class ProductionVoucherController extends Controller
             'outputs.brand',
             'slots.breaks'
         ])->findOrFail($id);
+
+        $jobOrderRawMaterialQcs = JobOrderRawMaterialQc::whereIn('job_order_id', $productionVoucher->jobOrders->pluck('id'))->get();
 
         $jobOrders = JobOrder::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();

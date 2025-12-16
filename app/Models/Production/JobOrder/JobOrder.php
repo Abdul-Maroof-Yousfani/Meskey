@@ -129,4 +129,9 @@ class JobOrder extends Model
           $locations = $this->company_locations;
           return $locations->pluck('name')->implode(', ');
       }
+
+      public function rawMaterialQcs()
+      {
+        return $this->hasMany(JobOrderRawMaterialQc::class);
+      }
 }

@@ -200,10 +200,20 @@ class JobOrderController extends Controller
         }
     }
 
-    public function edit($id)
+    public function edit($id, Request $request)
     {
-        $jobOrder = JobOrder::with(['packingItems', 'specifications', 'product'])->findOrFail($id);
-
+        // dd($request->all());
+       // $jobOrder = JobOrder::with(['packingItems:where(company_location_id, $request->company_location_id)', 'specifications', 'product'])->findOrFail($id);
+       $jobOrder = JobOrder::with([
+        'packingItems' => function($query) use ($request) {
+            $query->when($request->filled('company_location_id'), function($q) use ($request) {
+                $q->where('company_location_id', $request->company_location_id);
+            });
+        },
+        'specifications',
+        'product'
+    ])->findOrFail($id);
+    //    dd($jobOrder);
         $products = Product::where('status', 1)->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();

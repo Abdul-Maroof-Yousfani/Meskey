@@ -3,6 +3,108 @@
     Edit Production Voucher
 @endsection
 @section('content')
+<style>
+    /* Production Voucher Input/Output List Styles */
+    .slot-header-row {
+        background-color: #d1ecf1 !important;
+        /* border-top: 5px solid white !important; */
+    }
+    .slot-header-cell {
+        font-weight: bold;
+    }
+    
+    .head-product-row {
+        background-color: #cce5ff !important;
+    }
+    .head-product-cell {
+        font-weight: bold;
+    }
+    .by-product-row {
+        background-color: #d1ecf1 !important;
+    }
+    .by-product-cell {
+        font-weight: bold;
+    }
+    .commodity-total-row {
+        /* background-color: #fff3cd !important; */
+    }
+    .commodity-total-cell {
+        font-weight: bold;
+        padding-left: 30px;
+    }
+    .commodity-total-qty {
+        /* font-weight: bold; */
+        /* text-align: right; */
+    }
+    .grand-total-row {
+        background-color: #d4edda !important;
+    }
+    .grand-total-cell {
+        font-weight: bold;
+        text-align: center;
+    }
+    .grand-total-commodity-row {
+        background-color: #fff3cd !important;
+    }
+    .grand-total-commodity-cell {
+        font-weight: bold;
+    }
+    .bg-light-warning {
+        background-color: #fff3cd !important;
+    }
+
+    /* Grand Total Summary Dashboard Cards */
+    .dashboard-card.summary-box {
+        background: #f8f9fa!important;
+        border-radius: 8px;
+        padding: 20px;
+        position: relative;
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .summary-box-info {
+        background: #e7f3ff;
+    }
+
+    .summary-box-success {
+        background: #e8f5e9;
+    }
+
+    .summary-box-primary {
+        background: #e3f2fd;
+    }
+
+    .dashboard-card.summary-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .dashboard-card.summary-box .card-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 8px;
+        margin-top: 0;
+    }
+
+    .dashboard-card.summary-box .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+        line-height: 1.2;
+    }
+
+    .dashboard-card.summary-box .card-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 0;
+        line-height: 1.3;
+    }
+</style>
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
@@ -284,16 +386,16 @@
                     </button>
                 </div>
             </div>
-                            <div id="productionInputsFilterForm" class="form">
-                            </div>
+            <div id="productionInputsFilterForm" class="form">
+            </div>
             <div class="table-responsive" id="productionInputsTable">
                 <table class="table table-bordered">
-                     <thead>
+                    <thead>
                         <tr>
                             <th>Commodity</th>
                             <th>Location</th>
                             <th>Qty (kg)</th>
-                                                    <th>%</th>
+                            <th>%</th>
                             <th>Remarks</th>
                             <th>Actions</th>
                         </tr>
@@ -318,58 +420,58 @@
                 </div>
             </div>
             <div id="productionOutputsFilterForm" class="form">
-                            </div>
-                                    <div id="productionOutputsTable">
-                                                @include('management.production.production_voucher.output.getList', [
-                                            'headProductOutputs' => $productionVoucher->outputs->where('product_id', $productionVoucher->jobOrder->product_id ?? null),
-                                            'otherProductOutputs' => $productionVoucher->outputs->where('product_id', '!=', $productionVoucher->jobOrder->product_id ?? null),
-                                            'productionVoucher' => $productionVoucher,
-                                            'headProductId' => $productionVoucher->jobOrder->product_id ?? null,
-                                            'inputs' => $productionVoucher->inputs
-                                        ])
-                                    </div>
-                                </div>
+            </div>
+            <div id="productionOutputsTable">
+                @include('management.production.production_voucher.output.getList', [
+                    'headProductOutputs' => $productionVoucher->outputs->where('product_id', $productionVoucher->jobOrder->product_id ?? null),
+                    'otherProductOutputs' => $productionVoucher->outputs->where('product_id', '!=', $productionVoucher->jobOrder->product_id ?? null),
+                    'productionVoucher' => $productionVoucher,
+                    'headProductId' => $productionVoucher->jobOrder->product_id ?? null,
+                    'inputs' => $productionVoucher->inputs
+                ])
+            </div>
+        </div>
 
-                                <!-- Production Slots Section -->
-                                <div class="col-md-12 mt-4">
-                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
-                                            <div class="col-md-6">
-                                            <h6 class="m-0">Production Slots</h6>
-                                        </div>
-                                        <div class="col-md-6 text-right">
-                                            <button type="button" class="btn btn-warning btn-sm" onclick="openModal(this, '{{ route('production-voucher.slot.form', $productionVoucher->id) }}', 'Create Production Slot', false, '70%')">
-                                                <i class="ft-plus"></i> Create Production Slot
-                                            </button>
-                                        </div>
-                                    </div>
+        <!-- Production Slots Section -->
+        <div class="col-md-12 mt-4">
+            <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
+                <div class="col-md-6">
+                    <h6 class="m-0">Production Slots</h6>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="openModal(this, '{{ route('production-voucher.slot.form', $productionVoucher->id) }}', 'Create Production Slot', false, '70%')">
+                        <i class="ft-plus"></i> Create Production Slot
+                    </button>
+                </div>
+            </div>
             <div class="table-responsive">
                 <div id="productionSlotsFilterForm" class="form">
-                            </div>
+                </div>
                 <table class="table table-bordered" id="productionSlotsTable">
                     <thead>
                         <tr>
-                                                    <th>Date</th>
-                                                    <th>Start Time</th>
-                                                    <th>End Time</th>
-                                                    <th>Breaks</th>
-                                                    <th>Status</th>
-                                                    <th>Attachment</th>
+                            <th>Date</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Breaks</th>
+                            <th>Status</th>
+                            <th>Attachment</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="productionSlotsTableBody">
-                                                @include('management.production.production_voucher.slot.getList', ['slots' => $productionVoucher->slots, 'productionVoucher' => $productionVoucher])
+                        @include('management.production.production_voucher.slot.getList', ['slots' => $productionVoucher->slots, 'productionVoucher' => $productionVoucher])
                     </tbody>
                 </table>
+            </div>
         </div>
-    </div>
 
         <div class="row bottom-button-bar mt-4 w-100 mx-auto">
-                                    <div class="col-12 text-right">
-                                        <!-- <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a> -->
-            <button type="submit" class="btn btn-primary submitbutton">Update Production Voucher</button>
+            <div class="col-12 text-right">
+                <!-- <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a> -->
+                <button type="submit" class="btn btn-primary submitbutton">Update Production Voucher</button>
+            </div>
         </div>
-    </div>
 </form>
                         </div>
                     </div>
@@ -583,24 +685,24 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
             }
         }).then((result) => {
             if (result.isConfirmed) {
-            $.ajax({
-                url: '{{ route("production-voucher.input.destroy", [":id", ":inputId"]) }}'
-                    .replace(':id', voucherId)
-                    .replace(':inputId', inputId),
+                $.ajax({
+                    url: '{{ route("production-voucher.input.destroy", [":id", ":inputId"]) }}'
+                        .replace(':id', voucherId)
+                        .replace(':inputId', inputId),
                     method: 'POST',
                     data: {
                         _method: 'DELETE',
                         _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
+                    },
+                    success: function(response) {
                         Swal.fire(
                             'Deleted!',
                             'Your record has been deleted.',
                             'success'
                         ).then(() => {
-                    $.post('{{ route("get.production-voucher-inputs", ":id") }}'.replace(':id', voucherId), {}, function(data) {
-                        $('#productionInputsTable').html(data);
-                    });
+                            $.post('{{ route("get.production-voucher-inputs", ":id") }}'.replace(':id', voucherId), {}, function(data) {
+                                $('#productionInputsTable').html(data);
+                            });
                         });
                     },
                     error: function(xhr, status, error) {
@@ -610,9 +712,9 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
                             title: 'Error ' + status,
                             html: `<p>${xhr.responseJSON?.error || 'An error occurred'}</p><small>${xhr.responseJSON?.details || ''}</small>`
                         });
-                }
-            });
-        }
+                    }
+                });
+            }
         });
     }
 
@@ -639,24 +741,24 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
             }
         }).then((result) => {
             if (result.isConfirmed) {
-            $.ajax({
-                url: '{{ route("production-voucher.output.destroy", [":id", ":outputId"]) }}'
-                    .replace(':id', voucherId)
-                    .replace(':outputId', outputId),
+                $.ajax({
+                    url: '{{ route("production-voucher.output.destroy", [":id", ":outputId"]) }}'
+                        .replace(':id', voucherId)
+                        .replace(':outputId', outputId),
                     method: 'POST',
                     data: {
                         _method: 'DELETE',
                         _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
+                    },
+                    success: function(response) {
                         Swal.fire(
                             'Deleted!',
                             'Your record has been deleted.',
                             'success'
                         ).then(() => {
-                    $.post('{{ route("get.production-voucher-outputs", ":id") }}'.replace(':id', voucherId), {}, function(data) {
-                        $('#productionOutputsTable').html(data);
-                    });
+                            $.post('{{ route("get.production-voucher-outputs", ":id") }}'.replace(':id', voucherId), {}, function(data) {
+                                $('#productionOutputsTable').html(data);
+                            });
                         });
                     },
                     error: function(xhr, status, error) {
@@ -666,9 +768,9 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
                             title: 'Error ' + status,
                             html: `<p>${xhr.responseJSON?.error || 'An error occurred'}</p><small>${xhr.responseJSON?.details || ''}</small>`
                         });
-                }
-            });
-        }
+                    }
+                });
+            }
         });
     }
 
@@ -695,24 +797,24 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
             }
         }).then((result) => {
             if (result.isConfirmed) {
-            $.ajax({
-                url: '{{ route("production-voucher.slot.destroy", [":id", ":slotId"]) }}'
-                    .replace(':id', voucherId)
-                    .replace(':slotId', slotId),
+                $.ajax({
+                    url: '{{ route("production-voucher.slot.destroy", [":id", ":slotId"]) }}'
+                        .replace(':id', voucherId)
+                        .replace(':slotId', slotId),
                     method: 'POST',
                     data: {
                         _method: 'DELETE',
                         _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
+                    },
+                    success: function(response) {
                         Swal.fire(
                             'Deleted!',
                             'Your record has been deleted.',
                             'success'
                         ).then(() => {
-                    $.post('{{ route("get.production-voucher-slots", ":id") }}'.replace(':id', voucherId), {}, function(data) {
+                            $.post('{{ route("get.production-voucher-slots", ":id") }}'.replace(':id', voucherId), {}, function(data) {
                                 $('#productionSlotsTableBody').html(data);
-                    });
+                            });
                         });
                     },
                     error: function(xhr, status, error) {
@@ -722,9 +824,9 @@ filterationCommon('{{ route("get.production-voucher-slots", $productionVoucher->
                             title: 'Error ' + status,
                             html: `<p>${xhr.responseJSON?.error || 'An error occurred'}</p><small>${xhr.responseJSON?.details || ''}</small>`
                         });
-                }
-            });
-        }
+                    }
+                });
+            }
         });
     }
 </script>

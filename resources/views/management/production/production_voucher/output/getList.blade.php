@@ -246,7 +246,7 @@
                         $slotOtherProductAvgWeightPerBag = $slotOtherProductTotalBags > 0 ? ($slotOtherProductTotal / $slotOtherProductTotalBags) : 0;
                     @endphp
 
-                    <tr class="table-info by-product-row">
+                    <tr class="table-primary by-product-row">
                         <td colspan="1" class="by-product-cell">
                             <i class="ft-list"></i> By Product
                         </td>
@@ -265,7 +265,7 @@
                         <td class="commodity-total-qty">
                             <strong class="badge badge-warning">{{ number_format($slotOtherProductYield, 2) }}%</strong>
                         </td>
-                        <td colspan="4"></td>
+                        <td colspan="5"></td>
      
                     </tr>
 
