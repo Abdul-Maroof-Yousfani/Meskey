@@ -147,9 +147,9 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Bag Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
+                            <th>Quantity (Kg)</th>
                             <th>Rate per Kg</th>
                             <th>Brands</th>
                             <th style="display: none;">Pack Size</th>
