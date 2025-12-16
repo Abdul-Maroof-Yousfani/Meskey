@@ -189,64 +189,72 @@ class SalesInquiryController extends Controller
         $factoryIds = $request->arrival_location_id ?? [];
         $sectionIds = $request->arrival_sub_location_id ?? [];
 
-        $data = [
-            "inquiry_no" => $request->reference_no,
-            "date" => $request->inquiry_date,
-            "customer" => $request->customer,
-            "contract_type" => $request->contract_type,
-            "status" => "pending",
-            "contact_person" => $request->contact_person,
-            "remarks" => $request->remarks ?? "",
-            "reference_number" => $request->reference_number,
-            "required_date" => $request->required_date,
-            'arrival_location_id' => $factoryIds[0] ?? null,
-            'arrival_sub_location_id' => $sectionIds[0] ?? null,
+        DB::beginTransaction();
+        try {
+            $data = [
+                "inquiry_no" => $request->reference_no,
+                "date" => $request->inquiry_date,
+                "customer" => $request->customer,
+                "contract_type" => $request->contract_type,
+                "status" => "pending",
+                "contact_person" => $request->contact_person,
+                "remarks" => $request->remarks ?? "",
+                "reference_number" => $request->reference_number,
+                "required_date" => $request->required_date,
+                'arrival_location_id' => $factoryIds[0] ?? null,
+                'arrival_sub_location_id' => $sectionIds[0] ?? null,
 
-            'am_change_made' => 1
-        ];
+                'am_change_made' => 1
+            ];
 
-        if($sales_inquiry->am_approval_status === 'reverted') {
-            $data["am_approval_status"] = "pending";
-        }
+            if($sales_inquiry->am_approval_status === 'reverted') {
+                $data["am_approval_status"] = "pending";
+            }
 
-        $sales_inquiry->update($data);
+            $sales_inquiry->update($data);
 
-        $sales_inquiry->sales_inquiry_data()->delete();
-        $sales_inquiry->locations()->delete();
-        $sales_inquiry->factories()->delete();
-        $sales_inquiry->sections()->delete();
-      
+            $sales_inquiry->sales_inquiry_data()->delete();
+            $sales_inquiry->locations()->delete();
+            $sales_inquiry->factories()->delete();
+            $sales_inquiry->sections()->delete();
+        
 
-        foreach($request->item_id as $index => $item) {
-            $sales_inquiry->sales_inquiry_data()->create([
-                "item_id" => $request->item_id[$index],
-                "qty" => $request->qty[$index],
-                "rate" => $request->rate[$index],
-                "description" => $request->desc[$index] ?? "",
-                "bag_type" => $request->bag_type[$index],
-                "bag_size" => $request->bag_size[$index],
-                "no_of_bags" => $request->no_of_bags[$index],
-                "brand_id" => $request->brand_id[$index],
-                "pack_size" => $request->pack_size[$index]
-            ]);
-        }
+            foreach($request->item_id as $index => $item) {
+                $sales_inquiry->sales_inquiry_data()->create([
+                    "item_id" => $request->item_id[$index],
+                    "qty" => $request->qty[$index],
+                    "rate" => $request->rate[$index],
+                    "description" => $request->desc[$index] ?? "",
+                    "bag_type" => $request->bag_type[$index],
+                    "bag_size" => $request->bag_size[$index],
+                    "no_of_bags" => $request->no_of_bags[$index],
+                    "brand_id" => $request->brand_id[$index],
+                    "pack_size" => $request->pack_size[$index]
+                ]);
+            }
 
-        $locations = $request->locations;
+            $locations = $request->locations;
 
-        foreach($locations as $location) {
-            $sales_inquiry->locations()->create([
-                "location_id" => $location
-            ]);
-        }
-        foreach ($factoryIds as $factoryId) {
-            $sales_inquiry->factories()->create([
-                'arrival_location_id' => $factoryId,
-            ]);
-        }
-        foreach ($sectionIds as $sectionId) {
-            $sales_inquiry->sections()->create([
-                'arrival_sub_location_id' => $sectionId,
-            ]);
+            foreach($locations as $location) {
+                $sales_inquiry->locations()->create([
+                    "location_id" => $location
+                ]);
+            }
+            foreach ($factoryIds as $factoryId) {
+                $sales_inquiry->factories()->create([
+                    'arrival_location_id' => $factoryId,
+                ]);
+            }
+            foreach ($sectionIds as $sectionId) {
+                $sales_inquiry->sections()->create([
+                    'arrival_sub_location_id' => $sectionId,
+                ]);
+            }
+
+            DB::commit();
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 500);
         }
 
 
