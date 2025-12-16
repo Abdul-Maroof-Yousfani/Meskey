@@ -51,11 +51,11 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['si_data']->rate, 2) }}
+                                    {{ isset($itemRow['si_data']) ? number_format($itemRow['si_data']->rate, 2) : ''}}
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow["si_data"]->rate * $itemRow["si_data"]->qty, 2) }}
+                                    {{ isset($itemRow["si_data"]) ? number_format($itemRow["si_data"]->rate * $itemRow["si_data"]->qty, 2) : '' }}
                                 </td>
 
                                 {{-- Date & Status - Show only on first row --}}

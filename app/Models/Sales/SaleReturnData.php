@@ -12,7 +12,20 @@ class SaleReturnData extends Model
     protected $fillable = [
         "quantity",
         "sale_return_id",
-        "sale_invoice_data_id"
+        "sale_invoice_data_id",
+        "rate",
+        "gross_amount",
+        "discount_percent",
+        "discount_amount",
+        "amount",
+        "gst",
+        "gst_percentage",
+        "gst_amount",
+        "net_amount",
+        "line_desc",
+        "truck_no",
+        "packing",
+        "no_of_bags"
     ];
 
     public function sale_return() {

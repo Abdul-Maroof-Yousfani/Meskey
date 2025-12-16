@@ -875,7 +875,7 @@ if (!function_exists('createStockTransaction')) {
         array $additionalData = []
     ) {
         try {
-            $validVoucherTypes = ['grn', 'gdn', 'sale_return', 'purchase_return'];
+            $validVoucherTypes = ['grn', 'gdn', 'sale_return', 'purchase_return', 'delivery_challan'];
             if (!in_array(strtolower($voucherType), $validVoucherTypes)) {
                 throw new \InvalidArgumentException(
                     "Voucher type must be one of: " . implode(', ', $validVoucherTypes)

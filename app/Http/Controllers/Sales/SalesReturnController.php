@@ -226,7 +226,14 @@ class SalesReturnController extends Controller
                     "no_of_bags" => $request->no_of_bags[$index],
                     "rate" => $request->rate[$index],
                     "gross_amount" => $request->gross_amount[$index],
-                    // "discount_percent" => $requ
+                    "discount_percent" => $request->gross_amount[$index],
+                    "discount_amount" => $request->discount_amount[$index],
+                    "amount" => $request->amount[$index],
+                    "gst_percentage" => $request->gst_percent[$index],
+                    "gst_amount" => $request->gst_amount[$index],
+                    "net_amount"  => $request->net_amount[$index],
+                    "line_desc" => $request->line_desc[$index],
+                    "truck_no" => $request->truck_no[$index]
                 ]);
             }
 

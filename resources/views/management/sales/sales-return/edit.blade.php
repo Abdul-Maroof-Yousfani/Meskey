@@ -196,17 +196,16 @@
                                 // if ($balance <= 0) {
                                 //     continue;
                                 // }
-                                $sr_data = $data;
-                                $data = $data->sale_invoice_data;
+                        
                                 $packing = $data->packing ?? 0;
                                 $qty = $data->quantity;
-                                $noOfBags = $packing * $sr_data->quantity; // Use available balance as default
+                                $noOfBags = round($packing / $qty); // Use available balance as default
                                 $rate = $data->rate ?? 0;
                                 $grossAmount = $qty * $rate;
-                                $discountPercent = $data->discount_percent;
-                                $discountAmount = $data->discount_amount;
+                                $discountPercent = $data->discount_amount;
+                                $discountAmount = $data->discount_percent;
                                 $amount = $grossAmount - $discountAmount;
-                                $gstPercent = $data->gst_percent;
+                                $gstPercent = $data->gst_percentage;
                                 $gstAmount = $data->gst_amount;
                                 $netAmount = $amount + $gstAmount;
                                 $lineDesc = $data->line_desc ?? '';
@@ -243,7 +242,7 @@
                                 <td style="min-width: 100px;">
                                     <input type="text" name="qty[]" id="qty_{{ $rowIndex }}"
                                         class="form-control qty" onkeyup="calculateRow(this)"
-                                        value="{{ $sr_data->quantity }}">
+                                        value="{{ $data->quantity }}">
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="rate[]" id="rate_{{ $rowIndex }}"
@@ -353,7 +352,7 @@
         const gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
         // Calculate Qty = Packing * No of Bags
-        const result = parseFloat(qtyInput.val()) * parseFloat(packingInput.val());
+        const result = parseFloat(parseFloat(packingInput.val() / qtyInput.val())).toFixed();
         noOfBagsInput.val(result);
       
         // Calculate Gross Amount = Qty * Rate
