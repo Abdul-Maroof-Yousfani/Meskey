@@ -125,7 +125,7 @@
                     <button type="button" class="btn btn-warning btn-block" onclick="openModal(this, '{{ route('production-voucher.slot.form', $productionVoucher->id) }}', 'Create Production Slot', false, '50%')">
                         <i class="ft-plus"></i> Create Production Slot
                     </button>
-                </div>
+                </div> 
                 <div class="col-md-4">
                                             <button type="button" class="btn btn-success btn-block" onclick="openModal(this, '{{ route('production-voucher.input.form', $productionVoucher->id) }}', 'Create Production Input', false, '50%')">
                         <i class="ft-plus"></i> Create Production Input
