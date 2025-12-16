@@ -84,7 +84,7 @@
                                         <i class="ft-eye"></i>
                                     </a>
                                     @if(auth()->user()->id == $group['created_by_id'])
-                                      @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
+                                      @if($group['status'] == 'pending' || $group['status'] == 'reverted')
                                           <button 
                                             onclick="openModal(this,'{{ route('sales.sales-invoice.edit', ['sales_invoice' => $group['id']]) }}','Edit Sales Invoice', false, '100%')"
                                             class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
