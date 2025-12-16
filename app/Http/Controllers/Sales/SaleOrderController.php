@@ -78,6 +78,8 @@ class SaleOrderController extends Controller
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
+        $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
+        
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($payload);
