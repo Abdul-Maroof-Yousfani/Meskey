@@ -201,6 +201,7 @@ class SalesInquiryController extends Controller
             "required_date" => $request->required_date,
             'arrival_location_id' => $factoryIds[0] ?? null,
             'arrival_sub_location_id' => $sectionIds[0] ?? null,
+
             'am_change_made' => 1
         ];
 
@@ -221,7 +222,7 @@ class SalesInquiryController extends Controller
                 "item_id" => $request->item_id[$index],
                 "qty" => $request->qty[$index],
                 "rate" => $request->rate[$index],
-                "description" => $request->desc[$index],
+                "description" => $request->desc[$index] ?? "",
                 "bag_type" => $request->bag_type[$index],
                 "bag_size" => $request->bag_size[$index],
                 "no_of_bags" => $request->no_of_bags[$index],
