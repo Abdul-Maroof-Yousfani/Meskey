@@ -29,9 +29,9 @@ class SalesInquiryRequest extends FormRequest
             "reference_number" => "required",
 
             "required_date" => "required|date",
-            "arrival_location_id" => "required|array|min:1",
+            "arrival_location_id" => "nullable|array|min:1",
             "arrival_location_id.*" => "integer|exists:arrival_locations,id",
-            "arrival_sub_location_id" => "required|array|min:1",
+            "arrival_sub_location_id" => "nullable|array|min:1",
             "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "contract_type" => "required|in:pohanch,x-mill",

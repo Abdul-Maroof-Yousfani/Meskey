@@ -32,6 +32,9 @@ class SalesInvoice extends Model
         'am_change_made'
     ];
 
+
+    
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

@@ -24,10 +24,10 @@ class DeliveryChallanData extends Model
     public static function booted() {
         static::created(function($delivery_challan_data) {
             $debit_account_id = 103;
-            $credit_account_id = 28;
             $voucher_type_id = 3;
-
+            
             $voucher_no = $delivery_challan_data->deliveryChallan->dc_no;
+            $credit_account_id = $delivery_challan_data->product->account_id;
 
             createTransaction(
                 $delivery_challan_data->qty * $delivery_challan_data->rate,
