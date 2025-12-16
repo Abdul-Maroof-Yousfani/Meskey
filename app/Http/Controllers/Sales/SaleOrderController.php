@@ -133,6 +133,7 @@ class SaleOrderController extends Controller
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
+            $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
 
             // Update parent sale order data
             $sales_order->update($payload);
