@@ -48,7 +48,7 @@
             </td>
             <td>
                 <input type="text" name="qty[]" id="qty_{{ $index }}"
-                    value="{{ $data->qty - $delivery_order->spent }}"
+                    value="{{ round($data->bag_size / $balance) }}"
                     class="form-control qty" step="0.01" min="0" oninput="calc(this)">
             </td>
             <td>
