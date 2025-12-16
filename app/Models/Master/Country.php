@@ -13,7 +13,6 @@ class Country extends Model
         'name',
         'alpha_2_code',
         'alpha_3_code',
-        'region',
         'phone_code',
     ];
 
