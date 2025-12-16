@@ -39,8 +39,8 @@
                 class="form-control" min="0" readonly>
 
 
-            <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_0" value="{{ $data->id }}" class="form-control sales_inquiry_id" onkeyup="calc(this)" step="0.01"
-                min="0">
+            <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_0" value="{{ $data->id }}"
+                class="form-control sales_inquiry_id" onkeyup="calc(this)" step="0.01" min="0">
         </td>
 
         <td>
@@ -83,6 +83,11 @@
         <td>
             <input type="text" name="amount[]" id="pack_size_{{ $i }}"
                 value="{{ $data->qty * $data->rate }}" class="form-control amount" readonly>
+        </td>
+
+         <td>
+            <input type="text" name="description[]" id="pack_size_{{ $i }}"
+                value="{{ $data->description }}" class="form-control amount" readonly>
         </td>
 
         <td>

@@ -182,6 +182,7 @@
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Amount</th>
+                            <th>Description</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -238,6 +239,11 @@
                             <td>
                                 <input type="text" name="amount[]" id="amount_0" class="form-control amount"
                                     readonly>
+                            </td>
+
+                            <td>
+                                <input type="text" name="description[]" id="description_0" class="form-control description"
+                                    >
                             </td>
                             <td>
                                 <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"

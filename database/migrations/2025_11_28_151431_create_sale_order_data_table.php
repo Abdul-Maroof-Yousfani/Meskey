@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string("bag_size");
             $table->string("no_of_bags");
             $table->foreignId("sale_order_id")->constrained("sales_orders")->cascadeOnDelete();
+            $table->string("description")->nullable();
             $table->timestamps();
         });
     }

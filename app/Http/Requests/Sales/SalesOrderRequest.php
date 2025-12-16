@@ -52,6 +52,10 @@ class SalesOrderRequest extends FormRequest
             "brand_id" => "required",
             "brand_id.*" => "required",
 
+
+            "description" => "nullable",
+            "description.*" => "nullable",
+
             "pack_size" => "required",
             "pack_size.*" => "required",
 

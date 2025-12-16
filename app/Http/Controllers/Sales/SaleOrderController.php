@@ -109,6 +109,7 @@ class SaleOrderController extends Controller
                     'bag_type' => $request->bag_type[$index],
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
+                    'description' => $request->description[$index] ?? ""
                 ]);
             }
             DB::commit();
@@ -175,6 +176,7 @@ class SaleOrderController extends Controller
                     'bag_type' => $request->bag_type[$index] ?? $request->bag_type_id[$index] ?? null,
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
+                    'description' => $request->description[$index]
                 ]);
             }
             DB::commit();

@@ -200,6 +200,7 @@
                             <th>Amount</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
+                            <th>Description</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -267,6 +268,10 @@
                                 <td style="display: none;">
                                     <input type="text" value="0" name="pack_size[]" id="pack_size_{{ $index }}"
                                         value="{{ $data->pack_size }}" class="form-control pack-size">
+                                </td>
+                                <td>
+                                    <input type="text" name="description[]" id="description{{ $index }}"
+                                        value="{{ $data->description }}" class="form-control pack-size">
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-danger btn-sm removeRowBtn"
