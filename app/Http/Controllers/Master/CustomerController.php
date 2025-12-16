@@ -15,10 +15,6 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
-    function __construct()
-    {
-        $this->middleware('check.company:raw-material-customer', ['only' => ['index', 'edit', 'getList']]);
-    }
     /**
      * Display a listing of the resource.
      */
@@ -33,7 +29,8 @@ class CustomerController extends Controller
     public function getList(Request $request)
     {
         $Customers = Customer::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%'.$request->search.'%';
+
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
             });
@@ -42,7 +39,7 @@ class CustomerController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        //dd($Suppliers->first()->company_location_ids);
+        // dd($Suppliers->first()->company_location_ids);
         return view('management.master.customer.getList', compact('Customers'));
     }
 
@@ -85,22 +82,21 @@ class CustomerController extends Controller
             $requestData['unique_no'] = generateUniqueNumber('customers', null, null, 'unique_no');
             $requestData['name'] = $request->company_name;
             $requestData['company_location_ids'] = $request->company_location_ids;
-            // $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
-            // $isSupplier = $requestData['is_gate_buying_supplier'] == 'Yes';
 
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'customers'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '1-5', 'customers'));
                 $requestData['account_id'] = $account->id;
             }
 
             $customer = Customer::create($requestData);
 
-            if (!empty($request->company_bank_name)) {
+            if (! empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
-                    if (empty($bankName))
+                    if (empty($bankName)) {
                         continue;
+                    }
 
                     CustomerCompanyBankDetail::create([
                         'bank_name' => $bankName,
@@ -108,15 +104,16 @@ class CustomerController extends Controller
                         'branch_code' => $request->company_branch_code[$key] ?? '',
                         'account_title' => $request->company_account_title[$key] ?? '',
                         'account_number' => $request->company_account_number[$key] ?? '',
-                        'customer_id' => $customer->id
+                        'customer_id' => $customer->id,
                     ]);
                 }
             }
 
-            if (!empty($request->owner_bank_name)) {
+            if (! empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
-                    if (empty($bankName))
+                    if (empty($bankName)) {
                         continue;
+                    }
 
                     CustomerOwnerBankDetail::create([
                         'bank_name' => $bankName,
@@ -124,14 +121,14 @@ class CustomerController extends Controller
                         'branch_code' => $request->owner_branch_code[$key] ?? '',
                         'account_title' => $request->owner_account_title[$key] ?? '',
                         'account_number' => $request->owner_account_number[$key] ?? '',
-                        'customer_id' => $customer->id
+                        'customer_id' => $customer->id,
                     ]);
                 }
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
- 
-                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3',  'brokers'));
+
+                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
 
                 $brokerData = [
                     'company_id' => $customer->company_id ?? null,
@@ -146,8 +143,6 @@ class CustomerController extends Controller
                     'status' => $customer->status,
                 ];
 
-
-
                 $broker = Broker::create($brokerData);
             }
 
@@ -155,13 +150,14 @@ class CustomerController extends Controller
 
             return response()->json([
                 'success' => 'Customer created successfully.',
-                'data' => []
+                'data' => [],
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'error' => 'Failed to create customer. Please try again.',
-                'details' => config('app.debug') ? $e->getMessage() : null
+                'details' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -173,7 +169,7 @@ class CustomerController extends Controller
     {
         $customer = Customer::with([
             'companyBankDetails',
-            'ownerBankDetails'
+            'ownerBankDetails',
         ])->findOrFail($id);
 
         $companyLocations = CompanyLocation::all();
@@ -187,7 +183,7 @@ class CustomerController extends Controller
             'customer' => $customer,
             'companyLocations' => $companyLocations,
             'selectedLocations' => $selectedLocations,
-            'accounts' => $accounts
+            'accounts' => $accounts,
         ]);
     }
 
@@ -201,12 +197,17 @@ class CustomerController extends Controller
         try {
             $data = $request->validated();
             $requestData = $request->all();
-            // $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
-            if ($request->account_id) {
-                $requestData['account_id'] = $request->account_id;
-            } elseif (empty($customer->account_id)) { 
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'customers'));
 
+            if ($customer->account) {
+                // Existing account update
+                $customer->account->update([
+                    'name' => $request->company_name,
+                ]);
+            } elseif ($request->account_id) {
+                $requestData['account_id'] = $request->account_id;
+            } else {
+                // New account create
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '1-5', 'customers'));
                 $requestData['account_id'] = $account->id;
             }
 
@@ -264,13 +265,14 @@ class CustomerController extends Controller
 
             return response()->json([
                 'success' => 'Customer updated successfully.',
-                'data' => []
+                'data' => [],
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'error' => 'Failed to update Customer. Please try again.',
-                'details' => config('app.debug') ? $e->getMessage() : null
+                'details' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -281,8 +283,9 @@ class CustomerController extends Controller
         $updatedIds = [];
 
         foreach ($bankNames as $index => $bankName) {
-            if (empty($bankName))
+            if (empty($bankName)) {
                 continue;
+            }
 
             $bankData = [
                 'bank_name' => $bankName,
@@ -301,7 +304,7 @@ class CustomerController extends Controller
         }
 
         $toDelete = array_diff($existingIds, $updatedIds);
-        if (!empty($toDelete)) {
+        if (! empty($toDelete)) {
             $customer->{$relation}()->whereIn('id', $toDelete)->delete();
         }
     }
@@ -312,6 +315,7 @@ class CustomerController extends Controller
     public function destroy(Customer $customer)
     {
         $customer->delete();
-        return response()->json(['success' => 'Category deleted successfully.'], 200);
+
+        return response()->json(['success' => 'Customer deleted successfully.'], 200);
     }
 }

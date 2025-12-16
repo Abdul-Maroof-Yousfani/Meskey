@@ -15,12 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 class SupplierController extends Controller
 {
-
-
-    function __construct()
+    public function __construct()
     {
         $this->middleware('check.company:raw-material-supplier', ['only' => ['index', 'edit', 'getList']]);
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -35,7 +34,8 @@ class SupplierController extends Controller
     public function getList(Request $request)
     {
         $Suppliers = Supplier::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%'.$request->search.'%';
+
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
             });
@@ -44,7 +44,7 @@ class SupplierController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        //dd($Suppliers->first()->company_location_ids);
+        // dd($Suppliers->first()->company_location_ids);
         return view('management.master.supplier.getList', compact('Suppliers'));
     }
 
@@ -99,10 +99,11 @@ class SupplierController extends Controller
 
             $supplier = Supplier::create($requestData);
 
-            if (!empty($request->company_bank_name)) {
+            if (! empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
-                    if (empty($bankName))
+                    if (empty($bankName)) {
                         continue;
+                    }
 
                     SupplierCompanyBankDetail::create([
                         'bank_name' => $bankName,
@@ -110,15 +111,16 @@ class SupplierController extends Controller
                         'branch_code' => $request->company_branch_code[$key] ?? '',
                         'account_title' => $request->company_account_title[$key] ?? '',
                         'account_number' => $request->company_account_number[$key] ?? '',
-                        'supplier_id' => $supplier->id
+                        'supplier_id' => $supplier->id,
                     ]);
                 }
             }
 
-            if (!empty($request->owner_bank_name)) {
+            if (! empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
-                    if (empty($bankName))
+                    if (empty($bankName)) {
                         continue;
+                    }
 
                     SupplierOwnerBankDetail::create([
                         'bank_name' => $bankName,
@@ -126,14 +128,14 @@ class SupplierController extends Controller
                         'branch_code' => $request->owner_branch_code[$key] ?? '',
                         'account_title' => $request->owner_account_title[$key] ?? '',
                         'account_number' => $request->owner_account_number[$key] ?? '',
-                        'supplier_id' => $supplier->id
+                        'supplier_id' => $supplier->id,
                     ]);
                 }
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
- 
-                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3',  'brokers'));
+
+                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
 
                 $brokerData = [
                     'company_id' => $supplier->company_id ?? null,
@@ -148,8 +150,6 @@ class SupplierController extends Controller
                     'status' => $supplier->status,
                 ];
 
-
-
                 $broker = Broker::create($brokerData);
             }
 
@@ -157,13 +157,14 @@ class SupplierController extends Controller
 
             return response()->json([
                 'success' => 'Supplier created successfully.',
-                'data' => []
+                'data' => [],
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'error' => 'Failed to create supplier. Please try again.',
-                'details' => config('app.debug') ? $e->getMessage() : null
+                'details' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -175,7 +176,7 @@ class SupplierController extends Controller
     {
         $supplier = Supplier::with([
             'companyBankDetails',
-            'ownerBankDetails'
+            'ownerBankDetails',
         ])->findOrFail($id);
 
         $companyLocations = CompanyLocation::all();
@@ -189,7 +190,7 @@ class SupplierController extends Controller
             'supplier' => $supplier,
             'companyLocations' => $companyLocations,
             'selectedLocations' => $selectedLocations,
-            'accounts' => $accounts
+            'accounts' => $accounts,
         ]);
     }
 
@@ -204,11 +205,17 @@ class SupplierController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
             $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
-            if ($request->account_id) {
-                $requestData['account_id'] = $request->account_id;
-            } elseif (empty($supplier->account_id)) { 
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
 
+            if ($supplier->account) {
+                // Existing account update
+                $supplier->account->update([
+                    'name' => $request->company_name,
+                ]);
+            } elseif ($request->account_id) {
+                $requestData['account_id'] = $request->account_id;
+            } else {
+                // New account create
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
                 $requestData['account_id'] = $account->id;
             }
 
@@ -266,13 +273,14 @@ class SupplierController extends Controller
 
             return response()->json([
                 'success' => 'Supplier updated successfully.',
-                'data' => []
+                'data' => [],
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'error' => 'Failed to update supplier. Please try again.',
-                'details' => config('app.debug') ? $e->getMessage() : null
+                'details' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -283,8 +291,9 @@ class SupplierController extends Controller
         $updatedIds = [];
 
         foreach ($bankNames as $index => $bankName) {
-            if (empty($bankName))
+            if (empty($bankName)) {
                 continue;
+            }
 
             $bankData = [
                 'bank_name' => $bankName,
@@ -303,7 +312,7 @@ class SupplierController extends Controller
         }
 
         $toDelete = array_diff($existingIds, $updatedIds);
-        if (!empty($toDelete)) {
+        if (! empty($toDelete)) {
             $supplier->{$relation}()->whereIn('id', $toDelete)->delete();
         }
     }
@@ -314,6 +323,7 @@ class SupplierController extends Controller
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
+
         return response()->json(['success' => 'Category deleted successfully.'], 200);
     }
 }

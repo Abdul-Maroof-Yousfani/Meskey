@@ -21,14 +21,14 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
-                            <small>{{ $row->email ?? '--' }}</small> <br>
+                            {{ $row->owner_name }} <br>
+                            {{-- <small class="text-black-50">{{ $row->owner_mobile_no ?? '--' }}</small> <br> --}}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
                             {{ $row->company_name }} <br>
-                            <small>{{ $row->company_mobile_no ?? '--' }}</small> <br>
+                            {{-- <small>{{ $row->company_mobile_no ?? '--' }}</small> <br> --}}
                         </p>
                     </td>
                     <td>

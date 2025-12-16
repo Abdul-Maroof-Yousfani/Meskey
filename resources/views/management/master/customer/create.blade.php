@@ -1,19 +1,6 @@
 <form action="{{ route('customer.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.customer') }}" />
-    {{-- <div class="row form-mar mb-2">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Gate Buying Supplier
-            </h6>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="checkbox">
-                <input name="is_gate_buying_supplier" type="checkbox" id="is_gate_buying_supplier" value="Yes">
-                <label for="is_gate_buying_supplier"><span>Gate buying supplier</span></label>
-            </div>
-        </div>
-    </div> --}}
     <div class="row ">
 
         <div class="col-12">
@@ -318,10 +305,13 @@
 
     toggleRemoveButton();
 
-    $('body').on('click', '.add-more', function() {
-        var newCard = $('#card-container .clonecard:first').clone();
+    $('body').off('click', '.add-more').on('click', '.add-more', function(e) {
+        e.preventDefault();
+        var lastCard = $('#card-container .clonecard:last');
+        var newCard = lastCard.clone();
         newCard.find('input').val('');
-        $('#card-container').append(newCard);
+        newCard.find('.remove-card').show();
+        lastCard.after(newCard);
         toggleRemoveButton();
     });
 
@@ -343,10 +333,13 @@
 
     toggleRemoveButton2();
 
-    $('body').on('click', '.add-more2', function() {
-        var newCard = $('#card-container2 .clonecard2:first').clone();
+    $('body').off('click', '.add-more2').on('click', '.add-more2', function(e) {
+        e.preventDefault();
+        var lastCard = $('#card-container2 .clonecard2:last');
+        var newCard = lastCard.clone();
         newCard.find('input').val('');
-        $('#card-container2').append(newCard);
+        newCard.find('.remove-card2').show();
+        lastCard.after(newCard);
         toggleRemoveButton2();
     });
 
