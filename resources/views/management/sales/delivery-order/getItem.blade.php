@@ -56,7 +56,7 @@
         </td>
         <td>
             <input type="text" name="desc[]" id="desc_{{ $index }}"
-                class="form-control" value="Editing Remarks" readonly>
+                class="form-control" value="{{ $data->description }}" readonly>
         </td>
         <td style="display: none">
             <input type="text" name="pack_size[]" id="pack_size_{{ $index }}" value="{{ $data->pack_size }}"
