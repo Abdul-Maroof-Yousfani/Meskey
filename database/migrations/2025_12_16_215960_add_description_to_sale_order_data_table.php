@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sale_order_data', function (Blueprint $table) {
-            //
+        Schema::table('sales_order_data', function (Blueprint $table) {
+            $table->string("description")->nullable();
         });
     }
 
