@@ -21,14 +21,14 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
-                            <small>{{ $row->email ?? '--' }}</small> <br>
+                            {{ $row->owner_name }} <br>
+                            {{-- <small>{{ $row->email ?? '--' }}</small> <br> --}}
                         </p>
                     </td>
                     <td>
                         <p class="m-0">
                             {{ $row->company_name }} <br>
-                            <small>{{ $row->company_mobile_no ?? '--' }}</small> <br>
+                            {{-- <small>{{ $row->company_mobile_no ?? '--' }}</small> <br> --}}
                         </p>
                     </td>
                     <td>
@@ -46,13 +46,13 @@
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
                         @endcan
-                        @can('role-delete')
+                        {{-- @can('role-delete')
                             <a onclick="deletemodal('{{ route('customer.destroy', $row->id) }}','{{ route('get.customer') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">
 
                                 <i class="ft-x font-medium-3"></i>
                             </a>
-                        @endcan
+                        @endcan --}}
                     </td>
                 </tr>
             @endforeach

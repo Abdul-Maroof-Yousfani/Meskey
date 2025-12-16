@@ -594,7 +594,15 @@
                         </ul>
                     </li>
                     @endcanAccess
+                    @canAccess('export-order')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('export-order.index') }}" onclick="loadPageContent('{{ route('export-order.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Extended">Export Order</span></a>
+                    </li>
+                    @endcanAccess
                 </ul>
+
             </li>
             @endcanAccess
 
