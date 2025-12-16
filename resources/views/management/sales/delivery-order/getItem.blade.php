@@ -37,7 +37,7 @@
             <span style="font-size: 14px;">Total Quantity: {{ $total_quantity }}</span>
         </td>
         <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->bag_size / ($total_quantity - $used_quantity) }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
+            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->bag_size / ($total_quantity - $used_quantity)) }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>
