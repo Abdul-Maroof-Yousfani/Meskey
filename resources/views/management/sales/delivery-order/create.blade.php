@@ -550,15 +550,15 @@
             let bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
 
             if (balance && bagsResult > balance) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Limit Exceeded',
-                    text: 'No of bags cannot exceed available balance (' + balance + ').',
-                });
-                bagsResult = balance;
+                // Swal.fire({
+                //     icon: 'warning',
+                //     title: 'Limit Exceeded',
+                //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                // });
+                // bagsResult = balance;
                 // adjust qty to match the capped bags
-                const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
-                qty.val(limitedQty.toFixed(2));
+                // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
+                // qty.val(limitedQty.toFixed(2));
             }
 
             no_of_bags.val(bagsResult);
@@ -586,13 +586,13 @@
                 if (bag_size.val() && qty.val()) {
                     const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
                     if (bagsResult > balance) {
-                        valid = false;
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Limit Exceeded',
-                            text: 'No of bags cannot exceed available balance (' + balance + ').',
-                        });
-                        return false; // break .each
+                        // valid = false;
+                        // Swal.fire({
+                        //     icon: 'warning',
+                        //     title: 'Limit Exceeded',
+                        //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                        // });
+                        // return false; // break .each
                     }
                 }
             }

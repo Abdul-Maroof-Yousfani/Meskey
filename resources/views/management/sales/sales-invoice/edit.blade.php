@@ -455,7 +455,7 @@
         const gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
         // Calculate Qty = Packing * No of Bags
-        const qty =  packing / parseFloat(qtyInput.val());
+        const qty =  (packing / parseFloat(qtyInput.val())).toFixed();
         noOfBagsInput.val(qty);
         // alert(qty);
         // return;

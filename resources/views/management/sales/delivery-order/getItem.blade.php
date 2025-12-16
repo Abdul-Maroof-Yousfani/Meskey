@@ -114,14 +114,14 @@
         let bagsResult = Math.round(bagSizeVal / qtyVal);
 
         if (balance && bagsResult > balance) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Limit Exceeded',
-                text: 'No of bags cannot exceed available balance (' + balance + ').',
-            });
-            bagsResult = balance;
-            const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
-            qty.val(limitedQty.toFixed(2));
+            // Swal.fire({
+            //     icon: 'warning',
+            //     title: 'Limit Exceeded',
+            //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+            // });
+            // bagsResult = balance;
+            // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
+            // qty.val(limitedQty.toFixed(2));
         }
   
         no_of_bags.val(bagsResult);
