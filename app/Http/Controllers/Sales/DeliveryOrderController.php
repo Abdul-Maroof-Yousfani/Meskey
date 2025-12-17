@@ -79,7 +79,6 @@ class DeliveryOrderController extends Controller
                 'remarks' => $request->remarks ?? "",
                 'company_id' => $request->company_id,
                 'created_by' => auth()->user()->id,
-                "description" => "",
                 'am_approval_status' => 'pending',
             ]);
 
@@ -138,7 +137,7 @@ class DeliveryOrderController extends Controller
                     'no_of_bags' => $request->no_of_bags[$key],
                     'pack_size' => $request->pack_size[$key],
                     'so_data_id' => $request->so_data_id[$key],
-                    "description" => $request->desc[$key]
+                    "description" => $request->desc[$key] ?? ""
                 ]);
             }
 
@@ -458,7 +457,6 @@ class DeliveryOrderController extends Controller
                 'company_id' => $request->company_id,
                 'remarks' => $request->remarks ?? "",
                 'am_approval_status' => 'pending',
-                "description" => "",
                 'am_change_made' => 1
             ]);
 
@@ -505,7 +503,7 @@ class DeliveryOrderController extends Controller
                     'bag_size' => $request->bag_size[$key],
                     'bag_type' => $request->bag_type[$key],
                     "so_data_id" => $request->so_data_id[$key],
-                    "description" => $request->desc[$key] ?? ""
+                    "description" => $request->desc[$key] ?? "-"
                 ]);
             }
 
