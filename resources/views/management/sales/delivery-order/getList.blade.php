@@ -124,7 +124,7 @@
                                             </g>
                                         </g>
                                     </svg>
-                                    <p class="text-muted mt-3">No Sale Order found</p>
+                                    <p class="text-muted mt-3">No Delivery Order found</p>
                                 </div>
                             </td>
                         </tr>
