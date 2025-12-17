@@ -112,7 +112,7 @@ class DeliveryOrderController extends Controller
                     $rv->save();
                 }
 
-                $delivery_order->receipt_vouchers()->syncWithoutDetaching($syncData);
+                $delivery_order->receipt_vouchers()->sync($syncData);
             }
 
 
