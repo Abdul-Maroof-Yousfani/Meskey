@@ -765,6 +765,8 @@
 
                 so_amount = res.so_amount;
 
+                $("#delivery_date").val(res.delivery_date);
+
                 // $("#locations").val(res.locations).trigger("change");
             },
             error: function(error) {

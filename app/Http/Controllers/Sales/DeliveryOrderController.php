@@ -321,6 +321,7 @@ class DeliveryOrderController extends Controller
             'so_amount' => $sale_order->sales_order_data()->sum(DB::raw('qty * rate')),
             'amount_received' => $sale_order->delivery_order_transactions()->sum(DB::raw('advance_amount')),
             'sauda_type' => strtolower($sale_order->sauda_type),
+            'delivery_date' => $sale_order->delivery_date,
             'payment_term_id' => $sale_order->payment_term_id,
             'locations' => $locations,
             'factory_map' => $factoryMap,
