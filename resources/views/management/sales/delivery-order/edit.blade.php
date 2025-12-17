@@ -132,7 +132,7 @@
                             <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2">
                                 <option value="">Select Receipt Vouchers</option>
                                 @foreach ($receipt_vouchers as $receipt_voucher)
-                                    <option value="{{ $receipt_voucher->id }}" @selected(in_array($receipt_voucher->id, $delivery_order->receipt_vouchers->pluck('pivot.receipt_voucher_id', 'id')->toArray()))
+                                    <option value="{{ $receipt_voucher->id }}" @selected($receipt_voucher->id == $delivery_order->withhold_for_rv_id)
                                         data-amount="{{ $receipt_voucher->remaining_amount ?? $receipt_voucher->withhold_amount ?? 0 }}">
                                         {{ $receipt_voucher->unique_no }}</option>
                                 @endforeach
