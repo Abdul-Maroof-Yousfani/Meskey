@@ -375,9 +375,9 @@ class DeliveryOrderController extends Controller
         foreach ($receipt_vouchers as $receipt_voucher) {
             $remaining_amount = $receipt_voucher->total_amount - $receipt_voucher['spent_amount'];
 
-            if ($remaining_amount <= 0) {
-                continue;
-            }
+            // if ($remaining_amount <= 0) {
+            //     continue;
+            // }
 
             $data[] = [
                 'id' => $receipt_voucher->id,
