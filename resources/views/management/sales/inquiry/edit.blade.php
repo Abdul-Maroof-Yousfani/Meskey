@@ -307,7 +307,7 @@
         }
 
         // No of bags = bag size * quantity (per requirement)
-        const result = (qty / bag_size).toFixed();
+        const result = (bag_size / qty).toFixed();
         no_of_bags.val(result);
     }
 
