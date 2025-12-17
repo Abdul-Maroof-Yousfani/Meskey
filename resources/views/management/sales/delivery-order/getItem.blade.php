@@ -115,7 +115,7 @@
             return;
         }
 
-        let bagsResult = Math.round(bagSizeVal / qtyVal);
+        let bagsResult = Math.round(qtyVal / bagSizeVal);
 
         if (balance && bagsResult > balance) {
             // Swal.fire({
