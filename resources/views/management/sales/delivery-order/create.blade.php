@@ -294,7 +294,8 @@
 
     function check_so_type() {
         const type = $("#sale_order").find("option:selected").data("type");
-        if (type == 3) {
+        console.log(type);
+        if (type == 10) {
             $(".advanced").css("display", "block");
         } else {
             $(".advanced").css("display", "none");
