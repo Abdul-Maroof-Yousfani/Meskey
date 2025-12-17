@@ -351,7 +351,7 @@ class DeliveryOrderController extends Controller
     {
         $customer_id = $request->customer_id;
 
-        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')->select('id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
+        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')->where("customer_id", $customer_id)->select('id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
             ->get()
             ->map(function ($receipt_voucher) {
                 $sum = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
