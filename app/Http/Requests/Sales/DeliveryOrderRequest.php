@@ -61,7 +61,7 @@ class DeliveryOrderRequest extends FormRequest
 
         $saleOrder = SalesOrder::find(request()->sale_order_id);
        
-        if($saleOrder && $saleOrder->pay_type_id == 3) {
+        if($saleOrder && $saleOrder->pay_type_id == 10) {
               $rules = array_merge($rules, [
                 'advance_amount'   => 'required|numeric',
                 'withhold_amount'  => 'nullable|numeric',
