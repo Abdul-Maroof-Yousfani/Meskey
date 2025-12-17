@@ -345,7 +345,7 @@
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
-                                        min="0" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
+                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
                                 </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"
