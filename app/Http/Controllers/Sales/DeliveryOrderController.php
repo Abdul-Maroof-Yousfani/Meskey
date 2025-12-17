@@ -79,6 +79,7 @@ class DeliveryOrderController extends Controller
                 'remarks' => $request->remarks ?? "",
                 'company_id' => $request->company_id,
                 'created_by' => auth()->user()->id,
+                "description" => "",
                 'am_approval_status' => 'pending',
             ]);
 
@@ -457,6 +458,7 @@ class DeliveryOrderController extends Controller
                 'company_id' => $request->company_id,
                 'remarks' => $request->remarks ?? "",
                 'am_approval_status' => 'pending',
+                "description" => "",
                 'am_change_made' => 1
             ]);
 
