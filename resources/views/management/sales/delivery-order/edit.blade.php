@@ -949,6 +949,10 @@
 
                 // Re-apply saved location/arrival/section after refreshing maps
                 $("#locations").val(String(initialLocationId || ''));
+
+
+                $("#delivery_date").val(res.delivery_date);
+                $("#delivery_date").prop("readonly", true);
                 // selectLocation(document.getElementById("locations"), true);
 
                 // $("#locations").val(res.locations).trigger("change");
