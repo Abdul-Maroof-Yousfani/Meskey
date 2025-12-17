@@ -64,8 +64,8 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="font-weight-bold">Weighbridge Amount</label>
-                <input type="number" class="form-control editable-field" name="weighbridge_amount" value="{{ $receivingRequest->inhouse_weighbridge_amount }}" step="0.01" min="0" placeholder="Weighbridge Amount">
+                <label class="font-weight-bold">Inhouse Weighbridge Amount</label>
+                <input type="number" class="form-control editable-field" name="inhouse_weighbridge_amount" value="{{ $receivingRequest->weighbridge_amount }}" step="0.01" min="0" placeholder="Inhouse Weighbridge Amount">
             </div>
         </div>
         <div class="col-md-3">
@@ -81,9 +81,10 @@
             </div>
         </div>
         <div class="col-md-3">
+            
             <div class="form-group">
-                <label class="font-weight-bold">Inhouse Weighbridge Amount</label>
-                <input type="number" class="form-control editable-field" name="inhouse_weighbridge_amount" value="{{ $receivingRequest->weighbridge_amount }}" step="0.01" min="0" placeholder="Inhouse Weighbridge Amount">
+                <label class="font-weight-bold">Weighbridge Amount</label>
+                <input type="number" class="form-control editable-field" name="weighbridge_amount" value="{{ $receivingRequest->inhouse_weighbridge_amount }}" step="0.01" min="0" placeholder="Weighbridge Amount">
             </div>
         </div>
     </div>
