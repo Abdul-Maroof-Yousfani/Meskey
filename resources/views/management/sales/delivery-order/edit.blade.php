@@ -322,7 +322,7 @@
                                 <td>
                                     <input type="hidden" class="allowed_value" value="{{ $allowed_value }}" />
                                     <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        value="{{ round($data->bag_size / ($data->qty ?? 0)) }}" readonly
+                                        value="{{ round(($data->qty ?? 0) / $data->bag_size) }}" readonly
                                         class="form-control no_of_bags" step="0.01" min="0">
                                 </td>
                                 <td>
