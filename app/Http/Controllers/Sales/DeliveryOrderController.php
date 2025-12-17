@@ -91,7 +91,7 @@ class DeliveryOrderController extends Controller
             // Run it if user intends to apply withhold amounts
 
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            if ($salesOrder->pay_type_id == 3) {
+            if ($salesOrder->pay_type_id == 10) {
                 foreach ($receipt_vouchers as $rv) {
                     $last_withheld_amount = $rv->withhold_amount;
 
