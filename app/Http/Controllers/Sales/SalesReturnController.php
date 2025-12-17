@@ -232,7 +232,7 @@ class SalesReturnController extends Controller
                     "gst_percentage" => $request->gst_percent[$index],
                     "gst_amount" => $request->gst_amount[$index],
                     "net_amount"  => $request->net_amount[$index],
-                    "line_desc" => $request->line_desc[$index],
+                    "line_desc" => $request->line_desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index]
                 ]);
             }
