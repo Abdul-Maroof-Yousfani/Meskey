@@ -50,7 +50,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-4 ">
                     <div class="form-group">
                         <label class="form-label">Contract Type:</label>
                         <input type="hidden" name="sauda_type" id="sauda_type_hidden">
