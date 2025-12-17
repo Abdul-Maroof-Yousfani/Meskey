@@ -766,6 +766,7 @@
                 so_amount = res.so_amount;
 
                 $("#delivery_date").val(res.delivery_date);
+                $("#delivery_date").prop("disabled", true);
 
                 // $("#locations").val(res.locations).trigger("change");
             },
