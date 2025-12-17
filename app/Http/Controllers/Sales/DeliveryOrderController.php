@@ -95,16 +95,6 @@ class DeliveryOrderController extends Controller
                 foreach ($receipt_vouchers as $rv) {
                     $last_withheld_amount = $rv->withhold_amount;
 
-                    // if ($rv->id == $request->withhold_for_rv) {
-                    //     $rv->withhold_amount = $request->withhold_amount;
-                    //     $rv->remaining_amount = $rv->total_amount - $rv->withhold_amount;
-                    // } else {
-                    //     $rv->withhold_amount = 0;
-                    //     $rv->remaining_amount = $rv->total_amount - $rv->withhold_amount;
-                    // }
-
-                    // $rv->save();
-
                     $withhold_amount = 0;
                     $spent_amount = $rv->delivery_orders?->sum(fn ($do) => $do->pivot->amount) ?? 0;
                     $remaining_amount = $rv->total_amount - $spent_amount;
@@ -361,7 +351,7 @@ class DeliveryOrderController extends Controller
     {
         $customer_id = $request->customer_id;
 
-        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')->select('remaining_amount', 'id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
+        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')->select('id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
             ->get()
             ->map(function ($receipt_voucher) {
                 $sum = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
