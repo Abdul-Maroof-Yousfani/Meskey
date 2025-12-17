@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SalesInquiry, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -626,6 +626,20 @@ function delivery_order_balance($sale_order_data_id) {
     return $balance;
 }
 
+function delivery_order_bags_used($sale_order_data_id) {
+    $data = DeliveryOrderData::where("so_data_id", $sale_order_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    return $spent;
+}
+
+
+function delivery_challan_bags_used($delivery_order_data_id) {
+    $data = DeliveryChallanData::where("do_data_id", $delivery_order_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    return $spent;
+}
 
 function delivery_challan_balance($delivery_order_data_id) {
     $data = DeliveryChallanData::where("do_data_id", $delivery_order_data_id)->get();
@@ -635,6 +649,24 @@ function delivery_challan_balance($delivery_order_data_id) {
     $balance = (int)$able_to_spend - (int)$spent;
 
     return $balance;
+}
+
+
+function sales_invoice_balance($delivery_challan_data_id) {
+    $data = SalesInvoiceData::where("dc_data_id", $delivery_challan_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    $able_to_spend = (DeliveryChallanData::where("id", $delivery_challan_data_id)->first())->no_of_bags;
+    $balance = (int)$able_to_spend - (int)$spent;
+
+    return $balance;
+}
+
+function sales_invoice_bags_used($delivery_challan_data_id) {
+    $data = SalesInvoiceData::where("dc_data_id", $delivery_challan_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    return $spent;
 }
 
 

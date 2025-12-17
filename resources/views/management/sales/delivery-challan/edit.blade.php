@@ -251,7 +251,7 @@
                             <th style="display: none">Packing</th>
                             <th>Action</th>
                         </tr>
-                    </thead>
+                    </thead>    
                     <tbody id="dcTableBody">
                         @foreach ($delivery_challan->delivery_challan_data as $index => $data)
                             @php
@@ -301,10 +301,19 @@
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         value="{{ $balance }}"
                                         class="form-control no_of_bags" step="0.01" min="0" readonly>
+                                    
+                                    <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_challan_bags_used($data->do_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_challan_balance($data->do_data_id) }}</span>
+
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->qty }}"
+                                        onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
+                                        data-balance="{{ delivery_challan_balance($data->do_data_id) + $data->no_of_bags }}"
                                         class="form-control qty" step="0.01" min="0" oninput="calc(this)">
                                 </td>
                                 <td>
@@ -374,6 +383,22 @@
         // hydrateLocationsFromDos(initialSelectedDos);
     });
 
+    function check_balance(el, target) {
+      const balance = $(el).data("balance");
+      const value = $("#" + target).val();
+      
+      if(value > balance) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Cannot proceed more than ' + balance,
+        });
+            
+        $("#" + target).addClass("is-invalid");
+      } else {
+        $("#" + target).removeClass("is-invalid");
+      }
+  }
 
     sum = 0;
     so_amount = 0;

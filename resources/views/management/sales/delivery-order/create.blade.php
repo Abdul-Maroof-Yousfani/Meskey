@@ -451,6 +451,7 @@
         const qtyVal = ((remaining_amount / rate)).toFixed(2);
         $("#qty_0").val(qtyVal);
         no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+
         if(isNaN(no_of_bags)) {
             $("#no_of_bags_0").val(0);
         } else {
@@ -857,4 +858,6 @@
             }
         });
     }
+
+    
 </script>

@@ -547,6 +547,7 @@ function filterationCommon(
   }
 }
 
+
 if (!SUBMISSION_ON_ENTER) {
   $(document).on("keypress", "#ajaxSubmit input", function (e) {
     if (e.which === 13) {

@@ -31,13 +31,13 @@
             $total_quantity = $data->no_of_bags;
         @endphp
         <td>
-            <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" data-balance="{{ $balance }}" value="{{ $total_quantity - $used_quantity }}" class="form-control no_of_bags" step="0.01" min="0" readonly>
-            <span style="font-size: 14px;;">Used Quantity: {{ $used_quantity }}</span>
+            <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $total_quantity - $used_quantity }}" class="form-control no_of_bags" step="0.01" min="0" readonly>
+            <span style="font-size: 14px;;">Used Quantity: {{ delivery_order_bags_used($data->id) }}</span>
             <br />
-            <span style="font-size: 14px;">Total Quantity: {{ $total_quantity }}</span>
+            <span style="font-size: 14px;">Balance: {{ delivery_order_balance($data->id) }}</span>
         </td>
         <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" onchange="calc(this)" oninput="calc(this)">
+            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" onchange="calc(this);" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" oninput="calc(this)">
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>
@@ -70,6 +70,23 @@
 </script>
 
 <script>
+
+function check_balance(el, target) {
+      const balance = $(el).data("balance");
+      const value = $("#" + target).val();
+      
+      if(value > balance) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Cannot proceed more than ' + balance,
+        });
+            
+        $("#" + target).addClass("is-invalid");
+      } else {
+        $("#" + target).removeClass("is-invalid");
+      }
+  }
     function is_able_to_submit(el) {
         const quantity = $(el).val();
         const threshold = $(el).data("balance");

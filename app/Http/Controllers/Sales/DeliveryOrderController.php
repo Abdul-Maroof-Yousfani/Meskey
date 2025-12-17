@@ -60,6 +60,7 @@ class DeliveryOrderController extends Controller
         $receipt_vouchers = ReceiptVoucher::whereIn('id', $request?->receipt_vouchers ?? [])->get();
         // $locations = $request->locations;
 
+        
         try {
             $delivery_order = DeliveryOrder::create([
                 'customer_id' => $request->customer_id,
@@ -117,6 +118,11 @@ class DeliveryOrderController extends Controller
 
 
             foreach ($request->item_id as $key => $item) {
+                $balance = delivery_order_balance($request->so_data_id[$key]);
+                if($request->no_of_bags[$key] > $balance) {
+                    return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                }
+
                 $delivery_order->delivery_order_data()->create([
                     'item_id' => $request->item_id[$key],
                     'qty' => $request->qty[$key],
@@ -136,9 +142,8 @@ class DeliveryOrderController extends Controller
         } catch (\Exception $e) {
 
             DB::rollBack();
-            dd($e);
 
-            return response()->json(['error' => 'Something bad happened']);
+            return response()->json(['error' => $e->getMessage()]);
 
         }
 
@@ -484,6 +489,10 @@ class DeliveryOrderController extends Controller
             // Rebuild line items
             $delivery_order->delivery_order_data()->delete();
             foreach ($request->item_id as $key => $item) {
+                $balance =  delivery_order_balance($request->so_data_id[$key]);
+                if($request->no_of_bags[$key] > ($balance)) {
+                    return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                }
                 $delivery_order->delivery_order_data()->create([
                     'item_id' => $request->item_id[$key],
                     'qty' => $request->qty[$key],

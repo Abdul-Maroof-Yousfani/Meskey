@@ -301,6 +301,13 @@
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->qty }}" class="form-control qty"
                                         step="0.01" min="0" readonly>
+
+                                    <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_challan_bags_used($data->do_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_challan_balance($data->do_data_id) }}</span>
+
                                 </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"

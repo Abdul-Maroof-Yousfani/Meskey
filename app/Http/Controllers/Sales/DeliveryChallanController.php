@@ -73,6 +73,13 @@ class DeliveryChallanController extends Controller
             // Store delivery challan data items
             $createdItems = [];
             foreach($request->item_id as $index => $item) {
+
+                $balance = delivery_challan_balance($request->do_data_id[$index]);
+
+                if($request->no_of_bags[$index] > $balance) {
+                    return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
@@ -143,6 +150,7 @@ class DeliveryChallanController extends Controller
         $do_ids = $request->do_no;
         try {
 
+
             $delivery_challan->update([
                 "customer_id" => $request->customer_id,
                 "reference_number" => $request->reference_number,
@@ -168,6 +176,14 @@ class DeliveryChallanController extends Controller
             $delivery_challan->delivery_challan_data()->delete();
 
             foreach($request->item_id as $index => $item) {
+                
+
+                $balance = delivery_challan_balance($request->do_data_id[$index]);
+
+                if($request->no_of_bags[$index] > $balance) {
+                    return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                }
+
                 $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],

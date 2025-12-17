@@ -194,9 +194,17 @@
                                 @else
                                 <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $index }}" readonly class="form-control no_of_bags" step="0.01" min="0" value="{{ $data->no_of_bags }}">
                                 @endif
+
+                                <span style="font-size: 14px;;">Used Quantity:
+                                    {{ sales_invoice_bags_used($data->dc_data_id) }}</span>
+                                <br />
+                                <span style="font-size: 14px;">Balance:
+                                    {{ sales_invoice_balance($data->dc_data_id) }}</span>
+                                
+       
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="qty[]" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ $data->qty }}" onkeyup="calculateRow(this)">
+                                <input type="number" name="qty[]" data-balance="{{ sales_invoice_balance($data->dc_data_id) + $data->no_of_bags }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ $data->qty }}" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $index }}')">
                             </td>
                             <td style="min-width: 100px;">
                                 <input type="number" name="rate[]" id="rate_{{ $index }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $data->rate }}">
@@ -258,6 +266,23 @@
     $(document).ready(function() {
         $('.select2').select2();
     });
+
+    function check_balance(el, target) {
+        const balance = $(el).data("balance");
+        const value = $("#" + target).val();
+        
+        if(value > balance) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Exceeded',
+                text: 'Cannot proceed more than ' + balance,
+            });
+                
+            $("#" + target).addClass("is-invalid");
+        } else {
+            $("#" + target).removeClass("is-invalid");
+        }
+    }
 
     function selectLocation(el) {
         const company = $(el).val();

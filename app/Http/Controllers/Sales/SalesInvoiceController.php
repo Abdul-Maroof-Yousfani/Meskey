@@ -73,6 +73,11 @@ class SalesInvoiceController extends Controller
             // Store line items if provided
             if ($request->item_id) {
                 foreach ($request->item_id as $index => $item) {
+                    $balance = sales_invoice_balance($request->dc_data_id[$index]);
+
+                    if($request->no_of_bags[$index] > $balance) {
+                        return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                    }
                     $sales_invoice->sales_invoice_data()->create([
                         "item_id" => $request->item_id[$index],
                         "packing" => $request->packing[$index] ?? 0,
@@ -178,6 +183,11 @@ class SalesInvoiceController extends Controller
 
             if ($request->item_id) {
                 foreach ($request->item_id as $index => $item) {
+                    $balance = sales_invoice_balance($request->dc_data_id[$index]);
+
+                    if($request->no_of_bags[$index] > $balance) {
+                        return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                    }
                     $sales_invoice->sales_invoice_data()->create([
                         "item_id" => $request->item_id[$index],
                         "packing" => $request->packing[$index] ?? 0,

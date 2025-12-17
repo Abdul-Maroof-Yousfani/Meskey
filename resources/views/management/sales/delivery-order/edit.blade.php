@@ -39,7 +39,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no" value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
+                        <input type="text" name="reference_no" id="reference_no"
+                            value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -52,7 +53,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" value="{{ $delivery_order->delivery_date }}" class="form-control">
+                        <input type="date" name="delivery_date" id="delivery_date"
+                            value="{{ $delivery_order->delivery_date }}" class="form-control">
                     </div>
                 </div>
             </div>
@@ -97,7 +99,8 @@
 
                                 @foreach ($receipt_vouchers as $receipt_voucher)
                                     <option value="{{ $receipt_voucher->id }}"
-                                        data-amount="{{ $receipt_voucher->remaining_amount ?? $receipt_voucher->withhold_amount ?? 0 }}" @selected(in_array($receipt_voucher->id, $delivery_order->receipt_vouchers->pluck('id')->toArray()))>
+                                        data-amount="{{ $receipt_voucher->remaining_amount ?? ($receipt_voucher->withhold_amount ?? 0) }}"
+                                        @selected(in_array($receipt_voucher->id, $delivery_order->receipt_vouchers->pluck('id')->toArray()))>
                                         {{ $receipt_voucher->unique_no }}</option>
                                 @endforeach
                             </select>
@@ -108,7 +111,7 @@
 
             <div class="row">
                 @if ($sale_order_of_delivery_order->pay_type_id == 10)
-                
+
                     <div class="col-md-4 advanced">
                         <div class="form-group">
                             <label class="form-label">Advance Amount:</label>
@@ -122,7 +125,8 @@
                         <div class="form-group">
                             <label class="form-label">Withhold Amount:</label>
                             <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                                value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control">
+                                value="0" onkeyup="change_withhold_amount()" id="withhold_amount"
+                                class="form-control">
                         </div>
                     </div>
 
@@ -133,7 +137,7 @@
                                 <option value="">Select Receipt Vouchers</option>
                                 @foreach ($receipt_vouchers as $receipt_voucher)
                                     <option value="{{ $receipt_voucher->id }}" @selected($receipt_voucher->id == $delivery_order->withhold_for_rv_id)
-                                        data-amount="{{ $receipt_voucher->remaining_amount ?? $receipt_voucher->withhold_amount ?? 0 }}">
+                                        data-amount="{{ $receipt_voucher->remaining_amount ?? ($receipt_voucher->withhold_amount ?? 0) }}">
                                         {{ $receipt_voucher->unique_no }}</option>
                                 @endforeach
                             </select>
@@ -169,7 +173,8 @@
                             class="form-control select2">
                             <option value="">Select Locations</option>
                             @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}" @selected($location->id == $delivery_order->location_id)>{{ $location->name }}
+                                <option value="{{ $location->id }}" @selected($location->id == $delivery_order->location_id)>
+                                    {{ $location->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -181,7 +186,7 @@
                         <select name="arrival_id" id="arrivals" onchange="selectStorage(this)"
                             class="form-control select2" @if (!$delivery_order->arrival_location_id) disabled @endif>
                             <option value="">Select Factory</option>
-                            @if($delivery_order->arrival_location_id)
+                            @if ($delivery_order->arrival_location_id)
                                 <option value="{{ $delivery_order->arrival_location_id }}" selected>
                                     {{ arrival_name_by_id($delivery_order->arrival_location_id) }}</option>
                             @else
@@ -190,16 +195,16 @@
                                         {{ $location->name }}</option>
                                 @endforeach
                             @endif
-                           
+
                         </select>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Section:</label>
-                        <select name="storage_id" id="storages" class="form-control select2" >
+                        <select name="storage_id" id="storages" class="form-control select2">
                             <option value="">Select Section</option>
-                            @if($delivery_order->sub_arrival_location_id)
+                            @if ($delivery_order->sub_arrival_location_id)
                                 <option value="{{ $delivery_order->sub_arrival_location_id }}" selected>
                                     {{ sub_arrival_name_by_id($delivery_order->sub_arrival_location_id) }}</option>
                             @else
@@ -257,7 +262,7 @@
 
 
 
-        
+
 
     </div>
 
@@ -291,12 +296,13 @@
                         @foreach ($delivery_order->delivery_order_data as $index => $data)
                             @php
                                 $balance = delivery_order_balance($data->so_data_id);
-                                $allowed_value = (int)$balance;
+                                $allowed_value = (int) $balance;
                             @endphp
 
                             <tr id="row_{{ $index }}">
                                 <td>
-                                    <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2">
+                                    <select name="item_id[]" id="item_id_{{ $index }}"
+                                        class="form-control select2">
                                         <option value="">Select Item</option>
                                         @foreach ($items as $item)
                                             <option value="{{ $item->id }}" @selected($item->id == $data->item_id)>
@@ -306,12 +312,11 @@
                                 </td>
                                 <td>
                                     <input type="text" id="bag_type_display_{{ $index }}"
-                                        value="{{ bag_type_name($data->bag_type) }}"
-                                        class="form-control" readonly>
+                                        value="{{ bag_type_name($data->bag_type) }}" class="form-control" readonly>
 
                                     <input type="hidden" name="bag_type[]" value="{{ $data->bag_type }}">
 
-                                        <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
+                                    <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
                                         value="{{ $data->so_data_id }}">
                                 </td>
                                 <td>
@@ -319,16 +324,28 @@
                                         value="{{ $data->bag_size }}" oninput="calc(this)"
                                         class="form-control bag_size" step="0.01" min="0">
                                 </td>
+                                @php
+                                    $used_quantity = $data->no_of_bags - $balance;
+                                    $total_quantity = $data->no_of_bags;
+                                @endphp
                                 <td>
                                     <input type="hidden" class="allowed_value" value="{{ $allowed_value }}" />
-                                    <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
+                                    <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]"
+                                        id="no_of_bags_{{ $index }}"
                                         value="{{ round(($data->qty ?? 0) / $data->bag_size) }}" readonly
                                         class="form-control no_of_bags" step="0.01" min="0">
+
+                                    <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_order_bags_used($data->so_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_order_balance($data->so_data_id) }}</span>
+
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty }}" class="form-control qty"
-                                        step="0.01" min="0" oninput="calc(this)">
+                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
+                                        min="0" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
                                 </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"
@@ -337,11 +354,12 @@
                                 </td>
                                 <td>
                                     <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * ($data->qty ?? 0) }}"
-                                        class="form-control amount" readonly>
+                                        value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control amount"
+                                        readonly>
                                 </td>
                                 <td>
-                                    <select name="brand_id[]" id="brand_id_{{ $index }}" class="form-control select2">
+                                    <select name="brand_id[]" id="brand_id_{{ $index }}"
+                                        class="form-control select2">
                                         <option value="">Select Brand</option>
                                         @foreach (getAllBrands() as $brand)
                                             <option value="{{ $brand->id }}" @selected($brand->id == $data->brand_id)>
@@ -391,8 +409,25 @@
         // Initialize location options based on current sale order locations
         get_so_detail();
 
-        
+
     });
+
+    function check_balance(el, target) {
+      const balance = $(el).data("balance");
+      const value = $("#" + target).val();
+      
+      if(value > balance) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Cannot proceed more than ' + balance,
+        });
+            
+        $("#" + target).addClass("is-invalid");
+      } else {
+        $("#" + target).removeClass("is-invalid");
+      }
+  }
 
     function applySaudaType(saudaType) {
         const normalized = (saudaType || '').toLowerCase();
@@ -422,14 +457,16 @@
         select.select2();
 
         // Reset dependent dropdowns; will be rehydrated by selectLocation when data exists
-        $("#arrivals").empty().append('<option value=\"\">Select Factory</option>').prop('disabled', true).trigger('change.select2');
-        $("#storages").empty().append('<option value=\"\">Select Section</option>').prop('disabled', true).trigger('change.select2');
+        $("#arrivals").empty().append('<option value=\"\">Select Factory</option>').prop('disabled', true).trigger(
+            'change.select2');
+        $("#storages").empty().append('<option value=\"\">Select Section</option>').prop('disabled', true).trigger(
+            'change.select2');
     }
 
     function is_allowed(el) {
         const allowed_value = $(el).closest("tr").find(".allowed_value").val();
         const written_value = $(el).val();
-        if(parseFloat(written_value) > parseFloat(allowed_value)) {
+        if (parseFloat(written_value) > parseFloat(allowed_value)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Limit Exceeded',
@@ -603,21 +640,22 @@
         const advance = parseFloat($("#advance_amount").val()) || 0;
         remaining_amount = advance - withhold;
         receipt_vouchers = $("#receipt_vouchers");
-       
+
         bag_size = $("#bag_size_0").val();
         rate = $("#rate_0").val();
         const qtyVal = ((remaining_amount / rate)).toFixed(2);
         $("#qty_0").val(qtyVal);
         no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
 
-        if(isNaN(no_of_bags)) {
+
+        if (isNaN(no_of_bags)) {
             $("#no_of_bags_0").val(0);
         } else {
             $("#no_of_bags_0").val(no_of_bags);
         }
 
 
-        if($("#withhold_amount").val() > 0 && receipt_vouchers.val()) {
+        if ($("#withhold_amount").val() > 0 && receipt_vouchers.val()) {
             $("#withhold_for_rv").prop("disabled", false);
         } else {
 
@@ -730,10 +768,11 @@
         const amount = $(element).find(".amount");
 
         // Calculate no_of_bags from bag_size * qty
-        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) || null;
+        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) ||
+            null;
 
         if (bag_size.val() && qty.val()) {
-            let bagsResult = Math.round(parseFloat( parseFloat(qty.val() / bag_size.val())));
+            let bagsResult = Math.round(parseFloat(parseFloat(qty.val() / bag_size.val())));
 
             if (balance && bagsResult > balance) {
                 // Swal.fire({
@@ -764,7 +803,8 @@
             const no_of_bags = row.find(".no_of_bags");
             const bag_size = row.find(".bag_size");
             const qty = row.find(".qty");
-            const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value").val()) || null;
+            const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value")
+                .val()) || null;
 
             if (balance) {
                 if (bag_size.val() && qty.val()) {

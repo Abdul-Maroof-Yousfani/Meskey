@@ -158,9 +158,16 @@
                         </td>
                         <td style="min-width: 100px;">
                             <input type="number" class="form-control" value="{{ $data->no_of_bags }}" readonly>
+                            <span style="font-size: 14px;;">Used Quantity:
+                                    {{ sales_invoice_bags_used($data->dc_data_id) }}</span>
+                                <br />
+                                <span style="font-size: 14px;">Balance:
+                                    {{ sales_invoice_balance($data->dc_data_id) }}</span>
+                                
                         </td>
                         <td style="min-width: 100px;">
                             <input type="number" class="form-control" value="{{ $data->qty }}" readonly>
+                            
                         </td>
                         <td style="min-width: 100px;">
                             <input type="number" class="form-control" value="{{ $data->rate }}" readonly>

@@ -234,6 +234,12 @@
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         value="{{ $data->no_of_bags }}" onkeyup="calc(this)"
                                         class="form-control no_of_bags" step="0.01" min="0" readonly>
+
+                                        <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_order_bags_used($data->so_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_order_balance($data->so_data_id) }}</span>
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}"

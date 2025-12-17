@@ -45,10 +45,19 @@
                 <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                     value="{{ $balance }}"
                     class="form-control no_of_bags" step="0.01" min="0" readonly>
+                
+                    <span style="font-size: 14px;;">Used Quantity:
+                        {{ delivery_challan_bags_used($data->id) }}</span>
+                    <br />
+                    <span style="font-size: 14px;">Balance:
+                        {{ delivery_challan_balance($data->id) }}</span>
+
             </td>
             <td>
                 <input type="text" name="qty[]" id="qty_{{ $index }}"
                     value="{{ round($data->bag_size / $balance) }}"
+                    onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
+                    data-balance="{{ delivery_challan_balance($data->id) }}"
                     class="form-control qty" step="0.01" min="0" oninput="calc(this)">
             </td>
             <td>
@@ -119,6 +128,23 @@
         amount.val(result);
 
     }
+
+    function check_balance(el, target) {
+      const balance = $(el).data("balance");
+      const value = $("#" + target).val();
+      
+      if(value > balance) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Cannot proceed more than ' + balance,
+        });
+            
+        $("#" + target).addClass("is-invalid");
+      } else {
+        $("#" + target).removeClass("is-invalid");
+      }
+  }
 
     function calc(el) {
         const element = $(el).closest("tr");
