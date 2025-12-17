@@ -733,7 +733,7 @@
         const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) || null;
 
         if (bag_size.val() && qty.val()) {
-            let bagsResult = Math.round(parseFloat(bag_size.val()) / parseFloat(qty.val()));
+            let bagsResult = Math.round(parseFloat( parseFloat(qty.val() / bag_size.val())));
 
             if (balance && bagsResult > balance) {
                 // Swal.fire({
