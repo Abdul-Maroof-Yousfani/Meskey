@@ -86,7 +86,7 @@
                     </div>
                 </div>
 
-                @if ($sale_order_of_delivery_order->pay_type_id == 3)
+                @if ($sale_order_of_delivery_order->pay_type_id == 10)
                     <div class="col-md-4 advanced">
                         <div class="form-group">
                             <label class="form-label">Receipt Vouchers:</label>
@@ -107,7 +107,7 @@
             </div>
 
             <div class="row">
-                @if ($sale_order_of_delivery_order->pay_type_id == 3)
+                @if ($sale_order_of_delivery_order->pay_type_id == 10)
                 
                     <div class="col-md-4 advanced">
                         <div class="form-group">
