@@ -628,29 +628,29 @@
 
 
 
-        $("#withhold_for_rv").val("").trigger("change");
-        $('#withhold_for_rv').select2({
-            templateResult: function(data) {
+        // $("#withhold_for_rv").val("").trigger("change");
+        // $('#withhold_for_rv').select2({
+        //     templateResult: function(data) {
 
-                if (!data.id) return data.text;
+        //         if (!data.id) return data.text;
 
-                let amount = $(data.element).data('amount');
+        //         let amount = $(data.element).data('amount');
 
 
-                if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
-                    return null; // Hides this option
-                }
+        //         if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
+        //             return null; // Hides this option
+        //         }
 
-                let $item = $(`
-                    <span>
-                        ${data.text}
-                        <strong style="color: green; margin-left: 6px;">(${amount})</strong>
-                    </span>
-                `);
+        //         let $item = $(`
+        //             <span>
+        //                 ${data.text}
+        //                 <strong style="color: green; margin-left: 6px;">(${amount})</strong>
+        //             </span>
+        //         `);
 
-                return $item;
-            }
-        });
+        //         return $item;
+        //     }
+        // });
 
     }
 
