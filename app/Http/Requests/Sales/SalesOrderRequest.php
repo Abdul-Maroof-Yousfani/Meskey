@@ -24,7 +24,7 @@ class SalesOrderRequest extends FormRequest
         return [
             "delivery_date" => "required|date",
             "order_date" => "nullable|date",
-            "reference_no" => "required",
+            "reference_no" => "nullable",
             "so_reference_no" => "nullable|string|max:255",
             "customer_id" => "required|numeric",
             "inquiry_id" => "nullable|numeric",
@@ -61,6 +61,18 @@ class SalesOrderRequest extends FormRequest
 
             "sales_inquiry_id" => "nullable",
             "sales_inquiry_id.*" => "nullable",
+
+            "bag_size" => "required",
+            "bag_size.*" => 'required',
+
+            "no_of_bags" => "required",
+            "no_of_bags.*" => 'required',
+
+            "bag_type" => "required",
+            "bag_type.*" => 'required',
+
+            "amount" => "required",
+            "amount.*" => 'required',
             
         ];
     }

@@ -218,7 +218,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="bag_type_id[]" id="bag_type_id_{{ $index }}"
+                                    <select name="bag_type[]" id="bag_type_id_{{ $index }}"
                                         class="form-control select2">
                                         <option value="">Select Bag Type</option>
                                         @foreach ($bag_types ?? [] as $bag_type)

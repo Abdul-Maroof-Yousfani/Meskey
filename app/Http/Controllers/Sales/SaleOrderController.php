@@ -79,6 +79,8 @@ class SaleOrderController extends Controller
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
+        $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
+        // $payload["reference_n"]  =  !$request->contact_person ? '' : $request->contact_person;
         
         DB::beginTransaction();
         try {
@@ -135,6 +137,8 @@ class SaleOrderController extends Controller
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
+            $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
+     
 
             // Update parent sale order data
             $sales_order->update($payload);
@@ -176,7 +180,7 @@ class SaleOrderController extends Controller
                     'bag_type' => $request->bag_type[$index] ?? $request->bag_type_id[$index] ?? null,
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
-                    'description' => $request->description[$index]
+                    'description' => $request->description[$index] ?? ""
                 ]);
             }
             DB::commit();
