@@ -50,7 +50,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Address:</label>
-                        <textarea name="invoice_address" id="invoice_address" class="form-control" rows="1" placeholder="Enter invoice address"></textarea>
+                        <textarea name="invoice_address" id="invoice_address" class="form-control" rows="1"
+                            placeholder="Enter invoice address"></textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -77,17 +78,19 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Arrival Location:<span class="text-danger">*</span></label>
-                        <select name="arrival_locations" id="arrivals" onchange="get_delivery_challans()"
+                        <label class="form-label">Factory:<span class="text-danger">*</span></label>
+                        <select name="arrival_locations" id="arrivals" onchange="selectStorage(this); get_delivery_challans()"
                             class="form-control select2">
-                            <option value="">Select Arrival Location</option>
+                            <option value="">Select Factory</option>
                         </select>
                     </div>
                 </div>
+              
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control">
+                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date"
+                            class="form-control">
                     </div>
                 </div>
             </div>
@@ -97,7 +100,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
-                        <input type="text" name="reference_number" id="reference_number" class="form-control" placeholder="Enter reference number">
+                        <input type="text" name="reference_number" id="reference_number" class="form-control"
+                            placeholder="Enter reference number">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -113,7 +117,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">DC Numbers:</label>
-                        <select name="dc_no[]" id="dc_no" onchange="get_items(this)" class="form-control select2" multiple>
+                        <select name="dc_no[]" id="dc_no" onchange="get_items(this)" class="form-control select2"
+                            multiple>
                             <option value="">Select Delivery Challans</option>
                         </select>
                     </div>
@@ -186,6 +191,44 @@
     $(document).ready(function() {
         $('.select2').select2();
     });
+
+    function selectStorage(el) {
+        const arrival = $(el).val();
+        console.log(arrival);
+        if (!arrival) {
+            $("#sections").prop("disabled", true);
+            $("#sections").empty();
+            return;
+        } else {
+            // get.arrival-locations; send request to this url
+            $("#sections").prop("disabled", false);
+            $.ajax({
+                url: "{{ route('sales.get.storage-locations') }}",
+                method: "GET",
+                data: {
+                    arrival_id: arrival
+                },
+                dataType: "json",
+                success: function(res) {
+                    console.log(res);
+                    $("#sections").empty();
+                    $("#sections").append(`<option value=''>Select Storage</option>`)
+                    res.forEach(loc => {
+                        $("#sections").append(`
+                        <option value="${loc.id}">
+                            ${loc.text}
+                        </option>
+                    `);
+                    });
+
+                    $("#sections").select2();
+                },
+                error: function(error) {
+
+                }
+            });
+        }
+    }
 
     function selectLocation(el) {
         const company = $(el).val();
@@ -358,7 +401,7 @@
     }
 
     function calculateRow(el) {
-          const row = $(el).closest("tr");
+        const row = $(el).closest("tr");
         // Get input elements
         const packingInput = row.find(".packing");
         const noOfBagsInput = row.find(".no_of_bags");
@@ -382,7 +425,7 @@
         // Calculate Qty = Packing * No of Bags
         const result = (parseFloat(qtyInput.val()) / parseFloat(packingInput.val())).toFixed();
         noOfBagsInput.val(result);
-      
+
         // Calculate Gross Amount = Qty * Rate
         const grossAmount = result * rate;
         grossAmountInput.val(round(grossAmount));
@@ -444,4 +487,3 @@
         }
     }
 </script>
-

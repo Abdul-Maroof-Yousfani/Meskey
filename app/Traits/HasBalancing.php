@@ -12,12 +12,30 @@ use Illuminate\Support\Facades\Auth;
 trait HasBalancing {
     
     public function balance($id) {
-        $data = DeliveryChallanData::where("do_data_id", $delivery_order_data_id)->get();
+        $line_item_class = $this->line_item_class;
+        $parent_line_item = $this->parent_line_item;
+        $foreign_key = $this->foreign_key;
+        $to_balance_column = $this->balancing_column;
         
-        $spent = $data->sum("no_of_bags");
-        $able_to_spend = (DeliveryOrderData::where("id", $delivery_order_data_id)->first())->no_of_bags;
+        $data = $line_item_class::get();
+        dd($id);
+        
+        $spent = $data->sum($to_balance_column);
+        $able_to_spend = ($parent_line_item::where("id", $id)->first());
+        dd($data);
         $balance = (int)$able_to_spend - (int)$spent;
 
         return $balance;
+    }
+
+    public function spent($id) {
+        $line_item_class = $this->line_item_class;
+        $foreign_key = $this->foreign_key;
+        $to_balance_column = $this->balancing_column;
+
+        $data = $line_item_class::where($foreign_key, $id)->get();
+        
+        $spent = $data->sum($to_balance_column);
+        return $spent;
     }
 }

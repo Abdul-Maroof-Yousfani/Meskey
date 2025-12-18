@@ -6,6 +6,9 @@ use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Customer;
 use App\Models\User;
+use App\Models\Sales\SalesInvoiceData;
+use App\Models\Sales\DeliveryChallanData;
+use App\Traits\HasBalancing;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasApproval;
@@ -13,6 +16,7 @@ use App\Traits\HasApproval;
 class SalesInvoice extends Model
 {
     use HasFactory, HasApproval;
+
 
     protected $table = "sales_invoices";
 

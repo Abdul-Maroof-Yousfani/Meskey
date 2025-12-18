@@ -465,13 +465,13 @@ class DeliveryOrderController extends Controller
             // }
 
             $delivery_order->receipt_vouchers()->detach();
-
             $syncData = [];
 
             foreach ($receipt_vouchers as $rv) {
                 $last_withheld_amount = $rv->withhold_amount;
 
-                $spent_amount = $rv->delivery_orders?->sum(fn ($do) => $do->pivot->amount) ?? 0;
+                $spent_amount = $rv->delivery_orders?->filter(fn($do) => $do->pivot->delivery_order_id != $delivery_order->id)
+                                                    ?->sum(fn ($do) => $do->pivot->amount) ?? 0;
                 $remaining_amount = $rv->total_amount - $spent_amount;
 
                 $withhold_amount = ($rv->id == $request->withhold_for_rv)
@@ -485,7 +485,7 @@ class DeliveryOrderController extends Controller
                 ];
             }
 
-            $delivery_order->receipt_vouchers()->syncWithoutDetaching($syncData);
+            $delivery_order->receipt_vouchers()->sync($syncData);
 
             // Rebuild line items
             $delivery_order->delivery_order_data()->delete();

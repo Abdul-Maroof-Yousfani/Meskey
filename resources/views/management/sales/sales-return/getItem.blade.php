@@ -42,9 +42,21 @@
             </td>
             <td style="min-width: 100px;">
                 <input readonly type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="; validateBalance(this)" class="form-control no_of_bags" step="0.01" min="0" max="{{ 1 }}" value="{{ $noOfBags }}">
+                <span style="font-size: 14px;;">Used Quantity: {{ sale_return_bags_used($data->id) }}</span>
+                <br />
+                <span style="font-size: 14px;">Balance: {{ sale_return_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" class="form-control qty" step="0.01" min="0"  onkeyup="calc(this)" value="{{ $qty }}">
+                <input 
+                    type="number" 
+                    name="qty[]" 
+                    id="qty_{{ $rowIndex }}" 
+                    class="form-control qty" 
+                    step="0.01" 
+                    min="0"  
+                    data-balance="{{ sale_return_balance($data->id) }}"
+                    onkeyup="calc(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" 
+                    value="{{ $qty }}">
             </td>
             <td style="min-width: 100px;">
                 <input readonly type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">
@@ -87,12 +99,30 @@
 @endforeach
 
 <script>
+
+     function check_balance(el, target) {
+        const balance = $(el).data("balance");
+        const value = $("#" + target).val();
+        
+        if(value > balance) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Exceeded',
+                text: 'Cannot proceed more than ' + balance,
+            });
+                
+            $("#" + target).addClass("is-invalid");
+        } else {
+            $("#" + target).removeClass("is-invalid");
+        }
+    }
+
     function change_qty(el) {
         const packing = $(el).closest("tr").find(".packing");
         const no_of_bags = $(el).closest("tr").find(".no_of_bags");
         const qty = $(el).closest('tr').find(".qty");
 
-        const result = parseFloat(qty.val()) / parseFloat(packing.val());
+        const result = parseFloat( parseFloat(packing.val() / qty.val()));
         no_of_bags.val(result);
     }
     

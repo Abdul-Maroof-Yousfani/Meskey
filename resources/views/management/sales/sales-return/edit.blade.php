@@ -224,7 +224,7 @@
                                     </select>
                                     {{-- <input type="hidden" class="max_balance" value="{{ $balance }}"> --}}
 
-                                    <input type="hidden" name="si_data_id[]" value="{{ $data->id }}">
+                                    <input type="hidden" name="si_data_id[]" value="{{ $data->sale_invoice_data_id }}">
          
                                 </td>
                                 <td style="min-width: 100px;">
@@ -235,13 +235,19 @@
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="no_of_bags[]"
                                         id="no_of_bags_{{ $rowIndex }}"
-                                        onkeyup="; validateBalance(this)"
+                                        onkeyup="; validateBalance(this);"
+                                      
                                         class="form-control no_of_bags" step="0.01" min="0"
-                                        max="{{ 1 }}" value="{{ $noOfBags }}">
+                                        max="" value="{{ $noOfBags }}">
+
+                                    <span style="font-size: 14px;;">Used Quantity: {{ sale_return_bags_used($data->sale_invoice_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance: {{ sale_return_balance($data->sale_invoice_data_id) }}</span>
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input type="text" name="qty[]" id="qty_{{ $rowIndex }}"
-                                        class="form-control qty" onkeyup="calculateRow(this)"
+                                        class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')"
+                                        data-balance="{{ sale_return_balance($data->sale_invoice_data_id) + $data->no_of_bags }}"
                                         value="{{ $data->quantity }}">
                                 </td>
                                 <td style="min-width: 100px;">
@@ -329,6 +335,23 @@
     });
 
     
+    function check_balance(el, target) {
+        const balance = $(el).data("balance");
+        const value = $("#" + target).val();
+        
+        if(value > balance) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Exceeded',
+                text: 'Cannot proceed more than ' + balance,
+            });
+                
+            $("#" + target).addClass("is-invalid");
+        } else {
+            $("#" + target).removeClass("is-invalid");
+        }
+    }
+
     function calculateRow(el) {
           const row = $(el).closest("tr");
         // Get input elements
@@ -352,7 +375,7 @@
         const gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
         // Calculate Qty = Packing * No of Bags
-        const result = parseFloat(parseFloat(packingInput.val() / qtyInput.val())).toFixed();
+        const result = parseFloat(parseFloat(qtyInput.val()) / packingInput.val()).toFixed();
         noOfBagsInput.val(result);
       
         // Calculate Gross Amount = Qty * Rate

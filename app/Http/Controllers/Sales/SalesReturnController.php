@@ -73,26 +73,43 @@ class SalesReturnController extends Controller
         }
     }
 
+  
+
     public function get_sale_invoices(Request $request) {
         $customer_id = $request->customer_id;
         $locations_id = $request->location_id;
         $arrival_location_id = $request->arrival_location_id;
         $storage_id = $request->storage_id;
 
-        $sale_invoices = SalesInvoice::
-                                approved()
+        $sale_invoices = SalesInvoice::approved()
                                 ->select("id", "si_no")
                                 ->where("location_id", $locations_id)
                                 ->get();
 
         $data = [];
 
-        foreach($sale_invoices as $sale_invoice) {
-            $data[] = [
-                "text" => $sale_invoice->si_no,
-                "id" => $sale_invoice->id
-            ];
+        foreach ($sale_invoices as $sale_invoice) {
+            // Check if DC has any items with available balance
+            $hasAvailableItems = false;
+            
+            foreach ($sale_invoice->sales_invoice_data as $siData) {
+                $balance = sale_return_balance($siData->id);
+                if ($balance > 0) {
+                    $hasAvailableItems = true;
+                    break;
+                }
+            }
+
+            // Only include DCs with available items
+            if ($hasAvailableItems) {
+                $data[] = [
+                    "id" => $sale_invoice->id,
+                    "text" => $sale_invoice->si_no
+                ];
+            }
         }
+
+     
 
         return $data;
 
@@ -219,6 +236,12 @@ class SalesReturnController extends Controller
             
 
             foreach($request->item_id as $index => $item_id) {
+                $balance = sale_return_balance($request->si_data_id[$index]);
+
+                if($request->no_of_bags[$index] > $balance) {
+                    return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                }
+                
                 $sale_return->sale_return_data()->create([
                     "quantity" => $request->qty[$index],
                     "sale_invoice_data_id" => $request->si_data_id[$index],
@@ -238,6 +261,7 @@ class SalesReturnController extends Controller
             }
 
             foreach($sale_invoices as $sale_invoice) {
+                
                 $sale_return->sale_invoices()->sync([
                     $sale_invoice => [
                         "qty" => $request->qty[$index]

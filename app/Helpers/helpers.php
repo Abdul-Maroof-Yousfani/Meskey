@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -660,6 +660,23 @@ function sales_invoice_balance($delivery_challan_data_id) {
     $balance = (int)$able_to_spend - (int)$spent;
 
     return $balance;
+}
+
+function sale_return_balance($sale_invoice_data_id) {
+    $data = SaleReturnData::where("sale_invoice_data_id", $sale_invoice_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    $able_to_spend = (SalesInvoiceData::where("id", $sale_invoice_data_id)->first())->no_of_bags;
+    $balance = (int)$able_to_spend - (int)$spent;
+
+    return $balance;
+}
+
+function sale_return_bags_used($sale_invoice_data_id) {
+    $data = SaleReturnData::where("sale_invoice_data_id", $sale_invoice_data_id)->get();
+    
+    $spent = $data->sum("no_of_bags");
+    return $spent;
 }
 
 function sales_invoice_bags_used($delivery_challan_data_id) {

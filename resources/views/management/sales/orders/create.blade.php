@@ -84,7 +84,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Pay Type:</label>
-                <select name="pay_type_id" id="pay_type_id" class="form-control select2">
+                <select name="pay_type_id" id="pay_type_id" class="form-control select2" onchange="is_type_credit(this)">
                     <option value="">Select Pay Type</option>
                     @foreach ($pay_types as $pay_type)
                         <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
@@ -95,7 +95,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Payment Terms:</label>
-                <select name="payment_term_id" id="payment_term_id" class="form-control select2">
+                <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" disabled>
                     <option value="">Select Payment Term</option>
                     @foreach ($payment_terms as $payment_term)
                         <option value="{{ $payment_term->id }}">{{ $payment_term->desc }}</option>
@@ -271,6 +271,16 @@
 
 <script>
     salesInquiryRowIndex = 1;
+
+    function is_type_credit(el) {
+        const type = $(el).val();
+        
+        if(type == 11) {
+            $(".credit").prop('disabled', false);
+        } else {
+            $(".credit").prop("disabled", true);
+        }
+    }
 
     $(document).ready(function() {
         $('.select2').select2();
