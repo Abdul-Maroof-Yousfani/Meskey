@@ -22,7 +22,7 @@ class SalesInquiryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "reference_no" => "required",
+            "reference_no" => "nullable",
             "locations" => "required|array",
             "inquiry_date" => "required|date",
             "customer" => "required",
@@ -35,7 +35,7 @@ class SalesInquiryRequest extends FormRequest
             "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "contract_type" => "required|in:pohanch,x-mill",
-            "contact_person" => "required",
+            "contact_person" => "nullable",
             "remarks" => "nullable",
 
             "item_id" => "nullable|array",
