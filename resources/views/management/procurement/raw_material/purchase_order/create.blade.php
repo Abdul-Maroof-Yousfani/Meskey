@@ -7,6 +7,9 @@
                 <label>Location:</label>
                 <select name="company_location_id" id="company_location_id" class="form-control select22">
                     <option value="">Location</option>
+                    @foreach ($companyLocations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -678,7 +681,7 @@
             calculateQuantityAndBags();
         });
 
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);

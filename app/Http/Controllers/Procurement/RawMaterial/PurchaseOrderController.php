@@ -26,7 +26,10 @@ class PurchaseOrderController extends Controller
      */
     public function index()
     {
-        return view('management.procurement.raw_material.purchase_order.index');
+        $companyLocations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->where('id', auth()->user()->company_location_id);
+        })->get();
+        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations'));
     }
 
     /**
@@ -79,6 +82,8 @@ class PurchaseOrderController extends Controller
 
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
+            })->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('company_location_id', auth()->user()->company_location_id);
             })
             ->where('purchase_type', 'regular')
             ->latest()
@@ -130,6 +135,9 @@ class PurchaseOrderController extends Controller
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
         $data['brokers'] = Broker::all();
+        $data['companyLocations'] = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->where('id', auth()->user()->company_location_id);
+        })->get();
         $authUser = auth()->user();
         $locationId = $authUser->companyLocation?->id ?? '1';
         $locationId = (string) $locationId;
