@@ -46,17 +46,26 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber()" id="dispatch_date"
+                        <input type="date" name="dispatch_date" onchange="getNumber(); validate_expiry()" id="dispatch_date"
                             value="{{ $delivery_order->dispatch_date }}" class="form-control">
                     </div>
                 </div>
+
+
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date"
-                            value="{{ $delivery_order->delivery_date }}" class="form-control">
+                        <label class="form-label">Contract Type:</label>
+                        <input type="hidden" name="sauda_type" id="sauda_type_hidden"
+                            value="{{ $delivery_order->sauda_type }}">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Sauda Type</option>
+                            <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
+                        </select>
                     </div>
                 </div>
+
+           
             </div>
 
             <div class="row">
@@ -77,7 +86,7 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items()"
+                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(); validate_expiry()"
                             class="form-control select2">
                             <option value="">Select SO</option>
                             @foreach ($sale_orders as $sale_order)
@@ -146,21 +155,22 @@
 
                 @endif
 
-                <div class="col-md-6">
+             
+                     <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Dispatch Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber()"
-                            value="{{ $delivery_order->dispatch_date }}" id="dispatch_date" class="form-control">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date"
+                            value="{{ $delivery_order->delivery_date }}" class="form-control">
                     </div>
                 </div>
-
-                <div class="col-md-6">
+                  <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Do No:</label>
                         <input type="text" name="reference_no" id="reference_no"
                             value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
+
 
 
             </div>
@@ -232,22 +242,11 @@
                         </select>
                     </div>
                 </div> --}}
+                
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Sauda Type:</label>
-                        <input type="hidden" name="sauda_type" id="sauda_type_hidden"
-                            value="{{ $delivery_order->sauda_type }}">
-                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Line Description:</label>
-                        <textarea name="line_desc" id="line_desc" class="form-control">{{ $delivery_order->line_desc }}</textarea>
+                        <label class="form-label">Remarks:</label>
+                        <textarea name="remarks" id="remarks" class="form-control">{{ $delivery_order->line_desc }}</textarea>
                     </div>
                 </div>
             </div>
@@ -411,6 +410,25 @@
 
 
     });
+
+
+    function validate_expiry(el) {
+
+        const do_date = $("#dispatch_date").val();
+        const delivery_date = $("#delivery_date").val();
+     
+        const dispatchDate = new Date(do_date);
+        const deliveryDate = new Date(delivery_date);
+
+        if(dispatchDate > deliveryDate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Expired!',
+                text: 'Dispatch date cannot be greater than delivery date.',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
 
     function check_balance(el, target) {
       const balance = $(el).data("balance");

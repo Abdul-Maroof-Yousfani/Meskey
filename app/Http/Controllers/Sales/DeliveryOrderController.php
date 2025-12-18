@@ -93,6 +93,7 @@ class DeliveryOrderController extends Controller
 
             $salesOrder = SalesOrder::find($request->sale_order_id);
             if ($salesOrder->pay_type_id == 10) {
+                $syncData  =  [];
                 foreach ($receipt_vouchers as $rv) {
                     $last_withheld_amount = $rv->withhold_amount;
 
@@ -143,7 +144,7 @@ class DeliveryOrderController extends Controller
 
             DB::rollBack();
 
-            return response()->json(['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
 
         }
 
@@ -510,7 +511,7 @@ class DeliveryOrderController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e);
+            return response()->json($e->getMessage(), $e->getCode());
         }
 
         return response()->json(['success' => 'Delivery Order has been updated']);

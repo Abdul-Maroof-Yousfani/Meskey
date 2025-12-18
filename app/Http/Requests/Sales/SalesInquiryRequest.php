@@ -22,11 +22,11 @@ class SalesInquiryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "reference_no" => "nullable",
+            "reference_no" => "required",
             "locations" => "required|array",
             "inquiry_date" => "required|date",
             "customer" => "required",
-            "reference_number" => "required",
+            "reference_number" => "nullable",
 
             "required_date" => "required|date",
             "arrival_location_id" => "nullable|array|min:1",

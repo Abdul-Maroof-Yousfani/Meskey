@@ -154,3 +154,7 @@ body.drawer-opened {
 .clean-sidebar-drawer ~ .clean-sidebar-drawer {
   filter: brightness(0.97);
 }
+
+.required::after {
+  content: '*';
+}
