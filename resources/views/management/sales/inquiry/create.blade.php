@@ -3,6 +3,10 @@
     body {
         overflow-x: hidden;
     }
+    .required::after {
+        content: '*';
+        color: red
+    }
 </style>
 
 <form action="{{ route('sales.sales-inquiry.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -16,19 +20,19 @@
     <div class="row">
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Inquiry Number:</label>
+                <label class="form-label required">Inquiry Number:</label>
                 <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Inquiry Date:</label>
+                <label class="form-label required">Inquiry Date:</label>
                 <input type="date" name="inquiry_date" onchange="getNumber()" id="inquiry_date" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Contract Type:</label>
+                <label class="form-label required">Contract Type:</label>
                 <select name="contract_type" id="contract_type" class="form-control select2">
                     <option value="">Select Contract Type</option>
                     <option value="x-mill">X-Mill</option>
@@ -41,8 +45,8 @@
     <div class="row">
         <div class="col-md-4 mt-3">
             <div class="form-group">
-                <label class="form-label">Customer:</label>
-                <select name="customer" id="customer" class="form-control select2">
+                <label class="form-label required">Customer:</label>
+                <select name="customer" id="customer" class="form-control select2 required">
                     <option value="">Select Customer</option>
                     @foreach ($customers ?? [] as $customer)
                         <option value="{{ $customer->id }}">{{ $customer->name }}</option>
@@ -58,7 +62,7 @@
         </div>
         <div class="col-md-4 mt-3">
             <div class="form-group">
-                <label class="form-label">Delivery Date:</label>
+                <label class="form-label required">Delivery Date:</label>
                 <input type="date" name="required_date" id="required_date" class="form-control">
             </div>
         </div>
@@ -73,7 +77,7 @@
         </div>
         <div class="col-md-6 mt-3">
             <div class="form-group">
-                <label class="form-label">Token Money:</label>
+                <label class="form-label required">Token Money:</label>
                 <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
             </div>
         </div>
@@ -82,7 +86,7 @@
     <div class="row">
         <div class="col-md-4 mt-3">
             <div class="form-group">
-                <label class="form-label">Locations:</label>
+                <label class="form-label required">Locations:</label>
                 <select name="locations[]" id="locations" class="form-control select2" multiple>
                     @foreach (get_locations() as $location)
                         <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -136,13 +140,13 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Bag Type</th>
-                            <th>Packing</th>
-                            <th>No of Bags</th>
-                            <th>Quantity (Kg)</th>
-                            <th>Rate per Kg</th>
-                            <th>Brands</th>
+                            <th class="required">Item</th>
+                            <th class="required">Bag Type</th>
+                            <th class="required">Packing</th>
+                            <th class="required">No of Bags</th>
+                            <th class="required">Quantity (Kg)</th>
+                            <th class="required">Rate per Kg</th>
+                            <th class="required">Brands</th>
                             <th style="display: none">Pack Size</th>
                             <th>Description</th>
                         </tr>

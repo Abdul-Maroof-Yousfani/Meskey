@@ -45,7 +45,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber()" id="dispatch_date"
+                        <input type="date" name="dispatch_date" onchange="getNumber(); validate_expiry(this)" id="dispatch_date"
                             class="form-control">
                     </div>
                 </div>
@@ -81,7 +81,7 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_so_items(), check_so_type()" class="form-control select2">
+                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry()" class="form-control select2">
                             <option value="">Select SO</option>
                         </select>
                     </div>
@@ -254,6 +254,26 @@
         $('#sauda_type').prop('disabled', true);
     });
 
+    function validate_expiry() {
+
+        const do_date = $("#dispatch_date").val();
+        const delivery_date = $("#delivery_date").val();
+     
+        const dispatchDate = new Date(do_date);
+        const deliveryDate = new Date(delivery_date);
+
+        console.log(dispatchDate);
+        console.log(delivery_date);
+
+        if(dispatchDate > deliveryDate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Expired!',
+                text: 'Dispatch date cannot be greater than delivery date.',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
 
     sum = 0;
     so_amount = 0;
@@ -768,6 +788,7 @@
 
                 $("#delivery_date").val(res.delivery_date);
                 $("#delivery_date").prop("readonly", true);
+                validate_expiry();
 
                 // $("#locations").val(res.locations).trigger("change");
             },
