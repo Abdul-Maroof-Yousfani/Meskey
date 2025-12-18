@@ -373,6 +373,7 @@
                 res.arrival_locations.forEach(item => {
                     let option = new Option(item.text, item.id, true, true); // selected = true
                     $('#arrival_location_id').append(option);
+                    
                 });
 
                 // notify select2
