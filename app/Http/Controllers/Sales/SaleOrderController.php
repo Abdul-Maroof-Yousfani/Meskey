@@ -283,6 +283,26 @@ class SaleOrderController extends Controller
 
         $items = Product::select('name', 'id')->get();
         $inquiry = SalesInquiry::with(['sales_inquiry_data', 'locations'])->where('id', $inquiry_id)->first();
+
+
+        $factory_locations = [];
+
+        foreach($inquiry->factories as $factory) {
+            $arrival = ArrivalLocation::select("id", "name")->where("status", "active")->find($factory->arrival_location_id);
+            $factory_locations[] = [
+                "text" => $arrival->name,
+                "id" => $arrival->id
+            ];
+        }
+
+        foreach($inquiry->sections as $section) {
+            $section = ArrivalSubLocation::select("id", "name")->where("status", "active")->find($section->arrival_sub_location_id);
+            $section_locations[] = [
+                "text" => $section->name,
+                "id" => $section->id
+            ];
+        }
+
         // Return inquiry details along with the items view
         if ($request->ajax() && $request->has('get_details')) {
             return response()->json([
@@ -294,8 +314,8 @@ class SaleOrderController extends Controller
                 'contact_person' => $inquiry->contact_person,
                 'arrival_location_id' => $inquiry->factories->pluck("arrival_location_id")->toArray(),
                 'arrival_sub_location_id' => $inquiry->sections->pluck("arrival_sub_location_id")->toArray(),
-                'arrival_locations' => $inquiry->factories->pluck("arrival_location_id")->toArray() ? [$inquiry->factories->pluck("arrival_location_id")->toArray()] : [],
-                'arrival_sub_locations' => $inquiry->sections->pluck("arrival_sub_location_id")->toArray() ? [$inquiry->sections->pluck("arrival_sub_location_id")->toArray()] : [],
+                'arrival_locations' => $factory_locations,
+                'arrival_sub_locations' => $section_locations,
             ]);
         }
 

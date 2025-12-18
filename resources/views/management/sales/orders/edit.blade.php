@@ -367,12 +367,28 @@
                 const inquiryFactories = res.arrival_locations || (res.arrival_location_id ? [res.arrival_location_id] : []);
                 const inquirySections = res.arrival_sub_locations || (res.arrival_sub_location_id ? [res.arrival_sub_location_id] : []);
 
-                if (inquiryFactories.length > 0) {
-                    $("#arrival_location_id").val(inquiryFactories).trigger('change.select2');
-                }
-                if (inquirySections.length > 0) {
-                    $("#arrival_sub_location_id").val(inquirySections).trigger('change.select2');
-                }
+                $('#arrival_location_id').empty();
+
+                // append + select all
+                res.arrival_locations.forEach(item => {
+                    let option = new Option(item.text, item.id, true, true); // selected = true
+                    $('#arrival_location_id').append(option);
+                });
+
+                // notify select2
+                $('#arrival_location_id').trigger('change');
+
+               
+                $('#arrival_sub_location_id').empty();
+
+                // append + select all
+                res.arrival_sub_locations.forEach(item => {
+                    let option = new Option(item.text, item.id, true, true); // selected = true
+                    $('#arrival_sub_location_id').append(option);
+                });
+
+                // notify select2
+                $('#arrival_sub_location_id').trigger('change');
 
                 // Fill locations
                 if (res.locations && res.locations.length > 0) {
