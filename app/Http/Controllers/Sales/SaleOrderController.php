@@ -80,6 +80,7 @@ class SaleOrderController extends Controller
         $payload['created_by'] = auth()->user()->id;
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
+        $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
         // $payload["reference_n"]  =  !$request->contact_person ? '' : $request->contact_person;
         
         DB::beginTransaction();
@@ -138,6 +139,7 @@ class SaleOrderController extends Controller
             $payload['am_change_made'] = 1;
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
+            $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
      
 
             // Update parent sale order data

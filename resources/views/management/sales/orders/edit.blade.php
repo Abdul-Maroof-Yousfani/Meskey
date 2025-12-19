@@ -89,7 +89,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Pay Type:</label>
-                <select name="pay_type_id" id="pay_type_id" class="form-control select2">
+                <select name="pay_type_id" id="pay_type_id" class="form-control select2" onchange="is_type_credit(this)">
                     <option value="">Select Pay Type</option>
                     @foreach ($pay_types as $pay_type)
                         <option value="{{ $pay_type->id }}" @selected($sale_order->pay_type_id == $pay_type->id)>{{ $pay_type->name }}
@@ -100,8 +100,8 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Payment Terms:</label>
-                <select name="payment_term_id" id="payment_term_id" class="form-control select2">
+                <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
+                <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" @disabled($sale_order->pay_type_id != 8)>
                     <option value="">Select Payment Term</option>
                     @foreach ($payment_terms as $payment_term)
                         <option value="{{ $payment_term->id }}" @selected($payment_term->id == $sale_order->payment_term_id)>{{ $payment_term->desc }}</option>
@@ -300,6 +300,18 @@
 
 <script>
     salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
+
+    function is_type_credit(el) {
+        const type = $(el).val();
+       
+
+        if(type == 8) {
+            $(".credit").prop('disabled', false);
+        } else {
+            $(".credit").prop("disabled", true);
+        }
+    }
+
     function enableInquiryFields() {
         // Enable fields when no inquiry selected
         $("#delivery_date").prop('readonly', false);

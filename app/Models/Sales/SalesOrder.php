@@ -8,6 +8,7 @@ use App\Models\Procurement\Store\FactoryLocation;
 use App\Models\Procurement\Store\Location;
 use App\Models\Procurement\Store\SectionLocation;
 use App\Traits\HasApproval;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -35,6 +36,17 @@ class SalesOrder extends Model
         "created_by",
         "am_change_made"
     ];
+
+    protected function paymentTermId(): Attribute{
+        return Attribute::make(
+            get: function($value) {
+                if($this->pay_type_id == 8) {
+                    return $value;
+                }
+                return null;
+            }
+        );
+    }
 
     public function sales_order_data() {
         return $this->hasMany(SalesOrderData::class, "sale_order_id");

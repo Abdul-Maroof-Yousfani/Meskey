@@ -70,24 +70,26 @@
     </div>
 
     <div class="row form-mar">
-        <div class="col-md-4">
+        <div class="{{ $sale_order->payment_term_id ? 'col-md-4' : 'col-md-6'}}">
             <div class="form-group">
                 <label class="form-label">Reference Number:</label>
                 <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="{{ $sale_order->payment_term_id ? 'col-md-4' : 'col-md-6'}}">
             <div class="form-group">
                 <label class="form-label">Pay Type:</label>
                 <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control" readonly>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Payment Terms:</label>
-                <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
+        @if($sale_order->payment_term_id)
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
+                    <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
     @php

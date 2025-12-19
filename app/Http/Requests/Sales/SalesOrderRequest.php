@@ -21,15 +21,15 @@ class SalesOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            "delivery_date" => "required|date",
+
+        $rules = [
+ "delivery_date" => "required|date",
             "order_date" => "nullable|date",
             "reference_no" => "nullable",
             "so_reference_no" => "nullable|string|max:255",
             "customer_id" => "required|numeric",
             "inquiry_id" => "nullable|numeric",
             "sauda_type" => "required|in:pohanch,x-mill,thadda",
-            "payment_term_id" => "required|numeric",
             "company_id" => "required",
             'pay_type_id' => 'required',
             'token_money' => 'required|numeric',
@@ -73,8 +73,16 @@ class SalesOrderRequest extends FormRequest
 
             "amount" => "required",
             "amount.*" => 'required',
-            
         ];
+
+        if(request()->pay_type_id == 8) {
+            $rules = array_merge($rules, [
+                "payment_term_id" => "required|numeric",
+           
+            ]);
+        }
+
+        return $rules;
     }
 
     public function messages() {
