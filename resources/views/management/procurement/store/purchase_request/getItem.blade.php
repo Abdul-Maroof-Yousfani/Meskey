@@ -1,8 +1,8 @@
 @foreach ($job_orders as $job_order)
-    @foreach ($job_order->packing_items as $packing_item)
         @php
             $i = $loop->iteration;
         @endphp
+    @foreach ($job_order->packing_items as $packing_item)
         <tr id="row_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
                 <select name="category_id[]" id="category_id_{{ $i }}"
