@@ -14,7 +14,34 @@
         <div class="col-md-12">
             <!-- Row 1: Dispatch Date, Do No -->
             <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Do No:</label>
+                        <input type="text" name="reference_no" id="reference_no"
+                            value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
 
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">DO Date:</label>
+                        <input type="date" name="dispatch_date" value="{{ $delivery_order->dispatch_date }}"
+                            onchange="getNumber()" id="dispatch_date" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Sauda Type:</label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" readonly>
+                            <option value="">Select Sauda Type</option>
+                            <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
@@ -28,6 +55,7 @@
                         </select>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Sale Order:</label>
@@ -43,6 +71,7 @@
 
                     </div>
                 </div>
+
 
                 @if ($sale_order_of_delivery_order->pay_type_id == 10)
                     <div class="col-md-4">
@@ -62,83 +91,90 @@
                 @endif
             </div>
 
-            <div class="row">
-                @if($sale_order_of_delivery_order->pay_type_id == 10)
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Advance Amount:</label>
-                            <input type="number" name="advance_amount" value="{{ $delivery_order->advance_amount }}"
-                                onchange="" id="advance_amount" class="form-control" readonly>
-                        </div>
+        
+
+        <div class="row">
+            @if ($sale_order_of_delivery_order->pay_type_id == 10)
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Advance Amount:</label>
+                        <input type="number" name="advance_amount" value="{{ $delivery_order->advance_amount }}"
+                            onchange="" id="advance_amount" class="form-control" readonly>
                     </div>
+                </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Withhold Amount:</label>
-                            <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                                value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control"
-                                readonly>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Withhold Amount:</label>
+                        <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
+                            value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control"
+                            readonly>
 
-                        </div>
                     </div>
+                </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Withhold for RV:</label>
-                            <input type="text" name="withhold_for_rv"
-                                value="{{ $delivery_order->withheld_receipt_voucher?->unique_no }}" value="0"
-                                onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control" readonly>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Withhold for RV:</label>
+                        <input type="text" name="withhold_for_rv"
+                            value="{{ $delivery_order->withheld_receipt_voucher?->unique_no }}" value="0"
+                            onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control" readonly>
 
-                        </div>
                     </div>
-                @endif
+                </div>
+            @endif
 
+
+
+
+
+
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="withhold_for_rv"
+                            value="{{ $delivery_order->so_reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Dispatch Date:</label>
-                        <input type="date" name="dispatch_date" value="{{ $delivery_order->dispatch_date }}"
-                            onchange="getNumber()" id="dispatch_date" class="form-control" readonly>
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date"
+                            value="{{ $delivery_order->delivery_date }}" class="form-control" readonly>
                     </div>
                 </div>
+        </div>
 
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no"
-                            value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
-                    </div>
-                </div>
-
-
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Location:</label>
-                        <input type="text" class="form-control"
-                            value="{{ get_location_name_by_id($delivery_order->location_id) }}" readonly>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Factory:</label>
-                        <input type="text" class="form-control"
-                            value="{{ arrival_name_by_id($delivery_order->arrival_location_id) }}" readonly>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Section:</label>
-                        <input type="text" class="form-control"
-                            value="{{ sub_arrival_name_by_id($delivery_order->sub_arrival_location_id) }}" readonly>
-                    </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Location:</label>
+                    <input type="text" class="form-control"
+                        value="{{ get_location_name_by_id($delivery_order->location_id) }}" readonly>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Factory:</label>
+                    <input type="text" class="form-control"
+                        value="{{ arrival_name_by_id($delivery_order->arrival_location_id) }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Section:</label>
+                    <input type="text" class="form-control"
+                        value="{{ sub_arrival_name_by_id($delivery_order->sub_arrival_location_id) }}" readonly>
+                </div>
+            </div>
+        </div>
 
-            <!-- Row 2: Sale Orders, Sauda Type -->
-            <div class="row">
-                {{-- <div class="col-md-6">
+        <!-- Row 2: Sale Orders, Sauda Type -->
+        <div class="row">
+            {{-- <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Payment Terms:</label>
                         <select name="payment_term_id" id="payment_term_id" class="form-control select2" disabled>
@@ -150,28 +186,19 @@
                         </select>
                     </div>
                 </div> --}}
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Sauda Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2" readonly>
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Description:</label>
-                        <textarea name="line_desc" id="line_desc" class="form-control" readonly>{{ $delivery_order->line_desc }}</textarea>
-                    </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Remarks:</label>
+                    <textarea name="line_desc" id="line_desc" class="form-control" readonly>{{ $delivery_order->line_desc }}</textarea>
                 </div>
             </div>
         </div>
+    </div>
 
 
 
-        <!-- Row 3: Customer, Contract Terms, Locations -->
+    <!-- Row 3: Customer, Contract Terms, Locations -->
 
 
 
@@ -235,7 +262,7 @@
                                         value="{{ $data->no_of_bags }}" onkeyup="calc(this)"
                                         class="form-control no_of_bags" step="0.01" min="0" readonly>
 
-                                        <span style="font-size: 14px;;">Used Quantity:
+                                    <span style="font-size: 14px;;">Used Quantity:
                                         {{ delivery_order_bags_used($data->so_data_id) }}</span>
                                     <br />
                                     <span style="font-size: 14px;">Balance:
