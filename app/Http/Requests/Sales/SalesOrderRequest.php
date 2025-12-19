@@ -23,8 +23,8 @@ class SalesOrderRequest extends FormRequest
     {
 
         $rules = [
- "delivery_date" => "required|date",
-            "order_date" => "nullable|date",
+            "delivery_date" => "required|date",
+            "order_date" => "required|date",
             "reference_no" => "nullable",
             "so_reference_no" => "nullable|string|max:255",
             "customer_id" => "required|numeric",
