@@ -147,4 +147,37 @@
         $('#uom_' + index).val(uom);
     }
 
+     function filter_items(category_id, count) {
+        $.ajax({
+            url: '{{ route('get.items') }}',
+            type: 'GET',
+            data: {
+                category_id: category_id
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success && response.products) {
+                    $('#item_id_' + count).empty();
+                    $('#item_id_' + count).append('<option value="">Select a Item</option>');
+
+                    $.each(response.products, function (index, product) {
+                        $('#item_id_' + count).append(
+                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
+                        );
+                    });
+
+
+                    $('#item_id_' + count).select2();
+                } else {
+                    console.error('No products found or request failed');
+                    $('#item_id_' + count).html('<option value="">No products available</option>');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('AJAX Error:', status, error);
+                $('#item_id_' + count).html('<option value="">Error loading products</option>');
+            }
+        });
+    }
+
 </script>
