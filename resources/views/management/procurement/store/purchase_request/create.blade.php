@@ -29,6 +29,18 @@
             </div>
         </div>
 
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Job Orders:</label>
+                <select class="form-control select2 job_orders" onchange="added_job_order(this)" multiple>
+                    <option value="">Select Job Order</option>
+                    @foreach($job_orders as $job_order)
+                        <option value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
             <div class="form-group">
                 <label class="form-label">Description (Optional):</label>
@@ -45,8 +57,8 @@
         </div>
 
         <div class="col-md-12">
-   <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
-    <table class="table table-bordered" id="purchaseRequestTable" style="min-width:2000px;">
+   <div style="overflow-x: auto; width: 100%;">
+    <table class="table table-bordered" id="purchaseRequestTable" style="min-width:2000px; width:100%;">
         <thead>
             <tr>
                 <th>Category</th>
@@ -67,79 +79,11 @@
             </tr>
         </thead>
         <tbody id="purchaseRequestBody">
-            <tr id="row_0">
-                <td><select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)"
-                        class="form-control item-select" data-index="0" style="width:180px;">
-                        <option value="">Select Category</option>
-                        @foreach ($categories ?? [] as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select></td>
-
-                <td><select name="item_id[]" id="item_id_0" onchange="get_uom(0)"
-                        class="form-control item-select" data-index="0" style="width:180px;">
-                        <option value="">Select Item</option>
-                    </select></td>
-
-
-                <td><input type="text" name="uom[]" id="uom_0" class="form-control uom" readonly style="width:120px;"></td>
-
-                <td><input type="number" name="qty[]" id="qty_0" class="form-control" step="0.01"
-                        min="0" placeholder="Qty" style="width:120px;"></td>
-
-                <td><select name="job_order_id[0][]" id="job_order_id_0" multiple
-                        class="form-control item-select" data-index="0" style="width:180px;">
-                        <option value="">Select Job Order</option>
-                        @foreach ($job_orders ?? [] as $job_order)
-                            <option value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
-                        @endforeach
-                    </select></td>
-
-                    <td><select name="brands[]" id="brands_0" class="form-control item-select brand-select" style="width:150px;">
-                        <option value="">Select Brand</option>
-                        @foreach(getAllBrands() ?? [] as $brand)
-                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                        @endforeach
-                    </select></td>
-                <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
-                        step="0.01" min="0" placeholder="Min Weight" style="width:120px;"></td>
-
-                <td><select name="color[]" id="color_0" class="form-control item-select color-select" style="width:150px;">
-                        <option value="">Select Color</option>
-                        @foreach(getAllColors() ?? [] as $color)
-                            <option value="{{ $color->id }}">{{ $color->color }}</option>
-                        @endforeach
-                    </select></td>
-
-                <td><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_0"
-                        class="form-control" step="0.01" min="0" placeholder="Cons./sq. in." style="width:150px;"></td>
-
-                <td><select name="size[]" id="size_0" class="form-control item-select size-select" style="width:150px;">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">{{ $size->size }}</option>
-                        @endforeach
-                    </select></td>
-
-                <td><input type="text" name="stitching[]" id="stitching_0" class="form-control"
-                        step="0.01" min="0" placeholder="Stitching" style="width:120px;"></td>
-
-                
-                 <td>
-                    <input type="text" name="micron[]" id="micron" placeholder="Micron" class="form-control micron" style="width:120px;">
-                 </td>
-                <td><input type="file" name="printing_sample[]" id="printing_sample_0"
-                        class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample" style="width:180px;"></td>
-
-                <td><input type="text" name="remarks[]" id="remark_0" class="form-control"
-                        placeholder="Remarks" style="width:150px;"></td>
-
-                <td><button type="button" disabled class="btn btn-danger btn-sm removeRowBtn" data-id="0" style="width:60px;">
-                        <i class="fa fa-trash"></i>
-                    </button></td>
-            </tr>
+            <!-- table rows -->
         </tbody>
     </table>
+</div>
+
 </div>
 
 
@@ -163,6 +107,7 @@
         $(".color-select").select2();
         $(".brand-select").select2();
         $(".size-select").select2();
+        $(".select2").select2();
         $('#job_order_id_0').select2({
             placeholder: 'Please Select Job Order',
             width: '100%'
@@ -170,6 +115,7 @@
 
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, true);
 
+        
         function fetchUniqueNumber() {
             let locationId = $('#company_location_id').val();
             let contractDate = $('#purchase_date').val();
@@ -198,8 +144,30 @@
         $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
     });
 
+    $(".job_orders").on("change", function() {
+        console.log($(this).val());
+    })
+
+    function added_job_order(el) {
+        $.ajax({
+            url: '{{ route('store.get.jobOrdersDataForPurchaseRequest') }}',
+            type: 'GET',
+            data: {
+                job_orders: JSON.stringify($(el).val())
+            },
+            success: function (response) {
+                $("#purchaseRequestBody").empty();
+                $("#purchaseRequestBody").html(response);
+            },
+            error: function (xhr, status, error) {
+                console.log(error);
+            }
+        });
+    }
+
     function addRow() {
-        let index = purchaseRequestRowIndex++;
+        let index = `${purchaseRequestRowIndex++}0`;
+   
         let row = `
                 <tr id="row_${index}">
                     <td style="width: 10%">
@@ -242,7 +210,7 @@
                     <td style="width: 8%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="job_order_id[0][]" id="job_order_id_${index}" multiple
+                                <select name="job_order_id[][]" id="job_order_id_${index}" multiple
                                     class="form-control item-select" data-index="0">
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)

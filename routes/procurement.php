@@ -36,6 +36,7 @@ use App\Http\Controllers\Procurement\Store\{
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-request', PurchaseRequestController::class);
     Route::post('get-purchase-request', [PurchaseRequestController::class, 'getList'])->name('get.purchase-request');
+   
 
     Route::resource('gate-buying', GateBuyingController::class);
     Route::post('get-gate-buying', [GateBuyingController::class, 'getList'])->name('get.gate-buying');
@@ -129,6 +130,8 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
 Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-request', StorePurchaseRequestController::class);
+    Route::get("job-order/get", [StorePurchaseRequestController::class, "getItems"])->name("get.jobOrdersDataForPurchaseRequest");
+
     Route::post('get-purchase-request', [StorePurchaseRequestController::class, 'getList'])->name('get.purchase-request');
     Route::get('purchase-request-approvals/{id}', [StorePurchaseRequestController::class, 'manageApprovals'])->name('purchase-request.approvals');
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
@@ -145,7 +148,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list.show');
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
     Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
-
+   
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc", [QcController::class, "index"])->name("qc.get");
@@ -175,6 +178,8 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-order-approvals/{id}', [StorePurchaseOrderController::class, 'manageApprovals'])->name('purchase-order.approvals');
     Route::get('purchase-order/get_order_item', [StorePurchaseOrderController::class, 'get_order_item'])->name('purchase-order.get_order_item');
     Route::get('get-unique-number-order/{locationId}/{contractDate}', [StorePurchaseOrderController::class, 'getNumber'])->name('get-unique-number-order');
+    Route::get("purchase-quotation/get", [StorePurchaseOrderController::class, "get_quotations"])->name("get.quotations");
+    Route::get("purchase-quotation/supplier/get", [StorePurchaseOrderController::class, "get_supplier"])->name("pq.get.supplier");
 
     Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class)->except(['show']);
     Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');

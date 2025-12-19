@@ -8,12 +8,15 @@
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-request') }}" />
-
     <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Locations:</label>
-                <select name="company_location_id[]" id="company_location_id" class="form-control" readonly>
+                <select name="company_location_id[]" id="company_location_i" class="form-control select2" multiple readonly>
+                    <option value="">Select Location</option>
+                    @foreach(get_locations() as $loc)
+                        <option value="{{ $loc->id }}" @selected(in_array($loc->id, $purchaseRequest->locations->pluck("location_id")->toArray()))>{{ $loc->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -29,6 +32,18 @@
                 <label class="form-label">Reference No:</label>
                 <input type="text" name="reference_no" value="{{ $purchaseRequest->reference_no }}" id="reference_no"
                     readonly class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Job Orders:</label>
+                <select class="form-control select2" name="job_orders[]" onchange="added_job_order(this)" id="job_orders" multiple>
+                    <option value="">Select Job Order</option>
+                    @foreach($job_orders as $job_order)
+                        <option value="{{ $job_order->id }}" @selected(in_array($job_order->id, json_decode($purchaseRequest->job_orders)))>{{ $job_order->job_order_no }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
@@ -104,8 +119,8 @@
                         step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" style="width:100px;"></td>
 
                 <td>
-                    <select name="job_order_id[{{ $index }}][]" id="job_order_id_{{ $index }}" multiple
-                        class="form-control item-select" data-index="{{ $index }}" style="width:180px;">
+                    <select name="job_order_id[][]" id="job_order_id_{{ $index }}" multiple
+                        class="form-control item-select" data-index="{{ $index }}"  style="width:180px;">
                         <option value="">Select Job Order</option>
                         @foreach ($job_orders ?? [] as $job_order)
                         <option value="{{ $job_order->id }}"
@@ -204,6 +219,7 @@
     purchaseRequestRowIndex = {{ count($purchaseRequest->PurchaseData) }};
 
     $(document).ready(function() {
+        $(".select2").select2();
         @foreach ($purchaseRequest->PurchaseData as $index => $item)
             $('#category_id_{{ $index }}').select2();
             $('#item_id_{{ $index }}').select2();
@@ -236,8 +252,27 @@
         $('#company_location_id').trigger('change');
     }, 0);
 
+    function added_job_order(el) {
+       console.log($(el).val());
+       
+        $.ajax({
+            url: '{{ route('store.get.jobOrdersDataForPurchaseRequest') }}',
+            type: 'GET',
+            data: {
+                job_orders: JSON.stringify($(el).val())
+            },
+            success: function (response) {
+                $("#purchaseRequestBody").html(response);
+            },
+            error: function (xhr, status, error) {
+                console.log(error);
+            }
+        });
+    }
+
     function addRow() {
-        let index = purchaseRequestRowIndex++;
+
+        let index = `${purchaseRequestRowIndex++}0`;
         let row = `
             <tr id="row_${index}">
                 <input type="hidden" name="item_row_id[]" value="">
@@ -281,7 +316,7 @@
                     <td style="width: 8%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="job_order_id[0][]" id="job_order_id_${index}" multiple
+                                <select name="job_order_id[][]" id="job_order_id_${index}" multiple
                                     class="form-control item-select" data-index="0">
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)

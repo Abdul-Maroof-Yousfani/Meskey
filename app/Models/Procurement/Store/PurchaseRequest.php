@@ -27,6 +27,7 @@ class PurchaseRequest extends Model
         'status',
         'po_status',
         'created_by',
+        'job_orders'
     ];
 
     public function location()
