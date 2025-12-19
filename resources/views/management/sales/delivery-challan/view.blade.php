@@ -296,17 +296,18 @@
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
                                         onkeyup="is_able_to_submit(this); calc(this)" value="{{ $data->no_of_bags }}"
                                         class="form-control no_of_bags" step="0.01" min="0" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty }}" class="form-control qty"
-                                        step="0.01" min="0" readonly>
 
+                                    
                                     <span style="font-size: 14px;;">Used Quantity:
                                         {{ delivery_challan_bags_used($data->do_data_id) }}</span>
                                     <br />
                                     <span style="font-size: 14px;">Balance:
                                         {{ delivery_challan_balance($data->do_data_id) }}</span>
+                                </td>
+                                <td>
+                                    <input type="text" name="qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->qty }}" class="form-control qty"
+                                        step="0.01" min="0" readonly>
 
                                 </td>
                                 <td>

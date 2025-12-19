@@ -55,7 +55,7 @@
             </td>
             <td>
                 <input type="text" name="qty[]" id="qty_{{ $index }}"
-                    value="{{ round($data->bag_size / $balance) }}"
+                    value="{{ round($data->qty) }}"
                     onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
                     data-balance="{{ delivery_challan_balance($data->id) }}"
                     class="form-control qty" step="0.01" min="0" oninput="calc(this)">

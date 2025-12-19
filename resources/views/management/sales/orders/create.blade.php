@@ -275,7 +275,7 @@
     function is_type_credit(el) {
         const type = $(el).val();
         
-        if(type == 11) {
+        if(type == 8) {
             $(".credit").prop('disabled', false);
         } else {
             $(".credit").prop("disabled", true);
