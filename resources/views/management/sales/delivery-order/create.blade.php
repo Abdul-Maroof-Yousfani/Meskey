@@ -289,7 +289,7 @@
     }
 
     function updateLocations(locations) {
-        const select = $("#locations");
+        const select = $("#locations").select2({data: locations});
         const current = select.val();
         select.empty();
         select.append('<option value="">Select Locations</option>');
@@ -678,7 +678,6 @@
             },
             dataType: "html",
             success: function(res) {
-                console.log("success");
                 $("#alesInquiryBody").empty();
                 $("#salesInquiryBody").html(res);
             },

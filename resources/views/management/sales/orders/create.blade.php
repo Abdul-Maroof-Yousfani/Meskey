@@ -491,12 +491,10 @@
                     $("#contact_person").val(res.contact_person).prop('readonly', true);
                 }
 
-                console.log(res.arrival_locations);
 
                 const inquiryFactories = res.arrival_locations || (res.arrival_location_id ? [res.arrival_location_id] : []);
                 const inquirySections = res.arrival_sub_locations || (res.arrival_sub_location_id ? [res.arrival_sub_location_id] : []);
 
-                console.log(res.arrival_locations);
                 // clear old options
                 $('#arrival_location_id').empty();
 
@@ -509,6 +507,18 @@
                 // notify select2
                 $('#arrival_location_id').trigger('change');
 
+                 // clear old options
+                $('#locations').empty();
+
+                // append + select all
+                res.locations.forEach(item => {
+                    let option = new Option(item.text, item.id, true, true); // selected = true
+                    $('#locations').append(option);
+                });
+
+                // notify select2
+                $('#locations').trigger('change');
+
                
                 $('#arrival_sub_location_id').empty();
 
@@ -520,11 +530,6 @@
 
                 // notify select2
                 $('#arrival_sub_location_id').trigger('change');
-
-                // Fill locations
-                if (res.locations && res.locations.length > 0) {
-                    $("#locations").val(res.locations).trigger('change.select2');
-                }
 
                 // Fill token money
                 if (res.token_money !== null && res.token_money !== undefined) {

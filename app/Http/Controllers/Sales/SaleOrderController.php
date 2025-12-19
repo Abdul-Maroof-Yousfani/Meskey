@@ -7,6 +7,7 @@ use App\Http\Requests\Sales\SalesOrderRequest;
 use App\Models\BagType;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\ArrivalSubLocation;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Customer;
 use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
@@ -293,6 +294,15 @@ class SaleOrderController extends Controller
         $inquiry = SalesInquiry::with(['sales_inquiry_data', 'locations'])->where('id', $inquiry_id)->first();
 
 
+        $company_locations = [];
+        foreach($inquiry->locations as $location) {
+            $location = CompanyLocation::select("id", 'name')->where("status", "active")->find($location->location_id);
+            $company_locations[] = [
+                "text" => $location->name,
+                "id" => $location->id
+            ];
+        }
+
         $factory_locations = [];
 
         foreach($inquiry->factories as $factory) {
@@ -303,6 +313,7 @@ class SaleOrderController extends Controller
             ];
         }
 
+        $section_locations = [];
         foreach($inquiry->sections as $section) {
             $section = ArrivalSubLocation::select("id", "name")->where("status", "active")->find($section->arrival_sub_location_id);
             $section_locations[] = [
@@ -317,7 +328,7 @@ class SaleOrderController extends Controller
                 'required_date' => $inquiry->required_date,
                 'customer_id' => $inquiry->customer,
                 'contract_type' => $inquiry->contract_type,
-                'locations' => $inquiry->locations->pluck('location_id')->toArray(),
+                'locations' => $company_locations,
                 'token_money' => $inquiry->token_money,
                 'contact_person' => $inquiry->contact_person,
                 'arrival_location_id' => $inquiry->factories->pluck("arrival_location_id")->toArray(),
