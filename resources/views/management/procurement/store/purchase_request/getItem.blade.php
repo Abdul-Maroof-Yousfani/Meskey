@@ -1,7 +1,10 @@
+@php
+    $i = 0;
+@endphp
 @foreach ($job_orders as $job_order)
-        @php
-            $i = $loop->iteration;
-        @endphp
+    @php
+        ++$i;
+    @endphp   
     @foreach ($job_order->packing_items as $packing_item)
         <tr id="row_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
