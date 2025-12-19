@@ -26,11 +26,11 @@
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
-                    @foreach (get_supplier() as $supplier)
+                    {{-- @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}">
                             {{ $supplier->name }}
                         </option>
-                    @endforeach
+                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -168,32 +168,72 @@
             const purchaseRequestId = $('select[name="purchase_request_id"]').val();
             if (purchaseRequestId) {
                 get_purchase(purchaseRequestId);
+                get_supplier($(this).val());
             }
         });
 
-        $(document).on('change', '#supplier_id, [name="purchase_request_id"]', function() {
-            const supplierId = $('#supplier_id').val();
-            const purchaseRequestId = $('[name="purchase_request_id"]').val();
-            $('#quotation_no').empty();
-            if (supplierId && purchaseRequestId) {
-                initializeDynamicDependentCall1Select2All(
-                    '#supplier_id',
-                    '#quotation_no',
-                    'suppliers',
-                    'purchase_quotation_no',
-                    'id',
-                    'purchase_quotations',
-                    'supplier_id',
-                    'purchase_quotation_no',
-                    true,
-                    false,
-                    true,
-                    true, {
-                        purchase_request_id: purchaseRequestId
-                    }
-                );
-            }
+
+        function get_supplier(pq_id) {
+            $.ajax({
+                url: "{{ route('store.pq.get.supplier') }}",
+                type: 'GET',
+                data: { pq_id },
+                success: function(response) {
+                    console.log(response);
+                    $("#supplier_id").empty();
+                    $("#supplier_id").select2({
+                        data: response
+                    })
+                },
+                error: function(xhr, status, error) {
+
+                }
+            });
+        }
+
+        $(document).on('change', '[name="purchase_request_id"]', function() {
+            $.ajax({
+                url: "{{ route('store.get.quotations') }}",
+                type: 'GET',
+                data: {
+                    pr_id: $('[name="purchase_request_id"]').val()
+                },
+                success: function(response) {
+                    $("#quotation_no").empty();
+                    $("#quotation_no").select2({
+                        data: response
+                    })
+                },
+                error: function(xhr, status, error) {
+
+                }
+            });
         });
+        
+
+        // $(document).on('change', '[name="purchase_request_id"]', function() {
+        //     const supplierId = $('#supplier_id').val();
+        //     const purchaseRequestId = $('[name="purchase_request_id"]').val();
+        //     $('#quotation_no').empty();
+        //     if (supplierId && purchaseRequestId) {
+        //         initializeDynamicDependentCall1Select2All(
+        //             '#supplier_id',
+        //             '#quotation_no',
+        //             'suppliers',
+        //             'purchase_quotation_no',
+        //             'id',
+        //             'purchase_quotations',
+        //             'supplier_id',
+        //             'purchase_quotation_no',
+        //             true,
+        //             false,
+        //             true,
+        //             true, {
+        //                 purchase_request_id: purchaseRequestId
+        //             }
+        //         );
+        //     }
+        // });
 
     });
     $(".select2").select2();
