@@ -1,15 +1,12 @@
+
 @php
-    $outer = 0;
-    $inner = 0;
+    $i = 0;
 @endphp
 @foreach ($job_orders as $job_order)
-    @php
-        ++$outer;
-    @endphp   
+       
     @foreach ($job_order->packing_items as $packing_item)
         @php
-            ++$inner;
-            $i = $outer . "-" . $inner;
+            ++$i;
         @endphp
         <tr id="row_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
@@ -121,9 +118,7 @@
             </td>
         </tr>
     @endforeach
-    @php
-        $inner = 0;
-    @endphp
+ 
 @endforeach
 
 
