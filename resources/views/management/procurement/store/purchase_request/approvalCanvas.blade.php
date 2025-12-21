@@ -3,7 +3,7 @@
         overflow-x: hidden;
     }
 </style>
-<form action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
+<form action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit2"
     autocomplete="off">
     @csrf
     @method('PUT')
