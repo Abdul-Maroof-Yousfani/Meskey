@@ -175,32 +175,13 @@ class PurchaseRequestController extends Controller
 
                 ]);
 
-                // Ensure $request->job_order_id exists and is an array
-                if (isset($request->job_order_id) && is_array($request->job_order_id)) {
-                    foreach ($request->job_order_id as $job_order_ids) {
-                        // Ensure nested item is also an array
-                        if (is_array($job_order_ids)) {
-                            foreach ($job_order_ids as $job_order_id) {
-                                // Skip if job_order_id is null or empty
-                                if (empty($job_order_id)) {
-                                    continue;
-                                }
-
-                                try {
-                                    // Safely create record
-                                    PurchaseAgainstJobOrder::create([
-                                        'purchase_request_id' => $purchaseRequest->id,
-                                        'purchase_request_data_id' => $requestData->id,
-                                        'job_order_id' => $job_order_id,
-                                    ]);
-                                } catch (\Illuminate\Database\QueryException $e) {
-                                    // Log the error instead of breaking
-                                    \Log::error('Failed to insert PurchaseAgainstJobOrder: '.$e->getMessage());
-
-                                    continue; // skip this item and continue loop
-                                }
-                            }
-                        }
+                if (! empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
+                    foreach ($request->job_order_id[$index] as $jobOrderId) {
+                        PurchaseAgainstJobOrder::create([
+                            'purchase_request_id' => $purchaseRequest->id,
+                            'purchase_request_data_id' => $requestData->id,
+                            'job_order_id' => $jobOrderId,
+                        ]);
                     }
                 }
             }
@@ -401,9 +382,10 @@ class PurchaseRequestController extends Controller
 
     public function destroy($id)
     {
-        $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseRequestData = PurchaseRequestData::where('id', $id)->update(['status' => '0']);
+        $purchaseRequest = PurchaseRequest::find($id)->delete();
+        // $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
+        // $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
+        // $PurchaseRequestData = PurchaseRequestData::where('id', $id)->delete();
 
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
