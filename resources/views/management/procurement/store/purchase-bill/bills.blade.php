@@ -123,7 +123,7 @@
         <td style="width: 30%">
             <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]"
                 value="{{ getTaxPercentageById($data->sales_tax) }}" id="tax_id_{{ $key }}"
-                class="form-control tax_id" step="0.01" min="0" readonly>
+                class="form-control tax_id" step="0.01" min="0">
         </td>
         @php
             $gst_amount = (getTaxPercentageById($data->sales_tax) / 100) * ($net_amount);
