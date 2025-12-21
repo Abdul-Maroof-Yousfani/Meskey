@@ -234,9 +234,9 @@
                                         step="0.01" min="0">
                                 </td>
                                 <td style="width: 30%">
-                                    <input style="width: 100px;" type="number" oninput="calc({{ $key }})"
+                                    <input style="width: 100px;" type="number" onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         name="excise_duty[]" value="{{ $data->excise_duty }}"
-                                        id="excise_duty_{{ $key }}" class="form-control" step="0.01"
+                                        id="excise_duty_{{ $key }}" class="form-control excise_duty" step="0.01"
                                         min="0">
                                 </td>
 
@@ -309,7 +309,7 @@
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px;" type="number" readonly
+                                    <input style="width: 100px;" type="number"
                                         value="{{ $data->rate * $data->qty + ((int) $tax_percentage / 100) * ($data->rate * $data->qty) }}"
                                         id="total_{{ $key }}" class="form-control net_amount"
                                         step="0.01" min="0" readonly name="total[]">
@@ -507,44 +507,76 @@
     }
 
     function calc(num) {
-        var qtyInput = $('#qty_' + num);
-        var maxQty = parseFloat(qtyInput.attr('max'));
-        var qty = parseFloat(qtyInput.val());
-        var rate = parseFloat($('#rate_' + num).val());
+    // Get input values
+    var qtyInput = $('#qty_' + num);
+    var maxQty = parseFloat(qtyInput.attr('max')) || 0;
+    var qty = parseFloat(qtyInput.val()) || 0;
+    var rate = parseFloat($('#rate_' + num).val()) || 0;
+    var excise_duty = parseFloat($('#excise_duty_' + num).val()) || 0;
+    console.log(excise_duty);
 
-        if (qty > maxQty) {
-            alert('Maximum allowed quantity is ' + maxQty);
-            qty = maxQty;
-            qtyInput.val(maxQty);
-        }
-
-        var total = qty * rate;
-        $('#total_' + num).val(total);
+    // Check max quantity
+    if (qty > maxQty) {
+        alert('Maximum allowed quantity is ' + maxQty);
+        qty = maxQty;
+        qtyInput.val(maxQty);
     }
 
+    // Get tax percentage from selected option
+    var selectedOption = $('#tax_id_' + num + ' option:selected');
+    var tax_percentage = parseFloat(selectedOption.data('percentage')) || 0;
 
-    function calculatePercentage(el) {
-        const gross_amount = $(el).closest("tr").find(".gross_amount");
-        const rate = $(el).closest("tr").find(".rate");
-        const qty = $(el).closest("tr").find(".qty");
-
-        gross_amount.val(rate.val() * qty.val());
-
-        const tax_percent = $(el)
-            .closest("tr")
-            .find(".taxes option:selected")
-            .data("percentage");
-        const percent_amount = $(el).closest("tr").find(".percent_amount");
-        const net_amount = $(el).closest("tr").find(".net_amount");
+    // Calculate total
+    var subtotal = qty * rate;
+    var tax_amount = subtotal * (tax_percentage / 100);
+    var total = subtotal + tax_amount + excise_duty;
+    
+    $('#total_' + num).val(total.toFixed(2));
+}
 
 
+function calculatePercentage(el) {
+    // Find the closest row
 
-        const percent_amount_of_gross = (parseFloat(tax_percent) / 100) * parseFloat(gross_amount.val());
-        const net_amount_value = parseFloat(gross_amount.val()) + parseFloat(percent_amount_of_gross);
+    var row = $(el).closest("tr");
 
-        percent_amount.val(percent_amount_of_gross);
-        net_amount.val(net_amount_value)
+    // Get input elements within the row
+    var qtyInput = row.find(".qty");
+    var rateInput = row.find(".rate");
+    var exciseDutyInput = row.find(".excise_duty");
+    var taxSelect = row.find(".taxes");
+    var grossAmountInput = row.find(".gross_amount");
+    var percentAmountInput = row.find(".percent_amount");
+    var netAmountInput = row.find(".net_amount");
+    var totalInput = row.find(".total");
 
+    // Read values
+    var maxQty = parseFloat(qtyInput.attr("max")) || 0;
+    var qty = parseFloat(qtyInput.val()) || 0;
+    var rate = parseFloat(rateInput.val()) || 0;
+    var exciseDuty = parseFloat(exciseDutyInput.val()) || 0;
 
+    // Check max quantity
+    if (qty > maxQty) {
+        alert("Maximum allowed quantity is " + maxQty);
+        qty = maxQty;
+        qtyInput.val(maxQty);
     }
+
+    // Calculate gross/subtotal
+    var grossAmount = qty * rate;
+    grossAmountInput.val(grossAmount.toFixed(2));
+
+    // Get tax percentage
+    var taxPercentage = parseFloat(taxSelect.find("option:selected").data("percentage")) || 0;
+    var taxAmount = (taxPercentage / 100) * grossAmount;
+    percentAmountInput.val(taxAmount.toFixed(2));
+
+    // Calculate net / total
+    var netAmount = grossAmount + taxAmount + exciseDuty;
+    console.log(netAmount);
+    netAmountInput.val(netAmount);
+    totalInput.val(netAmount.toFixed(2));
+}
+
 </script>
