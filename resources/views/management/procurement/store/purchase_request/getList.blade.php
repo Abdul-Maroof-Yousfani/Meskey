@@ -101,7 +101,7 @@
                                     @endif
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
                                         @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
-                                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $requestGroup['request_data']->id) }}','Edit Purchase Request',false,'100%')"
+                                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')"
                                                 class="info p-1 text-center mr-2 position-relative">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
