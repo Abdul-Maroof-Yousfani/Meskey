@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -251,6 +251,13 @@ if (!function_exists('image_path')) {
         return asset($path);
     }
 }
+
+if(!function_exists("job_orders")) {
+    function job_orders() {
+        return JobOrder::all();
+    }
+}
+
 if (!function_exists('getMenu')) {
 
     function getMenu()

@@ -6,9 +6,9 @@
        
     @foreach ($job_order->packing_items as $packing_item)
         @php
-            ++$i;
+            $i = $job_order->id;
         @endphp
-        <tr id="row_{{ $i }}" class="jo-{{ $job_order->id }}">
+        <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
                 <select name="category_id[]" id="category_id_{{ $i }}"
                     onchange="filter_items(this.value,{{ $i }})" class="form-control item-select select2Dropdown"
@@ -26,6 +26,8 @@
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width:120px;">
                     <option value="">Select Item</option>
                 </select>
+                <input type="hidden" name="index[]" value="{{ $i }}" />
+                <input type="hidden" name="is_single_job_order[]" value="1" />
             </td>
 
             <td>
@@ -39,9 +41,10 @@
             </td>
 
             <td>
-                <input type="text" class="form-control" value="{{ $job_order->job_order_no }}" readonly
-                    style="width:190px;" />
-                <input type="hidden" name="job_order_id[][]" value="{{ $job_order->id }}" />
+                <select class="form-control select2Dropdown" style="width: 250px;" multiple disabled>
+                    <option selected value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
+                </select>
+                <input type="hidden" name="job_order_id[{{ $i }}][]" value="{{ $job_order->id }}" />
             </td>
 
             <td>
@@ -111,7 +114,7 @@
             </td>
 
             <td>
-                <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
+                <button type="button" onclick="removeRow('pre_{{ $i }}')" class="btn btn-danger btn-sm removeRowBtn"
                     data-id="{{ $i }}" style="width:120px;">
                     <i class="fa fa-trash"></i>
                 </button>
@@ -135,6 +138,8 @@
     $(".job_orders").on("change", function() {
         console.log($(this).val());
     })
+
+
 
 
     function get_uom(index) {

@@ -25,10 +25,10 @@ class PurchaseRequestController extends Controller
         return view('management.procurement.store.purchase_request.index');
     }
 
-    public function getItems()
+    public function getItems(Request $request)
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::with('packing_items')->whereIn('id', json_decode(request()->job_orders))->get();
+        $job_orders = JobOrder::with('packing_items')->where('id', request()->job_order)->get();
 
         return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories'));
     }
@@ -130,7 +130,6 @@ class PurchaseRequestController extends Controller
         DB::beginTransaction();
         try {
             $company_locations = $request->company_location_id;
-
             $purchaseRequest = PurchaseRequest::create([
                 'purchase_request_no' => self::getNumber($request, $request->company_location_id, $request->purchase_date),
                 'purchase_date' => $request->purchase_date,
@@ -139,7 +138,7 @@ class PurchaseRequestController extends Controller
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
-                'job_orders' => collect($request->job_order_id)->flatten()->filter()
+                'job_orders' => collect($request->master_job_orders)->flatten()->filter()
             ]);
 
             foreach ($company_locations as $company_location) {
@@ -172,15 +171,15 @@ class PurchaseRequestController extends Controller
                     'printing_sample' => $printingSamplePath,
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
+                    "is_single_job_order" => $request->is_single_job_order[$index] ?? false
 
                 ]);
-
-                if (! empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                    foreach ($request->job_order_id[$index] as $jobOrderId) {
+                if (! empty($request->job_order_id[$request->index[$index]]) && is_array($request->job_order_id[$request->index[$index]])) {
+                    foreach ($request->job_order_id[$request->index[$index]] as $job_order) {
                         PurchaseAgainstJobOrder::create([
                             'purchase_request_id' => $purchaseRequest->id,
                             'purchase_request_data_id' => $requestData->id,
-                            'job_order_id' => $jobOrderId,
+                            'job_order_id' => $job_order,
                         ]);
                     }
                 }
@@ -268,6 +267,7 @@ class PurchaseRequestController extends Controller
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'am_change_made' => 1,
+                'job_orders' => collect($request->master_job_orders)->flatten()->filter()
             ];
             // echo $purchaseRequest->am_approval_status;
 
@@ -304,13 +304,13 @@ class PurchaseRequestController extends Controller
                             'remarks' => $request->remarks[$index] ?? null,
                             'brand_id' => $request->brands[$index],
                             'micron' => $request->micron[$index],
+                            "is_single_job_order" => $request->is_single_job_order[$index]
                         ]);
                         $submittedItems[] = $requestData->id;
 
                         PurchaseAgainstJobOrder::where('purchase_request_data_id', $requestData->id)->delete();
-
-                        if (! empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                            foreach ($request->job_order_id[$index] as $jobOrderId) {
+                        if (! empty($request->job_order_id[$request->index[$index]]) && is_array($request->job_order_id[$request->index[$index]])) {
+                            foreach ($request->job_order_id[$request->index[$index]] as $jobOrderId) {
                                 PurchaseAgainstJobOrder::create([
                                     'purchase_request_id' => $purchaseRequest->id,
                                     'purchase_request_data_id' => $requestData->id,
@@ -344,9 +344,8 @@ class PurchaseRequestController extends Controller
                     ]);
 
                     $submittedItems[] = $requestData->id;
-
-                    if (! empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                        foreach ($request->job_order_id[$index] as $jobOrderId) {
+                    if (! empty($request->job_order_id[$request->index[$index]]) && is_array($request->job_order_id[$request->index[$index]])) {
+                        foreach ($request->job_order_id[$request->index[$index]] as $jobOrderId) {
                             PurchaseAgainstJobOrder::create([
                                 'purchase_request_id' => $purchaseRequest->id,
                                 'purchase_request_data_id' => $requestData->id,

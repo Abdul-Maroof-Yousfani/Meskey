@@ -32,7 +32,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Job Orders:</label>
-                <select class="form-control select2 job_orders" onchange="added_job_order(this)" multiple>
+                <select class="form-control select2 job_orders" name="master_job_orders[]" multiple>
                     <option value="">Select Job Order</option>
                     @foreach($job_orders as $job_order)
                         <option value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
@@ -79,7 +79,6 @@
             </tr>
         </thead>
         <tbody id="purchaseRequestBody">
-            <!-- table rows -->
         </tbody>
     </table>
 </div>
@@ -148,22 +147,31 @@
         console.log($(this).val());
     })
 
-    function added_job_order(el) {
+    $('.job_orders').on('select2:select', function (e) {
+        let id = e.params.data.id;
+     
         $.ajax({
             url: '{{ route('store.get.jobOrdersDataForPurchaseRequest') }}',
             type: 'GET',
             data: {
-                job_orders: JSON.stringify($(el).val())
+                job_order: id,
             },
             success: function (response) {
-                $("#purchaseRequestBody").empty();
-                $("#purchaseRequestBody").html(response);
+                $("#purchaseRequestBody").append(response);
             },
             error: function (xhr, status, error) {
                 console.log(error);
             }
         });
-    }
+    });
+
+    $('.job_orders').on('select2:unselect', function (e) {
+        let id = e.params.data.id;
+        // alert(id);
+        // console.log($(`#row_${id}`));
+        $(`#row_pre_${id}`).remove();
+    });
+
 
     function addRow() {
         let index = `${purchaseRequestRowIndex++}0`;
@@ -193,6 +201,8 @@
                                     class="form-control item-select" data-index="0">
                                     <option value="">Select Item</option>
                                 </select>
+                                <input type="hidden" name="index[]" value="${index}" />
+         
                             </div>
                         </div>
                     </td>
@@ -210,7 +220,7 @@
                     <td style="width: 8%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="job_order_id[][]" id="job_order_id_${index}" multiple
+                                <select name="job_order_id[${index}][]" id="job_order_id_${index}" multiple
                                     class="form-control item-select" data-index="0">
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
