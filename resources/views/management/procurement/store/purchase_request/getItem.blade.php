@@ -148,6 +148,8 @@
     }
 
      function filter_items(category_id, count) {
+        alert(count);
+        
         $.ajax({
             url: '{{ route('get.items') }}',
             type: 'GET',
