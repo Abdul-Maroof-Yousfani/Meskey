@@ -169,7 +169,7 @@
         let id = e.params.data.id;
         // alert(id);
         // console.log($(`#row_${id}`));
-        $(`#row_pre_${id}`).remove();
+        $(`.jo-${id}`).remove();
     });
 
 

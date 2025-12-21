@@ -11,7 +11,7 @@
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
                 <select name="category_id[]" id="category_id_{{ $i }}"
-                    onchange="filter_items(this.value,'{{ $i }}')" class="form-control item-select select2Dropdown"
+                    onchange="filter_items(this.value,'{{ $i }}')" class="form-control item-select select2Dropdown jo-{{ $job_order->id }}"
                     data-index="{{ $i }}" style="width:120px;">
                     <option value="">Select Category</option>
                     @foreach ($categories ?? [] as $category)
