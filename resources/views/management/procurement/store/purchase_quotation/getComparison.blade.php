@@ -155,14 +155,13 @@
                                     <div class="d-flex gap-2">
                                         <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
                                             class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-check font-medium-3"></i>
+                                            <i class="ft-eye font-medium-3"></i>
 
                                         </a>
                                     </div>
-                                    @if (
-                                        $requestGroup['request_status'] != 'approved' &&
-                                            $requestGroup['request_status'] != 'rejected' &&
-                                            $requestGroup['request_status'] != 'partial approved')
+                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
+                                        @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
+                                   
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
                                                 class="info p-1 text-center mr-2 position-relative"
@@ -171,15 +170,16 @@
 
                                             </a>
                                         </div>
-                                    @endif
                                     {{-- </td>
                             <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
                                     <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
+                                        <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $requestGroup['request_data']->id) }}', '{{ route('store.purchase-quotation.comparison-list.show') }}')"
                                             class="info p-1 text-center mr-2 position-relative" title="View Approved">
-                                            <i class="ft-eye font-medium-3"></i>
+                                            <i class="ft-x font-medium-3"></i>
                                         </a>
                                     </div>
+                                    @endif
+                                    @endif
                                 </td>
 
                                 @php

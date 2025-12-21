@@ -456,15 +456,14 @@ class PurchaseQuotationController extends Controller
         // dd(count($purchaseRequest->PurchaseData));
         
 
-        $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-            ->where('am_approval_status', 'pending')->pluck('id');
+        $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)->pluck('id');
 
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->where('am_approval_status', 'pending')
+            // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
             // })
@@ -481,6 +480,7 @@ class PurchaseQuotationController extends Controller
             'locations' => $locations,
             'job_orders' => $job_orders,
             'PurchaseQuotationData' => $PurchaseQuotationData,
+            "PurchaseQuotation" => $PurchaseQuotationData[0]->purchase_quotation,
             'data1' => $data,
         ]);
     }
@@ -550,12 +550,12 @@ class PurchaseQuotationController extends Controller
             //         $query->where('am_approval_status', 'approved');
             //     }
             // )
-            ->when(
-                in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
-                function ($query) {
-                    $query->where('am_approval_status', 'approved');
-                }
-            )
+            // ->when(
+            //     in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
+            //     function ($query) {
+            //         $query->where('am_approval_status', 'approved');
+            //     }
+            // )
 
             ->get();
 
@@ -754,8 +754,7 @@ class PurchaseQuotationController extends Controller
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
    
-         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-            ->where('am_approval_status', 'pending')->pluck('id');
+        $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)->pluck('id');
 
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
@@ -975,11 +974,11 @@ class PurchaseQuotationController extends Controller
             
             
             $PurchaseQuotation->update([
-                "description" => $request->description
+                "description" => $request->description,
+                "am_change_made" => 1,
             ]);
 
             PurchaseQuotationData::where('purchase_quotation_id', $PurchaseQuotation->id)->delete();
-
             foreach ($request->item_id as $index => $itemId) {
                 PurchaseQuotationData::create([
                     'purchase_quotation_id' => $PurchaseQuotation->id,
@@ -989,7 +988,7 @@ class PurchaseQuotationController extends Controller
                     'qty' => $request->qty[$index] ?? 0,
                     'rate' => $request->rate[$index],
                     'total' => ($request->qty[$index] ?? 0) * $request->rate[$index],
-                    'supplier_id' => $request->supplier_id,
+                    'supplier_id' => $request->supplier_id_master,
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
             }

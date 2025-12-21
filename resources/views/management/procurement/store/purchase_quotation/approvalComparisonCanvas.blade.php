@@ -14,7 +14,7 @@
              </select>
          </div>
      </div>
-     {{-- <div class="col-md-3">
+     <div class="col-md-3">
          <div class="form-group">
              <label>Location:</label>
              <select disabled name="company_location" id="company_location_id" class="form-control select2">
@@ -28,29 +28,40 @@
                      value="{{ optional($purchaseRequest)->location_id }}" id="location_id">
              </select>
          </div>
-     </div> --}}
-     <div class="col-md-3">
-         <div class="form-group">
-             <label>PR Date:</label>
-             <input readonly type="date" id="purchase_date" value="{{ $purchaseRequest->purchase_date }}"
-                 name="purchase_date" class="form-control">
-         </div>
      </div>
+     <div class="col-md-3">
+        <div class="form-group">
+            <label>Quotation Date:</label>
+            <input readonly type="date" id="purchase_date"
+                value="{{ optional($PurchaseQuotation)->quotation_date }}" name="purchase_date"
+                class="form-control">
+        </div>
+    </div>
 
-     {{-- <div class="col-md-3">
+    <div class="col-md-3">
+        <div class="form-group">
+            <label>Reference No:</label>
+            <select readonly class="form-control" name="purchase_quotation_id">
+                <option value="{{ $PurchaseQuotation->id }}">
+                    {{ optional($PurchaseQuotation)->purchase_quotation_no }}</option>
+            </select>
+        </div>
+    </div>
+
+     <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
                 <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
-                        {{ $supplier->id == $purchaseRequestData->supplier_id ? 'selected' : '' }}>
+                        {{ $supplier->id == $PurchaseQuotation->supplier_id ? 'selected' : '' }}>
                             {{ $supplier->name }}
                         </option>
                     @endforeach
                 </select>
             </div>
-        </div> --}}
+        </div>
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>

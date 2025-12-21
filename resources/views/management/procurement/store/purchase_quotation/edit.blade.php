@@ -62,7 +62,7 @@
                             {{ $supplier->name }}
                         </option>
                     @endforeach
-                    <input type="hidden" name="supplier_id" value="{{ optional($purchaseQuotation)->supplier_id }}"
+                    <input type="hidden" name="supplier_id_master" value="{{ optional($purchaseQuotation)->supplier_id }}"
                         id="supplier_id">
                 </select>
             </div>
@@ -112,8 +112,9 @@
                         @foreach ($PurchaseQuotationData ?? [] as $key => $data)
                             <tr id="row_{{ $key }}">
                                 <td style="width: 30%">
-                                    <select style="width: 100px" id="category_id_{{ $key }}" disabled
+                                    <select style="width: 100px" id="category_id_{{ $key }}"
                                         onchange="filter_items(this.value,{{ $key }})"
+                                        disabled
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         <option value="">Select Category</option>
                                         @foreach ($categories ?? [] as $category)
@@ -130,7 +131,8 @@
 
                                 <td style="width: 30%">
                                     <select style="width: 100px" id="supplier_id_{{ $key }}"
-                                        name="supplier_id[]" disabled class="form-control item-select select2"
+                                        name="supplier_id[]" class="form-control item-select select2"
+                                        disabled
                                         data-index="{{ $key }}">
                                         <option value="">Select Vendor</option>
                                         @foreach (get_supplier() as $supplier)
@@ -143,7 +145,8 @@
 
                                 <td style="width: 30%">
                                     <select style="width: 100px;" id="item_id_{{ $key }}"
-                                        onchange="get_uom({{ $key }})" disabled
+                                        onchange="get_uom({{ $key }})"
+                                        disabled
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         @foreach (get_product_by_category($data->category_id) as $item)
                                             <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
@@ -158,68 +161,68 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
-                                        id="uom_{{ $key }}" class="form-control" disabled readonly>
+                                        id="uom_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="number" disabled
+                                    <input style="width: 100px" type="number"
                                         value="{{ $data->purchase_request?->min_weight ?? null }}"
                                         id="min_weight_{{ $key }}" class="form-control" step="0.01"
-                                        min="0">
+                                        min="0" readonly>
                                     <input type="hidden" name="min_weight[]"
                                         value="{{ $data->purchase_request?->min_weight ?? null }}">
                                 </td>
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="text" disabled
+                                    <input style="width: 100px" type="text"
                                         value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
-                                        id="color_{{ $key }}" class="form-control">
+                                        id="color_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="brand[]"
                                         value="{{ $data->purchase_request?->brand_id ?? null }}">
                                 </td>
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="text" disabled
+                                    <input style="width: 100px" type="text"
                                         value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
-                                        id="color_{{ $key }}" class="form-control">
+                                        id="color_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="color[]"
                                         value="{{ $data->purchase_request?->color ?? null }}">
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="number" disabled
+                                    <input style="width: 100px" type="number"
                                         value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}"
                                         id="construction_{{ $key }}" class="form-control" step="0.01"
-                                        min="0">
+                                        min="0" readonly>
                                     <input type="hidden" name="construction_per_square_inch[]"
                                         value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}">
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="text" disabled
+                                    <input style="width: 100px" type="text"
                                         value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                                        id="size_{{ $key }}" class="form-control">
+                                        id="size_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="size[]"
                                         value="{{ $data->purchase_request?->size ?? null }}">
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="text" disabled
+                                    <input style="width: 100px" type="text"
                                         value="{{ $data->purchase_request?->stitching ?? null }}"
-                                        id="stitching_{{ $key }}" class="form-control">
+                                        id="stitching_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="stitch[]"
                                         value="{{ $data->purchase_request?->stitching ?? null }}">
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="text" disabled
+                                    <input style="width: 100px" type="text"
                                         value="{{ $data->purchase_request?->micron ?? null }}"
-                                        id="micron_{{ $key }}" class="form-control">
+                                        id="micron_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="stitch[]"
                                         value="{{ $data->purchase_request?->micron ?? null }}">
                                 </td>
 
                                 <td style="width:150px;">
-                                    <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                    <input disabled type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" class="form-control" accept="image/*,application/pdf">
                                     @if (!empty($data->purchase_request->printing_sample))
                                         <small>
                                             <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
@@ -232,6 +235,7 @@
                                 <td style="width: 30%">
                                     <input style="width: 100px" name="qty[]" type="number"
                                         value="{{ $data->qty }}" id="qty_{{ $key }}"
+                                        onkeyup="calc('{{ $key }}')"
                                         class="form-control" step="0.01" min="0"
                                         max="{{ $data->qty }}">
                                 </td>
@@ -239,13 +243,14 @@
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" name="rate[]"
                                         value="{{ $data->rate }}" id="rate_{{ $key }}"
+                                        onkeyup="calc('{{ $key }}')"
                                         class="form-control" step="0.01" min="0">
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
+                                    <input style="width: 100px" type="number" value="{{ $data->total }}"
                                         id="total_{{ $key }}" class="form-control" step="0.01"
-                                        min="0" name="total[]">
+                                        min="0" name="total[]" readonly>
                                 </td>
 
                                 <td style="width: 30%">
@@ -292,7 +297,7 @@
         width: '100%'
     });
 
-    let rowIndex = {{ $purchaseQuotationDataCount ?? 1 }};
+    rowIndex = {{ $purchaseQuotationDataCount ?? 1 }};
 
     function addRow() {
         let index = rowIndex++;
@@ -389,8 +394,8 @@
         $('#uom_' + index).val(uom);
     }
 
-    let allowedCategories = [];
-    let allowedItems = [];
+    allowedCategories = [];
+    allowedItems = [];
 
     function get_purchase(purchaseQuotationId) {
         if (!purchaseQuotationId) return;
@@ -438,7 +443,7 @@
         });
     }
 
-    function calc(num) {
+     function calc(num) {
         var qtyInput = $('#qty_' + num);
         var maxQty = parseFloat(qtyInput.attr('max'));
         var qty = parseFloat(qtyInput.val());
@@ -451,6 +456,6 @@
         }
 
         var total = qty * rate;
-        $('#total_' + num).val(total);
+        $('#total_' + num).val(parseFloat(total));
     }
 </script>

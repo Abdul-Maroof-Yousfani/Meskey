@@ -39,6 +39,12 @@ use App\Http\Controllers\Reports\{
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
+
+Route::get("/procurement/delete-data", function() {
+    PurchaseRequest::query()->delete();
+    PurchaseQuotation::query()->delete();
+});
+
 Route::get("checking-data", function() {
     SalesInquiry::query()->delete();
     SalesOrder::query()->delete();
