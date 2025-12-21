@@ -338,7 +338,9 @@
 
 
     function get_uom(index) {
+        console.log(index);
         let uom = $('#item_id_' + index).find(':selected').data('uom');
+        console.log($('#item_id_' + index).find(':selected'));
         $('#uom_' + index).val(uom);
     }
 
