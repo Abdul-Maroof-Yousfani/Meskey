@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Supplier;
 use App\Models\PaymentTerm;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
@@ -562,6 +563,47 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData' => $purchaseOrderData,
             'data1' => $data,
         ]);
+    }
+
+    public function get_quotations(): array {
+        $pr_id = request()->pr_id;
+
+        $quotations = PurchaseQuotation::withSum("quotation_data as sum", "qty")
+                    ->where("am_approval_status", "approved")
+                    ->where("purchase_request_id", $pr_id)
+                    // ->select("id", "purchase_quotation_no")
+                    ->get();
+
+        $data = [
+            [
+                "id" => "",
+                "text" => "Select Quotation"
+            ]
+        ];
+        foreach($quotations as $quotation) {
+            $data[] = [
+                "id" => $quotation->id,
+                "text" => $quotation->purchase_quotation_no
+            ];
+        }
+
+        return $data;
+    }
+
+    public function get_supplier(): array {
+        $pq_id = request()->pq_id;
+        
+        $purchase_quotation = PurchaseQuotation::select("id", "supplier_id")->find($pq_id);
+      
+
+        $supplier = Supplier::select('id', 'name')->find($purchase_quotation->supplier_id);
+
+        return [
+            [
+            "id" => $supplier->id,
+            "text" => $supplier->name
+            ]
+        ];
     }
 
     public function get_order_item(Request $request)
