@@ -568,11 +568,21 @@ class PurchaseOrderController extends Controller
     public function get_quotations(): array {
         $pr_id = request()->pr_id;
 
-        $quotations = PurchaseQuotation::withSum("quotation_data as sum", "qty")
+        $quotations = PurchaseQuotation::with(["quotation_data", "quotation_data.purchase_order_data"])
                     ->where("am_approval_status", "approved")
                     ->where("purchase_request_id", $pr_id)
                     // ->select("id", "purchase_quotation_no")
                     ->get();
+        
+        $quotations = $quotations->filter(function($quotation) use (&$i) { // note the &
+            $totalQty = $quotation->quotation_data->sum("qty");
+            $po_qty = $quotation->quotation_data->sum(function ($qData) {
+                return $qData->purchase_order_data->sum('qty');
+            });
+            return $po_qty < $totalQty;
+        });
+
+
 
         $data = [
             [
