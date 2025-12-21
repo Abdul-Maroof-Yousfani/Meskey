@@ -6,7 +6,7 @@
        
     @foreach ($job_order->packing_items as $packing_item)
         @php
-            $i = $job_order->id;
+            $i = $job_order->id . '-' . $packing_item->id;
         @endphp
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
