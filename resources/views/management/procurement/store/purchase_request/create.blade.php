@@ -167,8 +167,6 @@
 
     $('.job_orders').on('select2:unselect', function (e) {
         let id = e.params.data.id;
-        // alert(id);
-        // console.log($(`#row_${id}`));
         $(`.jo-${id}`).remove();
     });
 

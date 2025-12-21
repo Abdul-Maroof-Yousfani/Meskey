@@ -90,7 +90,7 @@
             @php
                 $index = $item->is_single_job_order == 1 ? "pre_" . $item->JobOrder->pluck("job_order_id")->toArray()[0] . "-" . $index : $index;
             @endphp
-            <tr id="row_{{ $index }}">
+            <tr id="row_{{ $index }}" class="{{ $item->is_single_job_order ? 'jo-' . $item->JobOrder->pluck("job_order_id")->toArray()[0] : '' }}">
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
 
                 <td>
