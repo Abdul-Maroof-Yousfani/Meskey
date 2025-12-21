@@ -88,7 +88,7 @@
         <tbody id="purchaseRequestBody">
             @foreach ($purchaseRequest->PurchaseData as $index => $item)
             @php
-                $index = $item->is_single_job_order == 1 ? "pre_" . $item->JobOrder->pluck("job_order_id")->toArray()[0] : $index;
+                $index = $item->is_single_job_order == 1 ? "pre_" . $item->JobOrder->pluck("job_order_id")->toArray()[0] . "-" . $index : $index;
             @endphp
             <tr id="row_{{ $index }}">
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
