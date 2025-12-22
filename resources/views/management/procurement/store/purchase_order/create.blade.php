@@ -26,11 +26,11 @@
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
-                    {{-- @foreach (get_supplier() as $supplier)
+                    @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}">
                             {{ $supplier->name }}
                         </option>
-                    @endforeach --}}
+                    @endforeach
                 </select>
             </div>
         </div>
