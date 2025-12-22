@@ -367,7 +367,7 @@
                             href="{{ route('store.qc.get') }}"
                             onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">QC</span>
+                            <span data-i18n="Task Board">Purchase QC</span>
                         </a>
                     </li>
 
@@ -376,7 +376,7 @@
                             href="{{ route('store.purchase-bill.index') }}"
                             onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Bill</span>
+                            <span data-i18n="Task Board">Purchase Bill</span>
                         </a>
                     </li>
 
