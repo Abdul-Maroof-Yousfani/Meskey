@@ -12,10 +12,9 @@
                         <a href="{{ route('receipt-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
                     </div>
                     <div class="card-body">
-                        <form id="ajaxSubmit" action="{{ route('receipt-voucher.update', $receiptVoucher->id) }}"
-                            method="POST">
+                        <form action="{{ route('receipt-voucher.update', $receiptVoucher->id) }}"
+                            >
                             @csrf
-                            @method('PUT')
                             <input type="hidden" id="redirectUrl" value="{{ route('receipt-voucher.index') }}">
                             <div class="row">
                                 <div class="col-md-6">
@@ -585,8 +584,8 @@
                 const form = $(this);
 
                 $.ajax({
-                    url: "{{ route('receipt-voucher.store') }}",
-                    method: "POST",
+                    url: form.attr('action'),
+                    method: "PUT",
                     data: form.serialize(),
                     success: function(resp) {
                         if (resp.success) {
