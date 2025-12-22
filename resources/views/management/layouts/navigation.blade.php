@@ -348,51 +348,44 @@
                             </li>
                         </ul> --}}
                     </li>
-                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
-                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Bootstrap Tables">Purchase Order</span></a>
-                        <ul class="dropdown-menu">
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('store.purchase-order.index') }}"
-                                    onclick="loadPageContent('{{ route('store.purchase-order.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Purchase Order</span>
-                                </a>
-                            </li>
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('store.purchase-order-receiving.index') }}"
-                                    onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Goods Received Note</span>
-                                </a>
-                            </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.purchase-order.index') }}"
+                            onclick="loadPageContent('{{ route('store.purchase-order.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Purchase Order</span>
+                        </a>
+                    </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.purchase-order-receiving.index') }}"
+                            onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Goods Received Note</span>
+                        </a>
+                    </li>
 
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('store.qc.get') }}"
-                                    onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">QC</span>
-                                </a>
-                            </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.qc.get') }}"
+                            onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">QC</span>
+                        </a>
+                    </li>
 
 
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('store.purchase-bill.index') }}"
-                                    onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Bill</span>
-                                </a>
-                            </li>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.purchase-bill.index') }}"
+                            onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Bill</span>
+                        </a>
+                    </li>
 
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('store.purchase-order-payment-request.index') }}"
-                                    onclick="loadPageContent('{{ route('store.purchase-order-payment-request.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Payment Request</span>
-                                </a>
-                            </li>
-                        </ul>
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.purchase-order-payment-request.index') }}"
+                            onclick="loadPageContent('{{ route('store.purchase-order-payment-request.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Payment Request</span>
+                        </a>
                     </li>
                 </ul>
             </li>

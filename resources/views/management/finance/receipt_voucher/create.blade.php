@@ -359,6 +359,7 @@
         }
 
         // ==================== Build Table Rows from Selected References ====================
+        
         function buildRows(items) {
             referencesTableBody.empty();
 
