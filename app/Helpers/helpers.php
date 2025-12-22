@@ -168,6 +168,13 @@ if(!function_exists("sub_arrival_name_by_id")) {
     }
 }
 
+if(!function_exists("get_customer_name")) {
+    function get_customer_name($customer_id) {
+        $customer = Customer::select("id", "name")->find($customer_id);
+        return $customer;
+    }
+}
+
 if(!function_exists("getTaxById")) {
     function getTaxPercentageById($tax_id) {
         $tax = Tax::find($tax_id);

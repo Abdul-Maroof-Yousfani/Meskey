@@ -442,104 +442,108 @@ class ReceiptVoucherController extends Controller
    
 
     public function update(Request $request, $id)
-    {
-        $receiptVoucher = ReceiptVoucher::findOrFail($id);
+{
+    $receiptVoucher = ReceiptVoucher::findOrFail($id);
+    $payload = app(ReceiptVoucherRequest::class)->validated();
 
-        $payload = app(ReceiptVoucherRequest::class)->validated();
-        $items = collect($payload['items'] ?? [])
-            ->filter(function ($item) {
-                return !empty($item['reference_id']) && !empty($item['reference_type']);
-            });
+    // Filter valid items
+    $items = collect($payload['items'] ?? [])
+        ->filter(fn($item) => !empty($item['reference_id']) && !empty($item['reference_type']));
 
-        DB::beginTransaction();
-        try {
-            $totalNetAmount = $items->sum(function ($item) {
-                $amount = (float) ($item['amount'] ?? 0);
-                $taxAmount = (float) ($item['tax_amount'] ?? 0);
-                return $item['net_amount'] ?? ($amount + $taxAmount);
-            });
+    DB::beginTransaction();
+    try {
+        $totalNetAmount = $items->sum(function ($item) {
+            $amount = (float) ($item['amount'] ?? 0);
+            $taxAmount = (float) ($item['tax_amount'] ?? 0);
+            return $item['net_amount'] ?? ($amount + $taxAmount);
+        });
 
-            $customer = Customer::with('account')->findOrFail($payload['customer_id']);
-            $customerAccountId = $customer->account_id;
-            if (!$customerAccountId) {
-                throw new \Exception('Selected customer has no linked account.');
-            }
-
-            $receiptVoucher->update([
-                'rv_date' => $payload['rv_date'],
-                'ref_bill_no' => $payload['ref_bill_no'] ?? null,
-                'bill_date' => $payload['bill_date'] ?? null,
-                'cheque_no' => $payload['cheque_no'] ?? null,
-                'cheque_date' => $payload['cheque_date'] ?? null,
-                'account_id' => $payload['account_id'],
-                'customer_id' => $payload['customer_id'] ?? null,
-                'voucher_type' => $payload['voucher_type'],
-                'remarks' => $payload['remarks'] ?? null,
-                'total_amount' => $totalNetAmount,
-            ]);
-
-            ReceiptVoucherItem::where('receipt_voucher_id', $receiptVoucher->id)->delete();
-
-            foreach ($items as $item) {
-                ReceiptVoucherItem::create([
-                    'receipt_voucher_id' => $receiptVoucher->id,
-                    'reference_type' => $item['reference_type'],
-                    'reference_id' => $item['reference_id'],
-                    'amount' => $item['amount'] ?? 0,
-                    'tax_id' => $item['tax_id'] ?? null,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
-                    'line_desc' => $item['line_desc'] ?? null,
-                ]);
-            }
-
-            // remove old transactions for this voucher
-            Transaction::where('voucher_no', $receiptVoucher->unique_no)->delete();
-
-            $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
-            $remarks = $payload['remarks'] ?? null;
-
-            createTransaction(
-                $totalNetAmount,
-                $payload['account_id'],
-                1,
-                $receiptVoucher->unique_no,
-                'debit',
-                'no',
-                [
-                    'purpose' => $purpose,
-                    'payment_against' => $receiptVoucher->unique_no,
-                    'counter_account_id' => $customerAccountId,
-                    'remarks' => $remarks
-                ]
-            );
-
-            createTransaction(
-                $totalNetAmount,
-                $customerAccountId,
-                1,
-                $receiptVoucher->unique_no,
-                'credit',
-                'no',
-                [
-                    'purpose' => $purpose,
-                    'payment_against' => $receiptVoucher->unique_no,
-                    'counter_account_id' => $payload['account_id'],
-                    'remarks' => $remarks
-                ]
-            );
-
-            DB::commit();
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            return response()->json(['error' => $th->getMessage()], 500);
+        $customer = Customer::with('account')->findOrFail($payload['customer_id']);
+        $customerAccountId = $customer->account_id;
+        if (!$customerAccountId) {
+            throw new \Exception('Selected customer has no linked account.');
         }
 
-        return response()->json([
-            'success' => 'Receipt voucher updated successfully!',
-            'redirect' => route('receipt-voucher.index')
+        // Update receipt voucher
+        $receiptVoucher->update([
+            'rv_date' => $payload['rv_date'],
+            'ref_bill_no' => $payload['ref_bill_no'] ?? null,
+            'bill_date' => $payload['bill_date'] ?? null,
+            'cheque_no' => $payload['cheque_no'] ?? null,
+            'cheque_date' => $payload['cheque_date'] ?? null,
+            'account_id' => $payload['account_id'],
+            'customer_id' => $payload['customer_id'] ?? null,
+            'voucher_type' => $payload['voucher_type'],
+            'remarks' => $payload['remarks'] ?? null,
+            'total_amount' => $totalNetAmount,
         ]);
+        
+        // Delete old items and recreate
+        ReceiptVoucherItem::where('receipt_voucher_id', $receiptVoucher->id)->delete();
+        foreach ($request->items as $item) {
+            ReceiptVoucherItem::create([
+                'receipt_voucher_id' => $receiptVoucher->id,
+                'reference_type' => $item['reference_type'],
+                'reference_id' => $item['reference_id'],
+                'amount' => $item["amount_display"],
+                'tax_id' => $item['tax_id'] ?? null,
+                'tax_amount' => $item['tax_amount'] ?? 0,
+                'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
+                'line_desc' => $item['line_desc'] ?? null,
+            ]);
+        }
+
+        // Remove old transactions
+        Transaction::where('voucher_no', $receiptVoucher->unique_no)->delete();
+
+        $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+        $remarks = $payload['remarks'] ?? null;
+
+        // Create debit transaction for account
+        createTransaction(
+            $totalNetAmount,
+            $payload['account_id'],
+            1,
+            $receiptVoucher->unique_no,
+            'debit',
+            'no',
+            [
+                'purpose' => $purpose,
+                'payment_against' => $receiptVoucher->unique_no,
+                'counter_account_id' => $customerAccountId,
+                'remarks' => $remarks
+            ]
+        );
+
+        // Create credit transaction for customer
+        createTransaction(
+            $totalNetAmount,
+            $customerAccountId,
+            1,
+            $receiptVoucher->unique_no,
+            'credit',
+            'no',
+            [
+                'purpose' => $purpose,
+                'payment_against' => $receiptVoucher->unique_no,
+                'counter_account_id' => $payload['account_id'],
+                'remarks' => $remarks
+            ]
+        );
+
+        DB::commit();
+
+    } catch (\Throwable $th) {
+        DB::rollBack();
+        return response()->json(['error' => $th->getMessage()], 500);
     }
+
+    return response()->json([
+        'success' => 'Receipt voucher updated successfully!',
+        'redirect' => route('receipt-voucher.index')
+    ]);
+}
+
 
     public function destroy($id)
     {
