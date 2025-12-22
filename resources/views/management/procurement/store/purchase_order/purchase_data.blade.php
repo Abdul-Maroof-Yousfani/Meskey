@@ -220,6 +220,10 @@
 <script>
 
 
+function remove(id) {
+    $("#row_" + id).remove();
+}
+
 function calculatePercentage(el) {
     const gross_amount = $(el).closest("tr").find(".gross_amount");
     const rate = $(el).closest("tr").find(".rate");
