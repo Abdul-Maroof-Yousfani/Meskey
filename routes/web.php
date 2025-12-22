@@ -17,6 +17,7 @@ use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Procurement\Store\QCItems;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SaleReturnData;
@@ -39,6 +40,9 @@ use App\Http\Controllers\Reports\{
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
+Route::get("/receipt-vouchers/delete", function() {
+    $receipt_voucher = ReceiptVoucher::query()->delete();
+});
 
 Route::get("/procurement/delete-data", function() {
     PurchaseRequest::query()->delete();
