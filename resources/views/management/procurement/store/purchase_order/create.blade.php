@@ -211,29 +211,29 @@
         });
         
 
-        // $(document).on('change', '[name="purchase_request_id"]', function() {
-        //     const supplierId = $('#supplier_id').val();
-        //     const purchaseRequestId = $('[name="purchase_request_id"]').val();
-        //     $('#quotation_no').empty();
-        //     if (supplierId && purchaseRequestId) {
-        //         initializeDynamicDependentCall1Select2All(
-        //             '#supplier_id',
-        //             '#quotation_no',
-        //             'suppliers',
-        //             'purchase_quotation_no',
-        //             'id',
-        //             'purchase_quotations',
-        //             'supplier_id',
-        //             'purchase_quotation_no',
-        //             true,
-        //             false,
-        //             true,
-        //             true, {
-        //                 purchase_request_id: purchaseRequestId
-        //             }
-        //         );
-        //     }
-        // });
+        $(document).on('change', '[name="purchase_request_id"]', function() {
+            const supplierId = $('#supplier_id').val();
+            const purchaseRequestId = $('[name="purchase_request_id"]').val();
+            $('#quotation_no').empty();
+            if (supplierId && purchaseRequestId) {
+                initializeDynamicDependentCall1Select2All(
+                    '#supplier_id',
+                    '#quotation_no',
+                    'suppliers',
+                    'purchase_quotation_no',
+                    'id',
+                    'purchase_quotations',
+                    'supplier_id',
+                    'purchase_quotation_no',
+                    true,
+                    false,
+                    true,
+                    true, {
+                        purchase_request_id: purchaseRequestId
+                    }
+                );
+            }
+        });
 
     });
     $(".select2").select2();
