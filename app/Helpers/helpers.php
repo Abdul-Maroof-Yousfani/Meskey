@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -629,6 +629,18 @@ function delivery_order_balance($sale_order_data_id) {
     $spent = $data->sum("no_of_bags");
     $able_to_spend = (SalesOrderData::where("id", $sale_order_data_id)->first())->no_of_bags;
     $balance = (int)$able_to_spend - (int)$spent;
+
+    return $balance;
+}
+
+function receipt_voucher_balance($reference_id) {
+    $data = ReceiptVoucherItem::where("reference_id", $reference_id)->get();
+    $total_spent = $data->sum(callback: "amount");
+    $total_overall_amount = SalesOrderData::where('sale_order_id', $reference_id)
+                                            ->selectRaw('SUM(qty * rate) as total')
+                                            ->value('total');
+    
+    $balance = $total_overall_amount - $total_spent;
 
     return $balance;
 }

@@ -28,7 +28,8 @@ class ReceiptVoucher extends Model
         'module_type',
         'voucher_type',
         'remarks',
-        'total_amount'
+        'total_amount',
+        'company_id'
     ];
 
     protected $casts = [

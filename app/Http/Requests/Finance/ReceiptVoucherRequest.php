@@ -32,6 +32,7 @@ class ReceiptVoucherRequest extends FormRequest
             'items.*.tax_amount' => ['nullable', 'numeric'],
             'items.*.net_amount' => ['nullable', 'numeric'],
             'items.*.line_desc' => ['nullable', 'string'],
+            "company_id" => ["required"]
         ];
     }
 }

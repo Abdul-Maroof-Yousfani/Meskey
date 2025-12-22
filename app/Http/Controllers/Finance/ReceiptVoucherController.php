@@ -12,6 +12,7 @@ use App\Models\ReceiptVoucherItem;
 use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesOrder;
 use App\Models\Master\Account\Transaction;
+use Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,66 @@ class ReceiptVoucherController extends Controller
     public function index()
     {
         return view('management.finance.receipt_voucher.index');
+    }
+
+    public function getitems(Request $request) {
+        $items = json_decode($request->items);
+        $taxes = Tax::where("status", "active")->get();
+
+        return view("management.finance.receipt_voucher.getItems", compact("items", "taxes"));
+    }
+
+    public function getDocumentsForRv(Request $request) {
+        $is_advance = $request->is_advance === 'true' ? true : false;
+        $customer_id = $request->customer_id;
+        $dropdowndData = [];
+        $data = [];
+       
+        if($is_advance) {
+            $dropdowndData[] = [
+                "id" => "",
+                "text" => "Select Sale Order"
+            ];
+
+            $data = SalesOrder::select("id", "reference_no")
+                                    ->with("sales_order_data")
+                                    ->where("customer_id", $customer_id)
+                                    ->where("am_approval_status", 'approved')
+                                    ->get()
+                                    ->filter(function($saleOrder) {
+                                        // Example: keep only if any related sale_order_data has quantity > 0
+                                        return $saleOrder->sales_order_data->contains(function($item) {
+                                            $balance = receipt_voucher_balance($item->sale_order_id);
+                                            return $balance > 0; 
+                                        });
+                                    });
+                                   
+                                    
+        } else {
+            $dropdowndData[] = [
+                "id" => "",
+                "text" => "Select Sale Invoice"
+            ];
+
+            $data = SalesInvoice::select("id", "si_no as reference_no")
+                                ->where("customer_id", $customer_id)
+                                ->where("am_approval_status", "approved");
+        }
+        
+      
+
+        foreach($data as $datum) {
+            $dropdowndData[] = [
+                "id" => $datum->id,
+                "text" => $datum->reference_no
+            ];
+            
+        }
+
+
+        return $dropdowndData;
+
+
     }
 
     public function getList(Request $request)
@@ -176,6 +237,7 @@ class ReceiptVoucherController extends Controller
                 throw new \Exception('Selected customer has no linked account.');
             }
 
+       
             $receiptVoucher = ReceiptVoucher::create([
                 'unique_no' => $payload['unique_no'],
                 'rv_date' => $payload['rv_date'],
@@ -188,6 +250,7 @@ class ReceiptVoucherController extends Controller
                 'voucher_type' => $payload['voucher_type'],
                 'remarks' => $payload['remarks'] ?? null,
                 'total_amount' => $totalNetAmount,
+                "company_id" => $request->company_id
             ]);
 
             foreach ($items as $item) {
@@ -292,7 +355,7 @@ class ReceiptVoucherController extends Controller
                 ->get()
                 ->map(function ($order) {
                     $quantity = $order->sales_order_data->sum(function ($row) {
-                        return (float) ($row->qty ?? 0);
+                        return (float) ($row->qty * $row->rate ?? 0);
                     });
 
                     return [

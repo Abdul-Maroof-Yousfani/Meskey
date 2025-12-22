@@ -3,6 +3,7 @@
 use App\Http\Controllers\Finance\PaymentVoucherController;
 use App\Http\Controllers\Finance\JournalVoucherController;
 use App\Http\Controllers\Finance\ReceiptVoucherController;
+use App\Models\ReceiptVoucher;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('payment-voucher')->group(function () {
@@ -18,9 +19,11 @@ Route::post('get-payment-voucher', [PaymentVoucherController::class, 'getList'])
 Route::prefix('receipt-voucher')->group(function () {
     Route::post('generate-rv-number', [ReceiptVoucherController::class, 'generateRvNumber'])->name('receipt-voucher.generate-rv-number');
     Route::post('reference-details', [ReceiptVoucherController::class, 'getReferenceDetails'])->name('receipt-voucher.reference-details');
+    Route::get("/get/documents-for-rv", [ReceiptVoucherController::class, "getDocumentsForRv"])->name("receipt.voucher.get-documents");
 });
 Route::resource('receipt-voucher', ReceiptVoucherController::class);
 Route::post('get-receipt-voucher', [ReceiptVoucherController::class, 'getList'])->name('get.receipt-vouchers');
+Route::post("/receipt-voucher/get-row", [ReceiptVoucherController::class, "getitems"])->name("receipt-voucher.get.rows");
 
 Route::prefix('journal-voucher')->group(function () {
     Route::post('generate-jv-number', [JournalVoucherController::class, 'generateJvNumber'])->name('journal-voucher.generate-jv-number');

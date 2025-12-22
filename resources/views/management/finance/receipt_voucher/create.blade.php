@@ -12,9 +12,9 @@
                         <a href="{{ route('receipt-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
                     </div>
                     <div class="card-body">
-                        <form id="ajaxSubmit" action="{{ route('receipt-voucher.store') }}" method="POST">
+                        <form>
                             @csrf
-                            <input type="hidden" id="redirectUrl" value="{{ route('receipt-voucher.index') }}">
+                            {{-- <input type="hidden" id="redirectUrl" value="{{ route('receipt-voucher.index') }}"> --}}
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -70,7 +70,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="customer_id">Customer Account</label>
-                                        <select name="customer_id" id="customer_id" class="form-control select2">
+                                        <select name="customer_id" id="customer_id" class="form-control select2" onchange="select_customer()">
                                             <option value="">Select Customer</option>
                                             @foreach ($customers as $customer)
                                                 <option value="{{ $customer->id }}">{{ $customer->name }}</option>
@@ -101,7 +101,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="is_advance">
+                                        <input class="form-check-input" type="checkbox" id="is_advance" checked>
                                         <label class="form-check-label" for="is_advance">Advance</label>
                                     </div>
                                 </div>
@@ -127,7 +127,7 @@
                                                         <th width="18%">Line Desc</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
+                                                <tbody id="rv-data">
                                                     <tr>
                                                         <td colspan="6" class="text-center text-muted">Select references to load details.</td>
                                                     </tr>
@@ -172,6 +172,26 @@
 
 @section('script')
 <script>
+    // This function can stay outside if it's called from elsewhere (e.g., onchange of customer)
+    function select_customer() {
+        $.ajax({
+            url: '{{ route("receipt.voucher.get-documents") }}',
+            data: {
+                customer_id: $("#customer_id").val(),
+                is_advance: $("#is_advance").is(":checked")
+            },
+            success: function (response) {
+                console.log(response);
+                $("#reference_ids").empty();
+                $("#reference_ids").select2({ data: response });
+            },
+            error: function (xhr, status, error) {
+                console.error(error);
+                console.error(xhr.responseText);
+            },
+        });
+    }
+
     $(document).ready(function () {
         const referenceSelect = $('#reference_ids');
         const referenceLabel = $('#reference_label');
@@ -181,9 +201,89 @@
         const emptyMessage = $('.selected-docs-container p');
         const taxes = @json($taxes ?? []);
 
+        // ==================== CORE FUNCTION: Update Selected Documents List ====================
+                // ==================== CORE FUNCTION: Update Selected Documents List with TOTAL ====================
+        function updateSelectedDocsList() {
+            const selected = [];
+            let total = 0;
+
+            referencesTableBody.find('tr').each(function () {
+                const row = $(this);
+                const checkbox = row.find('.row-select');
+                if (checkbox.length && checkbox.is(':checked')) {
+                    const type = row.find('td').eq(1).text().trim() || '';
+                    const number = row.find('td').eq(2).text().trim() || '';
+                    const date = row.find('td').eq(3).text().trim() || '';
+                    const customer = row.find('td').eq(4).text().trim() || '';
+                    const netAmount = parseFloat(row.find('.net-amount').val()) || 0;
+
+                    selected.push({
+                        type,
+                        number,
+                        date,
+                        customer,
+                        amount: netAmount,
+                        idx: checkbox.data('row')
+                    });
+                    total += netAmount;
+                }
+            });
+
+            listContainer.empty();
+
+            if (!selected.length) {
+                emptyMessage.show();
+                listContainer.hide();
+                // Also hide/clear total if exists
+                $('#selected-total-amount').hide();
+                return;
+            }
+
+            emptyMessage.hide();
+            listContainer.show();
+
+            // Add each selected document
+            selected.forEach(function (item) {
+                listContainer.append(`
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${item.number}</strong> <span class="text-muted">(${item.type})</span>
+                            <div class="small text-muted">${item.date} • ${item.customer}</div>
+                        </div>
+                        <span class="badge badge-primary badge-pill">${item.amount.toFixed(2)}</span>
+                    </li>
+                `);
+            });
+
+            // =============== ADD TOTAL AMOUNT AT BOTTOM ===============
+            // First, remove any existing total row
+            $('#selected-total-row').remove();
+
+            // Append a strong total row
+            listContainer.append(`
+                <li id="selected-total-row" class="list-group-item active d-flex justify-content-between align-items-center font-weight-bold" style="background-color: #e9ecef; border-top: 3px double #ccc;">
+                    <div class="text-dark">
+                        <strong>Total Amount</strong>
+                    </div>
+                    <span class="badge badge-dark badge-pill" style="font-size: 1.1em;">
+                        ${total.toFixed(2)}
+                    </span>
+                </li>
+            `);
+
+            // Optional: Also update a dedicated total field if you have one (e.g., for form submission display)
+            if ($('#total_receipt_amount').length) {
+                $('#total_receipt_amount').val(total.toFixed(2));
+            }
+            if ($('#display_total_amount').length) {
+                $('#display_total_amount').text(total.toFixed(2));
+            }
+        }
+
+        // ==================== Toggle Reference Options Based on Advance Checkbox ====================
         function toggleReferenceOptions() {
             const isAdvance = $('#is_advance').is(':checked');
-            referenceSelect.find('option').each(function() {
+            referenceSelect.find('option').each(function () {
                 const type = $(this).data('type');
                 if (isAdvance && type === 'sale_order') {
                     $(this).removeClass('d-none');
@@ -193,16 +293,18 @@
                     $(this).addClass('d-none').prop('selected', false);
                 }
             });
+
             referenceSelect.trigger('change.select2');
             referenceLabel.text(isAdvance ? 'Sale Orders (approved)' : 'Invoices (approved, receiving pending)');
             referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>');
+            selectAll.prop('checked', false);
+            updateSelectedDocsList();
         }
 
-        $('#is_advance').on('change', toggleReferenceOptions);
-        toggleReferenceOptions();
-
+        // ==================== Load RV Number or Accounts ====================
         function loadRvNumber() {
             if (!$('#voucher_type').val()) return;
+
             $.post(`{{ route('receipt-voucher.generate-rv-number') }}`, {
                 _token: '{{ csrf_token() }}',
                 voucher_type: $('#voucher_type').val(),
@@ -223,97 +325,7 @@
             });
         }
 
-        $('#voucher_type, #rv_date').on('change', loadRvNumber);
-
-        function buildRows(items) {
-            referencesTableBody.empty();
-            if (!items.length) {
-                referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">No data found for selected references.</td></tr>');
-                selectAll.prop('checked', false);
-                updateSelectedDocsList();
-                return;
-            }
-
-            items.forEach(function (item, idx) {
-                referencesTableBody.append(`
-                    <tr>
-                        <td class="text-center">
-                            <input type="checkbox" class="row-select" data-row="${idx}">
-                            <input type="hidden" name="items[${idx}][reference_id]" value="${item.reference_id}">
-                            <input type="hidden" name="items[${idx}][reference_type]" value="${item.reference_type}">
-                            <input type="hidden" class="hidden-amount" name="items[${idx}][amount]" value="${item.quantity ?? item.amount}">
-                        </td>
-                        <td>${item.reference_type === 'sale_order' ? 'Sale Order' : 'Sales Invoice'}</td>
-                        <td>${item.number}</td>
-                        <td>${item.date}</td>
-                        <td>${item.customer_name || item.customer || ''}</td>
-                        <td><input type="number" step="0.01" class="form-control amount-input" name="items[${idx}][amount_display]" value="${parseFloat(item.quantity ?? item.amount).toFixed(2)}"></td>
-                        <td>
-                            <select class="form-control tax-select" name="items[${idx}][tax_id]">
-                                <option value="">No Tax</option>
-                                ${taxes.map(t => `<option value="${t.id}" data-percent="${t.percentage}">${t.name} (${t.percentage}%)</option>`).join('')}
-                            </select>
-                        </td>
-                        <td>
-                            <input type="number" step="0.01" readonly class="form-control tax-amount" name="items[${idx}][tax_amount]" value="0.00">
-                        </td>
-                        <td>
-                            <input type="number" step="0.01" readonly class="form-control net-amount" name="items[${idx}][net_amount]" value="${parseFloat(item.quantity ?? item.amount).toFixed(2)}">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control line-desc" name="items[${idx}][line_desc]" placeholder="Line description">
-                        </td>
-                    </tr>
-                `);
-            });
-            selectAll.prop('checked', false);
-            updateSelectedDocsList();
-            bindRowEvents();
-        }
-
-        referenceSelect.on('change', function () {
-            const ids = $(this).val() || [];
-            const isAdvance = $('#is_advance').is(':checked');
-            const refType = isAdvance ? 'sale_order' : 'sales_invoice';
-            if (!ids.length) {
-                referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>');
-                selectAll.prop('checked', false);
-                updateSelectedDocsList();
-                return;
-            }
-
-            $.post(`{{ route('receipt-voucher.reference-details') }}`, {
-                _token: '{{ csrf_token() }}',
-                reference_type: refType,
-                reference_ids: ids
-            }, function (resp) {
-                if (resp.success) {
-                    buildRows(resp.items || []);
-                }
-            });
-        });
-
-        selectAll.on('change', function() {
-            const checked = $(this).is(':checked');
-            referencesTableBody.find('.row-select').prop('checked', checked);
-                updateSelectedDocsList();
-        });
-
-            $(document).on('change', '.row-select', function() {
-                updateSelectedDocsList();
-            });
-
-        function bindRowEvents() {
-            referencesTableBody.find('.amount-input').off('input').on('input', function() {
-                const row = $(this).closest('tr');
-                recalcRow(row);
-            });
-            referencesTableBody.find('.tax-select').off('change').on('change', function() {
-                const row = $(this).closest('tr');
-                recalcRow(row);
-            });
-        }
-
+        // ==================== Recalculate Row Amounts (Amount + Tax) ====================
         function recalcRow(row) {
             const amountInput = row.find('.amount-input');
             const taxSelect = row.find('.tax-select');
@@ -333,83 +345,150 @@
             updateSelectedDocsList();
         }
 
-            function updateSelectedDocsList() {
-                const selected = [];
-                let total = 0;
+        // ==================== Bind Events to Dynamic Rows ====================
+        function bindRowEvents() {
+            referencesTableBody.find('.amount-input').off('input').on('input', function () {
+                const row = $(this).closest('tr');
+                recalcRow(row);
+            });
 
-                referencesTableBody.find('tr').each(function() {
-                    const row = $(this);
-                    const checkbox = row.find('.row-select');
-                    if (checkbox.length && checkbox.is(':checked')) {
-                        const type = row.find('td').eq(1).text();
-                        const number = row.find('td').eq(2).text();
-                        const date = row.find('td').eq(3).text();
-                        const customer = row.find('td').eq(4).text();
-                    const netAmount = parseFloat(row.find('.net-amount').val()) || 0;
-                    selected.push({ type, number, date, customer, amount: netAmount, idx: checkbox.data('row') });
-                    total += netAmount;
-                    }
-                });
+            referencesTableBody.find('.tax-select').off('change').on('change', function () {
+                const row = $(this).closest('tr');
+                recalcRow(row);
+            });
+        }
 
-                listContainer.empty();
-                if (!selected.length) {
-                    emptyMessage.show();
-                    listContainer.hide();
-                    return;
+        // ==================== Build Table Rows from Selected References ====================
+        function buildRows(items) {
+            referencesTableBody.empty();
+
+            if (!items.length) {
+                referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">No data found for selected references.</td></tr>');
+                selectAll.prop('checked', false);
+                updateSelectedDocsList();
+                return;
+            }
+            console.log(items);
+            $.ajax({
+                url: "{{ route('receipt-voucher.get.rows') }}",
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    items: JSON.stringify(items)
+                },
+                success: function (response) {
+                    $("#rv-data").html(response);
+
+                    // Important: Re-bind events after injecting new HTML
+                    bindRowEvents();
+
+                    // Now update the selected list
+                    updateSelectedDocsList();
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                    console.error(xhr.responseText);
+                    referencesTableBody.html('<tr><td colspan="6" class="text-center text-danger">Error loading rows.</td></tr>');
                 }
+            });
+        }
 
-                emptyMessage.hide();
-                selected.forEach(function (item) {
-                    listContainer.append(`
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${item.number}</strong> <span class="text-muted">(${item.type})</span>
-                                <div class="small text-muted">${item.date} • ${item.customer}</div>
-                            </div>
-                            <span class="badge badge-primary badge-pill">${item.amount.toFixed(2)}</span>
-                        </li>
-                    `);
-                });
+        // ==================== Event Listeners ====================
 
-                listContainer.append(`
-                    <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                        <strong>Total Amount</strong>
-                        <strong>${total.toFixed(2)}</strong>
-                    </li>
-                `);
+        // Advance checkbox toggle
+        $('#is_advance').on('change', toggleReferenceOptions);
+        toggleReferenceOptions(); // Initial call
 
-                listContainer.show();
+        // Voucher type or date change → reload RV number
+        $('#voucher_type, #rv_date').on('change', loadRvNumber);
+
+        // Reference select change → load details
+        referenceSelect.on('change', function () {
+            const ids = $(this).val() || [];
+            const isAdvance = $('#is_advance').is(':checked');
+            const refType = isAdvance ? 'sale_order' : 'sales_invoice';
+
+            if (!ids.length) {
+                referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>');
+                selectAll.prop('checked', false);
+                updateSelectedDocsList();
+                return;
             }
 
-        $('#ajaxSubmit').on('submit', function (e) {
+            $.post(`{{ route('receipt-voucher.reference-details') }}`, {
+                _token: '{{ csrf_token() }}',
+                reference_type: refType,
+                reference_ids: ids
+            }, function (resp) {
+                if (resp.success) {
+                    buildRows(resp.items || []);
+                } else {
+                    referencesTableBody.html('<tr><td colspan="6" class="text-center text-danger">No data returned.</td></tr>');
+                }
+            }).fail(function () {
+                referencesTableBody.html('<tr><td colspan="6" class="text-center text-danger">Failed to load details.</td></tr>');
+            });
+        });
+
+        // Select All checkbox
+        selectAll.on('change', function () {
+            const checked = $(this).is(':checked');
+            referencesTableBody.find('.row-select').prop('checked', checked);
+            updateSelectedDocsList();
+        });
+
+        // Individual row checkboxes
+        $(document).on('change', '.row-select', function () {
+            // Update select all if needed
+            const totalRows = referencesTableBody.find('.row-select').length;
+            const checkedRows = referencesTableBody.find('.row-select:checked').length;
+            selectAll.prop('checked', totalRows > 0 && totalRows === checkedRows);
+
+            updateSelectedDocsList();
+        });
+
+        // ==================== Form Submission ====================
+        $('form').off('submit').on('submit', function (e) {
             e.preventDefault();
-            // keep only selected rows
-            referencesTableBody.find('tr').each(function() {
+            const totalChecked = referencesTableBody.find('.row-select:checked').length;
+            if(!totalChecked) {
+                Swal.fire('Validation', 'Please select at least one reference.', 'warning');
+                return false;
+            }
+            // Remove unselected rows from DOM before submit
+            referencesTableBody.find('tr').each(function () {
                 const checkbox = $(this).find('.row-select');
+                console.log($(this).find(".row-select").is(":checked"))
+            
                 if (checkbox.length && !checkbox.is(':checked')) {
                     $(this).remove();
                 }
             });
 
+            // Validation: at least one item selected
             if (!referencesTableBody.find('input[name*="items"]').length) {
                 Swal.fire('Validation', 'Please select at least one reference.', 'warning');
-                return;
+                return false;
             }
 
             const form = $(this);
+
             $.ajax({
-                url: form.attr('action'),
-                method: 'POST',
+                url: "{{ route('receipt-voucher.store') }}",
+                method: "POST",
                 data: form.serialize(),
                 success: function (resp) {
                     if (resp.success) {
                         Swal.fire({
                             icon: 'success',
                             title: resp.success,
-                            timer: 1200,
-                            showConfirmButton: false
-                        }).then(() => {
-                            window.location.href = resp.redirect || $('#redirectUrl').val();
+                            confirmButtonText: 'OK',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = resp.redirect || $('#redirectUrl').val() || '/';
+                            }
                         });
                     }
                 },
@@ -417,6 +496,8 @@
                     let msg = 'Something went wrong.';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         msg = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        msg = xhr.responseText;
                     }
                     Swal.fire('Error', msg, 'error');
                 }
