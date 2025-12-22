@@ -587,6 +587,19 @@
                     url: form.attr('action'),
                     method: "PUT",
                     data: form.serialize(),
+
+                    beforeSend: function () {
+                        Swal.fire({
+                            title: 'Processing...',
+                            text: 'Please wait',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+
                     success: function(resp) {
                         if (resp.success) {
                             Swal.fire({

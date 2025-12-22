@@ -474,34 +474,50 @@
             const form = $(this);
 
             $.ajax({
-                url: "{{ route('receipt-voucher.store') }}",
-                method: "POST",
-                data: form.serialize(),
-                success: function (resp) {
-                    if (resp.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: resp.success,
-                            confirmButtonText: 'OK',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = resp.redirect || $('#redirectUrl').val() || '/';
-                            }
-                        });
-                    }
-                },
-                error: function (xhr) {
-                    let msg = 'Something went wrong.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    } else if (xhr.responseText) {
-                        msg = xhr.responseText;
-                    }
-                    Swal.fire('Error', msg, 'error');
+    url: "{{ route('receipt-voucher.store') }}",
+    method: "POST",
+    data: form.serialize(),
+
+    beforeSend: function () {
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Please wait',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    },
+
+    success: function (resp) {
+        if (resp.success) {
+            Swal.fire({
+                icon: 'success',
+                title: resp.success,
+                confirmButtonText: 'OK',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = resp.redirect || $('#redirectUrl').val() || '/';
                 }
             });
+        }
+    },
+
+    error: function (xhr) {
+        let msg = 'Something went wrong.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            msg = xhr.responseJSON.message;
+        } else if (xhr.responseText) {
+            msg = xhr.responseText;
+        }
+
+        Swal.fire('Error', msg, 'error');
+    }
+});
+
         });
     });
 </script>
