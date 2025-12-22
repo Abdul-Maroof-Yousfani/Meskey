@@ -185,7 +185,7 @@
                                                                     class="form-control amount-input"
                                                                     name="items[{{ $idx }}][amount_display]"
                                                                     value="{{ $item->amount }}"
-                                                                    max="{{ $balance }}">
+                                                                    max="{{ $balance + $item->amount }}">
                                                                 Balance: {{ $balance }}
                                                             </td>
                                                             <td>
