@@ -13,8 +13,8 @@ class DeliveryAfterDispatch implements ValidationRule
      * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
      */
 
-    protected string $deliveryDate;
-    protected string $dispatchDate;
+    protected $deliveryDate;
+    protected $dispatchDate;
     public function __construct($deliveryDate, $dispatchDate) {
         $this->deliveryDate = $deliveryDate;
         $this->dispatchDate = $dispatchDate;
