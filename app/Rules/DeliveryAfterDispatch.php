@@ -15,7 +15,7 @@ class DeliveryAfterDispatch implements ValidationRule
 
     protected string $deliveryDate;
     protected string $dispatchDate;
-    public function __construct(?string $deliveryDate, ?string $dispatchDate) {
+    public function __construct($deliveryDate, $dispatchDate) {
         $this->deliveryDate = $deliveryDate;
         $this->dispatchDate = $dispatchDate;
     }
