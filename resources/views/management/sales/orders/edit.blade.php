@@ -100,7 +100,7 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
+                <label class="form-label">Payment Terms:</label>
                 <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" @disabled($sale_order->pay_type_id != 8)>
                     <option value="">Select Payment Term</option>
                     @foreach ($payment_terms as $payment_term)
