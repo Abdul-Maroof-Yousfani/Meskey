@@ -15,13 +15,14 @@ class DeliveryAfterDispatch implements ValidationRule
 
     protected string $deliveryDate;
     protected string $dispatchDate;
-    public function __construct(string $deliveryDate, string $dispatchDate) {
+    public function __construct(?string $deliveryDate, ?string $dispatchDate) {
         $this->deliveryDate = $deliveryDate;
         $this->dispatchDate = $dispatchDate;
     }
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        if(!$this->dispatchDate && !$this->deliveryDate) return;
         if(strtotime($this->dispatchDate) > strtotime($this->deliveryDate)) {
             $fail("Expired, DO date can not be greater than delivery date");
         }
