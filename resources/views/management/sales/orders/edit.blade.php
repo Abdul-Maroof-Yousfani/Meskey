@@ -72,7 +72,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" 
+                <input type="date" name="delivery_date" value="{{ $sale_order->dispatch_date }}" 
                     id="delivery_date" class="form-control">
             </div>
         </div>
