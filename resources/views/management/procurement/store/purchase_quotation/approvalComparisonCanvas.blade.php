@@ -33,7 +33,7 @@
         <div class="form-group">
             <label>Quotation Date:</label>
             <input readonly type="date" id="purchase_date"
-                value="{{ optional($PurchaseQuotation)->quotation_date }}" name="purchase_date"
+                value="{{ optional($master_data)->quotation_date }}" name="purchase_date"
                 class="form-control">
         </div>
     </div>
@@ -42,8 +42,8 @@
         <div class="form-group">
             <label>Reference No:</label>
             <select readonly class="form-control" name="purchase_quotation_id">
-                <option value="{{ $PurchaseQuotation->id }}">
-                    {{ optional($PurchaseQuotation)->purchase_quotation_no }}</option>
+                <option value="{{ $master_data->id }}">
+                    {{ optional($master_data)->purchase_quotation_no }}</option>
             </select>
         </div>
     </div>
@@ -55,7 +55,7 @@
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
-                        {{ $supplier->id == $PurchaseQuotation->supplier_id ? 'selected' : '' }}>
+                        {{ $supplier->id == $master_data->supplier_id ? 'selected' : '' }}>
                             {{ $supplier->name }}
                         </option>
                     @endforeach

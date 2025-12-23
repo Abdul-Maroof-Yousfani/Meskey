@@ -159,7 +159,7 @@
                                                 <tbody id="rv-data">
                                                     @foreach ($receiptVoucher->items as $idx => $item)
                                                         @php
-                                                            $balance = receipt_voucher_balance($item->reference_id);
+                                                            $balance = receipt_voucher_balance($item->reference_id, $item->reference_type);
                                                         @endphp
                                                         <tr>
                                                             <td class="text-center">

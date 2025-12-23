@@ -640,12 +640,18 @@ function delivery_order_balance($sale_order_data_id) {
     return $balance;
 }
 
-function receipt_voucher_balance($reference_id) {
+function receipt_voucher_balance($reference_id, $type = "sale_order") {
     $data = ReceiptVoucherItem::where("reference_id", $reference_id)->get();
     $total_spent = $data->sum(callback: "amount");
-    $total_overall_amount = SalesOrderData::where('sale_order_id', $reference_id)
-                                            ->selectRaw('SUM(qty * rate) as total')
-                                            ->value('total');
+    if($type == "sale_order") {
+        $total_overall_amount = SalesOrderData::where('sale_order_id', $reference_id)
+                                                ->selectRaw('SUM(qty * rate) as total')
+                                                ->value('total');
+    } else {
+        $total_overall_amount = SalesInvoiceData::where('sales_invoice_id', $reference_id)
+                                                ->selectRaw('SUM(net_amount) as total')
+                                                ->value('total');
+    }
     
     $balance = $total_overall_amount - $total_spent;
 

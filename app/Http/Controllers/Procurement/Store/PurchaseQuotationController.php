@@ -506,17 +506,21 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
                                                 ->whereNotIn("am_approval_status", ["rejected", "approved"])
                                                 ->pluck('id');
+        $master_data = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)->first();
+                                        
 
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+            ->whereNotIn("am_approval_status", ["rejected", "approved"])
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
             // })
             ->get();
+
 
         $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
@@ -529,7 +533,8 @@ class PurchaseQuotationController extends Controller
             'locations' => $locations,
             'job_orders' => $job_orders,
             'PurchaseQuotationData' => $PurchaseQuotationData,
-            "PurchaseQuotation" => $PurchaseQuotationData[0]->purchase_quotation,
+            "PurchaseQuotation" => $PurchaseQuotationData->first()?->purchase_quotation,
+            "master_data" => $master_data,
             'data1' => $data,
         ]);
     }
@@ -812,7 +817,7 @@ class PurchaseQuotationController extends Controller
         ])->findOrFail($id);
    
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-                                                ->where("am_approval_status", "pending")
+                                                ->whereIn("am_approval_status", ["pending", "reverted"])
                                                 ->pluck('id');
 
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
@@ -1030,7 +1035,7 @@ class PurchaseQuotationController extends Controller
         try {
             // $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
             $PurchaseQuotations = PurchaseQuotation::where("purchase_request_id", $id)
-                                                    ->where("am_approval_status", "pending")
+                                                    ->whereIn("am_approval_status", ["pending", "reverted"])
                                                     ->get();
             
             $updated_ids = [];
@@ -1039,7 +1044,8 @@ class PurchaseQuotationController extends Controller
 
                 $PurchaseQuotation->update([
                     'description' => $request->description,
-                    'am_change_made' => 1,
+                    'am_change_made' => 0,
+                    "am_approval_status" => "pending"
                 ]);
 
                 // IDs that came from the form (request)
@@ -1055,7 +1061,7 @@ class PurchaseQuotationController extends Controller
                 $purchaseQuotationData = PurchaseQuotationData::where(
                     'purchase_quotation_id',
                     $PurchaseQuotation->id
-                )->where('am_approval_status', 'pending')->get();
+                )->whereNotIn('am_approval_status', ['pending', 'rejected'])->get();
 
                 foreach ($purchaseQuotationData as $row) {
 
@@ -1070,6 +1076,8 @@ class PurchaseQuotationController extends Controller
                         'qty'     => $qty,
                         'rate'    => $rate,
                         'total'   => $qty * $rate,
+                        "am_approval_status" => "pending",
+                        "am_change_made" => 0,
                         'remarks' => $request->remarks[$row->id] ?? null,
                     ]);
                 }

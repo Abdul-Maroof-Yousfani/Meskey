@@ -58,14 +58,15 @@ class ReceiptVoucherController extends Controller
                                    
                                     
         } else {
-            $dropdowndData[] = [
-                "id" => "",
-                "text" => "Select Sale Invoice"
-            ];
+                $dropdowndData[] = [
+                    "id" => "",
+                    "text" => "Select Sale Invoice"
+                ];
 
-            $data = SalesInvoice::select("id", "si_no as reference_no")
-                                ->where("customer_id", $customer_id)
-                                ->where("am_approval_status", "approved");
+                $data = SalesInvoice::select("id", "si_no as reference_no")
+                                    ->where("customer_id", $customer_id)
+                                    ->where("am_approval_status", "approved")
+                                    ->get();
         }
         
       
@@ -377,7 +378,7 @@ class ReceiptVoucherController extends Controller
                 ->get()
                 ->map(function ($invoice) {
                     $quantity = $invoice->sales_invoice_data->sum(function ($row) {
-                        return (float) ($row->qty ?? 0);
+                        return (float) ($row->net_amount ?? 0);
                     });
 
                     return [

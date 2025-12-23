@@ -101,7 +101,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="is_advance" checked>
+                                        <input class="form-check-input" type="checkbox" id="is_advance" onchange="select_customer()" checked>
                                         <label class="form-check-label" for="is_advance">Advance</label>
                                     </div>
                                 </div>
@@ -299,6 +299,7 @@
             referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>');
             selectAll.prop('checked', false);
             updateSelectedDocsList();
+            select_customer();
         }
 
         // ==================== Load RV Number or Accounts ====================
@@ -475,49 +476,49 @@
             const form = $(this);
 
             $.ajax({
-    url: "{{ route('receipt-voucher.store') }}",
-    method: "POST",
-    data: form.serialize(),
+                url: "{{ route('receipt-voucher.store') }}",
+                method: "POST",
+                data: form.serialize(),
 
-    beforeSend: function () {
-        Swal.fire({
-            title: 'Processing...',
-            text: 'Please wait',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-    },
+                beforeSend: function () {
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Please wait',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
 
-    success: function (resp) {
-        if (resp.success) {
-            Swal.fire({
-                icon: 'success',
-                title: resp.success,
-                confirmButtonText: 'OK',
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = resp.redirect || $('#redirectUrl').val() || '/';
+                success: function (resp) {
+                    if (resp.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: resp.success,
+                            confirmButtonText: 'OK',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = resp.redirect || $('#redirectUrl').val() || '/';
+                            }
+                        });
+                    }
+                },
+
+                error: function (xhr) {
+                    let msg = 'Something went wrong.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        msg = xhr.responseText;
+                    }
+
+                    Swal.fire('Error', msg, 'error');
                 }
             });
-        }
-    },
-
-    error: function (xhr) {
-        let msg = 'Something went wrong.';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-            msg = xhr.responseJSON.message;
-        } else if (xhr.responseText) {
-            msg = xhr.responseText;
-        }
-
-        Swal.fire('Error', msg, 'error');
-    }
-});
 
         });
     });

@@ -1,6 +1,7 @@
 @foreach ($items as $idx => $item)
+    {{-- @dd($item->quantity) --}}
     @php
-        $balance = receipt_voucher_balance($item->reference_id);
+        $balance = receipt_voucher_balance($item->reference_id, $item->reference_type);
         if($balance < 0) continue;
     @endphp
     <tr>

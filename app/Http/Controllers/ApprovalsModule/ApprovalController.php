@@ -237,7 +237,7 @@ class ApprovalController extends Controller
             $parentModelClass = get_class($record->purchase_quotation);
 
             $allParentIds = $parentModelClass::where('purchase_request_id', $purchaseRequestId)
-                ->where("am_approval_status", "pending")
+                ->whereNotIn("am_approval_status", ["rejected", "approved"])
                 ->pluck('id')
                 ->toArray();
 
@@ -312,33 +312,35 @@ class ApprovalController extends Controller
 
         }
 
-        foreach ($unselectedParentIds as $parentId) {
-            // Use the parent model to find parent quotation
-            $parent = $parentModelClass::find($parentId);
-            if (!$parent) {
-                continue;
+        if($reqType != "reject") {
+            foreach ($unselectedParentIds as $parentId) {
+                // Use the parent model to find parent quotation
+                $parent = $parentModelClass::find($parentId);
+                if (!$parent) {
+                    continue;
+                }
+    
+                $parent->am_change_made = 0;
+                $parent->save();
+                $parent->reject($request->comments);
+    
+                $childIds = $modelClass::where('purchase_quotation_id', $parentId)
+                    ->pluck('id')
+                    ->toArray();
+    
+                if (!empty($childIds)) {
+                    $modelClass::whereIn('id', $childIds)
+                        ->each(function ($child) use ($request) {
+                            $child->reject($request->comments);
+                        });
+                }
+    
+                $results[] = [
+                    'parent_id' => $parent->id,
+                    'status' => 'rejected (unselected)',
+                    'action' => 'auto-rejected',
+                ];
             }
-
-            $parent->am_change_made = 0;
-            $parent->save();
-            $parent->reject($request->comments);
-
-            $childIds = $modelClass::where('purchase_quotation_id', $parentId)
-                ->pluck('id')
-                ->toArray();
-
-            if (!empty($childIds)) {
-                $modelClass::whereIn('id', $childIds)
-                    ->each(function ($child) use ($request) {
-                        $child->reject($request->comments);
-                    });
-            }
-
-            $results[] = [
-                'parent_id' => $parent->id,
-                'status' => 'rejected (unselected)',
-                'action' => 'auto-rejected',
-            ];
         }
 
 
