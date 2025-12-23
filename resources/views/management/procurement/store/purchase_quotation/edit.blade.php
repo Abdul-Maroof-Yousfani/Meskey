@@ -5,7 +5,7 @@
     }
 </style>
 
-<form action="{{ route('store.purchase-quotation.update', optional($purchaseQuotation)->id) }}" method="POST"
+<form action="{{ route('store.purchase-quotation.update', optional($purchaseQuotation->purchase_request)->id) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
@@ -233,7 +233,7 @@
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" name="qty[]" type="number"
+                                    <input style="width: 100px" name="qty[{{ $data->id }}]" type="number"
                                         value="{{ $data->qty }}" id="qty_{{ $key }}"
                                         onkeyup="calc('{{ $key }}')"
                                         class="form-control" step="0.01" min="0"
@@ -241,7 +241,7 @@
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="number" name="rate[]"
+                                    <input style="width: 100px" type="number" name="rate[{{ $data->id }}]"
                                         value="{{ $data->rate }}" id="rate_{{ $key }}"
                                         onkeyup="calc('{{ $key }}')"
                                         class="form-control" step="0.01" min="0">
@@ -254,9 +254,9 @@
                                 </td>
 
                                 <td style="width: 30%">
-                                    <input style="width: 100px" type="text" value="{{ $data->remarks }}"
+                                    <input style="width: 100px" name="remarks[{{ $data->id }}]" type="text" value="{{ $data->remarks }}"
                                         id="remark_{{ $key }}" class="form-control">
-                                    <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
+                                    {{-- <input type="hidden" name="remarks[]" value="{{ $data->remarks }}"> --}}
                                 </td>
 
                                 <td>

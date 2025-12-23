@@ -159,6 +159,14 @@
 
                                         </a>
                                     </div>
+                                    <div class="d-flex gap-2">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Quotation', false, '100%')"
+                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                                            <i class="ft-list font-medium-3"></i>
+
+                                        </a>
+                                    </div>
+                                    {{--  --}}
                                      @if($requestGroup['created_by_id'] == auth()->user()->id)
                                         @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
                                    
@@ -172,12 +180,12 @@
                                         </div>
                                     {{-- </td>
                             <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
-                                    <div class="d-flex gap-2">
+                                    {{-- <div class="d-flex gap-2">
                                         <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $requestGroup['request_data']->id) }}', '{{ route('store.purchase-quotation.comparison-list.show') }}')"
                                             class="info p-1 text-center mr-2 position-relative" title="View Approved">
                                             <i class="ft-x font-medium-3"></i>
                                         </a>
-                                    </div>
+                                    </div> --}}
                                     @endif
                                     @endif
                                 </td>

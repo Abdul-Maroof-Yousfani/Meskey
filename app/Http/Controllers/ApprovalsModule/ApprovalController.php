@@ -237,6 +237,7 @@ class ApprovalController extends Controller
             $parentModelClass = get_class($record->purchase_quotation);
 
             $allParentIds = $parentModelClass::where('purchase_request_id', $purchaseRequestId)
+                ->where("am_approval_status", "pending")
                 ->pluck('id')
                 ->toArray();
 

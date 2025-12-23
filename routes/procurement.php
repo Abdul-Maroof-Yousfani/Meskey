@@ -148,7 +148,10 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list.show');
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
     Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
+    Route::get('purchase-quotation/comparison-approvals-for-view/{id}', [PurchaseQuotationController::class, 'dataForComparison'])->name('purchase-quotation.dataForComparison');
    
+
+
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc", [QcController::class, "index"])->name("qc.get");
