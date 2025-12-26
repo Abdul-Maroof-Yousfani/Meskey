@@ -29,7 +29,8 @@ class PaymentVoucher extends Model
         'module_type',
         'voucher_type',
         'remarks',
-        'total_amount'
+        'total_amount',
+        "is_direct"
     ];
 
     protected $casts = [

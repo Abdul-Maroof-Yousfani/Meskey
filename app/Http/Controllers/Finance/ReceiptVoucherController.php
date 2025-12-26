@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\DirectReceiptVoucherRequest;
 use App\Http\Requests\Finance\ReceiptVoucherRequest;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Customer;
@@ -14,6 +15,7 @@ use App\Models\Sales\SalesOrder;
 use App\Models\Master\Account\Transaction;
 use Auth;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -29,6 +31,62 @@ class ReceiptVoucherController extends Controller
         $taxes = Tax::where("status", "active")->get();
 
         return view("management.finance.receipt_voucher.getItems", compact("items", "taxes"));
+    }
+
+
+    public function direct_receipt_voucher(DirectReceiptVoucherRequest $request) {
+        DB::beginTransaction();
+        try {
+            $receipt_voucher = ReceiptVoucher::create([
+                ...$request->validated(),
+                "is_direct" => 1
+            ]);
+            $amount = 0;
+
+
+            foreach($request->account as $index => $account) {
+
+                $receipt_voucher->items()->create([
+                    "reference_id" => "1234",
+                    "reference_type" => "direct",
+                    "amount" => $request->amount[$index],
+                    "tax_id" => $request->tax_id[$index],
+                    "tax_amount" => $request->tax_amount[$index],
+
+                    "net_amount" => $request->net_amount[$index],
+                    "line_desc" => $request->description[$index],
+                    'account_id' => $request->account[$index]
+                ]);
+                createTransaction(
+                    $request->net_amount[$index],
+                    $request->account[$index],
+                    4,
+                    $receipt_voucher->unique_no,
+                    'credit',
+                    'no',
+                    [
+                        'counter_account_id' => $request->account_id,
+                     ]
+                );
+
+                $amount += $request->net_amount[$index];
+            }
+
+            createTransaction(
+                $amount,
+                $request->account_id,
+                4,
+                $receipt_voucher->unique_no,
+                'debit',
+                'no',
+                
+            );
+
+            DB::commit();
+        } catch(Exception $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 500);
+        }
     }
 
     public function getDocumentsForRv(Request $request) {
@@ -66,7 +124,14 @@ class ReceiptVoucherController extends Controller
                 $data = SalesInvoice::select("id", "si_no as reference_no")
                                     ->where("customer_id", $customer_id)
                                     ->where("am_approval_status", "approved")
-                                    ->get();
+                                    ->get()
+                                    ->filter(function($sale_invoice) {
+                                        // Example: keep only if any related sale_order_data has quantity > 0
+                                        return $sale_invoice->sales_invoice_data->contains(function($item) {
+                                            $balance = receipt_voucher_balance($item->sales_invoice_id, "sales_invoie");
+                                            return $balance > 0; 
+                                        });
+                                    });
         }
         
       
@@ -213,6 +278,158 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
+    public function edit_direct($id){
+        $receiptVoucher = ReceiptVoucher::with('items')->findOrFail($id);
+        $accounts = Account::all();
+        $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+        return view("management.finance.receipt_voucher.edit_directReceiptVoucher", compact("receiptVoucher", "taxes", "accounts"));
+    }
+
+    public function update_direct(Request $request, $id)
+{
+    // TODO: Create a validation request class if needed, similar to ReceiptVoucherRequest
+    // For now, assuming basic validation
+    $request->validate([
+        'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+        'rv_date' => 'required|date',
+        'unique_no' => 'required|string',
+        'account_id' => 'required|exists:accounts,id',
+        'ref_bill_no' => 'nullable|string',
+        'bill_date' => 'nullable|date',
+        'account.*' => 'required|exists:accounts,id',
+        'amount.*' => 'required|numeric|min:0',
+        'tax_id.*' => 'nullable|exists:taxes,id',
+        'tax_amount.*' => 'nullable|numeric|min:0',
+        'net_amount.*' => 'nullable|numeric|min:0',
+        'description.*' => 'nullable|string',
+    ]);
+
+    $payload = $request->all();
+    $receiptVoucher = ReceiptVoucher::findOrFail($id);
+
+    DB::beginTransaction();
+    try {
+        // Calculate items and totals
+        $accounts_array = $payload['account'] ?? [];
+        $amounts = $payload['amount'] ?? [];
+        $tax_ids = $payload['tax_id'] ?? [];
+        $tax_amounts = $payload['tax_amount'] ?? [];
+        $net_amounts = $payload['net_amount'] ?? [];
+        $descriptions = $payload['description'] ?? [];
+
+        $totalNetAmount = 0;
+        $items = [];
+
+        for ($i = 0; $i < count($accounts_array); $i++) {
+            if (empty($accounts_array[$i]) || empty($amounts[$i])) continue;
+
+            $amount = (float) ($amounts[$i] ?? 0);
+            $tax_id = $tax_ids[$i] ?? null;
+            $tax_amount = (float) ($tax_amounts[$i] ?? 0);
+            $net_amount = (float) ($net_amounts[$i] ?? ($amount + $tax_amount));
+            $description = $descriptions[$i] ?? null;
+
+            $totalNetAmount += $net_amount;
+
+            $items[] = [
+                'account_id' => $accounts_array[$i],
+                'amount' => $amount,
+                'tax_id' => $tax_id,
+                'tax_amount' => $tax_amount,
+                'net_amount' => $net_amount,
+                'line_desc' => $description,
+                'reference_id' => 1234,
+                'reference_type' => "direct"
+            ];
+        }
+
+        if (empty($items)) {
+            throw new \Exception('At least one valid voucher entry is required.');
+        }
+
+        // Delete old transactions
+        $oldPurpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+        Transaction::where('purpose', $oldPurpose)->delete();
+
+        // Update the receipt voucher
+        $receiptVoucher->update([
+            'unique_no' => $payload['unique_no'],
+            'rv_date' => $payload['rv_date'],
+            'ref_bill_no' => $payload['ref_bill_no'] ?? null,
+            'bill_date' => $payload['bill_date'] ?? null,
+            'account_id' => $payload['account_id'],
+            'voucher_type' => $payload['voucher_type'],
+            'remarks' => $payload['remarks'] ?? null, // Assuming optional, as in create
+            'total_amount' => $totalNetAmount,
+            'company_id' => $request->company_id, // Assuming same as create
+        ]);
+
+        // Delete old items
+        $receiptVoucher->items()->delete();
+
+        // Create new items
+        foreach ($items as $item) {
+            ReceiptVoucherItem::create(array_merge($item, ['receipt_voucher_id' => $receiptVoucher->id]));
+        }
+
+        // Create new transactions
+        // For direct receipt: Debit the main account (bank/cash) for each item's net_amount, credit the item's account
+        // This creates balanced pairs per item
+        $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+        $remarks = $payload['remarks'] ?? null;
+        $unique_no = $receiptVoucher->unique_no;
+        $company_id = $request->company_id; // Assuming from request, as in create
+
+        foreach ($items as $item) {
+            $net_amount = $item['net_amount'];
+            $item_account_id = $item['account_id'];
+            $main_account_id = $payload['account_id'];
+
+            // Debit main account (bank/cash)
+            createTransaction(
+                $net_amount,
+                $main_account_id,
+                $company_id,
+                $unique_no,
+                'debit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $unique_no,
+                    'counter_account_id' => $item_account_id,
+                    'remarks' => $remarks
+                ]
+            );
+
+            // Credit item account
+            createTransaction(
+                $net_amount,
+                $item_account_id,
+                $company_id,
+                $unique_no,
+                'credit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $unique_no,
+                    'counter_account_id' => $main_account_id,
+                    'remarks' => $remarks
+                ]
+            );
+        }
+
+        DB::commit();
+    } catch (\Throwable $th) {
+        DB::rollBack();
+        return response()->json(['error' => $th->getMessage()], 500);
+    }
+
+    return response()->json([
+        'success' => 'Direct Receipt Voucher updated successfully!',
+        'redirect' => route('receipt-voucher.index')
+    ]);
+}
+
     public function store(ReceiptVoucherRequest $request)
     {
         $payload = $request->validated();
@@ -251,7 +468,8 @@ class ReceiptVoucherController extends Controller
                 'voucher_type' => $payload['voucher_type'],
                 'remarks' => $payload['remarks'] ?? null,
                 'total_amount' => $totalNetAmount,
-                "company_id" => $request->company_id
+                "is_direct" => 0,
+                "company_id" => $request->company_id,
             ]);
 
             foreach ($items as $item) {
@@ -311,6 +529,12 @@ class ReceiptVoucherController extends Controller
             'success' => 'Receipt voucher created successfully!',
             'redirect' => route('receipt-voucher.index')
         ]);
+    }
+
+    public function directReceiptVoucher(Request $request) {
+        $accounts = Account::all();
+        $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+        return view("management.finance.receipt_voucher.directReceiptVoucher", compact("taxes", "accounts"));
     }
 
     public function generateRvNumber(Request $request)

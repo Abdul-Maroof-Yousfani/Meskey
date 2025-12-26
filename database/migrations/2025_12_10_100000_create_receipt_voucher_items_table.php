@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tax_id')->nullable();
             $table->decimal('tax_amount', 15, 2)->default(0);
             $table->decimal('net_amount', 15, 2)->default(0);
+            $table->foreignId("account_id")->nullable()->constrained("accounts")->cascadeOnDelete();
             $table->text('line_desc')->nullable();
             $table->timestamps();
 

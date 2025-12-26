@@ -2,7 +2,7 @@
     {{-- @dd($item->quantity) --}}
     @php
         $balance = receipt_voucher_balance($item->reference_id, $item->reference_type);
-        if($balance < 0) continue;
+        if(!$balance) continue;
     @endphp
     <tr>
         <td class="text-center">

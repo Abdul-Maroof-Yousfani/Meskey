@@ -3,7 +3,9 @@
         <tr>
             <th>RV No</th>
             <th>Date</th>
+            <th>Status</th>
             <th>Type</th>
+            <th>Document</th>
             <th>Account</th>
             <th>Bill/Ref No</th>
             <th>Cheque No</th>
@@ -17,6 +19,7 @@
                 <tr>
                     <td>{{ $voucher->unique_no }}</td>
                     <td>{{ optional($voucher->rv_date)->format('d-m-Y') }}</td>
+                    <td>{{ $voucher->is_direct ? "Direct RV" : "Via Document" }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $voucher->voucher_type)) }}</td>
                     <td>{{ $voucher->account->account_name ?? $voucher->account->name ?? 'N/A' }}</td>
                     <td>{{ $voucher->ref_bill_no ?? 'N/A' }}</td>
@@ -27,10 +30,18 @@
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
+                        @php
+                            $editRoute = $voucher->is_direct
+                                ? route('direct.receipt-voucher.edit', $voucher->id)
+                                : route('receipt-voucher.edit', $voucher->id);
+                        @endphp
+
                         <a class="info p-1 text-center mr-2 position-relative"
-                            href="{{ route('receipt-voucher.edit', $voucher->id) }}" title="Edit">
+                        href="{{ $editRoute }}"
+                        title="Edit">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
+
                     </td>
                 </tr>
             @endforeach

@@ -20,6 +20,7 @@ class ReceiptVoucherItem extends Model
         'tax_amount',
         'net_amount',
         'line_desc',
+        "account_id"
     ];
 
     public function receiptVoucher()

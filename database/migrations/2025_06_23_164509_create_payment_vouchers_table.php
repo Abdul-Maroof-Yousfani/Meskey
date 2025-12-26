@@ -30,6 +30,7 @@ return new class extends Migration
             $table->enum('voucher_type', ['bank_payment_voucher', 'cash_payment_voucher']);
             $table->text('remarks')->nullable();
             $table->decimal('total_amount', 15, 2)->default(0);
+            $table->boolean("is_direct")->nullable()->default(0);
             $table->timestamps();
             $table->softDeletes();
 

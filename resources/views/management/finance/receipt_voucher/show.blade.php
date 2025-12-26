@@ -46,17 +46,23 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $net_amount = 0;
+                    @endphp
                     @forelse($items as $index => $item)
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item['type'] }}</td>
                             <td>{{ $item['doc_no'] }}</td>
-                            <td>{{ $item['customer'] }}</td>
+                            <td>{{ $item['customer'] ? $item['customer'] : "N/A" }}</td>
                             <td class="text-right">{{ number_format($item['amount'], 2) }}</td>
                             <td class="text-right">{{ number_format($item['tax_amount'], 2) }}</td>
                             <td class="text-right">{{ number_format($item['net_amount'], 2) }}</td>
                             <td>{{ $item['line_desc'] }}</td>
                         </tr>
+                        @php
+                            $net_amount += $item["net_amount"];
+                        @endphp
                     @empty
                         <tr>
                             <td colspan="8" class="text-center text-muted">No line items</td>
@@ -64,7 +70,7 @@
                     @endforelse
                     <tr>
                         <td colspan="6" class="text-right"><strong>Total Amount:</strong></td>
-                        <td class="text-right"><strong>{{ number_format($receiptVoucher->total_amount, 2) }}</strong></td>
+                        <td class="text-right"><strong>{{ $net_amount }}</strong></td>
                         <td></td>
                     </tr>
                 </tbody>

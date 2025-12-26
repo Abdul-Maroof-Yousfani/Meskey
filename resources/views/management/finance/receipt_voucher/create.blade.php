@@ -55,13 +55,13 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="ref_bill_no">Receipt Ref No</label>
-                                        <input type="text" name="ref_bill_no" id="ref_bill_no" class="form-control">
+                                        <input type="text" name="ref_bill_no" id="ref_bill_no" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="bill_date">Receipt Date</label>
-                                        <input type="date" name="bill_date" id="bill_date" class="form-control">
+                                        <input type="date" name="bill_date" id="bill_date" class="form-control" required>
                                     </div>
                                 </div>
                             </div>
