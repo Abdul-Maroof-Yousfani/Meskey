@@ -479,6 +479,7 @@ class ReceiptVoucherController extends Controller
                     'reference_id' => $item['reference_id'],
                     'amount' => $item['amount'] ?? 0,
                     'tax_id' => $item['tax_id'] ?? null,
+                    'account_id' => null,
                     'tax_amount' => $item['tax_amount'] ?? 0,
                     'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
                     'line_desc' => $item['line_desc'] ?? null,
