@@ -4,6 +4,7 @@
             <th class="col-sm-3">PO Receiving No </th>
             <th class="col-sm-3">Purchase Request No</th>
             <th class="col-sm-3">Purchase Order No</th>
+            <th class="col-sm-3">DC No</th>
             <th class="col-sm-3">Category- item</th>
             <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
@@ -63,6 +64,14 @@
                                 </td>
                                 @php $isFirstItemRow = false; @endphp
                             @endif
+
+                            <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}"
+                                style="background-color: #fff3e0; vertical-align: middle;">
+                                <p class="m-0 font-weight-bold">
+                                    {{ $requestGroup['dc_no'] ?? '-' }}
+                                </p>
+                            </td>
+
                             {{-- Item --}}
                             <td>
                                 <p class="m-0 font-weight-bold">
