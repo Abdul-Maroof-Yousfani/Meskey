@@ -49,6 +49,7 @@ class PurchaseOrderReceivingController extends Controller
         $processedData = [];
 
         foreach ($PurchaseOrderRaw as $row) {
+            $dc_no = $row->purchase_order_receiving->dc_no;
             // Handle missing relationships
             $purchaseRequestNo = $row->purchase_order_receiving->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
             $quotationNo = $row->purchase_order_receiving->purchase_quotation->purchase_quotation_no ?? 'N/A';
@@ -157,6 +158,7 @@ class PurchaseOrderReceivingController extends Controller
                         'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
+                        'dc_no' => $dc_no,
                         'qc_status' => $orderGroup['row']->qc?->am_approval_status ?? null,
                         'has_approved_item' => $hasApprovedItem,
                     ];
