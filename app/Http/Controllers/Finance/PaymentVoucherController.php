@@ -156,7 +156,7 @@ class PaymentVoucherController extends Controller
                     $accountId,
                     1, // adjust if you have different transaction type for payments
                     $uniqueNo,
-                    'credit',
+                    'debit',
                     'no',
                     [
                         'purpose' => "$prefix-{$paymentVoucher->id}",
@@ -174,7 +174,7 @@ class PaymentVoucherController extends Controller
                 $request->account_id,
                 1,
                 $uniqueNo,
-                'debit',
+                'credit',
                 'no',
                 [
                     'purpose' => "$prefix-{$paymentVoucher->id}",
@@ -301,6 +301,7 @@ class PaymentVoucherController extends Controller
             'account',
             'supplier',
         ])->findOrFail($id);
+        
 
         $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
             ->get();
@@ -311,7 +312,7 @@ class PaymentVoucherController extends Controller
         } elseif ($paymentVoucher->bank_account_type === 'owner') {
             $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
         }
-
+     
         return view('management.finance.payment_voucher.show', [
             'paymentVoucher' => $paymentVoucher,
             'transactions' => $transactions,
