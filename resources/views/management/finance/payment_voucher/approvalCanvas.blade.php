@@ -95,12 +95,13 @@
                     @foreach ($paymentVoucher->paymentVoucherData as $index => $voucherData)
                         @php
                             $request = $voucherData->paymentRequest;
+                            if(!$request) continue;
                             $purchaseOrder = $request->paymentRequestData->purchaseOrder ?? null;
                         @endphp
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}</td>
-                            <td>{{ $request->created_at->format('d-M-Y') }}</td>
+                            <td>{{ $request?->created_at?->format('d-M-Y') }}</td>
                             <td class="text-right">{{ number_format($request->amount, 2) }}</td>
                             <td>{{ $request->paymentRequestData->notes ?? 'No description' }}</td>
                             <td>

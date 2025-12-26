@@ -95,6 +95,7 @@
                     @foreach ($paymentVoucher->paymentVoucherData as $index => $voucherData)
                         @php
                             $request = $voucherData->paymentRequest;
+                            if(!$request) continue;
                             $purchaseOrder = $request->paymentRequestData->purchaseOrder ?? null;
                         @endphp
                         <tr>
