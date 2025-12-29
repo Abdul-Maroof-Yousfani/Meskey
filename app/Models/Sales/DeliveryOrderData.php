@@ -13,6 +13,14 @@ class DeliveryOrderData extends Model
     protected $guarded  = ["id", "created_at", "updated_at"];
 
     public function delivery_order() {
-        return $this->hasOne(DeliveryOrder::class);
+        return $this->belongsTo(DeliveryOrder::class, 'delivery_order_id');
+    }
+
+    public function salesOrderData() {
+        return $this->belongsTo(SalesOrderData::class, 'so_data_id');
+    }
+
+    public function item() {
+        return $this->belongsTo(\App\Models\Product::class, 'item_id');
     }
 }

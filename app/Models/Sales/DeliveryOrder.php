@@ -2,6 +2,7 @@
 
 namespace App\Models\Sales;
 
+use App\Models\Master\Customer;
 use App\Models\Procurement\Store\Location;
 use App\Models\ReceiptVoucher;
 use App\Traits\HasApproval;
@@ -23,6 +24,10 @@ class DeliveryOrder extends Model
         return $this->belongsToMany(ReceiptVoucher::class, "delivery_order_receipt_voucher", "delivery_order_id", "receipt_voucher_id")->withPivot("amount", "receipt_voucher_id");
     }
 
+    public function customer() {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function withheld_receipt_voucher() {
         return $this->belongsTo(ReceiptVoucher::class, "withhold_for_rv_id");
     }
@@ -33,5 +38,26 @@ class DeliveryOrder extends Model
 
     public function delivery_challans() {
         return $this->belongsToMany(DeliveryChallan::class, "delivery_challan_delivery_order", "delivery_order_id", "delivery_challan_id")->withPivot("qty");
+    }
+    public function firstWeighbridge() {
+        return $this->hasOne(FirstWeighbridge::class, "delivery_order_id");
+    }
+
+    public function salesOrder() {
+        return $this->belongsTo(SalesOrder::class, "so_id");
+    }
+
+    public function arrivalLocation() {
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, "arrival_id");
+    }
+
+    public function subArrivalLocation() {
+        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "subarrival_id");
+    }
+
+   
+
+    public function secondWeighbridge() {
+        return $this->hasOne(SecondWeighbridge::class, "delivery_order_id");
     }
 }

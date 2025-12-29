@@ -510,6 +510,22 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.first-weighbridge.index') }}"
+                            onclick="loadPageContent('{{ route('sales.first-weighbridge.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">First Weighbridge</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                        href="{{ route('sales.second-weighbridge.index') }}"
+                        onclick="loadPageContent('{{ route('sales.second-weighbridge.index') }}')"
+                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                        <span data-i18n="Task Board">Second Weighbridge</span>
+                    </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.delivery-challan.index') }}"
                             onclick="loadPageContent('{{ route('sales.delivery-challan.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>

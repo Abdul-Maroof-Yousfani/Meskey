@@ -215,8 +215,6 @@ $(document).ready(function () {
         });
     }
 
-
-
     function openModal(url, title, viewonly=false) {
         $('#settinsgs .modal-title').html(title);
         // $('#settings').modal('show');

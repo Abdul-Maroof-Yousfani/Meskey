@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Sales\DeliveryChallanController;
 use App\Http\Controllers\Sales\DeliveryOrderController;
+use App\Http\Controllers\Sales\FirstWeighBridgeController;
+use App\Http\Controllers\Sales\SecondWeighBridgeController;
 use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\SalesInquiryController;
@@ -39,6 +41,15 @@ Route::name("sales.")->group(function () {
     Route::get("get-do-against-customer", [DeliveryChallanController::class, "get_delivery_orders"])->name("get.delivery-challan.get-do");
     Route::get("/get-delivery-order-items",  [DeliveryChallanController::class, "getItems"])->name("get.delivery-challan.get-items");
     Route::get("/delivery-challan/{delivery_challan}/view", [DeliveryChallanController::class, "view"])->name("get.delivery-challan.view");
+
+
+    Route::resource("first-weighbridge", FirstWeighBridgeController::class);
+    Route::post("get-first-weighbridge", [FirstWeighBridgeController::class, "getList"])->name("get.first-weighbridge");
+    Route::get('/get-first-weighbridge-related-data', [FirstWeighBridgeController::class, 'getFirstWeighbridgeRelatedData'])->name('getFirstWeighbridgeRelatedData');
+
+    Route::resource("second-weighbridge", SecondWeighBridgeController::class);
+    Route::post("get-second-weighbridge", [SecondWeighBridgeController::class, "getList"])->name("get.second-weighbridge");
+    Route::get('/get-second-weighbridge-related-data', [SecondWeighBridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
 
     // Receiving Request Routes
     Route::resource("receiving-request", ReceivingRequestController::class)->only(['index', 'edit', 'update']);
