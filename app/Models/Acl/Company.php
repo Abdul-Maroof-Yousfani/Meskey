@@ -2,6 +2,7 @@
 
 namespace App\Models\Acl;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -21,7 +22,7 @@ class Company extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'company_user_role')
-            ->withPivot('role_id')
+            ->withPivot('role_id', 'locations', 'arrival_locations')
             ->withTimestamps();
     }
 }

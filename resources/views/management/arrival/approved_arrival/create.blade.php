@@ -9,11 +9,13 @@
                 <select class="form-control select2" name="arrival_ticket_id" required>
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
+                        <option data-locationid="{{ $arrivalTicket->location_id }}"
+                            data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
                             data-trucknumber="{{ $arrivalTicket->truck_no }}" data-bags="{{ $arrivalTicket->bags }}"
                             value="{{ $arrivalTicket->id }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
-                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }}
+                            Truck No: {{ $arrivalTicket->truck_no ?? '-' }} --
+                            Arrival Location: {{ $arrivalTicket->unloadingLocation->arrivalLocation?->name ?? 'N' }}
                         </option>
                     @endforeach
                 </select>
@@ -25,7 +27,8 @@
                 <select class="form-control select2" name="gala_id" id="gala_id">
                     <option value="">Select Gala</option>
                     @foreach ($arrivalSubLocations as $arrivalSubLocation)
-                        <option value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
+                        <option data-locationid="{{ $arrivalSubLocation->arrival_location_id }}"
+                            value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
                     @endforeach
                 </select>
 
@@ -154,6 +157,47 @@
 
 <script>
     $(document).ready(function () {
+
+
+        // 1️⃣ Select2 init (sirf ek dafa)
+        $('#gala_id').select2({
+            placeholder: 'Select Gala',
+            width: '100%'
+        });
+
+        // 2️⃣ Original options backup
+        var originalGalaOptions = $('#gala_id').html();
+
+        // 3️⃣ Ticket change
+        $('select[name="arrival_ticket_id"]').on('change', function () {
+
+            var locationId = $(this).find('option:selected').data('locationid');
+
+            // Reset gala options
+            $('#gala_id').html(originalGalaOptions);
+
+            if (!locationId) {
+                $('#gala_id').val(null).trigger('change');
+                return;
+            }
+
+            // Sirf matching gala rakho, baqi remove
+            $('#gala_id option').each(function () {
+                if ($(this).data('locationid') != locationId && $(this).val() !== "") {
+                    $(this).remove();
+                }
+            });
+
+            // Select2 refresh
+            $('#gala_id').select2({
+                placeholder: 'Select Gala',
+                width: '100%'
+            });
+
+        });
+
+
+
 
         function toggleBagFields() {
             let selectedBagType = $('#bag_type_id option:selected').text().toLowerCase();

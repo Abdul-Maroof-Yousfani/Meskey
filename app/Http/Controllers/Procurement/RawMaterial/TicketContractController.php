@@ -14,6 +14,7 @@ use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
@@ -33,7 +34,8 @@ class TicketContractController extends Controller
     {
         $commodities = Product::all();
         $millers = Miller::all();
-        return view('management.procurement.raw_material.ticket_contracts.index', compact('commodities', 'millers'));
+        $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
+        return view('management.procurement.raw_material.ticket_contracts.index', compact('commodities', 'millers', 'companyLocations'));
     }
 
     /**
@@ -86,6 +88,8 @@ class TicketContractController extends Controller
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.location_id', $request->company_location_id);
             })
+            ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
+
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
             })

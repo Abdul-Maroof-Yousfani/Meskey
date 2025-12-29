@@ -38,10 +38,13 @@ class FreightController extends Controller
                 });
             })
             ->where('company_id', $request->company_id)
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
-                    $query->where('location_id', $authUser->company_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+            //         $query->where('location_id', $authUser->company_location_id);
+            //     });
+            // });
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             });
 
         $freights = $query->latest()
@@ -58,11 +61,12 @@ class FreightController extends Controller
         $tickets = ArrivalTicket::where('freight_status', 'pending')
             ->whereNotNull('qc_product')
             // where('arrival_purchase_order_id', '!=', Null)
-            ->when(!$isSuperAdmin, function ($query) use ($authUser) {
-                // return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                return $query->where('location_id', $authUser->company_location_id);
-                // });
-            })
+            // ->when(!$isSuperAdmin, function ($query) use ($authUser) {
+            //     // return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+            //     return $query->where('location_id', $authUser->company_location_id);
+            //     // });
+            // })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->get();
 
         return view('management.arrival.freight.create', ['tickets' => $tickets]);

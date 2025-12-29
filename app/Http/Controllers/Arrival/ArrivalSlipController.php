@@ -51,10 +51,13 @@ class ArrivalSlipController extends Controller
                     $sq->where('arrival_slips.unique_no', 'like', $searchTerm);
                 });
             })
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
-                    $query->where('location_id', $authUser->company_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+            //         $query->where('location_id', $authUser->company_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where('arrival_slips.company_id', $request->company_id)
             ->latest('arrival_slips.created_at')

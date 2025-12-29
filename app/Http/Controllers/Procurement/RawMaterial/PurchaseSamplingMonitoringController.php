@@ -54,6 +54,9 @@ class PurchaseSamplingMonitoringController extends Controller
                     $query->where('company_location_id', $request->company_location_id);
                 });
             })
+            ->whereHas('purchaseOrder', function ($query) {
+                $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
+            })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->whereHas('purchaseOrder', function ($query) use ($request) {
                     $query->where('supplier_id', $request->supplier_id);

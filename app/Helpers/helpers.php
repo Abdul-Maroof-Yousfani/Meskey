@@ -70,6 +70,33 @@ if (!function_exists('canAccess')) {
     }
 }
 
+
+
+
+if(!function_exists('getUserCompanyLocations')) {
+    function getUserCurrentCompanyLocations() {
+        $user = Auth::user();
+        $currentCompanyId = $user->current_company_id;
+        $userLocations = $user->companies->where('id', $currentCompanyId)->first()->pivot->locations;
+        if (!$userLocations) {
+            return [];
+        }
+        return json_decode($userLocations, true);
+    }
+}
+
+if(!function_exists('getUserCurrentCompanyArrivalLocations')) {
+    function getUserCurrentCompanyArrivalLocations() {
+        $user = Auth::user();
+        $currentCompanyId = $user->current_company_id;
+        $userLocationsArrivals = $user->companies->where('id', $currentCompanyId)->first()->pivot->arrival_locations;
+        if (!$userLocationsArrivals) {
+            return [];
+        }
+        return json_decode($userLocationsArrivals, true);
+    }
+}
+
 function numberToWords($number)
 {
     $number = floatval($number);
