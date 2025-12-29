@@ -47,10 +47,13 @@ class FirstWeighbridgeController extends Controller
                 });
             })
             ->where('company_id', $request->company_id)
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
-                    $query->where('arrival_location_id', $authUser->arrival_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
+            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+            //     });
+            // });
+            ->whereHas('arrivalTicket.unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
             });
 
         $ArrivalSamplingRequests = $query->latest()
@@ -71,11 +74,14 @@ class FirstWeighbridgeController extends Controller
             'ArrivalLocations' => ArrivalLocation::where('status', 'active')->get(),
             'ArrivalTickets' => ArrivalTicket::with('unloadingLocation')
                 ->where('first_weighbridge_status', 'pending')
-                ->when(!$isSuperAdmin, function ($query) use ($authUser) {
-                    return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                        $q->where('arrival_location_id', $authUser->arrival_location_id);
-                    });
-            })
+                ->whereHas('unloadingLocation', function ($q) {
+                    $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                })
+                // ->when(!$isSuperAdmin, function ($query) use ($authUser) {
+                //     return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+                //         $q->where('arrival_location_id', $authUser->arrival_location_id);
+                //     });
+                // })
             ->get()
         ];
 

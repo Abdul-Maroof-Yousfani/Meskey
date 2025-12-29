@@ -21,7 +21,7 @@
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row justify-content-nd text">
-                                            <div class="col-md-2">
+                                            <!-- <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id" id="company_location"
@@ -29,7 +29,18 @@
                                                         <option value="">Location</option>
                                                     </select>
                                                 </div>
-                                            </div>
+                                            </div> -->
+                                            @foreach ($companyLocations as $location)
+                                                <div class="col-md-2">
+                                                    <div class="form-group mb-0">
+                                                        <label>Location:</label>
+                                                        <select name="company_location_id" id="company_location"
+                                                            class="form-control select2">
+                                                            <option value="">Location</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>
@@ -161,7 +172,7 @@
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
 
             initializeDynamicDependentSelect2(
-                '#company_location',
+                // '#company_location',
                 '#supplier_id_f',
                 'company_locations',
                 'name',

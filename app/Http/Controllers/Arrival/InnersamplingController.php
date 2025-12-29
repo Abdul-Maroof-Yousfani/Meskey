@@ -47,10 +47,13 @@ class InnersamplingController extends Controller
                     ->orWhere('supplier_name', 'like', $searchTerm);
             });
         })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
-                });
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket', function ($q) { 
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->latest()
             ->paginate(request('per_page', 25));
@@ -74,11 +77,16 @@ class InnersamplingController extends Controller
         }
 
         $samplingRequests = $query
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
-                });
-            })->get();
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id);
+            //     });
+            // })
+            
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
+            })
+            ->get();
 
 
         $products = Product::all();

@@ -36,10 +36,13 @@ class ArrivalApproveController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
-                    $query->where('arrival_location_id', $authUser->arrival_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
+            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket.unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
             })
             ->with(['bagType', 'bagCondition', 'bagPacking', 'arrivalTicket'])
             ->latest()
@@ -64,10 +67,13 @@ class ArrivalApproveController extends Controller
                     ->where('arrival_sampling_requests.deleted_at', null);
             })
             ->whereNull('arrival_sampling_requests.id')
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
-                    $query->where('arrival_location_id', $authUser->arrival_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+            //     });
+            // })
+            ->whereHas('unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
             })
             ->select('arrival_tickets.*')
             ->get();
@@ -76,10 +82,10 @@ class ArrivalApproveController extends Controller
         $data['bagConditions'] = BagCondition::all();
         $data['bagPackings'] = BagPacking::all();
         $data['arrivalSubLocations'] = ArrivalSubLocation::where('status', 'Active')
-         ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
             })
-        ->get();
+            ->get();
 
         return view('management.arrival.approved_arrival.create', $data);
     }
@@ -124,7 +130,7 @@ class ArrivalApproveController extends Controller
         ]);
 
         $gala_name = ArrivalSubLocation::where('id', $request->gala_id)->value('name');
-        
+
         $validator->sometimes('total_rejection', 'required|integer|min:1', function ($input) {
             return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
         });
