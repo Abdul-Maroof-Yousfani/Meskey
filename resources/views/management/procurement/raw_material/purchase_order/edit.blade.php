@@ -231,21 +231,21 @@
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per KG:</label>
-                 <input type="number" name="rate_per_kg" value="{{ $arrivalPurchaseOrder->rate_per_kg }}"
+                 <input type="number" step="0.01"name="rate_per_kg" value="{{ $arrivalPurchaseOrder->rate_per_kg }}"
                      placeholder="Rate Per KG" class="form-control" />
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per Mound:</label>
-                 <input type="number" name="rate_per_mound" value="{{ $arrivalPurchaseOrder->rate_per_mound }}"
+                 <input type="number" step="0.01" name="rate_per_mound" value="{{ $arrivalPurchaseOrder->rate_per_mound }}"
                      placeholder="Rate Per Mound" class="form-control" />
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per 100KG:</label>
-                 <input type="number" name="rate_per_100kg" value="{{ $arrivalPurchaseOrder->rate_per_100kg }}"
+                 <input type="number" step="0.01" name="rate_per_100kg" value="{{ $arrivalPurchaseOrder->rate_per_100kg }}"
                      placeholder="Rate Per 100KG" class="form-control" />
              </div>
          </div>
