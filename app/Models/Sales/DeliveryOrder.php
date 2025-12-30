@@ -48,16 +48,20 @@ class DeliveryOrder extends Model
     }
 
     public function arrivalLocation() {
-        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, "arrival_id");
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, "arrival_location_id");
     }
 
     public function subArrivalLocation() {
-        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "subarrival_id");
+        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "sub_arrival_location_id");
     }
 
    
 
     public function secondWeighbridge() {
         return $this->hasOne(SecondWeighbridge::class, "delivery_order_id");
+    }
+
+    public function loadingProgram() {
+        return $this->hasOne(LoadingProgram::class, "delivery_order_id");
     }
 }

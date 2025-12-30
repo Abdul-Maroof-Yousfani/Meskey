@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Sales\SecondWeighbridge;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\FirstWeighbridge;
+use App\Models\Sales\SalesOrder;
 use App\Models\Master\ArrivalTruckType;
+use App\Models\Master\WeighbridgeAmount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -49,14 +51,15 @@ class SecondWeighBridgeController extends Controller
      */
     public function create()
     {
-        
+
         $data = [
             'ArrivalTruckTypes' => ArrivalTruckType::where('status', 'active')->get(),
-            'DeliveryOrders' => DeliveryOrder::with('customer', 'delivery_order_data.item')
-                ->where('am_approval_status', 'approved')
-                ->whereHas('firstWeighbridge')
-                ->whereDoesntHave('secondWeighbridge')
-                ->get()
+            'DeliveryOrders' => collect(), // Empty collection initially
+            'SaleOrders' => SalesOrder::whereHas('delivery_orders', function($query) {
+                $query->where('am_approval_status', 'approved')
+                      ->whereHas('firstWeighbridge')
+                      ->whereDoesntHave('secondWeighbridge');
+            })->where('am_approval_status', 'approved')->get()
         ];
 
         return view('management.sales.second-weighbridge.create', $data);
@@ -89,7 +92,17 @@ class SecondWeighBridgeController extends Controller
         $request['company_id'] = $request->company_id;
         $request['first_weight'] = $firstWeighbridge->first_weight;
         $request['net_weight'] = $request->second_weight - $firstWeighbridge->first_weight;
-        $request['weighbridge_amount'] = ArrivalTruckType::find($request->truck_type_id)->weighbridge_amount;
+
+        // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and arrival location
+        $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+            ->where('company_location_id', $deliveryOrder->location_id)
+            ->first();
+
+        if (!$weighbridgeAmount) {
+            return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
+        }
+
+        $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
 
         $secondWeighbridge = SecondWeighbridge::create($request->all());
 
@@ -101,7 +114,8 @@ class SecondWeighBridgeController extends Controller
      */
     public function edit($id)
     {
-        $data['SecondWeighbridge'] = SecondWeighbridge::where('company_id', $authUser->company_id)->findOrFail($id);
+        $authUser = auth()->user();
+        $data['SecondWeighbridge'] = SecondWeighbridge::findOrFail($id);
         $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
         $data['DeliveryOrders'] = DeliveryOrder::with('customer', 'delivery_order_data.item')
             ->where('am_approval_status', 'approved')
@@ -139,7 +153,17 @@ class SecondWeighBridgeController extends Controller
         $request['company_id'] = $request->company_id;
         $request['first_weight'] = $firstWeighbridge->first_weight;
         $request['net_weight'] = $request->second_weight - $firstWeighbridge->first_weight;
-        $request['weighbridge_amount'] = ArrivalTruckType::find($request->truck_type_id)->weighbridge_amount;
+
+        // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and arrival location
+        $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+            ->where('company_location_id', $deliveryOrder->arrival_location_id)
+            ->first();
+
+        if (!$weighbridgeAmount) {
+            return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
+        }
+
+        $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
 
         $secondWeighbridge->update($request->all());
 
@@ -167,5 +191,58 @@ class SecondWeighBridgeController extends Controller
         $html = view('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', compact('DeliveryOrder', 'ArrivalTruckTypes'))->with('SecondWeighbridge', null)->render();
 
         return response()->json(['success' => true, 'html' => $html]);
+    }
+
+    public function getWeighbridgeAmount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'truck_type_id' => 'required|exists:arrival_truck_types,id',
+            'delivery_order_id' => 'required|exists:delivery_order,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $deliveryOrder = DeliveryOrder::find($request->delivery_order_id);
+
+        $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+            ->where('company_location_id', $deliveryOrder->location_id)
+            ->first();
+
+        if ($weighbridgeAmount) {
+            return response()->json([
+                'success' => true,
+                'weighbridge_amount' => $weighbridgeAmount->weighbridge_amount
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Weighbridge amount not found for selected truck type and arrival location.'
+            ]);
+        }
+    }
+
+    public function getDeliveryOrdersBySaleOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'sale_order_id' => 'required|exists:sales_orders,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
+            ->where('am_approval_status', 'approved')
+            ->whereHas('firstWeighbridge')
+            ->whereDoesntHave('secondWeighbridge')
+            ->with('customer', 'delivery_order_data.item')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'delivery_orders' => $deliveryOrders
+        ]);
     }
 }

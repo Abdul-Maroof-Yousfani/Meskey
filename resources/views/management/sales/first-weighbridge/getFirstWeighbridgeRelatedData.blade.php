@@ -122,9 +122,46 @@
 
         // Update weighbridge amount when truck type changes
         $('#truck_type_id').change(function() {
-            var selectedOption = $(this).find('option:selected');
-            var weighbridgeAmount = selectedOption.data('weighbridge-amount') || '';
-            $('#weighbridge_amount').val(weighbridgeAmount);
+            var truckTypeId = $(this).val();
+            var deliveryOrderId = $('#delivery_order_id').val();
+
+            if (truckTypeId && deliveryOrderId) {
+                $.ajax({
+                    url: '{{ route('sales.getWeighbridgeAmount') }}',
+                    type: 'GET',
+                    data: {
+                        truck_type_id: truckTypeId,
+                        delivery_order_id: deliveryOrderId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#weighbridge_amount').val(response.weighbridge_amount);
+                        } else {
+                            $('#weighbridge_amount').val('');
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Not Found',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#weighbridge_amount').val('');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to fetch weighbridge amount.'
+                        });
+                    }
+                });
+            } else {
+                $('#weighbridge_amount').val('');
+            }
         });
+
+        // Trigger change event on page load if truck type is already selected
+        if ($('#truck_type_id').val() && $('#delivery_order_id').val()) {
+            $('#truck_type_id').trigger('change');
+        }
     });
 </script>
