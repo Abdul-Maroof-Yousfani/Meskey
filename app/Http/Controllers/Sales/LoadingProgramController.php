@@ -330,7 +330,7 @@ class LoadingProgramController extends Controller
 
         $latestContract = LoadingProgramItem::select("id", "transaction_number")->where('transaction_number', 'like', "$prefix-%")
             ->get();
-        $latestContract = $latestContract[$latestContract->count() - 1];
+        $latestContract = $latestContract[(!$latestContract->count()) ? 0 : $latestContract->count() - 1];
        
         // dd($latestContract);
      
