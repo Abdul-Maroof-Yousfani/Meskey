@@ -135,15 +135,15 @@
             <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
-                        <input type="text" name="withhold_for_rv"
-                            value="{{ $delivery_order->so_reference_no }}" class="form-control" readonly>
+                        <input type="text"
+                            value="{{ $delivery_order->line_desc }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date"
-                            value="{{ $delivery_order->delivery_date }}" class="form-control" readonly>
+                            value="{{ $delivery_order->dispatch_date }}" class="form-control" readonly>
                     </div>
                 </div>
         </div>

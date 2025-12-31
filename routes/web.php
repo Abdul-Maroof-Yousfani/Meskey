@@ -21,11 +21,17 @@ use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 
 use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\FirstWeighbridge;
+use App\Models\Sales\LoadingProgram;
+use App\Models\Sales\LoadingSlip;
+use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\SaleReturnData;
 use App\Models\Sales\SalesInquiry;
 use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesOrder;
+use App\Models\Sales\SalesQc;
 use App\Models\Sales\SalesReturn;
+use App\Models\Sales\SecondWeighbridge;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -54,10 +60,16 @@ Route::get("checking-data", function() {
     SalesInquiry::query()->delete();
     SalesOrder::query()->delete();
     DeliveryOrder::query()->delete();
+    LoadingProgram::query()->delete();
+    FirstWeighbridge::query()->delete();
+    SalesQc::query()->delete();
+    LoadingSlip::query()->delete();
+    SecondWeighbridge::query()->delete();
     DeliveryChallan::query()->delete();
-
+    ReceivingRequest::query()->delete();
     SalesInvoice::query()->delete();
     SalesReturn::query()->delete();
+
 });
 
 

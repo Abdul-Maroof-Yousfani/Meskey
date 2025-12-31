@@ -534,6 +534,14 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.loading-slip.index') }}"
+                            onclick="loadPageContent('{{ route('sales.loading-slip.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Loading Slip</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                         href="{{ route('sales.second-weighbridge.index') }}"
                         onclick="loadPageContent('{{ route('sales.second-weighbridge.index') }}')"
                         data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>

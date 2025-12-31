@@ -41,4 +41,8 @@ class LoadingProgramItem extends Model
     public function salesQc() {
         return $this->hasOne(\App\Models\Sales\SalesQc::class);
     }
+
+    public function loadingSlip() {
+        return $this->hasOne(\App\Models\Sales\LoadingSlip::class);
+    }
 }
