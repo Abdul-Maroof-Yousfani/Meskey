@@ -7,13 +7,18 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             {!! getUserMissingInfoAlert() !!}
             <div class="form-group">
-                <label>Delivery Order:</label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
-                    <option value="">Select Delivery Order</option>
-                    @foreach ($DeliveryOrders as $deliveryOrder)
-                        <option value="{{ $deliveryOrder->id }}" {{ $deliveryOrder->id == $FirstWeighbridge->delivery_order_id ? 'selected' : '' }}>
-                            DO No: {{ $deliveryOrder->reference_no }} --
-                            Customer: {{ $deliveryOrder->customer->name }}
+                <label>Ticket:</label>
+                <select class="form-control select2" name="loading_program_item_id" id="loading_program_item_id">
+                    <option value="">Select Ticket</option>
+                    @php
+                        $availableTickets = \App\Models\Sales\LoadingProgramItem::whereDoesntHave('firstWeighbridge')
+                            ->orWhere('id', $FirstWeighbridge->loading_program_item_id)
+                            ->with(['loadingProgram.deliveryOrder.customer', 'loadingProgram.deliveryOrder.delivery_order_data.item'])
+                            ->get();
+                    @endphp
+                    @foreach ($availableTickets as $ticket)
+                        <option value="{{ $ticket->id }}" {{ $ticket->id == $FirstWeighbridge->loading_program_item_id ? 'selected' : '' }}>
+                            {{ $ticket->transaction_number }} -- {{ $ticket->truck_number }}
                         </option>
                     @endforeach
                 </select>
@@ -22,7 +27,7 @@
     </div>
     <div class="row" id="slabsContainer">
         @if($DeliveryOrder)
-            @include('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', ['DeliveryOrder' => $DeliveryOrder, 'FirstWeighbridge' => $FirstWeighbridge, 'ArrivalTruckTypes' => $ArrivalTruckTypes])
+            @include('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', ['DeliveryOrder' => $DeliveryOrder, 'FirstWeighbridge' => $FirstWeighbridge, 'ArrivalTruckTypes' => $ArrivalTruckTypes, 'LoadingProgramItem' => $FirstWeighbridge->loadingProgramItem])
         @endif
     </div>
 
@@ -40,21 +45,21 @@
     });
 
     $(document).ready(function() {
-        $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
+        $('#loading_program_item_id').change(function() {
+            var loading_program_item_id = $(this).val();
 
-            if (delivery_order_id) {
+            if (loading_program_item_id) {
                 $.ajax({
                     url: '{{ route('sales.getFirstWeighbridgeRelatedData') }}',
                     type: 'GET',
                     data: {
-                        delivery_order_id: delivery_order_id
+                        loading_program_item_id: loading_program_item_id
                     },
                     dataType: 'json',
                     beforeSend: function() {
                         Swal.fire({
                             title: "Processing...",
-                            text: "Please wait while fetching delivery order details.",
+                            text: "Please wait while fetching ticket details.",
                             allowOutsideClick: false,
                             didOpen: () => {
                                 Swal.showLoading();

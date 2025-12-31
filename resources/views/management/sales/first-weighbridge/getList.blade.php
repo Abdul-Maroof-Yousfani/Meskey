@@ -2,7 +2,8 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th class="col-sm-1">DO No.</th>
+                <th class="col-sm-1">Ticket No.</th>
+                <th class="col-sm-1">Truck No.</th>
                 <th class="col-sm-2">Customer</th>
                 <th class="col-sm-2">Commodity</th>
                 <th class="col-sm-1">Weight</th>
@@ -14,13 +15,16 @@
             @foreach($FirstWeighbridges as $firstWeighbridge)
                 <tr>
                     <td>
-                        {{ $firstWeighbridge->deliveryOrder->reference_no ?? 'N/A' }}
+                        {{ $firstWeighbridge->loadingProgramItem->transaction_number ?? 'N/A' }}
                     </td>
                     <td>
-                        {{ $firstWeighbridge->deliveryOrder->customer->name ?? 'N/A' }}
+                        {{ $firstWeighbridge->loadingProgramItem->truck_number ?? 'N/A' }}
                     </td>
                     <td>
-                        {{ $firstWeighbridge->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}
+                        {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}
                     </td>
                     <td>
                         {{ $firstWeighbridge->first_weight ?? 'N/A' }}

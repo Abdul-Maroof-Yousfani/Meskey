@@ -33,4 +33,12 @@ class LoadingProgramItem extends Model
     {
         return $this->belongsTo(\App\Models\Master\Brands::class, "brand_id");
     }
+
+    public function firstWeighbridge()
+    {
+        return $this->hasOne(\App\Models\Sales\FirstWeighbridge::class, "loading_program_item_id");
+    }
+    public function salesQc() {
+        return $this->hasOne(\App\Models\Sales\SalesQc::class);
+    }
 }

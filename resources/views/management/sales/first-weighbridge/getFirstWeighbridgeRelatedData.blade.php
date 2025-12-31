@@ -123,15 +123,15 @@
         // Update weighbridge amount when truck type changes
         $('#truck_type_id').change(function() {
             var truckTypeId = $(this).val();
-            var deliveryOrderId = $('#delivery_order_id').val();
+            var loadingProgramItemId = '{{ $LoadingProgramItem->id }}';
 
-            if (truckTypeId && deliveryOrderId) {
+            if (truckTypeId && loadingProgramItemId) {
                 $.ajax({
                     url: '{{ route('sales.getWeighbridgeAmount') }}',
                     type: 'GET',
                     data: {
                         truck_type_id: truckTypeId,
-                        delivery_order_id: deliveryOrderId
+                        loading_program_item_id: loadingProgramItemId
                     },
                     success: function(response) {
                         if (response.success) {

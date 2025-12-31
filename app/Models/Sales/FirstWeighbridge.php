@@ -13,8 +13,12 @@ class FirstWeighbridge extends Model
 
     protected $guarded = ["id", "created_at", "updated_at"];
 
+    public function loadingProgramItem() {
+        return $this->belongsTo(LoadingProgramItem::class, "loading_program_item_id");
+    }
+
     public function deliveryOrder() {
-        return $this->belongsTo(DeliveryOrder::class, "delivery_order_id");
+        return $this->hasOneThrough(DeliveryOrder::class, LoadingProgramItem::class, 'id', 'id', 'loading_program_item_id', 'delivery_order_id');
     }
 
     public function truckType() {

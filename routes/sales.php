@@ -79,5 +79,9 @@ Route::name("sales.")->group(function () {
     Route::get("/get/sr-no", [SalesReturnController::class, "getNumber"])->name("get.sales-return.getNumber");
     Route::post("get-sale-returns", [SalesReturnController::class, "getList"])->name("get.sales-return.list");
     Route::get("sales-return/{id}/view", [SalesReturnController::class, "view"])->name("sales-return.view");
-  
+
+    Route::resource("sales-qc", \App\Http\Controllers\Sales\SalesQcController::class);
+    Route::post("get-sales-qc", [\App\Http\Controllers\Sales\SalesQcController::class, "getList"])->name("get.sales-qc");
+    Route::get('/get-ticket-related-data', [\App\Http\Controllers\Sales\SalesQcController::class, 'getTicketRelatedData'])->name('getTicketRelatedData');
+
 });

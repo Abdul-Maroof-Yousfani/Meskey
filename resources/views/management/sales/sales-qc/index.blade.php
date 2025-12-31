@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Loading Program
+    Sales QC
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Loading Program</h2>
+                    <h2 class="page-title"> Sales QC</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('sales.loading-program.create') }}','Add Loading Program')"
+                    <button onclick="openModal(this,'{{ route('sales.sales-qc.create') }}','Add Sales QC')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Loading Program
+                        Create Sales QC
                     </button>
                 </div>
             </div>
@@ -40,20 +40,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
-                                    <thead>
-                                        <tr>
-                                            <th class="col-sm-1">SO No.</th>
-                                            <th class="col-sm-1">DO No.</th>
-                                            <th class="col-sm-2">Customer</th>
-                                            <th class="col-sm-2">Commodity</th>
-                                            <th class="col-sm-1">Items</th>
-                                            <th class="col-sm-2">Created</th>
-                                            <th class="col-sm-1">Action</th>
-                                        </tr>
-                                    </thead>
-
-                                </table>
+                                <!-- Table will be loaded here by AJAX -->
                             </div>
                         </div>
                     </div>
@@ -67,12 +54,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('sales.get.loading-program') }}`)
+            filterationCommon(`{{ route('sales.get.sales-qc') }}`)
         });
     </script>
 @endsection
-
-
-
-
-
