@@ -3,27 +3,14 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.second-weighbridge') }}" />
     <div class="row form-mar">
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Sale Order:</label>
-                <select class="form-control select2" name="sale_order_id" id="sale_order_id">
-                    <option value="">Select Sale Order</option>
-                    @foreach ($SaleOrders as $SaleOrder)
-                        <option value="{{ $SaleOrder->id }}">
-                            {{ $SaleOrder->reference_no }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Delivery Order:</label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
-                    <option value="">Select Delivery Order</option>
-                    @foreach ($DeliveryOrders as $deliveryOrder)
-                        <option value="{{ $deliveryOrder->id }}">
-                            {{ $deliveryOrder->reference_no }}
+                <label>Loading Slip:</label>
+                <select class="form-control select2" name="loading_slip_id" id="loading_slip_id">
+                    <option value="">Select Loading Slip</option>
+                    @foreach ($LoadingSlips as $loadingSlip)
+                        <option value="{{ $loadingSlip->id }}">
+                            {{ $loadingSlip->loadingProgramItem->transaction_number }} -- {{ $loadingSlip->loadingProgramItem->truck_number }}
                         </option>
                     @endforeach
                 </select>
@@ -47,73 +34,22 @@
     });
 
     $(document).ready(function() {
-        // Handle sale order change
-        $('#sale_order_id').change(function() {
-            var sale_order_id = $(this).val();
+        // Handle loading slip change
+        $('#loading_slip_id').change(function() {
+            var loading_slip_id = $(this).val();
 
-            if (sale_order_id) {
-                $.ajax({
-                    url: '{{ route('sales.getDeliveryOrdersBySaleOrderSecond') }}',
-                    type: 'GET',
-                    data: {
-                        sale_order_id: sale_order_id
-                    },
-                    dataType: 'json',
-                    beforeSend: function() {
-                        Swal.fire({
-                            title: "Processing...",
-                            text: "Please wait while fetching delivery orders.",
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                    },
-                    success: function(response) {
-                        Swal.close();
-                        if (response.success) {
-                            // Clear existing delivery orders and slabs container
-                            $('#delivery_order_id').empty().append('<option value="">Select Delivery Order</option>');
-                            $('#slabsContainer').html('');
-
-                            // Populate delivery orders
-                            $.each(response.delivery_orders, function(index, deliveryOrder) {
-                                $('#delivery_order_id').append('<option value="' + deliveryOrder.id + '">' + deliveryOrder.reference_no + '</option>');
-                            });
-                        } else {
-                            Swal.fire("No Data", "No delivery orders found for selected sale order.",
-                                "info");
-                        }
-                    },
-                    error: function() {
-                        Swal.close();
-                        Swal.fire("Error", "Something went wrong. Please try again.",
-                            "error");
-                    }
-                });
-            } else {
-                // Clear delivery orders and slabs container if no sale order selected
-                $('#delivery_order_id').empty().append('<option value="">Select Delivery Order</option>');
-                $('#slabsContainer').html('');
-            }
-        });
-
-        // Handle delivery order change
-        $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
-
-            if (delivery_order_id) {
+            if (loading_slip_id) {
                 $.ajax({
                     url: '{{ route('sales.getSecondWeighbridgeRelatedData') }}',
                     type: 'GET',
                     data: {
-                        delivery_order_id: delivery_order_id
+                        loading_slip_id: loading_slip_id
                     },
                     dataType: 'json',
                     beforeSend: function() {
                         Swal.fire({
                             title: "Processing...",
-                            text: "Please wait while fetching delivery order details.",
+                            text: "Please wait while fetching weighbridge data.",
                             allowOutsideClick: false,
                             didOpen: () => {
                                 Swal.showLoading();
@@ -123,10 +59,10 @@
                     success: function(response) {
                         Swal.close();
                         if (response.success) {
-                            // Append the rendered HTML to a container element
+                            // Populate the slabs container with the rendered HTML
                             $('#slabsContainer').html(response.html);
                         } else {
-                            Swal.fire("No Data", "No delivery order details found.",
+                            Swal.fire("No Data", "No weighbridge data found for selected loading slip.",
                                 "info");
                         }
                     },
@@ -137,7 +73,7 @@
                     }
                 });
             } else {
-                // Clear slabs container if no delivery order selected
+                // Clear slabs container if no loading slip selected
                 $('#slabsContainer').html('');
             }
         });

@@ -42,4 +42,8 @@ class LoadingSlip extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
+
+    public function secondWeighbridge() {
+        return $this->hasOne(\App\Models\Sales\SecondWeighbridge::class);
+    }
 }

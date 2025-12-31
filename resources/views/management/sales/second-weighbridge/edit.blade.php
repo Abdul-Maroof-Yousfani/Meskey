@@ -7,13 +7,12 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             {!! getUserMissingInfoAlert() !!}
             <div class="form-group">
-                <label>Delivery Order:</label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
-                    <option value="">Select Delivery Order</option>
-                    @foreach ($DeliveryOrders as $deliveryOrder)
-                        <option value="{{ $deliveryOrder->id }}" {{ $deliveryOrder->id == $SecondWeighbridge->delivery_order_id ? 'selected' : '' }}>
-                            DO No: {{ $deliveryOrder->reference_no }} --
-                            Customer: {{ $deliveryOrder->customer->name }}
+                <label>Loading Slip:</label>
+                <select class="form-control select2" name="loading_slip_id" id="loading_slip_id">
+                    <option value="">Select Loading Slip</option>
+                    @foreach ($LoadingSlips as $loadingSlip)
+                        <option value="{{ $loadingSlip->id }}" {{ $loadingSlip->id == $SecondWeighbridge->loading_slip_id ? 'selected' : '' }}>
+                            {{ $loadingSlip->loadingProgramItem->transaction_number }} -- {{ $loadingSlip->loadingProgramItem->truck_number }}
                         </option>
                     @endforeach
                 </select>
@@ -21,8 +20,8 @@
         </div>
     </div>
     <div class="row" id="slabsContainer">
-        @if($DeliveryOrder)
-            @include('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', ['DeliveryOrder' => $DeliveryOrder, 'SecondWeighbridge' => $SecondWeighbridge, 'ArrivalTruckTypes' => $ArrivalTruckTypes])
+        @if($SecondWeighbridge->loadingSlip)
+            @include('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', ['LoadingSlip' => $SecondWeighbridge->loadingSlip, 'SecondWeighbridge' => $SecondWeighbridge])
         @endif
     </div>
 
@@ -40,15 +39,15 @@
     });
 
     $(document).ready(function() {
-        $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
+        $('#loading_slip_id').change(function() {
+            var loading_slip_id = $(this).val();
 
-            if (delivery_order_id) {
+            if (loading_slip_id) {
                 $.ajax({
                     url: '{{ route('sales.getSecondWeighbridgeRelatedData') }}',
                     type: 'GET',
                     data: {
-                        delivery_order_id: delivery_order_id
+                        loading_slip_id: loading_slip_id
                     },
                     dataType: 'json',
                     beforeSend: function() {

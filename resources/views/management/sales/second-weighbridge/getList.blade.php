@@ -2,7 +2,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th class="col-sm-1">DO No.</th>
+                <th class="col-sm-1">Ticket No.</th>
                 <th class="col-sm-2">Customer</th>
                 <th class="col-sm-2">Commodity</th>
                 <th class="col-sm-1">Net Weight</th>
@@ -14,13 +14,13 @@
             @foreach($SecondWeighbridges as $secondWeighbridge)
                 <tr>
                     <td>
-                        {{ $secondWeighbridge->deliveryOrder->reference_no ?? 'N/A' }}
+                        {{ $secondWeighbridge->loadingSlip->loadingProgramItem->transaction_number ?? 'N/A' }}
                     </td>
                     <td>
-                        {{ $secondWeighbridge->deliveryOrder->customer->name ?? 'N/A' }}
+                        {{ $secondWeighbridge->loadingSlip->customer ?? 'N/A' }}
                     </td>
                     <td>
-                        {{ $secondWeighbridge->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}
+                        {{ $secondWeighbridge->loadingSlip->commodity ?? 'N/A' }}
                     </td>
                     <td>
                         {{ $secondWeighbridge->net_weight ?? 'N/A' }}

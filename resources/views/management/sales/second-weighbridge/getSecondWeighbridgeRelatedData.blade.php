@@ -1,14 +1,14 @@
 <div class="col-12">
     <h6 class="header-heading-sepration">
-        Delivery Order Details
+        Loading Slip Details
     </h6>
 </div>
 
-{{-- Delivery Order Details Section --}}
+{{-- Loading Slip Details Section --}}
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Customer:</label>
-        <input type="text" value="{{ $DeliveryOrder->customer->name ?? 'N/A' }}"
+        <input type="text" value="{{ $LoadingSlip->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A' }}"
             disabled class="form-control" autocomplete="off" readonly />
     </div>
 </div>
@@ -16,7 +16,7 @@
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Commodity:</label>
-        <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}"
+        <input type="text" value="{{ $LoadingSlip->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}"
             disabled class="form-control" autocomplete="off" readonly />
     </div>
 </div>
@@ -24,7 +24,7 @@
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>SO Qty:</label>
-        <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 'N/A' }}"
+        <input type="text" value="{{ $LoadingSlip->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 'N/A' }}"
             disabled class="form-control" autocomplete="off" readonly />
     </div>
 </div>
@@ -32,15 +32,7 @@
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>DO Qty:</label>
-        <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->qty ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
-    </div>
-</div>
-
-<div class="col-xs-12 col-sm-6 col-md-6">
-    <div class="form-group">
-        <label>Arrival Location:</label>
-        <input type="text" value="{{ get_location_name_by_id($DeliveryOrder->location_id) }}"
+        <input type="text" value="{{ $LoadingSlip->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->qty ?? 'N/A' }}"
             disabled class="form-control" autocomplete="off" readonly />
     </div>
 </div>
@@ -48,23 +40,15 @@
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Factory:</label>
-        <input type="text" value="{{ get_arrival_name_by_id($DeliveryOrder->arrival_location_id) }}"
+        <input type="text" value="{{ $LoadingSlip->factory ?? 'N/A' }}"
             disabled class="form-control" autocomplete="off" readonly />
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
-        <label>Sub Arrival Location ID:</label>
-        <input type="text" value="{{ get_storage_name_by_id($DeliveryOrder->sub_arrival_location_id) }}"
-            disabled class="form-control" autocomplete="off" readonly />
-    </div>
-</div>
-
-<div class="col-xs-12 col-sm-6 col-md-6">
-    <div class="form-group">
-        <label>Transporter:</label>
-        <input type="text" value=""
+        <label>Gala:</label>
+        <input type="text" value="{{ $LoadingSlip->gala ?? 'N/A' }}"
             disabled class="form-control" autocomplete="off" readonly />
     </div>
 </div>
@@ -80,9 +64,9 @@
     <div class="form-group">
         <label>First Weight:</label>
         <input type="text" name="first_weight_display" id="first_weight_display"
-            value="{{ $DeliveryOrder->firstWeighbridge->first_weight ?? 'N/A' }}"
+            value="{{ $LoadingSlip->loadingProgramItem->firstWeighbridge->first_weight ?? 'N/A' }}"
             readonly class="form-control" autocomplete="off" />
-        <input type="hidden" name="first_weight" value="{{ $DeliveryOrder->firstWeighbridge->first_weight ?? 0 }}" />
+        <input type="hidden" name="first_weight" value="{{ $LoadingSlip->loadingProgramItem->firstWeighbridge->first_weight ?? 0 }}" />
     </div>
 </div>
 
@@ -104,29 +88,6 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-6 col-md-6">
-    <div class="form-group">
-        <label><i class="ft-truck"></i> Truck Type:</label>
-        <select class="form-control select2" name="truck_type_id" id="truck_type_id">
-            <option value="">Select Truck Type</option>
-            @foreach ($ArrivalTruckTypes ?? [] as $truckType)
-                <option value="{{ $truckType->id }}" data-weighbridge-amount="{{ $truckType->weighbridge_amount ?? '' }}"
-                    {{ isset($SecondWeighbridge) && ($SecondWeighbridge->truck_type_id ?? null) == $truckType->id ? 'selected' : '' }}>
-                    {{ $truckType->name ?? '' }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-</div>
-
-<div class="col-xs-12 col-sm-6 col-md-6">
-    <div class="form-group">
-        <label>Weighbridge Amount:</label>
-        <input type="text" name="weighbridge_amount" id="weighbridge_amount" placeholder="Weighbridge Amount"
-            value="{{ isset($SecondWeighbridge) ? $SecondWeighbridge->weighbridge_amount : '' }}"
-            readonly class="form-control" autocomplete="off" />
-    </div>
-</div>
 
 <div class="col-xs-12 col-sm-12 col-md-12">
     <div class="form-group">
@@ -138,50 +99,6 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
-
-        // Update weighbridge amount when truck type changes
-        $('#truck_type_id').change(function() {
-            var truckTypeId = $(this).val();
-            var deliveryOrderId = $('#delivery_order_id').val();
-
-            if (truckTypeId && deliveryOrderId) {
-                $.ajax({
-                    url: '{{ route('sales.getSecondWeighbridgeAmount') }}',
-                    type: 'GET',
-                    data: {
-                        truck_type_id: truckTypeId,
-                        delivery_order_id: deliveryOrderId
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#weighbridge_amount').val(response.weighbridge_amount);
-                        } else {
-                            $('#weighbridge_amount').val('');
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Not Found',
-                                text: response.message
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        $('#weighbridge_amount').val('');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Failed to fetch weighbridge amount.'
-                        });
-                    }
-                });
-            } else {
-                $('#weighbridge_amount').val('');
-            }
-        });
-
-        // Trigger change event on page load if truck type is already selected
-        if ($('#truck_type_id').val() && $('#delivery_order_id').val()) {
-            $('#truck_type_id').trigger('change');
-        }
 
         // Calculate net weight when second weight changes
         $('#second_weight').on('input', function() {

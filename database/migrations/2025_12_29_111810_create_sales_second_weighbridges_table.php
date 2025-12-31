@@ -13,15 +13,26 @@ return new class extends Migration
     {
         Schema::create('sales_second_weighbridges', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->foreignId('delivery_order_id')->constrained('delivery_order')->onDelete('cascade');
-            $table->foreignId('truck_type_id')->constrained('arrival_truck_types')->onDelete('cascade');
+
+            $table->foreignId('company_id')
+                ->constrained('companies')
+                ->cascadeOnDelete();
+
+            // replaced delivery_order_id with loading_slip_id
+            $table->foreignId('loading_slip_id')
+                ->constrained('loading_slips')
+                ->cascadeOnDelete();
+
             $table->decimal('first_weight', 10, 2);
             $table->decimal('second_weight', 10, 2);
             $table->decimal('net_weight', 10, 2);
-            $table->decimal('weighbridge_amount', 10, 2);
+
             $table->text('remark')->nullable();
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+
+            $table->foreignId('created_by')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
             $table->timestamps();
         });
     }

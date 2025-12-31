@@ -68,10 +68,13 @@ class DeliveryOrderRequest extends FormRequest
               $rules = array_merge($rules, [
                 'advance_amount'   => 'nullable',
                 'withhold_amount'  => 'nullable',
-                'withhold_for_rv_id' => 'nullable',
+                'withhold_for_rv' => 'nullable',
                 "receipt_vouchers" => "required",
                 "receipt_vouchers.*" => "required"
             ]);
+            if(request()->withhold_amount && request()->withhold_amount > 0) {
+                $rules["withhold_for_rv"] = "required";
+            }
         }
       
 

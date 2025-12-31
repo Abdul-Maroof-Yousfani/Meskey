@@ -52,7 +52,6 @@ Route::name("sales.")->group(function () {
     Route::resource("second-weighbridge", SecondWeighBridgeController::class);
     Route::post("get-second-weighbridge", [SecondWeighBridgeController::class, "getList"])->name("get.second-weighbridge");
     Route::get('/get-second-weighbridge-related-data', [SecondWeighBridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
-    Route::get('/get-second-weighbridge-amount', [SecondWeighBridgeController::class, 'getWeighbridgeAmount'])->name('getSecondWeighbridgeAmount');
     Route::get('/get-delivery-orders-by-sale-order-second', [SecondWeighBridgeController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderSecond');
 
     Route::resource("loading-program", \App\Http\Controllers\Sales\LoadingProgramController::class);
