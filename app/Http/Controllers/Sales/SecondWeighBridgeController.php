@@ -110,12 +110,17 @@ class SecondWeighBridgeController extends Controller
     public function edit($id)
     {
         $authUser = auth()->user();
-        $data['SecondWeighbridge'] = SecondWeighbridge::with('loadingSlip')->findOrFail($id);
+        $data['SecondWeighbridge'] = SecondWeighbridge::with([
+            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation'
+        ])->findOrFail($id);
         $data['LoadingSlips'] = LoadingSlip::whereDoesntHave('secondWeighbridge')
             ->orWhere('id', $data['SecondWeighbridge']->loading_slip_id)
             ->with([
                 'loadingProgramItem.loadingProgram.deliveryOrder.customer',
-                'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item'
+                'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+                'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+                'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation'
             ])
             ->get();
 

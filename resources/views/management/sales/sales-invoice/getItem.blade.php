@@ -3,15 +3,15 @@
     @foreach($delivery_challan->delivery_challan_data as $data)
         @php
             $balance = $balances[$data->id] ?? 0;
-            
+
             // Skip items with 0 balance
             if ($balance <= 0) {
                 continue;
             }
-            
+
             $packing = $data->bag_size ?? 0;
             $noOfBags = $balance; // Use available balance as default
-            $qty = $data->qty;
+            $qty = $balance * $packing; // Calculate qty based on available bags and packing
             $rate = $data->rate ?? 0;
             $grossAmount = $qty * $rate;
             $discountPercent = 0;
@@ -47,7 +47,7 @@
                     {{ sales_invoice_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty"  onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ $qty }}">
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ $qty }}">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">

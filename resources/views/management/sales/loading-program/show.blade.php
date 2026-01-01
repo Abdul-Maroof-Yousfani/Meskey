@@ -77,7 +77,7 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location</label>
-                <select class="form-control select2 w-100" id="company_locations" multiple disabled style="width: 100% !important;">
+                <select class="form-control select2 w-100" id="company_locations" disabled style="width: 100% !important;">
                     <!-- Options will be populated dynamically -->
                 </select>
             </div>
@@ -194,11 +194,12 @@
         var subArrivalLocationsSelect = $('#sub_arrival_locations');
         subArrivalLocationsSelect.empty();
 
-        @if($LoadingProgram)
+        @if($LoadingProgram && $LoadingProgram->deliveryOrder)
             @php
-                $companyLocationIds = $LoadingProgram->company_locations ?? [];
-                $arrivalLocationIds = $LoadingProgram->arrival_locations ?? [];
-                $subArrivalLocationIds = $LoadingProgram->sub_arrival_locations ?? [];
+                // Get locations from delivery order's comma-separated values
+                $companyLocationIds = [$LoadingProgram->deliveryOrder->location_id];
+                $arrivalLocationIds = $LoadingProgram->deliveryOrder->arrival_location_id ? explode(',', $LoadingProgram->deliveryOrder->arrival_location_id) : [];
+                $subArrivalLocationIds = $LoadingProgram->deliveryOrder->sub_arrival_location_id ? explode(',', $LoadingProgram->deliveryOrder->sub_arrival_location_id) : [];
 
                 $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $companyLocationIds)->get();
                 $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();

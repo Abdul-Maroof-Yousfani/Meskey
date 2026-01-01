@@ -416,18 +416,28 @@
         const netAmountInput = row.find(".net_amount");
 
         // Get values
-        const packing = parseFloat(packingInput.val()) || 0;
-        const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
-        const rate = parseFloat(rateInput.val()) || 0;
-        const discountPercent = parseFloat(discountPercentInput.val()) || 0;
-        const gstPercent = parseFloat(gstPercentInput.val()) || 0;
+        let packing = parseFloat(packingInput.val()) || 0;
+        let noOfBags = parseFloat(noOfBagsInput.val()) || 0;
+        let qty = parseFloat(qtyInput.val()) || 0;
+        let rate = parseFloat(rateInput.val()) || 0;
+        let discountPercent = parseFloat(discountPercentInput.val()) || 0;
+        let gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
-        // Calculate Qty = Packing * No of Bags
-        const result = (parseFloat(qtyInput.val()) / parseFloat(packingInput.val())).toFixed();
-        noOfBagsInput.val(result);
+        // Calculate based on what changed
+        if ($(el).hasClass("packing") || $(el).hasClass("no_of_bags")) {
+            // When packing or no_of_bags changes, calculate qty
+            qty = packing * noOfBags;
+            qtyInput.val(round(qty));
+        } else if ($(el).hasClass("qty")) {
+            // When qty changes, calculate no_of_bags (if packing > 0)
+            if (packing > 0) {
+                noOfBags = qty / packing;
+                noOfBagsInput.val(round(noOfBags));
+            }
+        }
 
-        // Calculate Gross Amount = Qty * Rate
-        const grossAmount = result * rate;
+        // Always recalculate amounts based on current values
+        const grossAmount = qty * rate;
         grossAmountInput.val(round(grossAmount));
 
         // Calculate Discount Amount = (Discount % / 100) * Gross Amount

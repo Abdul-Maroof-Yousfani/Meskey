@@ -159,15 +159,32 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Factory:</label>
-                    <input type="text" class="form-control"
-                        value="{{ arrival_name_by_id($delivery_order->arrival_location_id) }}" readonly>
+                    <select class="form-control select2" multiple disabled>
+                        @php
+                            $selectedArrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [];
+                        @endphp
+                        @foreach (get_arrivals_by($delivery_order->location_id) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Section:</label>
-                    <input type="text" class="form-control"
-                        value="{{ sub_arrival_name_by_id($delivery_order->sub_arrival_location_id) }}" readonly>
+                    <select class="form-control select2" multiple disabled>
+                        @php
+                            $selectedSubArrivalIds = $delivery_order->sub_arrival_location_id ? explode(',', $delivery_order->sub_arrival_location_id) : [];
+                            $arrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [$delivery_order->arrival_location_id];
+                        @endphp
+                        @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
         </div>

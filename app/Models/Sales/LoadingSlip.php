@@ -44,6 +44,6 @@ class LoadingSlip extends Model
     }
 
     public function secondWeighbridge() {
-        return $this->hasOne(\App\Models\Sales\SecondWeighbridge::class);
+        return $this->hasOne(\App\Models\Sales\SecondWeighbridge::class, "loading_slip_id");
     }
 }

@@ -40,16 +40,35 @@
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Factory:</label>
-        <input type="text" value="{{ $LoadingSlip->factory ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        <select class="form-control select2 w-100" id="factory_display" multiple disabled style="width: 100% !important;">
+            @php
+                $deliveryOrder = $LoadingSlip->loadingProgramItem->loadingProgram->deliveryOrder ?? null;
+                if ($deliveryOrder && $deliveryOrder->arrival_location_id) {
+                    $arrivalLocationIds = explode(',', $deliveryOrder->arrival_location_id);
+                    $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+                    foreach($arrivalLocations as $location) {
+                        echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
+                    }
+                }
+            @endphp
+        </select>
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Gala:</label>
-        <input type="text" value="{{ $LoadingSlip->gala ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        <select class="form-control select2 w-100" id="gala_display" multiple disabled style="width: 100% !important;">
+            @php
+                if ($deliveryOrder && $deliveryOrder->sub_arrival_location_id) {
+                    $subArrivalLocationIds = explode(',', $deliveryOrder->sub_arrival_location_id);
+                    $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
+                    foreach($subArrivalLocations as $location) {
+                        echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
+                    }
+                }
+            @endphp
+        </select>
     </div>
 </div>
 

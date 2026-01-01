@@ -58,12 +58,12 @@ class LoadingProgramController extends Controller
     public function create()
     {
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
-                                    ->whereHas('delivery_orders', function ($query) {
-                                        $query->where("am_approval_status", "approved")->whereDoesntHave('loadingProgram');
-                                    })
-                                    ->withCount(['delivery_orders' => function ($query) {
-                                        $query->where("am_approval_status", "approved")->whereDoesntHave('loadingProgram');
-                                    }])
+                                    // ->whereHas('delivery_orders', function ($query) {
+                                    //     $query->where("am_approval_status", "approved")->whereDoesntHave('loadingProgram');
+                                    // })
+                                    // ->withCount(['delivery_orders' => function ($query) {
+                                    //     $query->where("am_approval_status", "approved")->whereDoesntHave('loadingProgram');
+                                    // }])
                                     ->get();
 
         $data = [
@@ -98,10 +98,10 @@ class LoadingProgramController extends Controller
         }
 
         // Check if delivery order already has a loading program
-        $existingLoadingProgram = LoadingProgram::where('delivery_order_id', $request->delivery_order_id)->first();
-        if ($existingLoadingProgram) {
-            return response()->json(['errors' => ['delivery_order_id' => 'Loading program already exists for this delivery order.']], 422);
-        }
+        // $existingLoadingProgram = LoadingProgram::where('delivery_order_id', $request->delivery_order_id)->first();
+        // if ($existingLoadingProgram) {
+        //     return response()->json(['errors' => ['delivery_order_id' => 'Loading program already exists for this delivery order.']], 422);
+        // }
 
         $request['created_by'] = auth()->user()->id;
         $request['company_id'] = $request->company_id;
@@ -268,7 +268,7 @@ class LoadingProgramController extends Controller
         $SalesOrder = SalesOrder::with('customer', 'sales_order_data.item', 'sales_order_data.brand')->findOrFail($request->sale_order_id);
 
         $DeliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
-            ->whereDoesntHave('loadingProgram')
+            // ->whereDoesntHave('loadingProgram')
             ->where('am_approval_status', 'approved')
             ->get();
 
@@ -289,10 +289,13 @@ class LoadingProgramController extends Controller
         }
 
         $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
-            ->whereDoesntHave(relation: 'loadingProgram')
+            // ->whereDoesntHave(relation: 'loadingProgram')
             ->where('am_approval_status', 'approved')
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
+            ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
+
+            
 
         return response()->json([
             'success' => true,
@@ -313,6 +316,7 @@ class LoadingProgramController extends Controller
         $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
             ->where('am_approval_status', 'approved')
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
+            ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
 
         return response()->json([

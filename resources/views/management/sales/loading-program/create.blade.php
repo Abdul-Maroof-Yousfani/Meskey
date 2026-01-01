@@ -45,7 +45,7 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location</label>
-                <select class="form-control select2 w-100" name="company_locations[]" id="company_locations" multiple disabled style="width: 100% !important;">
+                <select class="form-control select2 w-100" name="company_locations" id="company_locations" disabled style="width: 100% !important;">
                     <!-- Options will be populated dynamically -->
                 </select>
             </div>
@@ -111,7 +111,6 @@
             </div>
         </div>
     </div>
-
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -123,6 +122,7 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
     });
 
     $(document).ready(function() {
@@ -177,45 +177,102 @@
 
         // Handle delivery order change
         $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
+    var delivery_order_id = $(this).val();
 
-            if (delivery_order_id) {
-                // Fetch delivery order data to get packing and brand
-                var saleOrderId = $('#sale_order_id').val();
-                if (saleOrderId) {
-                    $.ajax({
-                        url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
-                        type: 'GET',
-                        data: { sale_order_id: saleOrderId },
-                        success: function(response) {
-                            if (response.success && response.delivery_orders) {
-                                // Find the selected delivery order
-                                var selectedDeliveryOrder = response.delivery_orders.find(function(d_o) {
-                                    return d_o.id == delivery_order_id;
-                                });
+    if (delivery_order_id) {
+        // Fetch delivery order data to get packing and brand
+        var saleOrderId = $('#sale_order_id').val();
+        
+        if (saleOrderId) {
+            $.ajax({
+                url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
+                type: 'GET',
+                data: { sale_order_id: saleOrderId },
+                success: function(response) {
+                    if (response.success && response.delivery_orders) {
+                        // Find the selected delivery order
+                        var selectedDeliveryOrder = response.delivery_orders.find(function(d_o) {
+                            return d_o.id == delivery_order_id;
+                        });  // <-- Fixed: added missing closing parenthesis
 
-                                if (selectedDeliveryOrder && selectedDeliveryOrder.delivery_order_data && selectedDeliveryOrder.delivery_order_data.length > 0) {
-                                    var firstItem = selectedDeliveryOrder.delivery_order_data[0];
+                        if (selectedDeliveryOrder) {
+                            // Populate location fields
+                            populateLocationFields(selectedDeliveryOrder);
 
-                                    // Set default packing and brand for new items
-                                    $('input[name="loading_program_items[0][packing]"]').val(firstItem.bag_size || '');
-                                    $('input[name="loading_program_items[0][brand_id]"]').val(firstItem.brand_id || '');
-                                    $('input[name="loading_program_items[0][brand_name]"]').val(firstItem.brand ? firstItem.brand.name : '');
-                                }
+                            if (selectedDeliveryOrder.delivery_order_data && selectedDeliveryOrder.delivery_order_data.length > 0) {
+                                var firstItem = selectedDeliveryOrder.delivery_order_data[0];
+
+                                // Set default packing and brand for new items
+                                $('input[name="loading_program_items[0][packing]"]').val(firstItem.bag_size || '');
+                                $('input[name="loading_program_items[0][brand_id]"]').val(firstItem.brand_id || '');
+                                $('input[name="loading_program_items[0][brand_name]"]').val(firstItem.brand ? firstItem.brand.name : '');
                             }
                         }
-                    });
+                    }
                 }
+            });
+        }
 
-                // Show location and line items containers
-                $('#locationContainer').show();
-                $('#lineItemsContainer').show();
-            } else {
-                // Hide location and line items containers
-                $('#locationContainer').hide();
-                $('#lineItemsContainer').hide();
+        // Show location and line items containers
+        $('#locationContainer').show();
+        $('#lineItemsContainer').show();
+    } else {
+        // Hide location and line items containers
+        $('#locationContainer').hide();
+        $('#lineItemsContainer').hide();
+    }
+});
+
+        // Function to populate location fields from delivery order
+        function populateLocationFields(deliveryOrder) {
+            console.log('Populating locations for delivery order:', deliveryOrder);
+
+            // Clear existing options
+            $('#company_locations').empty();
+            $('#arrival_locations').empty();
+            $('#sub_arrival_locations').empty();
+
+            // Get all locations data
+            var companyLocations = @json(get_locations());
+            var arrivalLocations = @json(\App\Models\Master\ArrivalLocation::all());
+            var subArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
+
+            // Parse comma-separated IDs
+            var selectedCompanyIds = deliveryOrder.location_id ? [deliveryOrder.location_id] : [];
+            var selectedArrivalIds = deliveryOrder.arrival_location_id ? deliveryOrder.arrival_location_id.split(',').map(id => id.trim()) : [];
+            var selectedSubArrivalIds = deliveryOrder.sub_arrival_location_id ? deliveryOrder.sub_arrival_location_id.split(',').map(id => id.trim()) : [];
+
+            // Populate company locations with selection (single select)
+            $.each(companyLocations, function(index, location) {
+                var isSelected = selectedCompanyIds.includes(location.id.toString());
+                var option = new Option(location.name, location.id, isSelected, isSelected);
+                $('#company_locations').append(option);
+            });
+
+            // Set the value for single select company location
+            if (selectedCompanyIds.length > 0) {
+                $('#company_locations').val(selectedCompanyIds[0]);
             }
-        });
+
+            // Populate arrival locations with selection
+            $.each(arrivalLocations, function(index, location) {
+                var isSelected = selectedArrivalIds.includes(location.id.toString());
+                var option = new Option(location.name, location.id, isSelected, isSelected);
+                $('#arrival_locations').append(option);
+            });
+
+            // Populate sub-arrival locations with selection
+            $.each(subArrivalLocations, function(index, location) {
+                var isSelected = selectedSubArrivalIds.includes(location.id.toString());
+                var option = new Option(location.name, location.id, isSelected, isSelected);
+                $('#sub_arrival_locations').append(option);
+            });
+
+            // Re-initialize select2 to reflect changes
+            $('#company_locations').select2();
+            $('#arrival_locations').select2();
+            $('#sub_arrival_locations').select2();
+        }
 
         // Add item functionality
         let itemIndex = 0;
@@ -284,7 +341,6 @@
                         type: 'GET',
                         data: { sale_order_id: saleOrderId },
                         success: function(response) {
-                            console.log(response);
                             if (response.success && response.delivery_orders) {
                                 var selectedDeliveryOrder = response.delivery_orders.find(function(d_o) {
                                     return d_o.id == deliveryOrderId;

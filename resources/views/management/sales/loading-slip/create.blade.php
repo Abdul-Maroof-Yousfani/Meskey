@@ -121,14 +121,20 @@
             <div class="row">
                 <div class="col-xs-12 col-sm-6 col-md-4">
                     <div class="form-group">
-                        <label>Factory: <span class="text-danger">*</span></label>
-                        <input type="text" name="factory" value="${data.factory}" class="form-control" readonly required />
+                        <label>Factory:</label>
+                        <select class="form-control select2 w-100" name="factory_display[]" id="factory_display" multiple disabled style="width: 100% !important;">
+                            ${data.factory_names && data.factory_names.length > 0 ? data.factory_names.map(name => `<option value="" selected>${name}</option>`).join('') : ''}
+                        </select>
+                        <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-4">
                     <div class="form-group">
                         <label>Gala:</label>
-                        <input type="text" name="gala" value="${data.gala}" class="form-control" readonly />
+                        <select class="form-control select2 w-100" name="gala_display[]" id="gala_display" multiple disabled style="width: 100% !important;">
+                            ${data.gala_names && data.gala_names.length > 0 ? data.gala_names.map(name => `<option value="" selected>${name}</option>`).join('') : ''}
+                        </select>
+                        <input type="hidden" name="gala" value="${data.gala_names ? data.gala_names.join(', ') : ''}" />
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-4">
@@ -158,6 +164,8 @@
         `;
 
         $('#ticketDataContainer').html(html);
+        // Initialize select2 for the new elements
+        $('.select2').select2();
 
         // Calculate kilogram when no_of_bags changes
         $('#no_of_bags').on('input', function() {

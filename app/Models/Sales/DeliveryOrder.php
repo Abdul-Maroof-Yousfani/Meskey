@@ -55,11 +55,7 @@ class DeliveryOrder extends Model
         return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "sub_arrival_location_id");
     }
 
-   
 
-    public function secondWeighbridge() {
-        return $this->hasOne(SecondWeighbridge::class, "delivery_order_id");
-    }
 
     public function loadingProgram() {
         return $this->hasOne(LoadingProgram::class, "delivery_order_id");

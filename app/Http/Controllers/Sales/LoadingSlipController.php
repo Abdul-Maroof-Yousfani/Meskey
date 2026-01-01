@@ -136,6 +136,8 @@ class LoadingSlipController extends Controller
         $loadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
             'createdBy'
         ])->findOrFail($id);
 
@@ -150,6 +152,8 @@ class LoadingSlipController extends Controller
         $loadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
             'createdBy'
         ])->findOrFail($id);
 
@@ -242,8 +246,12 @@ class LoadingSlipController extends Controller
             'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
             'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
             'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
-            'factory' => $DeliveryOrder->arrivalLocation->name ?? '',
-            'gala' => $DeliveryOrder->subArrivalLocation->name ?? '',
+            'factory' => $DeliveryOrder->arrival_location_id ?? '',
+            'gala' => $DeliveryOrder->sub_arrival_location_id ?? '',
+            'factory_names' => $DeliveryOrder->arrival_location_id ?
+                \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $DeliveryOrder->arrival_location_id))->pluck('name')->toArray() : [],
+            'gala_names' => $DeliveryOrder->sub_arrival_location_id ?
+                \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $DeliveryOrder->sub_arrival_location_id))->pluck('name')->toArray() : [],
             'bag_size' => $DeliveryOrder->delivery_order_data->first()->bag_size ?? 0
         ];
 

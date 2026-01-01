@@ -73,8 +73,8 @@ class DeliveryOrderController extends Controller
                 'payment_term_id' => $request->payment_term_id ?? (PaymentTerm::first())->id,
                 'sauda_type' => $request->sauda_type,
                 'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_id ?: 0,
-                'sub_arrival_location_id' => $request->storage_id ?: 0,
+                'arrival_location_id' => is_array($request->arrival_id) ? implode(',', $request->arrival_id) : $request->arrival_id,
+                'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
                 'line_desc' => $request->line_desc,
                 'delivery_date' => $request->delivery_date,
                 'remarks' => $request->remarks ?? "",
@@ -426,6 +426,7 @@ class DeliveryOrderController extends Controller
             })
             ->values();
 
+
         return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types'));
 
     }
@@ -449,8 +450,8 @@ class DeliveryOrderController extends Controller
                 'sauda_type' => $request->sauda_type,
                 'line_desc' => $request->line_desc,
                 'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_id ?: 0,
-                'sub_arrival_location_id' => $request->storage_id ?: 0,
+                'arrival_location_id' => is_array($request->arrival_id) ? implode(',', $request->arrival_id) : $request->arrival_id,
+                'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
                 'company_id' => $request->company_id,
                 'remarks' => $request->remarks ?? "",
                 'am_approval_status' => 'pending',
