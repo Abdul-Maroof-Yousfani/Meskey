@@ -18,7 +18,7 @@ return new class extends Migration
 
             // Change column types to string (this will handle the foreign key -> string conversion)
             $table->string('arrival_location_id')->nullable()->change();
-            $table->string('subarrival_id')->nullable()->change();
+            $table->string('sub_arrival_location_id')->nullable()->change();
 
         });
     }
