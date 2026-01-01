@@ -13,16 +13,13 @@ return new class extends Migration
     {
         Schema::table('delivery_order', function (Blueprint $table) {
             // Drop foreign key constraints first
-            $table->dropForeign(['arrival_id']);
-            $table->dropForeign(['subarrival_id']);
+            $table->dropForeign(['arrival_location_id']);
+            $table->dropForeign(['sub_arrival_location_id']);
 
             // Change column types to string (this will handle the foreign key -> string conversion)
-            $table->string('arrival_id')->nullable()->change();
+            $table->string('arrival_location_id')->nullable()->change();
             $table->string('subarrival_id')->nullable()->change();
 
-            // Rename columns
-            $table->renameColumn('arrival_id', 'arrival_location_id');
-            $table->renameColumn('subarrival_id', 'sub_arrival_location_id');
         });
     }
 
