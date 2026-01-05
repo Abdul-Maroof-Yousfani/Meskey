@@ -33,9 +33,8 @@
 
             @canAccess('dashboard')
             <li class="nav-item {{ request()->is('dashboard') ? 'active' : '' }}" data-menu="dropdown">
-                <a class="dropdown-toggle nav-link   d-flex align-items-center"  href="{{ url('dashboard') }}"
-                  
-                data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
+                <a class="dropdown-toggle nav-link   d-flex align-items-center" href="{{ url('dashboard') }}"
+                    data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
             </li>
             @endcanAccess
             @canAccess('arrival')
@@ -145,8 +144,8 @@
             </li>
             @endcanAccess
             @canAccess('procurement-raw-material')
-            <li class="dropdown nav-item {{ request()->is('procurement/raw-material*') ? 'active' : '' }}" data-menu="dropdown"><a
-                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+            <li class="dropdown nav-item {{ request()->is('procurement/raw-material*') ? 'active' : '' }}"
+                data-menu="dropdown"><a class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Purchase
                         Contract</span></a>
                 <ul class="dropdown-menu">
@@ -316,8 +315,8 @@
             </li>
             @endcanAccess
             @canAccess('procurement-store')
-            <li class="dropdown nav-item {{ request()->is('procurement/store*') ? 'active' : '' }}" data-menu="dropdown"><a
-                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+            <li class="dropdown nav-item {{ request()->is('procurement/store*') ? 'active' : '' }}"
+                data-menu="dropdown"><a class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Store
                         Management</span></a>
                 <ul class="dropdown-menu">
@@ -534,10 +533,10 @@
                         </a>
                     </li>
 
-                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-qc.index') }}"
-                            onclick="loadPageContent('{{ route('sales.sales-qc.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            onclick="loadPageContent('{{ route('sales.sales-qc.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Sales QC</span>
                         </a>
                     </li>
@@ -695,24 +694,26 @@
                     data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Access
                         Control</span></a>
                 <ul class="dropdown-menu">
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                    <!-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('roles.index') }}" onclick="loadPageContent('{{ route('roles.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span>Manage Roles &
                                 Permission</span></a>
-                    </li>
+                    </li> -->
+                    @canAccess('company')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('company.index') }}"
                             onclick="loadPageContent('{{ route('company.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span>Manage
                                 Company</span></a>
                     </li>
-
+                    @canAccess('users')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('users-test.index') }}"
                             onclick="loadPageContent('{{ route('users-test.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manage
                                 Users</span></a>
                     </li>
+                    @endcanAccess
                 </ul>
             </li>
             @endcanAccess
