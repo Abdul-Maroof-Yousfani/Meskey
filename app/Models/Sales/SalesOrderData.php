@@ -2,6 +2,7 @@
 
 namespace App\Models\Sales;
 
+use App\Models\Master\Brands;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,5 +34,8 @@ class SalesOrderData extends Model
 
     public function item() {
         return $this->belongsTo(Product::class, "item_id");
+    }
+    public function brand() {
+        return $this->belongsTo(Brands::class);
     }
 }

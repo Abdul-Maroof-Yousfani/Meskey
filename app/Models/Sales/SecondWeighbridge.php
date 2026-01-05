@@ -13,8 +13,16 @@ class SecondWeighbridge extends Model
 
     protected $guarded = ["id", "created_at", "updated_at"];
 
+    public function loadingSlip() {
+        return $this->belongsTo(LoadingSlip::class, "loading_slip_id");
+    }
+
     public function deliveryOrder() {
-        return $this->belongsTo(DeliveryOrder::class, "delivery_order_id");
+        return $this->hasOneThrough(DeliveryOrder::class, LoadingSlip::class, 'id', 'id', 'loading_slip_id', 'delivery_order_id');
+    }
+
+    public function loadingProgramItem() {
+        return $this->hasOneThrough(LoadingProgramItem::class, LoadingSlip::class, 'id', 'id', 'loading_slip_id', 'loading_program_item_id');
     }
 
     public function truckType() {

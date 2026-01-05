@@ -48,16 +48,30 @@
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Factory:</label>
-        <input type="text" value="{{ get_arrival_name_by_id($DeliveryOrder->arrival_location_id) }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        <select class="form-control select2 w-100" name="arrival_locations[]" id="arrival_locations" multiple disabled style="width: 100% !important;">
+            @php
+                $arrivalLocationIds = $DeliveryOrder->arrival_location_id ? explode(',', $DeliveryOrder->arrival_location_id) : [];
+                $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+            @endphp
+            @foreach($arrivalLocations as $location)
+                <option value="{{ $location->id }}" selected>{{ $location->name }}</option>
+            @endforeach
+        </select>
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
-        <label>Sub Arrival Location ID:</label>
-        <input type="text" value="{{ get_storage_name_by_id($DeliveryOrder->sub_arrival_location_id) }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        <label>Sub Arrival Location:</label>
+        <select class="form-control select2 w-100" name="sub_arrival_locations[]" id="sub_arrival_locations" multiple disabled style="width: 100% !important;">
+            @php
+                $subArrivalLocationIds = $DeliveryOrder->sub_arrival_location_id ? explode(',', $DeliveryOrder->sub_arrival_location_id) : [];
+                $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
+            @endphp
+            @foreach($subArrivalLocations as $location)
+                <option value="{{ $location->id }}" selected>{{ $location->name }}</option>
+            @endforeach
+        </select>
     </div>
 </div>
 
@@ -122,9 +136,46 @@
 
         // Update weighbridge amount when truck type changes
         $('#truck_type_id').change(function() {
-            var selectedOption = $(this).find('option:selected');
-            var weighbridgeAmount = selectedOption.data('weighbridge-amount') || '';
-            $('#weighbridge_amount').val(weighbridgeAmount);
+            var truckTypeId = $(this).val();
+            var loadingProgramItemId = '{{ $LoadingProgramItem->id }}';
+
+            if (truckTypeId && loadingProgramItemId) {
+                $.ajax({
+                    url: '{{ route('sales.getWeighbridgeAmount') }}',
+                    type: 'GET',
+                    data: {
+                        truck_type_id: truckTypeId,
+                        loading_program_item_id: loadingProgramItemId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#weighbridge_amount').val(response.weighbridge_amount);
+                        } else {
+                            $('#weighbridge_amount').val('');
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Not Found',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#weighbridge_amount').val('');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to fetch weighbridge amount.'
+                        });
+                    }
+                });
+            } else {
+                $('#weighbridge_amount').val('');
+            }
         });
+
+        // Trigger change event on page load if truck type is already selected
+        if ($('#truck_type_id').val() && $('#delivery_order_id').val()) {
+            $('#truck_type_id').trigger('change');
+        }
     });
 </script>

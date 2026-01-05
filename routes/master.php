@@ -35,7 +35,8 @@ use App\Http\Controllers\Master\{
     SizeController,
     PaymentTermController,
     PayTypeController,
-    PortController
+    PortController,
+    WeighbridgeAmountController
 };
 
 
@@ -153,3 +154,7 @@ Route::post('/get-city', [CountryCityController::class, 'getCountryCityTable'])-
 Route::resource('ports', PortController::class);
 Route::post('/get-port', [PortController::class, 'getPortTable'])->name('get.port');
 Route::get('/get-cities/{country_id}', [PortController::class, 'getCities']);
+
+// weighbridge amounts
+Route::resource('weighbridge-amount', WeighbridgeAmountController::class);
+Route::post('/get-weighbridge-amount', [WeighbridgeAmountController::class, 'getList'])->name('get.weighbridge-amount');

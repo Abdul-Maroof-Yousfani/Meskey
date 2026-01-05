@@ -5,12 +5,12 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Delivery Order:</label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
-                    <option value="">Select Delivery Order</option>
-                    @foreach ($DeliveryOrders as $deliveryOrder)
-                        <option value="{{ $deliveryOrder->id }}">
-                            {{ $deliveryOrder->reference_no }}
+                <label>Tickets:</label>
+                <select class="form-control select2" name="loading_program_item_id" id="loading_program_item_id">
+                    <option value="">Select Ticket</option>
+                    @foreach ($Tickets as $ticket)
+                        <option value="{{ $ticket->id }}">
+                            {{ $ticket->transaction_number }} -- {{ $ticket->truck_number }}
                         </option>
                     @endforeach
                 </select>
@@ -34,21 +34,22 @@
     });
 
     $(document).ready(function() {
-        $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
+        // Handle ticket selection
+        $('#loading_program_item_id').change(function() {
+            var loading_program_item_id = $(this).val();
 
-            if (delivery_order_id) {
+            if (loading_program_item_id) {
                 $.ajax({
                     url: '{{ route('sales.getFirstWeighbridgeRelatedData') }}',
                     type: 'GET',
                     data: {
-                        delivery_order_id: delivery_order_id
+                        loading_program_item_id: loading_program_item_id
                     },
                     dataType: 'json',
                     beforeSend: function() {
                         Swal.fire({
                             title: "Processing...",
-                            text: "Please wait while fetching delivery order details.",
+                            text: "Please wait while fetching ticket details.",
                             allowOutsideClick: false,
                             didOpen: () => {
                                 Swal.showLoading();
@@ -61,7 +62,7 @@
                             // Append the rendered HTML to a container element
                             $('#slabsContainer').html(response.html);
                         } else {
-                            Swal.fire("No Data", "No delivery order details found.",
+                            Swal.fire("No Data", "No ticket details found.",
                                 "info");
                         }
                     },
@@ -71,7 +72,11 @@
                             "error");
                     }
                 });
+            } else {
+                // Clear slabs container if no ticket selected
+                $('#slabsContainer').html('');
             }
         });
+
     });
 </script>

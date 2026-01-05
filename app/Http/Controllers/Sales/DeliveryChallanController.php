@@ -30,7 +30,13 @@ class DeliveryChallanController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
-        $delivery_orders = DeliveryOrder::select("id", "reference_no")->get();
+        $delivery_orders = DeliveryOrder::select("delivery_order.id", "delivery_order.reference_no")
+            ->join('loading_programs', 'delivery_order.id', '=', 'loading_programs.delivery_order_id')
+            ->join('loading_program_items', 'loading_programs.id', '=', 'loading_program_items.loading_program_id')
+            ->join('loading_slips', 'loading_program_items.id', '=', 'loading_slips.loading_program_item_id')
+            ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
+            ->distinct()
+            ->get();
 
         return view("management.sales.delivery-challan.create", compact("customers", "delivery_orders"));
     }
@@ -360,6 +366,7 @@ class DeliveryChallanController extends Controller
         $delivery_orders = DeliveryOrder::with("delivery_order_data")
             ->where("customer_id", $customer_id)
             ->where("am_approval_status", "approved")
+            ->whereHas("loadingProgram.loadingSlips")
             ->get()
             ->filter(function ($deliveryOrder) {
                 foreach ($deliveryOrder->delivery_order_data as $data) {

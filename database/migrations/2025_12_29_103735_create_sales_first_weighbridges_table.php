@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('sales_first_weighbridges', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->foreignId('delivery_order_id')->constrained('delivery_order')->onDelete('cascade');
+            $table->foreignId('loading_program_item_id')->constrained('loading_program_items')->onDelete('cascade');
             $table->foreignId('truck_type_id')->constrained('arrival_truck_types')->onDelete('cascade');
             $table->decimal('first_weight', 10, 2);
             $table->decimal('weighbridge_amount', 10, 2);

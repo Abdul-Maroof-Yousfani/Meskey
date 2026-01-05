@@ -184,14 +184,30 @@ if(!function_exists("totalBillQuantityCreated")) {
 
 if(!function_exists("arrival_name_by_id")) {
     function arrival_name_by_id($arrival_id) {
-        $arrival = ArrivalLocation::find($arrival_id);
-        return $arrival->name;
+        if (str_contains($arrival_id, ',')) {
+            // Handle comma-separated values
+            $ids = explode(',', $arrival_id);
+            $arrivals = ArrivalLocation::whereIn('id', $ids)->pluck('name')->toArray();
+            return implode(', ', $arrivals);
+        } else {
+            // Handle single value
+            $arrival = ArrivalLocation::find($arrival_id);
+            return $arrival ? $arrival->name : '';
+        }
     }
 }
 if(!function_exists("sub_arrival_name_by_id")) {
     function sub_arrival_name_by_id($sub_arrival_id) {
-        $sub_arrival = ArrivalSubLocation::find($sub_arrival_id);
-        return $sub_arrival->name;
+        if (str_contains($sub_arrival_id, ',')) {
+            // Handle comma-separated values
+            $ids = explode(',', $sub_arrival_id);
+            $sub_arrivals = ArrivalSubLocation::whereIn('id', $ids)->pluck('name')->toArray();
+            return implode(', ', $sub_arrivals);
+        } else {
+            // Handle single value
+            $sub_arrival = ArrivalSubLocation::find($sub_arrival_id);
+            return $sub_arrival ? $sub_arrival->name : '';
+        }
     }
 }
 
@@ -641,6 +657,12 @@ function get_arrival($arrival_id) {
 function get_sub_arrivals_by($arrival_id) {
     $sub_arrival = ArrivalSubLocation::where("arrival_location_id", $arrival_id)->get();
     return $sub_arrival;
+}
+
+function get_sub_arrivals_by_multiple($arrival_ids) {
+    if (empty($arrival_ids)) return collect();
+    $sub_arrivals = ArrivalSubLocation::whereIn("arrival_location_id", $arrival_ids)->get();
+    return $sub_arrivals;
 }
 
 function get_location_name_by_id($company_location_id) {

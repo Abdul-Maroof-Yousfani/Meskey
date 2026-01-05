@@ -5,12 +5,12 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Delivery Order:</label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
-                    <option value="">Select Delivery Order</option>
-                    @foreach ($DeliveryOrders as $deliveryOrder)
-                        <option value="{{ $deliveryOrder->id }}">
-                            {{ $deliveryOrder->reference_no }}
+                <label>Loading Slip:</label>
+                <select class="form-control select2" name="loading_slip_id" id="loading_slip_id">
+                    <option value="">Select Loading Slip</option>
+                    @foreach ($LoadingSlips as $loadingSlip)
+                        <option value="{{ $loadingSlip->id }}">
+                            {{ $loadingSlip->loadingProgramItem->transaction_number }} -- {{ $loadingSlip->loadingProgramItem->truck_number }}
                         </option>
                     @endforeach
                 </select>
@@ -34,21 +34,22 @@
     });
 
     $(document).ready(function() {
-        $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
+        // Handle loading slip change
+        $('#loading_slip_id').change(function() {
+            var loading_slip_id = $(this).val();
 
-            if (delivery_order_id) {
+            if (loading_slip_id) {
                 $.ajax({
                     url: '{{ route('sales.getSecondWeighbridgeRelatedData') }}',
                     type: 'GET',
                     data: {
-                        delivery_order_id: delivery_order_id
+                        loading_slip_id: loading_slip_id
                     },
                     dataType: 'json',
                     beforeSend: function() {
                         Swal.fire({
                             title: "Processing...",
-                            text: "Please wait while fetching delivery order details.",
+                            text: "Please wait while fetching weighbridge data.",
                             allowOutsideClick: false,
                             didOpen: () => {
                                 Swal.showLoading();
@@ -58,10 +59,10 @@
                     success: function(response) {
                         Swal.close();
                         if (response.success) {
-                            // Append the rendered HTML to a container element
+                            // Populate the slabs container with the rendered HTML
                             $('#slabsContainer').html(response.html);
                         } else {
-                            Swal.fire("No Data", "No delivery order details found.",
+                            Swal.fire("No Data", "No weighbridge data found for selected loading slip.",
                                 "info");
                         }
                     },
@@ -71,6 +72,9 @@
                             "error");
                     }
                 });
+            } else {
+                // Clear slabs container if no loading slip selected
+                $('#slabsContainer').html('');
             }
         });
     });

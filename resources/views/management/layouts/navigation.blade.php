@@ -518,10 +518,34 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.loading-program.index') }}"
+                            onclick="loadPageContent('{{ route('sales.loading-program.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Loading Program</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.first-weighbridge.index') }}"
                             onclick="loadPageContent('{{ route('sales.first-weighbridge.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">First Weighbridge</span>
+                        </a>
+                    </li>
+
+                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.sales-qc.index') }}"
+                            onclick="loadPageContent('{{ route('sales.sales-qc.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Sales QC</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.loading-slip.index') }}"
+                            onclick="loadPageContent('{{ route('sales.loading-slip.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Loading Slip</span>
                         </a>
                     </li>
 
@@ -899,6 +923,14 @@
                                     onclick="loadPageContent('{{ route('qc-relief.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Qc Relief</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('weighbridge-amount')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('weighbridge-amount.index') }}"
+                                    onclick="loadPageContent('{{ route('weighbridge-amount.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Weighbridge Amount</span></a>
                             </li>
                             @endcanAccess
                         </ul>

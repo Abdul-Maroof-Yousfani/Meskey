@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sales\SecondWeighbridge;
-use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\LoadingSlip;
 use App\Models\Sales\FirstWeighbridge;
-use App\Models\Master\ArrivalTruckType;
+use App\Models\Sales\SalesOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -31,11 +31,18 @@ class SecondWeighBridgeController extends Controller
      */
     public function getList(Request $request)
     {
-        $SecondWeighbridges = SecondWeighbridge::with(['deliveryOrder.customer', 'deliveryOrder.delivery_order_data.item'])
+        $SecondWeighbridges = SecondWeighbridge::with([
+            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.customer',
+            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'truckType'
+        ])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('name', 'like', $searchTerm);
+                    $sq->whereHas('loadingSlip.loadingProgramItem', function ($query) use ($searchTerm) {
+                        $query->where('transaction_number', 'like', $searchTerm)
+                              ->orWhere('truck_number', 'like', $searchTerm);
+                    });
                 });
             })
             ->latest()
@@ -49,14 +56,16 @@ class SecondWeighBridgeController extends Controller
      */
     public function create()
     {
-        
+        // Get loading slips that don't have a second weighbridge yet
+        $LoadingSlips = LoadingSlip::whereDoesntHave('secondWeighbridge')
+            ->with([
+                'loadingProgramItem.loadingProgram.deliveryOrder.customer',
+                'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item'
+            ])
+            ->get();
+
         $data = [
-            'ArrivalTruckTypes' => ArrivalTruckType::where('status', 'active')->get(),
-            'DeliveryOrders' => DeliveryOrder::with('customer', 'delivery_order_data.item')
-                ->where('am_approval_status', 'approved')
-                ->whereHas('firstWeighbridge')
-                ->whereDoesntHave('secondWeighbridge')
-                ->get()
+            'LoadingSlips' => $LoadingSlips
         ];
 
         return view('management.sales.second-weighbridge.create', $data);
@@ -68,9 +77,8 @@ class SecondWeighBridgeController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'delivery_order_id' => 'required|exists:delivery_order,id',
+            'loading_slip_id' => 'required|exists:loading_slips,id',
             'second_weight' => 'required|numeric',
-            'truck_type_id' => 'required|exists:arrival_truck_types,id',
             'remark' => 'nullable|string'
         ]);
 
@@ -78,18 +86,18 @@ class SecondWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Get first weighbridge data to calculate net weight
-        $firstWeighbridge = FirstWeighbridge::where('delivery_order_id', $request->delivery_order_id)->first();
+        // Get loading slip and its related first weighbridge data
+        $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge')->find($request->loading_slip_id);
+        $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
+
         if (!$firstWeighbridge) {
-            return response()->json(['errors' => ['delivery_order_id' => 'First weighbridge not found for this delivery order.']], 422);
+            return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
         }
 
-        $deliveryOrder = DeliveryOrder::find($request->delivery_order_id);
         $request['created_by'] = auth()->user()->id;
         $request['company_id'] = $request->company_id;
         $request['first_weight'] = $firstWeighbridge->first_weight;
         $request['net_weight'] = $request->second_weight - $firstWeighbridge->first_weight;
-        $request['weighbridge_amount'] = ArrivalTruckType::find($request->truck_type_id)->weighbridge_amount;
 
         $secondWeighbridge = SecondWeighbridge::create($request->all());
 
@@ -101,12 +109,20 @@ class SecondWeighBridgeController extends Controller
      */
     public function edit($id)
     {
-        $data['SecondWeighbridge'] = SecondWeighbridge::where('company_id', $authUser->company_id)->findOrFail($id);
-        $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
-        $data['DeliveryOrders'] = DeliveryOrder::with('customer', 'delivery_order_data.item')
-            ->where('am_approval_status', 'approved')
+        $authUser = auth()->user();
+        $data['SecondWeighbridge'] = SecondWeighbridge::with([
+            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation'
+        ])->findOrFail($id);
+        $data['LoadingSlips'] = LoadingSlip::whereDoesntHave('secondWeighbridge')
+            ->orWhere('id', $data['SecondWeighbridge']->loading_slip_id)
+            ->with([
+                'loadingProgramItem.loadingProgram.deliveryOrder.customer',
+                'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+                'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+                'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation'
+            ])
             ->get();
-        $data['DeliveryOrder'] = DeliveryOrder::where('id', $data['SecondWeighbridge']->delivery_order_id)->first();
 
         return view('management.sales.second-weighbridge.edit', $data);
     }
@@ -117,9 +133,8 @@ class SecondWeighBridgeController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'delivery_order_id' => 'required|exists:delivery_order,id',
+            'loading_slip_id' => 'required|exists:loading_slips,id',
             'second_weight' => 'required|numeric',
-            'truck_type_id' => 'required|exists:arrival_truck_types,id',
             'remark' => 'nullable|string'
         ]);
 
@@ -129,17 +144,17 @@ class SecondWeighBridgeController extends Controller
 
         $secondWeighbridge = SecondWeighbridge::findOrFail($id);
 
-        // Get first weighbridge data to calculate net weight
-        $firstWeighbridge = FirstWeighbridge::where('delivery_order_id', $request->delivery_order_id)->first();
+        // Get loading slip and its related first weighbridge data
+        $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge')->find($request->loading_slip_id);
+        $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
+
         if (!$firstWeighbridge) {
-            return response()->json(['errors' => ['delivery_order_id' => 'First weighbridge not found for this delivery order.']], 422);
+            return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
         }
 
-        $deliveryOrder = DeliveryOrder::find($request->delivery_order_id);
         $request['company_id'] = $request->company_id;
         $request['first_weight'] = $firstWeighbridge->first_weight;
         $request['net_weight'] = $request->second_weight - $firstWeighbridge->first_weight;
-        $request['weighbridge_amount'] = ArrivalTruckType::find($request->truck_type_id)->weighbridge_amount;
 
         $secondWeighbridge->update($request->all());
 
@@ -158,14 +173,42 @@ class SecondWeighBridgeController extends Controller
 
     public function getSecondWeighbridgeRelatedData(Request $request)
     {
-        $DeliveryOrder = DeliveryOrder::with('customer', 'salesOrder', 'delivery_order_data.item', 'delivery_order_data.salesOrderData', 'arrivalLocation', 'subArrivalLocation')
-            ->findOrFail($request->delivery_order_id);
+        $LoadingSlip = LoadingSlip::with([
+            'loadingProgramItem.loadingProgram.deliveryOrder.customer',
+            'loadingProgramItem.loadingProgram.deliveryOrder.salesOrder',
+            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
+            'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation'
+        ])->findOrFail($request->loading_slip_id);
 
-        $ArrivalTruckTypes = \App\Models\Master\ArrivalTruckType::where('status', 'active')->get();
-
-        // Render view with the delivery order data
-        $html = view('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', compact('DeliveryOrder', 'ArrivalTruckTypes'))->with('SecondWeighbridge', null)->render();
+        // Render view with the loading slip data
+        $html = view('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', compact('LoadingSlip'))->with('SecondWeighbridge', null)->render();
 
         return response()->json(['success' => true, 'html' => $html]);
+    }
+
+
+    public function getDeliveryOrdersBySaleOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'sale_order_id' => 'required|exists:sales_orders,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
+            ->where('am_approval_status', 'approved')
+            ->whereHas('firstWeighbridge')
+            ->whereDoesntHave('secondWeighbridge')
+            ->with('customer', 'delivery_order_data.item')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'delivery_orders' => $deliveryOrders
+        ]);
     }
 }

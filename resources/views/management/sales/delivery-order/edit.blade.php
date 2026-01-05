@@ -193,36 +193,32 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
-                        <select name="arrival_id" id="arrivals" onchange="selectStorage(this)"
-                            class="form-control select2" @if (!$delivery_order->arrival_location_id) disabled @endif>
+                        <select name="arrival_id[]" id="arrivals" onchange="selectStorage(this)"
+                            class="form-control select2" multiple @if (!$delivery_order->arrival_location_id) disabled @endif>
                             <option value="">Select Factory</option>
-                            @if ($delivery_order->arrival_location_id)
-                                <option value="{{ $delivery_order->arrival_location_id }}" selected>
-                                    {{ arrival_name_by_id($delivery_order->arrival_location_id) }}</option>
-                            @else
-                                @foreach (get_arrivals_by($delivery_order->location_id) as $location)
-                                    <option value="{{ $location->id }}" @selected($location->id == $delivery_order->arrival_location_id)>
-                                        {{ $location->name }}</option>
-                                @endforeach
-                            @endif
-
+                            @php
+                                $selectedArrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [];
+                            @endphp
+                            @foreach (get_arrivals_by($delivery_order->location_id) as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>
+                                    {{ $location->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Section:</label>
-                        <select name="storage_id" id="storages" class="form-control select2">
+                        <select name="storage_id[]" id="storages" class="form-control select2" multiple>
                             <option value="">Select Section</option>
-                            @if ($delivery_order->sub_arrival_location_id)
-                                <option value="{{ $delivery_order->sub_arrival_location_id }}" selected>
-                                    {{ sub_arrival_name_by_id($delivery_order->sub_arrival_location_id) }}</option>
-                            @else
-                                @foreach (get_sub_arrivals_by($delivery_order->arrival_location_id) as $location)
-                                    <option value="{{ $location->id }}" @selected($location->id == $delivery_order->sub_arrival_location_id)>
-                                        {{ $location->name }}</option>
-                                @endforeach
-                            @endif
+                            @php
+                                $selectedSubArrivalIds = $delivery_order->sub_arrival_location_id ? explode(',', $delivery_order->sub_arrival_location_id) : [];
+                                $arrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [$delivery_order->arrival_location_id];
+                            @endphp
+                            @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>
+                                    {{ $location->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -616,7 +612,7 @@
         }
     }
 
-    const isEdit = true;
+    isEdit = true;
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
