@@ -29,7 +29,7 @@
                     <div class="filter-group">
                         <label>LOCATION</label>
                         <select name="location_id" id="location_id" class="filter-input select2">
-                            <option value="">Select Location</option>
+                            <option value="">All</option>
                             @foreach($companylocations as $companylocation)
                                 <option value="{{ $companylocation->id }}" @selected($companylocation->id == $location_id)>{{ $companylocation->name }}</option>
                             @endforeach
