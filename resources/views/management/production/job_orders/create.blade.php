@@ -430,7 +430,7 @@
 <table class="sub-packing-item-template d-none">
     <tbody>
         <tr class="sub-packing-item-row">
-        <td>
+        <td class="col-2">
             <input type="hidden" class="packing-item-ref" name="packing_items[INDEX][sub_items][SUB_INDEX][job_order_packing_item_id]" value="">
             <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_type_id]" class="form-control form-control-sm select2 sub-bag-type">
                 <option value="">Select Bag Type</option>
@@ -470,7 +470,7 @@
                 class="form-control form-control-sm sub-total-bags" readonly value="0">
         </td>
         
-        <td>
+        <td class="col-1">
             <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_color_id]" class="form-control form-control-sm select2 sub-bag-color">
                 <option value="">Select Color</option>
                 @foreach($bagColors as $color)
@@ -479,7 +479,7 @@
             </select>
         </td>
         
-        <td>
+        <td class="col-1">
             <select name="packing_items[INDEX][sub_items][SUB_INDEX][brand_id]" class="form-control form-control-sm select2 sub-brand">
                 <option value="">Select Brand</option>
                 @foreach($brands as $brand)
@@ -488,7 +488,7 @@
             </select>
         </td>
         
-        <td>
+        <td class="col-1">
             <select name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]" class="form-control form-control-sm select2 sub-thread-color">
                 <option value="">Select Color</option>
                 @foreach($bagColors as $color)
