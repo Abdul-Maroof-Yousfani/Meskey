@@ -32,13 +32,14 @@
             @endforeach
 
             @canAccess('dashboard')
-            <li class="nav-item" data-menu="dropdown">
-                <a class="dropdown-toggle nav-link d-flex align-items-center" href="{{ url('dashboard') }}"
-                    data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
+            <li class="nav-item {{ request()->is('dashboard') ? 'active' : '' }}" data-menu="dropdown">
+                <a class="dropdown-toggle nav-link   d-flex align-items-center"  href="{{ url('dashboard') }}"
+                  
+                data-toggle="dropdown"><i class="ft-home"></i><span data-i18n="Dashboard">Dashboard</span></a>
             </li>
             @endcanAccess
             @canAccess('arrival')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('arrival*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-truck"></i><span data-i18n="UI Kit">Arrival</span></a>
                 <ul class="dropdown-menu">
@@ -144,7 +145,7 @@
             </li>
             @endcanAccess
             @canAccess('procurement-raw-material')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('procurement/raw-material*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Purchase
                         Contract</span></a>
@@ -315,7 +316,7 @@
             </li>
             @endcanAccess
             @canAccess('procurement-store')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('procurement/store*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-book"></i><span data-i18n="UI Kit">Store
                         Management</span></a>
@@ -390,7 +391,7 @@
             </li>
             @endcanAccess
             @canAccess('production')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('production*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Production</span></a>
                 <ul class="dropdown-menu">
@@ -441,7 +442,7 @@
             </li>
             @endcanAccess
             @canAccess('finance')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('finance*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Finance</span></a>
                 <ul class="dropdown-menu">
@@ -490,7 +491,7 @@
                 </ul>
             </li>
             @endcanAccess
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('sales*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Sales</span></a>
                 <ul class="dropdown-menu">
@@ -599,7 +600,7 @@
             </li>
 
             @canAccess('procurement-raw-material')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-arrow-up"></i><span data-i18n="UI Kit">Export</span></a>
                 <ul class="dropdown-menu">
@@ -689,7 +690,7 @@
             @endcanAccess
 
             @canAccess('access-control')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('acl*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-user-check"></i><span data-i18n="Apps">Access
                         Control</span></a>
@@ -721,7 +722,7 @@
             </li>
             @endcanAccess
             @canAccess('reports')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('reports*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
                 <ul class="dropdown-menu">
@@ -765,7 +766,7 @@
             </li>
             @endcanAccess
             @canAccess('master')
-            <li class="dropdown nav-item" data-menu="dropdown"><a
+            <li class="dropdown nav-item {{ request()->is('master*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
                         Control</span></a>
