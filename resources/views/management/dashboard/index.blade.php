@@ -26,6 +26,15 @@
                         <label>TO DATE</label>
                         <input type="date" id="to_date" class="filter-input" value="{{ $toDate }}">
                     </div>
+                    <div class="filter-group">
+                        <label>LOCATION</label>
+                        <select name="location_id" id="location_id" class="filter-input select2">
+                            <option value="">Select Location</option>
+                            @foreach($companylocations as $companylocation)
+                                <option value="{{ $companylocation->id }}" @selected($companylocation->id == $location_id)>{{ $companylocation->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <button type="button" id="refresh_dashboard" class="refresh-btn">
                         <i class="ft-refresh-cw"></i> Refresh
                     </button>
@@ -44,7 +53,7 @@
                             <div class="card-subtitle">Total Tickets</div>
                             @if (($data['rejected_tickets'] ?? 0) > 0)
                                 <div class="status-badge status-danger cursor-pointer"
-                                    onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
+                                    onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
                                     {{ $data['rejected_tickets'] ?? 0 }} Rejected</div>
                             @else
                                 <div class="status-badge status-neutral">No Rejections</div>
@@ -52,13 +61,13 @@
 
                             @if (($data['completed_tickets'] ?? 0) > 0)
                                 <div class="status-badge status-success cursor-pointer"
-                                    onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=completed_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Completed Tickets - Arrival Slip Generated', true, '70%')">
+                                    onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=completed_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Completed Tickets - Arrival Slip Generated', true, '70%')">
                                     {{ $data['completed_tickets'] ?? 0 }} Completed</div>
                             @else
                                 <div class="status-badge status-neutral">No Completed Yet!</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Total Tickets', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -77,7 +86,7 @@
                                 <div class="status-badge status-neutral">No Rejections</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -96,7 +105,7 @@
                                 <div class="status-badge status-neutral">All Completed</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}','Initial Sampling Requested - Pending Initial Sampling', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Requested - Pending Initial Sampling', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -116,7 +125,7 @@
                                 <div class="status-badge status-neutral">All Approved</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_done&from_date={{ $fromDate }}&to_date={{ $toDate }}','Initial Sampling Done - Pending Approval', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_done&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Done - Pending Approval', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -136,7 +145,7 @@
                                 <div class="status-badge status-neutral">No Resampling Required</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=resampling_required&from_date={{ $fromDate }}&to_date={{ $toDate }}','Resampling Required', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=resampling_required&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Resampling Required', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -157,7 +166,7 @@
                                 <div class="status-badge status-neutral">All Transferred</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=location_transfer_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}','Location Transfer Pending', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=location_transfer_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Location Transfer Pending', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -178,7 +187,7 @@
                                 <div class="status-badge status-neutral">All Weighed</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}','First Weighbridge Pending', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','First Weighbridge Pending', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -198,7 +207,7 @@
                                 <div class="status-badge status-neutral">All Completed</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}','Inner Sampling Requested', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Inner Sampling Requested', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -218,7 +227,7 @@
                                 <div class="status-badge status-neutral">All Approved</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_pending_approval&from_date={{ $fromDate }}&to_date={{ $toDate }}','Inner Sampling Pending Approval', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_pending_approval&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Inner Sampling Pending Approval', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -239,7 +248,7 @@
                                 <div class="status-badge status-neutral">All Approved</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_full_approve_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}','Half/Full Approve Pending', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_full_approve_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Half/Full Approve Pending', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -259,7 +268,7 @@
                                 <div class="status-badge status-neutral">All Completed</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}','Second Weighbridge Pending', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Second Weighbridge Pending', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -281,7 +290,7 @@
                                 <div class="status-badge status-neutral">All Completed</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=freight_ready&from_date={{ $fromDate }}&to_date={{ $toDate }}','Freight Ready', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=freight_ready&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Freight Ready', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -301,32 +310,39 @@
     </div>
 
     <script>
-        $(document).ready(function() {
-            $('#module_select').change(function() {
-                updateDashboard();
-            });
+        $(document).ready(function () {
 
-            $('#from_date, #to_date').change(function() {
-                updateDashboard();
-            });
-
-            $('#refresh_dashboard').click(function() {
-                updateDashboard();
-            });
-
-            function updateDashboard() {
-                const module = $('#module_select').val();
-                const fromDate = $('#from_date').val();
-                const toDate = $('#to_date').val();
-
-                window.location.href = '{{ route('home') }}?' + $.param({
-                    module: module,
-                    from_date: fromDate,
-                    to_date: toDate
-                });
-            }
+        $('#module_select, #from_date, #to_date, #location_id').on('change', function () {
+            updateDashboard();
         });
-    </script>
+
+        $('#refresh_dashboard').on('click', function () {
+            updateDashboard();
+        });
+
+        function updateDashboard() {
+            const module = $('#module_select').val();
+            const fromDate = $('#from_date').val();
+            const toDate = $('#to_date').val();
+            const location_id = $('#location_id').val();
+
+            let params = {
+                module: module, 
+                from_date: fromDate,
+                to_date: toDate
+            };
+
+            // ✅ sirf jab value ho tab add ho
+            if (location_id !== null && location_id !== '') {
+                params.location_id = location_id;
+            }
+
+            window.location.href = '{{ route('home') }}?' + $.param(params);
+        }
+
+});     
+
+        </script>
 
 <script>
 const companyId = "{{ auth()->user()->company_id ?? 1 }}";
