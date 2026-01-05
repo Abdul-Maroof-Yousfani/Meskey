@@ -706,6 +706,7 @@
                                 class="ft-arrow-right submenu-icon"></i><span>Manage
                                 Company</span></a>
                     </li>
+                    @endcanAccess
                     @canAccess('users')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('users-test.index') }}"
