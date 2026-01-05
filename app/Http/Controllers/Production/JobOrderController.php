@@ -7,6 +7,7 @@ use App\Http\Requests\Production\JobOrderRequest;
 use App\Models\Master\CropYear;
 use App\Models\Production\JobOrder\{
     JobOrderPackingItem,
+    JobOrderPackingSubItem,
     JobOrder,
     JobOrderSpecification
 };
@@ -171,8 +172,48 @@ class JobOrderController extends Controller
 
             $jobOrder = JobOrder::create($jobOrderData);
 
+            // Handle location details
+            $locationDetails = $request->location_details ?? [];
+
             foreach ($request->packing_items as $item) {
-                $jobOrder->packingItems()->create($item);
+                // Extract sub-items if they exist
+                $subItems = $item['sub_items'] ?? [];
+                unset($item['sub_items']);
+                
+                // Merge location details if exists
+                $locationId = $item['company_location_id'] ?? null;
+                if ($locationId && isset($locationDetails[$locationId])) {
+                    $item['no_of_containers'] = $locationDetails[$locationId]['no_of_containers'] ?? 0;
+                    $item['description'] = $locationDetails[$locationId]['description'] ?? null;
+                    $item['location_instruction'] = $locationDetails[$locationId]['location_instruction'] ?? null;
+                }
+                
+                // Calculate totals from sub-items
+                if (!empty($subItems)) {
+                    $totalBagsFromSubItems = collect($subItems)->sum('no_of_bags');
+                    $totalKgsFromSubItems = collect($subItems)->sum(function($subItem) {
+                        return ($subItem['no_of_bags'] ?? 0) * ($subItem['bag_size'] ?? 0);
+                    });
+                    
+                    $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
+                    $item['total_kgs'] = $totalKgsFromSubItems;
+                    $item['metric_tons'] = $item['total_kgs'] / 1000;
+                }
+                
+                // Store bag_type_id as JSON array
+                if (isset($item['bag_type_id']) && is_array($item['bag_type_id'])) {
+                    $item['bag_type_id'] = json_encode($item['bag_type_id']);
+                }
+                
+                // Create packing item
+                $packingItem = $jobOrder->packingItems()->create($item);
+                
+                // Create sub-items
+                if (!empty($subItems)) {
+                    foreach ($subItems as $subItem) {
+                        $packingItem->subItems()->create($subItem);
+                    }
+                }
             }
 
             foreach ($request->specifications as $spec) {
@@ -270,9 +311,51 @@ class JobOrderController extends Controller
 
             $jobOrder->update($jobOrderData);
 
+            // Delete existing packing items and their sub-items (cascade)
             $jobOrder->packingItems()->delete();
+            
+            // Handle location details
+            $locationDetails = $request->location_details ?? [];
+            
             foreach ($request->packing_items as $item) {
-                $jobOrder->packingItems()->create($item);
+                // Extract sub-items if they exist
+                $subItems = $item['sub_items'] ?? [];
+                unset($item['sub_items']);
+                
+                // Merge location details if exists
+                $locationId = $item['company_location_id'] ?? null;
+                if ($locationId && isset($locationDetails[$locationId])) {
+                    $item['no_of_containers'] = $locationDetails[$locationId]['no_of_containers'] ?? 0;
+                    $item['description'] = $locationDetails[$locationId]['description'] ?? null;
+                    $item['location_instruction'] = $locationDetails[$locationId]['location_instruction'] ?? null;
+                }
+                
+                // Calculate totals from sub-items
+                if (!empty($subItems)) {
+                    $totalBagsFromSubItems = collect($subItems)->sum('no_of_bags');
+                    $totalKgsFromSubItems = collect($subItems)->sum(function($subItem) {
+                        return ($subItem['no_of_bags'] ?? 0) * ($subItem['bag_size'] ?? 0);
+                    });
+                    
+                    $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
+                    $item['total_kgs'] = $totalKgsFromSubItems;
+                    $item['metric_tons'] = $item['total_kgs'] / 1000;
+                }
+                
+                // Store bag_type_id as JSON array
+                if (isset($item['bag_type_id']) && is_array($item['bag_type_id'])) {
+                    $item['bag_type_id'] = json_encode($item['bag_type_id']);
+                }
+                
+                // Create packing item
+                $packingItem = $jobOrder->packingItems()->create($item);
+                
+                // Create sub-items
+                if (!empty($subItems)) {
+                    foreach ($subItems as $subItem) {
+                        $packingItem->subItems()->create($subItem);
+                    }
+                }
             }
 
             $jobOrder->specifications()->delete();

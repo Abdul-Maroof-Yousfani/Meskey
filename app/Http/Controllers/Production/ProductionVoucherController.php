@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\Brands;
+use App\Models\Master\Plant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,68 @@ class ProductionVoucherController extends Controller
     public function index()
     {
         return view('management.production.production_voucher.index');
+    }
+
+    public function getByProductTable(Request $request)
+    {
+        $byProductId = $request->by_product_id;
+        $locationId = $request->location_id;
+        $jobOrderIds = $request->job_order_ids ?? [];
+        $headProduct = $byProductId ? Product::find($byProductId) : null;
+
+        // Filter products based on parent_id logic
+        $productsQuery = Product::where('status', 1);
+
+        if ($headProduct) {
+            if ($headProduct->parent_id) {
+                // Head product has a parent - show all products with same parent_id (including head product if it's a child)
+                $productsQuery->where(function ($q) use ($headProduct) {
+                    $q->where('parent_id', $headProduct->parent_id)
+                        ->orWhere('id', $headProduct->parent_id); // Include parent itself
+                });
+            } else {
+                // Head product is itself a parent (parent_id is null) - show all its children + itself
+                $productsQuery->where(function ($q) use ($byProductId) {
+                    $q->where('parent_id', $byProductId)
+                        ->orWhere('id', $byProductId); // Include head product itself
+                });
+            }
+        }
+
+        $byProducts = $productsQuery->orderBy('name')->get();
+
+        $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
+            ->where('company_id', $request->company_id)->where('status', 'active')->get();
+
+        $brands = Brands::where('company_id', $request->company_id)->get();
+        $jobOrders = JobOrder::where('company_id', $request->company_id)->whereIn('id', $jobOrderIds)->get();
+        // dd('ssss');
+        return view('management.production.production_voucher.partials.by_product_table', compact(
+            'byProducts',
+            'arrivalSubLocations',
+            'brands',
+            'jobOrders'
+        ));
+    }
+    public function getHeadProductsData(Request $request)
+    {
+        $productId = $request->product_id;
+        $locationId = $request->location_id;
+        $jobOrderIds = $request->job_order_ids ?? [];
+        $headProduct = Product::where('status', 1)->where('id', $productId)->first();
+
+        $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
+            ->where('company_id', $request->company_id)->where('status', 'active')->get();
+
+        $brands = Brands::where('company_id', $request->company_id)->get();
+        $jobOrders = JobOrder::where('company_id', $request->company_id)->whereIn('id', $jobOrderIds)->get();
+        // dd('ssss');
+        return view('management.production.production_voucher.partials.head_products_table', compact(
+            'headProduct',
+            'arrivalSubLocations',
+            'brands',
+            'jobOrders'
+        ));
     }
 
     public function getList(Request $request)
@@ -58,11 +121,11 @@ class ProductionVoucherController extends Controller
 
         // Filter by job order (check both old job_order_id and pivot table)
         if ($request->filled('job_order_id')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('job_order_id', $request->job_order_id)
-                  ->orWhereHas('jobOrders', function($q) use ($request) {
-                      $q->where('job_orders.id', $request->job_order_id);
-                  });
+                    ->orWhereHas('jobOrders', function ($q) use ($request) {
+                        $q->where('job_orders.id', $request->job_order_id);
+                    });
             });
         }
 
@@ -102,14 +165,15 @@ class ProductionVoucherController extends Controller
         foreach ($productionVouchers as $voucher) {
             $jobOrderData = [];
             $voucher->producedByJobOrder = []; // Initialize as empty array
-            
+
             // Get all job orders for this voucher
             $jobOrders = $voucher->jobOrders->count() > 0 ? $voucher->jobOrders : collect([$voucher->jobOrder])->filter();
-            
+
             // Get allocated quantities from packing items (only for this voucher's location)
             foreach ($jobOrders as $jobOrder) {
-                if (!$jobOrder) continue;
-                
+                if (!$jobOrder)
+                    continue;
+
                 $allocatedQty = 0;
                 // Only count packing items for this voucher's location
                 foreach ($jobOrder->packingItems as $packingItem) {
@@ -117,7 +181,7 @@ class ProductionVoucherController extends Controller
                         $allocatedQty += $packingItem->total_kgs ?? 0;
                     }
                 }
-                
+
                 $jobOrderData[$jobOrder->id] = [
                     'job_order_no' => $jobOrder->job_order_no,
                     'job_order_ref_no' => $jobOrder->ref_no ?? null,
@@ -125,19 +189,19 @@ class ProductionVoucherController extends Controller
                     'produced_qty' => 0
                 ];
             }
-            
+
             // Get produced quantities from production outputs (grouped by job order)
             foreach ($voucher->outputs as $output) {
                 if ($output->job_order_id && isset($jobOrderData[$output->job_order_id])) {
                     $jobOrderData[$output->job_order_id]['produced_qty'] += $output->qty ?? 0;
                 }
             }
-            
+
             // Calculate remaining for each job order
             foreach ($jobOrderData as &$data) {
                 $data['remaining_qty'] = $data['allocated_qty'] - $data['produced_qty'];
             }
-            
+
             $voucher->producedByJobOrder = $jobOrderData;
         }
 
@@ -156,11 +220,19 @@ class ProductionVoucherController extends Controller
     public function create()
     {
         $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $supervisors = User::where('status', 'active')->get();
+        $products = Product::where('status', 1)->get();
 
         return view('management.production.production_voucher.create', compact(
             'companyLocations',
-            'supervisors'
+            'products'
+        ));
+    }
+
+    public function getHeadProducts()
+    {
+        $headProducts = Product::where('status', 1)->where('parent_id', null)->get();
+        return view('management.production.production_voucher.partials.head_products_table', compact(
+            'headProducts'
         ));
     }
 
@@ -168,7 +240,7 @@ class ProductionVoucherController extends Controller
     {
         $locationId = $request->location_id;
         $productId = $request->product_id; // Optional commodity filter
-        
+
         if (!$locationId) {
             return response()->json(['jobOrders' => []]);
         }
@@ -206,7 +278,7 @@ class ProductionVoucherController extends Controller
     {
         $jobOrderIds = $request->job_order_ids; // Array of job order IDs
         $locationId = $request->location_id;
-        
+
         if (!$jobOrderIds || !$locationId) {
             return response()->json(['packingItems' => []]);
         }
@@ -247,7 +319,7 @@ class ProductionVoucherController extends Controller
         $jobOrderIds = $request->job_order_ids; // Array of job order IDs
         $locationId = $request->location_id;
         $currentProductionVoucherId = $request->current_production_voucher_id ?? null;
-        
+
         if (!$jobOrderIds || !$locationId) {
             return view('management.production.production_voucher.partials.packing_items_table', [
                 'packingItems' => [],
@@ -274,7 +346,7 @@ class ProductionVoucherController extends Controller
         // Get production outputs with details for each job order (location-wise)
         $producedByJobOrder = [];
         $producedDetailsByJobOrder = [];
-        
+
         foreach ($jobOrderIds as $jobOrderId) {
             $outputs = \App\Models\Production\ProductionOutput::with([
                 'productionVoucher',
@@ -285,11 +357,11 @@ class ProductionVoucherController extends Controller
                 'brand'
             ])
                 ->where('job_order_id', $jobOrderId)
-                ->whereHas('productionVoucher', function($q) use ($locationId) {
+                ->whereHas('productionVoucher', function ($q) use ($locationId) {
                     $q->where('location_id', $locationId);
                 })
                 ->get();
-            
+
             $producedQty = $outputs->sum('qty');
             $producedByJobOrder[$jobOrderId] = $producedQty ?? 0;
             $producedDetailsByJobOrder[$jobOrderId] = $outputs;
@@ -313,16 +385,16 @@ class ProductionVoucherController extends Controller
         // }
 
 
-        
+
         $brandIds = \App\Models\Production\JobOrder\JobOrderPackingItem::
-        when($jobOrderIds != null, function($query) use ($jobOrderIds) {
-            $query->whereIn('job_order_id', is_array($jobOrderIds) ? $jobOrderIds : [$jobOrderIds]);
-        })
-        ->whereNotNull('brand_id')
-        ->where('company_location_id', $request->location_id)
-        ->distinct()
-        ->pluck('brand_id')
-        ->toArray();
+            when($jobOrderIds != null, function ($query) use ($jobOrderIds) {
+                $query->whereIn('job_order_id', is_array($jobOrderIds) ? $jobOrderIds : [$jobOrderIds]);
+            })
+            ->whereNotNull('brand_id')
+            ->where('company_location_id', $request->location_id)
+            ->distinct()
+            ->pluck('brand_id')
+            ->toArray();
 
         $brands = Brands::where('status', 1)
             ->whereIn('id', $brandIds)
@@ -341,7 +413,7 @@ class ProductionVoucherController extends Controller
     public function getCommoditiesByLocation(Request $request)
     {
         $locationId = $request->location_id;
-        
+
         if (!$locationId) {
             return response()->json(['commodities' => []]);
         }
@@ -374,6 +446,73 @@ class ProductionVoucherController extends Controller
             ->values();
 
         return response()->json(['commodities' => $commodities]);
+    }
+
+    public function getPlantsByLocation(Request $request)
+    {
+        $locationId = $request->location_id;
+
+        if (!$locationId) {
+            return response()->json(['plants' => []]);
+        }
+
+        $user = auth()->user();
+
+        $plants = Plant::where('company_location_id', $locationId)
+            ->where('status', 'active')
+            ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
+                return $query->where('company_id', $user->company_id);
+            })
+            ->get()
+            ->map(function ($plant) {
+                return [
+                    'id' => $plant->id,
+                    'name' => $plant->name
+                ];
+            });
+
+        return response()->json(['plants' => $plants]);
+    }
+
+    public function getHeadProductsByCommodity(Request $request)
+    {
+        $commodityId = $request->commodity_id;
+
+        if (!$commodityId) {
+            return response()->json(['headProducts' => []]);
+        }
+
+        $commodity = Product::find($commodityId);
+
+        if (!$commodity) {
+            return response()->json(['headProducts' => []]);
+        }
+
+        // Filter products based on parent_id logic (same as output form)
+        $productsQuery = Product::where('status', 1);
+
+        if ($commodity->parent_id) {
+            // Commodity has a parent - show all products with same parent_id (including commodity if it's a child)
+            $productsQuery->where(function ($q) use ($commodity) {
+                $q->where('parent_id', $commodity->parent_id)
+                    ->orWhere('id', $commodity->parent_id); // Include parent itself
+            });
+        } else {
+            // Commodity is itself a parent (parent_id is null) - show all its children + itself
+            $productsQuery->where(function ($q) use ($commodityId) {
+                $q->where('parent_id', $commodityId)
+                    ->orWhere('id', $commodityId); // Include commodity itself
+            });
+        }
+
+        $headProducts = $productsQuery->orderBy('name')->get()->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name
+            ];
+        });
+
+        return response()->json(['headProducts' => $headProducts]);
     }
 
     public function store(ProductionVoucherRequest $request)
@@ -529,17 +668,17 @@ class ProductionVoucherController extends Controller
     {
         $productionVoucher = ProductionVoucher::findOrFail($id);
         $products = Product::where('status', 1)->get();
-        
+
         // Get arrival sub locations filtered by production voucher's location
         $sublocationsQuery = ArrivalSubLocation::where('status', 'active');
         if ($productionVoucher->location_id) {
             // Filter by company location through arrival locations
-            $sublocationsQuery->whereHas('arrivalLocation', function($q) use ($productionVoucher) {
+            $sublocationsQuery->whereHas('arrivalLocation', function ($q) use ($productionVoucher) {
                 $q->where('company_location_id', $productionVoucher->location_id);
             });
         }
         $sublocations = $sublocationsQuery->get();
-        
+
         // Get slots for this production voucher
         $slots = ProductionSlot::where('production_voucher_id', $id)
             ->where('status', '!=', 'cancelled')
@@ -569,55 +708,55 @@ class ProductionVoucherController extends Controller
     public function getOutputForm($id, $outputId = null)
     {
         $productionVoucher = ProductionVoucher::with(['jobOrder.product', 'jobOrders.product'])->findOrFail($id);
-        
+
         // Get head product (from first job order - backward compatibility)
         $headProductId = $productionVoucher->jobOrder->product_id ?? ($productionVoucher->jobOrders->first()->product_id ?? null);
         $headProduct = $headProductId ? Product::find($headProductId) : null;
-        
+
         // Filter products based on parent_id logic
         $productsQuery = Product::where('status', 1);
-        
+
         if ($headProduct) {
             if ($headProduct->parent_id) {
                 // Head product has a parent - show all products with same parent_id (including head product if it's a child)
-                $productsQuery->where(function($q) use ($headProduct) {
+                $productsQuery->where(function ($q) use ($headProduct) {
                     $q->where('parent_id', $headProduct->parent_id)
-                      ->orWhere('id', $headProduct->parent_id); // Include parent itself
+                        ->orWhere('id', $headProduct->parent_id); // Include parent itself
                 });
             } else {
                 // Head product is itself a parent (parent_id is null) - show all its children + itself
-                $productsQuery->where(function($q) use ($headProductId) {
+                $productsQuery->where(function ($q) use ($headProductId) {
                     $q->where('parent_id', $headProductId)
-                      ->orWhere('id', $headProductId); // Include head product itself
+                        ->orWhere('id', $headProductId); // Include head product itself
                 });
             }
         }
-        
+
         $products = $productsQuery->orderBy('name')->get();
-        
+
         // Get arrival sub locations filtered by production voucher's location
         $arrivalSubLocationsQuery = \App\Models\Master\ArrivalSubLocation::with('arrivalLocation')
             ->where('status', 'active');
-        
+
         if ($productionVoucher->location_id) {
             // Filter by company location through arrival locations
-            $arrivalSubLocationsQuery->whereHas('arrivalLocation', function($q) use ($productionVoucher) {
+            $arrivalSubLocationsQuery->whereHas('arrivalLocation', function ($q) use ($productionVoucher) {
                 $q->where('company_location_id', $productionVoucher->location_id);
             });
         }
-        
+
         $arrivalSubLocations = $arrivalSubLocationsQuery->orderBy('name')->get();
-        
+
         // Get all brands (will be filtered dynamically by job order via JavaScript)
         $brands = Brands::where('status', 1)->orderBy('name')->get();
-        
+
         // Get slots for this production voucher
         $slots = ProductionSlot::where('production_voucher_id', $id)
             ->where('status', '!=', 'cancelled')
             ->orderBy('date', 'desc')
             ->orderBy('start_time', 'desc')
             ->get();
-        
+
         // Get all job orders for this production voucher
         $jobOrders = $productionVoucher->jobOrders;
 
@@ -783,7 +922,7 @@ class ProductionVoucherController extends Controller
         $inputs = ProductionInput::with(['product', 'location', 'slot'])
             ->where('production_voucher_id', $id)
             ->get()
-            ->sortByDesc(function($input) {
+            ->sortByDesc(function ($input) {
                 if ($input->slot) {
                     return $input->slot->date . ' ' . ($input->slot->start_time ?? '00:00:00');
                 }
@@ -801,14 +940,14 @@ class ProductionVoucherController extends Controller
     public function getOutputsList(Request $request, $id)
     {
         $productionVoucher = ProductionVoucher::with(['jobOrder.product', 'jobOrders.product'])->findOrFail($id);
-        
+
         // Get head product from first job order (for backward compatibility)
         $headProductId = $productionVoucher->jobOrder->product_id ?? ($productionVoucher->jobOrders->first()->product_id ?? null);
-        
+
         $allOutputs = ProductionOutput::with(['product', 'storageLocation.arrivalLocation', 'brand', 'slot', 'jobOrder'])
             ->where('production_voucher_id', $id)
             ->get()
-            ->sortByDesc(function($output) {
+            ->sortByDesc(function ($output) {
                 if ($output->slot) {
                     return $output->slot->date . ' ' . ($output->slot->start_time ?? '00:00:00');
                 }
@@ -824,8 +963,8 @@ class ProductionVoucherController extends Controller
         $inputs = ProductionInput::where('production_voucher_id', $id)->get();
 
         return view('management.production.production_voucher.output.getList', compact(
-            'headProductOutputs', 
-            'otherProductOutputs', 
+            'headProductOutputs',
+            'otherProductOutputs',
             'productionVoucher',
             'headProductId',
             'inputs'
@@ -969,7 +1108,7 @@ class ProductionVoucherController extends Controller
                 if ($productionSlot->attachment && Storage::exists('public/' . $productionSlot->attachment)) {
                     Storage::delete('public/' . $productionSlot->attachment);
                 }
-                
+
                 $file = $request->file('attachment');
                 $fileName = 'production_slots/' . time() . '_' . $file->getClientOriginalName();
                 $file->storeAs('public', $fileName);
@@ -981,7 +1120,7 @@ class ProductionVoucherController extends Controller
             // Handle breaks - update existing, create new, delete removed
             if ($request->has('breaks') && is_array($request->breaks)) {
                 $existingBreakIds = [];
-                
+
                 foreach ($request->breaks as $breakData) {
                     if (!empty($breakData['break_in']) && trim($breakData['break_in']) !== '') {
                         if (isset($breakData['id']) && $breakData['id']) {

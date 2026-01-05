@@ -43,8 +43,10 @@ function fetchDynamicHTML(route, targetId, params = {}, options = {}) {
             } else {
                 target.html(response);
             }
-
-            updateJobOrderQty();
+//ignore if undefined
+            if (typeof updateJobOrderQty !== 'undefined') {
+                updateJobOrderQty();
+            }
         },
         error: function (xhr) {
 

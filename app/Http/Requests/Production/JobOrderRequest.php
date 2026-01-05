@@ -102,21 +102,34 @@ class JobOrderRequest extends FormRequest
             ],
             'packing_items.*.bag_type_id' => [
                 'required',
-                'string',
-                'max:100'
+                'array',
+                'min:1'
+            ],
+            'packing_items.*.bag_type_id.*' => [
+                'required',
+                'exists:bag_types,id'
             ],
             'packing_items.*.bag_condition_id' => [
                 'required',
                 'string',
                 'max:100'
             ],
-            'packing_items.*.bag_size' => [
+            'packing_items.*.sub_items' => [
+                'required',
+                'array',
+                'min:1'
+            ],
+            'packing_items.*.sub_items.*.bag_type_id' => [
+                'required',
+                'exists:bag_types,id'
+            ],
+            'packing_items.*.sub_items.*.bag_size' => [
                 'required',
                 'numeric',
                 'min:0.1',
                 'max:1000'
             ],
-            'packing_items.*.no_of_bags' => [
+            'packing_items.*.sub_items.*.no_of_bags' => [
                 'required',
                 'integer',
                 'min:1',
@@ -150,15 +163,9 @@ class JobOrderRequest extends FormRequest
                 'min:0'
             ],
             'packing_items.*.stuffing_in_container' => [
-                'required',
+                'nullable',
                 'numeric',
                 'min:0'
-            ],
-            'packing_items.*.no_of_containers' => [
-                'required',
-                'integer',
-                'min:0',
-                'max:100'
             ],
             'packing_items.*.brand_id' => [
                 'required',
@@ -171,13 +178,29 @@ class JobOrderRequest extends FormRequest
                 'max:50'
             ],
             'packing_items.*.min_weight_empty_bags' => [
-                'required',
+                'nullable',
                 'numeric',
                 'min:0'
             ],
             'packing_items.*.company_location_id' => [
                 'required',
                 'exists:company_locations,id'
+            ],
+            'packing_items.*.no_of_containers' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:100'
+            ],
+            'packing_items.*.description' => [
+                'nullable',
+                'string',
+                'max:1000'
+            ],
+            'packing_items.*.location_instruction' => [
+                'nullable',
+                'string',
+                'max:1000'
             ],
             // Delivery Date moved to packing items
             'packing_items.*.delivery_date' => [
@@ -188,6 +211,9 @@ class JobOrderRequest extends FormRequest
             // Fumigation Company moved to packing items
             'packing_items.*.fumigation_company_id' => [
                 'nullable',
+                'array'
+            ],
+            'packing_items.*.fumigation_company_id.*' => [
                 'exists:fumigation_companies,id'
             ],
 
@@ -249,12 +275,16 @@ class JobOrderRequest extends FormRequest
             // Packing Items Messages
             'packing_items.required' => 'At least one packing item is required',
             'packing_items.min' => 'At least one packing item is required',
-            'packing_items.*.bag_type_id.required' => 'Bag type is required for all packing items',
+            'packing_items.*.bag_type_id.required' => 'At least one bag type is required for all packing items',
+            'packing_items.*.bag_type_id.array' => 'Bag type must be an array',
+            'packing_items.*.bag_type_id.min' => 'At least one bag type must be selected',
             'packing_items.*.bag_condition_id.required' => 'Bag condition is required for all packing items',
-            'packing_items.*.bag_size.required' => 'Bag size is required for all packing items',
-            'packing_items.*.bag_size.min' => 'Bag size must be at least 0.1 kg',
-            'packing_items.*.no_of_bags.required' => 'Number of bags is required for all packing items',
-            'packing_items.*.no_of_bags.min' => 'Number of bags must be at least 1',
+            'packing_items.*.sub_items.required' => 'Bag type details are required for all packing items',
+            'packing_items.*.sub_items.min' => 'At least one bag type detail is required',
+            'packing_items.*.sub_items.*.bag_size.required' => 'Bag size is required for all bag types',
+            'packing_items.*.sub_items.*.bag_size.min' => 'Bag size must be at least 0.1 kg',
+            'packing_items.*.sub_items.*.no_of_bags.required' => 'Number of bags is required for all bag types',
+            'packing_items.*.sub_items.*.no_of_bags.min' => 'Number of bags must be at least 1',
             'packing_items.*.brand_id.required' => 'Brand is required for all packing items',
             'packing_items.*.bag_color_id.required' => 'Bag color is required for all packing items',
             'packing_items.*.company_location_id.required' => 'Company location is required for all packing items',

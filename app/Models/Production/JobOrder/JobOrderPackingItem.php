@@ -31,10 +31,13 @@ class JobOrderPackingItem extends Model
         'bag_color_id',
         'delivery_date',
         'fumigation_company_id',
-        'min_weight_empty_bags'
+        'min_weight_empty_bags',
+        'description',
+        'location_instruction'
     ];
     protected $casts = [
         // 'inspection_company_id' => 'array',
+        'bag_type_id' => 'array',
         'fumigation_company_id' => 'array',
         // 'arrival_locations' => 'array',
         // 'job_order_date' => 'date',
@@ -46,11 +49,22 @@ class JobOrderPackingItem extends Model
         parent::boot();
 
         static::saving(function ($model) {
-            // Auto calculate totals
-            $model->total_bags = $model->no_of_bags + $model->extra_bags + $model->empty_bags;
-            $model->total_kgs = $model->no_of_bags * $model->bag_size;
+            // Calculate totals from sub-items if they exist
+            if ($model->relationLoaded('subItems') && $model->subItems->count() > 0) {
+                $totalBagsFromSubItems = $model->subItems->sum('no_of_bags');
+                $totalKgsFromSubItems = $model->subItems->sum(function($subItem) {
+                    return $subItem->no_of_bags * $subItem->bag_size;
+                });
+                
+                $model->total_bags = $totalBagsFromSubItems + ($model->extra_bags ?? 0) + ($model->empty_bags ?? 0);
+                $model->total_kgs = $totalKgsFromSubItems;
+                $model->metric_tons = $model->total_kgs / 1000;
+            } else {
+                // Fallback to old calculation if sub-items don't exist
+                $model->total_bags = ($model->no_of_bags ?? 0) + ($model->extra_bags ?? 0) + ($model->empty_bags ?? 0);
+                $model->total_kgs = ($model->no_of_bags ?? 0) * ($model->bag_size ?? 0);
             $model->metric_tons = $model->total_kgs / 1000;
-
+            }
 
             // Ensure fumigation_company_id is properly formatted as array
             if ($model->fumigation_company_id && !is_array($model->fumigation_company_id)) {
@@ -85,5 +99,10 @@ class JobOrderPackingItem extends Model
     public function brand()
     {
         return $this->belongsTo(Brands::class, 'brand_id');
+    }
+
+    public function subItems()
+    {
+        return $this->hasMany(JobOrderPackingSubItem::class, 'job_order_packing_item_id');
     }
 }

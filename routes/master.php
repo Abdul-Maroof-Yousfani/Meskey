@@ -62,6 +62,9 @@ Route::get('/get-categories', [CategoryController::class, 'getCategories'])->nam
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
 
+Route::resource('plant-breakdown-type', \App\Http\Controllers\Master\PlantBreakdownTypeController::class);
+Route::post('/get-plant-breakdown-type', [\App\Http\Controllers\Master\PlantBreakdownTypeController::class, 'getList'])->name('get.plant-breakdown-type');
+
 Route::resource('truck-size-ranges', TruckSizeRangeController::class);
 Route::post('get-truck-size-ranges', [TruckSizeRangeController::class, 'getList'])->name('get.truck_size_ranges');
 

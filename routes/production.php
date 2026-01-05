@@ -24,6 +24,7 @@ Route::resource('production-voucher', ProductionVoucherController::class);
 Route::post('get-production-voucher', [ProductionVoucherController::class, 'getList'])->name('get.production-voucher');
 Route::post('production-voucher-get-job-orders-by-location', [ProductionVoucherController::class, 'getJobOrdersByLocation'])->name('production-voucher.get-job-orders-by-location');
 Route::post('production-voucher-get-commodities-by-location', [ProductionVoucherController::class, 'getCommoditiesByLocation'])->name('production-voucher.get-commodities-by-location');
+Route::post('production-voucher-get-plants-by-location', [ProductionVoucherController::class, 'getPlantsByLocation'])->name('production-voucher.get-plants-by-location');
 Route::post('production-voucher-get-packing-items', [ProductionVoucherController::class, 'getPackingItemsByJobOrder'])->name('production-voucher.get-packing-items');
 Route::post('production-voucher-get-packing-items-with-produced', [ProductionVoucherController::class, 'getPackingItemsWithProduced'])->name('production-voucher.get-packing-items-with-produced');
 Route::post('production-voucher-get-brands-by-job-orders', [ProductionVoucherController::class, 'getBrandsByJobOrders'])->name('production-voucher.get-brands-by-job-orders');
@@ -45,7 +46,8 @@ Route::post('production-voucher/{id}/slot', [ProductionVoucherController::class,
 Route::put('production-voucher/{id}/slot/{slotId}', [ProductionVoucherController::class, 'updateSlot'])->name('production-voucher.slot.update');
 Route::delete('production-voucher/{id}/slot/{slotId}', [ProductionVoucherController::class, 'destroySlot'])->name('production-voucher.slot.destroy');
 Route::post('get-production-voucher-slots/{id}', [ProductionVoucherController::class, 'getSlotsList'])->name('get.production-voucher-slots');
-
+Route::post('production-voucher-get-by-product-table', [ProductionVoucherController::class, 'getByProductTable'])->name('production-voucher.get-by-product-table');
+Route::post('production-voucher-get-head-products-data', [ProductionVoucherController::class, 'getHeadProductsData'])->name('production-voucher.get-head-products-data');
 // Production Slots Routes
 use App\Http\Controllers\Production\ProductionSlotController;
 Route::resource('production-slot', ProductionSlotController::class);
@@ -53,3 +55,8 @@ Route::post('get-production-slot', [ProductionSlotController::class, 'getList'])
 Route::post('production-slot/{slotId}/break', [ProductionSlotController::class, 'storeBreak'])->name('production-slot.break.store');
 Route::put('production-slot/{slotId}/break/{breakId}', [ProductionSlotController::class, 'updateBreak'])->name('production-slot.break.update');
 Route::delete('production-slot/{slotId}/break/{breakId}', [ProductionSlotController::class, 'destroyBreak'])->name('production-slot.break.destroy');
+
+// Plant Breakdown Routes
+use App\Http\Controllers\Production\PlantBreakdownController;
+Route::resource('plant-breakdown', PlantBreakdownController::class);
+Route::post('get-plant-breakdown', [PlantBreakdownController::class, 'getList'])->name('get.plant-breakdown');

@@ -311,6 +311,44 @@
                                 class="btn btn-sm btn-info duplicate-packing-item form-control">Duplicate</button>
                         </div>
                     </div> -->
+
+                    <!-- Master Packing Section -->
+                    <div class="col-md-12 mt-4">
+                        <div class="card border-primary shadow-sm">
+                            <div class="header-heading-sepration rounded-0 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 font-weight-bold">Master Packing</h6>
+                                <button type="button" class="btn btn-sm btn-primary add-sub-packing-item" data-index="0">
+                                    <i class="ft-plus"></i> Add Master Packing Item
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Bag Type</th>
+                                                <th>Bag Size (kg)</th>
+                                                <th>No. of Bags</th>
+                                                <th>Empty Bags</th>
+                                                <th>Extra Bags</th>
+                                                <th>Empty Bag Weight (g)</th>
+                                                <th>Total Bags</th>
+                                                <th>Bag Color</th>
+                                                <th>Brand</th>
+                                                <th>Thread Color</th>
+                                                <th>Attachment</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="sub-packing-items-container" data-index="0">
+                                            <!-- Master packing items will be added here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>&nbsp;</label>
@@ -388,10 +426,93 @@
     </div>
 </form>
 
+<!-- Hidden Template for Sub Packing Item -->
+<table class="sub-packing-item-template d-none">
+    <tbody>
+        <tr class="sub-packing-item-row">
+        <td>
+            <input type="hidden" class="packing-item-ref" name="packing_items[INDEX][sub_items][SUB_INDEX][job_order_packing_item_id]" value="">
+            <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_type_id]" class="form-control form-control-sm select2 sub-bag-type">
+                <option value="">Select Bag Type</option>
+                @foreach($bagTypes as $bagType)
+                    <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                @endforeach
+            </select>
+        </td>
+        
+        <td>
+            <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_size]" 
+                class="form-control form-control-sm sub-bag-size" step="0.01" placeholder="kg">
+        </td>
+        
+        <td>
+            <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_bags]" 
+                class="form-control form-control-sm sub-no-of-bags" readonly placeholder="Auto calc">
+        </td>
+        
+        <td>
+            <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bags]" 
+                class="form-control form-control-sm sub-empty-bags" value="0" min="0">
+        </td>
+        
+        <td>
+            <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags]" 
+                class="form-control form-control-sm sub-extra-bags" value="0" min="0">
+        </td>
+        
+        <td>
+            <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bag_weight]" 
+                class="form-control form-control-sm sub-empty-bag-weight" value="0" min="0" step="0.01">
+        </td>
+        
+        <td>
+            <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][total_bags]" 
+                class="form-control form-control-sm sub-total-bags" readonly value="0">
+        </td>
+        
+        <td>
+            <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_color_id]" class="form-control form-control-sm select2 sub-bag-color">
+                <option value="">Select Color</option>
+                @foreach($bagColors as $color)
+                    <option value="{{ $color->id }}">{{ $color->color }}</option>
+                @endforeach
+            </select>
+        </td>
+        
+        <td>
+            <select name="packing_items[INDEX][sub_items][SUB_INDEX][brand_id]" class="form-control form-control-sm select2 sub-brand">
+                <option value="">Select Brand</option>
+                @foreach($brands as $brand)
+                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                @endforeach
+            </select>
+        </td>
+        
+        <td>
+            <select name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]" class="form-control form-control-sm select2 sub-thread-color">
+                <option value="">Select Color</option>
+                @foreach($bagColors as $color)
+                    <option value="{{ $color->id }}">{{ $color->color }}</option>
+                @endforeach
+            </select>
+        </td>
+        
+        <td>
+            <input type="file" name="packing_items[INDEX][sub_items][SUB_INDEX][attachment]" 
+                class="form-control form-control-sm sub-attachment">
+        </td>
+        
+        <td>
+            <button type="button" class="btn btn-sm btn-danger remove-sub-packing-item">Remove</button>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
 <script>
     $(document).ready(function () {
-        // Initialize Select2 for all multi-selects
-        $('.select2').select2();
+        // Initialize Select2 for all multi-selects (excluding template)
+        $('.select2').not('.sub-packing-item-template .select2').select2();
 
         // Product selection change
         $('#productSelect').change(function () {
@@ -407,14 +528,19 @@
         });
 
         // Add more packing items using clone
-        $('#addPackingItem').click(function () {
+        $(document).off('click', '#addPackingItem').on('click', '#addPackingItem', function (e) {
+            e.preventDefault();
             addNewPackingItem();
         });
 
         // Add new packing item function
+        var isAddingItem = false;
         function addNewPackingItem() {
+            if (isAddingItem) return; // Prevent multiple simultaneous additions
+            isAddingItem = true;
+            
             var firstItem = $('.packing-item').first();
-            var newItem = firstItem.clone();
+            var newItem = firstItem.clone(true); // Clone with data but not event handlers
 
             // Update indexes
             var newIndex = $('.packing-item').length;
@@ -426,6 +552,13 @@
                     $(this).val(''); // Clear values
                 }
             });
+
+            // Update data-index for sub items container and button
+            newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
+            newItem.find('.add-sub-packing-item').attr('data-index', newIndex);
+            
+            // Clear sub items container
+            newItem.find('.sub-packing-items-container').empty();
 
             // Clear specific values
             newItem.find('.bag-size, .no-of-bags, .extra-bags, .empty-bags, .stuffing, .containers, .min-weight').val('');
@@ -450,6 +583,8 @@
             // Re-initialize Select2 for new selects
             newItem.find('select').select2();
             firstItem.find('select').select2();
+            
+            isAddingItem = false;
         }
 
         // Duplicate packing item - PROPERLY FIXED VERSION
@@ -516,9 +651,120 @@
             }
         });
 
+        // Add Sub Packing Item
+        $(document).on('click', '.add-sub-packing-item', function (e) {
+            e.preventDefault();
+            var packingItem = $(this).closest('.packing-item');
+            // Get packing index from first input/select name attribute
+            var firstInput = packingItem.find('input[name*="packing_items"], select[name*="packing_items"]').first();
+            var nameAttr = firstInput.attr('name');
+            var packingIndexMatch = nameAttr ? nameAttr.match(/packing_items\[(\d+)\]/) : null;
+            var packingIndex = packingIndexMatch ? packingIndexMatch[1] : packingItem.index();
+            
+            var container = packingItem.find('.sub-packing-items-container'); // This is tbody
+            var templateRow = $('.sub-packing-item-template').find('.sub-packing-item-row').first();
+            
+            if (!templateRow.length) {
+                console.error('Template row not found!');
+                return;
+            }
+            
+            var subIndex = container.find('.sub-packing-item-row').length;
+            
+            // Clone the tr from template
+            var newRow = templateRow.clone();
+            
+            // Replace INDEX and SUB_INDEX in all inputs/selects
+            newRow.find('input, select').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    name = name.replace(/\[INDEX\]/g, '[' + packingIndex + ']');
+                    name = name.replace(/\[SUB_INDEX\]/g, '[' + subIndex + ']');
+                    $(this).attr('name', name);
+                }
+            });
+            
+            // Clear values
+            newRow.find('input[type="text"], input[type="number"]').not('[readonly]').val('');
+            newRow.find('input[type="number"][readonly]').val('0');
+            newRow.find('select').prop('selectedIndex', 0);
+            newRow.find('input[type="file"]').val('');
+            
+            // Append tr to tbody
+            container.append(newRow);
+            
+            // Initialize Select2 for new selects
+            newRow.find('select.select2').each(function() {
+                var $select = $(this);
+                // Remove any existing Select2 initialization
+                if ($select.data('select2')) {
+                    $select.select2('destroy');
+                }
+                // Initialize Select2
+                $select.select2({
+                    dropdownParent: $select.closest('.table-responsive').length ? $select.closest('.table-responsive') : $('body')
+                });
+            });
+            
+            // Calculate no of bags based on packing item's total kgs
+            calculateSubItemNoOfBags(newRow, packingItem);
+        });
+
+        // Remove Sub Packing Item
+        $(document).on('click', '.remove-sub-packing-item', function () {
+            $(this).closest('.sub-packing-item-row').remove();
+        });
+
+        // Calculate No. of Bags for sub item when bag size changes
+        $(document).on('input', '.sub-bag-size', function () {
+            var subRow = $(this).closest('.sub-packing-item-row');
+            var packingItem = subRow.closest('.packing-item');
+            calculateSubItemNoOfBags(subRow, packingItem);
+        });
+
+        // Calculate No. of Bags for sub item when packing item's total kgs changes
+        $(document).on('input', '.total-kgs', function () {
+            var packingItem = $(this).closest('.packing-item');
+            packingItem.find('.sub-packing-item-row').each(function() {
+                calculateSubItemNoOfBags($(this), packingItem);
+            });
+        });
+
+        // Calculate total bags for sub item
+        $(document).on('input', '.sub-no-of-bags, .sub-empty-bags, .sub-extra-bags', function () {
+            var subRow = $(this).closest('.sub-packing-item-row');
+            var noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
+            var emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
+            var extraBags = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
+            var totalBags = noOfBags + emptyBags + extraBags;
+            subRow.find('.sub-total-bags').val(totalBags);
+        });
+
+        // Function to calculate no of bags from packing item's total kgs / bag size
+        function calculateSubItemNoOfBags(subRow, packingItem) {
+            var totalKgs = parseFloat(packingItem.find('.total-kgs').val()) || 0;
+            var bagSize = parseFloat(subRow.find('.sub-bag-size').val()) || 0;
+            
+            if (totalKgs > 0 && bagSize > 0) {
+                var noOfBags = Math.floor(totalKgs / bagSize);
+                subRow.find('.sub-no-of-bags').val(noOfBags);
+                // Trigger total bags calculation
+                subRow.find('.sub-no-of-bags').trigger('input');
+            } else {
+                subRow.find('.sub-no-of-bags').val('0');
+            }
+        }
+
         // Auto-calculate totals
         $(document).on('input', '.bag-size, .no-of-bags, .extra-bags, .empty-bags', function () {
             var item = $(this).closest('.packing-item');
+            calculateTotals(item);
+        });
+
+        // Update master packing items when packing item's bag type changes
+        $(document).on('change', 'select[name*="packing_items"][name*="[bag_type_id]"]:not([name*="[sub_items]"])', function () {
+            var item = $(this).closest('.packing-item');
+            // Trigger recalculation of totals which will update sub items
             calculateTotals(item);
         });
 
@@ -575,17 +821,38 @@
             if (containers > 0) {
                 calculateStuffing(item);
             }
+            
+            // Update all master packing items (sub items) when total kgs changes
+            item.find('.sub-packing-item-row').each(function() {
+                calculateSubItemNoOfBags($(this), item);
+            });
         }
 
         function reindexPackingItems() {
             $('.packing-item').each(function (index) {
-                $(this).find('input, select').each(function () {
-                    var name = $(this).attr('name');
-                    if (name) {
-                        name = name.replace(/\[\d+\]/, '[' + index + ']');
-                        $(this).attr('name', name);
-                    }
-                });
+                var packingItem = $(this);
+                
+                // Update data-index for sub items container and button
+                packingItem.find('.sub-packing-items-container').attr('data-index', index);
+                packingItem.find('.add-sub-packing-item').attr('data-index', index);
+                
+                // Get old index from first input/select
+                var firstInput = packingItem.find('input[name*="packing_items"], select[name*="packing_items"]').first();
+                var oldName = firstInput.attr('name');
+                var oldIndexMatch = oldName ? oldName.match(/packing_items\[(\d+)\]/) : null;
+                var oldIndex = oldIndexMatch ? oldIndexMatch[1] : null;
+                
+                if (oldIndex !== null && oldIndex != index) {
+                    // Update all input/select names (including sub items)
+                    packingItem.find('input, select').each(function () {
+                        var name = $(this).attr('name');
+                        if (name && name.includes('packing_items[' + oldIndex + ']')) {
+                            // Replace only the packing item index, keep sub item index as is
+                            name = name.replace('packing_items[' + oldIndex + ']', 'packing_items[' + index + ']');
+                            $(this).attr('name', name);
+                        }
+                    });
+                }
             });
         }
 
