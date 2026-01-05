@@ -67,7 +67,7 @@
                 <select name="sample_taken_by" id="sample_taken_by" class="form-control select2">
                     <option value="">Sample Taken By</option>
                     @foreach ($sampleTakenByUsers as $sampleTakenUser)
-                        <option value="{{ $sampleTakenUser->id }}">{{ $sampleTakenUser->name }}</option>
+                        <option data-location-id="{{ json_encode($sampleTakenUser->company_location_ids) }}" value="{{ $sampleTakenUser->id }}">{{ $sampleTakenUser->name }}</option>
                     @endforeach
                 </select>
             </div>

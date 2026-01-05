@@ -9,8 +9,8 @@ Route::post('/get-roles', [RoleController::class, 'getTable'])->name('get.roles'
 Route::get('/export-roles', [RoleController::class, 'exportToExcel'])->name('export-roles');
 Route::get('/get-arrival-locations/{companyLocationId}', [UserController::class, 'getArrivalLocations']);
 
-Route::resource('users', UserController::class);
-Route::post('/get-users', [UserController::class, 'getTable'])->name('get.users');
+// Route::resource('users', UserController::class);
+// Route::post('/get-users', [UserController::class, 'getTable'])->name('get.users');
 Route::get('/export-users', [UserController::class, 'exportToExcel'])->name('export-users');
 Route::get('/check-username', [UserController::class, 'checkUsernameAvailability']);
 
