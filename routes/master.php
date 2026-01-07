@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
 use App\Http\Controllers\Master\CountryCityController;
+use App\Http\Controllers\Master\StitchingController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Master\{
@@ -129,6 +130,9 @@ Route::post('/get-inspection-company', [InspectionCompanyController::class, 'get
 
 Route::resource('brands', BrandsController::class);
 Route::post('/get-brands', [BrandsController::class, 'getList'])->name('get.brands');
+
+Route::resource('stitching', StitchingController::class);
+Route::post('/get-stitching', [StitchingController::class, 'getList'])->name('get.stitching');
 
 Route::resource('account', AccountController::class);
 Route::post('/get-account', [AccountController::class, 'getList'])->name('get.account');
