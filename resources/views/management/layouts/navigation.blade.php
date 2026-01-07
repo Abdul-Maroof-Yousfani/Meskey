@@ -878,6 +878,13 @@
                                         data-i18n="Extended">Payment Terms</span></a>
                             </li>
                             @endcanAccess
+
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('stitching.index') }}"
+                                onclick="loadPageContent('{{ route('stitching.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Stitchings</span></a>
+                            </li>
                         </ul>
                     </li>
                     @endcanAccess
