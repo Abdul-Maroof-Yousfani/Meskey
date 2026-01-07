@@ -131,6 +131,11 @@ if(!function_exists("createdBy")) {
     }
 }
 
+function get_category_name($id) {
+    $category = Category::find($id)->value("name");
+    return $category;
+}
+
 //GetUser'sAllCompanies
 if (!function_exists('getUserAllCompanies')) {
     function getUserAllCompanies($id)
