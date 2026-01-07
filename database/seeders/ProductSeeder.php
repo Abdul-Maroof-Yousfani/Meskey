@@ -2,20 +2,27 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Product;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Master\Category;
+use App\Models\Master\Product;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class ProductSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        $category_names = [
+
+         $category = \App\Models\Category::firstOrCreate(
+                ['name' => 'Bags'],
+                [
+                    'name'=>'Bags',  
+                    'is_protected'=>'yes',
+                    'company_id' => 1
+
+                ]
+            );
+
+            $category_names = [
             'P.P',
             'Jute',
             'Cotton',
@@ -44,41 +51,18 @@ class ProductSeeder extends Seeder
             'RIVIANA BRAND',
         ];
 
-        $category_ids = [];
-
-        foreach ($category_names as $name) {
-            $category = Category::firstOrCreate(
-                ['name' => $name],
+        foreach($category_names as $product){
+            \App\Models\Product::firstOrCreate(
+                ['name' => $product],
+                [
+                    'name'=>$product,  
+                    'category_id'=>$category->id,
+                    'product_type'=>'general_items',
+                    'company_id' => 1
+                ]
             );
-
-            $category_ids[] = $category->id;
-
-            $category->is_protected = "yes";
-            $category->save();
         }
-
-        $existingCategoryIds = DB::table('products')
-            ->whereIn('category_id', $category_ids)
-            ->pluck('category_id')
-            ->toArray();
-
-        $newCategoryIds = array_diff($category_ids, $existingCategoryIds);
-
-      
-        $products = Product::latest()->first();
-        $next_unique_no = (int)$products->unique_no;
-
-        $products = array_map(fn ($id) => [
-            'category_id' => $id,
-            'company_id' => 1,
-            'unique_no' => "-",
-            'name' => '-'
-        ], $newCategoryIds);
-
-        
-        if (!empty($products)) {
-            DB::table('products')->insert($products);
-        }
+       
 
     }
 }
