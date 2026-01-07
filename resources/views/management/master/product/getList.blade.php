@@ -47,6 +47,7 @@
                         <td>—— {{ $child->name }}</td>
                         <td>{{ $parent->name }}</td>
                         <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
+                        <td><small>{{ get_category_name($parent->category_id) }}</small></td>
                         <td><label
                                 class="badge bg-light-{{ $child->status == 'inactive' ? 'danger' : 'success' }}">{{ $child->status }}</label>
                         </td>
