@@ -131,8 +131,9 @@ if(!function_exists("createdBy")) {
     }
 }
 
+
 function get_category_name($id) {
-    $category = Category::find($id)->first();
+    $category = Category::where("id", $id)->first();
     return $category->name;
 }
 
