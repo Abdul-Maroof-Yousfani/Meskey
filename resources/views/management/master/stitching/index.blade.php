@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Brands
+    Stitching
 @endsection
 @section('content')
     <div class="content-wrapper">
