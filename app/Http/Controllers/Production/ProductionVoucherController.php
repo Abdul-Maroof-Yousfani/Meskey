@@ -533,26 +533,88 @@ class ProductionVoucherController extends Controller
                 'prod_date',
                 'location_id',
                 'product_id',
-                'produced_qty_kg',
-                'supervisor_id',
-                'labor_cost_per_kg',
-                'overhead_cost_per_kg',
-                'status',
+                'plant_id',
+                'by_product_id',
                 'remarks'
             ]);
 
             // Handle multiple job orders - store first one in job_order_id for backward compatibility
             $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
-            $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null; // Store first job order ID for backward compatibility
+            $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
 
-            $productionVoucherData['company_id'] = $request->company_id;
+            $productionVoucherData['company_id'] = auth()->user()->company_id ?? $request->company_id;
             $productionVoucherData['prod_no'] = $uniqueProdNo;
+            $productionVoucherData['user_id'] = auth()->id();
+            $productionVoucherData['status'] = 'draft';
 
             $productionVoucher = ProductionVoucher::create($productionVoucherData);
 
             // Sync job orders to pivot table
             if (!empty($jobOrderIds)) {
                 $productionVoucher->jobOrders()->sync($jobOrderIds);
+            }
+
+            // Save Production Inputs
+            if ($request->has('product_id') && is_array($request->product_id)) {
+                $inputProductIds = $request->product_id;
+                $inputLocationIds = $request->input('location_id', []);
+                $inputQtys = $request->input('qty', []);
+                $inputRemarks = $request->input('remarks', []);
+
+                foreach ($inputProductIds as $index => $productId) {
+                    if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
+                        ProductionInput::create([
+                            'production_voucher_id' => $productionVoucher->id,
+                            'product_id' => $productId,
+                            'location_id' => $inputLocationIds[$index],
+                            'qty' => $inputQtys[$index],
+                            'remarks' => $inputRemarks[$index] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Save Production Outputs (Head Products and By Products)
+            // Now using output_ prefixed field names to differentiate from inputs
+            if ($request->has('output_qty') && is_array($request->output_qty)) {
+                $outputQtys = $request->output_qty;
+                $outputProductIds = $request->input('output_product_id', []);
+                $outputNoOfBags = $request->input('output_no_of_bags', []);
+                $outputBagSizes = $request->input('output_bag_size', []);
+                $outputAvgWeights = $request->input('output_avg_weight_per_bag', []);
+                $outputStorageLocations = $request->input('output_arrival_sub_location_id', []);
+                $outputBrandIds = $request->input('output_brand_id', []);
+                $outputJobOrderIds = $request->input('output_job_order_id', []);
+                $outputRemarks = $request->input('output_remarks', []);
+                
+                foreach ($outputQtys as $index => $qty) {
+                    if (!empty($qty) && $qty > 0 && !empty($outputProductIds[$index])) {
+                        // Get job_order_id for this row
+                        $jobOrderIdForOutput = null;
+                        if (!empty($outputJobOrderIds[$index])) {
+                            if (is_array($outputJobOrderIds[$index])) {
+                                $jobOrderIdForOutput = !empty($outputJobOrderIds[$index]) ? $outputJobOrderIds[$index][0] : null;
+                            } else {
+                                $jobOrderIdForOutput = $outputJobOrderIds[$index];
+                            }
+                        } else {
+                            $jobOrderIdForOutput = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
+                        }
+                        
+                        ProductionOutput::create([
+                            'production_voucher_id' => $productionVoucher->id,
+                            'job_order_id' => $jobOrderIdForOutput,
+                            'product_id' => $outputProductIds[$index],
+                            'qty' => $qty,
+                            'no_of_bags' => !empty($outputNoOfBags[$index]) ? (int)$outputNoOfBags[$index] : null,
+                            'bag_size' => !empty($outputBagSizes[$index]) ? $outputBagSizes[$index] : null,
+                            'avg_weight_per_bag' => !empty($outputAvgWeights[$index]) ? $outputAvgWeights[$index] : null,
+                            'arrival_sub_location_id' => !empty($outputStorageLocations[$index]) ? $outputStorageLocations[$index] : null,
+                            'brand_id' => !empty($outputBrandIds[$index]) ? $outputBrandIds[$index] : null,
+                            'remarks' => $outputRemarks[$index] ?? null,
+                        ]);
+                    }
+                }
             }
 
             DB::commit();
@@ -617,17 +679,15 @@ class ProductionVoucherController extends Controller
             $productionVoucherData = $request->only([
                 'prod_date',
                 'location_id',
-                'produced_qty_kg',
-                'supervisor_id',
-                'labor_cost_per_kg',
-                'overhead_cost_per_kg',
-                'status',
+                'product_id',
+                'plant_id',
+                'by_product_id',
                 'remarks'
             ]);
 
             // Handle multiple job orders
             $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
-            $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null; // Store first for backward compatibility
+            $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
 
             $productionVoucher->update($productionVoucherData);
 
@@ -638,11 +698,76 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync([]);
             }
 
+            // Delete existing inputs and outputs
+            $productionVoucher->inputs()->delete();
+            $productionVoucher->outputs()->delete();
+
+            // Save Production Inputs (same as store)
+            if ($request->has('product_id') && is_array($request->product_id)) {
+                $inputProductIds = $request->product_id;
+                $inputLocationIds = $request->input('location_id', []);
+                $inputQtys = $request->input('qty', []);
+                $inputRemarks = $request->input('remarks', []);
+
+                foreach ($inputProductIds as $index => $productId) {
+                    if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
+                        ProductionInput::create([
+                            'production_voucher_id' => $productionVoucher->id,
+                            'product_id' => $productId,
+                            'location_id' => $inputLocationIds[$index],
+                            'qty' => $inputQtys[$index],
+                            'remarks' => $inputRemarks[$index] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Save Production Outputs (same as store)
+            if ($request->has('output_qty') && is_array($request->output_qty)) {
+                $outputQtys = $request->output_qty;
+                $outputProductIds = $request->input('output_product_id', []);
+                $outputNoOfBags = $request->input('output_no_of_bags', []);
+                $outputBagSizes = $request->input('output_bag_size', []);
+                $outputAvgWeights = $request->input('output_avg_weight_per_bag', []);
+                $outputStorageLocations = $request->input('output_arrival_sub_location_id', []);
+                $outputBrandIds = $request->input('output_brand_id', []);
+                $outputJobOrderIds = $request->input('output_job_order_id', []);
+                $outputRemarks = $request->input('output_remarks', []);
+                
+                foreach ($outputQtys as $index => $qty) {
+                    if (!empty($qty) && $qty > 0 && !empty($outputProductIds[$index])) {
+                        $jobOrderIdForOutput = null;
+                        if (!empty($outputJobOrderIds[$index])) {
+                            if (is_array($outputJobOrderIds[$index])) {
+                                $jobOrderIdForOutput = !empty($outputJobOrderIds[$index]) ? $outputJobOrderIds[$index][0] : null;
+                            } else {
+                                $jobOrderIdForOutput = $outputJobOrderIds[$index];
+                            }
+                        } else {
+                            $jobOrderIdForOutput = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
+                        }
+                        
+                        ProductionOutput::create([
+                            'production_voucher_id' => $productionVoucher->id,
+                            'job_order_id' => $jobOrderIdForOutput,
+                            'product_id' => $outputProductIds[$index],
+                            'qty' => $qty,
+                            'no_of_bags' => !empty($outputNoOfBags[$index]) ? (int)$outputNoOfBags[$index] : null,
+                            'bag_size' => !empty($outputBagSizes[$index]) ? $outputBagSizes[$index] : null,
+                            'avg_weight_per_bag' => !empty($outputAvgWeights[$index]) ? $outputAvgWeights[$index] : null,
+                            'arrival_sub_location_id' => !empty($outputStorageLocations[$index]) ? $outputStorageLocations[$index] : null,
+                            'brand_id' => !empty($outputBrandIds[$index]) ? $outputBrandIds[$index] : null,
+                            'remarks' => $outputRemarks[$index] ?? null,
+                        ]);
+                    }
+                }
+            }
+
             DB::commit();
 
             return response()->json([
                 'success' => 'Production Voucher updated successfully.',
-                'data' => $productionVoucher
+                'data' => $productionVoucher->fresh(['inputs', 'outputs'])
             ], 200);
 
         } catch (\Throwable $e) {

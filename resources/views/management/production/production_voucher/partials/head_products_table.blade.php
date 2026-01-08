@@ -20,24 +20,25 @@
                 <tr>
                     <td>
                         <strong>{{ $headProduct->name }}</strong>
+                        <input type="hidden" name="output_product_id[]" value="{{ $headProduct->id }}">
                     </td>   
                     <td>
-                        <input type="number" name="no_of_bags[]" class="form-control" step="1" min="0" required>
+                        <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0" required>
                     </td>
                     <td>
-                        <input type="number" name="bag_size[]" class="form-control" step="0.01" min="0.01" required>
+                        <input type="number" name="output_bag_size[]" class="form-control" step="0.01" min="0.01" required>
                     </td>
                     <td>
-                        <input type="number" name="qty[]" class="form-control" step="0.01" min="0.01" required>
+                        <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01" required>
                     </td>
                     <td>
-                        <input type="number" name="avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01" readonly>
+                        <input type="number" name="output_avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01" readonly>
                     </td>
                     <td>
-                        <input type="number" name="yield[]" class="form-control" step="0.01" min="0.01" readonly>
+                        <input type="number" name="output_yield[]" class="form-control" step="0.01" min="0.01" readonly>
                     </td>
                     <td>
-                        <select name="arrival_sub_location_id[]" class="form-control select2" required>
+                        <select name="output_arrival_sub_location_id[]" class="form-control select2" required>
                             <option value="">Select Storage Location</option>
                             @foreach($arrivalSubLocations as $arrivalSubLocation)
                                 <option value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
@@ -45,7 +46,7 @@
                         </select>
                     </td>
                     <td>
-                        <select name="brand_id[]" class="form-control select2" required>
+                        <select name="output_brand_id[]" class="form-control select2" required>
                             <option value="">Select Brand</option>
                             @foreach($brands as $brand)
                                 <option value="{{ $brand->id }}">{{ $brand->name }}</option>
@@ -53,7 +54,7 @@
                         </select>
                     </td>
                     <td>
-                        <select name="job_order_id[]" class="form-control select2" required>
+                        <select name="output_job_order_id[]" class="form-control select2" required>
                             <option value="">Select Job Order</option>
                             @foreach($jobOrders as $jobOrder)
                                 <option value="{{ $jobOrder->id }}">{{ $jobOrder->job_order_no }}</option>
@@ -61,7 +62,7 @@
                         </select>
                     </td>
                     <td>
-                        <textarea name="remarks[]" class="form-control" rows="1"></textarea>
+                        <textarea name="output_remarks[]" class="form-control" rows="1"></textarea>
                     </td>
                     <td><button class="btn btn-sm btn-primary copythis"><i class="fa fa-copy"></i></button>
                         <button class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>

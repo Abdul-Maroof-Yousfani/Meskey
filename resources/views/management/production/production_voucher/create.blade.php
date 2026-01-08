@@ -87,13 +87,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Produced QTY (kg):</label>
-                                                <input type="number" name="produced_qty_kg" class="form-control" step="0.01"
-                                                    min="0.01" required>
-                                            </div>
-                                        </div>
+                                       
 
                                         <div class="col-md-3">
                                             <div class="form-group">
@@ -591,7 +585,7 @@
             clone.find('input[type="number"]:not([readonly]), input[type="text"]:not([readonly])').val('');
             clone.find('textarea').val('');
             clone.find('input[readonly]').val(''); // Clear readonly fields too
-            clone.find('input[name="qty[]"]').removeData('manual-change'); // Reset manual change flag
+            clone.find('input[name="output_qty[]"]').removeData('manual-change'); // Reset manual change flag
             
             // Insert clone after the original row
             $originalRow.after(clone);
@@ -667,14 +661,14 @@
             setTimeout(runAppropriateCalculation, 50);
             
             // Also attach direct event handlers to cloned row inputs for immediate calculation
-            clone.find('input[name="qty[]"]').on('input change keyup', function() {
+            clone.find('input[name="output_qty[]"]').on('input change keyup', function() {
                 $(this).data('manual-change', true);
                 setTimeout(runAppropriateCalculation, 10);
             });
             
-            clone.find('input[name="no_of_bags[]"], input[name="bag_size[]"]').on('input change keyup', function() {
+            clone.find('input[name="output_no_of_bags[]"], input[name="output_bag_size[]"]').on('input change keyup', function() {
                 // Clear manual-change flag so qty can be recalculated
-                $(this).closest('tr').find('input[name="qty[]"]').removeData('manual-change');
+                $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
                 setTimeout(runAppropriateCalculation, 10);
             });
         });
@@ -818,7 +812,7 @@
             
             // Sum all head products qty
             $('#productionHeadProductsTable tbody tr').not(':last').each(function() {
-                const qty = parseFloat($(this).find('input[name="qty[]"]').val()) || 0;
+                const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
                 totalOutputs += qty;
             });
             
@@ -827,7 +821,7 @@
                 const row = $(this);
                 // Skip total rows
                 if (!row.find('strong').text().includes('Total') && !row.find('strong').text().includes('Commodity Total')) {
-                    const qty = parseFloat(row.find('input[name="qty[]"]').val()) || 0;
+                    const qty = parseFloat(row.find('input[name="output_qty[]"]').val()) || 0;
                     totalOutputs += qty;
                 }
             });
@@ -849,11 +843,11 @@
             
             // Calculate for each product row (excluding total row)
             tbody.find('tr').not(':last').each(function() {
-                const qtyInput = $(this).find('input[name="qty[]"]');
-                const noOfBagsInput = $(this).find('input[name="no_of_bags[]"]');
-                const bagSizeInput = $(this).find('input[name="bag_size[]"]');
-                const avgWeightInput = $(this).find('input[name="avg_weight_per_bag[]"]');
-                const yieldInput = $(this).find('input[name="yield[]"]');
+                const qtyInput = $(this).find('input[name="output_qty[]"]');
+                const noOfBagsInput = $(this).find('input[name="output_no_of_bags[]"]');
+                const bagSizeInput = $(this).find('input[name="output_bag_size[]"]');
+                const avgWeightInput = $(this).find('input[name="output_avg_weight_per_bag[]"]');
+                const yieldInput = $(this).find('input[name="output_yield[]"]');
                 
                 const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
                 const bagSize = parseFloat(bagSizeInput.val()) || 0;
@@ -940,8 +934,8 @@
                     let commodityBags = 0;
                     
                     currentCommodityRows.forEach(function(commodityRow) {
-                        const qty = parseFloat(commodityRow.find('input[name="qty[]"]').val()) || 0;
-                        const bags = parseFloat(commodityRow.find('input[name="no_of_bags[]"]').val()) || 0;
+                        const qty = parseFloat(commodityRow.find('input[name="output_qty[]"]').val()) || 0;
+                        const bags = parseFloat(commodityRow.find('input[name="output_no_of_bags[]"]').val()) || 0;
                         commodityQty += qty;
                         commodityBags += bags;
                     });
@@ -968,11 +962,11 @@
                 }
                 // Regular product row
                 else {
-                    const qtyInput = row.find('input[name="qty[]"]');
-                    const noOfBagsInput = row.find('input[name="no_of_bags[]"]');
-                    const bagSizeInput = row.find('input[name="bag_size[]"]');
-                    const avgWeightInput = row.find('input[name="avg_weight_per_bag[]"]');
-                    const yieldInput = row.find('input[name="yield[]"]');
+                    const qtyInput = row.find('input[name="output_qty[]"]');
+                    const noOfBagsInput = row.find('input[name="output_no_of_bags[]"]');
+                    const bagSizeInput = row.find('input[name="output_bag_size[]"]');
+                    const avgWeightInput = row.find('input[name="output_avg_weight_per_bag[]"]');
+                    const yieldInput = row.find('input[name="output_yield[]"]');
                     
                     const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
                     const bagSize = parseFloat(bagSizeInput.val()) || 0;
@@ -1057,34 +1051,34 @@
             });
             
             // Head Products - no_of_bags and bag_size changes (auto calculate qty)
-            $(document).off('input change keyup', '#productionHeadProductsTable input[name="no_of_bags[]"], #productionHeadProductsTable input[name="bag_size[]"]');
-            $(document).on('input change keyup', '#productionHeadProductsTable input[name="no_of_bags[]"], #productionHeadProductsTable input[name="bag_size[]"]', function() {
+            $(document).off('input change keyup', '#productionHeadProductsTable input[name="output_no_of_bags[]"], #productionHeadProductsTable input[name="output_bag_size[]"]');
+            $(document).on('input change keyup', '#productionHeadProductsTable input[name="output_no_of_bags[]"], #productionHeadProductsTable input[name="output_bag_size[]"]', function() {
                 // Clear manual-change flag so qty can be recalculated
-                $(this).closest('tr').find('input[name="qty[]"]').removeData('manual-change');
+                $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
                 calculateHeadProducts();
                 calculateByProducts(); // Recalculate by products too since total outputs changed
             });
             
             // Head Products - qty manual change (mark as manual, then recalculate)
-            $(document).off('input change keyup', '#productionHeadProductsTable input[name="qty[]"]');
-            $(document).on('input change keyup', '#productionHeadProductsTable input[name="qty[]"]', function() {
+            $(document).off('input change keyup', '#productionHeadProductsTable input[name="output_qty[]"]');
+            $(document).on('input change keyup', '#productionHeadProductsTable input[name="output_qty[]"]', function() {
                 $(this).data('manual-change', true);
                 calculateHeadProducts();
                 calculateByProducts(); // Recalculate by products too since total outputs changed
             });
             
             // By Products - no_of_bags and bag_size changes (auto calculate qty)
-            $(document).off('input change keyup', '#productionByProductsTable input[name="no_of_bags[]"], #productionByProductsTable input[name="bag_size[]"]');
-            $(document).on('input change keyup', '#productionByProductsTable input[name="no_of_bags[]"], #productionByProductsTable input[name="bag_size[]"]', function() {
+            $(document).off('input change keyup', '#productionByProductsTable input[name="output_no_of_bags[]"], #productionByProductsTable input[name="output_bag_size[]"]');
+            $(document).on('input change keyup', '#productionByProductsTable input[name="output_no_of_bags[]"], #productionByProductsTable input[name="output_bag_size[]"]', function() {
                 // Clear manual-change flag so qty can be recalculated
-                $(this).closest('tr').find('input[name="qty[]"]').removeData('manual-change');
+                $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
                 calculateHeadProducts(); // Recalculate head products too since total outputs changed
                 calculateByProducts();
             });
             
             // By Products - qty manual change (mark as manual, then recalculate)
-            $(document).off('input change keyup', '#productionByProductsTable input[name="qty[]"]');
-            $(document).on('input change keyup', '#productionByProductsTable input[name="qty[]"]', function() {
+            $(document).off('input change keyup', '#productionByProductsTable input[name="output_qty[]"]');
+            $(document).on('input change keyup', '#productionByProductsTable input[name="output_qty[]"]', function() {
                 $(this).data('manual-change', true);
                 calculateHeadProducts(); // Recalculate head products too since total outputs changed
                 calculateByProducts();
