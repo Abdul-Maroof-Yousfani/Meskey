@@ -163,7 +163,7 @@ class JobOrderController extends Controller
                 'column' => 'job_order_no',
                 'with_date' => 1,
                 'custom_date' => $request->job_order_date,
-                'date_format' => 'm-Y',
+                'date_format' => 'Y',
                 'serial_at_end' => 1,
             ]);
 
