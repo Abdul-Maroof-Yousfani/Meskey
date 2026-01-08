@@ -209,7 +209,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <!-- <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Type:</label>
                                 <select name="packing_items[{{ $packingIndex }}][bag_type_id]" class="form-control">
@@ -217,6 +217,19 @@
                                     @foreach($bagTypes as $bagType)
                                         <option value="{{ $bagType->id }}" {{ $packingItem->bag_type_id == $bagType->id ? 'selected' : '' }}>
                                             {{ $bagType->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div> -->
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Bag Product:</label>
+                                <select name="packing_items[{{ $packingIndex }}][bag_product_id]" class="form-control">
+                                    <option value="">Select Bag Product</option>
+                                    @foreach($bagProducts as $bagProduct)
+                                        <option value="{{ $bagProduct->id }}" {{ $packingItem->bag_product_id == $bagProduct->id ? 'selected' : '' }}>
+                                            {{ $bagProduct->name }}
                                         </option>
                                     @endforeach
                                 </select>
