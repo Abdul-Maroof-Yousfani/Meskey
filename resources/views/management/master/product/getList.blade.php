@@ -5,6 +5,7 @@
             <th class="col-sm-3">Name </th>
             <th class="col-sm-3">Parent</th>
             <th class="col-sm-1">Product Type</th>
+            <th class="col-sm-1">Category</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
@@ -20,6 +21,7 @@
                     <td style="background: #f7f7f7; font-weight: bold;">{{ $parent->name }}</td>
                     <td>—</td>
                     <td><small>{{ formatEnumValue($parent->product_type) ?? '--' }}</small></td>
+                    <td><small>{{ get_category_name($parent->category_id) }}</small></td>
                     <td><label
                             class="badge bg-light-{{ $parent->status == 'inactive' ? 'danger' : 'success' }}">{{ $parent->status }}</label>
                     </td>
@@ -45,6 +47,7 @@
                         <td>—— {{ $child->name }}</td>
                         <td>{{ $parent->name }}</td>
                         <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
+                        <td><small>{{ get_category_name($parent->category_id) }}</small></td>
                         <td><label
                                 class="badge bg-light-{{ $child->status == 'inactive' ? 'danger' : 'success' }}">{{ $child->status }}</label>
                         </td>
