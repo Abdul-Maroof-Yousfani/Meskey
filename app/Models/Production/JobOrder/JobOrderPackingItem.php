@@ -6,6 +6,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Brands;
 use App\Models\BagType;
 use App\Models\BagCondition;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,7 +17,7 @@ class JobOrderPackingItem extends Model
     protected $fillable = [
         'job_order_id',
         'company_location_id',
-        'bag_type_id',
+        'bag_product_id',
         'bag_condition_id',
         'bag_size',
         'no_of_bags',
@@ -86,11 +87,11 @@ class JobOrderPackingItem extends Model
         return $this->belongsTo(CompanyLocation::class, 'company_location_id');
     }
 
-    public function bagType()
+    public function bagProduct()
     {
-        return $this->belongsTo(BagType::class, 'bag_type_id');
+        return $this->belongsTo(Product::class, 'bag_product_id');
     }
-
+    
     public function bagCondition()
     {
         return $this->belongsTo(BagCondition::class, 'bag_condition_id');
