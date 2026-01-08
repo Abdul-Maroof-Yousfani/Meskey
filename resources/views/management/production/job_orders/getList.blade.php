@@ -76,7 +76,7 @@
                     <td>
                         <div class="" role="group">
                             <button type="button" 
-                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',false,'95%')"
+                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',false,'100%')"
                                 class="btn btn-outline-primary  position-relative" title="Edit">
                                 <i class="ft-edit"></i>
                             </button>
@@ -86,7 +86,7 @@
                                 <i class="ft-trash"></i>
                             </button>
                             <button type="button" 
-                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',true,'90%')"
+                                onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',true,'100%')"
                                 class="btn btn-outline-info position-relative" title="View">
                                 <i class="ft-eye"></i>
                             </button>
