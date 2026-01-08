@@ -102,11 +102,6 @@ class JobOrderRequest extends FormRequest
             ],
             'packing_items.*.bag_type_id' => [
                 'required',
-                'array',
-                'min:1'
-            ],
-            'packing_items.*.bag_type_id.*' => [
-                'required',
                 'exists:bag_types,id'
             ],
             'packing_items.*.bag_condition_id' => [
@@ -115,25 +110,60 @@ class JobOrderRequest extends FormRequest
                 'max:100'
             ],
             'packing_items.*.sub_items' => [
-                'required',
-                'array',
-                'min:1'
+                'nullable',
+                'array'
             ],
-            'packing_items.*.sub_items.*.bag_type_id' => [
+            'packing_items.*.sub_items.*.bag_product_id' => [
                 'required',
-                'exists:bag_types,id'
+                'exists:products,id'
             ],
-            'packing_items.*.sub_items.*.bag_size' => [
+            'packing_items.*.sub_items.*.bag_size_id' => [
                 'required',
-                'numeric',
-                'min:0.1',
-                'max:1000'
+                'exists:sizes,id'
             ],
+            // 'packing_items.*.sub_items.*.bag_size' => [
+            //     'required',
+            //     'numeric',
+            //     'min:0.1',
+            //     'max:1000'
+            // ],
             'packing_items.*.sub_items.*.no_of_bags' => [
                 'required',
                 'integer',
                 'min:1',
                 'max:100000'
+            ],
+            'packing_items.*.sub_items.*.empty_bags' => [
+                'nullable',
+                'integer',
+                'min:0'
+            ],
+            'packing_items.*.sub_items.*.extra_bags' => [
+                'nullable',
+                'integer',
+                'min:0'
+            ],
+            'packing_items.*.sub_items.*.empty_bag_weight' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'packing_items.*.sub_items.*.total_bags' => [
+                'nullable',
+                'integer',
+                'min:0'
+            ],
+            'packing_items.*.sub_items.*.bag_color_id' => [
+                'nullable',
+                'exists:colors,id'
+            ],
+            'packing_items.*.sub_items.*.brand_id' => [
+                'nullable',
+                'exists:brands,id'
+            ],
+            'packing_items.*.sub_items.*.thread_color_id' => [
+                'nullable',
+                'exists:colors,id'
             ],
             'packing_items.*.extra_bags' => [
                 'nullable',
@@ -275,15 +305,17 @@ class JobOrderRequest extends FormRequest
             // Packing Items Messages
             'packing_items.required' => 'At least one packing item is required',
             'packing_items.min' => 'At least one packing item is required',
-            'packing_items.*.bag_type_id.required' => 'At least one bag type is required for all packing items',
-            'packing_items.*.bag_type_id.array' => 'Bag type must be an array',
-            'packing_items.*.bag_type_id.min' => 'At least one bag type must be selected',
+            'packing_items.*.bag_type_id.required' => 'Bag type is required for all packing items',
+            'packing_items.*.bag_type_id.exists' => 'Selected bag type does not exist',
             'packing_items.*.bag_condition_id.required' => 'Bag condition is required for all packing items',
-            'packing_items.*.sub_items.required' => 'Bag type details are required for all packing items',
-            'packing_items.*.sub_items.min' => 'At least one bag type detail is required',
-            'packing_items.*.sub_items.*.bag_size.required' => 'Bag size is required for all bag types',
+            'packing_items.*.sub_items.*.bag_type_id.required' => 'Bag type is required for master packing item',
+           
+            'packing_items.*.sub_items.*.bag_product_id.required' => 'Bag product is required for master packing item',
+            'packing_items.*.sub_items.*.bag_product_id.exists' => 'Selected bag product does not exist',
+            'packing_items.*.sub_items.*.bag_size_id.required' => 'Bag size is required for master packing item',
+            'packing_items.*.sub_items.*.bag_size_id.exists' => 'Selected bag size does not exist',
             'packing_items.*.sub_items.*.bag_size.min' => 'Bag size must be at least 0.1 kg',
-            'packing_items.*.sub_items.*.no_of_bags.required' => 'Number of bags is required for all bag types',
+            'packing_items.*.sub_items.*.no_of_bags.required' => 'Number of bags is required for master packing item',
             'packing_items.*.sub_items.*.no_of_bags.min' => 'Number of bags must be at least 1',
             'packing_items.*.brand_id.required' => 'Brand is required for all packing items',
             'packing_items.*.bag_color_id.required' => 'Bag color is required for all packing items',

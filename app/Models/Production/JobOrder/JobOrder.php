@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Master\{InspectionCompany, FumigationCompany, ArrivalLocation,CompanyLocation};
 use App\Models\Product;
+use App\Models\Acl\Company;
+use App\Models\User;
 class JobOrder extends Model
 {
     use HasFactory, SoftDeletes;
@@ -56,7 +58,7 @@ class JobOrder extends Model
     }
     public function attentionUsers()
     {
-        return User::whereIn('id', $this->attention_to ?? []);
+        return \App\Models\User::whereIn('id', $this->attention_to ?? []);
     }
     public function inspectionCompanies()
     {
@@ -90,7 +92,7 @@ class JobOrder extends Model
 
     public function company()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(\App\Models\Acl\Company::class);
     }
 
     // Auto calculate total fields
@@ -133,5 +135,12 @@ class JobOrder extends Model
       public function rawMaterialQcs()
       {
         return $this->hasMany(JobOrderRawMaterialQc::class);
+      }
+
+      public function containerProtectionItems()
+      {
+        return $this->belongsToMany(Product::class, 'job_order_container_protection_items', 'job_order_id', 'product_id')
+            ->withPivot('quantity_per_container')
+            ->withTimestamps();
       }
 }

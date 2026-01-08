@@ -37,7 +37,7 @@ class JobOrderPackingItem extends Model
     ];
     protected $casts = [
         // 'inspection_company_id' => 'array',
-        'bag_type_id' => 'array',
+        // 'bag_type_id' => 'array',
         'fumigation_company_id' => 'array',
         // 'arrival_locations' => 'array',
         // 'job_order_date' => 'date',
