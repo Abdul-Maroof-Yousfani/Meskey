@@ -100,10 +100,14 @@ class JobOrderRequest extends FormRequest
                 'array',
                 'min:1'
             ],
-            'packing_items.*.bag_type_id' => [
+            'packing_items.*.bag_product_id' => [
                 'required',
-                'exists:bag_types,id'
+                'exists:products,id'
             ],
+            // 'packing_items.*.bag_type_id' => [
+            //     'required',
+            //     'exists:bag_types,id'
+            // ],
             'packing_items.*.bag_condition_id' => [
                 'required',
                 'string',
@@ -306,6 +310,8 @@ class JobOrderRequest extends FormRequest
             'packing_items.required' => 'At least one packing item is required',
             'packing_items.min' => 'At least one packing item is required',
             'packing_items.*.bag_type_id.required' => 'Bag type is required for all packing items',
+            'packing_items.*.bag_product_id.required' => 'Bag product is required for all packing items',
+            'packing_items.*.bag_product_id.exists' => 'Selected bag product does not exist',
             'packing_items.*.bag_type_id.exists' => 'Selected bag type does not exist',
             'packing_items.*.bag_condition_id.required' => 'Bag condition is required for all packing items',
             'packing_items.*.sub_items.*.bag_type_id.required' => 'Bag type is required for master packing item',
