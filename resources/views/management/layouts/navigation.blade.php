@@ -412,7 +412,7 @@
                         </a>
                     </li>
                     @endcanAccess
-                    @canAccess('production-production-voucher-management')
+                    @canAccess('production-voucher')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('production-voucher.index') }}"
                             onclick="loadPageContent('{{ route('production-voucher.index') }}')"
