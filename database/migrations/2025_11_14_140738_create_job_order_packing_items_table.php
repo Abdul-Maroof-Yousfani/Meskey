@@ -14,7 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('job_order_id')->constrained()->onDelete('cascade');
             $table->foreignId('company_location_id')->nullable()->constrained('company_locations');
-            $table->foreignId('bag_type_id')->constrained('bag_types');
+            // $table->foreignId('bag_type_id')->constrained('bag_types');
+            $table->foreignId('bag_product_id')->constrained('products');
             $table->foreignId('bag_condition_id')->constrained('bag_conditions');
             $table->decimal('bag_size', 8, 2);
             $table->integer('no_of_bags');
