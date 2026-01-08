@@ -421,7 +421,7 @@
                         </a>
                     </li>
                     @endcanAccess
-                    @canAccess('plant-breakdown')
+                    @canAccess('production-plant-breakdown')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('plant-breakdown.index') }}"
                             onclick="loadPageContent('{{ route('plant-breakdown.index') }}')" data-toggle="dropdown"><i
