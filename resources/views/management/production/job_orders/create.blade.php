@@ -516,7 +516,7 @@
                     class="form-control form-control-sm select2 sub-bag-size" placeholder="Select Size">
                     <option value="">Select Size</option>
                     @foreach($sizes as $size)
-                        <option value="{{ $size->id }}">{{ $size->name }}</option>
+                        <option value="{{ $size->id }}">{{ $size->size }}</option>
                     @endforeach
                 </select>
             </td>
