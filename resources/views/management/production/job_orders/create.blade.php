@@ -1044,7 +1044,7 @@
         }
     });
 
-    $('input[name="job_order_date"]').off('change.jobOrderCreate').on('change.jobOrderCreate', function () {
+    $('input[name="job_order_date"]').on('change', function () {
         let locationCode = $("#company_location_id option:selected").data('code');
         let selectedDate = $('input[name="job_order_date"]').val();
 
