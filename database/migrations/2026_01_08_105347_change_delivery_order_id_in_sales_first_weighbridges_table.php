@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales_first_weighbridges', function (Blueprint $table) {
-            $table->foreignId('delivery_order_id')->nullable()->constrained("delivery_orders");
+            $table->unsignedBigInteger('delivery_order_id')->nullable();
+            $table->foreign('delivery_order_id')->references('id')->on('delivery_orders');
         });
     }
 
