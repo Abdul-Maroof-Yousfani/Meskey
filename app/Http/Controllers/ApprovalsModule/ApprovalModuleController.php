@@ -18,6 +18,7 @@ class ApprovalModuleController extends Controller
     public function index()
     {
         $modules = ApprovalModule::with('roles.role')->latest()->paginate(10);
+        
         return view('management.master.approval_modules.index', compact('modules'));
     }
 
