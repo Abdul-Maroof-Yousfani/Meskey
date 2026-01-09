@@ -12,7 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales_qc', function (Blueprint $table) {
-            $table->foreignId('delivery_order_id')->nullable()->constrained("delivery_orders");
+            // 1. Add the column (match type exactly)
+            $table->unsignedBigInteger('delivery_order_id')->nullable();
+
+            // 2. Add foreign key constraint
+            $table->foreign('delivery_order_id')
+                ->references('id')
+                ->on('delivery_orders')
+                ->onDelete('set null'); // optional
         });
     }
 

@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('loading_slips', function (Blueprint $table) {
-            $table->foreignId('delivery_order_id')->nullable()->constrained("delivery_orders");
+            $table->unsignedBigInteger('delivery_order_id')->nullable(); // add column first
+
+            $table->foreign('delivery_order_id') // then add foreign key
+                ->references('id')
+                ->on('delivery_orders')
+                ->onDelete('set null'); // optional
         });
     }
 
