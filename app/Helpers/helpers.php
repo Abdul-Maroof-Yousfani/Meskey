@@ -641,11 +641,6 @@ function get_product_by_category($id)
     return $Product;
 }
 
-function get_category_name($id) {
-    $category = Category::where("id", $id)->first();
-    return $category->name;
-}
-
 function get_customer_name($customer_id) {
     $customer = Customer::where("id", $customer_id)->first();
     return $customer?->name ?? "";
