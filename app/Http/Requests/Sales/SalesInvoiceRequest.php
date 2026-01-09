@@ -31,7 +31,7 @@ class SalesInvoiceRequest extends FormRequest
             "reference_number" => ["nullable", "string"],
             "sauda_type" => ["required", "in:pohanch,x-mill"],
             "remarks" => ["nullable", "string"],
-            "dc_no" => ["nullable", "array"],
+            "dc_no" => ["required", "array"],
             "dc_no.*" => ["exists:delivery_challans,id"],
         ];
     }

@@ -75,9 +75,9 @@ class DeliveryOrderController extends Controller
                 'location_id' => $request->location_id,
                 'arrival_location_id' => is_array($request->arrival_id) ? implode(',', $request->arrival_id) : $request->arrival_id,
                 'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
-                'line_desc' => $request->line_desc,
+                // 'line_desc' => $request->line_desc,
                 'delivery_date' => $request->delivery_date,
-                'remarks' => $request->remarks ?? "",
+                'line_desc' => $request->remarks ?? "",
                 'company_id' => $request->company_id,
                 'created_by' => auth()->user()->id,
                 'am_approval_status' => 'pending',
@@ -453,7 +453,7 @@ class DeliveryOrderController extends Controller
                 'arrival_location_id' => is_array($request->arrival_id) ? implode(',', $request->arrival_id) : $request->arrival_id,
                 'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
                 'company_id' => $request->company_id,
-                'remarks' => $request->remarks ?? "",
+                'line_desc' => $request->remarks ?? "",
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1
             ]);
@@ -551,5 +551,12 @@ class DeliveryOrderController extends Controller
         }
 
         return $data;
+    }
+    public function get_balance_against_second_weighbridge(Request $request) {
+        $delivery_order_id = $request->delivery_order_id;
+
+        $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order_id);
+
+        return $balance;
     }
 }

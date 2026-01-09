@@ -91,7 +91,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control" value="{{ $sales_invoice->invoice_date }}">
+                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control" value="{{ $sales_invoice->invoice_date }}" readonly>
                     </div>
                 </div>
             </div>
@@ -261,7 +261,7 @@
 </form>
 
 <script>
-    let salesInvoiceRowIndex = {{ count($sales_invoice->sales_invoice_data) }};
+    salesInvoiceRowIndex = {{ count($sales_invoice->sales_invoice_data) }};
 
     $(document).ready(function() {
         $('.select2').select2();

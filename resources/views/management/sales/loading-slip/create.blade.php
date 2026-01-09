@@ -18,12 +18,12 @@
         </div>
     </div>
 
-    <div class="row" id="ticketDataContainer">
+    <div class="row form-mar" style="margin-left: 4px; margin-right: 4px;" id="ticketDataContainer">
         <!-- Ticket data will be populated here -->
     </div>
 
     <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-6">
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
                 <textarea name="remarks" placeholder="Enter remarks" class="form-control" rows="3"></textarea>
@@ -145,16 +145,25 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="col-xs-4 col-sm-4 col-md-4">
                     <div class="form-group">
                         <label>No. of Bags: <span class="text-danger">*</span></label>
                         <input type="number" name="no_of_bags" id="no_of_bags" class="form-control" min="1" required>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="col-xs-4 col-sm-4 col-md-4">
                     <div class="form-group">
                         <label>Kilogram: <span class="text-danger">*</span></label>
                         <input type="number" name="kilogram" id="kilogram" value="0.00" class="form-control" readonly required step="0.01" />
+                    </div>
+                </div>
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>Labour</label>
+                        <select name='labour' class='form-control select2'>
+                            <option value='paid'>Paid</option>
+                            <option value='not_paid'>Not Paid</option>    
+                        </select>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-4">

@@ -29,6 +29,15 @@
                         {{ $secondWeighbridge->created_at->format('d-m-Y H:i') }}
                     </td>
                     <td>
+                        @php
+                            $dispatchQcId = optional(
+                                optional($secondWeighbridge->loadingProgramItem)->dispatchQc
+                            )->id;
+                        @endphp
+                        <a onclick="openModal(this,'{{ route('sales.get.dispatch-qc.gate-out', $dispatchQcId) }}', 'Gate Out', true, '100%')"
+                            class="success p-1 text-center mr-2 position-relative" title="Gate Out Pass" style="cursor: pointer;">
+                            <i class="ft-file font-medium-3"></i>
+                        </a>
                         <a onclick="openModal(this,'{{ route('sales.second-weighbridge.edit', $secondWeighbridge->id) }}','View Second Weighbridge', true)"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
@@ -40,8 +49,10 @@
     </table>
 
     <!-- Pagination -->
-    <div class="d-flex justify-content-center">
-        {{ $SecondWeighbridges->appends(request()->query())->links() }}
+    <div class="row d-flex" id="paginationLinks">
+        <div class="col-md-12 text-right">
+            {{ $SecondWeighbridges->links() }}
+        </div>
     </div>
 @else
     <div class="text-center py-5">

@@ -34,115 +34,154 @@
     <div class="row form-mar">
         <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
-            <!-- Row 1: Dispatch Date, Do No -->
-
+            <!-- Row 1: DC NO, Date, Contract Types -->
             <div class="row" style="margin-top: 10px">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">DC NO:</label>
                         <input type="text" name="dc_no" value="{{ $delivery_challan->dc_no }}" id="dc_no"
-                            id="text" class="form-control">
+                            class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Date:</label>
-                        <input type="date" name="date" onchange="getNumber()"
+                        <input type="date" readonly name="date" onchange="getNumber()"
                             value="{{ $delivery_challan->dispatch_date }}" id="date" class="form-control">
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <label class="form-label">Contract Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2">
+                    <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
                         <option value="">Select Contract type</option>
                         <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
                         <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
                     </select>
+                    <input type="hidden" name="sauda_type" value="{{ $delivery_challan->sauda_type }}">
                 </div>
             </div>
 
+            <!-- Row 2: Ticket (display only), Customer, DO Number -->
             <div class="row">
-
                 <div class="col-md-4">
-                    <label class="form-label">Customer:</label>
-                    <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
-                        class="form-control select2">
-                        <option value="">Select Customer</option>
-                        @foreach ($customers ?? [] as $customer)
-                            <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="form-label">Ticket:</label>
+                    @php
+                        $firstTicket = $delivery_challan->delivery_challan_data->first();
+                        $ticketModel = $firstTicket ? \App\Models\Sales\LoadingProgramItem::find($firstTicket->ticket_id) : null;
+                        $ticketDisplay = $ticketModel ? ($ticketModel->transaction_number . ' -- ' . $ticketModel->truck_number) : 'N/A';
+                    @endphp
+                    <input type="text" class="form-control" value="{{ $ticketDisplay }}" disabled>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">DO Numbers:</label>
-                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
-                        multiple>
-                        <option value="">Select Delivery Orders</option>
+                    <label class="form-label">Customer:</label>
+                    <select id="customer_id_display" class="form-control select2" disabled>
+                        <option value="">Select Customer</option>
+                        @foreach ($customers ?? [] as $customer)
+                            <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}</option>
+                        @endforeach
+                    </select>
+                    <input type="hidden" name="customer_id" id="customer_id" value="{{ $delivery_challan->customer_id }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">DO Number:</label>
+                    <select name="do_no[]" id="do_no" class="form-control select2" disabled>
+                        <option value="">Select Delivery Order</option>
                         @foreach ($delivery_orders as $delivery_order)
                             <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
                                 {{ $delivery_order->reference_no }}</option>
                         @endforeach
-
                     </select>
                 </div>
 
-                <div class="col-md-4">
+                <input type='hidden' name="delivery_order_id" id="delivery_order_id"  value="{{ $delivery_challan->delivery_order->pluck('id')->toArray()[0] }}"/>
+            </div>
+
+            <!-- Row 3: Reference Number, Add More Tickets -->
+            <div class="row">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="reference_number" id="reference_number"
                             value="{{ $delivery_challan->reference_number }}" class="form-control">
                     </div>
                 </div>
+
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Ticket Labour:</label>
+                        @php
+                            $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                            $ticketLabour = null;
+                            if ($firstTicketData && $firstTicketData->ticket_id) {
+                                $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
+                                $ticketLabour = $loadingSlip?->labour;
+                            }
+                        @endphp
+                        <input type="text" class="form-control" value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
+                    </div>
+                </div>
+                
             </div>
 
+            <!-- Row 4: Locations, Factory, Gala -->
             <div class="row">
                 <div class="col-md-4">
                     <label class="form-label">Locations:</label>
-                    <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
+                    <select name="locations[]" id="locations" class="form-control select2" disabled>
                         <option value="">Select Locations</option>
-                        @foreach (($locations ?? collect()) as $location)
-                            <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id))>
+                        @foreach (get_locations() as $location)
+                            <option value="{{ $location->id }}" @selected($location->id == $delivery_challan->location_id)>
                                 {{ $location->name }}
                             </option>
                         @endforeach
                     </select>
-                    <div id="locations_hidden"></div>
+                    <div id="locations_hidden">
+                    </div>
                 </div>
 
                 <div class="col-md-4">
                     <label class="form-label">Factory:</label>
                     <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
                         <option value="">Select Factory</option>
-                        @foreach (($arrivalLocations) as $location)
-                            <option value="{{ $location->id }}" @selected(($arrivalLocationIds ?? collect())->contains($location->id))>
+                        @foreach (($arrivalLocations ?? collect()) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, explode(",", $delivery_challan->arrival_id)))>
                                 {{ $location->name }}
                             </option>
                         @endforeach
                     </select>
-                    <div id="arrivals_hidden"></div>
+                    <div id="arrivals_hidden">
+                        <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" value="{{ $delivery_challan->arrival_id }}" />
+                    </div>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Section:</label>
+                    <label class="form-label">Gala:</label>
                     <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
-                        <option value="">Select Section</option>
+                        <option value="">Select Gala</option>
                         @foreach (($sections ?? collect()) as $section)
-                            <option value="{{ $section->id }}" @selected(($sectionIds ?? collect())->contains($section->id))>
+                            <option value="{{ $section->id }}" @selected(in_array($section->id, explode(",", $delivery_challan->section_id)))>
                                 {{ $section->name }}
                             </option>
                         @endforeach
                     </select>
-                    <div id="storages_hidden"></div>
+                    <div id="storages_hidden">
+                        <input type="hidden" name="storage_location_csv" id="storage_location_csv" value="{{ $delivery_challan->section_id }}" />
+                    </div>
                 </div>
             </div>
 
+            <!-- Row 5: Ticket Labour, Labour, Transporter -->
             <div class="row">
+                
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
-                        <select name="labour" id="labour" onchange="" class="form-control select2">
+                        <select name="labour" id="labour" class="form-control select2">
                             <option value="">Select Labours</option>
                             <option value="1" @selected($delivery_challan->labour == 1)>Labour 1</option>
                             <option value="2" @selected($delivery_challan->labour == 2)>Labour 2</option>
@@ -153,18 +192,17 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
-                        <select name="transporter" id="transporter" onchange="" class="form-control select2">
+                        <select name="transporter" id="transporter" class="form-control select2">
                             <option value="">Select Transporter</option>
                             <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
                             <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">In-house Weighbridge:</label>
-                        <select name="weighbridge" id="weighbridge" onchange="" class="form-control select2">
+                        <select name="weighbridge" id="weighbridge" class="form-control select2">
                             <option value="">Select Weighbridge</option>
                             <option value="1" @selected($delivery_challan->{'inhouse-weighbridge'} == 1)>Weighbridge 1</option>
                             <option value="2" @selected($delivery_challan->{"inhouse-weighbridge"} == 2)>Weighbridge 2</option>
@@ -173,19 +211,23 @@
                 </div>
             </div>
 
+            <!-- Row 5b: Weighbridge -->
+          
+
+            <!-- Row 6: Labour Amount, Transporter Amount, Weighbridge Amount -->
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour Amount:</label>
                         <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
-                            onchange="" id="labour_amount" class="form-control">
+                            id="labour_amount" class="form-control">
                     </div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount" onchange=""
+                        <input type="number" name="transporter_amount"
                             value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
                             class="form-control">
                     </div>
@@ -195,43 +237,30 @@
                     <div class="form-group">
                         <label class="form-label">Weighbridge Amount:</label>
                         <input type="number" name="weighbridge_amount"
-                            value="{{ $delivery_challan->{"weighbridge-amount"} }}" onchange=""
+                            value="{{ $delivery_challan->{"weighbridge-amount"} }}"
                             id="weighbridge_amount" class="form-control">
                     </div>
                 </div>
             </div>
 
+            <!-- Row 7: Remarks -->
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-12">
                     <label class="form-label">Remarks:</label>
                     <textarea name="remarks" id="remarks" class="form-control">{{ $delivery_challan->remarks }}</textarea>
                 </div>
             </div>
-
         </div>
-
-
-    </div>
-
-
-
-    <!-- Row 3: Customer, Contract Terms, Locations -->
-
-
-
-
-
-
     </div>
 
     <div class="row form-mar">
-
         <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div>
+
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
@@ -251,114 +280,107 @@
                             <th style="display: none">Packing</th>
                             <th>Action</th>
                         </tr>
-                    </thead>    
+                    </thead>
                     <tbody id="dcTableBody">
                         @foreach ($delivery_challan->delivery_challan_data as $index => $data)
-                            @php
-                                $doData = $delivery_challan->delivery_order->flatMap->delivery_order_data->firstWhere('id', $data->do_data_id);
-                                $brandId = $doData->brand_id ?? $data->brand_id;
-                            @endphp
-                            @php
-                                $balance = $data->no_of_bags;
-                            @endphp
-                            <tr id="row_{{ $index }}">
-                                <td>
+                        @php
+                            $index = "TICKET-" . $data->ticket_id;
+                        @endphp
+                        <tr id="row_{{ $index }}">
+                            <td>
+                                <input type="text" name="" id="item_id_read_only{{ $index }}"
+                                    value="{{ getItem($data->item_id)?->name }}" onkeyup="calc(this)"
+                                    class="form-control bag_type" step="0.01" min="0" readonly>
 
-                                    <input type="text" name="" id="item_id_read_only{{ $index }}"
-                                        value="{{ getItem($data->item_id)?->name }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0" readonly>
+                                <input type="hidden" name="item_id[]" id="item_id_{{ $index }}"
+                                    value="{{ $data->item_id }}" onkeyup="calc(this)"
+                                    class="form-control item_id" step="0.01" min="0">
 
-                                    <input type="hidden" name="item_id[]" id="item_id_{{ $index }}"
-                                        value="{{ $data->item_id }}" onkeyup="calc(this)"
-                                        class="form-control item_id" step="0.01" min="0">
+                                <input type="hidden" name="ticket_id[]" id="ticket_id_{{ $index }}" value="{{ $data->ticket_id }}"
+                                    onkeyup="calc(this)" class="form-control ticket_id" step="0.01" min="0">
 
-                                    <input type="hidden" name="do_data_id[]" id="do_data_id_{{ $index }}"
-                                        value="{{ $data->do_data_id }}" onkeyup="calc(this)"
-                                        class="form-control do_data_id" step="0.01" min="0">
-                                </td>
-                                
-                                <td>
+                                <input type="hidden" name="do_data_id[]" id="do_data_id_{{ $index }}"
+                                    value="{{ $data->do_data_id }}" onkeyup="calc(this)"
+                                    class="form-control do_data_id" step="0.01" min="0">
+                            </td>
+                            
+                            <td>
+                                <input type="text" name="" id="bag_type_{{ $index }}"
+                                    value="{{ $data->bag_type ? bag_type_name($data->bag_type) : '' }}" onkeyup="calc(this)"
+                                    class="form-control bag_type" step="0.01" min="0" readonly>
 
-                                    <input type="text" name="" id="bag_type_{{ $index }}"
-                                        value="{{ $data->bag_type ? bag_type_name($data->bag_type) : '' }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0" readonly>
+                                <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}"
+                                    value="{{ $data->bag_type }}" onkeyup="calc(this)"
+                                    class="form-control bag_type" step="0.01" min="0">
 
-                                    <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}"
-                                        value="{{ $data->bag_type }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0">
+                                <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
+                                    value="{{ $data->id }}" onkeyup="calc(this)"
+                                    class="form-control so_data_id" step="0.01" min="0">
+                            </td>
+                          
+                            <td>
+                                <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
+                                    value="{{ $data->bag_size }}"
+                                    class="form-control bag_size" step="0.01" min="0" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
+                                    value="{{ $data->no_of_bags }}"
+                                    class="form-control no_of_bags" step="0.01" min="0" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="qty[]" id="qty_{{ $index }}"
+                                    value="{{ $data->qty }}"
+                                    class="form-control qty" step="0.01" min="0" oninput="calc(this)" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="rate[]" id="rate_{{ $index }}"
+                                    value="{{ $data->rate }}" class="form-control rate" step="0.01"
+                                    min="0" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="amount[]" id="amount_{{ $index }}"
+                                    value="{{ $data->rate * ($data->qty ?? 0) }}"
+                                    class="form-control amount" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="" id="brand_id_read_only{{ $index }}"
+                                    value="{{ getBrandById($data->brand_id)?->name }}" onkeyup="calc(this)"
+                                    class="form-control brand_id" step="0.01" min="0" readonly>
 
-                                    <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
-                                        value="{{ $data->id }}" onkeyup="calc(this)"
-                                        class="form-control so_data_id" step="0.01" min="0">
-                                </td>
-                              
-                                <td>
-                                    <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
-                                        value="{{ $data->bag_size }}"
-                                        class="form-control bag_size" step="0.01" min="0" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        value="{{ $balance }}"
-                                        class="form-control no_of_bags" step="0.01" min="0" readonly>
-                                    
-                                    <span style="font-size: 14px;;">Used Quantity:
-                                        {{ delivery_challan_bags_used($data->do_data_id) }}</span>
-                                    <br />
-                                    <span style="font-size: 14px;">Balance:
-                                        {{ delivery_challan_balance($data->do_data_id) }}</span>
+                                <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}"
+                                    value="{{ $data->brand_id }}" onkeyup="calc(this)"
+                                    class="form-control item_id" step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input type="text" name="truck_no[]" id="truck_no_{{ $index }}"
+                                    class="form-control truck_no" value="{{ $data->truck_no }}" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="bilty_no[]" id="bilty_no_{{ $index }}"
+                                    value="{{ $data->bilty_no }}" class="form-control bilty_no">
+                            </td>
+                            <td>
+                                <input type="text" name="desc[]" id="desc_{{ $index }}"
+                                    class="form-control" value="{{ $data->description }}">
+                            </td>
 
-                                </td>
-                                <td>
-                                    <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty }}"
-                                        onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
-                                        data-balance="{{ delivery_challan_balance($data->do_data_id) + $data->no_of_bags }}"
-                                        class="form-control qty" step="0.01" min="0" oninput="calc(this)">
-                                </td>
-                                <td>
-                                    <input type="text" name="rate[]" id="rate_{{ $index }}"
-                                        value="{{ $data->rate }}" class="form-control rate" step="0.01"
-                                        min="0" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * ($data->qty ?? 0) }}"
-                                        class="form-control amount" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" name="" id="brand_id_read_only{{ $index }}"
-                                        value="{{ getBrandById($brandId)?->name }}" onkeyup="calc(this)"
-                                        class="form-control brand_id" step="0.01" min="0" readonly>
-
-                                    <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}"
-                                        value="{{ $brandId }}" onkeyup="calc(this)"
-                                        class="form-control item_id" step="0.01" min="0">
-                                </td>
-                                <td>
-                                    <input type="text" name="truck_no[]" id="truck_no_{{ $index }}"
-                                        class="form-control truck_no" value="{{ $data->truck_no }}">
-                                </td>
-                                <td>
-                                    <input type="text" name="bilty_no[]" id="bilty_no_{{ $index }}"
-                                        value="{{ $data->bilty_no }}" class="form-control bilty_no">
-                                </td>
-                                <td>
-                                    <input type="text" name="desc[]" id="desc_{{ $index }}"
-                                        class="form-control" value="{{ $data->description }}">
-                                </td>
-
-                                <td>
-                                    <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
-                                        style="width:60px;">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-
+                            <td>
+                                @php
+                                    $ticket = \App\Models\Sales\LoadingProgramItem::find($data->ticket_id);
+                                    $ticketText = $ticket ? ($ticket->transaction_number . ' -- ' . $ticket->truck_number) : '';
+                                @endphp
+                                <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                    data-ticket-id="{{ $data->ticket_id }}"
+                                    data-ticket-text="{{ $ticketText }}"
+                                    onclick="removeTicketRow(this)"
+                                    style="width:60px;">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
                         @endforeach
                     </tbody>
-                            
                 </table>
             </div>
         </div>
@@ -377,51 +399,132 @@
 
 <script>
     salesInquiryRowIndex = 1;
-
+    
+    // Track which tickets have been added
+    addedTicketIds = @json($delivery_challan->delivery_challan_data->pluck('ticket_id')->filter()->unique()->values());
+    
     $(document).ready(function() {
         $('.select2').select2();
-        // hydrateLocationsFromDos(initialSelectedDos);
+        
+        // Load additional tickets on page load
+        const selectedDos = $("#do_no").val();
+        if (selectedDos && selectedDos.length > 0) {
+            loadAdditionalTickets(Array.isArray(selectedDos) ? selectedDos : [selectedDos]);
+        }
     });
 
-    function check_balance(el, target) {
-      const balance = $(el).data("balance");
-      const value = $("#" + target).val();
-      
-      if(value > balance) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Limit Exceeded',
-            text: 'Cannot proceed more than ' + balance,
+    // Load additional tickets for the same delivery order
+    function loadAdditionalTickets(deliveryOrderIds) {
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-tickets') }}",
+            method: "GET",
+            data: {
+                delivery_order_ids: Array.isArray(deliveryOrderIds) ? deliveryOrderIds : [deliveryOrderIds],
+                delivery_challan_id: {{ $delivery_challan->id }}
+            },
+            success: function(response) {
+                const select = $("#add_ticket_id");
+                select.empty().append('<option value="">Select Ticket to Add</option>');
+                
+                if (response.tickets && response.tickets.length > 0) {
+                    let hasOptions = false;
+                    response.tickets.forEach(function(ticket) {
+                        // Exclude already added tickets
+                        if (!addedTicketIds.includes(ticket.id)) {
+                            select.append(`<option value="${ticket.id}">${ticket.text}</option>`);
+                            hasOptions = true;
+                        }
+                    });
+                    
+                    if (hasOptions) {
+                        $("#addTicketContainer").show();
+                    } else {
+                        $("#addTicketContainer").hide();
+                    }
+                } else {
+                    $("#addTicketContainer").hide();
+                }
+                
+                select.select2();
+            },
+            error: function(error) {
+                console.error('Error loading additional tickets:', error);
+            }
         });
-            
-        $("#" + target).addClass("is-invalid");
-      } else {
-        $("#" + target).removeClass("is-invalid");
-      }
-  }
+    }
+    
+    // Handle adding more tickets
+    $("#add_ticket_id").on("change", function() {
+        const ticketId = $(this).val();
+        
+        if (!ticketId) return;
+        
+        // Check if already added
+        if (addedTicketIds.includes(parseInt(ticketId))) {
+            Swal.fire("Warning", "This ticket has already been added", "warning");
+            $(this).val('').trigger('change');
+            return;
+        }
+        
+        // Load the ticket item row and append to table
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-ticket-items') }}",
+            method: "GET",
+            data: { ticket_id: ticketId },
+            dataType: "html",
+            success: function(res) {
+                $("#dcTableBody").append(res);
+                $(".select2").select2();
+                
+                // Track this ticket as added
+                addedTicketIds.push(parseInt(ticketId));
+                
+                // Remove this ticket from the dropdown
+                $("#add_ticket_id option[value='" + ticketId + "']").remove();
+                $("#add_ticket_id").val('').trigger('change');
+                
+                // Hide the dropdown if no more tickets available
+                if ($("#add_ticket_id option").length <= 1) {
+                    $("#addTicketContainer").hide();
+                }
+            },
+            error: function(error) {
+                console.error('Error loading ticket items:', error);
+                Swal.fire("Error", "Failed to load ticket data", "error");
+            }
+        });
+    });
+    
+    // Remove ticket row from table
+    function removeTicketRow(btn) {
+        const ticketId = $(btn).data('ticket-id');
+        const ticketText = $(btn).data('ticket-text');
+        
+        // Check if this is the last row
+        if ($("#dcTableBody tr").length <= 1) {
+            Swal.fire("Warning", "Cannot remove the last ticket. At least one ticket is required.", "warning");
+            return;
+        }
+        
+        // Remove from table
+        $(btn).closest('tr').remove();
+        
+        // Remove from tracked IDs
+        addedTicketIds = addedTicketIds.filter(id => id !== parseInt(ticketId));
+        
+        // Add back to dropdown
+        const select = $("#add_ticket_id");
+        select.append(`<option value="${ticketId}">${ticketText}</option>`);
+        select.select2();
+        
+        // Show the dropdown if it was hidden
+        $("#addTicketContainer").show();
+    }
 
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
-    @php
-        $initialDoMeta = [];
-        foreach ($delivery_orders as $delivery_order) {
-            $initialDoMeta[$delivery_order->id] = [
-                "location_id" => $delivery_order->location_id,
-                "arrival_location_id" => $delivery_order->arrival_id,
-                "arrival_id" => $delivery_order->arrival_id,
-                "sub_arrival_location_id" => $delivery_order->subarrival_id,
-                "subarrival_id" => $delivery_order->subarrival_id,
-                "location_name" => get_location_name_by_id($delivery_order->location_id),
-                "arrival_name" => get_arrival_name_by_id($delivery_order->arrival_id),
-                "section_name" => get_storage_name_by_id($delivery_order->subarrival_id),
-            ];
-        }
-    @endphp
-
-    const initialDoMeta = @json($initialDoMeta);
-    const initialSelectedDos = @json($delivery_challan->delivery_order->pluck('id'));
-    doMeta = initialDoMeta || {};
+    doMeta = {};
 
     function setHidden(name, values) {
         const container = $(`#${name}_hidden`);
@@ -430,317 +533,6 @@
             container.append(`<input type="hidden" name="${name}[]" value="${v}">`);
         });
     }
-
-    function hydrateLocationsFromDos(selectedIds) {
-        const locSet = new Set();
-        const arrSet = new Set();
-        const secSet = new Set();
-        const locOptions = [];
-        const arrOptions = [];
-        const secOptions = [];
-
-        (selectedIds || []).forEach(id => {
-            const meta = doMeta[id];
-            if (!meta) return;
-
-            const locationId = meta.location_id;
-            const arrivalId = meta.arrival_location_id ?? meta.arrival_id;
-            const sectionId = meta.sub_arrival_location_id ?? meta.subarrival_id;
-
-            if (locationId && !locSet.has(locationId)) {
-                locSet.add(locationId);
-                locOptions.push({ id: locationId, text: meta.location_name || locationId });
-            }
-            if (arrivalId && !arrSet.has(arrivalId)) {
-                arrSet.add(arrivalId);
-                arrOptions.push({ id: arrivalId, text: meta.arrival_name || arrivalId });
-            }
-            if (sectionId && !secSet.has(sectionId)) {
-                secSet.add(sectionId);
-                secOptions.push({ id: sectionId, text: meta.section_name || sectionId });
-            }
-        });
-
-        const locSelect = $("#locations");
-        locSelect.empty().append(`<option value=''>Select Locations</option>`);
-        locOptions.forEach(o => locSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
-        locSelect.prop("disabled", true).select2();
-        setHidden("locations", Array.from(locSet));
-
-        const arrSelect = $("#arrivals");
-        arrSelect.empty().append(`<option value=''>Select Factory</option>`);
-        arrOptions.forEach(o => arrSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
-        arrSelect.prop("disabled", true).select2();
-        setHidden("arrival_locations", Array.from(arrSet));
-
-        const secSelect = $("#storages");
-        secSelect.empty().append(`<option value=''>Select Section</option>`);
-        secOptions.forEach(o => secSelect.append(`<option value="${o.id}" selected>${o.text}</option>`));
-        secSelect.prop("disabled", true).select2();
-        setHidden("storage_id", Array.from(secSet));
-    }
-
-    function check_so_type() {
-        const type = $("#sale_order").find("option:selected").data("type");
-        if (type == 8) {
-            $(".advanced").css("display", "block");
-        } else {
-            $(".advanced").css("display", "none");
-        }
-    }
-
-    function selectLocation(el) {
-        const company = $(el).val();
-
-        $("#arrivals").prop("disabled", true).empty().append(`<option value=''>Select Arrival Locations</option>`);
-        $("#storages").prop("disabled", true).empty().append(`<option value=''>Select Section</option>`);
-
-        if (!company) {
-            return;
-        }
-
-        $.ajax({
-            url: "{{ route('sales.get.arrival-locations') }}",
-            method: "GET",
-            data: {
-                location_id: company
-            },
-            dataType: "json",
-            success: function(res) {
-                $("#arrivals").empty();
-                $("#arrivals").append(`<option value=''>Select Arrival Locations</option>`)
-
-                res.forEach(delivery_order => {
-                    $("#arrivals").append(`
-                        <option value="${delivery_order.id}" >
-                            ${delivery_order.text}
-                        </option>
-                    `);
-                });
-
-                $("#arrivals").prop("disabled", false).select2();
-            },
-            error: function(error) {
-
-            }
-        });
-    }
-
-    function get_items(el) {
-        // get.delivery-challan.get-items
-        const delivery_orders = $(el).val();
-
-        hydrateLocationsFromDos(delivery_orders || []);
-
-        $.ajax({
-            url: "{{ route('sales.get.delivery-challan.get-items') }}",
-            method: "GET",
-            data: {
-                delivery_order_ids: $(el).val(),
-            },
-            dataType: "html",
-            success: function(res) {
-                $("#dcTableBody").empty();
-                $("#dcTableBody").html(res);
-                $(".select2").select2();
-            },
-            error: function(error) {
-
-            }
-        });
-    }
-
-    function get_delivery_orders() {
-
-        const customer_id = $("#customer_id").val();
-
-        if (!customer_id) {
-            $("#do_no").empty().append(`<option value=''>Select Delivery Order</option>`);
-            return;
-        }
-
-        $.ajax({
-            url: "{{ route('sales.get.delivery-challan.get-do') }}",
-            method: "GET",
-            data: {
-                customer_id: customer_id
-            },
-            dataType: "json",
-            success: function(res) {
-                $("#do_no").empty();
-                $("#do_no").append(`<option value=''>Select Delivery Order</option>`)
-
-                doMeta = {};
-
-                res.forEach(delivery_order => {
-                    $("#do_no").append(`
-                    <option value="${delivery_order.id}" >
-                        ${delivery_order.text}
-                    </option>
-                `);
-
-                    doMeta[delivery_order.id] = {
-                        location_id: delivery_order.location_id || null,
-                        arrival_location_id: delivery_order.arrival_location_id ?? delivery_order.arrival_id,
-                        arrival_id: delivery_order.arrival_id || delivery_order.arrival_location_id,
-                        sub_arrival_location_id: delivery_order.sub_arrival_location_id ?? delivery_order.subarrival_id,
-                        subarrival_id: delivery_order.subarrival_id ?? delivery_order.sub_arrival_location_id,
-                        location_name: delivery_order.location_name || "",
-                        arrival_name: delivery_order.arrival_name || "",
-                        section_name: delivery_order.section_name || "",
-                    };
-                });
-
-                $("#do_no").select2();
-                hydrateLocationsFromDos($("#do_no").val() || []);
-            },
-            error: function(error) {
-
-            }
-        });
-    }
-
-    function selectStorage(el) {
-        const arrival = $(el).val();
-        console.log(arrival);
-        if (!arrival) {
-            $("#storages").prop("disabled", true);
-            $("#storages").empty();
-            return;
-        } else {
-            // get.arrival-locations; send request to this url
-            $("#storages").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.storage-locations') }}",
-                method: "GET",
-                data: {
-                    arrival_id: arrival
-                },
-                dataType: "json",
-                success: function(res) {
-                    console.log(res);
-                    $("#storages").empty();
-                    $("#storages").append(`<option value=''>Select Storage</option>`)
-                    res.forEach(loc => {
-                        $("#storages").append(`
-                        <option value="${loc.id}">
-                            ${loc.text}
-                        </option>
-                    `);
-                    });
-
-                    $("#storages").select2();
-                },
-                error: function(error) {
-
-                }
-            });
-        }
-    }
-
-    function add_advance_amount() {
-        let selectedAmounts = $("#receipt_vouchers option:selected")
-            .map(function() {
-                return $(this).data("amount");
-            }).get();
-
-
-        sum = 0;
-        selectedAmounts.forEach(selectedAmount => {
-            sum += parseFloat(selectedAmount);
-        });
-
-        if (sum > 0) {
-            $("#advance_amount").val(sum.toFixed(2));
-        } else {
-            $("#advance_amount").val("");
-        }
-
-    }
-
-    function change_withhold_amount() {
-        remaining_amount = parseFloat($("#advance_amount").val() ?? 0) - parseFloat($("#withhold_amount").val() ?? 0);
-        rate = $("#rate_0").val();
-        $("#qty_0").val((remaining_amount / rate).toFixed(2));
-
-        $("withhold_for_rv").val("").trigger("change");
-        $('#withhold_for_rv').select2({
-            templateResult: function(data) {
-
-                if (!data.id) return data.text;
-
-                let amount = $(data.element).data('amount');
-
-
-                if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
-                    return null; // Hides this option
-                }
-
-                let $item = $(`
-                    <span>
-                        ${data.text}
-                        <strong style="color: green; margin-left: 6px;">(${amount})</strong>
-                    </span>
-                `);
-
-                return $item;
-            }
-        });
-
-    }
-
-    function addRow() {
-        let index = salesInquiryRowIndex++;
-        let row = `
-        <tr id="row_${index}">
-            <td>
-                <select name="item_id[]" id="item_id_${index}" class="form-control select2">
-                    <option value="">Select Item</option>
-                    @foreach ($items ?? [] as $item)
-                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
-            </td>
-            <td>
-                <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
-            </td>
-            <td>
-                <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
-            </td>
-            <td>
-                <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `;
-        $('#salesInquiryBody').append(row);
-        $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
-    }
-
-    function removeRow(index) {
-        $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
-    }
-
-    // function calc(el) {
-    //     const element = $(el).closest("tr");
-
-    //     const rate = parseFloat($(element).find(".rate").val()) || 0;
-    //     const qty = parseFloat($(element).find(".qty").val()) || 0;
-
-    //     const amount = $(element).find(".amount");
-
-    //     amount.val(rate * qty);
-    // }
-
 
     function calcAmount(el) {
         const element = $(el).closest("tr");
@@ -754,7 +546,6 @@
         }
         const result = parseFloat(qty.val()) * parseFloat(rate.val());
         amount.val(result);
-
     }
 
     function calc(el) {
@@ -778,61 +569,6 @@
         calcAmount(el);
     }
 
-    function get_sale_orders() {
-        const customer_id = $("#customer_id").val();
-        // get-sale-inquiries-against-customer
-
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getSoAgainstCustomer') }}",
-            method: "GET",
-            data: {
-                customer_id: customer_id
-            },
-            dataType: "json",
-            success: function(res) {
-                $("#sale_order").empty();
-
-                res.forEach(item => {
-                    $("#sale_order").append(`
-                        <option value="${item.id}" 
-                                data-type="${item.type}">
-                            ${item.text}
-                        </option>
-                    `);
-                });
-
-                $("#sale_order").select2();
-            },
-            error: function(error) {
-
-            }
-        });
-
-        // get-sale-inquiry-data
-    }
-
-    function get_inquiry_data() {
-        const inquiry_id = $("#inquiry_id").val();
-
-        $.ajax({
-            url: "{{ route('sales.get-sale-inquiry-data') }}",
-            method: "GET",
-            data: {
-                inquiry_id: inquiry_id
-            },
-            dataType: "html",
-            success: function(res) {
-                console.log("success");
-                $("#alesInquiryBody").empty();
-                $("#salesInquiryBody").html(res);
-            },
-            error: function(error) {
-                console.log(error);
-            }
-        });
-
-    }
-
     function getNumber() {
         $.ajax({
             url: "{{ route('sales.get.delivery-challan.getNumber') }}",
@@ -845,171 +581,11 @@
                 $("#dc_no").val(res.dc_no)
             },
             error: function(error) {
-                // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
         });
     }
 
-
-    function calculate_percentage(el) {
-        const percentage = parseFloat($(el).val()) || 0;
-        const unused_amount = $("#unused_amount").val();
-        const err_message = $(".advance-amount-err-message");
-
-        if (!percentage) {
-            $("#advance_amount").val("");
-            $("#advance_amount").prop("disabled", false);
-            return;
-        }
-        const so_amount = parseFloat($("#so_amount").val()) || 0;
-
-
-        const result = (so_amount * percentage) / 100;
-
-        if (result > unused_amount) {
-            $(".submitbutton").prop("disabled", true);
-            $("#advance_amount").addClass("is-invalid");
-            err_message.css("display", "block");
-        } else {
-            $(".submitbutton").prop("disabled", false);
-            $("#advance_amount").removeClass("is-invalid");
-            err_message.css("display", "none");
-        }
-
-        $("#advance_amount").prop("disabled", true);
-        $("#advance_amount").val(result);
-
-    }
-
-    function manualChecking() {
-        const advance_amount = $("#advance_amount").val();
-        const unused_amount = $("#unused_amount").val();
-        const err_message = $(".advance-amount-err-message");
-
-        if (parseFloat(advance_amount) > parseFloat(unused_amount)) {
-            $(".submitbutton").prop("disabled", true);
-            $("#advance_amount").addClass("is-invalid");
-            err_message.css("display", "block");
-        } else {
-            $(".submitbutton").prop("disabled", false);
-            $("#advance_amount").removeClass("is-invalid");
-            err_message.css("display", "none");
-        }
-    }
-
-
-    function get_so_detail() {
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.details') }}",
-            method: "GET",
-            data: {
-                so_id: $("#sale_order").val(),
-            },
-            dataType: "json",
-            success: function(res) {
-                // $("#amount_received").val(res.amount_received)
-                // $("#so_amount").val(res.so_amount)
-                // $("#unused_amount").val(res.unused_amount)
-
-                // $("#sauda_type").val(res.sauda_type)
-                // $("#sauda_type").trigger("change");
-
-                // $("#payment_term_id").val(res.payment_term_id);
-                // $("#payment_term_id").trigger("change");
-
-                so_amount = res.so_amount;
-
-                // $("#locations").val(res.locations).trigger("change");
-            },
-            error: function(error) {
-                // Handle errors here
-                $('.loader-container').hide();
-                console.error("Error:", error);
-            }
-        });
-    }
-
-    // get.delivery-order.getRvAgainstSo
-
-    function get_receipt_vouchers() {
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getRvAgainstSo') }}",
-            method: "GET",
-            data: {
-                customer_id: $("#customer_id").val(),
-            },
-            dataType: "json",
-            success: function(res) {
-                // withhold_for_rv
-
-                let select = $("#receipt_vouchers");
-                select.empty();
-                select.append(
-                    `<option value='' data-amount="0">Select Receipt Voucher</option>`
-                );
-
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
-
-                select.select2();
-
-
-                select = $("#withhold_for_rv");
-                select.empty();
-
-                select.append(
-                    `<option value='' data-amount="0">Select Receipt Voucher</option>`
-                );
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
-
-                select.select2();
-
-
-            },
-            error: function(error) {
-                // Handle errors here
-                $('.loader-container').hide();
-                console.error("Error:", error);
-            }
-        });
-    }
-
-    function get_so_items() {
-
-        $('#soTableBody').empty();
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getSoItems') }}",
-            method: "GET",
-            data: {
-                so_id: $("#sale_order").val(),
-            },
-            dataType: "html",
-            success: function(res) {
-                $('#soTableBody').empty();
-
-                $('#soTableBody').html(res);
-
-            },
-            error: function(error) {
-                // Handle errors here
-                $('.loader-container').hide();
-                console.error("Error:", error);
-            }
-        });
-    }
+    $(".select2").select2();
 </script>

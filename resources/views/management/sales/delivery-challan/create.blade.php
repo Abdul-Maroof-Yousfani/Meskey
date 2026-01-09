@@ -46,7 +46,15 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Date:</label>
-                        <input type="date" name="date" onchange="getNumber()" id="date" class="form-control">
+                        <input 
+                            type="date" 
+                            name="date" 
+                            onchange="getNumber()" 
+                            id="date" 
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            readonly
+                        >
                     </div>
                 </div>
 
@@ -72,31 +80,50 @@
             </div>
 
             <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Select Ticket: <span class="text-danger">*</span></label>
+                    <select name="initial_ticket_id" id="initial_ticket_id" onchange="onInitialTicketSelect(this)"
+                        class="form-control select2">
+                        <option value="">Select Ticket</option>
+                    </select>
+                </div>
+                
 
                 <div class="col-md-4">
                     <label class="form-label">Customer:</label>
-                    <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
-                        class="form-control select2">
+                    <select id="customer_id_display" 
+                        class="form-control select2" disabled>
                         <option value="">Select Customer</option>
                         @foreach ($customers ?? [] as $customer)
                             <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                         @endforeach
                     </select>
+                    <input type="hidden" name="customer_id" id="customer_id">
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">DO Numbers:</label>
-                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
-                        multiple>
-                        <option value="">Select Delivery Orders</option>
-
+                    <label class="form-label">DO Number:</label>
+                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2" disabled>
+                        <option value="">Select Delivery Order</option>
                     </select>
                 </div>
 
-                <div class="col-md-4">
+                <input type='hidden' name="delivery_order_id" id="delivery_order_id" />
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
-                        <input type="text" name="reference_number" id="reference_number" class="form-control">
+                        <input type="text" name="reference_number" id="reference_number" class="form-control" disabled>
+                    </div>
+                </div>
+                
+          
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Ticket Labour:</label>
+                        <input type="text" id="ticket_labour" class="form-control" readonly placeholder="Select a ticket first">
                     </div>
                 </div>
             </div>
@@ -107,7 +134,8 @@
                     <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
                         <option value="">Select Locations</option>
                     </select>
-                    <div id="locations_hidden"></div>
+                    <div id="locations_hidden">
+                    </div>
                 </div>
 
                 <div class="col-md-4">
@@ -115,19 +143,27 @@
                     <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
                         <option value="">Select Factory</option>
                     </select>
-                    <div id="arrivals_hidden"></div>
+                    <div id="arrivals_hidden">
+                        <div id="storages_hidden">
+                            <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" />
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Section:</label>
+                    <label class="form-label">Gala:</label>
                     <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
-                        <option value="">Select Section</option>
+                        <option value="">Select Gala</option>
                     </select>
-                    <div id="storages_hidden"></div>
+                    <div id="storages_hidden">
+                        <input type="hidden" name="storage_location_csv" id="storage_location_csv" />
+                    </div>
                 </div>
             </div>
 
             <div class="row">
+             
+
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
@@ -139,7 +175,6 @@
                     </div>
                 </div>
 
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
@@ -150,7 +185,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">In-house Weighbridge:</label>
@@ -162,6 +196,8 @@
                     </div>
                 </div>
             </div>
+
+           
 
             <div class="row">
                 
@@ -228,7 +264,7 @@
             <div class="row">
                 
                 
-                <div class="col-md-4">
+                <div class="col-md-12">
                     <label class="form-label">Remarks:</label>
                     <textarea name="remarks" id="remarks" class="form-control"></textarea>
                 </div>
@@ -302,13 +338,296 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+        
+        // Load tickets with accepted Dispatch QC on page load
+        loadTicketsWithDispatchQc();
+        getNumber();
     });
 
+    // Load tickets with accepted Dispatch QC
+    function loadTicketsWithDispatchQc() {
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-tickets-with-dispatch-qc') }}",
+            method: "GET",
+            dataType: "json",
+            success: function(response) {
+                const select = $("#initial_ticket_id");
+                select.empty().append('<option value="">Select Ticket</option>');
+                
+                if (response.tickets && response.tickets.length > 0) {
+                    response.tickets.forEach(function(ticket) {
+                        select.append(`<option value="${ticket.id}">${ticket.text}</option>`);
+                    });
+                }
+                
+                select.select2();
+            },
+            error: function(error) {
+                console.error('Error loading tickets:', error);
+            }
+        });
+    }
+
+    // Handle initial ticket selection - auto-fill form fields
+    function onInitialTicketSelect(el) {
+        const ticketId = $(el).val();
+        
+        if (!ticketId) {
+            // Clear all fields
+            resetFormFields();
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-ticket-data') }}",
+            method: "GET",
+            data: { ticket_id: ticketId },
+            dataType: "json",
+            beforeSend: function() {
+                Swal.fire({
+                    title: "Loading...",
+                    text: "Fetching ticket data",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+            success: function(response) {
+                Swal.close();
+                
+                if (response.success) {
+                    // Set Ticket Labour (readonly)
+                    if (response.loading_slip_labour) {
+                        const labourDisplay = response.loading_slip_labour === 'paid' ? 'Paid' : 'Not Paid';
+                        $("#ticket_labour").val(labourDisplay);
+                    } else {
+                        $("#ticket_labour").val('N/A');
+                    }
+
+                    // Set Contract Type (readonly)
+                    $("#sauda_type").val(response.delivery_order.sauda_type).trigger('change');
+                    $("#delivery_order_id").val(response.delivery_order.id);
+                    $("#sauda_type").prop('disabled', true);
+                    // Add hidden field for sauda_type so it gets submitted
+                    if (!$("#sauda_type_hidden").length) {
+                        $("#sauda_type").after('<input type="hidden" name="sauda_type" id="sauda_type_hidden">');
+                    }
+                    $("#sauda_type_hidden").val(response.delivery_order.sauda_type);
+
+                    // Set Customer (readonly)
+                    $("#customer_id_display").val(response.customer.id).trigger('change');
+                    $("#customer_id").val(response.customer.id);
+
+                    // Set DO Number (readonly)
+                    const doSelect = $("#do_no");
+                    doSelect.empty().append('<option value="">Select Delivery Order</option>');
+                    doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
+                    doSelect.trigger('change');
+
+                    // Enable Reference Number field (don't auto-populate, leave it editable)
+                    $("#reference_number").prop('disabled', false);
+
+                    // Set Locations (readonly)
+                    const locSelect = $("#locations");
+                    locSelect.empty();
+                    response.locations.company_locations.forEach(loc => {
+                        locSelect.append(`<option value="${loc.id}" selected>${loc.text}</option>`);
+                    });
+                    locSelect.trigger('change');
+                    setHidden("locations", response.locations.company_location_ids);
+
+                    // Set Factory (readonly)
+                    const arrSelect = $("#arrivals");
+                    arrSelect.empty();
+                    response.locations.arrival_locations.forEach(loc => {
+                        arrSelect.append(`<option value="${loc.id}" selected>${loc.text}</option>`);
+                    });
+                    arrSelect.trigger('change');
+                    setHidden("arrival_locations", response.locations.arrival_location_ids);
+                    $("#arrival_location_csv").val(response.locations.arrival_location_ids.join(','));
+
+                    // Set Gala (readonly)
+                    const secSelect = $("#storages");
+                    secSelect.empty();
+                    response.locations.sub_arrival_locations.forEach(loc => {
+                        secSelect.append(`<option value="${loc.id}" selected>${loc.text}</option>`);
+                    });
+                    secSelect.trigger('change');
+                    setHidden("storage_id", response.locations.sub_arrival_location_ids);
+                    $("#storage_location_csv").val(response.locations.sub_arrival_location_ids.join(','));
+
+                    // Store doMeta for the selected DO
+                    doMeta[response.delivery_order.id] = {
+                        location_id: response.locations.company_location_ids[0] || null,
+                        arrival_location_id: response.locations.arrival_location_ids.join(','),
+                        sub_arrival_location_id: response.locations.sub_arrival_location_ids.join(','),
+                        location_name: response.locations.company_locations[0]?.text || "",
+                        arrival_names: Object.fromEntries(response.locations.arrival_locations.map(l => [l.id, l.text])),
+                        section_names: Object.fromEntries(response.locations.sub_arrival_locations.map(l => [l.id, l.text])),
+                    };
+
+                    // Trigger get_items to load the ticket item row
+                    $.ajax({
+                        url: "{{ route('sales.delivery-challan.get-ticket-items') }}",
+                        method: "GET",
+                        data: { ticket_id: ticketId },
+                        dataType: "html",
+                        success: function(res) {
+                            $("#dcTableBody").empty();
+                            $("#dcTableBody").append(res);
+                            $(".select2").select2();
+                            
+                            // Track added ticket IDs
+                            addedTicketIds = [parseInt(ticketId)];
+                            
+                            // Load additional tickets for the same customer/DO
+                            loadAdditionalTickets(response.delivery_order.id, ticketId);
+                        },
+                        error: function(error) {
+                            console.error('Error loading ticket items:', error);
+                        }
+                    });
+                }
+            },
+            error: function(error) {
+                Swal.close();
+                Swal.fire("Error", "Failed to load ticket data", "error");
+                console.error('Error fetching ticket data:', error);
+            }
+        });
+    }
+
+    function resetFormFields() {
+        $("#sauda_type").val('').trigger('change').prop('disabled', false);
+        $("#customer_id_display").val('').trigger('change');
+        $("#customer_id").val('');
+        $("#do_no").empty().append('<option value="">Select Delivery Order</option>').trigger('change');
+        $("#reference_number").val('').prop('disabled', true);
+        $("#locations").empty().trigger('change');
+        $("#arrivals").empty().trigger('change');
+        $("#storages").empty().trigger('change');
+        $("#dcTableBody").empty();
+        $("#addTicketContainer").hide();
+        $("#add_ticket_id").empty().append('<option value="">Select Ticket to Add</option>');
+        $("#ticket_labour").val('');
+        addedTicketIds = [];
+        doMeta = {};
+    }
+    
+    // Track which tickets have been added
+    addedTicketIds = [];
+    
+    // Load additional tickets for the same delivery order
+    function loadAdditionalTickets(deliveryOrderId, excludeTicketId) {
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-tickets') }}",
+            method: "GET",
+            data: {
+                delivery_order_ids: [deliveryOrderId]
+            },
+            success: function(response) {
+                const select = $("#add_ticket_id");
+                select.empty().append('<option value="">Select Ticket to Add</option>');
+                
+                if (response.tickets && response.tickets.length > 0) {
+                    let hasOptions = false;
+                    response.tickets.forEach(function(ticket) {
+                        // Exclude already added tickets
+                        if (!addedTicketIds.includes(ticket.id)) {
+                            select.append(`<option value="${ticket.id}">${ticket.text}</option>`);
+                            hasOptions = true;
+                        }
+                    });
+                    
+                    if (hasOptions) {
+                        $("#addTicketContainer").show();
+                    } else {
+                        $("#addTicketContainer").hide();
+                    }
+                }
+                
+                select.select2();
+            },
+            error: function(error) {
+                console.error('Error loading additional tickets:', error);
+            }
+        });
+    }
+    
+    // Handle adding more tickets
+    $("#initial_ticket_id").on("change", function() {
+        const ticketId = $(this).val();
+        
+        if (!ticketId) return;
+        
+        // Check if already added
+        if (addedTicketIds.includes(parseInt(ticketId))) {
+            Swal.fire("Warning", "This ticket has already been added", "warning");
+            $(this).val('').trigger('change');
+            return;
+        }
+        
+        // Load the ticket item row and append to table
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-ticket-items') }}",
+            method: "GET",
+            data: { ticket_id: ticketId },
+            dataType: "html",
+            success: function(res) {
+                console.log(res);
+                $("#dcTableBody").append(res);
+                $(".select2").select2();
+                
+                // Track this ticket as added
+                addedTicketIds.push(parseInt(ticketId));
+                
+                // Remove this ticket from the dropdown
+                $("#add_ticket_id option[value='" + ticketId + "']").remove();
+                $("#add_ticket_id").val('').trigger('change');
+                
+                // Hide the dropdown if no more tickets available
+                if ($("#add_ticket_id option").length <= 1) {
+                    $("#addTicketContainer").hide();
+                }
+            },
+            error: function(error) {
+                console.error('Error loading ticket items:', error);
+                Swal.fire("Error", "Failed to load ticket data", "error");
+            }
+        });
+    });
+    
+    // Remove ticket row from table
+    function removeTicketRow(btn) {
+        const ticketId = $(btn).data('ticket-id');
+        const ticketText = $(btn).data('ticket-text');
+        
+        // Check if this is the last row
+        if ($("#dcTableBody tr").length <= 1) {
+            Swal.fire("Warning", "Cannot remove the last ticket. At least one ticket is required.", "warning");
+            return;
+        }
+        
+        // Remove from table
+        $(btn).closest('tr').remove();
+        
+        // Remove from tracked IDs
+        addedTicketIds = addedTicketIds.filter(id => id !== parseInt(ticketId));
+        
+        // Add back to dropdown
+        const select = $("#add_ticket_id");
+        select.append(`<option value="${ticketId}">${ticketText}</option>`);
+        select.select2();
+        
+        // Show the dropdown if it was hidden
+        $("#addTicketContainer").show();
+    }
 
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
-    let doMeta = {};
+    doMeta = {};
 
     function setHidden(name, values) {
         const container = $(`#${name}_hidden`);
@@ -325,21 +644,46 @@
         const locOptions = [];
         const arrOptions = [];
         const secOptions = [];
-
+        
         (selectedIds || []).forEach(id => {
             const meta = doMeta[id];
+            console.log(meta);
             if (!meta) return;
+            
+            // Handle location
             if (meta.location_id && !locSet.has(meta.location_id)) {
                 locSet.add(meta.location_id);
                 locOptions.push({ id: meta.location_id, text: meta.location_name || meta.location_id });
             }
-            if (meta.arrival_location_id && !arrSet.has(meta.arrival_location_id)) {
-                arrSet.add(meta.arrival_location_id);
-                arrOptions.push({ id: meta.arrival_location_id, text: meta.arrival_name || meta.arrival_location_id });
+            
+            // Handle arrival locations (factories) - now using arrival_names object
+            $("#arrival_location_csv").val(meta.arrival_location_id || "");
+            if (meta.arrival_location_id) {
+                const arrivalIds = meta.arrival_location_id.split(",");
+                arrivalIds.forEach(function(arrival_location_id) {
+                    arrival_location_id = arrival_location_id.trim();
+                    if (arrival_location_id && !arrSet.has(arrival_location_id)) {
+                        arrSet.add(arrival_location_id);
+                        // Get name from arrival_names object, fallback to ID
+                        const name = (meta.arrival_names && meta.arrival_names[arrival_location_id]) || arrival_location_id;
+                        arrOptions.push({ id: arrival_location_id, text: name });
+                    }
+                });
             }
-            if (meta.sub_arrival_location_id && !secSet.has(meta.sub_arrival_location_id)) {
-                secSet.add(meta.sub_arrival_location_id);
-                secOptions.push({ id: meta.sub_arrival_location_id, text: meta.section_name || meta.sub_arrival_location_id });
+
+            // Handle sub arrival locations (sections) - now using section_names object
+            $("#storage_location_csv").val(meta.sub_arrival_location_id || "");
+            if (meta.sub_arrival_location_id) {
+                const sectionIds = meta.sub_arrival_location_id.split(",");
+                sectionIds.forEach(function(section_id) {
+                    section_id = section_id.trim();
+                    if (section_id && !secSet.has(section_id)) {
+                        secSet.add(section_id);
+                        // Get name from section_names object, fallback to ID
+                        const name = (meta.section_names && meta.section_names[section_id]) || section_id;
+                        secOptions.push({ id: section_id, text: name });
+                    }
+                });
             }
         });
 
@@ -412,29 +756,13 @@
         });
     }
 
+
     function get_items(el) {
         // get.delivery-challan.get-items
         const delivery_orders = $(el).val();
-
+      
         // Update readonly multi-selects for location/factory/section
-        hydrateLocationsFromDos(delivery_orders || []);
-
-        $.ajax({
-            url: "{{ route('sales.get.delivery-challan.get-items') }}",
-            method: "GET",
-            data: {
-                delivery_order_ids: $(el).val(),
-            },
-            dataType: "html",
-            success: function(res) {
-                $("#dcTableBody").empty();
-                $("#dcTableBody").html(res);
-                $(".select2").select2();
-            },
-            error: function(error) {
-
-            }
-        });
+        hydrateLocationsFromDos([delivery_orders]);
     }
 
     function get_delivery_orders() {
@@ -471,8 +799,8 @@
                         arrival_location_id: delivery_order.arrival_location_id || null,
                         sub_arrival_location_id: delivery_order.sub_arrival_location_id || null,
                         location_name: delivery_order.location_name || "",
-                        arrival_name: delivery_order.arrival_name || "",
-                        section_name: delivery_order.section_name || "",
+                        arrival_names: delivery_order.arrival_names || {}, // Object with id => name
+                        section_names: delivery_order.section_names || {}, // Object with id => name
                     };
                 });
 

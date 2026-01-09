@@ -24,11 +24,12 @@ class SalesInquiryRequest extends FormRequest
         return [
             "reference_no" => "required",
             "locations" => "required|array",
-            "inquiry_date" => "required|date",
+
+            "inquiry_date" => "required|date|before_or_equal:required_date",
             "customer" => "required",
             "reference_number" => "nullable",
 
-            "required_date" => "required|date",
+            "required_date" => "required|date|after_or_equal:inquiry_date",
             "arrival_location_id" => "nullable|array|min:1",
             "arrival_location_id.*" => "integer|exists:arrival_locations,id",
             "arrival_sub_location_id" => "nullable|array|min:1",

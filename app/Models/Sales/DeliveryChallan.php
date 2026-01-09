@@ -2,6 +2,8 @@
 
 namespace App\Models\Sales;
 
+use App\Models\Procurement\Store\FactoryLocation;
+use App\Models\Procurement\Store\SectionLocation;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +30,7 @@ class DeliveryChallan extends Model
         "weighbridge-amount",
         "subarrival_id",
         "created_by_id",
+        "section_id",
         "am_approval_status",
         "am_change_made"
     ];
@@ -44,6 +47,15 @@ class DeliveryChallan extends Model
 
     public function receivingRequest() {
         return $this->hasOne(ReceivingRequest::class, "delivery_challan_id");
+    }
+
+
+    public function factories() {
+        return $this->morphMany(FactoryLocation::class, 'factoryable');
+    }
+
+    public function sections() {
+        return $this->morphMany(SectionLocation::class, 'sectionable');
     }
     
 }

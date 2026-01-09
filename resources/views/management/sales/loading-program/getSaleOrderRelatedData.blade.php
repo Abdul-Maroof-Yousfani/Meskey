@@ -86,6 +86,36 @@
                 var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
                 subArrivalLocationsSelect.append(option);
             @endforeach
+        @else
+            {{-- If no delivery orders, populate from Sale Order --}}
+            @php
+                // Get company location from Sale Order's locations relationship
+                $soCompanyLocationId = $SalesOrder->locations->first()?->location_id;
+                $soArrivalLocationId = $SalesOrder->arrival_location_id;
+                $soSubArrivalLocationId = $SalesOrder->arrival_sub_location_id;
+                
+                $soCompanyLocation = $soCompanyLocationId ? \App\Models\Master\CompanyLocation::find($soCompanyLocationId) : null;
+                $allArrivalLocations = \App\Models\Master\ArrivalLocation::all();
+                $allSubArrivalLocations = \App\Models\Master\ArrivalSubLocation::all();
+                
+                $soArrivalLocation = $allArrivalLocations->where('id', $soArrivalLocationId)->first();
+                $soSubArrivalLocation = $allSubArrivalLocations->where('id', $soSubArrivalLocationId)->first();
+            @endphp
+
+            @if($soCompanyLocation)
+                var option = new Option('{{ $soCompanyLocation->name }}', '{{ $soCompanyLocation->id }}', true, true);
+                companyLocationsSelect.append(option);
+            @endif
+
+            @if($soArrivalLocation)
+                var option = new Option('{{ $soArrivalLocation->name }}', '{{ $soArrivalLocation->id }}', true, true);
+                arrivalLocationsSelect.append(option);
+            @endif
+
+            @if($soSubArrivalLocation)
+                var option = new Option('{{ $soSubArrivalLocation->name }}', '{{ $soSubArrivalLocation->id }}', true, true);
+                subArrivalLocationsSelect.append(option);
+            @endif
         @endif
 
         // Trigger change to refresh select2
@@ -93,7 +123,7 @@
         arrivalLocationsSelect.trigger('change');
         subArrivalLocationsSelect.trigger('change');
 
-        // Note: Packing and brand will be set when delivery order is selected
+        // Note: Packing and brand will be set when delivery order is selected or from sale order if no DO
     });
 </script>
 

@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <div class="row" id="ticketDataContainer">
+    <div class="row" id="ticketDataContainer" style="margin-left: 4px; margin-right: 4px;">
         <!-- Ticket data will be populated here -->
     </div>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sales\LoadingSlip;
+use App\Models\Sales\LoadingSlipLog;
 use App\Models\Sales\LoadingProgramItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,8 @@ class LoadingSlipController extends Controller
         $LoadingSlips = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.dispatchQc',
+            'logs',
             'createdBy'
         ])
             ->when($request->filled('search'), function ($q) use ($request) {
@@ -59,7 +62,8 @@ class LoadingSlipController extends Controller
     {
         // Get available tickets that have accepted Sales QC and no loading slip
         $availableTickets = LoadingProgramItem::whereHas('salesQc', function ($query) {
-            $query->where('status', 'accept');
+            $query->where('status', 'accept')
+                    ->orWhere("am_approval_status", "approved");
         })
         ->whereDoesntHave('loadingSlip')
         ->with([
@@ -88,9 +92,11 @@ class LoadingSlipController extends Controller
             'no_of_bags' => 'required|integer|min:1',
             'bag_size' => 'required|numeric|min:0',
             'kilogram' => 'required|numeric|min:0',
-            'remarks' => 'nullable|string'
+            'remarks' => 'nullable|string',
+            'labour' => "required|in:paid,not_paid"
         ]);
 
+      
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
@@ -104,6 +110,35 @@ class LoadingSlipController extends Controller
         try {
             DB::beginTransaction();
 
+                    // Get ticket data to auto-populate fields
+            $LoadingProgramItem = LoadingProgramItem::with([
+                'loadingProgram.deliveryOrder.customer',
+                'loadingProgram.deliveryOrder.salesOrder',
+                'loadingProgram.deliveryOrder.delivery_order_data.item',
+                'loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
+                'loadingProgram.deliveryOrder.arrivalLocation',
+                'loadingProgram.deliveryOrder.subArrivalLocation'
+            ])->findOrFail($request->loading_program_item_id);
+
+            $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+            $no_of_bags = $request->no_of_bags;
+            
+            // Only check balance if delivery order exists
+            if ($DeliveryOrder) {
+            $total_no_of_bags = $DeliveryOrder->delivery_order_data->sum('no_of_bags');
+            $used_no_of_bags = $DeliveryOrder->loadingSlips->sum("no_of_bags");
+            $remaining_no_of_bags = $total_no_of_bags - $used_no_of_bags;
+
+            // if(!$remaining_no_of_bags) {
+            //     return response()->json('You do not have any balance.', 422);
+            // }
+
+            // if($no_of_bags > $remaining_no_of_bags) {
+            //     return response()->json('Your balance is '.$remaining_no_of_bags.'.', 422);
+            // }
+            }
+
+            
             $loadingSlip = LoadingSlip::create([
                 'loading_program_item_id' => $request->loading_program_item_id,
                 'customer' => $request->customer,
@@ -115,8 +150,10 @@ class LoadingSlipController extends Controller
                 'no_of_bags' => $request->no_of_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
+                'delivery_order_id' => $DeliveryOrder?->id,
                 'remarks' => $request->remarks,
-                'created_by' => auth()->user()->id
+                'created_by' => auth()->user()->id,
+                'labour' => $request->labour
             ]);
 
             DB::commit();
@@ -154,10 +191,20 @@ class LoadingSlipController extends Controller
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
             'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
-            'createdBy'
+            'loadingProgramItem.dispatchQc',
+            'createdBy',
+            'logs'
         ])->findOrFail($id);
 
-        return view('management.sales.loading-slip.edit', compact('loadingSlip'));
+        // Check if there's a rejected dispatch QC
+        $rejectedDispatchQc = null;
+        $canEdit = $loadingSlip->canBeEdited();
+        
+        if ($loadingSlip->hasRejectedDispatchQc()) {
+            $rejectedDispatchQc = $loadingSlip->getLatestRejectedDispatchQc();
+        }
+
+        return view('management.sales.loading-slip.edit', compact('loadingSlip', 'rejectedDispatchQc', 'canEdit'));
     }
 
     /**
@@ -175,17 +222,61 @@ class LoadingSlipController extends Controller
             'no_of_bags' => 'required|integer|min:1',
             'bag_size' => 'required|numeric|min:0',
             'kilogram' => 'required|numeric|min:0',
-            'remarks' => 'nullable|string'
+            'remarks' => 'nullable|string',
+            'labour' => "required|in:paid,not_paid"
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $loadingSlip = LoadingSlip::findOrFail($id);
+
+        $loadingSlip = LoadingSlip::with('loadingProgramItem.dispatchQc')->findOrFail($id);
+        
+        // Check if editing is allowed
+        if (!$loadingSlip->canBeEdited()) {
+            return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
+        }
+        
+        $DeliveryOrder = $loadingSlip->deliveryOrder;
+        
+        // Only check bag balance if delivery order exists
+        if ($DeliveryOrder) {
+            $total_no_of_bags = $DeliveryOrder->delivery_order_data->sum('no_of_bags');
+            $used_no_of_bags = $DeliveryOrder->loadingSlips->sum("no_of_bags");
+           
+            // if($no_of_bags > ($remaining_no_of_bags + $loadingSlip->no_of_bags)) {
+            //     return response()->json('Your balance is '.($remaining_no_of_bags + $loadingSlip->no_of_bags).'.', 422);
+            // }
+        }
 
         try {
             DB::beginTransaction();
+
+            // Check if there's a rejected dispatch QC - if so, log the old data
+            $rejectedDispatchQc = $loadingSlip->loadingProgramItem?->latestRejectedDispatchQc;
+            if ($rejectedDispatchQc) {
+                // Store old data in logs (keep rejected QC record for history)
+                LoadingSlipLog::create([
+                    'loading_slip_id' => $loadingSlip->id,
+                    'dispatch_qc_id' => $rejectedDispatchQc->id,
+                    'customer' => $loadingSlip->customer,
+                    'commodity' => $loadingSlip->commodity,
+                    'so_qty' => $loadingSlip->so_qty,
+                    'do_qty' => $loadingSlip->do_qty,
+                    'factory' => $loadingSlip->factory,
+                    'gala' => $loadingSlip->gala,
+                    'no_of_bags' => $loadingSlip->no_of_bags,
+                    'bag_size' => $loadingSlip->bag_size,
+                    'kilogram' => $loadingSlip->kilogram,
+                    'remarks' => $loadingSlip->remarks,
+                    'labour' => $loadingSlip->labour,
+                    'qc_remarks' => $rejectedDispatchQc->qc_remarks,
+                    'edited_by' => auth()->user()->id,
+                    "delivery_order_id" => $DeliveryOrder?->id
+                ]);
+                
+            }
 
             $loadingSlip->update([
                 'customer' => $request->customer,
@@ -197,7 +288,8 @@ class LoadingSlipController extends Controller
                 'no_of_bags' => $request->no_of_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
-                'remarks' => $request->remarks
+                'remarks' => $request->remarks,
+                'labour' => $request->labour
             ]);
 
             DB::commit();
@@ -239,21 +331,38 @@ class LoadingSlipController extends Controller
         ])->findOrFail($request->loading_program_item_id);
 
         $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
-
+        $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
         // Prepare data for the form
-        $data = [
-            'customer' => $DeliveryOrder->customer->name ?? '',
-            'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
-            'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
-            'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
-            'factory' => $DeliveryOrder->arrival_location_id ?? '',
-            'gala' => $DeliveryOrder->sub_arrival_location_id ?? '',
-            'factory_names' => $DeliveryOrder->arrival_location_id ?
-                \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $DeliveryOrder->arrival_location_id))->pluck('name')->toArray() : [],
-            'gala_names' => $DeliveryOrder->sub_arrival_location_id ?
-                \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $DeliveryOrder->sub_arrival_location_id))->pluck('name')->toArray() : [],
-            'bag_size' => $DeliveryOrder->delivery_order_data->first()->bag_size ?? 0
-        ];
+        if ($DeliveryOrder) {
+            $data = [
+                'customer' => $DeliveryOrder->customer->name ?? '',
+                'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
+                'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
+                'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
+                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
+                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
+                'factory_names' => $LoadingProgramItem->arrival_location_id ?
+                    \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $LoadingProgramItem->arrival_location_id))->pluck('name')->toArray() : [],
+                'gala_names' => $LoadingProgramItem->sub_arrival_location_id ?
+                    \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $LoadingProgramItem->sub_arrival_location_id))->pluck('name')->toArray() : [],
+                'bag_size' => $DeliveryOrder->delivery_order_data->first()->bag_size ?? 0
+            ];
+        } else {
+            $data = [
+                'customer' => $SaleOrder->customer->name ?? '',
+                'commodity' => $SaleOrder->sales_order_data->first()->item->name ?? '',
+                'so_qty' => $SaleOrder->sales_order_data->first()->qty ?? 0,
+                'do_qty' => 0,
+                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
+                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
+                'factory_names' => $LoadingProgramItem->arrival_location_id ?
+                    \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $LoadingProgramItem->arrival_location_id))->pluck('name')->toArray() : [],
+                'gala_names' => $LoadingProgramItem->sub_arrival_location_id ?
+                    \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $LoadingProgramItem->sub_arrival_location_id))->pluck('name')->toArray() : [],
+                'bag_size' => $SaleOrder->sales_order_data->first()->bag_size ?? 0
+            ];
+        }
+
 
         return response()->json(['success' => true, 'data' => $data]);
     }

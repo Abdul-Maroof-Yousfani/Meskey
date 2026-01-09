@@ -5,7 +5,7 @@
     <div class="row form-mar">
 
         <div class="col-xs-12 col-sm-12 col-md-12">
-            {!! getUserMissingInfoAlert() !!}
+            {{-- {!! getUserMissingInfoAlert() !!} --}}
             <div class="form-group">
                 <label>Ticket:</label>
                 <select class="form-control select2" name="loading_program_item_id" id="loading_program_item_id">
@@ -26,9 +26,13 @@
         </div>
     </div>
     <div class="row" id="slabsContainer">
-        @if($DeliveryOrder)
-            @include('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', ['DeliveryOrder' => $DeliveryOrder, 'FirstWeighbridge' => $FirstWeighbridge, 'ArrivalTruckTypes' => $ArrivalTruckTypes, 'LoadingProgramItem' => $FirstWeighbridge->loadingProgramItem])
-        @endif
+        @include('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', [
+            'DeliveryOrder' => $DeliveryOrder ?? null, 
+            'SaleOrder' => $SaleOrder ?? null,
+            'FirstWeighbridge' => $FirstWeighbridge, 
+            'ArrivalTruckTypes' => $ArrivalTruckTypes, 
+            'LoadingProgramItem' => $FirstWeighbridge->loadingProgramItem
+        ])
     </div>
 
     <div class="row bottom-button-bar">

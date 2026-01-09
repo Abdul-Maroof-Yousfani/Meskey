@@ -22,6 +22,8 @@ class LoadingSlip extends Model
         'bag_size',
         'kilogram',
         'remarks',
+        'delivery_order_id',
+        'labour',
         'created_by'
     ];
 
@@ -45,5 +47,58 @@ class LoadingSlip extends Model
 
     public function secondWeighbridge() {
         return $this->hasOne(\App\Models\Sales\SecondWeighbridge::class, "loading_slip_id");
+    }
+
+    public function deliveryOrder() {
+        return $this->belongsTo(\App\Models\Sales\DeliveryOrder::class, "delivery_order_id");
+    }
+
+    public function logs() {
+        return $this->hasMany(\App\Models\Sales\LoadingSlipLog::class, "loading_slip_id");
+    }
+
+    /**
+     * Check if this loading slip has a rejected dispatch QC (latest QC is rejected)
+     */
+    public function hasRejectedDispatchQc(): bool
+    {
+        $latestDispatchQc = $this->loadingProgramItem?->dispatchQc;
+        
+        if (!$latestDispatchQc || $latestDispatchQc->status !== 'reject') {
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Get the latest rejected dispatch QC for this loading slip
+     */
+    public function getLatestRejectedDispatchQc()
+    {
+        return $this->loadingProgramItem?->latestRejectedDispatchQc;
+    }
+
+    /**
+     * Check if loading slip can be edited
+     * - Can edit if no dispatch QC exists
+     * - Can edit if the latest dispatch QC is rejected
+     * - Cannot edit if an accepted dispatch QC exists
+     */
+    public function canBeEdited(): bool
+    {
+        $loadingProgramItem = $this->loadingProgramItem;
+        
+        if (!$loadingProgramItem) {
+            return true;
+        }
+        
+        // If there's an accepted dispatch QC, editing is not allowed
+        if ($loadingProgramItem->hasAcceptedDispatchQc()) {
+            return false;
+        }
+        
+        // If no dispatch QC exists or latest is rejected, editing is allowed
+        return true;
     }
 }

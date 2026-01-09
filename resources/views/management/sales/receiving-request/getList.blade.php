@@ -38,10 +38,12 @@
                 <td>{{ $request->created_at->format('d M Y H:i') }}</td>
                 <td>
                     <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-primary"
-                            onclick="openModal(this, '{{ route('sales.receiving-request.edit', $request->id) }}', 'Edit Receiving Request', false, '80%')">
-                            <i class="fa fa-edit"></i> Edit
-                        </button>
+                        @if($request->am_approval_status !== "approved")
+                            <button class="btn btn-sm btn-primary"
+                                onclick="openModal(this, '{{ route('sales.receiving-request.edit', $request->id) }}', 'Edit Receiving Request', false, '80%')">
+                                <i class="fa fa-edit"></i> Edit
+                            </button>
+                        @endif
                         <button class="btn btn-sm btn-info"
                             onclick="openModal(this, '{{ route('sales.receiving-request.view', $request->id) }}', 'View Receiving Request', false, '80%')">
                             <i class="fa fa-eye"></i> View
@@ -51,7 +53,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="6" class="text-center py-4">
+                <td colspan="12" class="text-center py-4">
                     <div class="text-muted">
                         <i class="fa fa-inbox fa-3x mb-2"></i>
                         <p>No receiving requests found</p>
@@ -63,8 +65,9 @@
     </tbody>
 </table>
 
-@if($receivingRequests->hasPages())
-    <div class="d-flex justify-content-center mt-3">
+<!-- Pagination -->
+<div class="row d-flex" id="paginationLinks">
+    <div class="col-md-12 text-right">
         {{ $receivingRequests->links() }}
     </div>
-@endif
+</div>

@@ -129,7 +129,7 @@
                                                 </thead>
                                                 <tbody id="rv-data">
                                                     <tr>
-                                                        <td colspan="6" class="text-center text-muted">Select references to load details.</td>
+                                                        <td colspan="12" class="text-center text-muted">Select references to load details.</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -296,7 +296,7 @@
 
             referenceSelect.trigger('change.select2');
             referenceLabel.text(isAdvance ? 'Sale Orders (approved)' : 'Invoices (approved, receiving pending)');
-            referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>');
+            referencesTableBody.html('<tr><td colspan="12" class="text-center text-muted">Select references to load details.</td></tr>');
             selectAll.prop('checked', false);
             updateSelectedDocsList();
             select_customer();
@@ -411,7 +411,7 @@
             const refType = isAdvance ? 'sale_order' : 'sales_invoice';
 
             if (!ids.length) {
-                referencesTableBody.html('<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>');
+                referencesTableBody.html('<tr><td colspan="12" class="text-center text-muted">Select references to load details.</td></tr>');
                 selectAll.prop('checked', false);
                 updateSelectedDocsList();
                 return;

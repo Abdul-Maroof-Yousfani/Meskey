@@ -22,12 +22,14 @@
                     </td>
 
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('category.edit', $row->id) }}','Edit Category')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
+                        @if($row->is_protected !== "yes")
+                            @can('role-edit')
+                                <a onclick="openModal(this,'{{ route('category.edit', $row->id) }}','Edit Category')"
+                                    class="info p-1 text-center mr-2 position-relative ">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @endcan
+                        @endif
                         @can('role-delete')
                             <a onclick="deletemodal('{{ route('category.destroy', $row->id) }}','{{ route('get.category') }}')"
                                 class="danger p-1 text-center mr-2 position-relative ">

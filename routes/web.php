@@ -69,6 +69,7 @@ Route::get("checking-data", function() {
     ReceivingRequest::query()->delete();
     SalesInvoice::query()->delete();
     SalesReturn::query()->delete();
+    ReceiptVoucher::query()->delete();
 
 });
 

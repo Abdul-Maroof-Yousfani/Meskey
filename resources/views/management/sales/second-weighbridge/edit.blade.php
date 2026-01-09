@@ -5,7 +5,7 @@
     <div class="row form-mar">
 
         <div class="col-xs-12 col-sm-12 col-md-12">
-            {!! getUserMissingInfoAlert() !!}
+            {{-- {!! getUserMissingInfoAlert() !!} --}}
             <div class="form-group">
                 <label>Loading Slip:</label>
                 <select class="form-control select2" name="loading_slip_id" id="loading_slip_id">
@@ -21,7 +21,12 @@
     </div>
     <div class="row" id="slabsContainer">
         @if($SecondWeighbridge->loadingSlip)
-            @include('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', ['LoadingSlip' => $SecondWeighbridge->loadingSlip, 'SecondWeighbridge' => $SecondWeighbridge])
+            @include('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', [
+                'LoadingSlip' => $SecondWeighbridge->loadingSlip, 
+                'SecondWeighbridge' => $SecondWeighbridge,
+                'needsDeliveryOrder' => $needsDeliveryOrder ?? false,
+                'deliveryOrders' => $deliveryOrders ?? collect()
+            ])
         @endif
     </div>
 

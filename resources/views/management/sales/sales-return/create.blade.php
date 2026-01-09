@@ -58,7 +58,15 @@
                  <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="date" onchange="getNumber()" id="date" class="form-control">
+                        <input 
+                            type="date" 
+                            name="date" 
+                            onchange="getNumber()" 
+                            id="date" 
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            readonly
+                        >
                     </div>
                 </div>
             </div>
@@ -193,10 +201,11 @@
 </form>
 
 <script>
-    let salesInvoiceRowIndex = 1;
+    salesInvoiceRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();
+        getNumber();
     });
 
     // Legacy function for backward compatibility
@@ -394,17 +403,17 @@
 
         // Get values
         const packing = parseFloat(packingInput.val()) || 0;
-        const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
+        const qty = parseFloat(qtyInput.val()) || 0;
         const rate = parseFloat(rateInput.val()) || 0;
         const discountPercent = parseFloat(discountPercentInput.val()) || 0;
         const gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
-        // Calculate Qty = Packing * No of Bags
-        const result =  parseFloat(parseFloat(qtyInput.val() / packingInput.val())).toFixed();
-        noOfBagsInput.val(result);
+        // Calculate No of Bags = Qty / Packing
+        const noOfBagsResult = packing > 0 ? Math.round(qty / packing) : 0;
+        noOfBagsInput.val(noOfBagsResult);
       
         // Calculate Gross Amount = Qty * Rate
-        const grossAmount = result * rate;
+        const grossAmount = qty * rate;
         
         grossAmountInput.val(round(grossAmount));
 

@@ -46,7 +46,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber(); validate_expiry()" id="dispatch_date"
+                        <input type="date" name="dispatch_date" readonly onchange="getNumber(); validate_expiry()" id="dispatch_date"
                             value="{{ $delivery_order->dispatch_date }}" class="form-control">
                     </div>
                 </div>
@@ -135,6 +135,7 @@
                             <label class="form-label">Withhold Amount:</label>
                             <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
                                 value="0" onkeyup="change_withhold_amount()" id="withhold_amount"
+                                readonly
                                 class="form-control">
                         </div>
                     </div>
@@ -317,7 +318,7 @@
                                 <td>
                                     <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
                                         value="{{ $data->bag_size }}" oninput="calc(this)"
-                                        class="form-control bag_size" step="0.01" min="0">
+                                        class="form-control bag_size" step="0.01" min="0" readonly>
                                 </td>
                                 @php
                                     $used_quantity = $data->no_of_bags - $balance;
@@ -345,7 +346,7 @@
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"
                                         value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
-                                        step="0.01" min="0">
+                                        step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="amount[]" id="amount_{{ $index }}"
@@ -353,14 +354,13 @@
                                         readonly>
                                 </td>
                                 <td>
-                                    <select name="brand_id[]" id="brand_id_{{ $index }}"
-                                        class="form-control select2">
-                                        <option value="">Select Brand</option>
-                                        @foreach (getAllBrands() as $brand)
-                                            <option value="{{ $brand->id }}" @selected($brand->id == $data->brand_id)>
-                                                {{ $brand->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text" 
+                                        value="{{ getBrandById($data->brand_id)?->name ?? 'N/A' }}" class="form-control amount"
+                                        readonly>
+
+                                    <input type="hidden" 
+                                        value="{{ $data->brand_id }}" name="brand_id[]" id="brand_id_{{ $index }}" class="form-control"
+                                        readonly>  
                                 </td>
                                 <td>
                                     <input type="text" name="desc[]" id="desc_{{ $index }}"
@@ -504,19 +504,24 @@
         }
 
         if (allowedFactories.length > 0) {
-            $("#arrivals").prop("disabled", false).empty().append('<option value=\"\">Select Factory</option>');
+            $("#arrivals").prop("disabled", false).empty();
             allowedFactories.forEach(loc => {
                 $("#arrivals").append(`<option value="${loc.id}">${loc.text}</option>`);
             });
-            $("#arrivals").val('').select2();
 
-            // Apply initial arrival/section if present
+            // Apply initial arrival/section if present (for edit mode initialization)
             if (!initialArrivalApplied && initialArrivalId) {
-                $("#arrivals").val(String(initialArrivalId));
+                // Parse comma-separated IDs for multiple selection
+                const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
+                $("#arrivals").val(initialArrivalIds).trigger('change.select2');
                 initialArrivalApplied = true;
                 selectStorage(document.getElementById("arrivals"), true);
-            } else {
-                $("#storages").prop("disabled", true).empty().append('<option value=\"\">Select Section</option>');
+            } else if (!isInit) {
+                // Auto-select ALL factories when user manually changes location
+                const allFactoryIds = allowedFactories.map(loc => String(loc.id));
+                $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                // Populate and select all sections for all selected factories
+                selectAllStorages(allFactoryIds);
             }
         } else {
             // get.arrival-locations; send request to this url
@@ -530,7 +535,6 @@
                 dataType: "json",
                 success: function(res) {
                     $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrivals</option>`)
 
                     res.forEach(loc => {
                         $("#arrivals").append(`
@@ -543,9 +547,17 @@
                     $("#arrivals").select2();
 
                     if (!initialArrivalApplied && initialArrivalId) {
-                        $("#arrivals").val(String(initialArrivalId));
+                        // Parse comma-separated IDs for multiple selection
+                        const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
+                        $("#arrivals").val(initialArrivalIds).trigger('change.select2');
                         initialArrivalApplied = true;
                         selectStorage(document.getElementById("arrivals"), true);
+                    } else if (!isInit) {
+                        // Auto-select ALL factories
+                        const allFactoryIds = res.map(loc => String(loc.id));
+                        $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                        // Populate and select all sections
+                        selectAllStoragesFromServer(allFactoryIds);
                     }
                 },
                 error: function(error) {
@@ -556,60 +568,125 @@
     }
 
     function selectStorage(el, isInit = false) {
-        const arrival = $(el).val();
-        const allowedSections = soSectionMap[String(arrival)] || [];
-        console.log(arrival);
-        if (!arrival) {
+        const arrivals = $(el).val(); // This is now an array since it's multiple select
+        
+        if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
             return;
         }
 
-        if (allowedSections.length > 0) {
-            $("#storages").prop("disabled", false).empty().append('<option value=\"\">Select Section</option>');
-            allowedSections.forEach(loc => {
-                $("#storages").append(`<option value="${loc.id}">${loc.text}</option>`);
-            });
-            $("#storages").val('').select2();
+        // Convert to array if single value
+        const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
+        
+        // Check if we have SO mapping for any of the selected factories
+        let hasMapping = false;
+        factoryIds.forEach(factoryId => {
+            if (soSectionMap[String(factoryId)] && soSectionMap[String(factoryId)].length > 0) {
+                hasMapping = true;
+            }
+        });
 
-            if (!initialStorageApplied && initialStorageId) {
-                $("#storages").val(String(initialStorageId));
+        if (hasMapping) {
+            // Use SO mapping
+            selectAllStorages(factoryIds, isInit);
+        } else {
+            // Fetch from server
+            selectAllStoragesFromServer(factoryIds, isInit);
+        }
+    }
+    
+    // Function to populate and select all sections for all selected factories (using SO mapping)
+    function selectAllStorages(factoryIds, isInit = false) {
+        $("#storages").prop("disabled", false).empty();
+        
+        let allSections = [];
+        factoryIds.forEach(factoryId => {
+            const sections = soSectionMap[String(factoryId)] || [];
+            sections.forEach(section => {
+                // Avoid duplicates
+                if (!allSections.find(s => s.id === section.id)) {
+                    allSections.push(section);
+                }
+            });
+        });
+        
+        if (allSections.length > 0) {
+            allSections.forEach(section => {
+                $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+            });
+            
+            // Apply initial storage if present (for edit mode initialization)
+            if (!initialStorageApplied && initialStorageId && isInit) {
+                // Parse comma-separated IDs for multiple selection
+                const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
+                $("#storages").val(initialStorageIds).trigger('change.select2');
                 initialStorageApplied = true;
+            } else if (!isInit) {
+                // Auto-select ALL sections when user manually changes
+                const allSectionIds = allSections.map(s => String(s.id));
+                $("#storages").val(allSectionIds).trigger('change.select2');
             }
         } else {
-            // get.arrival-locations; send request to this url
-            $("#storages").prop("disabled", false);
+            // Fallback: fetch sections from server for each factory
+            selectAllStoragesFromServer(factoryIds, isInit);
+        }
+    }
+    
+    // Function to fetch and select all sections from server for multiple factories
+    function selectAllStoragesFromServer(factoryIds, isInit = false) {
+        $("#storages").prop("disabled", false).empty();
+        
+        let allSections = [];
+        let completedRequests = 0;
+        
+        if (factoryIds.length === 0) {
+            return;
+        }
+        
+        factoryIds.forEach(factoryId => {
             $.ajax({
                 url: "{{ route('sales.get.storage-locations') }}",
                 method: "GET",
                 data: {
-                    arrival_id: arrival
+                    arrival_id: factoryId
                 },
                 dataType: "json",
                 success: function(res) {
-                    console.log(res);
-                    $("#storages").empty();
-                    $("#storages").append(`<option value=''>Select Storage</option>`)
-                    res.forEach(loc => {
-                        $("#storages").append(`
-                        <option value="${loc.id}">
-                            ${loc.text}
-                        </option>
-                    `);
+                    res.forEach(section => {
+                        // Avoid duplicates
+                        if (!allSections.find(s => s.id === section.id)) {
+                            allSections.push(section);
+                        }
                     });
-
-                    $("#storages").select2();
-
-                    if (!initialStorageApplied && initialStorageId) {
-                        $("#storages").val(String(initialStorageId));
-                        initialStorageApplied = true;
+                    
+                    completedRequests++;
+                    
+                    // Once all requests complete, populate and select all sections
+                    if (completedRequests === factoryIds.length) {
+                        $("#storages").empty();
+                        allSections.forEach(section => {
+                            $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+                        });
+                        
+                        // Apply initial storage if present (for edit mode initialization)
+                        if (!initialStorageApplied && initialStorageId && isInit) {
+                            // Parse comma-separated IDs for multiple selection
+                            const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
+                            $("#storages").val(initialStorageIds).trigger('change.select2');
+                            initialStorageApplied = true;
+                        } else if (!isInit) {
+                            // Auto-select ALL sections
+                            const allSectionIds = allSections.map(s => String(s.id));
+                            $("#storages").val(allSectionIds).trigger('change.select2');
+                        }
                     }
                 },
                 error: function(error) {
-
+                    completedRequests++;
                 }
             });
-        }
+        });
     }
 
     isEdit = true;

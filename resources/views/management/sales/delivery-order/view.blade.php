@@ -143,7 +143,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date"
-                            value="{{ $delivery_order->dispatch_date }}" class="form-control" readonly>
+                            value="{{ $delivery_order->delivery_date }}" class="form-control" readonly>
                     </div>
                 </div>
         </div>

@@ -22,9 +22,10 @@ class SalesOrderRequest extends FormRequest
     public function rules(): array
     {
 
+        // delivery date and order date can be equal to each other
         $rules = [
-            "delivery_date" => "required|date",
-            "order_date" => "required|date",
+            "delivery_date" => "required|date|after_or_equal:order_date",
+            "order_date" => "required|date|before_or_equal:delivery_date",
             "reference_no" => "nullable",
             "so_reference_no" => "nullable|string|max:255",
             "customer_id" => "required|numeric",

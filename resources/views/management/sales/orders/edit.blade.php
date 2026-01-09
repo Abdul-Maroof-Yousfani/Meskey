@@ -35,7 +35,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Date:</label>
-                <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
+                <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
                     class="form-control">
             </div>
         </div>
@@ -72,7 +72,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" value="{{ $sale_order->dispatch_date }}" 
+                <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
                     id="delivery_date" class="form-control">
             </div>
         </div>
@@ -300,6 +300,24 @@
 
 <script>
     salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
+
+    function validateExpiry() {
+        console.log('validateExpiry');
+        const orderDate = $('#order_date').val();
+        const deliveryDate = $('#delivery_date').val();
+        if (orderDate && deliveryDate) {
+            if (orderDate > deliveryDate) {
+                $('#delivery_date').addClass('is-invalid');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Expired!',
+                    text: 'Order date cannot be greater than delivery date.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+    }
+    
 
     function is_type_credit(el) {
         const type = $(el).val();

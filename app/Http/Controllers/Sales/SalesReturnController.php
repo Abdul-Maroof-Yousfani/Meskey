@@ -57,9 +57,22 @@ class SalesReturnController extends Controller
 
             foreach($request->item_id as $index => $item_id) {
                 $saleReturn->sale_return_data()->create([
+                    
                     "quantity" => $request->qty[$index],
+                    "sale_return_id" => $saleReturn->id,
                     "sale_invoice_data_id" => $request->si_data_id[$index],
-                    "sale_return_id" => $saleReturn->id
+                    "packing" => $request->packing[$index],
+                    "no_of_bags" => $request->no_of_bags[$index],
+                    "rate" => $request->rate[$index],
+                    "gross_amount" => $request->gross_amount[$index],
+                    "discount_percent" => $request->discount_percent[$index],
+                    "discount_amount" => $request->discount_amount[$index],
+                    "amount" => $request->amount[$index],
+                    "gst_percentage" => $request->gst_percent[$index],
+                    "gst_amount" => $request->gst_amount[$index],
+                    "net_amount"  => $request->net_amount[$index],
+                    "line_desc" => $request->line_desc[$index],
+                    "truck_no" => $request->truck_no[$index],
                 ]);
             }
 
@@ -228,6 +241,16 @@ class SalesReturnController extends Controller
 
             $sale_invoices = $request->si_no;
            
+            // Sale Return's date should not be previous than sale invoices's date, and also tell that which sale invoice is breaking it along with its date and transaction number
+            $sale_invoices_data = SalesInvoice::whereIn("id", $sale_invoices)->get();
+            foreach ($sale_invoices_data as $sale_invoice) {
+                 if(strtotime($sale_invoice->invoice_date) > strtotime($request->date)) {
+                    return response()->json("Backward date is not allowed. Sale invoice: " . $sale_invoice->si_no . " Date: " . $sale_invoice->invoice_date, 422);
+                }
+            }
+
+
+
             $sale_return = SalesReturn::create([
                 ...$request->validated(),
                 "created_by" => auth()->user()->id
@@ -249,13 +272,13 @@ class SalesReturnController extends Controller
                     "no_of_bags" => $request->no_of_bags[$index],
                     "rate" => $request->rate[$index],
                     "gross_amount" => $request->gross_amount[$index],
-                    "discount_percent" => $request->gross_amount[$index],
+                    "discount_percent" => $request->discount_percent[$index],
                     "discount_amount" => $request->discount_amount[$index],
                     "amount" => $request->amount[$index],
                     "gst_percentage" => $request->gst_percent[$index],
                     "gst_amount" => $request->gst_amount[$index],
                     "net_amount"  => $request->net_amount[$index],
-                    "line_desc" => $request->line_desc[$index] ?? now(),
+                    "line_desc" => $request->line_desc[$index],
                     "truck_no" => $request->truck_no[$index]
                 ]);
             }
@@ -285,6 +308,7 @@ class SalesReturnController extends Controller
 
     public function destroy(SalesReturn $sales_return) {
         $sales_return->delete();
+        $sales_return->sale_return_data()->delete();
 
         return response()->json("Sale return has been deleted!");
     }

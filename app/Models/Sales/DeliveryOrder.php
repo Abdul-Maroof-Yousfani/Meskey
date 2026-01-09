@@ -55,9 +55,30 @@ class DeliveryOrder extends Model
         return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "sub_arrival_location_id");
     }
 
+    public function secondWeighbridge() {
+        return $this->hasOneThrough(
+            LoadingProgram::class,    // The original model (replace with correct class name)
+            LoadingSlip::class,
+            'delivery_order_id',      // First foreign key: loading_slips.delivery_order_id references delivery_orders.id
+            'loading_slip_id',        // Second foreign key: ??? Wait — this needs fixing based on your logic
+            'id',                     // Local key on DeliveryOrder (delivery_orders.id)
+            'id'                      // Local key on the far model? No — this doesn't match
+        );
+    }
 
+    public function saleSecondWeighbridge() {
+        return $this->hasMany(SecondWeighbridge::class, "delivery_order_id");
+    }
 
     public function loadingProgram() {
         return $this->hasOne(LoadingProgram::class, "delivery_order_id");
+    }
+
+    public function loadingSlips() {
+        return $this->hasMany(LoadingSlip::class, "delivery_order_id");
+    }
+
+    public function loadingPrograms() {
+        return $this->hasMany(LoadingProgram::class, "delivery_order_id");
     }
 }

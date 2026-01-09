@@ -2,12 +2,13 @@
 
 namespace App\Models\Sales;
 
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalesQc extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $table = 'sales_qc';
 
@@ -22,6 +23,7 @@ class SalesQc extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
+
 
     public function attachments()
     {

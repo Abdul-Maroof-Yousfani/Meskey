@@ -465,10 +465,26 @@
                     @endcanAccess
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('direct.payment-voucher') }}"
+                            onclick="loadPageContent('{{ route('direct.payment-voucher') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Direct Payment Vouchers</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('receipt-voucher.index') }}"
                             onclick="loadPageContent('{{ route('receipt-voucher.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Receipt Vouchers</span>
+                        </a>
+                    </li>
+
+                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('direct.receipt-voucher') }}"
+                            onclick="loadPageContent('{{ route('direct.receipt-voucher') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Direct Receipt Vouchers</span>
                         </a>
                     </li>
 
@@ -551,11 +567,19 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.second-weighbridge.index') }}"
-                            onclick="loadPageContent('{{ route('sales.second-weighbridge.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Second Weighbridge</span>
-                        </a>
+                        href="{{ route('sales.dispatch-qc.index') }}"
+                        onclick="loadPageContent('{{ route('sales.dispatch-qc.index') }}')"
+                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                        <span data-i18n="Task Board">Dispatch QC</span>
+                    </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                        href="{{ route('sales.second-weighbridge.index') }}"
+                        onclick="loadPageContent('{{ route('sales.second-weighbridge.index') }}')"
+                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                        <span data-i18n="Task Board">Second Weighbridge</span>
+                    </a>
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"

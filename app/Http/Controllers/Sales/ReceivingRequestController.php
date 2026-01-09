@@ -67,6 +67,8 @@ class ReceivingRequestController extends Controller
                 'transporter_amount' => $request->transporter_amount ?? 0,
                 'weighbridge_amount' => $request->inhouse_weighbridge_amount ?? 0,
                 'inhouse_weighbridge_amount' => $request->weighbridge_amount ?? 0,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
             ]);
 
             // Update items

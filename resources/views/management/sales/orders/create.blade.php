@@ -33,7 +33,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Date:</label>
-                <input type="date" name="order_date" id="order_date" onchange="getNumber()" class="form-control">
+                <input type="date" name="order_date" id="order_date" onchange="getNumber(); validateExpiry()" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
@@ -69,7 +69,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" id="delivery_date" class="form-control">
+                <input type="date" name="delivery_date" id="delivery_date" onchange="validateExpiry()" class="form-control">
             </div>
         </div>
     </div>
@@ -282,6 +282,24 @@
         }
     }
 
+    // apply validate expiry date for order date and delivery date
+    function validateExpiry() {
+        console.log('validateExpiry');
+        const orderDate = $('#order_date').val();
+        const deliveryDate = $('#delivery_date').val();
+        if (orderDate && deliveryDate) {
+            if (orderDate > deliveryDate) {
+                $('#delivery_date').addClass('is-invalid');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Expired!',
+                    text: 'Order date cannot be greater than delivery date.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+    }
+    
     $(document).ready(function() {
         $('.select2').select2();
 

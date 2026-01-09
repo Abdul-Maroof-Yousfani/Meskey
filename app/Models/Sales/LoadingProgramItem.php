@@ -41,8 +41,59 @@ class LoadingProgramItem extends Model
     public function salesQc() {
         return $this->hasOne(\App\Models\Sales\SalesQc::class);
     }
+    
+    /**
+     * Get all dispatch QCs for this ticket (supports multiple QCs after rejections)
+     */
+    public function dispatchQcs() {
+        return $this->hasMany(\App\Models\Sales\DispatchQc::class);
+    }
+    
+    /**
+     * Get the latest dispatch QC (for backward compatibility)
+     */
+    public function dispatchQc() {
+        return $this->hasOne(\App\Models\Sales\DispatchQc::class)->latestOfMany();
+    }
+    
+    /**
+     * Get the latest accepted dispatch QC
+     */
+    public function acceptedDispatchQc() {
+        return $this->hasOne(\App\Models\Sales\DispatchQc::class)
+            ->where('status', 'accept')
+            ->latestOfMany();
+    }
+    
+    /**
+     * Get the latest rejected dispatch QC
+     */
+    public function latestRejectedDispatchQc() {
+        return $this->hasOne(\App\Models\Sales\DispatchQc::class)
+            ->where('status', 'reject')
+            ->latestOfMany();
+    }
+    
+    /**
+     * Check if this ticket has an accepted dispatch QC
+     */
+    public function hasAcceptedDispatchQc(): bool {
+        return $this->dispatchQcs()->where('status', 'accept')->exists();
+    }
+    
+    /**
+     * Check if a new dispatch QC can be created for this ticket
+     * (only if no accepted QC exists)
+     */
+    public function canCreateNewDispatchQc(): bool {
+        return !$this->hasAcceptedDispatchQc();
+    }
 
     public function loadingSlip() {
         return $this->hasOne(\App\Models\Sales\LoadingSlip::class);
+    }
+
+    public function delivery_challan_data() {
+        return $this->hasOne(DeliveryChallanData::class, "ticket_id");
     }
 }

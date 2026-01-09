@@ -1,47 +1,78 @@
 <div class="col-12">
     <h6 class="header-heading-sepration">
-        Delivery Order Details
+        {{ $DeliveryOrder ? 'Delivery Order Details' : 'Sale Order Details' }}
     </h6>
 </div>
 
-{{-- Delivery Order Details Section --}}
+{{-- Details Section - Show from Delivery Order if available, otherwise from Sale Order --}}
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Customer:</label>
-        <input type="text" value="{{ $DeliveryOrder->customer->name ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        @if($DeliveryOrder)
+            <input type="text" value="{{ $DeliveryOrder->customer->name ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @else
+            <input type="text" value="{{ $SaleOrder->customer->name ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @endif
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Commodity:</label>
-        <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        @if($DeliveryOrder)
+            <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @else
+            <input type="text" value="{{ $SaleOrder->sales_order_data->first()->item->name ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @endif
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>SO Qty:</label>
-        <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        @if($DeliveryOrder)
+            <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @else
+            <input type="text" value="{{ $SaleOrder->sales_order_data->first()->qty ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @endif
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>DO Qty:</label>
-        <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->qty ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        @if($DeliveryOrder)
+            <input type="text" value="{{ $DeliveryOrder->delivery_order_data->first()->qty ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @else
+            <input type="text" value="N/A"
+                disabled class="form-control" autocomplete="off" readonly />
+        @endif
     </div>
 </div>
 
 <div class="col-xs-12 col-sm-6 col-md-6">
     <div class="form-group">
         <label>Arrival Location:</label>
-        <input type="text" value="{{ get_location_name_by_id($DeliveryOrder->location_id) }}"
-            disabled class="form-control" autocomplete="off" readonly />
+        @if($DeliveryOrder)
+            <input type="text" value="{{ get_location_name_by_id($DeliveryOrder->location_id) }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @else
+            @php
+                // Get company location from loading program when no delivery order
+                $companyLocationIds = $LoadingProgramItem->loadingProgram->company_locations ?? [];
+                $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+                $companyLocationName = $companyLocationId ? get_location_name_by_id($companyLocationId) : 'N/A';
+            @endphp
+            <input type="text" value="{{ $companyLocationName }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        @endif
     </div>
 </div>
 
@@ -50,8 +81,7 @@
         <label>Factory:</label>
         <select class="form-control select2 w-100" name="arrival_locations[]" id="arrival_locations" multiple disabled style="width: 100% !important;">
             @php
-                $arrivalLocationIds = $DeliveryOrder->arrival_location_id ? explode(',', $DeliveryOrder->arrival_location_id) : [];
-                $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+                $arrivalLocations = \App\Models\Master\ArrivalLocation::where('id', $LoadingProgramItem->arrival_location_id)->get();
             @endphp
             @foreach($arrivalLocations as $location)
                 <option value="{{ $location->id }}" selected>{{ $location->name }}</option>
@@ -65,8 +95,7 @@
         <label>Sub Arrival Location:</label>
         <select class="form-control select2 w-100" name="sub_arrival_locations[]" id="sub_arrival_locations" multiple disabled style="width: 100% !important;">
             @php
-                $subArrivalLocationIds = $DeliveryOrder->sub_arrival_location_id ? explode(',', $DeliveryOrder->sub_arrival_location_id) : [];
-                $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
+                $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::where('id', $LoadingProgramItem->sub_arrival_location_id)->get();
             @endphp
             @foreach($subArrivalLocations as $location)
                 <option value="{{ $location->id }}" selected>{{ $location->name }}</option>
@@ -75,13 +104,6 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-6 col-md-6">
-    <div class="form-group">
-        <label>Transporter:</label>
-        <input type="text" value=""
-            disabled class="form-control" autocomplete="off" readonly />
-    </div>
-</div>
 
 {{-- Before Loading Section --}}
 <div class="col-12">
@@ -174,7 +196,7 @@
         });
 
         // Trigger change event on page load if truck type is already selected
-        if ($('#truck_type_id').val() && $('#delivery_order_id').val()) {
+        if ($('#truck_type_id').val()) {
             $('#truck_type_id').trigger('change');
         }
     });

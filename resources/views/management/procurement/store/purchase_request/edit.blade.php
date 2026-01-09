@@ -181,8 +181,19 @@
                     </select>
                 </td>
 
-                <td><input type="text" name="stitching[]" id="stitching_0" class="form-control" step="0.01"
-                        min="0" value="{{ $item->stitching }}" placeholder="Stitching" style="width:120px;"></td>
+                <td>
+                    @php
+                        $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
+                    @endphp
+                    <select name="stitching[{{ $index }}][]" id="stitching_{{ $index }}" class="form-control item-select stitching-select select2" style="width:150px;" multiple>
+                        <option value="">Select Stitching</option>
+                        @foreach(getAllStitchings() ?? [] as $stitching)
+                            <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
+                                {{ $stitching->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </td>
 
 
                 <td><input type="text" name="micron[]" id="micron_0" class="form-control" 
@@ -232,13 +243,17 @@
     $(document).ready(function() {
         $(".select2").select2();
         @foreach ($purchaseRequest->PurchaseData as $index => $item)
-            $('#category_id_{{ $index }}').select2();
-            $('#item_id_{{ $index }}').select2();
+            @php
+                $jsIndex = $item->is_single_job_order == 1 ? "pre_" . $item->JobOrder->pluck("job_order_id")->toArray()[0] . "-" . $index : $index;
+            @endphp
+            $('#category_id_{{ $jsIndex }}').select2();
+            $('#item_id_{{ $jsIndex }}').select2();
 
-            $("#color_{{ $index }}").select2();
-            $("#brands_{{ $index }}").select2();
-            $("#size_{{ $index }}").select2();
-            $('#job_order_id_{{ $index }}').select2({
+            $("#color_{{ $jsIndex }}").select2();
+            $("#brands_{{ $jsIndex }}").select2();
+            $("#size_{{ $jsIndex }}").select2();
+            $("#stitching_{{ $jsIndex }}").select2();
+            $('#job_order_id_{{ $jsIndex }}').select2({
                 placeholder: 'Please Select Job Order',
                 width: '100%'
             });
@@ -403,8 +418,12 @@
                     <td style="width: 6%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="stitching[]" id="stitching_${index}" class="form-control"
-                                    step="0.01" min="0" placeholder="Stitching">
+                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:150px;" multiple>
+                                    <option value="">Select Stitching</option>
+                                    @foreach(getAllStitchings() ?? [] as $stitching)
+                                        <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </td>
@@ -435,6 +454,7 @@
         $('#color_' + index).select2();
         $('#size_' + index).select2();
         $('#brands_' + index).select2();
+        $('#stitching_' + index).select2();
         $('#category_id_' + index).select2();
         $('#job_order_id_' + index).select2({
             placeholder: 'Please Select Job Order',

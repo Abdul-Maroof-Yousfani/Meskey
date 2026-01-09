@@ -34,13 +34,18 @@ Route::name("sales.")->group(function () {
     Route::get("/delivery-order/{id}/view", [DeliveryOrderController::class, "view"])->name("get.delivery-order.view");
     Route::get("/get-arrival-locations-against-company-location", [DeliveryOrderController::class, "get_arrivals"])->name("get.arrival-locations");
     Route::get("/get-storage-locations-against-arrival-location", [DeliveryOrderController::class, "get_storages"])->name("get.storage-locations");
+    Route::get("/get-delivery-order-balance-balance-against-second-weighbridge", [DeliveryOrderController::class, "get_balance_against_second_weighbridge"])->name("balance-against-second-weighbridge");
 
     Route::resource("delivery-challan", DeliveryChallanController::class);
     Route::post("get-delivery-challan", [DeliveryChallanController::class, "getList"])->name("get.delivery-challan.list");
     Route::get("/get/dc-no", [DeliveryChallanController::class, "getNumber"])->name("get.delivery-challan.getNumber");
     Route::get("get-do-against-customer", [DeliveryChallanController::class, "get_delivery_orders"])->name("get.delivery-challan.get-do");
     Route::get("/get-delivery-order-items",  [DeliveryChallanController::class, "getItems"])->name("get.delivery-challan.get-items");
+    Route::get("/get-delivery-challan-tickets", [DeliveryChallanController::class, "getTickets"])->name("delivery-challan.get-tickets");
+    Route::get("/get-items-against-tickets", [DeliveryChallanController::class, "getItemsByTickets"])->name("delivery-challan.get-ticket-items");
     Route::get("/delivery-challan/{delivery_challan}/view", [DeliveryChallanController::class, "view"])->name("get.delivery-challan.view");
+    Route::get("/get-tickets-with-dispatch-qc", [DeliveryChallanController::class, "getTicketsWithDispatchQc"])->name("delivery-challan.get-tickets-with-dispatch-qc");
+    Route::get("/get-ticket-data-for-dc", [DeliveryChallanController::class, "getTicketDataForDC"])->name("delivery-challan.get-ticket-data");
 
 
     Route::resource("first-weighbridge", FirstWeighBridgeController::class);
@@ -59,6 +64,8 @@ Route::name("sales.")->group(function () {
     Route::get('/get-sale-order-related-data', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getSaleOrderRelatedData'])->name('getSaleOrderRelatedData');
     Route::get('/get-delivery-orders-by-sale-order-loading', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderLoading');
     Route::get('/get-delivery-orders-by-sale-order-loading-edit', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrderEdit'])->name('getDeliveryOrdersBySaleOrderLoadingEdit');
+    
+    
     // Receiving Request Routes
     Route::resource("receiving-request", ReceivingRequestController::class)->only(['index', 'edit', 'update']);
     Route::post("get-receiving-request", [ReceivingRequestController::class, "getList"])->name("get.receiving-request.list");
@@ -82,6 +89,11 @@ Route::name("sales.")->group(function () {
     Route::resource("sales-qc", \App\Http\Controllers\Sales\SalesQcController::class);
     Route::post("get-sales-qc", [\App\Http\Controllers\Sales\SalesQcController::class, "getList"])->name("get.sales-qc");
     Route::get('/get-ticket-related-data', [\App\Http\Controllers\Sales\SalesQcController::class, 'getTicketRelatedData'])->name('getTicketRelatedData');
+
+    Route::resource("dispatch-qc", \App\Http\Controllers\Sales\DispatchQCController::class);
+    Route::get("/dispatch-qc/{id}/gate-out", [\App\Http\Controllers\Sales\DispatchQCController::class, "get_gate_out"])->name("get.dispatch-qc.gate-out");
+    Route::post("get-dispatch-qc", [\App\Http\Controllers\Sales\DispatchQCController::class, "getList"])->name("get.dispatch-qc");
+    // Route::get('/get-ticket-related-data', [\App\Http\Controllers\Sales\SalesQcController::class, 'getTicketRelatedData'])->name('getTicketRelatedData');
 
     Route::resource("loading-slip", \App\Http\Controllers\Sales\LoadingSlipController::class);
     Route::post("get-loading-slip", [\App\Http\Controllers\Sales\LoadingSlipController::class, "getList"])->name("get.loading-slip");
