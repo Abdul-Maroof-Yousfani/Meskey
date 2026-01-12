@@ -35,7 +35,7 @@ class ArrivalSubLocationRequest extends FormRequest
     ->where(function ($query) {
         $query->where('arrival_location_id', $this->input('arrival_location_id'));
     })
-    ->ignore($this->route('arrival_sub_location')?->id);
+    ->ignore($this->route('arrival_sub_location')?->id)
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
