@@ -29,7 +29,7 @@
                     <option value="">Select Gala</option>
                     @foreach ($arrivalSubLocations as $arrivalSubLocation)
                         <option data-locationid="{{ $arrivalSubLocation->arrival_location_id }}"
-                            value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }} -- {{ $arrivalSubLocation->id }}</option>
+                            value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }} -- {{ $arrivalSubLocation->arrival_location_id }}</option>
                     @endforeach
                 </select>
 
