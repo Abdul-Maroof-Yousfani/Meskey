@@ -16,7 +16,7 @@
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             Truck No: {{ $arrivalTicket->truck_no ?? '-' }} --
                             Arrival Location: {{ $arrivalTicket->unloadingLocation->arrivalLocation?->name ?? 'N' }}
-                            ID: {{ $ArrivalTicket->location_id }}
+                            ID: {{ $arrivalTicket->location_id }}
                         </option>
                     @endforeach
                 </select>
