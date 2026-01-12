@@ -54,12 +54,12 @@ class JobOrderRequest extends FormRequest
             'remarks' => [
                 'nullable',
                 'string',
-                'max:500'
+                'max:5000'
             ],
             'order_description' => [
                 'nullable',
                 'string',
-                'max:1000'
+                'max:5000'
             ],
 
             // Product Validation
@@ -274,7 +274,7 @@ class JobOrderRequest extends FormRequest
             'packing_description' => [
                 'nullable',
                 'string',
-                'max:500'
+                'max:5000'
             ]
         ];
 
