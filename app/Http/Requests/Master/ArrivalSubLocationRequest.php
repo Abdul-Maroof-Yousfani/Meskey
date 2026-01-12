@@ -31,11 +31,11 @@ class ArrivalSubLocationRequest extends FormRequest
                 'string',
                 'max:255',
 
-
                 Rule::unique('arrival_sub_locations', 'name')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->route('arrival_sub_location')?->id)
-                    ->ignore($this->arrival_location_id)
+    ->where(function ($query) {
+        $query->where('arrival_location_id', $this->input('arrival_location_id'));
+    })
+    ->ignore($this->route('arrival_sub_location')?->id);
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
