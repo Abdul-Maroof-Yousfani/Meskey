@@ -22,7 +22,7 @@ class ArrivalSubLocationRequest extends FormRequest
      */
     public function rules(): array
     {
-        dd($this->id);
+        dd($this->route('arrival_sub_location')?->id);
         return [
             'company_id' => 'required|exists:companies,id',
             'company_location_id' => 'required|exists:company_locations,id',
@@ -34,7 +34,7 @@ class ArrivalSubLocationRequest extends FormRequest
 
                 Rule::unique('arrival_sub_locations', 'name')
                     ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->id)
+                    ->ignore($this->route('arrival_sub_location')?->id)
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
