@@ -9,7 +9,7 @@
                 <select class="form-control select2" name="arrival_ticket_id" required>
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option data-locationid="{{ $arrivalTicket->location_id }}"
+                        <option data-locationid="{{ $arrivalTicket->unloadingLocation->arrivalLocation?->id ?? 'N' }}"
                             data-secondqcstatus="{{ $arrivalTicket->second_qc_status }}"
                             data-trucknumber="{{ $arrivalTicket->truck_no }}" data-bags="{{ $arrivalTicket->bags }}"
                             value="{{ $arrivalTicket->id }}">
