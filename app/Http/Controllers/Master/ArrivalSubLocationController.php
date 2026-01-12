@@ -34,8 +34,8 @@ class ArrivalSubLocationController extends Controller
                     $searchTerm = '%' . $request->search . '%';
                     return $q->where(function ($sq) use ($searchTerm) {
                         $sq->where('name', 'like', $searchTerm);
-                    })->orWhere(function($query) use ($searchTerm) {
-                        $query->where("companyLocation.name", "like", $searchTerm);
+                    })->orWhereHas('companyLocation', function ($query) use ($searchTerm) {
+                        $query->where('name', 'like', "%{$searchTerm}%");
                     });
                 })
             ->where('company_id', $request->company_id)
