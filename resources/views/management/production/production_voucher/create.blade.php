@@ -150,7 +150,7 @@
                                                 <tbody>
                                                     <tr>
                                                         <td>
-                                                            <select name="product_id[]" class="form-control select2"
+                                                            <select name="input_product_id[]" class="form-control select2"
                                                                 required>
                                                                 <option value="">Select Commodity</option>
                                                                 @if(isset($products))
@@ -162,7 +162,7 @@
                                                             </select>
                                                         </td>
                                                         <td>
-                                                            <select name="location_id[]" class="form-control select2"
+                                                            <select name="input_location_id[]" class="form-control select2"
                                                                 required>
                                                                 <option value="">Select Location</option>
                                                                 @if(isset($sublocations))
@@ -175,15 +175,15 @@
                                                             </select>
                                                         </td>
                                                         <td>
-                                                            <input type="number" name="qty[]" class="form-control"
+                                                            <input type="number" name="input_qty[]" class="form-control"
                                                                 step="0.01" min="0.01" required>
                                                         </td>
                                                         <td>
-                                                            <input type="number" name="yield[]" class="form-control"
+                                                            <input type="number" name="input_yield[]" class="form-control"
                                                                 step="0.01" min="0.01" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea name="remarks[]" class="form-control"
+                                                            <textarea name="input_remarks[]" class="form-control"
                                                                 rows="1"></textarea>
                                                         </td>
                                                         <td><button type="button" class="btn btn-sm btn-primary copythis"><i class="fa fa-plus"></i></button>
@@ -198,11 +198,11 @@
                                                            
                                                         </td>
                                                         <td>
-                                                            <input type="number" name="total_qty[]" class="form-control"
+                                                            <input type="number" name="input_total_qty[]" class="form-control"
                                                                 step="0.01" min="0.01" readonly>
                                                         </td>
                                                         <td>
-                                                            <input type="number" name="total_yield[]" class="form-control"
+                                                            <input type="number" name="input_total_yield[]" class="form-control"
                                                                 step="0.01" min="0.01" readonly>
                                                         </td>
                                                       
@@ -590,24 +590,35 @@
             // Insert clone after the original row
             $originalRow.after(clone);
             
-            // Initialize Select2 for cloned row - use same pattern as codebase
-            // Remove any existing select2 containers and classes
-            clone.find('.select2-container').remove();
-            clone.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id');
-            
-            // Reinitialize select2 after DOM is ready - use simple initialization like codebase
-            setTimeout(function() {
-                // Initialize all selects in cloned row (they should all have select2 class)
+            // Initialize Select2 for cloned row - properly destroy and reinitialize
                 clone.find('select').each(function() {
                     var $select = $(this);
-                    // Make sure it has select2 class if it doesn't already
+                
+                // Destroy existing select2 instance if any
+                if ($select.data('select2')) {
+                    $select.select2('destroy');
+                }
+                
+                // Remove select2 containers and classes
+                $select.siblings('.select2-container').remove();
+                $select.removeClass('select2-hidden-accessible').removeAttr('data-select2-id');
+                
+                // Make sure it has select2 class
                     if (!$select.hasClass('select2')) {
                         $select.addClass('select2');
                     }
-                    // Initialize select2
-                    $select.select2();
+            });
+            
+            // Reinitialize select2 after DOM is ready
+            setTimeout(function() {
+                clone.find('select.select2').each(function() {
+                    var $select = $(this);
+                    // Initialize select2 with proper settings
+                    $select.select2({
+                        dropdownParent: $select.closest('.modal-body, .card-body, body')
+                    });
                 });
-            }, 200);
+            }, 100);
             
             // Function to determine which calculation to run
             function runAppropriateCalculation() {
@@ -772,14 +783,14 @@
             
             // First, calculate total input qty (excluding total row)
             tbody.find('tr').not(':last').each(function() {
-                const qty = parseFloat($(this).find('input[name="qty[]"]').val()) || 0;
+                const qty = parseFloat($(this).find('input[name="input_qty[]"]').val()) || 0;
                 totalQty += qty;
             });
             
             // Now calculate yield for each input row (total input = 100%)
             tbody.find('tr').not(':last').each(function() {
-                const qtyInput = $(this).find('input[name="qty[]"]');
-                const yieldInput = $(this).find('input[name="yield[]"]');
+                const qtyInput = $(this).find('input[name="input_qty[]"]');
+                const yieldInput = $(this).find('input[name="input_yield[]"]');
                 
                 const qty = parseFloat(qtyInput.val()) || 0;
                 
@@ -793,8 +804,8 @@
             });
             
             // Update total row
-            const totalQtyInput = tbody.find('tr:last').find('input[name="total_qty[]"]');
-            const totalYieldInput = tbody.find('tr:last').find('input[name="total_yield[]"]');
+            const totalQtyInput = tbody.find('tr:last').find('input[name="input_total_qty[]"]');
+            const totalYieldInput = tbody.find('tr:last').find('input[name="input_total_yield[]"]');
             
             totalQtyInput.val(roundToTwo(totalQty));
             
@@ -1021,9 +1032,17 @@
 
         // Initialize all calculations
         function initializeCalculations() {
-            // Reinitialize Select2 for dynamically loaded selects - use same pattern as codebase
+            // Reinitialize Select2 for dynamically loaded selects - properly destroy and reinitialize
             setTimeout(function() {
-                // Remove existing select2 containers first
+                // Destroy existing select2 instances first
+                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select').each(function() {
+                    var $select = $(this);
+                    if ($select.data('select2')) {
+                        $select.select2('destroy');
+                    }
+                });
+                
+                // Remove existing select2 containers
                 $('#productionInputsTable .select2-container, #productionHeadProductsTable .select2-container, #productionByProductsTable .select2-container').remove();
                 
                 // Clean up all selects
@@ -1031,22 +1050,24 @@
                     .removeClass('select2-hidden-accessible')
                     .removeAttr('data-select2-id');
                 
-                // Reinitialize all select2 - use simple initialization like codebase
+                // Reinitialize all select2 with proper settings
                 $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select').each(function() {
                     var $select = $(this);
                     // Make sure it has select2 class
                     if (!$select.hasClass('select2')) {
                         $select.addClass('select2');
                     }
-                    // Initialize select2
-                    $select.select2();
+                    // Initialize select2 with proper settings
+                    $select.select2({
+                        dropdownParent: $select.closest('.modal-body, .card-body, body')
+                    });
                 });
             }, 200);
             
             // Attach event handlers using delegated events (works for dynamically added rows)
             // Production Inputs - qty changes
-            $(document).off('input change keyup', '#productionInputsTable input[name="qty[]"]');
-            $(document).on('input change keyup', '#productionInputsTable input[name="qty[]"]', function() {
+            $(document).off('input change keyup', '#productionInputsTable input[name="input_qty[]"]');
+            $(document).on('input change keyup', '#productionInputsTable input[name="input_qty[]"]', function() {
                 calculateProductionInputs();
             });
             

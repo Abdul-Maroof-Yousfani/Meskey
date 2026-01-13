@@ -60,21 +60,21 @@ class ProductionVoucherRequest extends FormRequest
                 // 'string',
                 'max:1000'
             ],
-            // Production Inputs
-            'product_id.*' => [
+            // Production Inputs (using input_ prefix to avoid conflict with main form fields)
+            'input_product_id.*' => [
                 'nullable',
                 'exists:products,id'
             ],
-            'location_id.*' => [
+            'input_location_id.*' => [
                 'nullable',
                 'exists:arrival_sub_locations,id'
             ],
-            'qty.*' => [
+            'input_qty.*' => [
                 'nullable',
                 'numeric',
                 'min:0.01'
             ],
-            'remarks.*' => [
+            'input_remarks.*' => [
                 'nullable',
                 'string',
                 'max:1000'

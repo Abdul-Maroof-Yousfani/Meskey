@@ -1331,3 +1331,36 @@ if(!function_exists("getArrivalLocationsOfCompany")) {
         return $arrival_locations;
     }
 }
+
+
+if(!function_exists("getByProductsById")) {
+    function getByProductsById($by_product_id) {
+
+        $byProductId = $by_product_id;
+        $byProduct = $byProductId ? Product::find($byProductId) : null;
+
+        // Filter products based on parent_id logic
+        $productsQuery = Product::where('status', 1);
+
+        if ($byProduct) {
+            if ($byProduct->parent_id) {
+                // Head product has a parent - show all products with same parent_id (including head product if it's a child)
+                $productsQuery->where(function ($q) use ($byProduct) {
+                    $q->where('parent_id', $byProduct->parent_id)
+                        ->orWhere('id', $byProduct->parent_id); // Include parent itself
+                });
+            } else {
+                // Head product is itself a parent (parent_id is null) - show all its children + itself
+                $productsQuery->where(function ($q) use ($byProductId) {
+                    $q->where('parent_id', $byProductId)
+                        ->orWhere('id', $byProductId); // Include head product itself
+                });
+            }
+        }
+
+        $byProducts = $productsQuery->orderBy('name')->get();
+
+        
+        return $byProducts;
+    }
+}

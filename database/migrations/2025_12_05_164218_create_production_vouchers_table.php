@@ -18,7 +18,10 @@ return new class extends Migration
             $table->date('prod_date');
             $table->unsignedBigInteger('job_order_id')->nullable(); // Kept for backward compatibility
             $table->unsignedBigInteger('location_id'); // company_location_id
-            $table->unsignedBigInteger('product_id')->nullable(); // Commodity
+            $table->unsignedBigInteger('product_id')->nullable(); // Commodity/Head Product
+            $table->unsignedBigInteger('plant_id')->nullable();
+            $table->unsignedBigInteger('by_product_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->decimal('produced_qty_kg', 15, 2)->default(0);
             $table->unsignedBigInteger('supervisor_id')->nullable(); // user_id
             $table->decimal('labor_cost_per_kg', 10, 4)->default(0);
@@ -31,6 +34,9 @@ return new class extends Migration
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->foreign('location_id')->references('id')->on('company_locations')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('set null');
+            $table->foreign('plant_id')->references('id')->on('plants')->onDelete('set null');
+            $table->foreign('by_product_id')->references('id')->on('products')->onDelete('set null');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('supervisor_id')->references('id')->on('users')->onDelete('set null');
         });
 

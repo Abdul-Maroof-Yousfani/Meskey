@@ -529,14 +529,15 @@ class ProductionVoucherController extends Controller
                 'serial_at_end' => 1,
             ]);
 
-            $productionVoucherData = $request->only([
-                'prod_date',
-                'location_id',
-                'product_id',
-                'plant_id',
-                'by_product_id',
-                'remarks'
-            ]);
+            // Extract single values for main production voucher fields
+            $productionVoucherData = [
+                'prod_date' => $request->input('prod_date'),
+                'location_id' => $request->input('location_id'), // Single value from main form
+                'product_id' => $request->input('product_id'), // Single value from main form
+                'plant_id' => $request->input('plant_id'),
+                'by_product_id' => $request->input('by_product_id'),
+                'remarks' => $request->input('remarks')
+            ];
 
             // Handle multiple job orders - store first one in job_order_id for backward compatibility
             $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
@@ -544,7 +545,7 @@ class ProductionVoucherController extends Controller
 
             $productionVoucherData['company_id'] = auth()->user()->company_id ?? $request->company_id;
             $productionVoucherData['prod_no'] = $uniqueProdNo;
-            $productionVoucherData['user_id'] = auth()->id();
+            $productionVoucherData['user_id'] = auth()->user()->id;
             $productionVoucherData['status'] = 'draft';
 
             $productionVoucher = ProductionVoucher::create($productionVoucherData);
@@ -555,11 +556,12 @@ class ProductionVoucherController extends Controller
             }
 
             // Save Production Inputs
-            if ($request->has('product_id') && is_array($request->product_id)) {
-                $inputProductIds = $request->product_id;
-                $inputLocationIds = $request->input('location_id', []);
-                $inputQtys = $request->input('qty', []);
-                $inputRemarks = $request->input('remarks', []);
+            // Production inputs use input_product_id[] and input_location_id[] to avoid conflict with main form fields
+            $inputProductIds = $request->input('input_product_id', []);
+            if (is_array($inputProductIds) && !empty($inputProductIds)) {
+                $inputLocationIds = $request->input('input_location_id', []);
+                $inputQtys = $request->input('input_qty', []);
+                $inputRemarks = $request->input('input_remarks', []);
 
                 foreach ($inputProductIds as $index => $productId) {
                     if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
@@ -657,6 +659,7 @@ class ProductionVoucherController extends Controller
         $products = Product::where('status', 1)->get();
         $sublocations = ArrivalSubLocation::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
+        $plants = \App\Models\Master\Plant::where('status', 'active')->get();
 
         return view('management.production.production_voucher.edit', compact(
             'productionVoucher',
@@ -665,7 +668,8 @@ class ProductionVoucherController extends Controller
             'supervisors',
             'products',
             'sublocations',
-            'brands'
+            'brands',
+            'plants'
         ));
     }
 
@@ -676,14 +680,15 @@ class ProductionVoucherController extends Controller
         DB::beginTransaction();
 
         try {
-            $productionVoucherData = $request->only([
-                'prod_date',
-                'location_id',
-                'product_id',
-                'plant_id',
-                'by_product_id',
-                'remarks'
-            ]);
+            // Extract single values for main production voucher fields (same as store)
+            $productionVoucherData = [
+                'prod_date' => $request->input('prod_date'),
+                'location_id' => $request->input('location_id'), // Single value from main form
+                'product_id' => $request->input('product_id'), // Single value from main form
+                'plant_id' => $request->input('plant_id'),
+                'by_product_id' => $request->input('by_product_id'),
+                'remarks' => $request->input('remarks')
+            ];
 
             // Handle multiple job orders
             $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
@@ -698,16 +703,16 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync([]);
             }
 
-            // Delete existing inputs and outputs
+            // Delete existing inputs and outputs (always delete and recreate from form data)
             $productionVoucher->inputs()->delete();
             $productionVoucher->outputs()->delete();
 
-            // Save Production Inputs (same as store)
-            if ($request->has('product_id') && is_array($request->product_id)) {
-                $inputProductIds = $request->product_id;
-                $inputLocationIds = $request->input('location_id', []);
-                $inputQtys = $request->input('qty', []);
-                $inputRemarks = $request->input('remarks', []);
+            // Save Production Inputs (same as store - using input_ prefix)
+            $inputProductIds = $request->input('input_product_id', []);
+            if (is_array($inputProductIds) && !empty($inputProductIds)) {
+                $inputLocationIds = $request->input('input_location_id', []);
+                $inputQtys = $request->input('input_qty', []);
+                $inputRemarks = $request->input('input_remarks', []);
 
                 foreach ($inputProductIds as $index => $productId) {
                     if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
@@ -722,7 +727,7 @@ class ProductionVoucherController extends Controller
                 }
             }
 
-            // Save Production Outputs (same as store)
+            // Save Production Outputs (same as store - using output_ prefix)
             if ($request->has('output_qty') && is_array($request->output_qty)) {
                 $outputQtys = $request->output_qty;
                 $outputProductIds = $request->input('output_product_id', []);
