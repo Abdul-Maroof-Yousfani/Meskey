@@ -43,7 +43,7 @@ class SamplingMonitoringController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
                         $aq->where('unique_no', 'like', $searchTerm)
-                            ->orWhere('supplier_name', 'like', $searchTerm);
+                            ->orWhere('accounts_of_name', 'like', $searchTerm);
                     });
                 });
             })
