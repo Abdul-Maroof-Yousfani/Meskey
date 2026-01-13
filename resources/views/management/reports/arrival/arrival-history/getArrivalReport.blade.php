@@ -127,7 +127,7 @@
                                 @elseif ($status == 'TS-RH')
                                     <span class="badge bg-warning">TS-RH</span>
                                 @else
-                                    <span class="badge bg-info">In-Process</span>
+                                    <span class="badge bg-warning">In-Process</span>
                                 @endif
                             @endif
                         </td>
