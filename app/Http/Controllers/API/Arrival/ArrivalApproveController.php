@@ -12,6 +12,7 @@ use App\Models\Master\ArrivalSubLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Helpers\ApiResponse;
+use Illuminate\Support\Facades\DB;
 
 class ArrivalApproveController extends Controller
 {
