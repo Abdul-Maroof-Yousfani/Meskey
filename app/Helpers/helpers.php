@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrderData, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -71,7 +71,29 @@ if (!function_exists('canAccess')) {
 }
 
 
+if(!function_exists("getAllStitchings")) {
+    function getAllStitchings() {
+        return Stitching::select("id", "name")->where("status", "active")->get();
+    }
+}
 
+if(!function_exists("getStitchingById")) {
+    function getStitchingById($id) {
+        return Stitching::where("id", $id)->where("status", "active")->first();
+    }
+}
+
+if(!function_exists("getStitchingsByIds")) {
+    function getStitchingsByIds($ids) {
+        if (is_string($ids)) {
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+        if (empty($ids)) {
+            return collect();
+        }
+        return Stitching::whereIn("id", $ids)->where("status", "active")->get();
+    }
+}
 
 if(!function_exists('getUserCompanyLocations')) {
     function getUserCurrentCompanyLocations() {
@@ -693,6 +715,27 @@ function delivery_order_balance($sale_order_data_id) {
     $balance = (int)$able_to_spend - (int)$spent;
 
     return $balance;
+}
+
+function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_order_id = null) {
+    
+    $overall_quantities = $loadingSlip->deliveryOrder->delivery_order_data->sum("qty");
+    $spent_quantities = $loadingSlip->deliveryOrder->saleSecondWeighbridge->sum("net_weight");
+    $remaining_quantities = $overall_quantities - $spent_quantities;
+
+    return $remaining_quantities;
+
+}
+
+function get_second_weighbridge_balance_by_delivery_order($delivery_order_id) {
+
+    $delivery_order = DeliveryOrder::find($delivery_order_id);
+    $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
+    $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
+    $remaining_quantities = $overall_quantities - $spent_quantities;
+
+    return $remaining_quantities;
+
 }
 
 function receipt_voucher_balance($reference_id, $type = "sale_order") {

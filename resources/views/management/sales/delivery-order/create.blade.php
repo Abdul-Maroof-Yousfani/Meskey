@@ -45,8 +45,14 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber(); validate_expiry(this)" id="dispatch_date"
-                            class="form-control">
+                        <input
+                            type="date"
+                            name="dispatch_date"
+                            id="dispatch_date"
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            readonly
+                        >
                     </div>
                 </div>
 
@@ -252,6 +258,7 @@
     $(document).ready(function() {
         $('.select2').select2();
         $('#sauda_type').prop('disabled', true);
+        getNumber();
     });
 
     function validate_expiry() {
@@ -314,7 +321,6 @@
 
     function check_so_type() {
         const type = $("#sale_order").find("option:selected").data("type");
-        console.log(type);
         if (type == 10) {
             $(".advanced").css("display", "block");
         } else {
@@ -336,22 +342,17 @@
 
         // Prefer SO-selected factories; fallback to all factories for the location
         if (allowedFactories.length > 0) {
-            $("#arrivals").prop("disabled", false).empty().append('<option value=\"\">Select Factory</option>');
+            $("#arrivals").prop("disabled", false).empty();
             allowedFactories.forEach(loc => {
                 $("#arrivals").append(`<option value="${loc.id}">${loc.text}</option>`);
             });
-            $("#arrivals").val('').select2();
-
-            // Auto-select the first factory for the chosen location (per sale order mapping)
-            const firstFactoryId = allowedFactories?.[0]?.id;
-            if (firstFactoryId) {
-                $("#arrivals").val(String(firstFactoryId)).trigger('change.select2');
-                // Populate sections for that factory immediately
-                selectStorage(document.getElementById("arrivals"));
-            } else {
-                // Clear sections whenever factory list refreshes
-                $("#storages").prop("disabled", true).empty().append('<option value=\"\">Select Section</option>').trigger('change.select2');
-            }
+            
+            // Auto-select ALL factories
+            const allFactoryIds = allowedFactories.map(loc => String(loc.id));
+            $("#arrivals").val(allFactoryIds).trigger('change.select2');
+            
+            // Populate and select all sections for all selected factories
+            selectAllStorages(allFactoryIds);
         } else {
             $("#arrivals").prop("disabled", false);
             $.ajax({
@@ -363,7 +364,6 @@
                 dataType: "json",
                 success: function(res) {
                     $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrivals</option>`)
 
                     res.forEach(loc => {
                         $("#arrivals").append(`
@@ -373,7 +373,12 @@
                     `);
                     });
 
-                    $("#arrivals").select2();
+                    // Auto-select ALL factories
+                    const allFactoryIds = res.map(loc => String(loc.id));
+                    $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                    
+                    // Populate and select all sections for all selected factories
+                    selectAllStoragesFromServer(allFactoryIds);
                 },
                 error: function(error) {
 
@@ -381,57 +386,110 @@
             });
         }
     }
+    
+    // Function to populate and select all sections for all selected factories (using SO mapping)
+    function selectAllStorages(factoryIds) {
+        $("#storages").prop("disabled", false).empty();
+        
+        let allSections = [];
+        factoryIds.forEach(factoryId => {
+            const sections = soSectionMap[String(factoryId)] || [];
+            sections.forEach(section => {
+                // Avoid duplicates
+                if (!allSections.find(s => s.id === section.id)) {
+                    allSections.push(section);
+                }
+            });
+        });
+        
+        if (allSections.length > 0) {
+            allSections.forEach(section => {
+                $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+            });
+            
+            // Auto-select ALL sections
+            const allSectionIds = allSections.map(s => String(s.id));
+            $("#storages").val(allSectionIds).trigger('change.select2');
+        } else {
+            // Fallback: fetch sections from server for each factory
+            selectAllStoragesFromServer(factoryIds);
+        }
+    }
+    
+    // Function to fetch and select all sections from server for multiple factories
+    function selectAllStoragesFromServer(factoryIds) {
+        $("#storages").prop("disabled", false).empty();
+        
+        let allSections = [];
+        let completedRequests = 0;
+        
+        if (factoryIds.length === 0) {
+            return;
+        }
+        
+        factoryIds.forEach(factoryId => {
+            $.ajax({
+                url: "{{ route('sales.get.storage-locations') }}",
+                method: "GET",
+                data: {
+                    arrival_id: factoryId
+                },
+                dataType: "json",
+                success: function(res) {
+                    res.forEach(section => {
+                        // Avoid duplicates
+                        if (!allSections.find(s => s.id === section.id)) {
+                            allSections.push(section);
+                        }
+                    });
+                    
+                    completedRequests++;
+                    
+                    // Once all requests complete, populate and select all sections
+                    if (completedRequests === factoryIds.length) {
+                        $("#storages").empty();
+                        allSections.forEach(section => {
+                            $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+                        });
+                        
+                        // Auto-select ALL sections
+                        const allSectionIds = allSections.map(s => String(s.id));
+                        $("#storages").val(allSectionIds).trigger('change.select2');
+                    }
+                },
+                error: function(error) {
+                    completedRequests++;
+                }
+            });
+        });
+    }
 
     function selectStorage(el) {
-        const arrival = $(el).val();
-        const allowedSections = soSectionMap[String(arrival)] || [];
-        console.log(arrival);
-        if (!arrival) {
+        const arrivals = $(el).val(); // This is now an array since it's multiple select
+        
+        if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
             return;
         }
 
-        if (allowedSections.length > 0) {
-            $("#storages").prop("disabled", false).empty().append('<option value=\"\">Select Section</option>');
-            allowedSections.forEach(loc => {
-                $("#storages").append(`<option value="${loc.id}">${loc.text}</option>`);
-            });
-            $("#storages").val('').select2();
-
-            // Auto-select the first section for the chosen factory (per sale order mapping)
-            const firstSectionId = allowedSections?.[0]?.id;
-            if (firstSectionId) {
-                $("#storages").val(String(firstSectionId)).trigger('change.select2');
+        // Convert to array if single value
+        const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
+        
+        // Check if we have SO mapping for any of the selected factories
+        let hasMapping = false;
+        factoryIds.forEach(factoryId => {
+            if (soSectionMap[String(factoryId)] && soSectionMap[String(factoryId)].length > 0) {
+                hasMapping = true;
             }
+        });
+
+        if (hasMapping) {
+            // Use SO mapping
+            selectAllStorages(factoryIds);
         } else {
-            // get.arrival-locations; send request to this url
-            $("#storages").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.storage-locations') }}",
-                method: "GET",
-                data: {
-                    arrival_id: arrival
-                },
-                dataType: "json",
-                success: function(res) {
-                    console.log(res);
-                    $("#storages").empty();
-                    $("#storages").append(`<option value=''>Select Storage</option>`)
-                    res.forEach(loc => {
-                        $("#storages").append(`
-                        <option value="${loc.id}">
-                            ${loc.text}
-                        </option>
-                    `);
-                    });
-
-                    $("#storages").select2();
-                },
-                error: function(error) {
-
-                }
-            });
+            // Fetch from server
+            selectAllStoragesFromServer(factoryIds);
         }
     }
 
@@ -458,9 +516,6 @@
     }
 
     function change_withhold_amount() {
-
-
-
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
         remaining_amount = advance - withhold;
@@ -478,26 +533,36 @@
             $("#no_of_bags_0").val(no_of_bags);
         }
 
+        // Populate withhold_for_rv with only selected receipt vouchers
+        let withholdSelect = $("#withhold_for_rv");
+        withholdSelect.empty();
+        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        
+        // Get selected receipt vouchers and add them to withhold_for_rv
+        $("#receipt_vouchers option:selected").each(function() {
+            const val = $(this).val();
+            const text = $(this).text();
+            const amount = $(this).data('amount');
+            
+            if (val) { // Only add if it's a valid option (not empty)
+                withholdSelect.append(
+                    `<option value="${val}" data-amount="${amount}">${text}</option>`
+                );
+            }
+        });
 
-        if($("#withhold_amount").val() > 0 && receipt_vouchers.val()) {
+        if($("#withhold_amount").val() > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
             $("#withhold_for_rv").prop("disabled", false);
         } else {
-
             $("#withhold_for_rv").prop("disabled", true);
         }
 
-
-
-
-
-        $("withhold_for_rv").val("").trigger("change");
+        $("#withhold_for_rv").val("").trigger("change");
         $('#withhold_for_rv').select2({
             templateResult: function(data) {
-
                 if (!data.id) return data.text;
 
                 let amount = $(data.element).data('amount');
-
 
                 if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
                     return null; // Hides this option
@@ -513,7 +578,6 @@
                 return $item;
             }
         });
-
     }
 
     function addRow() {
@@ -810,8 +874,7 @@
             },
             dataType: "json",
             success: function(res) {
-                // withhold_for_rv
-
+                // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
                 select.empty();
                 select.append(
@@ -829,25 +892,14 @@
 
                 select.select2();
 
-
-                select = $("#withhold_for_rv");
-                select.empty();
-
-                select.append(
+                // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
+                let withholdSelect = $("#withhold_for_rv");
+                withholdSelect.empty();
+                withholdSelect.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
                 );
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
-
-                select.select2();
-
-
+                withholdSelect.prop("disabled", true);
+                withholdSelect.select2();
             },
             error: function(error) {
                 // Handle errors here

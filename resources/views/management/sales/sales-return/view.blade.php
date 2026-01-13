@@ -196,9 +196,10 @@
                                 // if ($balance <= 0) {
                                 //     continue;
                                 // }
+                                $sale_return_data = $data;
                                 $data = $data->sale_invoice_data;
                                 $packing = $data->packing ?? 0;
-                                $noOfBags = $data->no_of_bags; // Use available balance as default
+                                $noOfBags = $sale_return_data->no_of_bags; // Use available balance as default
                                 $qty = $data->qty;
                                 $rate = $data->rate ?? 0;
                                 $grossAmount = $data->gross_amount;
@@ -234,7 +235,7 @@
                                         id="no_of_bags_{{ $rowIndex }}"
                                         onkeyup="calculateRow(this); validateBalance(this)"
                                         class="form-control no_of_bags" step="0.01" min="0"
-                                        max="{{ 1 }}" value="{{ $noOfBags }}">
+                                        value="{{ $noOfBags }}">
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input type="number" name="qty[]" id="qty_{{ $rowIndex }}"
@@ -319,7 +320,7 @@
 <x-approval-status :model="$saleReturn" />
 
 <script>
-    let salesInvoiceRowIndex = 1;
+    salesInvoiceRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();

@@ -47,7 +47,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="8" class="ant-table-cell text-center">
+                <td colspan="12" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

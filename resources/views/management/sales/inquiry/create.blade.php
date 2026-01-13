@@ -27,7 +27,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label required">Inquiry Date:</label>
-                <input type="date" name="inquiry_date" onchange="getNumber()" id="inquiry_date" class="form-control">
+                <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()"  id="inquiry_date" class="form-control">
             </div>
         </div>
         <div class="col-md-4">
@@ -63,7 +63,7 @@
         <div class="col-md-4 mt-3">
             <div class="form-group">
                 <label class="form-label required">Delivery Date:</label>
-                <input type="date" name="required_date" id="required_date" class="form-control">
+                <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control">
             </div>
         </div>
     </div>
@@ -244,6 +244,7 @@
             $('#arrival_location_id').val(currentValues).trigger('change.select2');
         }
 
+
         function populateSections() {
             const factoryIds = $('#arrival_location_id').val() || initialFactories;
             const currentSections = $('#arrival_sub_location_id').val() || initialSections;
@@ -286,6 +287,23 @@
         const result = (qty / bag_size).toFixed();
         no_of_bags.val(result);
     }
+
+    function validateExpiry(){
+            const inquiryDate = $('#inquiry_date').val();
+            const requiredDate = $('#required_date').val();
+            if (inquiryDate && requiredDate) {
+                if (inquiryDate > requiredDate) {
+                    $('#required_date').addClass('is-invalid');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Expired!',
+                        text: 'Inquiry date cannot be greater than required date.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }
+        }
 
     function addRow() {
         let index = salesInquiryRowIndex++;

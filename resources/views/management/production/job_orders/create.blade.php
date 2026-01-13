@@ -640,54 +640,60 @@
 
         // Add new packing item function
         var isAddingItem = false;
-        function addNewPackingItem() {
-            if (isAddingItem) return; // Prevent multiple simultaneous additions
+      function addNewPackingItem() {
+            if (isAddingItem) return;
             isAddingItem = true;
 
-            var firstItem = $('.packing-item').first();
-            var newItem = firstItem.clone(true); // Clone with data but not event handlers
+            const $firstItem = $('.packing-item').first();
+            // 1. Clone **without events & data** → cleanest start
+            const $newItem = $firstItem.clone(false); // false = no data, no events
 
-            // Update indexes
-            var newIndex = $('.packing-item').length;
-            newItem.find('input, select').each(function () {
-                var name = $(this).attr('name');
+            const newIndex = $('.packing-item').length;
+
+            // 2. Fix names & clear values
+            $newItem.find('input, select').each(function () {
+                const $this = $(this);
+                let name = $this.attr('name');
                 if (name) {
                     name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
-                    $(this).attr('name', name);
-                    $(this).val(''); // Clear values
+                    $this.attr('name', name);
                 }
+                $this.val(''); // safe for both input & select
+            });
+            
+
+            // 3. Update data-index attributes
+            $newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
+            $newItem.find('.add-sub-packing-item').attr('data-index', newIndex);
+
+            // 4. Clean sub-items
+            $newItem.find('.sub-packing-items-container').empty();
+
+            // 5. Reset specific fields (optional - val('') already did most)
+            $newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
+            $newItem.find('select').prop('selectedIndex', 0);
+
+            // 6. Very important: Completely destroy any possible leftover Select2
+            //    (even if clone(false) was used, sometimes browser weirdness happens)
+            $newItem.find('select').each(function () {
+                const $select = $(this);
+                if ($select.data('select2')) {              // ← best way to check
+                    $select.select2('destroy');             // official destroy
+                }
+                // Clean up DOM remnants (sometimes destroy misses something)
+                $select.removeClass('select2-hidden-accessible');
+                $select.siblings('.select2-container').remove();
             });
 
-            // Update data-index for sub items container and button
-            newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
-            newItem.find('.add-sub-packing-item').attr('data-index', newIndex);
+            // 7. Finally append
+            $('#packingItems').append($newItem);
 
-            // Clear sub items container
-            newItem.find('.sub-packing-items-container').empty();
+        
+            // 8. Initialize fresh Select2 **only after** append
+            $newItem.find('select').select2();
 
-            // Clear specific values
-            newItem.find('.bag-size, .no-of-bags, .extra-bags, .empty-bags, .stuffing, .containers, .min-weight').val('');
-            newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
-            newItem.find('select').prop('selectedIndex', 0);
-
-            // Reset select fields
-            newItem.find('select').each(function () {
-                if ($(this).hasClass('select2-hidden-accessible')) {
-                    // Remove Select2 initialization
-                    $(this).siblings('.select2-container').remove();
-                    $(this).show().removeClass('select2-hidden-accessible');
-                    $(this).next('.select2-container').remove();
-                }
-                $(this).prop('selectedIndex', 0);
-            });
-
-            // Add to container
-            $('#packingItems').append(newItem);
-            newItem.find('select[name*="fumigation_company_id"]').val([]);
-
-            // Re-initialize Select2 for new selects
-            newItem.find('select').select2();
-            firstItem.find('select').select2();
+            // Optional: re-init first item if you really modified it
+            // $firstItem.find('select').select2(); // ← usually not needed
 
             isAddingItem = false;
         }
@@ -695,7 +701,7 @@
         // Duplicate packing item - PROPERLY FIXED VERSION
         $(document).off('click.jobOrderCreate', '.duplicate-packing-item').on('click.jobOrderCreate', '.duplicate-packing-item', function () {
             var currentItem = $(this).closest('.packing-item');
-
+            
             // Pehle original item ki values capture karo BEFORE destroying Select2
             var originalValues = {};
             currentItem.find('select').each(function () {

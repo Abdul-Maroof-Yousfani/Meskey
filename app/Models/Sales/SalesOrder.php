@@ -87,4 +87,7 @@ class SalesOrder extends Model
     public function customer() {
         return $this->belongsTo(Customer::class, "customer_id");
     }
+    public function saleSecondWeighbridge() {
+        return $this->hasMany(SecondWeighbridge::class, "sale_order_id");
+    }
 }

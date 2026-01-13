@@ -60,7 +60,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="date" onchange="getNumber()" id="date"
+                        <input type="date" readonly name="date" onchange="getNumber()" id="date"
                             value="{{ $saleReturn->date }}" class="form-control">
                     </div>
                 </div>
@@ -202,8 +202,8 @@
                                 $noOfBags = round($packing / $qty); // Use available balance as default
                                 $rate = $data->rate ?? 0;
                                 $grossAmount = $qty * $rate;
-                                $discountPercent = $data->discount_amount;
-                                $discountAmount = $data->discount_percent;
+                                $discountPercent = $data->discount_percent;
+                                $discountAmount = $data->discount_amount;
                                 $amount = $grossAmount - $discountAmount;
                                 $gstPercent = $data->gst_percentage;
                                 $gstAmount = $data->gst_amount;
@@ -238,7 +238,7 @@
                                         onkeyup="; validateBalance(this);"
                                       
                                         class="form-control no_of_bags" step="0.01" min="0"
-                                        max="" value="{{ $noOfBags }}">
+                                        max="" value="{{ $data->no_of_bags }}">
 
                                     <span style="font-size: 14px;;">Used Quantity: {{ sale_return_bags_used($data->sale_invoice_data_id) }}</span>
                                     <br />
@@ -328,7 +328,7 @@
 </form>
 
 <script>
-    let salesInvoiceRowIndex = 1;
+    salesInvoiceRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();
@@ -369,17 +369,17 @@
 
         // Get values
         const packing = parseFloat(packingInput.val()) || 0;
-        const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
+        const qty = parseFloat(qtyInput.val()) || 0;
         const rate = parseFloat(rateInput.val()) || 0;
         const discountPercent = parseFloat(discountPercentInput.val()) || 0;
         const gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
-        // Calculate Qty = Packing * No of Bags
-        const result = parseFloat(parseFloat(qtyInput.val()) / packingInput.val()).toFixed();
-        noOfBagsInput.val(result);
+        // Calculate No of Bags = Qty / Packing
+        const noOfBagsResult = packing > 0 ? Math.round(qty / packing) : 0;
+        noOfBagsInput.val(noOfBagsResult);
       
         // Calculate Gross Amount = Qty * Rate
-        const grossAmount = result * rate;
+        const grossAmount = qty * rate;
         grossAmountInput.val(round(grossAmount));
 
         // Calculate Discount Amount = (Discount % / 100) * Gross Amount

@@ -67,7 +67,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
-                        <select name="locations" id="locations" onchange="selectLocation(this); get_delivery_challans()"
+                        <select name="locations" id="locations" onchange="selectLocation(this);"
                             class="form-control select2">
                             <option value="">Select Company Location</option>
                             @foreach (get_locations() ?? [] as $location)
@@ -79,7 +79,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Factory:<span class="text-danger">*</span></label>
-                        <select name="arrival_locations" id="arrivals" onchange="selectStorage(this); get_delivery_challans()"
+                        <select name="arrival_locations" id="arrivals" onchange="selectStorage(this);"
                             class="form-control select2">
                             <option value="">Select Factory</option>
                         </select>
@@ -89,8 +89,15 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date"
-                            class="form-control">
+                        <input 
+                            type="date" 
+                            name="invoice_date" 
+                            onchange="getNumber()" 
+                            id="invoice_date"
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            readonly
+                        >
                     </div>
                 </div>
             </div>
@@ -107,7 +114,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" onchange="get_delivery_challans()">
                             <option value="">Select Sauda Type</option>
                             <option value="pohanch">Pohanch</option>
                             <option value="x-mill">X-mill</option>
@@ -186,10 +193,12 @@
 </form>
 
 <script>
-    let salesInvoiceRowIndex = 1;
+    salesInvoiceRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();
+
+        getNumber();
     });
 
     function selectStorage(el) {
@@ -306,7 +315,8 @@
             data: {
                 customer_id: $("#customer_id").val(),
                 company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrivals").val()
+                arrival_location_id: $("#arrivals").val(),
+                sauda_type: $("#sauda_type").val()
             },
             dataType: "json",
             success: function(res) {
@@ -432,7 +442,7 @@
             // When qty changes, calculate no_of_bags (if packing > 0)
             if (packing > 0) {
                 noOfBags = qty / packing;
-                noOfBagsInput.val(round(noOfBags));
+                noOfBagsInput.val(Math.round(noOfBags));
             }
         }
 

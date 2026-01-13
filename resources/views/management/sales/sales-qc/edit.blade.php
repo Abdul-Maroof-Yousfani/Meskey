@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="row" id="ticketDataContainer">
+    <div class="row" id="ticketDataContainer" style="margin-left: 4px; margin-right; 4px;">
         <div class="row">
             <div class="col-xs-12 col-sm-6 col-md-3">
                 <div class="form-group">
@@ -53,11 +53,20 @@
                     <select class="form-control select2 w-100" name="factory_display[]" id="factory_display" multiple disabled style="width: 100% !important;">
                         @php
                             $deliveryOrder = $SalesQc->loadingProgramItem->loadingProgram->deliveryOrder ?? null;
+                            $loadingProgramItem = $SalesQc->loadingProgramItem ?? null;
+                            
                             if ($deliveryOrder && $deliveryOrder->arrival_location_id) {
+                                // Get from delivery order
                                 $arrivalLocationIds = explode(',', $deliveryOrder->arrival_location_id);
                                 $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
                                 foreach($arrivalLocations as $location) {
                                     echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
+                                }
+                            } elseif ($loadingProgramItem && $loadingProgramItem->arrival_location_id) {
+                                // Fallback to loading program item
+                                $arrivalLocation = \App\Models\Master\ArrivalLocation::find($loadingProgramItem->arrival_location_id);
+                                if ($arrivalLocation) {
+                                    echo '<option value="' . $arrivalLocation->id . '" selected>' . $arrivalLocation->name . '</option>';
                                 }
                             }
                         @endphp
@@ -71,10 +80,17 @@
                     <select class="form-control select2 w-100" name="gala_display[]" id="gala_display" multiple disabled style="width: 100% !important;">
                         @php
                             if ($deliveryOrder && $deliveryOrder->sub_arrival_location_id) {
+                                // Get from delivery order
                                 $subArrivalLocationIds = explode(',', $deliveryOrder->sub_arrival_location_id);
                                 $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
                                 foreach($subArrivalLocations as $location) {
                                     echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
+                                }
+                            } elseif ($loadingProgramItem && $loadingProgramItem->sub_arrival_location_id) {
+                                // Fallback to loading program item
+                                $subArrivalLocation = \App\Models\Master\ArrivalSubLocation::find($loadingProgramItem->sub_arrival_location_id);
+                                if ($subArrivalLocation) {
+                                    echo '<option value="' . $subArrivalLocation->id . '" selected>' . $subArrivalLocation->name . '</option>';
                                 }
                             }
                         @endphp

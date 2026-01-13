@@ -117,7 +117,7 @@
                             <th width="15%">Gala/Sub Arrival Location</th>
                             <th width="10%">Driver Name</th>
                             <th width="10%">Contact Details</th>
-                            <th width="8%">Qty</th>
+                            <th width="8%">Suggested Qty</th>
                         </tr>
                     </thead>
                     <tbody id="itemsList">

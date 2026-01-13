@@ -21,25 +21,28 @@ class DeliveryChallanRequest extends FormRequest
      */
     public function rules(): array
     {
+
+        // in delivery order
+
         return [
             "dc_no" => [ "required" ],
             "date" => [ "required", "date" ],
             "customer_id" => [ "required", "numeric" ],
-            "reference_number" => [ "required" ],
-            "labour" => [ "required" ],
-            "labour_amount" => [ "required" ],
-            "transporter" => [ "required" ],
-            "transporter_amount" => [ "required" ],
-            "weighbridge" => [ "required" ],  
-            "weighbridge_amount" => [ "required" ],
+            // "reference_number" => [ "required" ],
+            // "labour" => [ "required" ],
+            // "labour_amount" => [ "required" ],
+            // "transporter" => [ "required" ],
+            // "transporter_amount" => [ "required" ],
+            // "weighbridge" => [ "required" ],  
+            // "weighbridge_amount" => [ "required" ],
             "sauda_type" => [ "required" ],
-            "remarks" => [ "required" ],
+            // "remarks" => [ "required" ],
 
-            "truck_no" => ["required"],
-            "truck_no.*" => ["required"],
+            // "truck_no" => ["required"],
+            // "truck_no.*" => ["required"],
 
-            "bilty_no" => ["required"],
-            "bilty_no.*" => ["required"],
+            // "bilty_no" => ["required"],
+            // "bilty_no.*" => ["required"],
         ];
     }
 }

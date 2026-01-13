@@ -43,13 +43,18 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">SO No.</th>
-                                            <th class="col-sm-1">DO No.</th>
-                                            <th class="col-sm-2">Customer</th>
-                                            <th class="col-sm-2">Commodity</th>
-                                            <th class="col-sm-1">Items</th>
-                                            <th class="col-sm-2">Created</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th>SO No.</th>
+                                            <th>DO No.</th>
+                                            <th>Customer</th>
+                                            <th>Commodity</th>
+                                            <th>Ticket No.</th>
+                                            <th>Truck No.</th>
+                                            <th>Container No.</th>
+                                            <th>Factory</th>
+                                            <th>Gala</th>
+                                            <th>Suggested Qty</th>
+                                            <th>Created</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
 
@@ -71,6 +76,10 @@
         });
     </script>
 @endsection
+
+
+
+
 
 
 

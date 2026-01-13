@@ -20,12 +20,24 @@
                     <td>
                         {{ $firstWeighbridge->loadingProgramItem->truck_number ?? 'N/A' }}
                     </td>
-                    <td>
-                        {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A' }}
-                    </td>
-                    <td>
-                        {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}
-                    </td>
+                    @if($firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder)
+                        <td>
+                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A' }}
+                        </td>
+                    @else
+                        <td>
+                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->saleOrder->customer->name ?? 'N/A' }}
+                        </td>
+                    @endif
+                    @if($firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder)
+                        <td>
+                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}
+                        </td>
+                    @else
+                        <td>
+                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->saleOrder->sales_order_data->first()->item->name ?? 'N/A' }}
+                        </td>
+                    @endif
                     <td>
                         {{ $firstWeighbridge->first_weight ?? 'N/A' }}
                     </td>
@@ -44,8 +56,10 @@
     </table>
 
     <!-- Pagination -->
-    <div class="d-flex justify-content-center">
-        {{ $FirstWeighbridges->appends(request()->query())->links() }}
+    <div class="row d-flex" id="paginationLinks">
+        <div class="col-md-12 text-right">
+            {{ $FirstWeighbridges->links() }}
+        </div>
     </div>
 @else
     <div class="text-center py-5">

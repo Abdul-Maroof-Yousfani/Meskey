@@ -103,4 +103,7 @@
     @endif
 </div>
 
+@if($SalesQc->status === 'reject')
+    <x-approval-without-revert :model="$SalesQc" />
+@endif
 

@@ -156,6 +156,15 @@ class PurchaseRequestController extends Controller
                     $printingSamplePath = $file->store('printing_samples', 'public');
                 }
 
+                // Handle stitching multi-select - convert array to comma-separated string
+                $stitchingIndex = $request->index[$index] ?? $index;
+                $stitchingValue = null;
+                if (isset($request->stitching[$stitchingIndex])) {
+                    $stitchingValue = is_array($request->stitching[$stitchingIndex]) 
+                        ? implode(',', $request->stitching[$stitchingIndex]) 
+                        : $request->stitching[$stitchingIndex];
+                }
+
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
                     'category_id' => $request->category_id[$index],
@@ -166,7 +175,7 @@ class PurchaseRequestController extends Controller
                     'color' => $request->color[$index] ?? null,
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                     'size' => $request->size[$index] ?? null,
-                    'stitching' => $request->stitching[$index] ?? null,
+                    'stitching' => $stitchingValue,
                     'micron' => $request->micron[$index] ?? null,
                     'printing_sample' => $printingSamplePath,
                     'brand_id' => $request->brands[$index],
@@ -291,6 +300,15 @@ class PurchaseRequestController extends Controller
                             $printingSamplePath = $file->store('printing_samples', 'public');
                         }
 
+                        // Handle stitching multi-select - convert array to comma-separated string
+                        $stitchingIndexUpdate = $request->index[$index] ?? $index;
+                        $stitchingValue = null;
+                        if (isset($request->stitching[$stitchingIndexUpdate])) {
+                            $stitchingValue = is_array($request->stitching[$stitchingIndexUpdate]) 
+                                ? implode(',', $request->stitching[$stitchingIndexUpdate]) 
+                                : $request->stitching[$stitchingIndexUpdate];
+                        }
+
                         $requestData->update([
                             'category_id' => $request->category_id[$index],
                             'item_id' => $itemId,
@@ -299,7 +317,7 @@ class PurchaseRequestController extends Controller
                             'color' => $request->color[$index] ?? null,
                             'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                             'size' => $request->size[$index] ?? null,
-                            'stitching' => $request->stitching[$index] ?? null,
+                            'stitching' => $stitchingValue,
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
                             'brand_id' => $request->brands[$index],
@@ -326,6 +344,15 @@ class PurchaseRequestController extends Controller
                         $printingSamplePath = $file->store('printing_samples', 'public');
                     }
 
+                    // Handle stitching multi-select - convert array to comma-separated string
+                    $stitchingIndexNew = $request->index[$index] ?? $index;
+                    $stitchingValueNew = null;
+                    if (isset($request->stitching[$stitchingIndexNew])) {
+                        $stitchingValueNew = is_array($request->stitching[$stitchingIndexNew]) 
+                            ? implode(',', $request->stitching[$stitchingIndexNew]) 
+                            : $request->stitching[$stitchingIndexNew];
+                    }
+
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
                         'category_id' => $request->category_id[$index],
@@ -336,7 +363,7 @@ class PurchaseRequestController extends Controller
                         'color' => $request->color[$index] ?? null,
                         'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                         'size' => $request->size[$index] ?? null,
-                        'stitching' => $request->stitching[$index] ?? null,
+                        'stitching' => $stitchingValueNew,
                         'printing_sample' => $printingSamplePath,
                         'brand_id' => $request->brands[$index],
                         'remarks' => $request->remarks[$index] ?? null,

@@ -106,6 +106,7 @@
         $(".color-select").select2();
         $(".brand-select").select2();
         $(".size-select").select2();
+        $(".stitching-select").select2();
         $(".select2").select2();
         $('#job_order_id_0').select2({
             placeholder: 'Please Select Job Order',
@@ -272,8 +273,12 @@
                     <td style="width: 6%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="stitching[]" id="stitching_${index}" class="form-control"
-                                    step="0.01" min="0" placeholder="Stitching">
+                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:150px;" multiple>
+                                    <option value="">Select Stitching</option>
+                                    @foreach(getAllStitchings() ?? [] as $stitching)
+                                        <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </td>
@@ -318,6 +323,7 @@
         $("#brands_" + index).select2();
         $("#color_" + index).select2();
         $("#size_" + index).select2();
+        $("#stitching_" + index).select2();
 
 
         $('.removeRowBtn').prop('disabled', false);

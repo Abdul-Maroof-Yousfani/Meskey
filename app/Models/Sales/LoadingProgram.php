@@ -46,6 +46,6 @@ class LoadingProgram extends Model
             'loading_program_item_id', // foreign key on loading_slips table
             'id', // local key on loading_programs table
             'id' // local key on loading_program_items table
-        );
+        )->first();
     }
 }

@@ -117,7 +117,10 @@ class SalesInquiryController extends Controller
     }
 
     public function store(SalesInquiryRequest $request) {
-        
+        if($request->inquiry_date > $request->required_date) {
+            return response()->json("Inquiry date cannot be greater than required date.", 400);
+        }
+
         try {
             DB::beginTransaction();
         
@@ -189,6 +192,10 @@ class SalesInquiryController extends Controller
         $factoryIds = $request->arrival_location_id ?? [];
         $sectionIds = $request->arrival_sub_location_id ?? [];
 
+        // if($request->inquiry_date > $request->required_date) {
+        //     return response()->json("Inquiry date cannot be greater than required date.", 400);
+        // }
+
         DB::beginTransaction();
         try {
             $data = [
@@ -203,7 +210,7 @@ class SalesInquiryController extends Controller
                 "required_date" => $request->required_date,
                 'arrival_location_id' => $factoryIds[0] ?? null,
                 'arrival_sub_location_id' => $sectionIds[0] ?? null,
-
+                "token_money" => $request->token_money,
                 'am_change_made' => 1
             ];
 

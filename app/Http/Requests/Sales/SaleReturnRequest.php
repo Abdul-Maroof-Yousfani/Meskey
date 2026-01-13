@@ -25,12 +25,13 @@ class SaleReturnRequest extends FormRequest
             "customer_id" => "required|numeric",
             "sr_no" => "required",
             "date" => "required|date",
-            "reference_number" => "required",
+            "reference_number" => "nullable",
             "contract_type" => "required|in:x-mill,pohanch",
             "company_location_id" => "required|numeric",
             "arrival_location_id" => "required|numeric",
             "storage_location_id" => "required|numeric",
-            "remarks" => "nullable"
+            "remarks" => "nullable",
+            "company_id" => "required|numeric"
         ];
     }
 }

@@ -203,6 +203,7 @@ class SaleOrderController extends Controller
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
 
+
         return response()->json(['data' => 'Sale Order has been deleted']);
     }
 

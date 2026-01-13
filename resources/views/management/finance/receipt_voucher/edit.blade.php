@@ -164,7 +164,7 @@
                                                         <tr>
                                                             <td class="text-center">
                                                                 <input type="checkbox" class="row-select"
-                                                                    data-row="{{ $idx }}">
+                                                                    data-row="{{ $idx }}" checked>
                                                                 <input type="hidden"
                                                                     name="items[{{ $idx }}][reference_id]"
                                                                     value="{{ $item->reference_id }}">
@@ -262,8 +262,14 @@
 
 @section('script')
     <script>
+        // Pre-selected references from server
+        var preSelectedReferences = @json($selectedReferences ?? []);
+        
         // This function can stay outside if it's called from elsewhere (e.g., onchange of customer)
-        function select_customer() {
+        function select_customer(preserveSelection = false) {
+            // Save current selection if we want to preserve it
+            var currentSelection = preserveSelection ? ($("#reference_ids").val() || preSelectedReferences) : [];
+            
             $.ajax({
                 url: '{{ route('receipt.voucher.get-documents') }}',
                 data: {
@@ -276,6 +282,11 @@
                     $("#reference_ids").select2({
                         data: response
                     });
+                    
+                    // Re-select the previously selected values
+                    if (currentSelection && currentSelection.length > 0) {
+                        $("#reference_ids").val(currentSelection).trigger('change.select2');
+                    }
                 },
                 error: function(xhr, status, error) {
                     console.error(error);
@@ -293,8 +304,6 @@
             const emptyMessage = $('.selected-docs-container p');
             const taxes = @json($taxes ?? []);
 
-
-            $("#customer_id").trigger("change");
 
             // ==================== CORE FUNCTION: Update Selected Documents List ====================
             // ==================== CORE FUNCTION: Update Selected Documents List with TOTAL ====================
@@ -393,7 +402,7 @@
                 referenceLabel.text(isAdvance ? 'Sale Orders (approved)' :
                 'Invoices (approved, receiving pending)');
                 referencesTableBody.html(
-                    '<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>'
+                    '<tr><td colspan="12" class="text-center text-muted">Select references to load details.</td></tr>'
                     );
                 selectAll.prop('checked', false);
                 updateSelectedDocsList();
@@ -499,6 +508,20 @@
 
             // ==================== Event Listeners ====================
 
+            // ==================== INITIALIZATION ON PAGE LOAD ====================
+            // Load documents for customer while preserving pre-selected references
+            select_customer(true);
+            
+            // Check select all checkbox if all rows are checked
+            const totalRowsInit = referencesTableBody.find('.row-select').length;
+            const checkedRowsInit = referencesTableBody.find('.row-select:checked').length;
+            if (totalRowsInit > 0 && totalRowsInit === checkedRowsInit) {
+                selectAll.prop('checked', true);
+            }
+            
+            // Update selected docs list on page load
+            updateSelectedDocsList();
+
             // Advance checkbox toggle
             $('#is_advance').on('change', toggleReferenceOptions);
             // toggleReferenceOptions(); // Initial call
@@ -514,7 +537,7 @@
 
                 if (!ids.length) {
                     referencesTableBody.html(
-                        '<tr><td colspan="6" class="text-center text-muted">Select references to load details.</td></tr>'
+                        '<tr><td colspan="12" class="text-center text-muted">Select references to load details.</td></tr>'
                         );
                     selectAll.prop('checked', false);
                     updateSelectedDocsList();

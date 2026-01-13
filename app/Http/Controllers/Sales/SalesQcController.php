@@ -110,20 +110,40 @@ class SalesQcController extends Controller
         ])->findOrFail($request->loading_program_item_id);
 
         $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+        $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
 
         // Auto-populate fields from ticket data (no matter what)
-        $salesQcData = [
-            'loading_program_item_id' => $request->loading_program_item_id,
-            'customer' => $request->customer ?: ($DeliveryOrder->customer->name ?? ''),
-            'commodity' => $request->commodity ?: ($DeliveryOrder->delivery_order_data->first()->item->name ?? ''),
-            'so_qty' => $request->so_qty ?: ($DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0),
-            'do_qty' => $request->do_qty ?: ($DeliveryOrder->delivery_order_data->first()->qty ?? 0),
-            'factory' => $request->factory ?: ($DeliveryOrder->arrivalLocation->name ?? ''),
-            'gala' => $request->gala ?: ($DeliveryOrder->subArrivalLocation->name ?? ''),
-            'qc_remarks' => $request->qc_remarks,
-            'status' => $request->status,
-            'created_by' => auth()->user()->id
-        ];
+        if ($DeliveryOrder) {
+            $salesQcData = [
+                'loading_program_item_id' => $request->loading_program_item_id,
+                'customer' => $request->customer ?: ($DeliveryOrder->customer->name ?? ''),
+                'commodity' => $request->commodity ?: ($DeliveryOrder->delivery_order_data->first()->item->name ?? ''),
+                'so_qty' => $request->so_qty ?: ($DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0),
+                'do_qty' => $request->do_qty ?: ($DeliveryOrder->delivery_order_data->first()->qty ?? 0),
+                'factory' => $request->factory ?: ($DeliveryOrder->arrivalLocation->name ?? ''),
+                'gala' => $request->gala ?: ($DeliveryOrder->subArrivalLocation->name ?? ''),
+                'qc_remarks' => $request->qc_remarks,
+                'status' => $request->status,
+                'delivery_order_id' => $DeliveryOrder->id,
+                'created_by' => auth()->user()->id
+            ];
+        }
+        else {
+            $salesQcData = [
+                'loading_program_item_id' => $request->loading_program_item_id,
+                'customer' => $request->customer ?: ($SaleOrder->customer->name ?? ''),
+                'commodity' => $request->commodity ?: ($SaleOrder->sales_order_data->first()->item->name ?? ''),
+                'so_qty' => $request->so_qty ?: ($SaleOrder->sales_order_data->first()->qty ?? 0),
+                'do_qty' => 0,
+                'factory' => $request->factory ?: ($SaleOrder->arrivalLocation->name ?? ''),
+                'gala' => $request->gala ?: ($SaleOrder->subArrivalLocation->name ?? ''),
+                'qc_remarks' => $request->qc_remarks,
+                'status' => $request->status,
+                'delivery_order_id' => null,
+                'created_by' => auth()->user()->id
+            ];
+        }
+        
 
         $salesQc = SalesQc::create($salesQcData);
 
@@ -172,6 +192,10 @@ class SalesQcController extends Controller
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
             'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgramItem.loadingProgram.saleOrder.customer',
+            'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.item',
+            'loadingProgramItem.arrivalLocation',
+            'loadingProgramItem.subArrivalLocation',
             'attachments'
         ])->findOrFail($id);
 
@@ -179,7 +203,8 @@ class SalesQcController extends Controller
             ->with([
                 'loadingProgram.deliveryOrder.customer',
                 'loadingProgram.deliveryOrder.delivery_order_data.item',
-                'loadingProgram.deliveryOrder'
+                'loadingProgram.deliveryOrder',
+                'loadingProgram.saleOrder.customer'
             ])
             ->get();
 
@@ -204,6 +229,7 @@ class SalesQcController extends Controller
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240'
         ]);
+
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -230,19 +256,36 @@ class SalesQcController extends Controller
         ])->findOrFail($request->loading_program_item_id);
 
         $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
-
+        $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
         // Auto-populate fields from ticket data (no matter what)
-        $salesQcData = [
-            'loading_program_item_id' => $request->loading_program_item_id,
-            'customer' => $request->customer ?: ($DeliveryOrder->customer->name ?? ''),
-            'commodity' => $request->commodity ?: ($DeliveryOrder->delivery_order_data->first()->item->name ?? ''),
-            'so_qty' => $request->so_qty ?: ($DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0),
-            'do_qty' => $request->do_qty ?: ($DeliveryOrder->delivery_order_data->first()->qty ?? 0),
-            'factory' => $request->factory ?: ($DeliveryOrder->arrivalLocation->name ?? ''),
-            'gala' => $request->gala ?: ($DeliveryOrder->subArrivalLocation->name ?? ''),
-            'qc_remarks' => $request->qc_remarks,
-            'status' => $request->status
-        ];
+        if ($DeliveryOrder) {
+            $salesQcData = [
+                'loading_program_item_id' => $request->loading_program_item_id,
+                'customer' => $request->customer ?: ($DeliveryOrder->customer->name ?? ''),
+                'commodity' => $request->commodity ?: ($DeliveryOrder->delivery_order_data->first()->item->name ?? ''),
+                'so_qty' => $request->so_qty ?: ($DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0),
+                'do_qty' => $request->do_qty ?: ($DeliveryOrder->delivery_order_data->first()->qty ?? 0),
+                'factory' => $request->factory ?: ($DeliveryOrder->arrivalLocation->name ?? ''),
+                'gala' => $request->gala ?: ($DeliveryOrder->subArrivalLocation->name ?? ''),
+                'qc_remarks' => $request->qc_remarks,
+                'delivery_order_id' => $DeliveryOrder->id,
+                'status' => $request->status
+            ];
+        } else {
+            $salesQcData = [
+                'loading_program_item_id' => $request->loading_program_item_id,
+                'customer' => $request->customer ?: ($SaleOrder->customer->name ?? ''),
+                'commodity' => $request->commodity ?: ($SaleOrder->sales_order_data->first()->item->name ?? ''),
+                'so_qty' => $request->so_qty ?: ($SaleOrder->sales_order_data->first()->qty ?? 0),
+                'do_qty' => 0,
+                'factory' => $request->factory ?: ($SaleOrder->arrivalLocation->name ?? ''),
+                'gala' => $request->gala ?: ($SaleOrder->subArrivalLocation->name ?? ''),
+                'qc_remarks' => $request->qc_remarks,
+                'delivery_order_id' => null,
+                'status' => $request->status
+            ];
+        }
+    
 
         $salesQc->update($salesQcData);
 
@@ -319,24 +362,43 @@ class SalesQcController extends Controller
             'loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
             'loadingProgram.deliveryOrder.arrivalLocation',
-            'loadingProgram.deliveryOrder.subArrivalLocation'
+            'loadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgram.saleOrder.customer',
+            'loadingProgram.saleOrder.sales_order_data.item',
+            'arrivalLocation',
+            'subArrivalLocation'
         ])->findOrFail($request->loading_program_item_id);
 
         $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
 
+        // Get factory and gala from loading program item
+        $factoryName = $LoadingProgramItem->arrivalLocation->name ?? '';
+        $galaName = $LoadingProgramItem->subArrivalLocation->name ?? '';
+
         // Prepare data for the form
-        $data = [
-            'customer' => $DeliveryOrder->customer->name ?? '',
-            'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
-            'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
-            'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
-            'factory' => $DeliveryOrder->arrival_location_id ?? '',
-            'gala' => $DeliveryOrder->sub_arrival_location_id ?? '',
-            'factory_names' => $DeliveryOrder->arrival_location_id ?
-                \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $DeliveryOrder->arrival_location_id))->pluck('name')->toArray() : [],
-            'gala_names' => $DeliveryOrder->sub_arrival_location_id ?
-                \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $DeliveryOrder->sub_arrival_location_id))->pluck('name')->toArray() : []
-        ];
+        if ($DeliveryOrder) {
+            $data = [
+                'customer' => $DeliveryOrder->customer->name ?? '',
+                'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
+                'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
+                'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
+                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
+                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
+                'factory_names' => $factoryName ? [$factoryName] : [],
+                'gala_names' => $galaName ? [$galaName] : []
+            ];
+        } else {
+            $data = [
+                'customer' => $LoadingProgramItem->loadingProgram->saleOrder->customer->name ?? '',
+                'commodity' => $LoadingProgramItem->loadingProgram->saleOrder->sales_order_data->first()->item->name ?? '',
+                'so_qty' => $LoadingProgramItem->loadingProgram->saleOrder->sales_order_data->first()->qty ?? 0,
+                'do_qty' => 0,
+                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
+                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
+                'factory_names' => $factoryName ? [$factoryName] : [],
+                'gala_names' => $galaName ? [$galaName] : []
+            ];
+        }
 
         return response()->json(['success' => true, 'data' => $data]);
     }

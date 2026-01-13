@@ -18,7 +18,7 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
-                <label>Delivery Order:</label>
+                <label id="delivery_order_label">Delivery Order: <span id="delivery_order_required_mark" class="text-danger">*</span></label>
                 <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
                     <option value="">Select Delivery Order</option>
                     @foreach ($DeliveryOrders as $deliveryOrder)
@@ -27,8 +27,12 @@
                         </option>
                     @endforeach
                 </select>
+                <small id="delivery_order_optional_note" class="text-muted" style="display: none;">
+                    Delivery Order is optional for this Sale Order. You can add it later during Second Weighbridge.
+                </small>
             </div>
         </div>
+        <input type="hidden" id="is_delivery_order_optional" value="0">
     </div>
     <div class="row" id="saleOrderDataContainer">
     </div>
@@ -86,7 +90,7 @@
                             <th width="15%">Gala/Sub Arrival Location *</th>
                             <th width="10%">Driver Name</th>
                             <th width="10%">Contact Details</th>
-                            <th width="8%">Qty</th>
+                            <th width="8%">Suggested Qty</th>
                             <th width="8%">Actions</th>
                         </tr>
                     </thead>
@@ -156,6 +160,25 @@
 
                             // Reinitialize select2 for any new dropdowns
                             $('.select2').select2();
+
+                            // Store sale order data for use when no delivery order is selected
+                            if (response.sale_order_data) {
+                                window.saleOrderData = response.sale_order_data;
+                            }
+
+                            // Handle delivery order optional status
+                            if (response.is_delivery_order_optional) {
+                                $('#is_delivery_order_optional').val('1');
+                                $('#delivery_order_required_mark').hide();
+                                $('#delivery_order_optional_note').show();
+                                // Show location and line items containers even without delivery order
+                                $('#locationContainer').show();
+                                $('#lineItemsContainer').show();
+                            } else {
+                                $('#is_delivery_order_optional').val('0');
+                                $('#delivery_order_required_mark').show();
+                                $('#delivery_order_optional_note').hide();
+                            }
                         } else {
                             Swal.fire("No Data", "No sale order details found.",
                                 "info");
@@ -172,6 +195,11 @@
                 $('#saleOrderDataContainer').html('');
                 $('#delivery_order_id').empty().append('<option value="">Select Delivery Order</option>');
                 $('#lineItemsContainer').hide();
+                $('#locationContainer').hide();
+                // Reset optional status
+                $('#is_delivery_order_optional').val('0');
+                $('#delivery_order_required_mark').show();
+                $('#delivery_order_optional_note').hide();
             }
         });
 
@@ -217,9 +245,12 @@
         $('#locationContainer').show();
         $('#lineItemsContainer').show();
     } else {
-        // Hide location and line items containers
+        // Hide location and line items containers only if delivery order is required
+        var isOptional = $('#is_delivery_order_optional').val() === '1';
+        if (!isOptional) {
         $('#locationContainer').hide();
         $('#lineItemsContainer').hide();
+        }
     }
 });
 
@@ -263,7 +294,7 @@
 
             // Populate sub-arrival locations with selection
             $.each(subArrivalLocations, function(index, location) {
-                var isSelected = selectedSubArrivalIds.includes(location.id.toString());
+               var isSelected = selectedSubArrivalIds.includes(location.id.toString());
                 var option = new Option(location.name, location.id, isSelected, isSelected);
                 $('#sub_arrival_locations').append(option);
             });
@@ -331,9 +362,10 @@
             // Populate arrival locations based on selected ones in the top
             updateItemLocations();
 
-            // Set packing and brand from delivery order for new item
+            // Set packing and brand from delivery order or sale order for new item
             var deliveryOrderId = $('#delivery_order_id').val();
             if (deliveryOrderId) {
+                // Use delivery order data
                 var saleOrderId = $('#sale_order_id').val();
                 if (saleOrderId) {
                     $.ajax({
@@ -348,23 +380,36 @@
 
                                 if (selectedDeliveryOrder && selectedDeliveryOrder.delivery_order_data && selectedDeliveryOrder.delivery_order_data.length > 0) {
                                     var firstItem = selectedDeliveryOrder.delivery_order_data[0];
-                                    console.log('Delivery order data:', selectedDeliveryOrder);
-                                    console.log('First item:', firstItem);
-                                    console.log('Brand data:', firstItem.brand);
 
                                     $('input[name="loading_program_items[' + index + '][packing]"]').val(firstItem.bag_size || '');
                                     $('input[name="loading_program_items[' + index + '][brand_id]"]').val(firstItem.brand_id || (firstItem.brand ? firstItem.brand.id : ''));
                                     $('input[name="loading_program_items[' + index + '][brand_name]"]').val(firstItem.brand ? firstItem.brand.name : '');
-
-                                    console.log('Setting brand for item ' + index + ':', {
-                                        brand_id: firstItem.brand_id || (firstItem.brand ? firstItem.brand.id : ''),
-                                        brand_name: firstItem.brand ? firstItem.brand.name : '',
-                                        firstItem: firstItem
-                                    });
                                 }
                             }
                         }
                     });
+                }
+            } else if (window.saleOrderData) {
+                // Use sale order data when no delivery order is selected
+                $('input[name="loading_program_items[' + index + '][packing]"]').val(window.saleOrderData.packing || '');
+                $('input[name="loading_program_items[' + index + '][brand_id]"]').val(window.saleOrderData.brand_id || '');
+                $('input[name="loading_program_items[' + index + '][brand_name]"]').val(window.saleOrderData.brand_name || '');
+
+                // Pre-select factory and gala from sale order data
+                var $factorySelect = $('select[name="loading_program_items[' + index + '][arrival_location_id]"]');
+                var $galaSelect = $('select[name="loading_program_items[' + index + '][sub_arrival_location_id]"]');
+
+                if (window.saleOrderData.arrival_location_id) {
+                    setTimeout(function() {
+                        $factorySelect.val(window.saleOrderData.arrival_location_id).trigger('change');
+                        
+                        // Set gala after factory is set
+                        setTimeout(function() {
+                            if (window.saleOrderData.sub_arrival_location_id) {
+                                $galaSelect.val(window.saleOrderData.sub_arrival_location_id).trigger('change');
+                            }
+                        }, 100);
+                    }, 100);
                 }
             }
         }
@@ -379,6 +424,9 @@
             }
         });
 
+        // Store all sub arrival locations with their parent arrival_location_id
+        var allSubArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
+
         function updateItemLocations() {
             const selectedArrivalLocations = $('#arrival_locations').val() || [];
             const selectedSubArrivalLocations = $('#sub_arrival_locations').val() || [];
@@ -388,7 +436,7 @@
                 const $select = $(this);
                 const currentValue = $select.val(); // Store current selected value
                 $select.empty().append('<option value="">Select Location</option>');
-
+                
                 // Get location names from the main arrival_locations select
                 $('#arrival_locations option').each(function() {
                     const value = $(this).val();
@@ -398,25 +446,55 @@
                         $select.append(option);
                     }
                 });
+
+                // Trigger change to update corresponding gala dropdown
+                if ($select.val()) {
+                    $select.trigger('change');
+                }
             });
 
-            // Update sub arrival location options
-            $('.sub-arrival-location-select').each(function() {
-                const $select = $(this);
-                const currentValue = $select.val(); // Store current selected value
-                $select.empty().append('<option value="">Select Sub Location</option>');
+            // Update sub arrival location options based on selected factory
+            updateGalaOptionsForAllRows();
+        }
 
-                // Get location names from the main sub_arrival_locations select
-                $('#sub_arrival_locations option').each(function() {
-                    const value = $(this).val();
-                    const text = $(this).text();
-                    if (value && selectedSubArrivalLocations.includes(value)) {
-                        const option = new Option(text, value, false, currentValue == value);
-                        $select.append(option);
+        // Function to update gala options for a specific row based on selected factory
+        function updateGalaOptions($factorySelect) {
+            const selectedFactoryId = $factorySelect.val();
+            const $row = $factorySelect.closest('tr');
+            const $galaSelect = $row.find('.sub-arrival-location-select');
+            const currentGalaValue = $galaSelect.val();
+            const selectedSubArrivalLocations = $('#sub_arrival_locations').val() || [];
+
+            $galaSelect.empty().append('<option value="">Select Sub Location</option>');
+
+            if (selectedFactoryId) {
+                // Filter sub arrival locations that:
+                // 1. Belong to the selected factory (arrival_location_id matches)
+                // 2. Are in the delivery order's sub arrival locations
+                allSubArrivalLocations.forEach(function(subLocation) {
+                    if (subLocation.arrival_location_id == selectedFactoryId && 
+                        selectedSubArrivalLocations.includes(subLocation.id.toString())) {
+                        const option = new Option(subLocation.name, subLocation.id, false, currentGalaValue == subLocation.id);
+                        $galaSelect.append(option);
                     }
                 });
+            }
+
+            // Reinitialize select2
+            $galaSelect.select2();
+        }
+
+        // Function to update gala options for all rows
+        function updateGalaOptionsForAllRows() {
+            $('.arrival-location-select').each(function() {
+                updateGalaOptions($(this));
             });
         }
+
+        // Event listener for factory select change in rows
+        $(document).on('change', '.arrival-location-select', function() {
+            updateGalaOptions($(this));
+        });
     });
 </script>
 

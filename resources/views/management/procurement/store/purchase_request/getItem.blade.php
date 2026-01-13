@@ -94,8 +94,16 @@
             </td>
 
             <td>
-                <input type="text" name="stitching[]" id="stitching_{{ $i }}" class="form-control"
-                    placeholder="Stitching" style="width:120px;">
+                {{-- <input type="text" name="stitching[]" id="stitching_{{ $i }}" class="form-control"
+                    placeholder="Stitching" style="width:120px;"> --}}
+
+               <select name="stitching[{{ $i }}][]" id="stitching_{{ $i }}"
+                    class="form-control item-select stitching-select select2Dropdown" style="width:200px;" multiple>
+                    <option value="">Select Stitching</option>
+                    @foreach (getAllStitchings() ?? [] as $stitching)
+                        <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
+                    @endforeach
+                </select>
             </td>
 
             <td>
@@ -131,6 +139,7 @@
 <script>
     $(document).ready(function() {
         $(".select2Dropdown").select2();
+        $(".stitching-select").select2();
     
 
     });

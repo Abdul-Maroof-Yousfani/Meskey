@@ -21,7 +21,8 @@ class SalesReturn extends Model
         "storage_location_id",
         "remarks",
         "am_approval_status",
-        "am_change_made"
+        "am_change_made",
+        "created_by"
     ];
 
     protected $table = "sales_return";

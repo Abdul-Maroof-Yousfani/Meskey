@@ -22,6 +22,7 @@
             $netAmount = $amount + $gstAmount;
             $lineDesc = $data->description ?? '';
             $truckNo = $data->truck_no ?? '';
+            $qty = $data->qty;
         @endphp
         <tr id="row_{{ $rowIndex }}">
             <td style="min-width: 200px;">
@@ -38,7 +39,7 @@
                 <input type="number" name="packing[]" id="packing_{{ $rowIndex }}" onkeyup="" class="form-control packing" step="0.01" min="0" value="{{ $packing }}" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" readonly step="0.01" min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" readonly  min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
                 
                 <span style="font-size: 14px;;">Used:
                     {{ sales_invoice_bags_used($data->id) }}</span>
@@ -53,7 +54,7 @@
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ $grossAmount }}">
+                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ $qty * $rate }}">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}">
