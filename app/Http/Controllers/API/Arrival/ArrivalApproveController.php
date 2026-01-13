@@ -29,10 +29,13 @@ class ArrivalApproveController extends Controller
                         ->where('approved_status', 'pending');
                 })
                 ->whereNull('arrival_sampling_requests.id')
-                ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                    return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
-                        $query->where('arrival_location_id', $authUser->arrival_location_id);
-                    });
+                // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+                //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+                //     });
+                // })
+                ->whereHas('unloadingLocation', function ($query) {
+                    $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
                 ->select('arrival_tickets.*')
                 ->get()
@@ -124,10 +127,13 @@ class ArrivalApproveController extends Controller
                 $join->on('arrival_tickets.id', '=', 'initial_req.arrival_ticket_id')
                      ->where('initial_req.sampling_type', 'initial');
             })
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
-                    $query->where('arrival_location_id', $authUser->arrival_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+            //     });
+            // })
+            ->whereHas('unloadingLocation', function ($query) {
+                $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
             })
             ->select(
                 'arrival_tickets.id',
