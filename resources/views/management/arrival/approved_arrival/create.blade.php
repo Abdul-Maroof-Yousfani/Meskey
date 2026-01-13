@@ -16,7 +16,6 @@
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             Truck No: {{ $arrivalTicket->truck_no ?? '-' }} --
                             Arrival Location: {{ $arrivalTicket->unloadingLocation->arrivalLocation?->name ?? 'N' }}
-                            ID: {{ $arrivalTicket->unloadingLocation->arrivalLocation?->id ?? 'N' }}
                         </option>
                     @endforeach
                 </select>
@@ -29,7 +28,7 @@
                     <option value="">Select Gala</option>
                     @foreach ($arrivalSubLocations as $arrivalSubLocation)
                         <option data-locationid="{{ $arrivalSubLocation->arrival_location_id }}"
-                            value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }} -- {{ $arrivalSubLocation->arrival_location_id }}</option>
+                            value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
                     @endforeach
                 </select>
 
