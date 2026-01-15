@@ -298,7 +298,7 @@ class ProductionVoucherController extends Controller
 
         $packingItems = \App\Models\Production\JobOrder\JobOrderPackingItem::with([
             'jobOrder',
-            'bagType',
+            'bagProduct',
             'bagCondition',
             'companyLocation',
             'brand',
@@ -346,7 +346,7 @@ class ProductionVoucherController extends Controller
         // Get packing items
         $packingItems = \App\Models\Production\JobOrder\JobOrderPackingItem::with([
             'jobOrder',
-            'bagType',
+            // 'bagType',
             'bagCondition',
             'companyLocation',
             'brand',

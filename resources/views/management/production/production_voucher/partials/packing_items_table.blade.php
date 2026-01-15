@@ -91,7 +91,7 @@
                                 </td>
                             @endif
                             <td>{{ $item->jobOrder->product->name ?? 'N/A' }}</td>
-                            <td>{{ $item->bagType->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagProduct->name ?? 'N/A' }}</td>
                             <td>{{ $item->bagCondition->name ?? 'N/A' }}</td>
                             <td>{{ $item->bag_size ?? '0' }}</td>
                             <td>{{ $item->no_of_bags ?? '0' }}</td>
