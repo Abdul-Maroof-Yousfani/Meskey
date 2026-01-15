@@ -767,7 +767,7 @@ class ProductionVoucherController extends Controller
                                 $jobOrderIdForOutput = $outputJobOrderIds[$index];
                             }
                         } else {
-                            $jobOrderIdForOutput = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
+                            $jobOrderIdForOutput = null;
                         }
 
                         ProductionOutput::create([
