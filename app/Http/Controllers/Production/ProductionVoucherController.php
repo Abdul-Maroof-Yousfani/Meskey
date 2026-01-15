@@ -54,8 +54,8 @@ class ProductionVoucherController extends Controller
             } else {
                 // Head product is itself a parent (parent_id is null) - show all its children + itself
                 $productsQuery->where(function ($q) use ($byProduct) {
-                    $q->where('parent_id', $byProduct)
-                        ->orWhere('id', $byProduct); // Include head product itself
+                    $q->where('parent_id', $byProduct->id)
+                        ->orWhere('id', $byProduct->id); // Include head product itself
                 });
             }
         }
