@@ -555,7 +555,7 @@ class ProductionVoucherController extends Controller
                 'plant_id' => $request->input('plant_id'),
                 'by_product_id' => $request->input('by_product_id'),
                 'remarks' => $request->input('remarks'),
-                'status' => 'active',
+                // 'status' => 'active',
             ];
 
             // Handle multiple job orders - store first one in job_order_id for backward compatibility
@@ -565,7 +565,8 @@ class ProductionVoucherController extends Controller
             $productionVoucherData['company_id'] = auth()->user()->company_id ?? $request->company_id;
             $productionVoucherData['prod_no'] = $uniqueProdNo;
             $productionVoucherData['user_id'] = auth()->user()->id;
-            $productionVoucherData['status'] = 'draft';
+            $productionVoucherData['supervisor_id'] = auth()->user()->id;
+            $productionVoucherData['status'] = 'active';
 
             $productionVoucher = ProductionVoucher::create($productionVoucherData);
 
