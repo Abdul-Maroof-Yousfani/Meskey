@@ -936,7 +936,8 @@
             fetchDynamicHTML('{{ route('production-voucher.get-by-product-table') }}', 'productionByProductsTable', {
                 by_product_id: byProductId,
                 location_id: locationId,
-                job_order_ids: jobOrderIds
+                job_order_ids: jobOrderIds,
+                production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
             }, { 
                 method: 'POST',
                 onSuccess: function(response, target) {
@@ -959,7 +960,9 @@
             fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}', 'productionHeadProductsTable', {
                 product_id: productId,
                 location_id: locationId,
-                job_order_ids: jobOrderIds
+                job_order_ids: jobOrderIds,
+                production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
+
             }, { 
                 method: 'POST',
                 onSuccess: function(response, target) {

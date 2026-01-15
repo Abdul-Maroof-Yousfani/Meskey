@@ -35,6 +35,9 @@ class ProductionVoucherController extends Controller
         $jobOrderIds = $request->job_order_ids ?? [];
         $headProduct = $byProductId ? Product::find($byProductId) : null;
 
+        $productionVoucherId = $request->production_voucher_id;
+        $productionVoucher = ProductionVoucher::find($productionVoucherId);
+        $byProductOutputs = $productionVoucher->outputs;
         // Filter products based on parent_id logic
         $productsQuery = Product::where('status', 1);
 
@@ -66,7 +69,8 @@ class ProductionVoucherController extends Controller
             'byProducts',
             'arrivalSubLocations',
             'brands',
-            'jobOrders'
+            'jobOrders',
+            'byProductOutputs'
         ));
     }
     public function getHeadProductsData(Request $request)
@@ -76,6 +80,10 @@ class ProductionVoucherController extends Controller
         $jobOrderIds = $request->job_order_ids ?? [];
         $headProduct = Product::where('status', 1)->where('id', $productId)->first();
 
+        $productionVoucherId = $request->production_voucher_id;
+        $productionVoucher = ProductionVoucher::find($productionVoucherId);
+        $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->product_id);
+        // dd($byProductOutputs);
         $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
             ->where('company_id', $request->company_id)->where('status', 'active')->get();
 
@@ -86,7 +94,8 @@ class ProductionVoucherController extends Controller
             'headProduct',
             'arrivalSubLocations',
             'brands',
-            'jobOrders'
+            'jobOrders',
+            'headProductOutputs'
         ));
     }
 
