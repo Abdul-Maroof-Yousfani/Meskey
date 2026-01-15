@@ -430,7 +430,15 @@
                         </a>
                     </li>
                     @endcanAccess
-
+                    @canAccess('production-quality-check')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('production-quality-check.index') }}"
+                            onclick="loadPageContent('{{ route('production-quality-check.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Production Quality Check</span>
+                        </a>
+                    </li>
+                    @endcanAccess
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>

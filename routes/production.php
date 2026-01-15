@@ -3,9 +3,11 @@
 use App\Http\Controllers\Finance\PaymentVoucherController;
 use App\Http\Controllers\Production\JobOrderController;
 use App\Http\Controllers\Production\JobOrderRawMaterialQcController;
+use App\Http\Controllers\Production\ProductionQualityCheckController;
 use App\Http\Controllers\Production\ProductionVoucherController;
 use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Production\PlantBreakdownController;
 
 
 
@@ -57,6 +59,9 @@ Route::put('production-slot/{slotId}/break/{breakId}', [ProductionSlotController
 Route::delete('production-slot/{slotId}/break/{breakId}', [ProductionSlotController::class, 'destroyBreak'])->name('production-slot.break.destroy');
 
 // Plant Breakdown Routes
-use App\Http\Controllers\Production\PlantBreakdownController;
 Route::resource('plant-breakdown', PlantBreakdownController::class);
 Route::post('get-plant-breakdown', [PlantBreakdownController::class, 'getList'])->name('get.plant-breakdown');
+
+// Plant Breakdown Routes
+Route::resource('production-quality-check', ProductionQualityCheckController::class);
+Route::post('get-production-quality-check', [ProductionQualityCheckController::class, 'getList'])->name('get.production-quality-check');
