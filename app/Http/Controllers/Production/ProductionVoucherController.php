@@ -32,6 +32,7 @@ class ProductionVoucherController extends Controller
     {
         $byProductOutputs = [];
         $byProductId = $request->by_product_id;
+        $byProduct = $byProductId ? Product::find($byProductId) : null;
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
         $headProductId = $request->head_product_id;
@@ -44,17 +45,17 @@ class ProductionVoucherController extends Controller
         $productsQuery = Product::where('status', 1);
 
         if ($byProductId) {
-            if ($byProductId->parent_id) {
+            if ($byProduct->parent_id) {
                 // Head product has a parent - show all products with same parent_id (including head product if it's a child)
-                $productsQuery->where(function ($q) use ($byProductId) {
-                    $q->where('parent_id', $byProductId->parent_id)
-                        ->orWhere('id', $byProductId->parent_id); // Include parent itself
+                $productsQuery->where(function ($q) use ($byProduct) {
+                    $q->where('parent_id', $byProduct->parent_id)
+                        ->orWhere('id', $byProduct->parent_id); // Include parent itself
                 });
             } else {
                 // Head product is itself a parent (parent_id is null) - show all its children + itself
-                $productsQuery->where(function ($q) use ($byProductId) {
-                    $q->where('parent_id', $byProductId)
-                        ->orWhere('id', $byProductId); // Include head product itself
+                $productsQuery->where(function ($q) use ($byProduct) {
+                    $q->where('parent_id', $byProduct)
+                        ->orWhere('id', $byProduct); // Include head product itself
                 });
             }
         }
