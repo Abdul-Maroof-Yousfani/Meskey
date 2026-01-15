@@ -234,10 +234,12 @@ class ProductionVoucherController extends Controller
     {
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $products = Product::where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::with('arrivalLocation')->get();
 
         return view('management.production.production_voucher.create', compact(
             'companyLocations',
-            'products'
+            'products',
+            'sublocations'
         ));
     }
 
