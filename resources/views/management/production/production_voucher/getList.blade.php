@@ -64,6 +64,8 @@
                     <td>
                         @if($voucher->status == 'draft')
                             <span class="badge badge-warning">Draft</span>
+                        @elseif($voucher->status == 'active')
+                            <span class="badge badge-success">Active</span>
                         @elseif($voucher->status == 'completed')
                             <span class="badge badge-success">Completed</span>
                         @elseif($voucher->status == 'approved')
