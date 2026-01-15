@@ -35,10 +35,11 @@ class ProductionVoucherController extends Controller
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
         $headProduct = $byProductId ? Product::find($byProductId) : null;
-
-        $productionVoucherId = $request->production_voucher_id;
-        $productionVoucher = ProductionVoucher::find($productionVoucherId);
-        $byProductOutputs = $productionVoucher->outputs;
+        if ($request->filled('production_voucher_id')) {
+            $productionVoucherId = $request->production_voucher_id;
+            $productionVoucher = ProductionVoucher::find($productionVoucherId);
+            $byProductOutputs = $productionVoucher->outputs;
+        }
         // Filter products based on parent_id logic
         $productsQuery = Product::where('status', 1);
 
@@ -81,9 +82,11 @@ class ProductionVoucherController extends Controller
         $jobOrderIds = $request->job_order_ids ?? [];
         $headProduct = Product::where('status', 1)->where('id', $productId)->first();
         $headProductOutputs = [];
-        $productionVoucherId = $request->production_voucher_id;
-        $productionVoucher = ProductionVoucher::find($productionVoucherId);
-        $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->product_id);
+        if ($request->filled('production_voucher_id')) {
+            $productionVoucherId = $request->production_voucher_id;
+            $productionVoucher = ProductionVoucher::find($productionVoucherId);
+            $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->product_id);
+        }
         // dd($byProductOutputs);
         $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
             ->where('company_id', $request->company_id)->where('status', 'active')->get();
@@ -598,7 +601,7 @@ class ProductionVoucherController extends Controller
                 $outputBrandIds = $request->input('output_brand_id', []);
                 $outputJobOrderIds = $request->input('output_job_order_id', []);
                 $outputRemarks = $request->input('output_remarks', []);
-                
+
                 foreach ($outputQtys as $index => $qty) {
                     if (!empty($qty) && $qty > 0 && !empty($outputProductIds[$index])) {
                         // Get job_order_id for this row
@@ -612,13 +615,13 @@ class ProductionVoucherController extends Controller
                         } else {
                             $jobOrderIdForOutput = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
                         }
-                        
+
                         ProductionOutput::create([
                             'production_voucher_id' => $productionVoucher->id,
                             'job_order_id' => $jobOrderIdForOutput,
                             'product_id' => $outputProductIds[$index],
                             'qty' => $qty,
-                            'no_of_bags' => !empty($outputNoOfBags[$index]) ? (int)$outputNoOfBags[$index] : null,
+                            'no_of_bags' => !empty($outputNoOfBags[$index]) ? (int) $outputNoOfBags[$index] : null,
                             'bag_size' => !empty($outputBagSizes[$index]) ? $outputBagSizes[$index] : null,
                             'avg_weight_per_bag' => !empty($outputAvgWeights[$index]) ? $outputAvgWeights[$index] : null,
                             'arrival_sub_location_id' => !empty($outputStorageLocations[$index]) ? $outputStorageLocations[$index] : null,
@@ -748,7 +751,7 @@ class ProductionVoucherController extends Controller
                 $outputBrandIds = $request->input('output_brand_id', []);
                 $outputJobOrderIds = $request->input('output_job_order_id', []);
                 $outputRemarks = $request->input('output_remarks', []);
-                
+
                 foreach ($outputQtys as $index => $qty) {
                     if (!empty($qty) && $qty > 0 && !empty($outputProductIds[$index])) {
                         $jobOrderIdForOutput = null;
@@ -761,13 +764,13 @@ class ProductionVoucherController extends Controller
                         } else {
                             $jobOrderIdForOutput = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
                         }
-                        
+
                         ProductionOutput::create([
                             'production_voucher_id' => $productionVoucher->id,
                             'job_order_id' => $jobOrderIdForOutput,
                             'product_id' => $outputProductIds[$index],
                             'qty' => $qty,
-                            'no_of_bags' => !empty($outputNoOfBags[$index]) ? (int)$outputNoOfBags[$index] : null,
+                            'no_of_bags' => !empty($outputNoOfBags[$index]) ? (int) $outputNoOfBags[$index] : null,
                             'bag_size' => !empty($outputBagSizes[$index]) ? $outputBagSizes[$index] : null,
                             'avg_weight_per_bag' => !empty($outputAvgWeights[$index]) ? $outputAvgWeights[$index] : null,
                             'arrival_sub_location_id' => !empty($outputStorageLocations[$index]) ? $outputStorageLocations[$index] : null,
