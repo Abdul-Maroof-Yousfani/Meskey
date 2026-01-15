@@ -551,7 +551,7 @@
                     <div id="productionByProductsTable">
                         @php
                             $byProduct = $productionVoucher->by_product_id ? \App\Models\Product::find($productionVoucher->by_product_id) : null;
-                            $byProducts = getByProductsById($productionVoucher->by_product_id);
+                            $byProducts = getByProductsById($productionVoucher->by_product_id)->where('id', '!=', $productionVoucher->product_id);
                             $byProductOutputs = $productionVoucher->by_product_id ? $productionVoucher->outputs : collect();
                             $arrivalSubLocations = $sublocations;
                         @endphp
