@@ -30,6 +30,7 @@ class ProductionVoucherController extends Controller
 
     public function getByProductTable(Request $request)
     {
+        $byProductOutputs = [];
         $byProductId = $request->by_product_id;
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
@@ -79,7 +80,7 @@ class ProductionVoucherController extends Controller
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
         $headProduct = Product::where('status', 1)->where('id', $productId)->first();
-
+        $headProductOutputs = [];
         $productionVoucherId = $request->production_voucher_id;
         $productionVoucher = ProductionVoucher::find($productionVoucherId);
         $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->product_id);
