@@ -26,7 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger('supervisor_id')->nullable(); // user_id
             $table->decimal('labor_cost_per_kg', 10, 4)->default(0);
             $table->decimal('overhead_cost_per_kg', 10, 4)->default(0);
-            $table->enum('status', ['draft', 'completed', 'approved'])->default('draft');
+            $table->enum('status', ['draft', 'completed', 'approved', 'active', 'inactive'])->default('draft');
             $table->text('remarks')->nullable();
             $table->timestamps();
             $table->softDeletes();

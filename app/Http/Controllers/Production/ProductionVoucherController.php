@@ -554,7 +554,8 @@ class ProductionVoucherController extends Controller
                 'product_id' => $request->input('product_id'), // Single value from main form
                 'plant_id' => $request->input('plant_id'),
                 'by_product_id' => $request->input('by_product_id'),
-                'remarks' => $request->input('remarks')
+                'remarks' => $request->input('remarks'),
+                'status' => 'active',
             ];
 
             // Handle multiple job orders - store first one in job_order_id for backward compatibility
