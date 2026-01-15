@@ -726,11 +726,13 @@
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = $('#job_order_id').val();
             console.log(jobOrderIds);
+            const headProductId = $('[name="product_id"]').val();
             if (byProductId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-by-product-table') }}', 'productionByProductsTable', {
                     by_product_id: byProductId,
                     location_id: locationId,
-                    job_order_ids: jobOrderIds
+                    job_order_ids: jobOrderIds,
+                    head_product_id: headProductId
                 }, { 
                     method: 'POST',
                     onSuccess: function(response, target) {

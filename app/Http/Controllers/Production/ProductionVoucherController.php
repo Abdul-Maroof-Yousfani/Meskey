@@ -34,7 +34,7 @@ class ProductionVoucherController extends Controller
         $byProductId = $request->by_product_id;
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
-        $headProduct = $byProductId ? Product::find($byProductId) : null;
+        $headProductId = $request->head_product_id;
         if ($request->filled('production_voucher_id')) {
             $productionVoucherId = $request->production_voucher_id;
             $productionVoucher = ProductionVoucher::find($productionVoucherId);
@@ -43,12 +43,12 @@ class ProductionVoucherController extends Controller
         // Filter products based on parent_id logic
         $productsQuery = Product::where('status', 1);
 
-        if ($headProduct) {
-            if ($headProduct->parent_id) {
+        if ($byProductId) {
+            if ($byProductId->parent_id) {
                 // Head product has a parent - show all products with same parent_id (including head product if it's a child)
-                $productsQuery->where(function ($q) use ($headProduct) {
-                    $q->where('parent_id', $headProduct->parent_id)
-                        ->orWhere('id', $headProduct->parent_id); // Include parent itself
+                $productsQuery->where(function ($q) use ($byProductId) {
+                    $q->where('parent_id', $byProductId->parent_id)
+                        ->orWhere('id', $byProductId->parent_id); // Include parent itself
                 });
             } else {
                 // Head product is itself a parent (parent_id is null) - show all its children + itself
@@ -58,7 +58,9 @@ class ProductionVoucherController extends Controller
                 });
             }
         }
-
+        if ($headProductId) {
+            $productsQuery->where('id', '!=', $headProductId);
+        }
         $byProducts = $productsQuery->orderBy('name')->get();
 
         $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
