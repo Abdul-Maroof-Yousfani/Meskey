@@ -305,7 +305,8 @@ class ArrivalApproveController extends Controller
 
                 'initial_req.is_done as initial_is_done',
                 'initial_req.approved_status as initial_approved_status',
-                'initial_req.is_re_sampling as initial_is_re_sampling'
+                'initial_req.is_re_sampling as initial_is_re_sampling',
+                'QcProduct.name as qc_product_name',
             )
             ->orderBy('arrival_tickets.id', 'desc')
             ->get()
