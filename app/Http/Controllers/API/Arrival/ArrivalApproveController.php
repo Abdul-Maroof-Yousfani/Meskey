@@ -67,7 +67,7 @@ class ArrivalApproveController extends Controller
             $authUser = auth()->user();
             $isSuperAdmin = $authUser->user_type === 'super-admin';
 
-            $tickets = ArrivalTicket::with(['qcProduct:id,name','location:id,name','unloadingLocation.arrivalLocation:id,name'])->where('first_weighbridge_status', 'completed')
+            $tickets = ArrivalTicket::with(['qcProduct:id,name', 'location:id,name', 'unloadingLocation.arrivalLocation:id,name'])->where('first_weighbridge_status', 'completed')
                 ->whereNull('document_approval_status')
                 ->leftJoin('arrival_sampling_requests', function ($join) {
                     $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
@@ -112,149 +112,149 @@ class ArrivalApproveController extends Controller
         try {
             $authUser = auth()->user();
             $isSuperAdmin = $authUser->user_type === 'super-admin';
-    
+
             $tickets = ArrivalTicket::with([
                 'qcProduct:id,name',
                 'location:id,name',
                 'unloadingLocation.arrivalLocation:id,name'
             ])
-            ->where('first_weighbridge_status', 'completed')
-            ->whereNull('document_approval_status')
-            ->leftJoin('arrival_sampling_requests as inner_req', function ($join) {
-                $join->on('arrival_tickets.id', '=', 'inner_req.arrival_ticket_id')
-                     ->where('inner_req.sampling_type', 'inner');
-            })
-            ->leftJoin('arrival_sampling_requests as initial_req', function ($join) {
-                $join->on('arrival_tickets.id', '=', 'initial_req.arrival_ticket_id')
-                     ->where('initial_req.sampling_type', 'initial');
-            })
-            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-            //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
-            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
-            //     });
-            // })
-            ->whereHas('unloadingLocation', function ($query) {
-                $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
-            })
-            ->select(
-                'arrival_tickets.id',
-                'arrival_tickets.unique_no',
-                'arrival_tickets.truck_no',
-                'arrival_tickets.bilty_no',
-                'arrival_tickets.created_at',
-                'inner_req.is_done as inner_is_done',
-                'inner_req.approved_status as inner_approved_status',
-                'inner_req.is_re_sampling as inner_is_re_sampling',
-                'initial_req.is_done as initial_is_done',
-                'initial_req.approved_status as initial_approved_status',
-                'initial_req.is_re_sampling as initial_is_re_sampling'
-            )
-            ->get()
-            ->map(function ($ticket) {
+                ->where('first_weighbridge_status', 'completed')
+                ->whereNull('document_approval_status')
+                ->leftJoin('arrival_sampling_requests as inner_req', function ($join) {
+                    $join->on('arrival_tickets.id', '=', 'inner_req.arrival_ticket_id')
+                        ->where('inner_req.sampling_type', 'inner');
+                })
+                ->leftJoin('arrival_sampling_requests as initial_req', function ($join) {
+                    $join->on('arrival_tickets.id', '=', 'initial_req.arrival_ticket_id')
+                        ->where('initial_req.sampling_type', 'initial');
+                })
+                // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+                //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+                //     });
+                // })
+                ->whereHas('unloadingLocation', function ($query) {
+                    $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                })
+                ->select(
+                    'arrival_tickets.id',
+                    'arrival_tickets.unique_no',
+                    'arrival_tickets.truck_no',
+                    'arrival_tickets.bilty_no',
+                    'arrival_tickets.created_at',
+                    'inner_req.is_done as inner_is_done',
+                    'inner_req.approved_status as inner_approved_status',
+                    'inner_req.is_re_sampling as inner_is_re_sampling',
+                    'initial_req.is_done as initial_is_done',
+                    'initial_req.approved_status as initial_approved_status',
+                    'initial_req.is_re_sampling as initial_is_re_sampling'
+                )
+                ->get()
+                ->map(function ($ticket) {
 
-                // Warehouse
-                $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
-                unset($ticket->unloadingLocation);
-            
-                // Slabs QC
-                $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
-            
-                // Document status logic (inner / initial / ticket)
-                if (isset($ticket->inner_is_done)) {
-                    $status_source = 'inner';
-                } elseif (isset($ticket->initial_is_done)) {
-                    $status_source = 'initial';
-                } else {
-                    $status_source = 'ticket';
-                }
-            
-                switch ($status_source) {
-                    case 'inner':
-                        if ($ticket->inner_is_re_sampling === 'yes') {
-                            $ticket->document_status = 'Resampling';
-                        } elseif ($ticket->inner_approved_status === 'approved') {
-                            $ticket->document_status = 'fully_approved';
-                        } elseif ($ticket->inner_approved_status === 'rejected') {
-                            $ticket->document_status = 'half_approved';
-                        } elseif ($ticket->inner_is_done == 'yes' && $ticket->inner_approved_status === 'pending') {
-                            $ticket->document_status = 'Waiting for Approval';
-                        } elseif ($ticket->inner_is_done == 'no' && $ticket->inner_approved_status === 'pending') {
-                            $ticket->document_status = 'Sampling Pending';
-                        } 
-                        break;
-            
-                    case 'initial':
-                        if ($ticket->initial_is_re_sampling === 'yes') {
-                            $ticket->document_status = 'Resampling';
-                        } elseif ($ticket->initial_approved_status === 'approved') {
-                            $ticket->document_status = 'fully_approved';
-                        } elseif ($ticket->initial_approved_status === 'rejected') {
-                            $ticket->document_status = 'full_rejected';
-                        } elseif ($ticket->initial_approved_status === 'pending') {
-                            $ticket->document_status = 'Waiting for Approval -- initial';
-                        }
-                        break;
-            
-                    case 'ticket':
-                        $ticket->document_status = $ticket->document_approval_status;
-                        break;
-                }
-            
-                // // Combine with sauda type ONLY if current document_status is one of approved / half_approved / full_rejected
-                // $approvedStatuses = ['fully_approved', 'half_approved', 'full_rejected'];
-                // if (isset($ticket->saudaType->id) && in_array($ticket->document_status, $approvedStatuses)) {
-                //     $saudaId = $ticket->saudaType->id;
-                //     $docStatus = $ticket->document_status;
-            
-                //     if ($saudaId == 1) {
-                //         if ($docStatus == 'fully_approved') {
-                //             $ticket->document_status = 'OK';
-                //         } elseif ($docStatus == 'half_approved') {
-                //             $ticket->document_status = 'P-RH';
-                //         } elseif($docStatus == 'full_rejected') {
-                //             $ticket->document_status = 'RF';
-                //         }
-                //     } elseif ($saudaId == 2) {
-                //         if ($docStatus == 'fully_approved') {
-                //             $ticket->document_status = 'TS';
-                //         } elseif ($docStatus == 'half_approved') {
-                //             $ticket->document_status = 'TS-RH';
-                //         } elseif($docStatus == 'full_rejected') {
-                //             $ticket->document_status = 'RF';
-                //         }
-                //     } else {
-                //         $ticket->document_status = 'RF';
-                //     }
-                // }
-            
+                    // Warehouse
+                    $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
+                    unset($ticket->unloadingLocation);
 
-            
-                return $ticket;
-            });
-            
+                    // Slabs QC
+                    $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
+
+                    // Document status logic (inner / initial / ticket)
+                    if (isset($ticket->inner_is_done)) {
+                        $status_source = 'inner';
+                    } elseif (isset($ticket->initial_is_done)) {
+                        $status_source = 'initial';
+                    } else {
+                        $status_source = 'ticket';
+                    }
+
+                    switch ($status_source) {
+                        case 'inner':
+                            if ($ticket->inner_is_re_sampling === 'yes') {
+                                $ticket->document_status = 'Resampling';
+                            } elseif ($ticket->inner_approved_status === 'approved') {
+                                $ticket->document_status = 'fully_approved';
+                            } elseif ($ticket->inner_approved_status === 'rejected') {
+                                $ticket->document_status = 'half_approved';
+                            } elseif ($ticket->inner_is_done == 'yes' && $ticket->inner_approved_status === 'pending') {
+                                $ticket->document_status = 'Waiting for Approval';
+                            } elseif ($ticket->inner_is_done == 'no' && $ticket->inner_approved_status === 'pending') {
+                                $ticket->document_status = 'Sampling Pending';
+                            }
+                            break;
+
+                        case 'initial':
+                            if ($ticket->initial_is_re_sampling === 'yes') {
+                                $ticket->document_status = 'Resampling';
+                            } elseif ($ticket->initial_approved_status === 'approved') {
+                                $ticket->document_status = 'fully_approved';
+                            } elseif ($ticket->initial_approved_status === 'rejected') {
+                                $ticket->document_status = 'full_rejected';
+                            } elseif ($ticket->initial_approved_status === 'pending') {
+                                $ticket->document_status = 'Waiting for Approval -- initial';
+                            }
+                            break;
+
+                        case 'ticket':
+                            $ticket->document_status = $ticket->document_approval_status;
+                            break;
+                    }
+
+                    // // Combine with sauda type ONLY if current document_status is one of approved / half_approved / full_rejected
+                    // $approvedStatuses = ['fully_approved', 'half_approved', 'full_rejected'];
+                    // if (isset($ticket->saudaType->id) && in_array($ticket->document_status, $approvedStatuses)) {
+                    //     $saudaId = $ticket->saudaType->id;
+                    //     $docStatus = $ticket->document_status;
     
+                    //     if ($saudaId == 1) {
+                    //         if ($docStatus == 'fully_approved') {
+                    //             $ticket->document_status = 'OK';
+                    //         } elseif ($docStatus == 'half_approved') {
+                    //             $ticket->document_status = 'P-RH';
+                    //         } elseif($docStatus == 'full_rejected') {
+                    //             $ticket->document_status = 'RF';
+                    //         }
+                    //     } elseif ($saudaId == 2) {
+                    //         if ($docStatus == 'fully_approved') {
+                    //             $ticket->document_status = 'TS';
+                    //         } elseif ($docStatus == 'half_approved') {
+                    //             $ticket->document_status = 'TS-RH';
+                    //         } elseif($docStatus == 'full_rejected') {
+                    //             $ticket->document_status = 'RF';
+                    //         }
+                    //     } else {
+                    //         $ticket->document_status = 'RF';
+                    //     }
+                    // }
+    
+
+
+                    return $ticket;
+                });
+
+
             return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve available tickets: ' . $e->getMessage(), 500);
         }
     }
-    
+
 
     public function getAvailableTicketsInnerSamplingStatus(Request $request)
-{
-    try {
-        $authUser = auth()->user();
+    {
+        try {
+            $authUser = auth()->user();
 
-        $tickets = ArrivalTicket::with([
+            $tickets = ArrivalTicket::with([
                 'qcProduct:id,name',
                 'location:id,name',
                 'unloadingLocation.arrivalLocation:id,name'
             ])
-            ->where('arrival_tickets.first_weighbridge_status', 'completed')
-            ->whereNull('arrival_tickets.document_approval_status')
+                ->where('arrival_tickets.first_weighbridge_status', 'completed')
+                ->whereNull('arrival_tickets.document_approval_status')
 
-            /* ===== Latest INNER Sampling ===== */
-            ->leftJoin(DB::raw("
+                /* ===== Latest INNER Sampling ===== */
+                ->leftJoin(DB::raw("
                 (
                     SELECT r1.*
                     FROM arrival_sampling_requests r1
@@ -268,8 +268,8 @@ class ArrivalApproveController extends Controller
                 ) AS inner_req
             "), 'arrival_tickets.id', '=', 'inner_req.arrival_ticket_id')
 
-            /* ===== Latest INITIAL Sampling ===== */
-            ->leftJoin(DB::raw("
+                /* ===== Latest INITIAL Sampling ===== */
+                ->leftJoin(DB::raw("
                 (
                     SELECT r1.*
                     FROM arrival_sampling_requests r1
@@ -283,94 +283,95 @@ class ArrivalApproveController extends Controller
                 ) AS initial_req
             "), 'arrival_tickets.id', '=', 'initial_req.arrival_ticket_id')
 
-            /* ===== Location Restriction ===== */
-            ->whereHas('unloadingLocation', function ($query) {
-                $query->whereIn(
-                    'arrival_location_id',
-                    getUserCurrentCompanyArrivalLocations()
-                );
-            })
+                /* ===== Location Restriction ===== */
+                ->whereHas('unloadingLocation', function ($query) {
+                    $query->whereIn(
+                        'arrival_location_id',
+                        getUserCurrentCompanyArrivalLocations()
+                    );
+                })
 
-            /* ===== Select ===== */
-            ->select(
-                'arrival_tickets.id',
-                'arrival_tickets.unique_no',
-                'arrival_tickets.truck_no',
-                'arrival_tickets.bilty_no',
-                'arrival_tickets.created_at',
+                /* ===== Select ===== */
+                ->select(
+                    'arrival_tickets.id',
+                    'arrival_tickets.unique_no',
+                    'arrival_tickets.truck_no',
+                    'arrival_tickets.bilty_no',
+                    'arrival_tickets.created_at',
 
-                'inner_req.is_done as inner_is_done',
-                'inner_req.approved_status as inner_approved_status',
-                'inner_req.is_re_sampling as inner_is_re_sampling',
+                    'inner_req.is_done as inner_is_done',
+                    'inner_req.approved_status as inner_approved_status',
+                    'inner_req.is_re_sampling as inner_is_re_sampling',
 
-                'initial_req.is_done as initial_is_done',
-                'initial_req.approved_status as initial_approved_status',
-                'initial_req.is_re_sampling as initial_is_re_sampling',
-                'QcProduct.name as qc_product_name',
-            )
-            ->orderBy('arrival_tickets.id', 'desc')
-            ->get()
+                    'initial_req.is_done as initial_is_done',
+                    'initial_req.approved_status as initial_approved_status',
+                    'initial_req.is_re_sampling as initial_is_re_sampling',
+                    'QcProduct.name as qc_product_name',
 
-            /* ===== Final Mapping ===== */
-            ->map(function ($ticket) {
+                )
+                ->orderBy('arrival_tickets.id', 'desc')
+                ->get()
 
-                // Warehouse
-                $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
-                unset($ticket->unloadingLocation);
+                /* ===== Final Mapping ===== */
+                ->map(function ($ticket) {
 
-                // Slabs QC
-                $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
+                    // Warehouse
+                    $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
+                    unset($ticket->unloadingLocation);
+                    $ticket->qc_product_name = $ticket->qcProduct->name ?? null;
+                    // Slabs QC
+                    $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
 
-                /* ===== Document Status Logic (LATEST ONLY) ===== */
-                if (!is_null($ticket->inner_is_done)) {
+                    /* ===== Document Status Logic (LATEST ONLY) ===== */
+                    if (!is_null($ticket->inner_is_done)) {
 
-                    if ($ticket->inner_is_re_sampling === 'yes') {
-                        $ticket->document_status = 'Resampling';
+                        if ($ticket->inner_is_re_sampling === 'yes') {
+                            $ticket->document_status = 'Resampling';
 
-                    } elseif ($ticket->inner_approved_status === 'approved') {
-                        $ticket->document_status = 'fully_approved';
+                        } elseif ($ticket->inner_approved_status === 'approved') {
+                            $ticket->document_status = 'fully_approved';
 
-                    } elseif ($ticket->inner_approved_status === 'rejected') {
-                        $ticket->document_status = 'half_approved';
+                        } elseif ($ticket->inner_approved_status === 'rejected') {
+                            $ticket->document_status = 'half_approved';
 
-                    } elseif ($ticket->inner_is_done === 'yes') {
-                        $ticket->document_status = 'Waiting for Approval';
+                        } elseif ($ticket->inner_is_done === 'yes') {
+                            $ticket->document_status = 'Waiting for Approval';
+
+                        } else {
+                            $ticket->document_status = 'Sampling Pending';
+                        }
+
+                    } elseif (!is_null($ticket->initial_is_done)) {
+
+                        if ($ticket->initial_is_re_sampling === 'yes') {
+                            $ticket->document_status = 'Resampling';
+
+                        } elseif ($ticket->initial_approved_status === 'approved') {
+                            $ticket->document_status = 'fully_approved';
+
+                        } elseif ($ticket->initial_approved_status === 'rejected') {
+                            $ticket->document_status = 'full_rejected';
+
+                        } else {
+                            $ticket->document_status = 'Waiting for Approval';
+                        }
 
                     } else {
                         $ticket->document_status = 'Sampling Pending';
                     }
 
-                } elseif (!is_null($ticket->initial_is_done)) {
+                    return $ticket;
+                });
 
-                    if ($ticket->initial_is_re_sampling === 'yes') {
-                        $ticket->document_status = 'Resampling';
+            return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
 
-                    } elseif ($ticket->initial_approved_status === 'approved') {
-                        $ticket->document_status = 'fully_approved';
-
-                    } elseif ($ticket->initial_approved_status === 'rejected') {
-                        $ticket->document_status = 'full_rejected';
-
-                    } else {
-                        $ticket->document_status = 'Waiting for Approval';
-                    }
-
-                } else {
-                    $ticket->document_status = 'Sampling Pending';
-                }
-
-                return $ticket;
-            });
-
-        return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
-
-    } catch (\Exception $e) {
-        return ApiResponse::error(
-            'Failed to retrieve available tickets: ' . $e->getMessage(),
-            500
-        );
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                'Failed to retrieve available tickets: ' . $e->getMessage(),
+                500
+            );
+        }
     }
-}
 
 
     public function store(Request $request)
