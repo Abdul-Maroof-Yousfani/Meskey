@@ -1,6 +1,7 @@
 @extends('management.layouts.master')
 @section('title')
     Production Quality Check
+@endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">

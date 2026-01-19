@@ -75,7 +75,7 @@
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" 
-                                onclick="window.location.href='{{ route('production-voucher.edit', $voucher->id) }}'"
+                                onclick="window.location.href='{{ route('production-quality-check.edit', $voucher->id) }}'"
                                 class="btn btn-outline-primary" title="Edit">
                                 <i class="ft-edit"></i>
                             </button>

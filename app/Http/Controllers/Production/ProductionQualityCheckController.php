@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
+use App\Models\Master\CompanyLocation;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
 use App\Models\Production\ProductionVoucher;
 use Illuminate\Http\Request;
 
@@ -141,8 +143,46 @@ class ProductionQualityCheckController extends Controller
 
     public function edit($id)
     {
-        $productionVoucher = ProductionVoucher::find($id);
-        return view('management.production.production_quality_check.edit', compact('productionVoucher'));
+        $productionVoucher = ProductionVoucher::with([
+            'jobOrder.product',
+            'jobOrders.product',
+            'location',
+            'product',
+            'supervisor',
+            'inputs.product',
+            'inputs.location',
+            'outputs.product',
+            'outputs.storageLocation',
+            'outputs.brand',
+            'slots.breaks',
+            'headProduct',
+            'byProducts',
+        ])->findOrFail($id);
+
+        $jobOrderRawMaterialQcs = JobOrderRawMaterialQc::whereIn('job_order_id', $productionVoucher->jobOrders->pluck('id'))->get();
+
+        $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->headProduct->id);
+        $byProductOutputs = $productionVoucher->outputs->where('product_id','!=', $productionVoucher->headProduct->id);
+        $jobOrders = JobOrder::where('status', 1)->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        // $supervisors = User::where('status', 'active')->get();
+        // $products = Product::where('status', 1)->get();
+        // $sublocations = ArrivalSubLocation::where('status', 1)->get();
+        // $brands = Brands::where('status', 1)->get();
+        $plants = \App\Models\Master\Plant::where('status', 'active')->get();
+
+        return view('management.production.production_quality_check.edit', compact(
+            'productionVoucher',
+            'jobOrders',
+            'companyLocations',
+            // 'supervisors',
+            // 'products',
+            // 'sublocations',
+            // 'brands',
+            'headProductOutputs',
+            'byProductOutputs',
+            'plants'
+        )); 
     }
     public function update(Request $request, $id)
     {

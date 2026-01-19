@@ -58,6 +58,20 @@ class ProductionVoucher extends Model
         return $this->belongsTo(\App\Models\Product::class);
     }
 
+    public function headProduct()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'product_id');
+    }
+
+    public function plant()
+    {
+        return $this->belongsTo(\App\Models\Master\Plant::class, 'plant_id');
+    }
+
+    public function byProducts()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'by_product_id');
+    }
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
