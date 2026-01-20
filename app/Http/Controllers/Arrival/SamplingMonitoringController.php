@@ -63,6 +63,9 @@ class SamplingMonitoringController extends Controller
                     });
                 });
             })
+            ->whereHas('arrivalTicket', function ($query) {
+                $query->whereIn('location_id', getUserCurrentCompanyLocations());
+            })
             ->where(function ($q) {
                 $q->where('approved_status', 'pending')
                     ->orWhere(function ($q) {
