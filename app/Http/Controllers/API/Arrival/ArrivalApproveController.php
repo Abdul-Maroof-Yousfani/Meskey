@@ -252,7 +252,7 @@ class ArrivalApproveController extends Controller
             ])
                 ->where('arrival_tickets.first_weighbridge_status', 'completed')
                 ->whereNull('arrival_tickets.document_approval_status')
-                ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product_id')
+                ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product')
 
                 /* ===== Latest INNER Sampling ===== */
                 ->leftJoin(DB::raw("
