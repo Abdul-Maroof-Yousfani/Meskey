@@ -252,6 +252,7 @@ class ArrivalApproveController extends Controller
             ])
                 ->where('arrival_tickets.first_weighbridge_status', 'completed')
                 ->whereNull('arrival_tickets.document_approval_status')
+                ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product_id')
 
                 /* ===== Latest INNER Sampling ===== */
                 ->leftJoin(DB::raw("
@@ -278,7 +279,7 @@ class ArrivalApproveController extends Controller
                         SELECT MAX(r2.id)
                         FROM arrival_sampling_requests r2
                         WHERE r2.arrival_ticket_id = r1.arrival_ticket_id
-                        AND r2.sampling_type = 'initial'
+                        AND r2.sampling_type = 'initial' 
                     )
                 ) AS initial_req
             "), 'arrival_tickets.id', '=', 'initial_req.arrival_ticket_id')
@@ -306,7 +307,9 @@ class ArrivalApproveController extends Controller
                     'initial_req.is_done as initial_is_done',
                     'initial_req.approved_status as initial_approved_status',
                     'initial_req.is_re_sampling as initial_is_re_sampling',
-                    'QcProduct.name as qc_product_name',
+                    // 'QcProduct.name as qc_product_name',
+                    'products.name as qc_product_name'   // ✅ Correct table name
+
 
                 )
                 ->orderBy('arrival_tickets.id', 'desc')
