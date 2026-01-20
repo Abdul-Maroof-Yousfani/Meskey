@@ -321,7 +321,7 @@ class ArrivalApproveController extends Controller
                     // Warehouse
                     $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
                     unset($ticket->unloadingLocation);
-                    $ticket->qc_product_name = $ticket->qcProduct ?? null;
+                    $ticket->qc_product = $ticket->qcProduct ?? null;
                     // Slabs QC
                     $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
 
