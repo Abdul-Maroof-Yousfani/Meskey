@@ -20,7 +20,7 @@
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                Basic Information
+                Basic Information  ffff
             </h6>
         </div>
         <div class="col-md-6">

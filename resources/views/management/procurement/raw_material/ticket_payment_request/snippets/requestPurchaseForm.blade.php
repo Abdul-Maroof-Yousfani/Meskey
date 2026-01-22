@@ -1,5 +1,11 @@
 @php
     $isThadda = $arrivalTicket->sauda_type_id == 2;
+    calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
+    $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
+    $Deductionfromhelperfunction = $paymentDetails['deductions']['sampling_deduction_details'];
+    // dd($Deductionfromhelperfunction);
+    // $lumpsumDeduction = $paymentDetails->lumpsumDeduction;
+    // $lumpsumDeductionKgs = $paymentDetails->lumpsumDeductionKgs;
 
     $hasLoadingWeight = true;
 
@@ -305,6 +311,31 @@
             </div>
 
             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="20%">Lump Sum Deduction</th>
+                                <th width="20%">Tabaar Deduction</th>
+                                <th width="20%">Deduction Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sampling-results-tbody">
+                            <tr>
+                                <td>Lumpsum Deduction Rupees</td>
+                                <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
+                                <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }} Rs.</td>
+                            </tr>
+                            <tr>
+                                <td>Lumpsum Deduction KG's</td>
+                                <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
+                                <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} Rs.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             @else
                 <div class="col-12" bis_skin_checked="1">
                     <h6 class="header-heading-sepration">
