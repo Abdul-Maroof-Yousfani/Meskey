@@ -52,7 +52,7 @@
                 $hasSelectedFreight = collect($contract['purchase_freights'] ?? [])->contains('is_selected', true);
 
             @endphp
-            <tr class="contract-row {{ $isLinked ? 'table-info' : '' }}" data-id="{{ $contract['id'] }}">
+            <tr class="contract-row {{ $isLinked ? 'table-info' : '' }}" data-id="{{ $contract['id'] }}" data-contractcaltype="{{$contract['calculation_type']}}">
                 <td data-ajeeb="{{$owntruckminuable}}">
                     <input type="radio" name="selected_contract" value="{{ $contract['id'] }}"
                         {{ $arrivalTicket->is_ticket_verified == 1 ? 'disabled' : '' }}
@@ -92,7 +92,7 @@
                     </span>
                 </td>
                 <td>{{ $contract['remarks'] ?? 'N/A' }}</td>
-                <td>{{ $contract['no_of_trucks'] ?? 0 }}</td>
+                <td>{{ $contract['calculation_type'] != 'quantity' ? $contract['no_of_trucks'] : 'N/A | Quantity Wise' }}</td>
                 <td>
                     {{ (isset($contract['min_quantity']) ? intval($contract['min_quantity']) : '-') .
                         ' - ' .
@@ -100,7 +100,7 @@
                 </td>
                 <td>{{ $arrivedTrucks }}</td>
                 <td>{{ $arrivedQty }}</td>
-                <td>{{ $balanceTrucks }} <span class="d-none">{{ $balanceTrucksWithoutOwn }}</span> </td>
+                <td>{{ $contract['calculation_type'] != 'quantity' ? $balanceTrucks : 'N/A | Quantity Wise' }} <span class="d-none">{{ $balanceTrucksWithoutOwn }}</span> </td>
                 <td>
                     {{ ($minQty ?? 0) - ($arrivedQty ?? 0) . ' - ' . (($maxQty ?? 0) - ($arrivedQty ?? 0)) }}
                     <span class="d-none">{{ $contract['sauda_type']['name']??'' }}</span>
