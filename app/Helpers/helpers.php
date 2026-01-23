@@ -1228,7 +1228,97 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
         }
 
         $compulsoryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)
-            ->where('applied_deduction', '>', 0)
+            // ->where('applied_deduction', '>', 0)
+            ->get();
+
+        foreach ($compulsoryResults as $compulsory) {
+            $result['compulsory_deductions'][$compulsory->qcParam->id] = [
+                'type' => 'compulsory',
+                'name' => $compulsory->qcParam->name ?? 'N/A',
+                'deduction' => $compulsory->applied_deduction,
+                'checklist_value' => $compulsory->compulsory_checklist_value,
+                'unit' => 'Rs.',
+            ];
+            $result['total_deduction'] += $compulsory->applied_deduction;
+        }
+
+        $slabResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)
+            // ->where('applied_deduction', '>', 0)
+            ->get();
+
+        foreach ($slabResults as $slab) {
+            $result['deductions'][$slab->slabType->id] = [
+                'type' => 'slab',
+                'name' => $slab->slabType->name ?? 'N/A',
+                'slabType_id' => $slab->slabType->id ?? 'N/A',
+                'slabType_qc_symbol' => $slab->slabType->qc_symbol ?? 'N/A',
+                'deduction' => $slab->applied_deduction,
+                'checklist_value' => $slab->checklist_value ?? 'N/A',
+                'unit' => SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1],
+            ];
+            $result['total_deduction'] += $slab->applied_deduction;
+        }
+
+        if ($ticket->net_weight && $result['total_deduction'] > 0) {
+            $result['total_deduction_kgs'] = ($ticket->net_weight * $result['total_deduction']) / 100;
+        }
+
+        return $result;
+    }
+}
+if (!function_exists('SlabTypeWisegetTicketQcResults')) {
+    function SlabTypeWisegetTicketQcResults($ticket, $type = null)
+    {
+
+        $result = [
+            'is_lumpsum' => false,
+            'lumpsum_deduction' => 0,
+            'lumpsum_deduction_kgs' => 0,
+            'deductions' => [],
+            'total_deduction' => 0,
+            'total_deduction_kgs' => 0,
+        ];
+
+        if ($ticket->is_lumpsum_deduction && $ticket->lumpsum_deduction > 0) {
+            $result['is_lumpsum'] = true;
+            $result['lumpsum_deduction'] = $ticket->lumpsum_deduction;
+            $result['lumpsum_deduction_kgs'] = $ticket->lumpsum_deduction_kgs;
+            $result['total_deduction'] = $ticket->lumpsum_deduction;
+            $result['total_deduction_kgs'] = $ticket->lumpsum_deduction_kgs;
+
+            return $result;
+        }
+
+        if ($type == null) {
+
+            $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
+                ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+        } else {
+            $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
+                ->where('sampling_type', $type)
+                //   ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+        }
+
+        if (!$samplingRequest) {
+            return $result;
+        }
+
+        if ($samplingRequest->is_lumpsum_deduction && $samplingRequest->lumpsum_deduction > 0) {
+            $result['is_lumpsum'] = true;
+            $result['lumpsum_deduction'] = $samplingRequest->lumpsum_deduction;
+            $result['lumpsum_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
+            $result['total_deduction'] = $samplingRequest->lumpsum_deduction;
+            $result['total_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
+
+            return $result;
+        }
+
+        $compulsoryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)
+            // ->where('applied_deduction', '>', 0)
             ->get();
 
         foreach ($compulsoryResults as $compulsory) {
