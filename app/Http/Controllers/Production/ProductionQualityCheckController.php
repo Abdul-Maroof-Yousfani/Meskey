@@ -239,7 +239,7 @@ class ProductionQualityCheckController extends Controller
                                 'status' => 'active',
                                 'company_id' => $productionVoucher->company_id,
                                 'product_type' =>  'raw_material',
-                                'parent_id' => $output->product->id,
+                                'parent_id' => $output->product->parent_id != null ? $output->product->parent_id : $output->product->id,
                                 'category_id' => $output->product->category_id,
                                 'unit_of_measure_id' => $output->product->unit_of_measure_id,
                 
