@@ -244,7 +244,7 @@ class ProductionQualityCheckController extends Controller
                                 'unit_of_measure_id' => $output->product->unit_of_measure_id,
                 
                             ]);
-                            dd($product);
+                         
                         }
                     }
                 }
