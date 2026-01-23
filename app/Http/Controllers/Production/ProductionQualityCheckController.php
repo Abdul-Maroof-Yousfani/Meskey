@@ -233,7 +233,7 @@ class ProductionQualityCheckController extends Controller
                         $output->update(['qc_status' => $qcStatus]);
                         if($qcStatus == 're_milling') {
                             $nameProduct = $output->product->name. '-Re-milling';
-                            // dd($nameProduct);
+                            dd($nameProduct);
                             $product = Product::where('name', $nameProduct)->firstOrCreate([
                                 'name' => $nameProduct,
                                 'status' => 'active',
