@@ -24,7 +24,9 @@ class ProductionOutput extends Model
         'avg_weight_per_bag',
         'arrival_sub_location_id',
         'brand_id',
-        'remarks'
+        'remarks',
+        'qc_status',
+        'qc_remarks'
     ];
 
     protected $casts = [

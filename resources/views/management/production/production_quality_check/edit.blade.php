@@ -123,19 +123,19 @@
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
                     <h2 class="page-title">Quality Check Production Voucher #{{ $productionVoucher->prod_no }}</h2>
                 </div>
-               
+
             </div>
             <div class="row">
                 <div class="col-12">
                     <div class="card">
 
                         <div class="card-body">
-                            <form action="{{ route('production-voucher.update', $productionVoucher->id) }}" method="POST"
-                                id="ajaxSubmit" autocomplete="off">
+                            <form action="{{ route('production-quality-check.update', $productionVoucher->id) }}"
+                                method="POST" id="ajaxSubmit" autocomplete="off">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" id="url"
-                                    value="{{ route('production-voucher.edit', $productionVoucher->id) }}" />
+                                    value="{{ route('production-quality-check.index') }}" />
 
                                 <div class="row form-mar">
 
@@ -435,6 +435,8 @@
                                                                     <tr>
                                                                         <td>
                                                                             <strong>{{ $headProductOutput->product->name }}</strong>
+                                                                            <input type="hidden" name="output_ids[]"
+                                                                                value="{{ $headProductOutput->id }}">
                                                                         </td>
                                                                         <td>
                                                                             <input type="number" name="output_no_of_bags[]" readonly
@@ -483,8 +485,9 @@
                                                                                 rows="1">{{ $headProductOutput ? $headProductOutput->remarks : '' }}</textarea>
                                                                         </td>
                                                                         <td>
-                                                                            <select name="qc_status" id="qc_status"
-                                                                                class="form-control">
+                                                                            <select name="qc_status[{{ $headProductOutput->id }}]"
+                                                                                id="qc_status_{{ $headProductOutput->id }}"
+                                                                                class="form-control" {{ $productionVoucher->status === 'qc_completed' ? 'disabled' : '' }}>
                                                                                 <option value="">Select QC Status</option>
                                                                                 <option value="local_sales" {{ $headProductOutput->qc_status == 'local_sales' ? 'selected' : '' }}>Local Sales</option>
                                                                                 <option value="export_sales" {{ $headProductOutput->qc_status == 'export_sales' ? 'selected' : '' }}>Export Sales</option>
@@ -580,6 +583,8 @@
                                                                     <tr>
                                                                         <td>
                                                                             <strong>{{ $byProductOutput->product->name }}</strong>
+                                                                            <input type="hidden" name="output_ids[]"
+                                                                                value="{{ $byProductOutput->id }}">
                                                                         </td>
                                                                         <td>
                                                                             <input type="number" name="output_no_of_bags[]" readonly
@@ -615,31 +620,32 @@
                                                                         <td>
                                                                             <input type="text" name="output_brand[]" readonly
                                                                                 class="form-control"
-                                                                                value="{{ $byProductOutput ? $byProductOutput->brand->name : '' }}">
+                                                                                value="{{ $byProductOutput ? $byProductOutput->brand->name ?? 'N/A' : 'N/A' }}">
                                                                         </td>
                                                                         <td>
                                                                             <input type="text" name="output_job_order[]" readonly
                                                                                 class="form-control"
-                                                                                value="{{ $byProductOutput ? $byProductOutput->jobOrder->job_order_no : '' }}">
+                                                                                value="{{ $byProductOutput ? $byProductOutput->jobOrder->job_order_no ?? 'N/A' : 'N/A' }}">
                                                                         </td>
                                                                         <td>
                                                                             <textarea name="output_remarks[]" readonly
                                                                                 class="form-control"
                                                                                 rows="1">{{ $byProductOutput ? $byProductOutput->remarks : '' }}</textarea>
                                                                         </td>
-                                                                        
+
                                                                         <td>
-                                                                            <select name="qc_status" id="qc_status"
-                                                                                class="form-control">
+                                                                            <select name="qc_status[{{ $byProductOutput->id }}]"
+                                                                                id="qc_status_{{ $byProductOutput->id }}"
+                                                                                class="form-control" {{ $productionVoucher->status === 'qc_completed' ? 'disabled' : '' }}>
                                                                                 <option value="">Select QC Status</option>
-                                                                                <option value="local_sales" {{ $headProductOutput->qc_status == 'local_sales' ? 'selected' : '' }}>Local Sales</option>
-                                                                                <option value="export_sales" {{ $headProductOutput->qc_status == 'export_sales' ? 'selected' : '' }}>Export Sales</option>
-                                                                                <option value="re_milling" {{ $headProductOutput->qc_status == 're_milling' ? 'selected' : '' }}>Re-milling</option>
-                                                                                <option value="other_consignment" {{ $headProductOutput->qc_status == 'other_consignment' ? 'selected' : '' }}>can be uae in orther
+                                                                                <option value="local_sales" {{ $byProductOutput->qc_status == 'local_sales' ? 'selected' : '' }}>Local Sales</option>
+                                                                                <option value="export_sales" {{ $byProductOutput->qc_status == 'export_sales' ? 'selected' : '' }}>Export Sales</option>
+                                                                                <option value="re_milling" {{ $byProductOutput->qc_status == 're_milling' ? 'selected' : '' }}>Re-milling</option>
+                                                                                <option value="other_consignment" {{ $byProductOutput->qc_status == 'other_consignment' ? 'selected' : '' }}>can be uae in orther
                                                                                     consignment</option>
-                                                                                <option value="sale_on_high_rate" {{ $headProductOutput->qc_status == 'sale_on_high_rate' ? 'selected' : '' }}>Sale on high rate</option>
+                                                                                <option value="sale_on_high_rate" {{ $byProductOutput->qc_status == 'sale_on_high_rate' ? 'selected' : '' }}>Sale on high rate</option>
                                                                             </select>
-                                                                        </td>   
+                                                                        </td>
                                                                     </tr>
                                                                 @endforeach
                                                                 <tr>
@@ -726,16 +732,31 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="row bottom-button-bar mt-4 w-100 mx-auto">
-                                        <div class="col-12 text-right">
-                                            <!-- <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a> -->
-                                            <button type="submit" class="btn btn-primary submitbutton">Save Quality Check
-                                                Results
-                                            </button>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                @if($productionVoucher->status === 'qc_completed')
+                                                    <div class="alert alert-warning">
+                                                        <strong>Note:</strong> This production voucher has already been quality checked and cannot be modified.
+                                                    </div>
+                                                @endif
+                                                <div class="form-group">
+                                                    <label>QC Remarks:</label>
+                                                    <textarea name="qc_remarks" placeholder="Enter QC remarks"
+                                                        class="form-control"
+                                                        rows="3" {{ $productionVoucher->status === 'qc_completed' ? 'readonly' : '' }}>{{ $productionVoucher->qc_remarks ?? '' }}</textarea>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+
+                                        <div class="row bottom-button-bar mt-4 w-100 mx-auto">
+                                            <div class="col-12 text-right">
+                                                <!-- <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a> -->
+                                                <button type="submit" class="btn btn-primary submitbutton" {{ $productionVoucher->status === 'qc_completed' ? 'disabled' : '' }}>Save Quality
+                                                    Check
+                                                    Results
+                                                </button>
+                                            </div>
+                                        </div>
                             </form>
                         </div>
                     </div>
@@ -933,7 +954,7 @@
                     job_order_ids: jobOrderIds,
                     location_id: locationId,
                     current_production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
-                            },
+                                },
                 {
                     method: 'POST',
                     loader: true,
@@ -1128,7 +1149,7 @@
                     job_order_ids: jobOrderIds,
                     production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
 
-                            }, {
+                                }, {
                     method: 'POST',
                     onSuccess: function (response, target) {
                         target.html(response);

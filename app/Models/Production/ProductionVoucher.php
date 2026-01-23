@@ -28,7 +28,8 @@ class ProductionVoucher extends Model
         'labor_cost_per_kg',
         'overhead_cost_per_kg',
         'status',
-        'remarks'
+        'remarks',
+        'qc_remarks'
     ];
 
     protected $casts = [

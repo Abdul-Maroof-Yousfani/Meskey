@@ -24,6 +24,8 @@ return new class extends Migration
             $table->unsignedBigInteger('arrival_sub_location_id')->nullable(); // Changed from storage_location_id
             $table->unsignedBigInteger('brand_id')->nullable();
             $table->text('remarks')->nullable();
+            $table->string('qc_status')->default('pending')->nullable();
+            $table->text('qc_remarks')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
