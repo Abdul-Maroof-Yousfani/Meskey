@@ -42,10 +42,10 @@
                     <td>
                         @if(isset($voucher->producedByJobOrder) && count($voucher->producedByJobOrder) > 0)
                             <div class="job-order-toggle-header" 
-                                 onclick="toggleJobOrderDetails('job-order-details-row-{{ $voucher->id }}', this)">
+                                 >
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <small class="text-muted">Click to view breakdown</small>
-                                    <i class="ft-chevron-down chevron-icon" id="chevron-{{ $voucher->id }}"></i>
+                                    <!-- <i class="ft-chevron-down chevron-icon" id="chevron-{{ $voucher->id }}"></i> -->
                                 </div>
                                 @foreach($voucher->producedByJobOrder as $jobOrderId => $data)
                                     <div class="job-order-summary-item">
