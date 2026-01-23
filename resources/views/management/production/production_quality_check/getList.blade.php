@@ -62,6 +62,7 @@
                         {{ $voucher->supervisor->name ?? '-' }}
                     </td>
                     <td>
+                        
                         @if($voucher->status == 'draft')
                             <span class="badge badge-warning">Draft</span>
                         @elseif($voucher->status == 'active')
@@ -70,6 +71,10 @@
                             <span class="badge badge-success">Completed</span>
                         @elseif($voucher->status == 'approved')
                             <span class="badge badge-info">Approved</span>
+                            @elseif($voucher->status == 'qc_pending')
+                            <span class="badge badge-info">Qc Pending</span>
+                            @elseif($voucher->status == 'qc_completed')
+                            <span class="badge badge-success">Qc Completed</span>
                         @endif
                     </td>
                     <td>
