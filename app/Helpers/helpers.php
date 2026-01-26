@@ -239,12 +239,12 @@ if(!function_exists("sub_arrival_name_by_id")) {
     }
 }
 
-if(!function_exists("get_customer_name")) {
-    function get_customer_name($customer_id) {
-        $customer = Customer::select("id", "name")->find($customer_id);
-        return $customer;
-    }
-}
+// if(!function_exists("get_customer_name")) {
+//     function get_customer_name($customer_id) {
+//         $customer = Customer::select("id", "name")->find($customer_id);
+//         return $customer;
+//     }
+// }
 
 if(!function_exists("getTaxById")) {
     function getTaxPercentageById($tax_id) {
@@ -1499,7 +1499,6 @@ if(!function_exists("getArrivalLocationsOfCompany")) {
     }
 }
 
-<<<<<<< HEAD
 
 if(!function_exists("getByProductsById")) {
     function getByProductsById($by_product_id) {
@@ -1532,7 +1531,6 @@ if(!function_exists("getByProductsById")) {
         return $byProducts;
     }
 }
-=======
 if(!function_exists("getDebitNoteBalance")) {
     function getDebitNoteBalance($purchase_bill_data_id, $exclude_debit_note_id = null) {
         $query = DebitNoteData::where('purchase_bill_data_id', $purchase_bill_data_id);
@@ -1641,4 +1639,3 @@ if(!function_exists("getArrivalLocations")) {
 }
 
 
->>>>>>> cb5468c1 (test)
