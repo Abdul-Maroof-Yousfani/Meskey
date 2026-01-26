@@ -77,7 +77,7 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location</label>
-                <select class="form-control select2 w-100" id="company_locations" disabled style="width: 100% !important;">
+                <select class="form-control select2 w-100" id="company_locations" multiple disabled style="width: 100% !important;">
                     <!-- Options will be populated dynamically -->
                 </select>
             </div>
@@ -109,6 +109,8 @@
                 <table class="table table-bordered table-striped">
                     <thead class="thead-light">
                         <tr>
+                            <th width="10%">Delivery Order</th>
+                            <th width="10%">DO Qty</th>
                             <th width="12%">Truck Number</th>
                             <th width="12%">Container Number</th>
                             <th width="10%">Packing</th>
@@ -123,6 +125,12 @@
                     <tbody id="itemsList">
                         @forelse($LoadingProgram->loadingProgramItems as $item)
                             <tr class="item-row">
+                                <td>
+                                    <input type="text" value="{{ $LoadingProgram->deliveryOrder->reference_no ?? 'N/A' }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
+                                </td>
+                                <td>
+                                    <input type="text" value="{{ $LoadingProgram->deliveryOrder?->delivery_order_data?->first()?->qty ?? 'N/A' }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
+                                </td>
                                 <td>
                                     <input type="text" value="{{ $item->truck_number }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
                                 </td>
@@ -200,6 +208,32 @@
                 $companyLocationIds = [$LoadingProgram->deliveryOrder->location_id];
                 $arrivalLocationIds = $LoadingProgram->deliveryOrder->arrival_location_id ? explode(',', $LoadingProgram->deliveryOrder->arrival_location_id) : [];
                 $subArrivalLocationIds = $LoadingProgram->deliveryOrder->sub_arrival_location_id ? explode(',', $LoadingProgram->deliveryOrder->sub_arrival_location_id) : [];
+
+                $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $companyLocationIds)->get();
+                $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+                $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
+            @endphp
+
+            @foreach($companyLocations as $location)
+                var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
+                companyLocationsSelect.append(option);
+            @endforeach
+
+            @foreach($arrivalLocations as $location)
+                var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
+                arrivalLocationsSelect.append(option);
+            @endforeach
+
+            @foreach($subArrivalLocations as $location)
+                var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
+                subArrivalLocationsSelect.append(option);
+            @endforeach
+        @else
+            @php
+                // Get multiple locations from sale order relationships
+                $companyLocationIds = $LoadingProgram->saleOrder->locations->pluck('location_id')->toArray();
+                $arrivalLocationIds = $LoadingProgram->saleOrder->factories->pluck('arrival_location_id')->toArray();
+                $subArrivalLocationIds = $LoadingProgram->saleOrder->sections->pluck('arrival_sub_location_id')->toArray();
 
                 $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $companyLocationIds)->get();
                 $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();

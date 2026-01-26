@@ -105,7 +105,7 @@
                 <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
                     <option value="">Select Factory</option>
                     @foreach ($arrivalLocations as $factory)
-                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
                     @endforeach
                 </select>
             </div>
@@ -116,7 +116,7 @@
                 <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
                     <option value="">Select Section</option>
                     @foreach ($arrivalSubLocations as $section)
-                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} - ({{ $section->arrivalLocation->name }})</option>
                     @endforeach
                 </select>
             </div>
@@ -131,12 +131,7 @@
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn">
-                <i class="fa fa-plus"></i>&nbsp; Add New Item
-            </button>
-        </div>
+  
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -149,6 +144,7 @@
                             <th>No of Bags</th>
                             <th>Quantity (Kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Brands</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Description</th>
@@ -198,6 +194,11 @@
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $i }}"
                                         value="{{ $data->rate }}" class="form-control" step="0.01"
+                                        min="0" readonly>
+                                </td>
+                                 <td>
+                                    <input type="number" name="rate_per_mond[]" id="rate_{{ $i }}"
+                                        value="{{ $data->rate_per_mond }}" class="form-control" step="0.01"
                                         min="0" readonly>
                                 </td>
                                 <td>

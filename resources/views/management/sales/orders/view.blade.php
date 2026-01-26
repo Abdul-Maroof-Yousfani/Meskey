@@ -121,18 +121,25 @@
                 <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
                     <option value="">Select Factory</option>
                     @foreach($arrivalLocations as $factory)
-                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
                     @endforeach
                 </select>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Section:</label>
+                @php
+                    $selectedFactoryNames = [];
+                    if (!empty($selectedFactories)) {
+                        $selectedFactoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $selectedFactories)->pluck('name')->toArray();
+                    }
+                    $factoryNamesString = !empty($selectedFactoryNames) ? ' (' . implode(', ', $selectedFactoryNames) . ')' : '';
+                @endphp
+                <label class="form-label">Section{{ $factoryNamesString }}:</label>
                 <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
                     <option value="">Select Section</option>
                     @foreach($arrivalSubLocations as $section)
-                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} ({{ $section->arrivalLocation->name }})</option>
                     @endforeach
                 </select>
             </div>
@@ -173,6 +180,7 @@
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
@@ -208,6 +216,10 @@
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
+                                        min="0" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
                                         min="0" readonly>
                                 </td>
                                 <td>
@@ -247,7 +259,7 @@
         <div class="col-12 text-end">
             <a type="button"
             class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            {{-- <button type="submit" class="btn btn-primary submitbutton">Save</button> --}}
         </div>
     </div>
 </form>

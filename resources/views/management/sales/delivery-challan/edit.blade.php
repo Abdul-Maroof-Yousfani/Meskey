@@ -272,6 +272,7 @@
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
@@ -336,6 +337,11 @@
                             <td>
                                 <input type="text" name="rate[]" id="rate_{{ $index }}"
                                     value="{{ $data->rate }}" class="form-control rate" step="0.01"
+                                    min="0" readonly>
+                            </td>
+                            <td>
+                                <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                    value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}" class="form-control rate" step="0.01"
                                     min="0" readonly>
                             </td>
                             <td>

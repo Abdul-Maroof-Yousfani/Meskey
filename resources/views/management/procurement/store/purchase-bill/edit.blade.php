@@ -118,7 +118,7 @@
 
                                 <td style="width: 30%">
                                     <input type="text" style="width: 100%;" name="description[]" value="{{ $data->description }}"
-                                        id="description_{{ $key }}" class="form-control uom" readonly>
+                                        id="description_{{ $key }}" class="form-control uom">
                                 </td>
 
                                 <td style="width: 30%">
@@ -193,7 +193,7 @@
                                     <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)"
                                         name="tax_id[]" value="{{ $data->tax_percent }}"
                                         id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01"
-                                        min="0" readonly>
+                                        min="0">
                                 </td>
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly

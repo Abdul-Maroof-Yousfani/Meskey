@@ -12,6 +12,7 @@ use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
+use App\Models\Product;
 use App\Models\Sales\JobOrder;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,8 +30,10 @@ class PurchaseRequestController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::with('packing_items')->where('id', request()->job_order)->get();
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
-        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories'));
+
+        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items'));
     }
 
     /**
@@ -118,8 +121,10 @@ class PurchaseRequestController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
-        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders'));
+      
+        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items'));
     }
 
     /**
@@ -247,6 +252,8 @@ class PurchaseRequestController extends Controller
         }
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+
         $locations = CompanyLocation::all();
 
         // dd($purchaseRequest);
@@ -258,6 +265,7 @@ class PurchaseRequestController extends Controller
             'job_orders' => $job_orders,
             'locations' => $locations,
             'locations_id' => $locations_id,
+            'items' => $items,
             'location_names' => $location_names,
 
         ]);

@@ -2,6 +2,7 @@
 
 namespace App\Models\Sales;
 
+use App\Models\Master\Customer;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,9 +22,14 @@ class DeliveryChallanData extends Model
         return $this->belongsTo(DeliveryChallan::class, 'delivery_challan_id');
     }
 
+    public function deliveryOrderData() {
+        return $this->belongsTo(DeliveryOrderData::class, "do_data_id");
+    }
+
     public static function booted() {
         static::created(function($delivery_challan_data) {
-            $debit_account_id = 103;
+            $customer_id = $delivery_challan_data->deliveryChallan->customer_id;
+            $debit_account_id = Customer::select("id", "account_id")->find($customer_id);
             $voucher_type_id = 3;
             
             $voucher_no = $delivery_challan_data->deliveryChallan->dc_no;
@@ -31,7 +37,7 @@ class DeliveryChallanData extends Model
 
             createTransaction(
                 $delivery_challan_data->qty * $delivery_challan_data->rate,
-                $debit_account_id,
+                $debit_account_id->account_id,
                 $voucher_type_id,
                 $voucher_no,
                 'debit',
@@ -56,7 +62,7 @@ class DeliveryChallanData extends Model
             );
 
             createStockTransaction(
-                $delivery_challan_data->item_id,
+                $delivery_challan_data->product->account_id,
                 'delivery_challan',
                 $voucher_no,
                 $delivery_challan_data->qty,

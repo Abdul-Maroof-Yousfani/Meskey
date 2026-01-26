@@ -34,8 +34,8 @@ class PurchaseBillController extends Controller
             ->whereHas('bill_data', function ($q): void {
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_bills_data WHERE purchase_bills_data.purchase_bill_id = purchase_bills.id)');
             })
+      
             ->get();
-
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
 
@@ -265,8 +265,10 @@ class PurchaseBillController extends Controller
         $supplier_id = $request->supplier_id;
 
         $purchase_order_receivings = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function ($query) {
-            $query->where('am_approval_status', 'approved');
+            $query->where('am_approval_status', 'approved')
+                    ->where("accepted_quantity", ">", 0);
         })
+            ->whereDoesntHave("bills")
             ->select('id', 'purchase_order_receiving_no')
             ->where('supplier_id', $supplier_id)
             ->get()
@@ -302,12 +304,13 @@ class PurchaseBillController extends Controller
 
         $master = PurchaseOrderReceiving::with("purchase_request")->where('purchase_order_receiving_no', $requestId)->first();
         $locations = $master?->purchase_request?->locations;
-        $location_ids = $locations->pluck("location_id")->toArray();
+        $location_ids = $master->location_id;
         
         $dataItems = collect();
 
         $dataItems = PurchaseOrderReceivingData::whereHas('qc', function ($query) {
-            $query->where('am_approval_status', 'approved');
+            $query->where('am_approval_status', 'approved')
+                    ->where("accepted_quantity", ">", 0);
         })
             ->whereDoesntHave('bill')
             ->with(['purchase_request_data', 'item', 'purchase_order_data'])
@@ -470,6 +473,8 @@ class PurchaseBillController extends Controller
                     'am_change_mode' => 1,
                 ]);
             }
+
+        
 
             DB::commit();
 

@@ -1,10 +1,10 @@
 
+<form action="{{ route('sales.loading-program.update', $LoadingProgram->id) }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
+    @csrf
 
-<div class="modal-body">
-    <form action="{{ route('sales.loading-program.update', $LoadingProgram->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
-        @csrf
-        @method('PUT')
-        <input type="hidden" id="listRefresh" value="{{ route('sales.get.loading-program') }}" />
+    @method('PUT')
+    <input type="hidden" id="listRefresh" value="{{ route('sales.get.loading-program') }}" />
     <div class="row form-mar">
 
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -13,7 +13,9 @@
                 <select class="form-control select2" name="sale_order_id" id="sale_order_id">
                     <option value="">Select Sale Order</option>
                     @foreach ($SaleOrders as $SaleOrder)
-                        <option value="{{ $SaleOrder->id }}" {{ $SaleOrder->id == $LoadingProgram->sale_order_id ? 'selected' : '' }}>
+                        <option value="{{ $SaleOrder->id }}"
+                            {{ $SaleOrder->id == $LoadingProgram->sale_order_id ? 'selected' : '' }}
+                            data-type="{{ $SaleOrder->pay_type_id }}">
                             {{ $SaleOrder->reference_no }}
                         </option>
                     @endforeach
@@ -23,26 +25,32 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 @php
-                    $isDeliveryOrderOptional = $LoadingProgram->saleOrder && $LoadingProgram->saleOrder->pay_type_id == 11;
+                    $isDeliveryOrderOptional =
+                        $LoadingProgram->saleOrder && $LoadingProgram->saleOrder->pay_type_id == 11;
                 @endphp
-                <label id="delivery_order_label">Delivery Order: <span id="delivery_order_required_mark" class="text-danger" @if($isDeliveryOrderOptional) style="display: none;" @endif>*</span></label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id">
+                <label id="delivery_order_label">Delivery Order: <span id="delivery_order_required_mark"
+                        class="text-danger"
+                        @if ($isDeliveryOrderOptional) style="display: none;" @endif>*</span></label>
+                <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple>
                     <option value="">Select Delivery Order</option>
                     @foreach ($DeliveryOrders as $deliveryOrder)
-                        <option value="{{ $deliveryOrder->id }}" {{ $deliveryOrder->id == $LoadingProgram->delivery_order_id ? 'selected' : '' }}>
+                        <option value="{{ $deliveryOrder->id }}"
+                            {{ $deliveryOrder->id == $LoadingProgram->delivery_order_id ? 'selected' : '' }}>
                             {{ $deliveryOrder->reference_no }}
                         </option>
-                    @endforeach
+                    @endforeach style="display: none;"
                 </select>
-                <small id="delivery_order_optional_note" class="text-muted" @if(!$isDeliveryOrderOptional) style="display: none;" @endif>
+                <small id="delivery_order_optional_note" class="text-muted"
+                    @if (!$isDeliveryOrderOptional) style="display: none;" @endif>
                     Delivery Order is optional for this Sale Order. You can add it later during Second Weighbridge.
                 </small>
             </div>
         </div>
         <input type="hidden" id="is_delivery_order_optional" value="{{ $isDeliveryOrderOptional ? '1' : '0' }}">
     </div>
+
     <div class="row" id="saleOrderDataContainer">
-        @if($LoadingProgram->saleOrder)
+        @if ($LoadingProgram->saleOrder)
             <div class="col-12">
                 <h6 class="header-heading-sepration">
                     Sale Order Details
@@ -53,15 +61,16 @@
             <div class="col-xs-12 col-sm-6 col-md-3">
                 <div class="form-group">
                     <label>Buyer:</label>
-                    <input type="text" value="{{ $LoadingProgram->saleOrder->customer->name ?? 'N/A' }}"
-                        disabled class="form-control" autocomplete="off" readonly />
+                    <input type="text" value="{{ $LoadingProgram->saleOrder->customer->name ?? 'N/A' }}" disabled
+                        class="form-control" autocomplete="off" readonly />
                 </div>
             </div>
 
             <div class="col-xs-12 col-sm-6 col-md-3">
                 <div class="form-group">
                     <label>Commodity:</label>
-                    <input type="text" value="{{ $LoadingProgram->saleOrder->sales_order_data->first()->item->name ?? 'N/A' }}"
+                    <input type="text"
+                        value="{{ $LoadingProgram->saleOrder->sales_order_data->first()->item->name ?? 'N/A' }}"
                         disabled class="form-control" autocomplete="off" readonly />
                 </div>
             </div>
@@ -69,7 +78,8 @@
             <div class="col-xs-12 col-sm-6 col-md-3">
                 <div class="form-group">
                     <label>SO Date:</label>
-                    <input type="text" value="{{ $LoadingProgram->saleOrder->order_date ? $LoadingProgram->saleOrder->order_date : 'N/A' }}"
+                    <input type="text"
+                        value="{{ $LoadingProgram->saleOrder->order_date ? $LoadingProgram->saleOrder->order_date : 'N/A' }}"
                         disabled class="form-control" autocomplete="off" readonly />
                 </div>
             </div>
@@ -77,18 +87,20 @@
             <div class="col-xs-12 col-sm-6 col-md-3">
                 <div class="form-group">
                     <label>SO Qty:</label>
-                    <input type="text" value="{{ $LoadingProgram->saleOrder->sales_order_data->first()->qty ?? 'N/A' }}"
-                        disabled class="form-control" autocomplete="off" readonly />
+                    <input type="text"
+                        value="{{ $LoadingProgram->saleOrder->sales_order_data->first()->qty ?? 'N/A' }}" disabled
+                        class="form-control" autocomplete="off" readonly />
                 </div>
             </div>
         @endif
     </div>
 
-    <div class="row" id="locationContainer" >
+    <div class="row" id="locationContainer">
         <style>
             .select2-container {
                 width: 100% !important;
             }
+
             .select2-container .select2-selection--multiple {
                 width: 100% !important;
             }
@@ -96,24 +108,33 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location</label>
-                <select class="form-control select2 w-100" name="company_locations" id="company_locations" disabled style="width: 100% !important;">
-                    <!-- Options will be populated dynamically -->
+                <select class="form-control select2 w-100" name="company_locations" id="company_locations" multiple
+                    disabled style="width: 100% !important;">
+                    @foreach($locations[0] as $company_location)
+                        <option value="{{ $company_location["id"] }}" selected>{{ $company_location["text"] }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Arrival Location</label>
-                <select class="form-control select2 w-100" name="arrival_locations[]" id="arrival_locations" multiple disabled style="width: 100% !important;">
-                    <!-- Options will be populated dynamically -->
+                <select class="form-control select2 w-100" name="arrival_locations[]" id="arrival_locations" multiple
+                    disabled style="width: 100% !important;">
+                    @foreach($locations[1] as $factory_location)
+                        <option value="{{ $factory_location["id"] }}" selected>{{ $factory_location["text"] }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Sub Arrival Location</label>
-                <select class="form-control select2 w-100" name="sub_arrival_locations[]" id="sub_arrival_locations" multiple disabled style="width: 100% !important;">
-                    <!-- Options will be populated dynamically -->
+                <select class="form-control select2 w-100" name="sub_arrival_locations[]" id="sub_arrival_locations"
+                    multiple disabled style="width: 100% !important;">
+                    @foreach($locations[2] as $section_location)
+                        <option value="{{ $section_location["id"] }}" selected>{{ $section_location["text"] }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -129,54 +150,118 @@
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead class="thead-light">
                         <tr>
+                            <th width="10%">Delivery Order</th>
+                            <th width="12%">DO Qty</th>
                             <th width="12%">Truck Number *</th>
                             <th width="12%">Container Number</th>
                             <th width="10%">Packing</th>
                             <th width="10%">Brand</th>
-                            <th width="15%">Factory/Arrival Location *</th>
-                            <th width="15%">Gala/Sub Arrival Location *</th>
-                            <th width="10%">Driver Name</th>
-                            <th width="10%">Contact Details</th>
-                            <th width="8%">Suggested Qty</th>
+                            <th width="13%">Factory/Arrival Location *</th>
+                            <th width="13%">Gala/Sub Arrival Location *</th>
+                            <th width="8%">Driver Name</th>
+                            <th width="8%">Contact Details</th>
+                            <th width="6%">Suggested Qty</th>
                             <th width="8%">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsList">
-                        <!-- Existing items will be populated here -->
+                        <!-- Items will be added here dynamically -->
                         @forelse($LoadingProgram->loadingProgramItems as $index => $item)
+                            @if ($item->firstWeighbridge)
+                                @continue
+                            @endif
                             <tr class="item-row" data-index="{{ $index }}">
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][truck_number]" class="form-control form-control-sm" required style="min-width: 100px;" value="{{ $item->truck_number }}">
-                                    <input type="hidden" name="loading_program_items[{{ $index }}][transaction_number]" class="form-control form-control-sm" required style="min-width: 100px;" value="{{ $item->transaction_number }}">
+                                    <select name="loading_program_items[{{ $index }}][delivery_order_id]"
+                                        class="form-control form-control-sm select2 delivery-order-select"
+                                        style="min-width: 100px;" onchange="getDoQty(this)">
+                                        <option value="">Select Delivery Order</option>
+                                        @if ($LoadingProgram->delivery_order_id)
+                                            @foreach ($DeliveryOrders as $deliveryOrder)
+                                                <option value="{{ $deliveryOrder->id }}"
+                                                    {{ $deliveryOrder->id == $item->delivery_order_id ? 'selected' : '' }}>
+                                                    {{ $deliveryOrder->reference_no }} -- {{ $item->delivery_order_id }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    {{-- <input type="hidden"
+                                        name="loading_program_items[{{ $index }}][delivery_order_id]"
+                                        class="form-control form-control-sm" required style="min-width: 100px;"
+                                        value="{{ $item->delivery_order_id }}"> --}}
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][container_number]" class="form-control form-control-sm" style="min-width: 100px;" value="{{ $item->container_number }}">
+                                    <input type="text" readonly
+                                        name="loading_program_items[{{ $index }}][do_qty]"
+                                        class="form-control form-control-sm do_qty" required style="min-width: 100px;"
+                                        value="{{ $LoadingProgram->deliveryOrder?->delivery_order_data->first()->qty ?? '' }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][packing]" class="form-control form-control-sm" readonly style="min-width: 80px;" value="{{ $item->packing }}">
+                                    <input type="text"
+                                        name="loading_program_items[{{ $index }}][truck_number]"
+                                        class="form-control form-control-sm" required style="min-width: 100px;"
+                                        value="{{ $item->truck_number }}">
+                                    <input type="hidden"
+                                        name="loading_program_items[{{ $index }}][transaction_number]"
+                                        class="form-control form-control-sm" required style="min-width: 100px;"
+                                        value="{{ $item->transaction_number }}">
                                 </td>
                                 <td>
-                                    <input type="hidden" name="loading_program_items[{{ $index }}][brand_id]" class="form-control form-control-sm" style="min-width: 80px;" value="{{ $item->brand_id }}">
-                                    <input type="text" name="loading_program_items[{{ $index }}][brand_name]" class="form-control form-control-sm" readonly style="min-width: 80px;" value="{{ $item?->brand?->name ?? ''}}">
+                                    <input type="text"
+                                        name="loading_program_items[{{ $index }}][container_number]"
+                                        class="form-control form-control-sm" style="min-width: 100px;"
+                                        value="{{ $item->container_number }}">
                                 </td>
                                 <td>
-                                    <select name="loading_program_items[{{ $index }}][arrival_location_id]" class="form-control form-control-sm select2 arrival-location-select" required style="min-width: 120px;">
+                                    <input type="text" name="loading_program_items[{{ $index }}][packing]"
+                                        class="form-control form-control-sm" readonly style="min-width: 80px;"
+                                        value="{{ $item->packing }}">
+                                </td>
+                                <td>
+                                    <input type="hidden" name="loading_program_items[{{ $index }}][brand_id]"
+                                        class="form-control form-control-sm" style="min-width: 80px;"
+                                        value="{{ $item->brand_id }}">
+                                    <input type="text"
+                                        name="loading_program_items[{{ $index }}][brand_name]"
+                                        class="form-control form-control-sm" readonly style="min-width: 80px;"
+                                        value="{{ $item?->brand?->name ?? '' }}">
+                                </td>
+                                <td>
+                                    <select name="loading_program_items[{{ $index }}][arrival_location_id]"
+                                        class="form-control form-control-sm select2 arrival-location-select" required
+                                        style="min-width: 120px;" data-arrival="{{ $item->arrival_location_id }}">
                                         <option value="">Select Location</option>
+                                        @foreach($locations[1] as $factory)
+                                            <option value="{{ $factory["id"] }}" @selected($item->arrival_location_id == $factory["id"])>{{ $factory["text"] }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="loading_program_items[{{ $index }}][sub_arrival_location_id]" class="form-control form-control-sm select2 sub-arrival-location-select" required style="min-width: 120px;">
+                                    <select name="loading_program_items[{{ $index }}][sub_arrival_location_id]"
+                                        class="form-control form-control-sm select2 sub-arrival-location-select"
+                                        required style="min-width: 120px;" data-subarrival="{{ $item->sub_arrival_location_id }}">
                                         <option value="">Select Sub Location</option>
+                                        @foreach($locations[2] as $section)
+                                            <option value="{{ $section["id"] }}" @selected($item->sub_arrival_location_id == $section["id"])>{{ $section["text"] }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][driver_name]" class="form-control form-control-sm" style="min-width: 100px;" value="{{ $item->driver_name }}">
+                                    <input type="text"
+                                        name="loading_program_items[{{ $index }}][driver_name]"
+                                        class="form-control form-control-sm" style="min-width: 100px;"
+                                        value="{{ $item->driver_name }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][contact_details]" class="form-control form-control-sm" style="min-width: 100px;" value="{{ $item->contact_details }}">
+                                    <input type="text"
+                                        name="loading_program_items[{{ $index }}][contact_details]"
+                                        class="form-control form-control-sm" style="min-width: 100px;"
+                                        value="{{ $item->contact_details }}">
                                 </td>
                                 <td>
-                                    <input type="number" name="loading_program_items[{{ $index }}][qty]" class="form-control form-control-sm" step="0.01" style="min-width: 70px;" value="{{ $item->qty }}">
+                                    <input type="number" name="loading_program_items[{{ $index }}][qty]"
+                                        class="form-control form-control-sm" step="0.01" style="min-width: 70px;"
+                                        value="{{ $item->qty }}">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-danger remove-item-btn">
@@ -201,134 +286,507 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remark:</label>
-                <textarea name="remark" placeholder="Remarks" class="form-control">{{ $LoadingProgram->remark }}</textarea>
+                <textarea name="remark" placeholder="Remarks" class="form-control"></textarea>
             </div>
         </div>
     </div>
-    <div class="row bottom-button-bar" style="position: sticky; bottom: 0; background: white; padding: 15px 0; border-top: 1px solid #dee2e6; margin-top: 20px;">
-        <div class="col-12 text-right">
-            <a href="{{ route('sales.loading-program.index') }}" class="btn btn-secondary mr-2">Cancel</a>
-            <button type="submit" class="btn btn-primary submitbutton">Update</button>
+    <div class="row bottom-button-bar">
+        <div class="col-12">
+            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+            <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
-    </form>
-</div>
-
+</form>
 
 <script>
     $(document).ready(function() {
         $('.select2').select2();
 
-        // Ensure modal footer is visible
-        $('.modal-footer').show();
-
-        $("#delivery_order_id").trigger("change");
     });
+
+    // Function to update delivery order options for a specific row
+    function updateDeliveryOrderOptionsForRow($select) {
+        const currentValue = $select.val();
+        $select.empty().append('<option value="">Select Delivery Order</option>');
+
+        // Get selected delivery orders from top
+        const selectedDeliveryOrderIds = $('#delivery_order_id').val() || [];
+
+        // If no delivery orders selected at top, don't show any options
+        if (selectedDeliveryOrderIds.length === 0) {
+            return;
+        }
+
+        // Get delivery order options from the main delivery order select
+        $('#delivery_order_id option').each(function() {
+            const value = $(this).val();
+            const text = $(this).text();
+            if (value && selectedDeliveryOrderIds.includes(value)) {
+                const option = new Option(text, value, false, currentValue == value);
+                $select.append(option);
+            }
+        });
+
+        // Reinitialize select2
+        $select.select2();
+    }
+
+    // Function to update delivery order options for all rows
+    function updateDeliveryOrderOptionsForAllRows() {
+        $('.delivery-order-select').each(function() {
+            updateDeliveryOrderOptionsForRow($(this));
+        });
+    }
+
+    function get_sale_order(sale_order_id, type_id) {
+        if(type_id == 11) {
+             $.ajax({
+            url: '{{ route('sales.so.locations') }}',
+            type: 'GET',
+            data: {
+                so_id: sale_order_id
+            },
+            dataType: 'json',
+            success: function(response) {
+                const [arrivalLocations, subArrivalLocations] = response;
+                
+                $(".arrival-location-select").each(function(index, element) {
+                    $(element).empty();
+                    $(element).select2({
+                        data: arrivalLocations
+                    });
+                });
+
+                $(".sub-arrival-location-select").each(function(index, element) {
+                    $(element).closest("tr").find("arrival-location-select").trigger("change");
+                    $(element).empty();
+                    $(element).select2({
+                        data: subArrivalLocations
+                    });
+                })
+            },
+            error: function() {
+                Swal.close();
+                Swal.fire("Error", "Something went wrong. Please try again.",
+                    "error");
+            }
+        });
+        } else {
+            $(".arrival-location-select").each(function(index, element) {
+                $(element).empty();
+          
+            });
+
+            $(".sub-arrival-location-select").each(function(index, element) {
+                $(element).empty();
+            })
+        }
+
+        $.ajax({
+            url: '{{ route('sales.getSaleOrderRelatedData') }}',
+            type: 'GET',
+            data: {
+                sale_order_id: sale_order_id
+            },
+            dataType: 'json',
+            beforeSend: function() {
+                Swal.fire({
+                    title: "Processing...",
+                    text: "Please wait while fetching sale order details.",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+            success: function(response) {
+                Swal.close();
+                if (response.success) {
+                    if (type_id != 11) {
+                        $("#locationContainer").hide();
+                    } else {
+                        $("#locationContainer").show();
+                    }
+
+                    // Append the rendered HTML to a container element
+                    $('#saleOrderDataContainer').html(response.html);
+
+                    // Reinitialize select2 for any new dropdowns
+                    $('.select2').select2();
+
+                    // Store sale order data for use when no delivery order is selected
+                    if (response.sale_order_data) {
+                        window.saleOrderData = response.sale_order_data;
+                    }
+
+                    // Handle delivery order optional status
+                    if (response.is_delivery_order_optional) {
+                        $('#is_delivery_order_optional').val('1');
+                        $('#delivery_order_required_mark').hide();
+                        $('#delivery_order_optional_note').show();
+                        // Show location and line items containers even without delivery order
+                        $('#locationContainer').show();
+                        $('#lineItemsContainer').show();
+                    } else {
+                        $('#is_delivery_order_optional').val('0');
+                        $('#delivery_order_required_mark').show();
+                        $('#delivery_order_optional_note').hide();
+                    }
+
+                    // Fetch and populate delivery orders for this sale order
+                    $.ajax({
+                        url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
+                        type: 'GET',
+                        data: { sale_order_id: sale_order_id },
+                        success: function(deliveryResponse) {
+                            if (deliveryResponse.success && deliveryResponse.delivery_orders) {
+                                // Update delivery order dropdown
+                                var $deliveryOrderSelect = $('#delivery_order_id');
+                                $deliveryOrderSelect.empty().append('<option value="">Select Delivery Order</option>');
+
+                                if (Array.isArray(deliveryResponse.delivery_orders)) {
+                                    deliveryResponse.delivery_orders.forEach(function(deliveryOrder) {
+                                        var option = new Option(deliveryOrder.reference_no, deliveryOrder.id, false, false);
+                                        $deliveryOrderSelect.append(option);
+                                    });
+                                } else {
+                                    // Handle single delivery order case
+                                    var option = new Option(deliveryResponse.delivery_orders.reference_no, deliveryResponse.delivery_orders.id, false, false);
+                                    $deliveryOrderSelect.append(option);
+                                }
+
+                                $deliveryOrderSelect.select2();
+
+                                // Update delivery order options in existing line items
+                                updateDeliveryOrderOptionsForAllRows();
+                            }
+                        },
+                        error: function() {
+                            console.log('Error fetching delivery orders');
+                        }
+                    });
+                } else {
+                    Swal.fire("No Data", "No sale order details found.",
+                        "info");
+                }
+            },
+            error: function() {
+                Swal.close();
+                Swal.fire("Error", "Something went wrong. Please try again.",
+                    "error");
+            }
+        });
+    }
 
     $(document).ready(function() {
         // Handle sale order change
         $('#sale_order_id').change(function() {
             var sale_order_id = $(this).val();
+            const type_id = $(this).find(':selected').data('type');
+    
 
             if (sale_order_id) {
-                $.ajax({
-                    url: '{{ route('sales.getSaleOrderRelatedData') }}',
-                    type: 'GET',
-                    data: {
-                        sale_order_id: sale_order_id
-                    },
-                    dataType: 'json',
-                    beforeSend: function() {
-                        Swal.fire({
-                            title: "Processing...",
-                            text: "Please wait while fetching sale order details.",
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                    },
-                    success: function(response) {
-                        Swal.close();
-                        if (response.success) {
-                            // Append the rendered HTML to a container element
-                            $('#saleOrderDataContainer').html(response.html);
-
-                            // Reinitialize select2 for any new dropdowns
-                            $('.select2').select2();
-
-                            // Store sale order data for use when no delivery order is selected
-                            if (response.sale_order_data) {
-                                window.saleOrderData = response.sale_order_data;
-                            }
-
-                            // Handle delivery order optional status
-                            if (response.is_delivery_order_optional) {
-                                $('#is_delivery_order_optional').val('1');
-                                $('#delivery_order_required_mark').hide();
-                                $('#delivery_order_optional_note').show();
-                            } else {
-                                $('#is_delivery_order_optional').val('0');
-                                $('#delivery_order_required_mark').show();
-                                $('#delivery_order_optional_note').hide();
-                            }
-                        } else {
-                            Swal.fire("No Data", "No sale order details found.",
-                                "info");
-                        }
-                    },
-                    error: function() {
-                        Swal.close();
-                        Swal.fire("Error", "Something went wrong. Please try again.",
-                            "error");
-                    }
-                });
+                get_sale_order(sale_order_id, type_id);
             } else {
                 // Clear containers if no sale order selected
                 $('#saleOrderDataContainer').html('');
-                $('#delivery_order_id').empty().append('<option value="">Select Delivery Order</option>');
+                $('#delivery_order_id').empty().append(
+                    '<option value="">Select Delivery Order</option>');
+                    
                 $('#lineItemsContainer').hide();
+                $('#locationContainer').hide();
+                // Reset optional status
+                $('#is_delivery_order_optional').val('0');
+                $('#delivery_order_required_mark').show();
+                $('#delivery_order_optional_note').hide();
+
+                // Clear delivery order options in existing line items
+                updateDeliveryOrderOptionsForAllRows();
+
+                // Clear location dropdowns
+                $('#company_locations').empty();
+                $('#arrival_locations').empty();
+                $('#sub_arrival_locations').empty();
+                $('#company_locations').select2();
+                $('#arrival_locations').select2();
+                $('#sub_arrival_locations').select2();
+
+                // Clear location options in existing line items
+                updateItemLocations();
             }
+
+            const elements_to_reset = [
+               ".delivery-order-select",
+               ".do_qty",
+               ".arrival-location-select",
+               ".sub-arrival-location-select" 
+            ];
+
+            elements_to_reset.forEach(function(selector) {
+                $(selector).each(function () {
+                    $(this).val("");
+                });
+            });
+            
         });
 
         // Handle delivery order change
         $('#delivery_order_id').change(function() {
-            var delivery_order_id = $(this).val();
+            var delivery_order_ids = $(this).val();
+            const type_id = $("#sale_order_id option:selected").data("type");
 
-            if (delivery_order_id) {
+         
+
+            if (delivery_order_ids.length === 0) {
+                get_sale_order($("#sale_order_id").val(), type_id);
+            }
+            if (delivery_order_ids && delivery_order_ids.length > 0) {
                 // Fetch delivery order data to get packing and brand
                 var saleOrderId = $('#sale_order_id').val();
                 if (saleOrderId) {
                     $.ajax({
                         url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
                         type: 'GET',
-                        data: { sale_order_id: saleOrderId },
+                        data: {
+                            sale_order_id: saleOrderId
+                        },
                         success: function(response) {
                             if (response.success && response.delivery_orders) {
-                                // Find the selected delivery order
-                                var selectedDeliveryOrder = response.delivery_orders.find(function(d_o) {
-                                    return d_o.id == delivery_order_id;
-                                });
+                                // Find all selected delivery orders
+                                var selectedDeliveryOrders = [];
+                                if (Array.isArray(response.delivery_orders)) {
+                                    selectedDeliveryOrders = response.delivery_orders
+                                        .filter(function(d_o) {
+                                            return delivery_order_ids.includes(d_o.id
+                                                .toString());
+                                        });
+                                } else {
+                                    // Handle single delivery order case
+                                    if (delivery_order_ids.includes(response.delivery_orders
+                                            .id.toString())) {
+                                        selectedDeliveryOrders = [response.delivery_orders];
+                                    }
+                                }
 
-                                // Note: Packing and brand values are set when adding new items in addItemRow function
-                                // Existing items should keep their original values
+                                if (selectedDeliveryOrders.length > 0) {
+                                    populateLocationFields(selectedDeliveryOrders);
+
+                                    // Update line item location dropdowns
+                                    updateItemLocations();
+
+                                    // Use data from the first delivery order for packing and brand
+                                    var firstDeliveryOrder = selectedDeliveryOrders[0];
+                                    if (firstDeliveryOrder.delivery_order_data &&
+                                        firstDeliveryOrder.delivery_order_data.length > 0) {
+                                        var firstItem = firstDeliveryOrder
+                                            .delivery_order_data[0];
+
+                                        // Set default packing and brand for new items
+                                        $('input[name="loading_program_items[0][packing]"]')
+                                            .val(firstItem.bag_size || '');
+                                        $('input[name="loading_program_items[0][brand_id]"]')
+                                            .val(firstItem.brand_id || '');
+                                        $('input[name="loading_program_items[0][brand_name]"]')
+                                            .val(firstItem.brand ? firstItem.brand.name :
+                                                '');
+                                    }
+                                }
                             }
                         }
                     });
                 }
 
-                // For edit form, containers are always shown
-                // $('#locationContainer').show();
-                // $('#lineItemsContainer').show();
+                // Update delivery order options in line items
+                updateDeliveryOrderOptionsForAllRows();
+
+                // Show location and line items containers
+                $('#locationContainer').show();
+                $('#lineItemsContainer').show();
+                      updateItemLocations();
+          
             } else {
-                // For edit form, don't hide containers
-                // $('#locationContainer').hide();
-                // $('#lineItemsContainer').hide();
+                // Clear delivery order options in line items when no delivery orders selected
+                $('.delivery-order-select').each(function() {
+                    $(this).empty().append('<option value="">Select Delivery Order</option>');
+                    $(this).select2();
+                });
+
+                // When no delivery orders are selected, populate locations from sale order data
+                var isOptional = $('#is_delivery_order_optional').val() === '1';
+                var currentSaleOrderType = $('#sale_order_id').find(':selected').data('type');
+
+                if ((isOptional || currentSaleOrderType == 11) && window.saleOrderData) {
+                    // Populate locations from sale order data for type 11 or optional delivery orders
+                    populateLocationsFromSaleOrder(window.saleOrderData);
+                } else {
+                    // Clear location dropdowns when no delivery orders selected and not type 11
+                    $('#company_locations').empty();
+                    $('#arrival_locations').empty();
+                    $('#sub_arrival_locations').empty();
+                    $('#company_locations').select2();
+                    $('#arrival_locations').select2();
+                    $('#sub_arrival_locations').select2();
+                }
+
+                // Update location options in existing line items
+                updateItemLocations();
+
+                // Hide location and line items containers only if delivery order is required
+                if (!isOptional) {
+                    $('#locationContainer').hide();
+                    $('#lineItemsContainer').hide();
+                }
             }
         });
 
+        const type_id = $("#sale_order_id option:selected").data("type");
+        
+        // $("#delivery_order_id").trigger("change");
+
+        // Function to populate locations from sale order data (for when no delivery orders are selected)
+        function populateLocationsFromSaleOrder(saleOrderData) {
+            // Clear existing options
+            $('#company_locations').empty();
+            $('#arrival_locations').empty();
+            $('#sub_arrival_locations').empty();
+
+            // Get all locations data
+            var companyLocations = @json(get_locations());
+            var arrivalLocations = @json(\App\Models\Master\ArrivalLocation::all());
+            var subArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
+
+            // For sale order locations, we need to get the location data
+            // This assumes saleOrderData has the location IDs
+            if (saleOrderData.arrival_location_id) {
+                var arrivalLocationIds = Array.isArray(saleOrderData.arrival_location_id)
+                    ? saleOrderData.arrival_location_id
+                    : [saleOrderData.arrival_location_id];
+
+                // Populate arrival locations
+                $.each(arrivalLocations, function(index, location) {
+                    if (arrivalLocationIds.includes(location.id.toString())) {
+                        var option = new Option(location.name, location.id, false, false);
+                        $('#arrival_locations').append(option);
+                    }
+                });
+
+                // Set selected values
+                $('#arrival_locations').val(arrivalLocationIds).trigger('change');
+            }
+
+            if (saleOrderData.sub_arrival_location_id) {
+                var subArrivalLocationIds = Array.isArray(saleOrderData.sub_arrival_location_id)
+                    ? saleOrderData.sub_arrival_location_id
+                    : [saleOrderData.sub_arrival_location_id];
+
+                // Populate sub arrival locations
+                $.each(subArrivalLocations, function(index, location) {
+                    if (subArrivalLocationIds.includes(location.id.toString())) {
+                        var option = new Option(location.name, location.id, false, false);
+                        $('#sub_arrival_locations').append(option);
+                    }
+                });
+
+                // Set selected values
+                $('#sub_arrival_locations').val(subArrivalLocationIds).trigger('change');
+            }
+
+            // Initialize select2
+            $('#company_locations').select2();
+            $('#arrival_locations').select2();
+            $('#sub_arrival_locations').select2();
+        }
+
+        // Function to populate location fields from delivery order(s)
+        function populateLocationFields(deliveryOrders) {
+            console.log('Populating locations for delivery orders:', deliveryOrders);
+
+            // Ensure deliveryOrders is an array
+            if (!Array.isArray(deliveryOrders)) {
+                deliveryOrders = [deliveryOrders];
+            }
+
+            // Clear existing options
+            $('#company_locations').empty();
+            $('#arrival_locations').empty();
+            $('#sub_arrival_locations').empty();
+
+            // Get all locations data
+            var companyLocations = @json(get_locations());
+            var arrivalLocations = @json(\App\Models\Master\ArrivalLocation::all());
+            var subArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
+
+            // Collect unique location IDs from all selected delivery orders
+            var selectedCompanyIds = [];
+            var selectedArrivalIds = [];
+            var selectedSubArrivalIds = [];
+
+            deliveryOrders.forEach(function(deliveryOrder) {
+                // Each delivery order has exactly one company location
+                if (deliveryOrder.location_id && !selectedCompanyIds.includes(deliveryOrder.location_id
+                        .toString())) {
+                    selectedCompanyIds.push(deliveryOrder.location_id.toString());
+                }
+
+                // Parse comma-separated arrival location IDs
+                if (deliveryOrder.arrival_location_id) {
+                    var arrivalIds = deliveryOrder.arrival_location_id.split(',').map(id => id.trim());
+                    arrivalIds.forEach(function(id) {
+                        if (id && !selectedArrivalIds.includes(id)) {
+                            selectedArrivalIds.push(id);
+                        }
+                    });
+                }
+
+                // Parse comma-separated sub-arrival location IDs
+                if (deliveryOrder.sub_arrival_location_id) {
+                    var subArrivalIds = deliveryOrder.sub_arrival_location_id.split(',').map(id => id
+                        .trim());
+                    subArrivalIds.forEach(function(id) {
+                        if (id && !selectedSubArrivalIds.includes(id)) {
+                            selectedSubArrivalIds.push(id);
+                        }
+                    });
+                }
+            });
+
+            // Populate company locations
+            $.each(companyLocations, function(index, location) {
+                var option = new Option(location.name, location.id, false, false);
+                $('#company_locations').append(option);
+            });
+
+            // Populate arrival locations
+            $.each(arrivalLocations, function(index, location) {
+                var option = new Option(location.name, location.id, false, false);
+                $('#arrival_locations').append(option);
+            });
+
+            // Populate sub-arrival locations
+            $.each(subArrivalLocations, function(index, location) {
+                var option = new Option(location.name, location.id, false, false);
+                $('#sub_arrival_locations').append(option);
+            });
+
+            // Re-initialize select2 to reflect changes
+            $('#company_locations').select2();
+            $('#arrival_locations').select2();
+            $('#sub_arrival_locations').select2();
+
+            // Set the selected values after select2 initialization
+            if (selectedCompanyIds.length > 0) {
+                $('#company_locations').val(selectedCompanyIds[0]).trigger('change');
+            }
+            if (selectedArrivalIds.length > 0) {
+                $('#arrival_locations').val(selectedArrivalIds).trigger('change');
+            }
+            if (selectedSubArrivalIds.length > 0) {
+                $('#sub_arrival_locations').val(selectedSubArrivalIds).trigger('change');
+            }
+        }
+
         // Add item functionality
-        let itemIndex = {{ $LoadingProgram->loadingProgramItems->count() }};
+        let itemIndex = {{ $LoadingProgram->loadingProgramItems?->count() ?? 0 }};
         $('#addItemBtn').click(function() {
             addItemRow(itemIndex);
             itemIndex++;
@@ -338,9 +796,18 @@
             const itemHtml = `
                 <tr class="item-row" data-index="${index}">
                     <td>
+                        <select onchange="getDoQty(this)" name="loading_program_items[${index}][delivery_order_id]" class="form-control form-control-sm select2 delivery-order-select" style="min-width: 100px;">
+                            <option value="">Select Delivery Order</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type='text' name="do_qty" class="form-control do_qty" style="min-width: 100px;" readonly />
+                        
+                    </td>
+                    <td>
                         <input type="text" name="loading_program_items[${index}][truck_number]" class="form-control form-control-sm" required style="min-width: 100px;">
                         <input type="hidden" name="loading_program_items[${index}][transaction_number]" class="form-control form-control-sm" required style="min-width: 100px;">
-                             
+
                     </td>
                     <td>
                         <input type="text" name="loading_program_items[${index}][container_number]" class="form-control form-control-sm" style="min-width: 100px;">
@@ -386,28 +853,45 @@
             // Populate arrival locations based on selected ones in the top
             updateItemLocations();
 
+            // Populate delivery order options for the new row
+            updateDeliveryOrderOptionsForRow($('tr[data-index="' + index + '"] .delivery-order-select'));
+
             // Set packing and brand from delivery order or sale order for new item
-            var deliveryOrderId = $('#delivery_order_id').val();
-            if (deliveryOrderId) {
-                // Use delivery order data
+            var deliveryOrderIds = $('#delivery_order_id').val();
+            if (deliveryOrderIds && deliveryOrderIds.length > 0) {
+                // Use delivery order data - we can access it from the global variable or make a call
                 var saleOrderId = $('#sale_order_id').val();
                 if (saleOrderId) {
                     $.ajax({
-                        url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
+                        url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
                         type: 'GET',
-                        data: { sale_order_id: saleOrderId },
+                        data: {
+                            sale_order_id: saleOrderId
+                        },
                         success: function(response) {
-                            console.log(response);
                             if (response.success && response.delivery_orders) {
-                                var selectedDeliveryOrder = response.delivery_orders.find(function(d_o) {
-                                    return d_o.id == deliveryOrderId;
-                                });
+                                // Find the first selected delivery order for packing/brand data
+                                var selectedDeliveryOrder = Array.isArray(response
+                                    .delivery_orders) ?
+                                    response.delivery_orders.find(function(d_o) {
+                                        return deliveryOrderIds.includes(d_o.id.toString());
+                                    }) :
+                                    (deliveryOrderIds.includes(response.delivery_orders.id
+                                    .toString()) ? response.delivery_orders : null);
 
-                                if (selectedDeliveryOrder && selectedDeliveryOrder.delivery_order_data && selectedDeliveryOrder.delivery_order_data.length > 0) {
+                                if (selectedDeliveryOrder && selectedDeliveryOrder
+                                    .delivery_order_data && selectedDeliveryOrder
+                                    .delivery_order_data.length > 0) {
                                     var firstItem = selectedDeliveryOrder.delivery_order_data[0];
-                                    $('input[name="loading_program_items[' + index + '][packing]"]').val(firstItem.bag_size || '');
-                                    $('input[name="loading_program_items[' + index + '][brand_id]"]').val(firstItem.brand_id || '');
-                                    $('input[name="loading_program_items[' + index + '][brand_name]"]').val(firstItem.brand ? firstItem.brand.name : '');
+
+                                    $('input[name="loading_program_items[' + index + '][packing]"]')
+                                        .val(firstItem.bag_size || '');
+                                    $('input[name="loading_program_items[' + index +
+                                        '][brand_id]"]').val(firstItem.brand_id || (firstItem
+                                        .brand ? firstItem.brand.id : ''));
+                                    $('input[name="loading_program_items[' + index +
+                                        '][brand_name]"]').val(firstItem.brand ? firstItem.brand
+                                        .name : '');
                                 }
                             }
                         }
@@ -415,22 +899,28 @@
                 }
             } else if (window.saleOrderData) {
                 // Use sale order data when no delivery order is selected
-                $('input[name="loading_program_items[' + index + '][packing]"]').val(window.saleOrderData.packing || '');
-                $('input[name="loading_program_items[' + index + '][brand_id]"]').val(window.saleOrderData.brand_id || '');
-                $('input[name="loading_program_items[' + index + '][brand_name]"]').val(window.saleOrderData.brand_name || '');
+                $('input[name="loading_program_items[' + index + '][packing]"]').val(window.saleOrderData
+                    .packing || '');
+                $('input[name="loading_program_items[' + index + '][brand_id]"]').val(window.saleOrderData
+                    .brand_id || '');
+                $('input[name="loading_program_items[' + index + '][brand_name]"]').val(window.saleOrderData
+                    .brand_name || '');
 
                 // Pre-select factory and gala from sale order data
-                var $factorySelect = $('select[name="loading_program_items[' + index + '][arrival_location_id]"]');
-                var $galaSelect = $('select[name="loading_program_items[' + index + '][sub_arrival_location_id]"]');
+                var $factorySelect = $('select[name="loading_program_items[' + index +
+                    '][arrival_location_id]"]');
+                var $galaSelect = $('select[name="loading_program_items[' + index +
+                    '][sub_arrival_location_id]"]');
 
                 if (window.saleOrderData.arrival_location_id) {
                     setTimeout(function() {
                         $factorySelect.val(window.saleOrderData.arrival_location_id).trigger('change');
-                        
+
                         // Set gala after factory is set
                         setTimeout(function() {
                             if (window.saleOrderData.sub_arrival_location_id) {
-                                $galaSelect.val(window.saleOrderData.sub_arrival_location_id).trigger('change');
+                                $galaSelect.val(window.saleOrderData.sub_arrival_location_id)
+                                    .trigger('change');
                             }
                         }, 100);
                     }, 100);
@@ -450,6 +940,9 @@
 
         // Store all sub arrival locations with their parent arrival_location_id
         var allSubArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
+
+
+
 
         function updateItemLocations() {
             const selectedArrivalLocations = $('#arrival_locations').val() || [];
@@ -496,9 +989,10 @@
                 // 1. Belong to the selected factory (arrival_location_id matches)
                 // 2. Are in the delivery order's sub arrival locations
                 allSubArrivalLocations.forEach(function(subLocation) {
-                    if (subLocation.arrival_location_id == selectedFactoryId && 
+                    if (subLocation.arrival_location_id == selectedFactoryId &&
                         selectedSubArrivalLocations.includes(subLocation.id.toString())) {
-                        const option = new Option(subLocation.name, subLocation.id, false, currentGalaValue == subLocation.id);
+                        const option = new Option(subLocation.name, subLocation.id, false,
+                            currentGalaValue == subLocation.id);
                         $galaSelect.append(option);
                     }
                 });
@@ -519,119 +1013,32 @@
         $(document).on('change', '.arrival-location-select', function() {
             updateGalaOptions($(this));
         });
-
-        // Initialize form on page load
-        $(document).ready(function() {
-            // Initialize sale order data from existing loading program's sale order
-            @if($LoadingProgram && $LoadingProgram->saleOrder)
-                @php
-                    $firstSoData = $LoadingProgram->saleOrder->sales_order_data->first();
-                @endphp
-                window.saleOrderData = {
-                    packing: '{{ $firstSoData->bag_size ?? '' }}',
-                    brand_id: '{{ $firstSoData->brand_id ?? '' }}',
-                    brand_name: '{{ $firstSoData->brand->name ?? '' }}',
-                    arrival_location_id: '{{ $LoadingProgram->saleOrder->arrival_location_id ?? '' }}',
-                    sub_arrival_location_id: '{{ $LoadingProgram->saleOrder->arrival_sub_location_id ?? '' }}'
-                };
-            @endif
-
-            // Populate and pre-select company locations
-            var companyLocationsSelect = $('#company_locations');
-            companyLocationsSelect.empty();
-
-            // Populate and pre-select arrival locations
-            var arrivalLocationsSelect = $('#arrival_locations');
-            arrivalLocationsSelect.empty();
-
-            // Populate and pre-select sub arrival locations
-            var subArrivalLocationsSelect = $('#sub_arrival_locations');
-            subArrivalLocationsSelect.empty();
-
-            @if($LoadingProgram && $LoadingProgram->deliveryOrder)
-                @php
-                    // Get locations from delivery order's comma-separated values
-                    $companyLocationIds = [$LoadingProgram->deliveryOrder->location_id];
-                    $arrivalLocationIds = $LoadingProgram->deliveryOrder->arrival_location_id ? explode(',', $LoadingProgram->deliveryOrder->arrival_location_id) : [];
-                    $subArrivalLocationIds = $LoadingProgram->deliveryOrder->sub_arrival_location_id ? explode(',', $LoadingProgram->deliveryOrder->sub_arrival_location_id) : [];
-
-                    $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $companyLocationIds)->get();
-                    $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
-                    $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
-                @endphp
-
-                @foreach($companyLocations as $location)
-                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                    companyLocationsSelect.append(option);
-                @endforeach
-
-                @foreach($arrivalLocations as $location)
-                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                    arrivalLocationsSelect.append(option);
-                @endforeach
-
-                @foreach($subArrivalLocations as $location)
-                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                    subArrivalLocationsSelect.append(option);
-                @endforeach
-            @elseif($LoadingProgram && $LoadingProgram->saleOrder)
-                {{-- If no delivery order, populate from Sale Order --}}
-                @php
-                    // Get company location from Sale Order's locations relationship
-                    $soCompanyLocationId = $LoadingProgram->saleOrder->locations->first()?->location_id;
-                    $soArrivalLocationId = $LoadingProgram->saleOrder->arrival_location_id;
-                    $soSubArrivalLocationId = $LoadingProgram->saleOrder->arrival_sub_location_id;
-                    
-                    $soCompanyLocation = $soCompanyLocationId ? \App\Models\Master\CompanyLocation::find($soCompanyLocationId) : null;
-                    $allArrivalLocations = \App\Models\Master\ArrivalLocation::all();
-                    $allSubArrivalLocations = \App\Models\Master\ArrivalSubLocation::all();
-                    
-                    $soArrivalLocation = $allArrivalLocations->where('id', $soArrivalLocationId)->first();
-                    $soSubArrivalLocation = $allSubArrivalLocations->where('id', $soSubArrivalLocationId)->first();
-                @endphp
-
-                @if($soCompanyLocation)
-                    var option = new Option('{{ $soCompanyLocation->name }}', '{{ $soCompanyLocation->id }}', true, true);
-                    companyLocationsSelect.append(option);
-                @endif
-
-                @if($soArrivalLocation)
-                    var option = new Option('{{ $soArrivalLocation->name }}', '{{ $soArrivalLocation->id }}', true, true);
-                    arrivalLocationsSelect.append(option);
-                @endif
-
-                @if($soSubArrivalLocation)
-                    var option = new Option('{{ $soSubArrivalLocation->name }}', '{{ $soSubArrivalLocation->id }}', true, true);
-                    subArrivalLocationsSelect.append(option);
-                @endif
-            @endif
-
-            // Trigger change to refresh select2
-            companyLocationsSelect.trigger('change');
-            arrivalLocationsSelect.trigger('change');
-            subArrivalLocationsSelect.trigger('change');
-
-            // For edit form, don't automatically trigger sale order change on load
-            // The sale order data should already be loaded from the server
-            // Only trigger when user manually changes the sale order
-
-            // Populate existing item location dropdowns
-            updateItemLocations();
-
-            // Set selected values for existing items - first set factory, then gala after a small delay
-            @if($LoadingProgram->loadingProgramItems)
-                @foreach($LoadingProgram->loadingProgramItems as $index => $item)
-                    // First set the factory value
-                    $('select[name="loading_program_items[{{ $index }}][arrival_location_id]"]').val('{{ $item->arrival_location_id }}').trigger('change');
-                @endforeach
-
-                // After a small delay to ensure gala options are populated, set the gala values
-                setTimeout(function() {
-                    @foreach($LoadingProgram->loadingProgramItems as $index => $item)
-                        $('select[name="loading_program_items[{{ $index }}][sub_arrival_location_id]"]').val('{{ $item->sub_arrival_location_id }}').trigger('change');
-                    @endforeach
-                }, 100);
-            @endif
-        });
     });
+
+    function getDoQty(el) {
+        if(!$(el).val()) {
+            $(el).closest("tr").find(".do_qty").val("");
+            return;
+        }
+        $.ajax({
+            url: '{{ route('sales.getDoQty') }}',
+            type: 'GET',
+            data: {
+                do_id: $(el).val()
+            },
+            dataType: 'json',
+
+            success: function(response) {
+                $(el).closest("tr").find(".do_qty").val(response);
+                console.log(response);
+            },
+            error: function() {
+                Swal.close();
+                Swal.fire("Error", "Something went wrong. Please try again.",
+                    "error");
+            }
+        });
+    }
+
+
 </script>

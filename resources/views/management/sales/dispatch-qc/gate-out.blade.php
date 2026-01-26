@@ -239,7 +239,7 @@
                 <div class="gate-out-field">
                     <label><i class="ft-package mr-1"></i>No of Bags</label>
                     <div class="value">
-                        {{ $DispatchQc->loadingProgramItem->loadingSlip->no_of_bags ?? 'N/A' }}
+                        {{ $DispatchQc?->loadingProgramItem?->loadingSlip?->deliveryOrder?->delivery_order_data[0]?->no_of_bags ?? 'N/A' }}
                     </div>
                 </div>
             </div>

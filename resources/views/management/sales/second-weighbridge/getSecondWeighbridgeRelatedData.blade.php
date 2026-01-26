@@ -24,7 +24,7 @@
 
 {{-- Loading Slip Details Section --}}
 @php
-    $deliveryOrder = $LoadingSlip->loadingProgramItem->loadingProgram->deliveryOrder ?? null;
+    $deliveryOrder = \App\Models\Sales\DeliveryOrder::find($LoadingSlip->loadingProgramItem->delivery_order_id);
     $saleOrder = $LoadingSlip->loadingProgramItem->loadingProgram->saleOrder ?? null;
 
     // Get customer name

@@ -73,8 +73,8 @@
                 <th>Item UOM</th>
                 <th>Qty</th>
                 <th>Job Orders</th>
-                <th>Min Weight</th>
                 <th>Brands</th>
+                <th>Min Weight</th>
                 <th>Color</th>
                 <th>Cons./sq. in.</th>
                 <th>Size</th>
@@ -123,6 +123,7 @@
                 <td><input type="number" name="qty[]" id="qty_{{ $index }}" class="form-control bg-white"
                         step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" style="width:100px;"></td>
 
+                
                 <td>
                     @if($item->is_single_job_order)
                         <input type="hidden" name="job_order_id[{{ $index }}][]" value="{{ $item->JobOrder->pluck("job_order_id")->toArray()[0] }}" />
@@ -140,10 +141,6 @@
                     </select>
                 </td>
 
-               
-                <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" style="width:120px;"></td>
-
                  <td>
                     <select name="brands[]" id="brands_{{ $index }}" class="form-control item-select color-select"
                         style="width:150px;">
@@ -154,6 +151,10 @@
                         @endforeach
                     </select>
                 </td>
+               
+                <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" style="width:120px;"></td>
+
            
                 <td>
                     <select name="color[]" id="color_{{ $index }}" class="form-control item-select color-select"
@@ -346,6 +347,14 @@
                             <div class="form-group mb-0">
                                 <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01"
                                     min="0" placeholder="Qty">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 8%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control" step="0.01"
+                                    min="0" placeholder="Net Amount">
                             </div>
                         </div>
                     </td>

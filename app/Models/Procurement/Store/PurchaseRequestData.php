@@ -31,7 +31,8 @@ class PurchaseRequestData extends Model
         'status',
         'brand_id',
         'micron',
-        "is_single_job_order"
+        'is_single_job_order',
+        'net_amount'
     ];
 
     protected $casts = [

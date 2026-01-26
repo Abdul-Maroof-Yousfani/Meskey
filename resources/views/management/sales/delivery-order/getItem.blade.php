@@ -37,22 +37,21 @@
             <span style="font-size: 14px;">Balance: {{ delivery_order_balance($data->id) }}</span>
         </td>
         <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" oninput="calc(this)">
+            <input type="text" name="qty[]" value="{{ $remaining_qty }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" oninput="calc(this)">
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * ($data->qty ?? 0) }}"
+            <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}" value="{{ $data->rate_per_mond }}" class="form-control rate_per_mond" step="0.01" min="0" readonly>
+        </td>
+        <td>
+            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * ($remaining_qty ?? 0) }}"
                 class="form-control amount" readonly>
         </td>
         <td>
-            <select name="brand_id[]" id="brand_id_{{ $index }}" class="form-control select2">
-                <option value="">Select Brand</option>
-                @foreach (getAllBrands() ?? [] as $brand)
-                    <option value="{{ $brand->id }}" @selected($brand->id == $data->brand_id)>{{ $brand->name }}</option>
-                @endforeach
-            </select>
+            <input type="text" value="{{ getBrandById($data->brand_id)?->name ?? 'N/A' }}" class="form-control" readonly/>
+            <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}" class="form-control" value="{{ $data->brand_id }}"/>
         </td>
         <td>
             <input type="text" name="desc[]" id="desc_{{ $index }}"

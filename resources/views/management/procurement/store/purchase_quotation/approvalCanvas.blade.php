@@ -103,7 +103,7 @@
             <td style="width: 25%">
                 <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
                     class="form-control item-select select2" data-index="{{ $key }}">
-                    @foreach (get_product_by_category($data->category_id) as $item)
+                    @foreach (get_product_by_id($data->item_id) as $item)
                         <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
                             {{ $item->id == $data->item_id ? 'selected' : '' }}>
                             {{ $item->name }}

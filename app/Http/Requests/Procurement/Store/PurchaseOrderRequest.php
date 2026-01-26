@@ -21,7 +21,7 @@ class PurchaseOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'delivery_address' => "required",
+            'delivery_address' => "nullable",
             'purchase_date' => 'required|date',
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'payment_term_id' => 'required|exists:payment_terms,id',

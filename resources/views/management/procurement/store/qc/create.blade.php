@@ -47,9 +47,22 @@
                                     class="form-control">
                             </td>
 
+                            @php
+                                // dd($purchaseOrderReceivingData->purchase_order_data);
+                                $data = $purchaseOrderReceivingData->purchase_order_data->purchase_request_data->JobOrder;
+                                $string = "";
+                                foreach($data as $datum) {
+                                    $string .= $datum->job_order_data->job_order_no . ", ";
+                                }
+
+                            @endphp
                             <td>
-                                <input type="text" name="job_order" id="job_order" value="JOB-KHI-11-2025-0001" readonly
-                                    class="form-control">
+                                <select style="width: 190px;" name="job_order" id="job_order" class="form-control select2" multiple disabled>
+                                    <option value="">Select Job Order</option>
+                                    @foreach($data as $datum)
+                                        <option value="{{ $datum->id }}" selected>{{ $datum->job_order_data->job_order_no }}</option>
+                                    @endforeach
+                                </select>
                             </td>
 
                             <td>
@@ -63,7 +76,7 @@
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 2)) * 1000 }}" readonly>
+                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty * 1000, 2)) }}" readonly>
                             </td>
 
                             <td>
@@ -117,7 +130,7 @@
 
                                 <td>
                                     <input type="text" name="total_weight[]" id="total_weight" placeholder="Average weight of one bag"
-                                        class="form-control">
+                                        class="form-control" readonly>
                                 </td>
                             </tr>
                         @endfor
@@ -154,7 +167,7 @@
 
                                 <td>
                                     <input type="text" name="total_weight[]" id="total_weight" placeholder="Average weight of one bag"
-                                        class="form-control">
+                                        class="form-control" readonly>
                                 </td>
                             </tr>
                         @endfor
@@ -235,9 +248,7 @@
             <textarea id="remarks" class="form-control" name="remarks" rows="4" cols="50" placeholder=""></textarea>
         </div>
     </div>
-
-
-    @can("approve")
+    @if(auth()->user()->can('approve') || $purchaseOrderReceivingData->purchase_order_receiving->created_by == auth()->user()->id)
     <div class="row" style="margin-bottom: 30px;">
         <div class="col-md-4">
             <div class="form-group">
@@ -258,7 +269,10 @@
             </div>
         </div>
     </div>
-    @endcan
+    @endif
+    {{-- @can("approve")
+
+    @endcan --}}
     <div class="row bottom-button-bar" style="padding-bottom: 20px;">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>

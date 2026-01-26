@@ -6,36 +6,36 @@
 </div>
 
 {{-- Sale Order Details Section --}}
-<div class="col-xs-12 col-sm-6 col-md-3">
-    <div class="form-group">
-        <label>Buyer:</label>
-        <input type="text" value="{{ $SalesOrder->customer->name ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+    <div class="col-xs-12 col-sm-6 col-md-3">
+        <div class="form-group">
+            <label>Buyer:</label>
+            <input type="text" value="{{ $SalesOrder->customer->name ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        </div>
     </div>
-</div>
 
-<div class="col-xs-12 col-sm-6 col-md-3">
-    <div class="form-group">
-        <label>Commodity:</label>
-        <input type="text" value="{{ $SalesOrder->sales_order_data->first()->item->name ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+    <div class="col-xs-12 col-sm-6 col-md-3">
+        <div class="form-group">
+            <label>Commodity:</label>
+            <input type="text" value="{{ $SalesOrder->sales_order_data->first()->item->name ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        </div>
     </div>
-</div>
 
-<div class="col-xs-12 col-sm-6 col-md-3">
-    <div class="form-group">
-        <label>SO Date:</label>
-        <input type="text" value="{{ $SalesOrder->order_date ? $SalesOrder->order_date : 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
+    <div class="col-xs-12 col-sm-6 col-md-3">
+        <div class="form-group">
+            <label>SO Date:</label>
+            <input type="text" value="{{ $SalesOrder->order_date ? $SalesOrder->order_date : 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        </div>
     </div>
-</div>
 
-<div class="col-xs-12 col-sm-6 col-md-3">
-    <div class="form-group">
-        <label>SO Qty:</label>
-        <input type="text" value="{{ $SalesOrder->sales_order_data->first()->qty ?? 'N/A' }}"
-            disabled class="form-control" autocomplete="off" readonly />
-    </div>
+    <div class="col-xs-12 col-sm-6 col-md-3">
+        <div class="form-group">
+            <label>SO Qty:</label>
+            <input type="text" value="{{ $SalesOrder->sales_order_data->first()->qty ?? 'N/A' }}"
+                disabled class="form-control" autocomplete="off" readonly />
+        </div>
 </div>
 
 
@@ -61,7 +61,7 @@
         var subArrivalLocationsSelect = $('#sub_arrival_locations');
         subArrivalLocationsSelect.empty();
 
-        @if($DeliveryOrders->count() > 0)
+        @if($SalesOrder->pay_type_id != 11)
             @php
                 $companyLocationIds = $DeliveryOrders->pluck('location_id')->unique()->toArray();
                 $arrivalLocationIds = $DeliveryOrders->pluck('arrival_location_id')->unique()->toArray();
@@ -87,34 +87,37 @@
                 subArrivalLocationsSelect.append(option);
             @endforeach
         @else
-            {{-- If no delivery orders, populate from Sale Order --}}
             @php
                 // Get company location from Sale Order's locations relationship
-                $soCompanyLocationId = $SalesOrder->locations->first()?->location_id;
-                $soArrivalLocationId = $SalesOrder->arrival_location_id;
-                $soSubArrivalLocationId = $SalesOrder->arrival_sub_location_id;
+                $soCompanyLocationIds = $SalesOrder->locations->pluck('location_id')->toArray();
+                $soArrivalLocationId = $SalesOrder->factories->pluck('arrival_location_id')->toArray();
+                $soSectionLocationId = $SalesOrder->sections->pluck('arrival_sub_location_id')->toArray();
                 
-                $soCompanyLocation = $soCompanyLocationId ? \App\Models\Master\CompanyLocation::find($soCompanyLocationId) : null;
-                $allArrivalLocations = \App\Models\Master\ArrivalLocation::all();
-                $allSubArrivalLocations = \App\Models\Master\ArrivalSubLocation::all();
+                $soCompanyLocation = $soCompanyLocationIds ? \App\Models\Master\CompanyLocation::whereIn('id', $soCompanyLocationIds)->get() : null;
                 
-                $soArrivalLocation = $allArrivalLocations->where('id', $soArrivalLocationId)->first();
-                $soSubArrivalLocation = $allSubArrivalLocations->where('id', $soSubArrivalLocationId)->first();
+                $soArrivalLocation = \App\Models\Master\ArrivalLocation::whereIn('id', $soArrivalLocationId)->get();
+                $soSubArrivalLocation = \App\Models\Master\ArrivalSubLocation::whereIn('id', $soSectionLocationId)->get();
             @endphp
-
             @if($soCompanyLocation)
-                var option = new Option('{{ $soCompanyLocation->name }}', '{{ $soCompanyLocation->id }}', true, true);
-                companyLocationsSelect.append(option);
+                @foreach($soCompanyLocation as $location)
+                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
+                    companyLocationsSelect.append(option);
+                    companyLocationsSelect.attr('multiple', 'multiple');
+                @endforeach
             @endif
 
             @if($soArrivalLocation)
-                var option = new Option('{{ $soArrivalLocation->name }}', '{{ $soArrivalLocation->id }}', true, true);
-                arrivalLocationsSelect.append(option);
+                @foreach($soArrivalLocation as $location)
+                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
+                    arrivalLocationsSelect.append(option);
+                @endforeach
             @endif
 
             @if($soSubArrivalLocation)
-                var option = new Option('{{ $soSubArrivalLocation->name }}', '{{ $soSubArrivalLocation->id }}', true, true);
-                subArrivalLocationsSelect.append(option);
+                @foreach($soSubArrivalLocation as $location)
+                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
+                    subArrivalLocationsSelect.append(option);
+                @endforeach
             @endif
         @endif
 

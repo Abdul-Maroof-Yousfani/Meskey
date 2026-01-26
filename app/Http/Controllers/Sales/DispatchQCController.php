@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
+use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DispatchQc;
 use App\Models\Sales\DispatchQcAttachment;
 use App\Models\Sales\LoadingProgramItem;
@@ -120,7 +121,8 @@ class DispatchQCController extends Controller
             'qc_remarks' => 'nullable|string',
             'status' => 'required|in:accept,reject',
             'attachments' => 'nullable|array',
-            'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240'
+            'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
+            'company_id' => "required|numeric"
         ]);
 
         if ($validator->fails()) {
@@ -168,7 +170,7 @@ class DispatchQCController extends Controller
 
         DB::beginTransaction();
         try {
-            $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+            $DeliveryOrder = DeliveryOrder::find($loadingProgramItem->delivery_order_id);
             $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
     
             // Auto-populate fields from ticket data (no matter what)
@@ -184,7 +186,8 @@ class DispatchQCController extends Controller
                     'qc_remarks' => $request->qc_remarks,
                     'status' => $request->status,
                     'delivery_order_id' => $DeliveryOrder->id,
-                    'created_by' => auth()->user()->id
+                    'created_by' => auth()->user()->id,
+                    'company_id' => $request->company_id
                 ];
             } else {
                 $dispatchQcData = [
@@ -322,7 +325,7 @@ class DispatchQCController extends Controller
             'subArrivalLocation'
         ])->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+        $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
         $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
 
         // Auto-populate fields from ticket data (no matter what)

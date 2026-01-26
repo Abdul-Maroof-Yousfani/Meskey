@@ -1,4 +1,4 @@
-<form action="{{ route('store.purchase-order-receiving.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-order-receiving.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-receiving') }}" />
     <div class="row form-mar">
@@ -47,12 +47,11 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location[]" id="company_location_id" class="form-control select2" multiple>
+                <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()">
                     <option value="">Select Location</option>
                     @foreach (get_locations() as $value)
                         <option value="{{ $value->id }}">{{ $value->name }}</option>
                     @endforeach
-                    <input type="hidden" name="location_id" id="location_id">
                 </select>
             </div>
         </div>
@@ -77,7 +76,7 @@
         </div>
     </div>
     <div class="row form-mar">
-        <div class="col-md-12">
+        <div class="col-md-12" style="overflow-x: auto">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
@@ -85,7 +84,7 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th>Qty</th>
-                        <th>Receive Weight</th>
+                        <th>Receive Weight (kg)</th>
                         <th>Min Weight</th>
                         <th>Brands</th>
                         <th>Color</th>
@@ -269,13 +268,24 @@
                 $('#purchase_request_id').val(master.purchase_request_id || '');
                 $('#purchase_request_no').val(master.purchase_request?.purchase_request_no || '');
 
-                $('#location_id').val(master.location_id);
-                $('#location_name').val(master.location?.name);
-                $("#location_name").trigger("change");
+                console.log(response.location_dropdowns);
+                $("#location_id").select2('destroy');
+
+                $("#location_id")
+                    .empty()
+                    .select2({
+                        data: response.location_dropdowns,
+                        width: '100%'
+                    })
+                    .trigger('change');
+                    
+                // $('#location_id').val(master.location_id);
+                // $('#location_name').val(master.location?.name);
+                // $("#location_name").trigger("change");
 
                 // $('#reference_no').val(master.reference_no);
                 $('#description').val(master.description);
-                $('#company_location_id').val(response.locations_id).trigger('change');
+                // $('#company_location_id').val(response.locations_id).trigger('change');
                 fetchUniqueNumber();
 
 

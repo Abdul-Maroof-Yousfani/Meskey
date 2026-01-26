@@ -90,6 +90,7 @@ class PurchaseOrderReceiving extends Model
         return $this->belongsTo(PurchaseRequest::class);
     }
 
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);

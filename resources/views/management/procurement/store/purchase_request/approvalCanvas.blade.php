@@ -166,14 +166,14 @@
                 <td><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_0"
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
                         placeholder="Cons./sq. in." style="width:120px;" readonly></td>
-
+                
                 <td>
                     <select name="size[]" id="size_{{ $index }}" class="form-control item-select size-select"
                         style="width:150px;" disabled>
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
-                        <option @selected($size->id == getSizeById($item->size)->id) value="{{ $size->id }}">
-                            {{ $size->size }}</option>
+                        <option @selected($size?->id ?? '' == getSizeById($item->size)?->id ?? '') value="{{ $size?->id ?? '' }}">
+                            {{ $size?->size }}</option>
                         @endforeach
                     </select>
                 </td>
@@ -191,6 +191,7 @@
                         @endforeach
                     </select>
                 </td>
+                
 
 
                 <td><input type="text" name="micron[]" id="micron_0" class="form-control" 

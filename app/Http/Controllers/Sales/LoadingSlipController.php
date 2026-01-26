@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
+use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\LoadingSlip;
 use App\Models\Sales\LoadingSlipLog;
 use App\Models\Sales\LoadingProgramItem;
@@ -93,7 +94,8 @@ class LoadingSlipController extends Controller
             'bag_size' => 'required|numeric|min:0',
             'kilogram' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
-            'labour' => "required|in:paid,not_paid"
+            'labour' => "required|in:paid,not_paid",
+            'company_id' => 'required|numeric'
         ]);
 
       
@@ -120,7 +122,7 @@ class LoadingSlipController extends Controller
                 'loadingProgram.deliveryOrder.subArrivalLocation'
             ])->findOrFail($request->loading_program_item_id);
 
-            $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+            $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
             $no_of_bags = $request->no_of_bags;
             
             // Only check balance if delivery order exists
@@ -153,7 +155,8 @@ class LoadingSlipController extends Controller
                 'delivery_order_id' => $DeliveryOrder?->id,
                 'remarks' => $request->remarks,
                 'created_by' => auth()->user()->id,
-                'labour' => $request->labour
+                'labour' => $request->labour,
+                'company_id' => $request->company_id
             ]);
 
             DB::commit();
@@ -238,7 +241,7 @@ class LoadingSlipController extends Controller
             return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
         }
         
-        $DeliveryOrder = $loadingSlip->deliveryOrder;
+        $DeliveryOrder = DeliveryOrder::find($loadingSlip->loadingProgramItem->delivery_order_id);
         
         // Only check bag balance if delivery order exists
         if ($DeliveryOrder) {
@@ -308,6 +311,7 @@ class LoadingSlipController extends Controller
     {
         try {
             $loadingSlip = LoadingSlip::findOrFail($id);
+            $loadingSlip->loadingProgramItem->dispatchQcs()->delete();
             $loadingSlip->delete();
 
             return response()->json(['success' => 'Loading Slip deleted successfully.'], 200);
@@ -330,7 +334,7 @@ class LoadingSlipController extends Controller
             'loadingProgram.deliveryOrder.subArrivalLocation'
         ])->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+        $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
         $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
         // Prepare data for the form
         if ($DeliveryOrder) {

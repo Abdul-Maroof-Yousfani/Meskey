@@ -227,6 +227,7 @@
                             <th>No of Bags</th>
                             <th>Quantity (Kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Desc</th>

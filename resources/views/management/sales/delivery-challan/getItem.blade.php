@@ -85,6 +85,10 @@
                     class="form-control rate" step="0.01" min="0" readonly>
             </td>
             <td>
+                <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $delivery_order_data->salesOrderData->rate_per_mond ?? 0 }}"
+                    class="form-control rate" step="0.01" min="0" readonly>
+            </td>
+            <td>
                 <input type="text" name="amount[]" id="amount_{{ $index }}"
                     value="{{ ($delivery_order_data->rate ?? 0) * $net_weight }}" class="form-control amount" readonly>
             </td>

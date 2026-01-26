@@ -71,6 +71,15 @@ class ReceivingRequestController extends Controller
                 "am_change_made" => 1
             ]);
 
+            $receivingRequest->deliveryChallan()->update([
+                "labour" => $request->labour,
+                "labour_amount" => $request->labour_amount ?? 0,
+                "transporter" => $request->transporter,
+                "transporter_amount" => $request->transporter_amount ?? 0,
+                "inhouse-weighbridge" => $request->inhouse_weighbridge,
+                "weighbridge-amount" => $request->weighbridge_amount ?? 0
+            ]);
+
             // Update items
             if ($request->has('items')) {
                 foreach ($request->items as $itemId => $itemData) {

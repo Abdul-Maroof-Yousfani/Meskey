@@ -61,7 +61,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="average_weight_of_one_bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 2)) * 1000 }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                                <input type="text" name="average_weight_of_one_bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty * 1000, 2)) }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
                                      class="form-control" placeholder="Average Weight of One Bag" readonly>
                             </td>
 
@@ -124,7 +124,7 @@
 
                                 <td>
                                     <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
-                                        class="form-control">
+                                        class="form-control" readonly>
                                 </td>
                             </tr>
                         @endfor
@@ -164,7 +164,7 @@
 
                                 <td>
                                     <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
-                                        class="form-control">
+                                        class="form-control" readonly>
                                 </td>
                             </tr>
                         @endfor
@@ -193,8 +193,8 @@
                 <label class="form-label">Smell:</label>
                 <select  name="smell" class="taxes form-group form-control select2">
                     <option value="">Select Smell</option>
-                    <option value="2">Smell 1</option>
-                    <option value="3">Smell 1</option>
+                    <option value="2" @selected($purchaseOrderReceivingData->qc->smell == '2')>Smell 1</option>
+                    <option value="3" @selected($purchaseOrderReceivingData->qc->smell == '3')>Smell 1</option>
                 </select>
             </div>
         </div>
@@ -247,7 +247,7 @@
     </div>
 
     <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
-        @can("approve")
+        @if(auth()->user()->can('approve') || $purchaseOrderReceivingData->purchase_order_receiving->created_by == auth()->user()->id)
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Accepted Qty:</label>

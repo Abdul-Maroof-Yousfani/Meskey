@@ -45,6 +45,9 @@
                                     ->where('dispatch_qc_id', $dispatchQc->id)
                                     ->isNotEmpty();
                             }
+
+                            $isActionAllowed = !$dispatchQc || ($dispatchQc->status == 'reject');
+                            // $isDeletionAllowed = !($dispatchQc->status == 'reject' || $dispatchQc->status == 'accept');
                         @endphp
                         @if($dispatchQc)
                             @if($dispatchQc->status === 'accept')
@@ -64,6 +67,7 @@
                         {{ $loadingSlip->created_at->format('d-m-Y H:i') }}
                     </td>
                     <td>
+                        @if($isActionAllowed)
                             <a onclick="openModal(this,'{{ route('sales.loading-slip.edit', $loadingSlip->id) }}','Edit Loading Slip', false)"
                                 class="warning p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
@@ -72,6 +76,7 @@
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-trash-2"></i>
                             </a>
+                        @endif
                         <a onclick="openModal(this,'{{ route('sales.loading-slip.show', $loadingSlip->id) }}','View Loading Slip', true)"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>

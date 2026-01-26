@@ -50,7 +50,7 @@
         <td style="width: 20%">
             <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}" disabled>
-                @foreach (get_product_by_category($data->category_id) as $item)
+                @foreach (get_product_by_id($data->item_id) as $item)
                     <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
                         {{ $item->id == $data->item_id ? 'selected' : '' }}>
                         {{ $item->name }}
@@ -159,7 +159,12 @@
                 id="size_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <input style="width: 100px" type="text" readonly name="stitching[]" value="{{ $data->stitching ? $data->stitching : $data->purchase_request->stitching }}"
+            <select class="form-control select2" multiple disabled>
+                @foreach(getStitchingsByIds($data?->stitching ?? "") as $stitching)
+                    <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+                @endforeach
+            </select>
+            <input style="width: 100px" type="hidden" readonly name="stitching[]" value="{{ $data->stitching ? $data->stitching : $data->purchase_request->stitching }}"
                 id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">

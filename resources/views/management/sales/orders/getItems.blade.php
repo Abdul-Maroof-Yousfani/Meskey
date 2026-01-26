@@ -61,6 +61,10 @@
             <input type="number" name="rate[]" id="rate_{{ $i }}" onkeyup="calc(this)"
                 value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>
         </td>
+        <td>
+            <input type="number" name="rate_per_mond[]" id="rate_per_mond_{{ $i }}" onkeyup="calc(this)"
+                value="{{ $data->rate_per_mond }}" class="form-control rate_per_mond" step="0.01" min="0" readonly>
+        </td>
 
         <td>
 

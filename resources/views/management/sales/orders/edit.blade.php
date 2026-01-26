@@ -39,14 +39,16 @@
                     class="form-control">
             </div>
         </div>
+        {{-- @dd($sale_order) --}}
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Contract Type:</label>
-                <select name="sauda_type" id="sauda_type" class="form-control select2">
+                <select @if(!$sale_order->inquiry_id) name="sauda_type" @endif id="sauda_type" class="form-control select2">
                     <option value="">Select Contract Type</option>
-                    <option value="pohanch" @selected($sale_order->sauda_type == $sale_order->sauda_type)>Pohanch</option>
-                    <option value="x-mill" @selected($sale_order->sauda_type == $sale_order->sauda_type)>X-mill</option>
+                    <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
+                    <option value="x-mill" @selected( strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
                 </select>
+                <input type="hidden" @if($sale_order->inquiry_id) name="sauda_type" @endif value="{{ strtolower($sale_order->sauda_type) }}" />
             </div>
         </div>
     </div>
@@ -55,12 +57,13 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Customer:</label>
-                <select name="customer_id" id="customer_id" class="form-control select2">
+                <select @if(!$sale_order->inquiry_id) name="customer_id" @endif id="customer_id" class="form-control select2">
                     <option value="">Select Customer</option>
                     @foreach ($customers ?? [] as $customer)
                         <option value="{{ $customer->id }}" @selected($customer->id == $sale_order->customer_id)>{{ $customer->name }}</option>
                     @endforeach
                 </select>
+                <input type="hidden" @if($sale_order->inquiry_id) name="customer_id" @endif value="{{ $sale_order->customer_id }}" />
             </div>
         </div>
         <div class="col-md-4">
@@ -197,6 +200,7 @@
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
@@ -246,10 +250,15 @@
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}"
-                                        value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
+                                        value="{{ $data->rate }}" onkeyup="calc(this); calculateRates(this)" class="form-control rate rate_per_kg"
                                         step="0.01" min="0">
                                 </td>
 
+                                  <td>
+                                    <input type="number" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                        value="{{ $data->rate_per_mond }}" onkeyup="calc(this); calculateRates(this)" class="form-control rate rate_per_mond"
+                                        step="0.01" min="0">
+                                </td>
                                 <td>
                                     <input type="number" name="amount[]" id="amount_{{ $index }}"
                                         value="{{ $data->rate * $data->qty }}" onkeyup="calc(this)"
@@ -301,6 +310,37 @@
 <script>
     salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
 
+
+    function calculateForRatePerKg(mond) {
+        return mond / 40;
+    }
+
+    function calculateForRatePerMond(kg) {
+        return kg * 40;
+    }
+
+    function calculateRates(el) {
+
+        if(!$(el).val()) {
+            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
+
+            $(el).closest("tr").find(".rate_per_kg").val("");
+            $(el).closest("tr").find(".rate_per_mond").val("");
+            return;
+        }
+
+        if($(el).hasClass("rate_per_kg")) {
+            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+        } else {
+            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            
+        }
+
+
+    }
     function validateExpiry() {
         console.log('validateExpiry');
         const orderDate = $('#order_date').val();
@@ -446,6 +486,7 @@
                 disableInquiryFields();
             },
             error: function(error) {
+                alert("err")
                 console.log(error);
             }
         });
@@ -474,6 +515,7 @@
         const initialFactories = @json($oldFactories ?? []);
         const initialSections = @json($oldSections ?? []);
         const inquirySelected = "{{ $sale_order->inquiry_id ? 1 : 0 }}";
+        let isInitializing = true;
 
         function populateFactories() {
             const selectedLocations = $('#locations').val() || [];
@@ -483,7 +525,7 @@
             factories
                 .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
                 .forEach(f => {
-                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name}</option>`);
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location.name})</option>`);
                 });
 
             $('#arrival_location_id').val(currentValues).trigger('change.select2');
@@ -497,23 +539,28 @@
             sections
                 .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
                 .forEach(s => {
-                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name}</option>`);
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location.name})</option>`);
                 });
 
             $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
         }
 
         $('#locations').on('change', function() {
-            populateFactories();
-            populateSections();
+            if (!isInitializing) {
+                populateFactories();
+                populateSections();
+            }
         });
 
         $('#arrival_location_id').on('change', function() {
-            populateSections();
+            if (!isInitializing) {
+                populateSections();
+            }
         });
 
         populateFactories();
         populateSections();
+        isInitializing = false;
 
         if (inquirySelected === "1") {
             disableInquiryFields();

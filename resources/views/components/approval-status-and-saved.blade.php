@@ -233,11 +233,11 @@
                                     <i class="fa fa-check me-2"></i>
                                     Grant Approval
                                 </button>
-                                <button type="button" class="btn btn-primary w-50 fw-semibold"
+                                {{-- <button type="button" class="btn btn-primary w-50 fw-semibold"
                                     onclick="confirmApproval('revert')">
                                     <i class="fa fa-return me-2"></i>
                                     Revert Request
-                                </button>
+                                </button> --}}
                                 <button type="button" class="btn btn-danger w-50 fw-semibold"
                                     onclick="confirmApproval('reject')">
                                     <i class="fa fa-times me-2"></i>
@@ -362,7 +362,7 @@
     <script>
         
 
-        let request_type = "";
+        request_type = "";
         $("#ajaxSubmit2").on("submit", function(e) {
             e.preventDefault();
 

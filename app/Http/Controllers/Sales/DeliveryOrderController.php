@@ -118,10 +118,18 @@ class DeliveryOrderController extends Controller
             }
 
 
+            $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
+            $total_qty = $salesOrder?->sales_order_data?->first()->qty;
+            $remaining_qty = $total_qty - $spent_qty;
+
             foreach ($request->item_id as $key => $item) {
                 $balance = delivery_order_balance($request->so_data_id[$key]);
+
                 if($request->no_of_bags[$key] > $balance) {
                     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                }
+                if($remaining_qty < $request->qty[$key]) {
+                    return response()->json("Total remaining qty: $remaining_qty. you can not exceed this balance", 422);
                 }
 
                 $delivery_order->delivery_order_data()->create([
@@ -305,6 +313,7 @@ class DeliveryOrderController extends Controller
             $factoryMap[$companyLocationId][] = [
                 'id' => $factory->id,
                 'text' => $factory->name,
+                
             ];
         }
 
@@ -318,7 +327,7 @@ class DeliveryOrderController extends Controller
             $factoryId = $section->arrival_location_id;
             $sectionMap[$factoryId][] = [
                 'id' => $section->id,
-                'text' => $section->name,
+                'text' => $section->name . " (" . $section?->arrivalLocation?->name  . ")",
             ];
         }
 
@@ -349,9 +358,13 @@ class DeliveryOrderController extends Controller
             ->flatMap->delivery_order_data
             ->sum('qty');
        
+        $spent_qty = $sale_order->delivery_orders->flatMap->delivery_order_data->sum("qty");
+        $total_qty = $sale_order?->sales_order_data?->first()->qty;
+        $remaining_qty = $total_qty - $spent_qty;
+
         $bag_types = BagType::select('id', 'name')->get();
 
-        return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent'));
+        return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent', 'remaining_qty'));
     }
 
     public function get_receipt_vouchers(Request $request)
@@ -397,8 +410,8 @@ class DeliveryOrderController extends Controller
 
     public function edit(DeliveryOrder $delivery_order)
     {
-        $delivery_order->load('receipt_vouchers');
-        $sale_orders = SalesOrder::select('reference_no', 'id', 'pay_type_id')->where('am_approval_status', 'approved')->get();
+        $delivery_order->load('receipt_vouchers', 'locations');
+        $sale_orders = SalesOrder::with("locations")->select('reference_no', 'id', 'pay_type_id')->where('am_approval_status', 'approved')->get();
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();
@@ -488,6 +501,12 @@ class DeliveryOrderController extends Controller
 
             $delivery_order->receipt_vouchers()->sync($syncData);
 
+            $salesOrder = SalesOrder::find($delivery_order->so_id);
+
+            $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
+            $total_qty = $salesOrder?->sales_order_data?->first()->qty;
+            $remaining_qty = $total_qty - $spent_qty;
+
             // Rebuild line items
             $delivery_order->delivery_order_data()->delete();
             foreach ($request->item_id as $key => $item) {
@@ -495,6 +514,11 @@ class DeliveryOrderController extends Controller
                 if($request->no_of_bags[$key] > ($balance)) {
                     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 }
+
+                if($request->qty[$key] > ($remaining_qty + $request->current_qty[$key])) {
+                    return response()->json("Total KG is: $remaining_qty, you can not exceed this balance", 422);
+                }
+
                 $delivery_order->delivery_order_data()->create([
                     'item_id' => $request->item_id[$key],
                     'qty' => $request->qty[$key],
@@ -546,7 +570,7 @@ class DeliveryOrderController extends Controller
         foreach ($subarrival_locations as $subarrival_location) {
             $data[] = [
                 'id' => $subarrival_location->id,
-                'text' => $subarrival_location->name,
+                'text' => $subarrival_location->name . " (" . $subarrival_location?->arrivalLocation?->name  . ")",
             ];
         }
 

@@ -93,7 +93,7 @@ class FirstWeighBridgeController extends Controller
         }
 
         $loadingProgramItem = LoadingProgramItem::with('loadingProgram.deliveryOrder')->findOrFail($request->loading_program_item_id);
-        $deliveryOrder = $loadingProgramItem->loadingProgram->deliveryOrder;
+        $deliveryOrder = DeliveryOrder::find($loadingProgramItem->delivery_order_id);
 
         $request['created_by'] = auth()->user()->id;
         $request['company_id'] = $request->company_id;
@@ -181,7 +181,7 @@ class FirstWeighBridgeController extends Controller
 
         $firstWeighbridge = FirstWeighbridge::findOrFail($id);
         $loadingProgramItem = LoadingProgramItem::with('loadingProgram.deliveryOrder')->findOrFail($request->loading_program_item_id);
-        $deliveryOrder = $loadingProgramItem->loadingProgram->deliveryOrder;
+        $deliveryOrder = DeliveryOrder::find($loadingProgramItem->delivery_order_id);
         $request['company_id'] = $request->company_id;
 
         // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and company location
@@ -238,7 +238,7 @@ class FirstWeighBridgeController extends Controller
             'loadingProgram.saleOrder.sales_order_data.brand'
         ])->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrder = $LoadingProgramItem->loadingProgram->deliveryOrder;
+        $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
         $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
         $ArrivalTruckTypes = \App\Models\Master\ArrivalTruckType::where('status', 'active')->get();
             

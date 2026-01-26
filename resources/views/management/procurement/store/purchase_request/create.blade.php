@@ -196,9 +196,11 @@
                     <td style="width: 15%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
-                                    class="form-control item-select" data-index="0">
-                                    <option value="">Select Item</option>
+                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom(${index})"
+                                    class="form-control item-select item-list" data-index="0">
+                                    @foreach($items as $item)
+                                        <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}">{{ $item->name }}</option>
+                                    @endforeach
                                 </select>
                                 <input type="hidden" name="index[]" value="${index}" />
          
@@ -270,10 +272,10 @@
                         @endforeach
                     </select></td>
 
-                    <td style="width: 6%">
+                    <td >
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:150px;" multiple>
+                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:100%;" multiple>
                                     <option value="">Select Stitching</option>
                                     @foreach(getAllStitchings() ?? [] as $stitching)
                                         <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
@@ -328,6 +330,9 @@
 
         $('.removeRowBtn').prop('disabled', false);
         $('#row_0 .removeRowBtn').prop('disabled', true);
+            $(".item-list").select2();
+        $(`#item_id_${index}`).trigger("change");
+    
     }
 
 
@@ -349,35 +354,35 @@
     }
 
     function filter_items(category_id, count) {
-        $.ajax({
-            url: '{{ route('get.items') }}',
-            type: 'GET',
-            data: {
-                category_id: category_id
-            },
-            dataType: 'json',
-            success: function (response) {
-                if (response.success && response.products) {
-                    $('#item_id_' + count).empty();
-                    $('#item_id_' + count).append('<option value="">Select a Item</option>');
+        // $.ajax({
+        //     url: '{{ route('get.items') }}',
+        //     type: 'GET',
+        //     data: {
+        //         category_id: category_id
+        //     },
+        //     dataType: 'json',
+        //     success: function (response) {
+        //         if (response.success && response.products) {
+        //             $('#item_id_' + count).empty();
+        //             $('#item_id_' + count).append('<option value="">Select a Item</option>');
 
-                    $.each(response.products, function (index, product) {
-                        $('#item_id_' + count).append(
-                            `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
-                        );
-                    });
+        //             $.each(response.products, function (index, product) {
+        //                 $('#item_id_' + count).append(
+        //                     `<option data-uom="${product.unit_of_measure?.name ?? ''}" value="${product.id}">${product.name}</option>`
+        //                 );
+        //             });
 
 
-                    $('#item_id_' + count).select2();
-                } else {
-                    console.error('No products found or request failed');
-                    $('#item_id_' + count).html('<option value="">No products available</option>');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('AJAX Error:', status, error);
-                $('#item_id_' + count).html('<option value="">Error loading products</option>');
-            }
-        });
+        //             $('#item_id_' + count).select2();
+        //         } else {
+        //             console.error('No products found or request failed');
+        //             $('#item_id_' + count).html('<option value="">No products available</option>');
+        //         }
+        //     },
+        //     error: function (xhr, status, error) {
+        //         console.error('AJAX Error:', status, error);
+        //         $('#item_id_' + count).html('<option value="">Error loading products</option>');
+        //     }
+        // });
     }
 </script>
