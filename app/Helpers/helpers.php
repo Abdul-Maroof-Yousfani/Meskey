@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNote, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNote, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -245,6 +245,70 @@ if(!function_exists("sub_arrival_name_by_id")) {
 //         return $customer;
 //     }
 // }
+
+if(!function_exists("numberToOrdinalWord")) {
+    function numberToOrdinalWord(int $number): string
+{
+    $ordinals = [
+        1 => 'first',
+        2 => 'second',
+        3 => 'third',
+        4 => 'fourth',
+        5 => 'fifth',
+        6 => 'sixth',
+        7 => 'seventh',
+        8 => 'eighth',
+        9 => 'ninth',
+        10 => 'tenth',
+        11 => 'eleventh',
+        12 => 'twelfth',
+        13 => 'thirteenth',
+        14 => 'fourteenth',
+        15 => 'fifteenth',
+        16 => 'sixteenth',
+        17 => 'seventeenth',
+        18 => 'eighteenth',
+        19 => 'nineteenth',
+        20 => 'twentieth',
+    ];
+
+    if (isset($ordinals[$number])) {
+        return $ordinals[$number];
+    }
+
+    $tens = [
+        20 => 'twenty',
+        30 => 'thirty',
+        40 => 'forty',
+        50 => 'fifty',
+        60 => 'sixty',
+        70 => 'seventy',
+        80 => 'eighty',
+        90 => 'ninety',
+    ];
+
+    $ten = intdiv($number, 10) * 10;
+    $unit = $number % 10;
+
+    if ($unit === 0) {
+        return $tens[$ten] . 'ieth'; // twentieth, thirtieth
+    }
+
+    return $tens[$ten] . '-' . $ordinals[$unit];
+}
+}
+
+if(!function_exists("getLoadingProgramBalance")) {
+    function getLoadingProgramBalance($delivery_order_id) {
+        $delivery_order = DeliveryOrder::find($delivery_order_id);
+        $total_qty = $delivery_order->delivery_order_data()->sum("qty");
+        $used_qty = LoadingProgramItem::where("delivery_order_id", $delivery_order_id)->sum("qty");
+
+        $remaining_qty = $total_qty - $used_qty;
+
+        return $remaining_qty;
+    }
+}
 
 if(!function_exists("getTaxById")) {
     function getTaxPercentageById($tax_id) {
