@@ -278,7 +278,7 @@ class LoadingProgramController extends Controller
             }
             
             foreach ($sale_order->delivery_orders as $delivery_order) {
-                $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id); 
+                $balance = getLoadingProgramBalance($delivery_order->id); 
                 if ($balance > 0) { 
                     return true;
                 }
@@ -576,6 +576,11 @@ class LoadingProgramController extends Controller
         $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder){
             $balance = getLoadingProgramBalance($deliveryOrder->id);
             return !$balance;
+        });
+
+        $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
+            $deliveryOrder->reference_no = $deliveryOrder->reference_no . " - " . getLocation($deliveryOrder->location_id)?->name;
+            return $deliveryOrder;
         });
         
 
