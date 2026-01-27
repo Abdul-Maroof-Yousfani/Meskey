@@ -276,16 +276,15 @@
                                 var $deliveryOrderSelect = $('#delivery_order_id');
                                 $deliveryOrderSelect.empty().append('<option value="">Select Delivery Order</option>');
 
-                                if (Array.isArray(deliveryResponse.delivery_orders)) {
-                                    deliveryResponse.delivery_orders.forEach(function(deliveryOrder) {
-                                        var option = new Option(deliveryOrder.reference_no, deliveryOrder.id, false, false);
-                                        $deliveryOrderSelect.append(option);
-                                    });
-                                } else {
-                                    // Handle single delivery order case
-                                    var option = new Option(deliveryResponse.delivery_orders.reference_no, deliveryResponse.delivery_orders.id, false, false);
+                                var deliveryOrders = Array.isArray(deliveryResponse.delivery_orders)
+                                    ? deliveryResponse.delivery_orders
+                                    : [deliveryResponse.delivery_orders]; // safety fallback
+
+                                deliveryOrders.forEach(function(deliveryOrder, index) {
+                                    if (!deliveryOrder) return; // in case null
+                                    var option = new Option(deliveryOrder.reference_no, deliveryOrder.id, false, false);
                                     $deliveryOrderSelect.append(option);
-                                }
+                                });
 
                                 $deliveryOrderSelect.select2();
 

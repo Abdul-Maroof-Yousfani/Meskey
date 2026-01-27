@@ -13,6 +13,7 @@ use App\Models\Sales\LoadingSlip;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\DeliveryOrder;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,8 +80,9 @@ class LoadingProgramController extends Controller
                                             return true;
                                         }
                                         
-                                        foreach ($sale_order->delivery_orders as $delivery_order) {
-                                            $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id); 
+                                        $delivery_orders = $sale_order->delivery_orders()->where("am_approval_status", "approved")->get();
+                                        foreach ($delivery_orders as $delivery_order) {
+                                            $balance = getLoadingProgramBalance($delivery_order->id);
                                             if ($balance > 0) {
                                                 return true;
                                             }
@@ -185,6 +187,7 @@ class LoadingProgramController extends Controller
 
         DB::beginTransaction();
         try {
+           
             $loadingProgram = LoadingProgram::create([
                 'company_id' => $request->company_id,
                 'sale_order_id' => $request->sale_order_id,
@@ -198,6 +201,23 @@ class LoadingProgramController extends Controller
     
             if (isset($request->loading_program_items) && is_array($request->loading_program_items)) {
                 foreach ($request->loading_program_items as $index => $itemData) {
+                    $delivery_order_id = $request->loading_program_items[$index]['delivery_order_id'];
+
+                    if($delivery_order_id)
+                        $balance = getLoadingProgramBalance($delivery_order_id);
+                        $qty = $request->loading_program_items[$index]['qty'];
+
+                    if($delivery_order_id && $balance < $qty) {
+                        DB::rollBack();
+
+                        $validator->errors()->add(
+                            "loading_program_items[$index][qty]", "Your qty balance is $balance, you can not exceed that balance."
+                        );
+                        return response()->json([
+                            "errors" => $validator->errors()
+                        ], 422);
+                    }
+                    
                     $itemData['loading_program_id'] = $loadingProgram->id;
                     $itemData['transaction_number'] = self::getNumber($request);
                     $itemData["delivery_order_id"] = $request->loading_program_items[$index]['delivery_order_id'];
@@ -443,6 +463,22 @@ class LoadingProgramController extends Controller
     
             if (isset($request->loading_program_items) && is_array($request->loading_program_items)) {
                 foreach ($request->loading_program_items as $index => $itemData) {
+                    $delivery_order_id = $itemData["delivery_order_id"];
+
+                    if($delivery_order_id)
+                        $balance = getLoadingProgramBalance($delivery_order_id);
+                        $qty = $itemData['qty'];
+                   
+                    if($delivery_order_id && $balance < $qty) {
+                        DB::rollBack();
+
+                        $validator->errors()->add(
+                            "loading_program_items[$index][qty]", "Your qty balance is $balance, you can not exceed that balance."
+                        );
+                        return response()->json([
+                            "errors" => $validator->errors()
+                        ], 422);
+                    }
                     $itemData['loading_program_id'] = $loadingProgram->id;
                     if(!$itemData['transaction_number']) {
                         $itemData["transaction_number"] = self::getNumber($request);
@@ -483,6 +519,7 @@ class LoadingProgramController extends Controller
             ->reject(function($delivery_order) {
                 return $delivery_order->sale_second_weighbridge_sum_net_weight < $delivery_order->sale_second_weighbridge_sum_net_weight;
             });
+
 
       
         // Summed up value is in delivery_order_data_sum_qty
@@ -536,11 +573,16 @@ class LoadingProgramController extends Controller
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
 
+        $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder){
+            $balance = getLoadingProgramBalance($deliveryOrder->id);
+            return !$balance;
+        });
+        
 
 
         return response()->json([
             'success' => true,
-            'delivery_orders' => $deliveryOrders
+            'delivery_orders' => $deliveryOrders->values()
         ]);
     }
 
@@ -553,7 +595,6 @@ class LoadingProgramController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
         $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
             ->where('am_approval_status', 'approved')
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
