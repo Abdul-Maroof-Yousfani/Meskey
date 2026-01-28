@@ -44,7 +44,7 @@
                                     {{ $loadingProgram->saleOrder->customer->name ?? 'N/A' }}
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    {{ $loadingProgram->saleOrder->sales_order_data->first()->item->name ?? 'N/A' }}
+                                    {{ $loadingProgram->saleOrder?->sales_order_data->first()->item->name ?? 'N/A' }}
                                 </td>
                             @endif
 
@@ -75,10 +75,12 @@
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
                                     <div class="d-flex gap-1">
+                                        @if($loadingProgram?->loadingProgramItems()->whereDoesntHave("firstWeighbridge")->count() > 0)
                                         <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false)"
-                                            class="warning p-1 text-center mr-1 position-relative" title="Edit">
-                                            <i class="ft-edit font-medium-3"></i>
-                                        </a>
+                                                class="warning p-1 text-center mr-1 position-relative" title="Edit">
+                                                <i class="ft-edit font-medium-3"></i>
+                                            </a>
+                                        @endif
                                         <a onclick="openModal(this,'{{ route('sales.loading-program.show', $loadingProgram->id) }}','View Loading Program', true)"
                                             class="info p-1 text-center mr-1 position-relative" title="View">
                                             <i class="ft-eye font-medium-3"></i>
@@ -116,10 +118,10 @@
                         </td>
                         <td>
                             <div class="d-flex gap-1">
-                                <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false)"
-                                    class="warning p-1 text-center mr-1 position-relative" title="Edit">
-                                    <i class="ft-edit font-medium-3"></i>
-                                </a>
+                                    <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false)"
+                                        class="warning p-1 text-center mr-1 position-relative" title="Edit">
+                                        <i class="ft-edit font-medium-3"></i>
+                                    </a>
                                 <a onclick="openModal(this,'{{ route('sales.loading-program.show', $loadingProgram->id) }}','View Loading Program', true)"
                                     class="info p-1 text-center mr-1 position-relative" title="View">
                                     <i class="ft-eye font-medium-3"></i>

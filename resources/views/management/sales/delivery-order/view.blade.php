@@ -25,7 +25,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">DO Date:</label>
-                        <input type="date" name="dispatch_date" value="{{ $delivery_order->dispatch_date }}"
+                        <input type="date" name="dispatch_date" 
+                            value="{{ date('Y-m-d') }}" 
                             onchange="getNumber()" id="dispatch_date" class="form-control" readonly>
                     </div>
                 </div>
@@ -143,7 +144,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date"
-                            value="{{ $delivery_order->delivery_date }}" class="form-control" readonly>
+                            value="{{ $delivery_order->salesOrder->delivery_date }}" class="form-control" readonly>
                     </div>
                 </div>
         </div>
@@ -181,7 +182,7 @@
                         @endphp
                         @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
                             <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>
-                                {{ $location->name }}
+                                {{ $location->name }} ({{ $location->arrivalLocation->name }})
                             </option>
                         @endforeach
                     </select>
@@ -246,6 +247,8 @@
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
+                            <th>Amount</th>
                             <th>Brand</th>
                             <th style="display: none">Pack Size</th>
                             <th>Action</th>
@@ -290,9 +293,19 @@
                                         onkeyup="calc(this)" value="{{ $data->qty }}" class="form-control qty"
                                         step="0.01" min="0" readonly>
                                 </td>
+                                 <td>
+                                    <input type="number" name="amount[]" id="amount_{{ $index }}"
+                                        onkeyup="calc(this)" value="{{ $data->rate }}" class="form-control qty"
+                                        step="0.01" min="0" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                        value="{{ $data->salesOrderData->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate_per_mond"
+                                        step="0.01" min="0" readonly>
+                                </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}"
-                                        value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
+                                        value="{{ $data->rate * $data->qty }}" onkeyup="calc(this)" class="form-control rate"
                                         step="0.01" min="0" readonly>
                                 </td>
                                 <td>

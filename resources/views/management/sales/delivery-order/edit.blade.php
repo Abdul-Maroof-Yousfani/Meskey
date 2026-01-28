@@ -25,7 +25,7 @@
         font-size: 13px;
     }
 </style>
-
+                           
 <form action="{{ route('sales.delivery-order.update', ['delivery_order' => $delivery_order->id]) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -156,7 +156,6 @@
 
                 @endif
 
-             
                      <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
@@ -175,7 +174,6 @@
 
 
             </div>
-
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
@@ -183,9 +181,9 @@
                         <select name="location_id" id="locations" onchange="selectLocation(this)"
                             class="form-control select2">
                             <option value="">Select Locations</option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}" @selected($location->id == $delivery_order->location_id)>
-                                    {{ $location->name }}
+                            @foreach (getSaleOrderLocation($delivery_order->so_id) as $location)
+                                <option value="{{ $location->location_id }}" @selected($location->location_id == $delivery_order->location_id)>
+                                    {{ getLocation($location->location_id)?->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -216,9 +214,9 @@
                                 $selectedSubArrivalIds = $delivery_order->sub_arrival_location_id ? explode(',', $delivery_order->sub_arrival_location_id) : [];
                                 $arrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [$delivery_order->arrival_location_id];
                             @endphp
-                            @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
-                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>
-                                    {{ $location->name }}</option>
+                            @foreach (getSaleOrderSubArrival($delivery_order->so_id) as $location)
+                                <option value="{{ $location->arrival_sub_location_id }}" @selected(in_array($location->arrival_sub_location_id, $selectedSubArrivalIds))>
+                                    {{ subArrivalLocationId($location->arrival_sub_location_id)?->name }} ({{ subArrivalLocationId($location->arrival_sub_location_id)?->arrivalLocation?->name }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -280,7 +278,8 @@
                             <th>Pack Size</th>
                             <th>No of Bags</th>
                             <th>Quantity (Kg)</th>
-                            <th>Rate</th>
+                            <th>Rate Per KG</th>
+                            <th>Rate Per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Desc</th>
@@ -342,10 +341,20 @@
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
                                         min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
-                                </td>
+                                    
+                                    <input type="hidden" name="current_qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
+                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
+                             
+                                    </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"
                                         value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
+                                        step="0.01" min="0" readonly>
+                                </td>
+                                 <td>
+                                    <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                        value="{{ $data->salesOrderData->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate_per_mond"
                                         step="0.01" min="0" readonly>
                                 </td>
                                 <td>
@@ -495,32 +504,29 @@
         const company = $(el).val();
         const allowedFactories = soFactoryMap[String(company)] || [];
 
-        if (!company) {
-            $("#arrivals").prop("disabled", true);
-            $("#arrivals").empty();
-            $("#storages").prop("disabled", true);
-            $("#storages").empty();
-            return;
-        }
+   
 
         if (allowedFactories.length > 0) {
-            $("#arrivals").prop("disabled", false).empty();
+            $("#arrivals").empty();
             allowedFactories.forEach(loc => {
-                $("#arrivals").append(`<option value="${loc.id}">${loc.text}</option>`);
+                const option = new Option(loc.text, loc.id);
+                $(option).attr("selected", "selected")
+                $("#arrivals").append(option);
             });
 
             // Apply initial arrival/section if present (for edit mode initialization)
             if (!initialArrivalApplied && initialArrivalId) {
                 // Parse comma-separated IDs for multiple selection
                 const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
-                $("#arrivals").val(initialArrivalIds).trigger('change.select2');
+                // $("#arrivals").val(initialArrivalIds).trigger('change.select2');
                 initialArrivalApplied = true;
                 selectStorage(document.getElementById("arrivals"), true);
             } else if (!isInit) {
                 // Auto-select ALL factories when user manually changes location
                 const allFactoryIds = allowedFactories.map(loc => String(loc.id));
-                $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                // $("#arrivals").val(allFactoryIds).trigger('change.select2');
                 // Populate and select all sections for all selected factories
+                
                 selectAllStorages(allFactoryIds);
             }
         } else {
@@ -538,7 +544,7 @@
 
                     res.forEach(loc => {
                         $("#arrivals").append(`
-                        <option value="${loc.id}" >
+                        <option value="${loc.id}" selected>
                             ${loc.text}
                         </option>
                     `);
@@ -549,13 +555,13 @@
                     if (!initialArrivalApplied && initialArrivalId) {
                         // Parse comma-separated IDs for multiple selection
                         const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
-                        $("#arrivals").val(initialArrivalIds).trigger('change.select2');
+                        // $("#arrivals").val(initialArrivalIds).trigger('change.select2');
                         initialArrivalApplied = true;
                         selectStorage(document.getElementById("arrivals"), true);
                     } else if (!isInit) {
                         // Auto-select ALL factories
                         const allFactoryIds = res.map(loc => String(loc.id));
-                        $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                        // $("#arrivals")   .val(allFactoryIds).trigger('change.select2');
                         // Populate and select all sections
                         selectAllStoragesFromServer(allFactoryIds);
                     }
@@ -569,7 +575,6 @@
 
     function selectStorage(el, isInit = false) {
         const arrivals = $(el).val(); // This is now an array since it's multiple select
-        
         if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
@@ -610,7 +615,7 @@
                 }
             });
         });
-        
+
         if (allSections.length > 0) {
             allSections.forEach(section => {
                 $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
@@ -620,12 +625,14 @@
             if (!initialStorageApplied && initialStorageId && isInit) {
                 // Parse comma-separated IDs for multiple selection
                 const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
-                $("#storages").val(initialStorageIds).trigger('change.select2');
+            $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+
                 initialStorageApplied = true;
             } else if (!isInit) {
                 // Auto-select ALL sections when user manually changes
                 const allSectionIds = allSections.map(s => String(s.id));
-                $("#storages").val(allSectionIds).trigger('change.select2');
+                $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+
             }
         } else {
             // Fallback: fetch sections from server for each factory
@@ -640,9 +647,9 @@
         let allSections = [];
         let completedRequests = 0;
         
-        if (factoryIds.length === 0) {
-            return;
-        }
+        // if (factoryIds.length === 0) {
+        //     return;
+        // }
         
         factoryIds.forEach(factoryId => {
             $.ajax({
@@ -673,7 +680,8 @@
                         if (!initialStorageApplied && initialStorageId && isInit) {
                             // Parse comma-separated IDs for multiple selection
                             const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
-                            $("#storages").val(initialStorageIds).trigger('change.select2');
+                            $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+
                             initialStorageApplied = true;
                         } else if (!isInit) {
                             // Auto-select ALL sections
@@ -687,6 +695,7 @@
                 }
             });
         });
+        
     }
 
     isEdit = true;

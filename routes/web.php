@@ -15,6 +15,8 @@ use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Procurement\Store\PurchaseBagQC;
+use App\Models\Procurement\Store\PurchaseReturn;
+use App\Models\Procurement\Store\PurchaseReturnData;
 use App\Models\Procurement\Store\QCItems;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\ReceiptVoucher;
@@ -52,9 +54,29 @@ Route::get("/receipt-vouchers/delete", function() {
 });
 
 Route::get("/procurement/delete-data", function() {
+    
+    PurchaseRequestData::query()->delete();
     PurchaseRequest::query()->delete();
+
+    PurchaseQuotationData::query()->delete();
     PurchaseQuotation::query()->delete();
+    
+    PurchaseOrderData::query()->delete();
+    PurchaseOrder::query()->delete();
+    
+    PurchaseOrderReceivingData::query()->delete();
+    PurchaseOrderReceiving::query()->delete();
+    
+    PurchaseBagQC::query()->delete();
+    
+    PurchaseBillData::query()->delete();
+    PurchaseBill::query()->delete();
+    
+    PurchaseReturnData::query()->delete();
+    PurchaseReturn::query()->delete();
 });
+
+
 
 Route::get("checking-data", function() {
     SalesInquiry::query()->delete();

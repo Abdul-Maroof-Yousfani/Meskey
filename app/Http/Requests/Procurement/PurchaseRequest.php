@@ -53,6 +53,9 @@ class PurchaseRequest extends FormRequest
             'uom'                   => 'nullable|array',
             'uom.*'                 => 'nullable|string|max:255',
 
+            'size' => 'required',
+            'size.*' => 'required',
+
             'brands' => 'required',
             'brands.*' => 'required',
 

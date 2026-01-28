@@ -22,7 +22,8 @@ class SalesReturn extends Model
         "remarks",
         "am_approval_status",
         "am_change_made",
-        "created_by"
+        "created_by",
+        "company_id"
     ];
 
     protected $table = "sales_return";

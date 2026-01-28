@@ -235,6 +235,7 @@
                         <th>No of Bags</th>
                         <th>Quantity (kg)</th>
                         <th>Rate per Kg</th>
+                        <th>Rate per Mond</th>
                         <th>Amount</th>
                         <th>Brand</th>
                         <th>Truck No.</th>
@@ -269,6 +270,9 @@
                         </td>
                         <td>
                             <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
+                        </td>
+                        <td>
+                            <input type="text" value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}" class="form-control" readonly>
                         </td>
                         <td>
                             <input type="text" value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control" readonly>

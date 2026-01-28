@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNote, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -239,10 +239,74 @@ if(!function_exists("sub_arrival_name_by_id")) {
     }
 }
 
-if(!function_exists("get_customer_name")) {
-    function get_customer_name($customer_id) {
-        $customer = Customer::select("id", "name")->find($customer_id);
-        return $customer;
+// if(!function_exists("get_customer_name")) {
+//     function get_customer_name($customer_id) {
+//         $customer = Customer::select("id", "name")->find($customer_id);
+//         return $customer;
+//     }
+// }
+
+if(!function_exists("numberToOrdinalWord")) {
+    function numberToOrdinalWord(int $number): string
+{
+    $ordinals = [
+        1 => 'first',
+        2 => 'second',
+        3 => 'third',
+        4 => 'fourth',
+        5 => 'fifth',
+        6 => 'sixth',
+        7 => 'seventh',
+        8 => 'eighth',
+        9 => 'ninth',
+        10 => 'tenth',
+        11 => 'eleventh',
+        12 => 'twelfth',
+        13 => 'thirteenth',
+        14 => 'fourteenth',
+        15 => 'fifteenth',
+        16 => 'sixteenth',
+        17 => 'seventeenth',
+        18 => 'eighteenth',
+        19 => 'nineteenth',
+        20 => 'twentieth',
+    ];
+
+    if (isset($ordinals[$number])) {
+        return $ordinals[$number];
+    }
+
+    $tens = [
+        20 => 'twenty',
+        30 => 'thirty',
+        40 => 'forty',
+        50 => 'fifty',
+        60 => 'sixty',
+        70 => 'seventy',
+        80 => 'eighty',
+        90 => 'ninety',
+    ];
+
+    $ten = intdiv($number, 10) * 10;
+    $unit = $number % 10;
+
+    if ($unit === 0) {
+        return $tens[$ten] . 'ieth'; // twentieth, thirtieth
+    }
+
+    return $tens[$ten] . '-' . $ordinals[$unit];
+}
+}
+
+if(!function_exists("getLoadingProgramBalance")) {
+    function getLoadingProgramBalance($delivery_order_id) {
+        $delivery_order = DeliveryOrder::find($delivery_order_id);
+        $total_qty = $delivery_order->delivery_order_data()->sum("qty");
+        $used_qty = LoadingProgramItem::where("delivery_order_id", $delivery_order_id)->sum("qty");
+
+        $remaining_qty = $total_qty - $used_qty;
+
+        return $remaining_qty;
     }
 }
 
@@ -641,6 +705,11 @@ function get_product_by_category($id)
     return $Product;
 }
 
+function get_product_by_id($id) {
+    $product = Product::with("unitOfMeasure")->where("id", $id)->get();
+    return $product;
+}
+
 function get_customer_name($customer_id) {
     $customer = Customer::where("id", $customer_id)->first();
     return $customer?->name ?? "";
@@ -659,6 +728,13 @@ function get_locations()
     $CompanyLocation = CompanyLocation::all();
 
     return $CompanyLocation;
+}
+
+function get_so_locations($so_id) {
+    $saleOrder = SalesOrder::find($so_id);
+    $locations = $saleOrder->locations->pluck('location_id')->toArray();
+    $companyLocations = CompanyLocation::whereIn('id', $locations)->get();
+    return $companyLocations;
 }
 
 function get_arrival_locations() {
@@ -696,6 +772,13 @@ function get_sub_arrivals_by_multiple($arrival_ids) {
 function get_location_name_by_id($company_location_id) {
     return CompanyLocation::where("id", $company_location_id)->value("name");
 }
+
+
+function get_location_id_by_name($location_id) {
+    $location = CompanyLocation::find($location_id);
+    return $location->id;
+}
+
 
 
 function get_arrival_name_by_id($arrival_id) {
@@ -737,6 +820,7 @@ function get_second_weighbridge_balance_by_delivery_order($delivery_order_id) {
     return $remaining_quantities;
 
 }
+
 
 function receipt_voucher_balance($reference_id, $type = "sale_order") {
     $data = ReceiptVoucherItem::where("reference_id", $reference_id)->get();
@@ -830,6 +914,20 @@ function get_uom($id)
 
     $name = optional($Product->unitOfMeasure)->name;
     return $name;
+}
+
+function applyTax($number, $percentage) {
+    // Ensure both inputs are numbers
+    $number = floatval($number);
+    $percentage = floatval($percentage);
+
+    // Calculate deduction
+    $deduction = ($percentage / 100) * $number;
+
+    // Subtract the deduction from the original number
+    $result = $number - $deduction;
+
+    return $result;
 }
 
 function getUserParams($param)
@@ -1497,3 +1595,111 @@ if(!function_exists("getByProductsById")) {
         return $byProducts;
     }
 }
+if(!function_exists("getDebitNoteBalance")) {
+    function getDebitNoteBalance($purchase_bill_data_id, $exclude_debit_note_id = null) {
+        $query = DebitNoteData::where('purchase_bill_data_id', $purchase_bill_data_id);
+
+        if ($exclude_debit_note_id) {
+            $query->where('debit_note_id', '!=', $exclude_debit_note_id);
+        }
+
+        $previousDebitNoteQty = $query->sum('debit_note_quantity');
+
+        $billData = PurchaseBillData::find($purchase_bill_data_id);
+
+        if (!$billData) {
+            return 0;
+        }
+
+        return max(0, $billData->qty - $previousDebitNoteQty);
+    }
+}
+
+
+if(!function_exists('getAvailableReturnBalance')) {
+    function getAvailableReturnBalance($purchase_bill_data_id, $exclude_return_id = null) {
+        // Get debit note balance (remaining quantity after debit notes)
+        $debitNoteBalance = getDebitNoteBalance($purchase_bill_data_id);
+
+        // Get purchase return quantities (excluding current return if editing)
+        $returnQuery = PurchaseReturnData::where('purchase_bill_data_id', $purchase_bill_data_id);
+
+        if ($exclude_return_id) {
+            $returnQuery->where('purchase_return_id', '!=', $exclude_return_id);
+        }
+
+        $returnedQty = $returnQuery->sum('quantity');
+
+        // Available balance = debit note balance - already returned quantity
+        return max(0, $debitNoteBalance - $returnedQty);
+    }
+}
+
+if(!function_exists('purchaseBillDistribution')) {
+    function purchaseBillDistribution($purchase_bill_data_id) {
+        $purchase_bill_data = PurchaseBillData::find($purchase_bill_data_id);
+        $debit_note = DebitNoteData::where('purchase_bill_data_id', $purchase_bill_data_id)->sum('debit_note_quantity');
+        $purchase_return = PurchaseReturnData::where('purchase_bill_data_id', $purchase_bill_data_id)->sum('quantity');
+        return $purchase_bill_data->qty - $debit_note - $purchase_return;
+    }
+}
+
+if(!function_exists("getPODataQty")) {
+    function getPODataQty($po_data_id) {
+        $po_data = PurchaseOrderData::find($po_data_id);
+        return $po_data->qty;
+    }
+}
+
+
+if(!function_exists("getStockByGrnDataId")) {
+    function getStockByGrnDataId($po_data_id) {
+        $stock_in = Stock::where("parent_id", $po_data_id)
+                            ->where("voucher_type", "grn")
+                            ->where("type", "stock-in")
+                            ->sum("qty");
+        
+        $stock_out = Stock::where("parent_id", $po_data_id)
+                            ->where("voucher_type", "qc")
+                            ->where("type", "stock-out")
+                            ->sum("qty");
+
+        return $stock_in - $stock_out;
+    }
+}
+
+if(!function_exists("getSaleOrderLocation")) {
+    function getSaleOrderLocation($so_id) {
+        $sale_order = SalesOrder::find($so_id);
+        return $sale_order->locations;
+    }
+}
+
+if(!function_exists("getSaleOrderSubArrival")) {
+    function getSaleOrderSubArrival($so_id) {
+        $sale_order = SalesOrder::find($so_id);
+        return $sale_order->sections;
+    }
+}
+
+if(!function_exists("subArrivalLocationId")) {
+    function subArrivalLocationId($subarrival_location_id) {
+        $sub_arrival = ArrivalSubLocation::with("arrivalLocation")->find($subarrival_location_id);
+        return $sub_arrival;
+    }
+}
+
+if(!function_exists("getLocation")) {
+    function getLocation($location_id) {
+        $company_location = CompanyLocation::find($location_id);
+        return $company_location;
+    }
+}
+
+if(!function_exists("getArrivalLocations")) {
+    function getArrivalLocations($sub_arrival_id) {
+        return ArrivalLocation::find($sub_arrival_id);
+    }
+}
+
+

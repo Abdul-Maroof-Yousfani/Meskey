@@ -3,6 +3,7 @@
 use App\Http\Controllers\Sales\DeliveryChallanController;
 use App\Http\Controllers\Sales\DeliveryOrderController;
 use App\Http\Controllers\Sales\FirstWeighBridgeController;
+use App\Http\Controllers\Sales\LoadingProgramController;
 use App\Http\Controllers\Sales\SecondWeighBridgeController;
 use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
@@ -64,7 +65,8 @@ Route::name("sales.")->group(function () {
     Route::get('/get-sale-order-related-data', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getSaleOrderRelatedData'])->name('getSaleOrderRelatedData');
     Route::get('/get-delivery-orders-by-sale-order-loading', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderLoading');
     Route::get('/get-delivery-orders-by-sale-order-loading-edit', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrderEdit'])->name('getDeliveryOrdersBySaleOrderLoadingEdit');
-    
+    Route::get("/get-do-qty", [LoadingProgramController::class, "getDo"])->name("getDoQty");
+    Route::get("/get-sale-order-locations", [LoadingProgramController::class, 'getLocations'])->name("so.locations");
     
     // Receiving Request Routes
     Route::resource("receiving-request", ReceivingRequestController::class)->only(['index', 'edit', 'update']);

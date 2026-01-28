@@ -69,6 +69,9 @@ class SalesInquiryRequest extends FormRequest
 
             "token_money" => "required|numeric",
 
+            "rate_per_mond" => "required",
+            "rate_per_mond.*" => "required"
+
         ];
     }
 

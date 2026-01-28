@@ -1,11 +1,10 @@
 <style>
-    html,
-    body {
+    html, body {
         overflow-x: hidden;
     }
 </style>
 
-<form action="{{ route('store.purchase-order.update', optional($purchaseOrder)->id) }}" method="POST" id="ajaxSubmit"
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-order.update', optional($purchaseOrder)->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -136,6 +135,7 @@
                     </thead>
                     <tbody id="purchaseRequestBody">
                         @foreach ($purchaseOrder->purchaseOrderData ?? [] as $key => $data)
+                            
                             <tr id="row_{{ $key }}">
                                 <td style="width: 30%">
                                     <select style="width: 100px;" id="category_id_{{ $key }}" disabled
@@ -150,12 +150,13 @@
                                     </select>
                                     <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
                                     <input type="hidden" name="data_id[]" value="{{ $data->id }}">
+                                    <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
                                 </td>
                                 <td style="width: 30%">
                                     <select style="width: 100px;" id="item_id_{{ $key }}"
                                         onchange="get_uom({{ $key }})" disabled
                                         class="form-control item-select select2" data-index="{{ $key }}">
-                                        @foreach (get_product_by_category($data->category_id) as $item)
+                                        @foreach (get_product_by_id($data->item_id) as $item)
                                             <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
                                                 value="{{ $item->id }}"
                                                 {{ $item->id == $data->item_id ? 'selected' : '' }}>
@@ -268,7 +269,12 @@
                                         class="form-control" step="0.01" min="0">
                                 </td>
                                 <td style="width: 30%">
-                                    <input style="width: 100px;" type="text" readonly name="stitching[]"
+                                      <select class="form-control select2" multiple disabled>
+                                            @foreach(getStitchingsByIds($data?->stitching ?? "") as $stitching)
+                                                <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    <input style="width: 100px;" type="hidden" readonly name="stitching[]"
                                         value="{{ $data->stitching }}" id="stitching_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
@@ -310,7 +316,7 @@
 
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="number"
-                                        value="{{ $data->rate * $data->qty + ((int) $tax_percentage / 100) * ($data->rate * $data->qty) }}"
+                                        value="{{ ($data->rate * $data->qty + ((int) $tax_percentage / 100) * ($data->rate * $data->qty)) + $data->excise_duty }}"
                                         id="total_{{ $key }}" class="form-control net_amount"
                                         step="0.01" min="0" readonly name="total[]">
                                 </td>
@@ -362,7 +368,7 @@
         width: '100%'
     });
 
-    let rowIndex = {{ $purchaseOrderDataCount ?? 1 }};
+    rowIndex = {{ $purchaseOrderDataCount ?? 1 }};
 
     function addRow() {
         let index = rowIndex++;
@@ -459,8 +465,8 @@
         $('#uom_' + index).val(uom);
     }
 
-    let allowedCategories = [];
-    let allowedItems = [];
+    allowedCategories = [];
+    allowedItems = [];
 
     function get_purchase(purchaseOrderId) {
         if (!purchaseOrderId) return;

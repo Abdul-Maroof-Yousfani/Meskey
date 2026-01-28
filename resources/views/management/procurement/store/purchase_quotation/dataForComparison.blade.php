@@ -122,7 +122,7 @@
                                  <select style="width: 100px;" id="item_id_{{ $key }}"
                                      onchange="get_uom({{ $key }})" disabled
                                      class="form-control item-select select2" data-index="{{ $key }}">
-                                     @foreach (get_product_by_category($data->category_id) as $item)
+                                     @foreach (get_product_by_id($data->item_id) as $item)
                                          <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
                                              value="{{ $item->id }}"
                                              {{ $item->id == $data->item_id ? 'selected' : '' }}>
@@ -185,15 +185,16 @@
                                  <input type="hidden" name="size[]"
                                      value="{{ $data->purchase_request?->size ?? null }}">
                              </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="text" onkeyup="calc({{ $key }})"
-                                     disabled onblur="calc({{ $key }})"
-                                     value="{{ $data->purchase_request?->stitching ?? null }}"
-                                     id="qty_{{ $key }}" class="form-control" step="0.01"
-                                     min="0">
-                                 <input type="hidden" name="stitch[]"
-                                     value="{{ $data->purchase_request?->stitching ?? null }}">
-                             </td>
+
+                               <td style="width: 10%">
+                                    <select class="form-control select2" multiple disabled style="width: 120px">
+                                    @foreach(getStitchingsByIds($data?->purchase_request->stitching ?? "") as $stitching)
+                                        <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+                                    @endforeach
+                                </select>
+                                    <input type="hidden" name="stitch[]"
+                                        value="{{ $data->purchase_request?->stitching ?? null }}">
+                                </td>
 
                              <td style="width: 30%">
                                  <input style="width: 100px" type="text" onkeyup="calc({{ $key }})"
@@ -279,7 +280,7 @@
          width: '100%'
      });
 
-     let rowIndex = 1;
+    rowIndex = 1;
 
      function addRow() {
          let index = rowIndex++;

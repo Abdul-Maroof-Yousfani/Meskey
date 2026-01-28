@@ -155,6 +155,7 @@
                             <th class="required">No of Bags</th>
                             <th class="required">Quantity (Kg)</th>
                             <th class="required">Rate per Kg</th>
+                            <th class="required">Rate per Mond</th>
                             <th class="required">Brands</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Description</th>
@@ -201,8 +202,14 @@
                                         min="0" onkeyup="calc(this)" onchange="calc(this)">
                                 </td>
                                 <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $i }}"
-                                        value="{{ $data->rate }}" class="form-control" step="0.01"
+                                    <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_{{ $i }}"
+                                        value="{{ $data->rate }}" class="form-control rate_per_kg" step="0.01"
+                                        min="0">
+                                </td>
+
+                                <td>
+                                    <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_{{ $i }}"
+                                        value="{{ $data->rate_per_mond }}" class="form-control rate_per_mond" step="0.01"
                                         min="0">
                                 </td>
 
@@ -250,6 +257,37 @@
 <script>
     salesInquiryRowIndex = {{ $i }};
 
+    function calculateForRatePerKg(mond) {
+        return mond / 40;
+    }
+
+    function calculateForRatePerMond(kg) {
+        return kg * 40;
+    }
+
+    function calculateRates(el) {
+
+        if(!$(el).val()) {
+            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
+
+            $(el).closest("tr").find(".rate_per_kg").val("");
+            $(el).closest("tr").find(".rate_per_mond").val("");
+            return;
+        }
+
+        if($(el).hasClass("rate_per_kg")) {
+            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+        } else {
+            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            
+        }
+
+
+    }
+
     $(document).ready(function() {
         $('.select2').select2();
 
@@ -266,7 +304,7 @@
             factories
                 .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
                 .forEach(f => {
-                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name}</option>`);
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location.name})</option>`);
                 });
 
             $('#arrival_location_id').val(currentValues).trigger('change.select2');
@@ -280,7 +318,7 @@
             sections
                 .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
                 .forEach(s => {
-                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name}</option>`);
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location.name})</option>`);
                 });
 
             $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');

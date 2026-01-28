@@ -24,8 +24,8 @@ class SalesInquiryController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
-        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
         return view("management.sales.inquiry.create", compact("customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations"));
     }
@@ -154,7 +154,8 @@ class SalesInquiryController extends Controller
                     "no_of_bags" => $request->no_of_bags[$index],
                     "bag_type" => $request->bag_type[$index],
                     "brand_id" => $request->brand_id[$index],
-                    "pack_size" => $request->pack_size[$index]
+                    "pack_size" => $request->pack_size[$index],
+                    "rate_per_mond" => $request->rate_per_mond[$index]
                 ]);
             }
 
@@ -236,7 +237,8 @@ class SalesInquiryController extends Controller
                     "bag_size" => $request->bag_size[$index],
                     "no_of_bags" => $request->no_of_bags[$index],
                     "brand_id" => $request->brand_id[$index],
-                    "pack_size" => $request->pack_size[$index]
+                    "pack_size" => $request->pack_size[$index],
+                    "rate_per_mond" => $request->rate_per_mond[$index]
                 ]);
             }
 
@@ -273,8 +275,9 @@ class SalesInquiryController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
-        $arrivalLocations = ArrivalLocation::select('id', 'name')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        // dd($arrivalLocations[0]->compa);
+        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
 
         return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations"));
@@ -285,8 +288,9 @@ class SalesInquiryController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 
-        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+
+        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
         return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types", "arrivalLocations", "arrivalSubLocations"));
     }

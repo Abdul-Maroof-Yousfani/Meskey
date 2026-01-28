@@ -26,6 +26,10 @@ class PurchaseOrderData extends Model
         return $this->belongsTo(PurchaseOrder::class);
     }
 
+    public function grn() {
+        return $this->hasOne(PurchaseOrderReceivingData::class, "purchase_order_data_id");
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');

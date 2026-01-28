@@ -1,3 +1,8 @@
+<style>
+    button:disabled {
+        cursor: not-allowed !important;
+    }
+</style>
 <table class="table m-0">
     <thead>
         <tr>
@@ -12,7 +17,7 @@
             <th class="col-sm-1">Total Amount</th>
             <th class="col-sm-1">QC</th>
             <th class="col-sm-1">QC Status</th>
-            <th class="col-sm-1">Item Status</th>
+            <th class="col-sm-1" style="display: none;">Item Status</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -48,29 +53,31 @@
                                 </td>
                             @endif
 
-                            @if ($isFirstItemRow)
-                                <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}"
+                            @if ($isFirstRequestRow)
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e8f5e8; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['purchase_request_no'] ?? 'N/A' }}
                                     </p>
                                 </td>
 
-                                <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}"
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #fff3e0; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['purchase_order_no'] ?? '-' }}
                                     </p>
                                 </td>
-                                @php $isFirstItemRow = false; @endphp
                             @endif
 
-                            <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}"
-                                style="background-color: #fff3e0; vertical-align: middle;">
-                                <p class="m-0 font-weight-bold">
-                                    {{ $requestGroup['dc_no'] ?? '-' }}
-                                </p>
-                            </td>
+                            @if ($isFirstItemRow)
+                                <td rowspan="{{ $itemGroup['item_rowspan'] ?? 1 }}"
+                                    style="background-color: #fff3e0; vertical-align: middle;">
+                                    <p class="m-0 font-weight-bold">
+                                        {{ $requestGroup['dc_no'] ?? '-' }}
+                                    </p>
+                                </td>
+                                @php $isFirstItemRow = false; @endphp
+                            @endif
 
                             {{-- Item --}}
                             <td>
@@ -87,14 +94,7 @@
                                 </p>
                             </td>
 
-                            {{-- Unit --}}
-                            {{-- <td>
-                                <p class="m-0 text-right">
-                                    {{ optional($supplierRow['data']->item->unitOfMeasure)->name }}
-                                </p>
-                            </td> --}}
-
-                            {{-- Rate --}}
+                        
                             <td>
                                 <p class="m-0 text-right">
                                     {{ $supplierRow['data']->qty }}
@@ -116,10 +116,35 @@
                             </td>
 
                             <td>
-                                @if($itemGroup["qc_status"] != 'pending' && $itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
-                                    <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                @if($requestGroup['created_by_id'] == auth()->user()->id || $requestGroup["canApprove"])
+                                    @if($itemGroup["qc_status"] != 'pending' && $itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
+                                        <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                    @elseif($itemGroup["qc_status"] != "approved")
+                                        <span
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="testing"
+                                        >
+                                            <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')"  style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                        </span>
+                                    @else
+                                        <span
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="QC has been created and approved"
+                                        >
+                                            <button
+                                                style="width: 100px;"
+                                                type="button"
+                                                class="btn btn-warning btn-sm createQc"
+                                                disabled
+                                            >
+                                                Edit QC
+                                            </button>
+                                        </span>
+                                    @endif
                                 @else
-                                    <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')"  style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                    <button style="width: 100px;" type="button" class="btn btn-secondary" disabled>Edit QC</button>
                                 @endif
                             </td>
                             <td>
@@ -164,7 +189,7 @@
 
                             {{-- Approval Status + Actions --}}
                             @if ($isFirstRequestRow)
-                                <td rowspan="{{ $requestGroup['request_rowspan'] }}">
+                                <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="display: none;">
                                     @php
                                         $badgeClass = match (strtolower($approvalStatus)) {
                                             'approved' => 'badge-success',

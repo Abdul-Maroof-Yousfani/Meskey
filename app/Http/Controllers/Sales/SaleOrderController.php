@@ -36,8 +36,8 @@ class SaleOrderController extends Controller
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
         $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
-        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
         return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations'));
     }
@@ -51,8 +51,8 @@ class SaleOrderController extends Controller
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
         $bag_types = BagType::select('id', 'name')->where('status', 1)->get();
-        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
         return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations'));
     }
@@ -64,8 +64,8 @@ class SaleOrderController extends Controller
         $customers = Customer::all();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
-        $arrivalLocations = ArrivalLocation::select('id', 'name', 'company_location_id')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
         return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations'));
     }
@@ -114,7 +114,8 @@ class SaleOrderController extends Controller
                     'bag_type' => $request->bag_type[$index],
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
-                    'description' => $request->description[$index] ?? ""
+                    'description' => $request->description[$index] ?? "",
+                    "rate_per_mond" => $request->rate_per_mond[$index]
                 ]);
             }
             DB::commit();
@@ -185,7 +186,8 @@ class SaleOrderController extends Controller
                     'bag_type' => $request->bag_type[$index] ?? $request->bag_type_id[$index] ?? null,
                     'bag_size' => $request->bag_size[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
-                    'description' => $request->description[$index] ?? ""
+                    'description' => $request->description[$index] ?? "",
+                    "rate_per_mond" => $request->rate_per_mond[$index]
                 ]);
             }
             DB::commit();

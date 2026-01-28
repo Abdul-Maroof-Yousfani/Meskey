@@ -1,10 +1,4 @@
-<style>
-    html, body {
-        overflow-x: hidden;
-    }
-</style>
-
-<form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
     <div class="row form-mar">
@@ -94,7 +88,7 @@
     </div>
     <div class="row form-mar">
         <div class="col-md-12">
-            <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
+            <div style="overflow-x: auto; width: 100%;">
                 <table class="table table-bordered" id="purchaseRequestTable">
                     <thead>
                         <tr>
@@ -123,6 +117,7 @@
 
                     <tbody id="purchaseOrderBody"></tbody>
                 </table>
+            </div>
             </div>
         </div>
 

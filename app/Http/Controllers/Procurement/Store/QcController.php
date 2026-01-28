@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\QCAmountRequest;
 use App\Http\Requests\QCRequest;
 use App\Models\Category;
+use App\Models\Master\Account\Stock;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
@@ -228,6 +229,9 @@ class QcController extends Controller
         $net_weights = $request->net_weight;
         $bag_weights = $request->bag_weight;
         $id = $request->purchase_receiving_data_id;
+        // $stock = Stock::where("product_id", $id)->where("voucher_type", "grn")->first();
+        // $stock->qty = $request->accepted_quantity;
+        // $stock->save();
 
         
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
@@ -248,6 +252,7 @@ class QcController extends Controller
         $bag_weights = $request->bag_weight;
         $id = $request->purchase_receiving_data_id;
 
+
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
         $purchase_receiving_data->qc()->update([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
         $purchase_receiving_data->qc->bags()->delete();
@@ -260,7 +265,7 @@ class QcController extends Controller
             ]);
         }
 
-        return response()->json(["qc has been stored"], 200);
+        return response()->json(["qc has been updated"], 200);
     }
     public function destroy(int $id) {
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);

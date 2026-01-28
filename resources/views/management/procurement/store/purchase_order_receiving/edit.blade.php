@@ -1,4 +1,4 @@
-<form action="{{ route('store.purchase-order-receiving.update', optional($purchaseOrderReceiving)->id) }}" method="POST"
+<form style="overflow-x: hidden" action="{{ route('store.purchase-order-receiving.update', optional($purchaseOrderReceiving)->id) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
@@ -60,16 +60,14 @@
             <div class="form-group">
              <label>Location:</label>
              @php
-                 $locations_id = optional($purchaseOrderReceiving->purchase_request)->locations->pluck("location_id")->toArray();
+                $locations_id = optional($purchaseOrderReceiving->purchase_request)->locations->pluck("location_id")->toArray();
              @endphp
-             <select disabled name="company_location" id="company_location_id" class="form-control select2" multiple>
+             <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()">
                  <option value="">Select Location</option>
-                 @foreach (get_locations() as $loc)
+                 @foreach ($location_dropdowns as $loc)
                      <option
-                         value="{{ $loc->id }}" @selected(in_array($loc->id, $locations_id))>{{ $loc->name }}</option>
+                         value="{{ $loc['id'] }}"  @selected($loc['id'] == $purchaseOrderReceiving->location_id)>{{ $loc['text'] }}</option>
                  @endforeach
-                 <input type="hidden" name="location_id" value="{{ optional($purchaseOrderReceiving)->location_id }}"
-                     id="location_id">
              </select>
          </div>
             {{-- reference_no --}}
@@ -129,7 +127,7 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
-                     <th>Receive Weight</th>
+                     <th>Receive Weight (kg)</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
@@ -154,8 +152,8 @@
                       <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'View QC', false, '100%')">&nbsp;</button>
              
                         <tr id="row_{{ $key }}">
-                            <td style="width: 25%">
-                                <select id="category_id_{{ $key }}" disabled
+                            <td style="width: 12%">
+                                <select id="category_id_{{ $key }}" disabled style="width: 140px"
                                     onchange="filter_items(this.value,{{ $key }})"
                                     class="form-control item-select select2" data-index="{{ $key }}">
                                     <option value="">Select Category</option>
@@ -170,10 +168,10 @@
                                 <input type="hidden" name="purchase_order_data_id[]" value="{{ $data->purchase_order_data_id }}">
 
                             </td>
-                            <td style="width: 30%">
-                                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
+                            <td style="width: 22%">
+                                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" style="width: 140px"
                                     disabled class="form-control item-select select2" data-index="{{ $key }}">
-                                    @foreach (get_product_by_category($data->category_id) as $item)
+                                    @foreach (get_product_by_id($data->item_id) as $item)
                                         <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
                                             value="{{ $item->id }}"
                                             {{ $item->id == $data->item_id ? 'selected' : '' }}>
@@ -183,109 +181,115 @@
                                 </select>
                                 <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                             </td>
-                            <td style="width: 30%">
-                                <input type="text" id="uom_{{ $key }}"  class="form-control uom"
+                            <td style="width: 10%">
+                                <input type="text" id="uom_{{ $key }}" style="width: 120px" class="form-control uom"
                                     value="{{ get_uom($data->item_id) }}" disabled readonly>
                                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                             </td>
-                        
-                            <td style="width: 10%">
-                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+
+                            <td style="width: 6%">
+                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc?->is_qc_approved == "approved") step="0.01" min="0" max="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc?->am_approval_status == "approved") step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
-                            <td style="width: 10%">
-                                <input style="width: 100px" onkeyup="calc({{ $key }})"
+                            <td style="width: 6%">
+                                <input style="width: 80px" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="receive_weight[]" value="{{ $data->receive_weight }}"
-                                    id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc?->is_qc_approved == "approved")
+                                    id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc?->am_approval_status == "approved")
                                    >
                             </td>
-                            <td style="width: 10%">
-                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                            <td style="width: 6%">
+                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="accepted_qty[]" readonly value="{{ $data->qc?->accepted_quantity ?? null }}"
                                     id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
                                    >
                             </td>
 
-                            <td style="width: 10%">
-                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                            <td style="width: 6%">
+                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rejected_qty[]" readonly value="{{ $data->qc?->rejected_quantity ?? null }}"
                                     id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
                                    >
                             </td>
 
-                            <td style="width: 10%">
-                                <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                            <td style="width: 6%">
+                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="deduction_per_bag[]" readonly value="{{ $data->qc?->deduction_per_bag ?? null }}"
                                     id="deduction_per_bag{{ $key }}" class="form-control deduction_per_bag" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
 
-                            <td style="width: 30%">
+                            <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="number" style="width: 100px;" name="min_weight[]" @readonly($data->qc?->is_qc_approved == "approved") id="min_weight_0" class="form-control"
+                                        <input type="number" style="width: 100px;" name="min_weight[]" @readonly($data->qc?->am_approval_status == "approved") id="min_weight_0" class="form-control"
                                             step="0.01" min="0" value="{{ $data->purchase_order_data->min_weight }}" placeholder="Min Weight">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 30%">
+                            <td style="width: 8%">
+                                <input type="hidden" value="{{ !is_null($data->qc) }}" name="approval_status[]" />
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="brand[]"  style="width: 100px;" @readonly($data->qc?->is_qc_approved == "approved") value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="brand[]"  style="width: 100px;" @readonly($data->qc?->am_approval_status == "approved") value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Brand">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 30%">
+                            <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="color[]"  style="width: 100px;" @readonly($data->qc?->is_qc_approved == "approved") value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="color[]"  style="width: 100px;" @readonly($data->qc?->am_approval_status == "approved") value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Color">
                                     </div>
                                 </div>
                             </td>
-                            
 
-                            <td style="width: 30%">
+
+                            <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
                                         <input type="text" style="width: 100px;" name="construction_per_square_inch[]"
-                                            id="construction_per_square_inch_0" @readonly($data->qc?->is_qc_approved == "approved") value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
+                                            id="construction_per_square_inch_0" @readonly($data->qc?->am_approval_status == "approved") value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
                                             placeholder="Cons./sq. in.">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 30%">
+                            <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="size[]" @readonly($data->qc?->is_qc_approved == "approved") style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
+                                        <input type="text" name="size[]" @readonly($data->qc?->am_approval_status == "approved") style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
                                             min="0" placeholder="Size">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 30%">
+                            <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" @readonly($data->qc?->is_qc_approved == "approved") name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
+                                         <select class="form-control select2" multiple disabled style="width: 100px">
+                                    @foreach(getStitchingsByIds($data?->purchase_order_data->stitching ?? "") as $stitching)
+                                        <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+                                    @endforeach
+                                </select>
+                                        <input type="hidden" @readonly($data->qc?->am_approval_status == "approved") name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
                                             step="0.01" min="0" placeholder="Stitching">
                                     </div>
                                 </div>
                             </td>
 
 
-                            <td style="width: 30%">
+                            <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" @readonly($data->qc?->is_qc_approved == "approved") name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
-                                            step="0.01" min="0" placeholder="Stitching">
+                                        <input type="text" @readonly($data->qc?->am_approval_status == "approved") name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
+                                            step="0.01" min="0" placeholder="Micron">
                                     </div>
                                 </div>
                             </td>
 
-                            <td style="width:150px;">
-                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                            <td style="width: 12%">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf" style="width: 140px">
                                 @if (!empty($data->purchase_order_data->printing_sample))
                                     <small>
                                         <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
@@ -306,20 +310,22 @@
                                     id="total_{{ $key }}" class="form-control" step="0.01"
                                     min="0" name="total[]">
                             </td> --}}
-                            <td style="width: 25%">
-                                <input style="width: 100px" @readonly($data->qc?->is_qc_approved == "approved") name="remarks[]" type="text" value="{{ $data->remarks }}"
+                            <td style="width: 10%">
+                                <input style="width: 120px" @readonly($data->qc?->am_approval_status == "approved") name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">
                             </td>
-                            <td class="d-flex" style="gap: 10px;">
-                                <button style="width: 100px;" type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                    onclick="remove({{ $key }})"
-                                    data-id="{{ $key }}">Remove</button>
+                            <td style="width: 15%">
+                                <div class="d-flex" style="gap: 5px;">
+                                    <button style="width: 70px;" type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                        onclick="remove({{ $key }})"
+                                        @disabled($data->qc?->am_approval_status == "approved")
+                                        data-id="{{ $key }}">Remove</button>
 
-
-                                    <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
-                                    <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->is_qc_approved == "approved" || !$data->qc?->exists()) style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
-                                    {{-- <button onclick="viewQc('{{ $data->id }}', '{{ $key }}')" style="width: 100px;" type="button" class="btn btn-primary btn-sm viewQc">View QC</button>
+                                    <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 70px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                    <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->am_approval_status == "approved" || !$data->qc?->exists()) style="width: 70px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                    {{-- <button onclick="viewQc('{{ $data->id }}', '{{ $key }}')" style="width: 70px;" type="button" class="btn btn-primary btn-sm viewQc">View QC</button>
               --}}
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -339,7 +345,32 @@
 
 <script>
 
+function fetchUniqueNumber() {
+        let locationId = $('#location_id').val();
+        let contractDate = $('#receiving_date').val();
 
+
+        if (locationId && contractDate) {
+            let url = '/procurement/store/get-unique-number-order-receiving/' + locationId + '/' + contractDate;
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    if (typeof response === 'string') {
+                        $('#reference_no').val(response);
+                    } else {
+                        $('#reference_no').val('');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $('#reference_no').val('');
+                }
+            });
+        } else {
+            $('#reference_no').val('');
+        }
+    }
     function createQc(id, key) {
         $("#modalButton" + key).trigger("click");
     }
@@ -358,7 +389,7 @@ $(document).ready(function () {
         width: '100%'
     });
 
-    let rowIndex = {{ $purchaseOrderReceivingDataCount ?? 1 }};
+    rowIndex = {{ $purchaseOrderReceivingDataCount ?? 1 }};
 
     // function createQc(id, element) {
     //     const accepted_qty = $(element).closest("tr").find(".accepted_qty");
@@ -436,7 +467,7 @@ $(document).ready(function () {
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="width: 10%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly style="width: 120px"></td>
                  <td style="width: 20%">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
                         <option value="">Select Vendor</option>
@@ -506,8 +537,8 @@ $(document).ready(function () {
         $('#uom_' + index).val(uom);
     }
 
-    let allowedCategories = [];
-    let allowedItems = [];
+    allowedCategories = [];
+    allowedItems = [];
 
     function get_purchase(purchaseOrderId) {
         if (!purchaseOrderId) return;

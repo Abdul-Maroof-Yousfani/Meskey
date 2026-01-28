@@ -233,6 +233,8 @@ class ApprovalController extends Controller
             }
 
             $purchaseRequestId = $purchaseRequest->id;
+            $purchase_quotation_id = $record->purchase_quotation->id;
+
 
             $parentModelClass = get_class($record->purchase_quotation);
 
@@ -246,10 +248,21 @@ class ApprovalController extends Controller
                 ->unique()
                 ->toArray();
 
+
+            $unselectedParentIds = $parentModelClass::with(["quotation_data" => function($query) use ($request) {
+                $query->whereNotIn("id", json_decode($request->model_data_ids))
+                        ->whereIn("am_approval_status", ["pending", "reverted"]);
+            }])->where("purchase_request_id", $purchaseRequestId)->first();
+                                                    
+
+
+            foreach($unselectedParentIds->quotation_data as $unselectedParent) {
+                $unselectedParent->am_approval_status = "rejected";
+                $unselectedParent->save();
+            }
+            $unselectedParent = $unselectedParentIds;
+          
             $unselectedParentIds = array_diff($allParentIds, $selectedParentIds);
-
-            // dd($unselectedParentIds);
-
             if ($reqType == 'revert') {
                 $record->am_change_made = 0;
                 $record->save();
@@ -258,8 +271,8 @@ class ApprovalController extends Controller
             } elseif ($reqType == 'reject') {
                 $record->am_change_made = 0;
                 $record->save();
-
                 $returnedChild = $record->reject($request->comments);
+       
             } else { // approve
                 if ($record->canApprove()) {
                     $returnedChild = $record->approve($request->comments);
@@ -297,7 +310,7 @@ class ApprovalController extends Controller
                 if ($parentRecord->canApprove()) {
                     if (!$NoRemainingPendingChild) {
                         // dd("ok1");
-                        $returnedParent = $parentRecord->partial_approve($request->comments);
+                        $returnedParent = $parentRecord->approve($request->comments);
                     } else {
                         // dd("ok2");
 

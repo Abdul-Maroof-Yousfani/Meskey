@@ -179,6 +179,7 @@
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
                             <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Amount</th>
@@ -220,8 +221,12 @@
                                     class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
                             </td>
                             <td>
-                                <input type="number" name="rate[]" id="rate_0" onkeyup="calc(this)"
-                                    class="form-control rate" step="0.01" min="0">
+                                <input type="number" name="rate[]" id="rate_0" onkeyup="calc(this); calculateRates(this)"
+                                    class="form-control rate rate_per_kg" step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input type="number" name="rate_per_mond[]" id="rate_per_mond_0" onkeyup="calc(this); calculateRates(this)"
+                                    class="form-control rate_per_mond" step="0.01" min="0">
                             </td>
                             <td>
 
@@ -272,6 +277,36 @@
 <script>
     salesInquiryRowIndex = 1;
 
+    function calculateForRatePerKg(mond) {
+        return mond / 40;
+    }
+
+    function calculateForRatePerMond(kg) {
+        return kg * 40;
+    }
+
+    function calculateRates(el) {
+
+        if(!$(el).val()) {
+            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
+
+            $(el).closest("tr").find(".rate_per_kg").val("");
+            $(el).closest("tr").find(".rate_per_mond").val("");
+            return;
+        }
+
+        if($(el).hasClass("rate_per_kg")) {
+            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+        } else {
+            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            
+        }
+
+
+    }
     function is_type_credit(el) {
         const type = $(el).val();
         
@@ -316,7 +351,7 @@
             factories
                 .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
                 .forEach(f => {
-                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name}</option>`);
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location.name})</option>`);
                 });
 
             $('#arrival_location_id').val(currentValues).trigger('change.select2');
@@ -330,7 +365,7 @@
             sections
                 .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
                 .forEach(s => {
-                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name}</option>`);
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location.name})</option>`);
                 });
 
             $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');

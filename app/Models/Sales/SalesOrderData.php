@@ -21,7 +21,8 @@ class SalesOrderData extends Model
         "bag_type",
         "bag_size",
         "no_of_bags",
-        "description"
+        "description",
+        "rate_per_mond"
     ];
 
     public function sales_order() {

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\IndicativePriceController;
+use App\Http\Controllers\Procurement\Store\DebitNoteController;
 use App\Http\Controllers\Procurement\Store\PurchaseBillController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
@@ -28,6 +29,7 @@ use App\Http\Controllers\Procurement\Store\{
     PurchaseOrderPaymentRequestController,
     PurchaseOrderReceivingController,
     PurchaseQuotationController,
+    PurchaseReturnController,
     PurchaseRequestController as StorePurchaseRequestController,
     QcController
 };
@@ -162,6 +164,12 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post("/qc/updateAmount", [QcController::class, "updateAmounts"])->name("qc.update-amount");
 
 
+    Route::resource('purchase-return', PurchaseReturnController::class);
+    Route::post('get-purchase-return', [PurchaseReturnController::class, 'getList'])->name('get.purchase-return');
+    Route::get('purchase-return/view/{id}', [PurchaseReturnController::class, 'view'])->name('purchase-return.view');
+    Route::post('purchase-return/get-items', [PurchaseReturnController::class, 'getItems'])->name('purchase-return.get-items');
+    Route::get('get-unique-number-purchase-return', [PurchaseReturnController::class, 'getNumber'])->name('purchase-return.getNumber');
+
     Route::get("purchase-bill/approve-item", [PurchaseBillController::class, "approve_item"])->name("purchase-bill.approve-item");
     Route::resource("purchase-bill", PurchaseBillController::class);
     Route::get('purchase-bill-approvals/{id}', [PurchaseBillController::class, 'manageApprovals'])->name('purchase-bill.approvals');
@@ -169,7 +177,14 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get("get-unique-number-purchase-bill/{locationId}/{contractDate}", [PurchaseBillController::class, "getNumber"])->name("purchase-bill.getNumber");
     Route::get("get-grns", [PurchaseBillController::class, "getGrns"])->name("get.grns");
    
+    Route::get("/debit-note/get-bills/{grn_id}", [DebitNoteController::class, "get_bills"])->name("debit-note.get-bills");
+    Route::get("/debit-note/get-bill-items/{bill_id}", [DebitNoteController::class, "get_bill_items"])->name("debit-note.get-bill-items");
+    Route::get("/debit-note/get-number", [DebitNoteController::class, "get_number"])->name("debit-note.get-number");
+    Route::post('get-debit-notes', [DebitNoteController::class, 'getList'])->name('get.debit-notes');
+    Route::resource("debit-note", DebitNoteController::class);
 
+
+    
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
     Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
     Route::post("qc/update", [QcController::class, "update"])->name("qc.update");
@@ -221,4 +236,9 @@ Route::prefix('indicative-prices')->group(function () {
     Route::delete('/{id}', [IndicativePriceController::class, 'destroy'])->name('indicative-prices.destroy');
     Route::get('/reports', [IndicativePriceController::class, 'reportsView'])->name('indicative-prices.reports');
     Route::post('/reports-list', [IndicativePriceController::class, 'reports'])->name('indicative-prices.reports.get-list');
+});
+
+// AJAX routes that don't require full authentication
+Route::middleware(['web'])->prefix('procurement/store')->name('store.')->group(function () {
+    Route::get('purchase-return/get-bills-by-supplier', [App\Http\Controllers\Procurement\Store\PurchaseReturnController::class, 'getPurchaseBillsBySupplier'])->name('purchase-return.get-bills-by-supplier');
 });

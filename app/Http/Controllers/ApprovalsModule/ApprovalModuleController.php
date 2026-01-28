@@ -44,7 +44,14 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Procurement\Store\PurchaseBagQC',
                 'label' => 'QC data'
             ],
-
+            [
+                'value' => 'App\Models\Procurement\Store\DebitNote',
+                'label' => 'Debit Note'
+            ],
+            [
+                'value' => 'App\Models\Procurement\Store\PurchaseReturn',
+                'label' => 'Purchase Return'
+            ],
             [
                 'value' => 'App\Models\Procurement\Store\PurchaseBill',
                 'label' => 'Purchase Bill'

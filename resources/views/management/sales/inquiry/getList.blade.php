@@ -58,7 +58,9 @@
                         </td>
 
                         <td class="text-right align-middle">
-                            {{ number_format($itemRow['item_data']->rate, 2) }}
+                            {{ number_format($itemRow['item_data']->rate, 2) }}<span class="text-muted">/kg</span>
+                            <br>
+                            {{ number_format($itemRow['item_data']->rate_per_mond, 2) }}<span class="text-muted">/mond</span>
                         </td>
 
                         {{-- Date & Status - Show only on first row --}}

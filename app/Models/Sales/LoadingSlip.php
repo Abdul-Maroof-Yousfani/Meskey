@@ -24,7 +24,8 @@ class LoadingSlip extends Model
         'remarks',
         'delivery_order_id',
         'labour',
-        'created_by'
+        'created_by',
+        'company_id'
     ];
 
     protected $casts = [
@@ -60,6 +61,7 @@ class LoadingSlip extends Model
     /**
      * Check if this loading slip has a rejected dispatch QC (latest QC is rejected)
      */
+    
     public function hasRejectedDispatchQc(): bool
     {
         $latestDispatchQc = $this->loadingProgramItem?->dispatchQc;

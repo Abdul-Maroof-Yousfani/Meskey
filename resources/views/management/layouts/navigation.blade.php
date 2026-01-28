@@ -380,12 +380,35 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                        href="{{ route('store.debit-note.index') }}"
+                        onclick="loadPageContent('{{ route('store.debit-note.index') }}')"
+                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                        <span data-i18n="Task Board">Debit Note</span>
+                    </a>
+
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                        href="{{ route('store.debit-note.index') }}"
+                        onclick="loadPageContent('{{ route('store.debit-note.index') }}')"
+                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                        <span data-i18n="Task Board">Replacement</span>
+                    </a>
+                </li> --}}
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                        href="{{ route('store.purchase-return.index') }}"
+                        onclick="loadPageContent('{{ route('store.purchase-return.index') }}')"
+                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                        <span data-i18n="Task Board">Purchase Return</span>
+                    </a>
+                </li>
+
+                    {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-order-payment-request.index') }}"
                             onclick="loadPageContent('{{ route('store.purchase-order-payment-request.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Payment Request</span>
                         </a>
-                    </li>
+                    </li> --}}
                 </ul>
             </li>
             @endcanAccess
@@ -514,7 +537,7 @@
                 </ul>
             </li>
             @endcanAccess
-            @canAccess('sales')
+            {{-- @canAccess('sales') --}}
             <li class="dropdown nav-item {{ request()->is('sales*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Sales</span></a>
@@ -630,7 +653,7 @@
                     </li> --}}
                 </ul>
             </li>
-            @endcanAccess
+            {{-- @endcanAccess --}}
             @canAccess('procurement-raw-material')
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
