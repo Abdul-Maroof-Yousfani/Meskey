@@ -368,17 +368,20 @@ class HomeController extends Controller
                 break;
 
             case 'location_transfer_pending':
+                // dd('$dateRange',$dateRange);
+                // dd($request->has('location_id'));
                 $title = 'Location Transfer Pending';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('location_transfer_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
+                    
                     // superadmin
                     //  ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                     //   return $q->where('location_id', auth()->user()->company_location_id);
                     // })
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
-                    ->when($request->has('location_id'), function ($q) use ($request) {
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
                     ->latest()
@@ -399,9 +402,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->whereHas('unloadingLocation', function ($q) {
-                        $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
-                    })
+                    // ->whereHas('unloadingLocation', function ($q) {
+                    //     $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    // })
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
                     ->paginate(1000);
@@ -427,7 +430,7 @@ class HomeController extends Controller
                     //     }
                     // )
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
-                    ->when($request->has('location_id'), function ($q) use ($request) {
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
                     ->whereHas('unloadingLocation', function ($q) {
@@ -452,7 +455,7 @@ class HomeController extends Controller
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
                     })
-                    ->when($request->has('location_id'), function ($q) use ($request) {
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                             $sq->where('location_id', $request->location_id);
                         });
@@ -502,7 +505,7 @@ class HomeController extends Controller
                     //     return $q->where('location_id', auth()->user()->company_location_id);
                     // })
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
-                    ->when($request->has('location_id'), function ($q) use ($request) {
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
                     ->whereBetween('created_at', $dateRange)
