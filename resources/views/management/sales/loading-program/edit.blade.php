@@ -35,7 +35,7 @@
                     <option value="">Select Delivery Order</option>
                     @foreach ($DeliveryOrders as $deliveryOrder)
                         <option value="{{ $deliveryOrder->id }}"
-                            @selected(in_array($deliveryOrder->id, $LoadingProgramDos))>
+                            {{ $deliveryOrder->id == $LoadingProgram->delivery_order_id ? 'selected' : '' }}>
                             {{ $deliveryOrder->reference_no }}
                         </option>
                     @endforeach
