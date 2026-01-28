@@ -1294,7 +1294,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
             $result['total_deduction'] = $ticket->lumpsum_deduction;
             $result['total_deduction_kgs'] = $ticket->lumpsum_deduction_kgs;
 
-            return $result;
+            // return $result;
         }
 
         if ($type == null) {
