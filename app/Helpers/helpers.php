@@ -1322,7 +1322,7 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
             $result['total_deduction'] = $samplingRequest->lumpsum_deduction;
             $result['total_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
 
-            return $result;
+            // return $result;
         }
 
         $compulsoryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)
