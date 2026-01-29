@@ -73,6 +73,7 @@ class LoadingProgramController extends Controller
      */
     public function create()
     {
+
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
                                     ->get()
                                     ->filter(function ($sale_order) {
