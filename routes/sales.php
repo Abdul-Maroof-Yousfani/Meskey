@@ -101,4 +101,6 @@ Route::name("sales.")->group(function () {
     Route::post("get-loading-slip", [\App\Http\Controllers\Sales\LoadingSlipController::class, "getList"])->name("get.loading-slip");
     Route::get('/get-loading-slip-ticket-data', [\App\Http\Controllers\Sales\LoadingSlipController::class, 'getTicketRelatedData'])->name('getLoadingSlipTicketData');
 
+    Route::get("/get-so-locations", [LoadingProgramController::class, "getLocationsOfSaleOrder"])->name("get.locations");
+
 });
