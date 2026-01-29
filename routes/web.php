@@ -18,6 +18,7 @@ use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Procurement\Store\PurchaseReturn;
 use App\Models\Procurement\Store\PurchaseReturnData;
 use App\Models\Procurement\Store\QCItems;
+use App\Models\Product;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
@@ -76,7 +77,11 @@ Route::get("/procurement/delete-data", function() {
     PurchaseReturn::query()->delete();
 });
 
-
+Route::get("uom-fill", function() {
+    $products = Product::whereNull("unit_of_measure_id")->update([
+        "unit_of_measure_id" => 1
+    ]);
+});
 
 Route::get("checking-data", function() {
     SalesInquiry::query()->delete();
