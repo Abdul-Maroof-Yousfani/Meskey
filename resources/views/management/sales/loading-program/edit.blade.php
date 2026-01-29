@@ -38,7 +38,7 @@
                             {{ $deliveryOrder->id == $LoadingProgram->delivery_order_id ? 'selected' : '' }}>
                             {{ $deliveryOrder->reference_no }}
                         </option>
-                    @endforeach
+                    @endforeach style="display: none;"
                 </select>
                 <small id="delivery_order_optional_note" class="text-muted"
                     @if (!$isDeliveryOrderOptional) style="display: none;" @endif>

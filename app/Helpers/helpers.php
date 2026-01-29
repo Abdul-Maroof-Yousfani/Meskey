@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNote, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderReceiving, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -710,6 +710,7 @@ function get_product_by_id($id) {
     return $product;
 }
 
+
 function get_customer_name($customer_id) {
     $customer = Customer::where("id", $customer_id)->first();
     return $customer?->name ?? "";
@@ -736,6 +737,7 @@ function get_so_locations($so_id) {
     $companyLocations = CompanyLocation::whereIn('id', $locations)->get();
     return $companyLocations;
 }
+
 
 function get_arrival_locations() {
     $ArrivalLocations = ArrivalLocation::all();
@@ -1563,7 +1565,6 @@ if(!function_exists("getArrivalLocationsOfCompany")) {
     }
 }
 
-
 if(!function_exists("getByProductsById")) {
     function getByProductsById($by_product_id) {
 
@@ -1701,5 +1702,4 @@ if(!function_exists("getArrivalLocations")) {
         return ArrivalLocation::find($sub_arrival_id);
     }
 }
-
 
