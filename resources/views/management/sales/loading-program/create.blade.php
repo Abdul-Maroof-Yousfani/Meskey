@@ -20,7 +20,7 @@
             <div class="form-group">
                 <label id="delivery_order_label">Delivery Order: <span id="delivery_order_required_mark"
                         class="text-danger">*</span></label>
-                <select class="form-control select2" name="delivery_order_id" id="delivery_order_id" multiple>
+                <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple>
                     <option value="">Select Delivery Order</option>
                     @foreach ($DeliveryOrders as $deliveryOrder)
                         <option value="{{ $deliveryOrder->id }}">
@@ -51,8 +51,8 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location</label>
-                <select class="form-control select2 w-100" name="company_locations" id="company_locations" multiple
-                    disabled style="width: 100% !important;">
+                <select class="form-control select2 w-100" name="company_locations" id="company_locations"
+                    style="width: 100% !important;" multiple disabled>
                     <!-- Options will be populated dynamically -->
                 </select>
             </div>
@@ -130,6 +130,9 @@
     </div>
 </form>
 
+    <div class="alert alert-danger mt-3" id="incompatible-dos" style="display: none">
+        <span style="font-weight: bold">Alert: </span>All selected delivery orders must have the same location. Selected Delivery Orders are not compatible
+    </div>  
 <script>
     $(document).ready(function() {
         $('.select2').select2();
@@ -365,6 +368,22 @@
         $('#delivery_order_id').change(function() {
             var delivery_order_ids = $(this).val();
             const type_id = $("#sale_order_id option:selected").data("type");
+            const submitBtn = $(".submitbutton");
+            
+            var delivery_order_texts = [...new Set(
+                $(this).find('option:selected').map(function() {
+                    return $(this).text().split(" - ")[1];
+                }).get()
+            )];
+
+            if(delivery_order_texts.length > 1) {
+                $("#incompatible-dos").css("display", "block");
+                submitBtn.attr("disabled", "disabled");
+            } else {
+                $("#incompatible-dos").css("display", "none ");
+                submitBtn.removeAttr("disabled");
+            }
+
 
          
 
