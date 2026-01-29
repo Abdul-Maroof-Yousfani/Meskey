@@ -38,7 +38,7 @@
                             {{ $deliveryOrder->id == $LoadingProgram->delivery_order_id ? 'selected' : '' }}>
                             {{ $deliveryOrder->reference_no }}
                         </option>
-                    @endforeach style="display: none;"
+                    @endforeach
                 </select>
                 <small id="delivery_order_optional_note" class="text-muted"
                     @if (!$isDeliveryOrderOptional) style="display: none;" @endif>
@@ -108,10 +108,10 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location</label>
-                <select class="form-control select2 w-100" name="company_locations" id="company_locations" multiple
-                    disabled style="width: 100% !important;">
+                <select class="form-control select2 w-100" name="company_locations" id="company_locations" @if($LoadingProgram->saleOrder->pay_type_id != 11) multiple disabled @endif
+                    style="width: 100% !important;">
                     @foreach($locations[0] as $company_location)
-                        <option value="{{ $company_location["id"] }}" selected>{{ $company_location["text"] }}</option>
+                        <option value="{{ $company_location["id"] }}" @if($LoadingProgram->saleOrder->pay_type_id != 11) selected @else @selected(trim($LoadingProgram->company_locations, '"') == $company_location["id"]) @endif>{{ $company_location["text"] }}</option>
                     @endforeach
                 </select>
             </div>
@@ -400,9 +400,9 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
-
     });
 
+    
     // Function to update delivery order options for a specific row
     function updateDeliveryOrderOptionsForRow($select) {
         const currentValue = $select.val();
@@ -1085,6 +1085,62 @@
             // Update sub arrival location options based on selected factory
             updateGalaOptionsForAllRows();
         }
+        $("#company_locations").change(function() {
+        if(!$(this).prop("multiple")) {
+            const company_location = $(this).val();
+            const sale_order_id = $("#sale_order_id").val();
+        
+            $.ajax({
+                url: "{{ route('sales.get.locations') }}",      
+                type: 'GET',                
+                data: {
+                    sale_order_id,
+                    company_location
+                },
+                dataType: 'json',           
+                success: function(response) {
+                    const [arrivalLocation, subArrivalLocation] = response;
+                    // sub_arrival_locations
+                    // Destroy old Select2 and empty
+                    $('#arrival_locations').select2('destroy');
+                    $('#arrival_locations').empty();
+
+                    // Append all options
+                    arrivalLocation.forEach(function(loc){
+                        let option = new Option(loc.text, loc.id, true, true); // true = selected
+                        $('#arrival_locations').append(option);
+                    });
+
+                    // Re-init Select2
+                    $('#arrival_locations').select2();
+                    // do something with response
+
+
+
+                    $('#sub_arrival_locations').select2('destroy');
+                    $('#sub_arrival_locations').empty();
+
+                    // Append all options
+                    subArrivalLocation.forEach(function(loc){
+                        let option = new Option(loc.text, loc.id, true, true); // true = selected
+                        $('#sub_arrival_locations').append(option);
+                    });
+
+                    // Re-init Select2
+                    $('#sub_arrival_locations').select2();
+                    // do something with response
+
+                    updateItemLocations();
+
+                },
+                error: function(xhr, status, error) {
+                    // handle errors
+                }
+            });
+        }
+    })
+
+        $("#company_locations").trigger("change");
 
         // Function to update gala options for a specific row based on selected factory
         function updateGalaOptions($factorySelect) {
