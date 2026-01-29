@@ -75,6 +75,8 @@
             @foreach($companyLocations as $location)
                 var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
                 companyLocationsSelect.append(option);
+                companyLocationsSelect.prop("multiple", true)
+                companyLocationsSelect.prop("disabled", true)
             @endforeach
 
             @foreach($arrivalLocations as $location)
@@ -102,7 +104,8 @@
                 @foreach($soCompanyLocation as $location)
                     var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
                     companyLocationsSelect.append(option);
-                    companyLocationsSelect.attr('multiple', 'multiple');
+                    companyLocationsSelect.prop("multiple", false)
+                    companyLocationsSelect.prop("disabled", false)
                 @endforeach
             @endif
 
@@ -128,5 +131,121 @@
 
         // Note: Packing and brand will be set when delivery order is selected or from sale order if no DO
     });
+</script>
+<script>
+       function updateItemLocations() {
+            const selectedArrivalLocations = $('#arrival_locations').val() || [];
+            const selectedSubArrivalLocations = $('#sub_arrival_locations').val() || [];
+
+            // Update arrival location options
+            $('.arrival-location-select').each(function() {
+                const $select = $(this);
+                const currentValue = $select.val(); // Store current selected value
+                $select.empty().append('<option value="">Select Location</option>');
+
+                // Get location names from the main arrival_locations select
+                $('#arrival_locations option').each(function() {
+                    const value = $(this).val();
+                    const text = $(this).text();
+                    if (value && selectedArrivalLocations.includes(value)) {
+                        const option = new Option(text, value, false, currentValue == value);
+                        $select.append(option);
+                    }
+                });
+
+                // Trigger change to update corresponding gala dropdown
+                if ($select.val()) {
+                    $select.trigger('change');
+                }
+            });
+
+            // Update sub arrival location options based on selected factory
+            updateGalaOptionsForAllRows();
+        }
+         function updateGalaOptionsForAllRows() {
+            $('.arrival-location-select').each(function() {
+                updateGalaOptions($(this));
+            });
+        }
+        function updateGalaOptions($factorySelect) {
+            const selectedFactoryId = $factorySelect.val();
+            const $row = $factorySelect.closest('tr');
+            const $galaSelect = $row.find('.sub-arrival-location-select');
+            const currentGalaValue = $galaSelect.val();
+            const selectedSubArrivalLocations = $('#sub_arrival_locations').val() || [];
+
+            $galaSelect.empty().append('<option value="">Select Sub Location</option>');
+
+            if (selectedFactoryId) {
+                // Filter sub arrival locations that:
+                // 1. Belong to the selected factory (arrival_location_id matches)
+                // 2. Are in the delivery order's sub arrival locations
+                allSubArrivalLocations.forEach(function(subLocation) {
+                    if (subLocation.arrival_location_id == selectedFactoryId &&
+                        selectedSubArrivalLocations.includes(subLocation.id.toString())) {
+                        const option = new Option(subLocation.name, subLocation.id, false,
+                            currentGalaValue == subLocation.id);
+                        $galaSelect.append(option);
+                    }
+                });
+            }
+
+            // Reinitialize select2
+            $galaSelect.select2();
+        }
+    $("#company_locations").change(function() {
+        if(!$(this).prop("multiple")) {
+            const company_location = $(this).val();
+            const sale_order_id = $("#sale_order_id").val();
+        
+            $.ajax({
+                url: "{{ route('sales.get.locations') }}",      
+                type: 'GET',                
+                data: {
+                    sale_order_id,
+                    company_location
+                },
+                dataType: 'json',           
+                success: function(response) {
+                    const [arrivalLocation, subArrivalLocation] = response;
+                    // sub_arrival_locations
+                    // Destroy old Select2 and empty
+                    $('#arrival_locations').select2('destroy');
+                    $('#arrival_locations').empty();
+
+                    // Append all options
+                    arrivalLocation.forEach(function(loc){
+                        let option = new Option(loc.text, loc.id, true, true); // true = selected
+                        $('#arrival_locations').append(option);
+                    });
+
+                    // Re-init Select2
+                    $('#arrival_locations').select2();
+                    // do something with response
+
+
+
+                    $('#sub_arrival_locations').select2('destroy');
+                    $('#sub_arrival_locations').empty();
+
+                    // Append all options
+                    subArrivalLocation.forEach(function(loc){
+                        let option = new Option(loc.text, loc.id, true, true); // true = selected
+                        $('#sub_arrival_locations').append(option);
+                    });
+
+                    // Re-init Select2
+                    $('#sub_arrival_locations').select2();
+                    // do something with response
+
+                    updateItemLocations();
+
+                },
+                error: function(xhr, status, error) {
+                    // handle errors
+                }
+            });
+        }
+    })
 </script>
 
