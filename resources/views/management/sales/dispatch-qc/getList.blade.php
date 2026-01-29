@@ -35,13 +35,10 @@
                         {{ $dispatchQc->created_at->format('d-m-Y H:i') }}
                     </td>
                     <td>
-                       
                         <a onclick="openModal(this,'{{ route('sales.dispatch-qc.show', $dispatchQc->id) }}','View Dispatch QC', true)"
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                      
-                         
                     </td>
                 </tr>
             @endforeach
