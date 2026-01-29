@@ -83,7 +83,7 @@ Route::get("uom-fill", function() {
     ]);
 });
 
-Route::get("update-customer", function($query) {
+Route::get("update-customer", function() {
     Customer::where("name", "Meskey")->update([
         'account_id' => 111
     ]);
