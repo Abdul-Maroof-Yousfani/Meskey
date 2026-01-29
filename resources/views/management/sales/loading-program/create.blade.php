@@ -803,7 +803,7 @@
                     const value = $(this).val();
                     const text = $(this).text();
                     if (value && selectedArrivalLocations.includes(value)) {
-                        const option = new Option(text, value, false, currentValue == value);
+                        const option = new Option(text, value, false, false);
                         $select.append(option);
                     }
                 });
