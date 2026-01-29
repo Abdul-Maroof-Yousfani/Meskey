@@ -37,7 +37,7 @@
             <span style="font-size: 14px;">Balance: {{ delivery_order_balance($data->id) }}</span>
         </td>
         <td>
-            <input type="text" name="qty[]" value="{{ $remaining_qty }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" oninput="calc(this)">
+            <input type="text" name="qty[]" @readonly($sale_order->pay_type_id == 10) value="{{ $remaining_qty }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" oninput="calc(this)">
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>

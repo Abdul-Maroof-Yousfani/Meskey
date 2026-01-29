@@ -338,6 +338,7 @@ class DeliveryOrderController extends Controller
             'sauda_type' => strtolower($sale_order->sauda_type),
             'delivery_date' => $sale_order->delivery_date,
             'payment_term_id' => $sale_order->payment_term_id,
+            'pay_type_id' => $sale_order->pay_type_id,
             'locations' => $locations,
             'factory_map' => $factoryMap,
             'section_map' => $sectionMap,
@@ -363,6 +364,8 @@ class DeliveryOrderController extends Controller
         $remaining_qty = $total_qty - $spent_qty;
 
         $bag_types = BagType::select('id', 'name')->get();
+
+        
 
         return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent', 'remaining_qty'));
     }

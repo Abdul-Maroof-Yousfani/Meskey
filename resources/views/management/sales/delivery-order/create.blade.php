@@ -519,15 +519,21 @@
     function change_withhold_amount() {
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
+        if(advance <= 0 && withhold >= 0) {
+            return;
+        }
         remaining_amount = advance - withhold;
         receipt_vouchers = $("#receipt_vouchers");
+       
        
         bag_size = $("#bag_size_0").val();
         rate = $("#rate_0").val();
         const qtyVal = ((remaining_amount / rate)).toFixed(2);
         $("#qty_0").val(qtyVal);
+        $("#qty_0").prop("readonly", true);
+        $("#amount_0").val(parseFloat(rate) * parseFloat(qtyVal));
         no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-
+      
         if(isNaN(no_of_bags)) {
             $("#no_of_bags_0").val(0);
         } else {
@@ -855,6 +861,7 @@
                 validate_expiry();
 
                 // $("#locations").val(res.locations).trigger("change");
+               
             },
             error: function(error) {
                 // Handle errors here
@@ -920,8 +927,10 @@
             dataType: "html",
             success: function(res) {
                 $('#soTableBody').empty();
-
+                console.log(res);
                 $('#soTableBody').html(res);
+
+             
 
             },
             error: function(error) {
