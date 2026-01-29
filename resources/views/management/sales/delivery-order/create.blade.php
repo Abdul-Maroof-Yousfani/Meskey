@@ -929,8 +929,9 @@
                 $('#soTableBody').empty();
                 console.log(res);
                 $('#soTableBody').html(res);
-
-             
+                $("#locations").val("");
+                $("#locations").trigger();
+                
 
             },
             error: function(error) {
