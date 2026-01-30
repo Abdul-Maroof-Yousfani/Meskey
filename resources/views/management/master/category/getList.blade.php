@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-4">Name </th>
             <th class="col-sm-4">Parent Category</th>
+            <th class="col-sm-4">Category Type</th>
             <th class="col-sm-2">Action</th>
         </tr>
     </thead>
@@ -19,6 +20,9 @@
                         <p class="m-0">
                             <small> {{ $row->parent->name ?? '--' }}</small>
                         </p>
+                    </td>
+                    <td style="text-transform: uppercase">
+                        {{ Str::replace("_", " ", $row->category_type) }}
                     </td>
 
                     <td>
