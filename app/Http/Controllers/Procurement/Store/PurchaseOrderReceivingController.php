@@ -364,19 +364,20 @@ class PurchaseOrderReceivingController extends Controller
                 ]);
 
                 $product = Product::select("id", "account_id")->find($itemId);
-                
-                createTransaction(
-                    $price,
-                    $product->account_id,
-                    8,
-                    $grnNumber->unique_no,
-                    'debit',
-                    'no',
-                    [
-                        'payment_against' => "Goods Received Note",
-                        'remarks' => "Goods Received Note"
-                    ]  
-                );
+                if($product->account_id) {
+                    createTransaction(
+                        $price,
+                        $product->account_id,
+                        8,
+                        $grnNumber->unique_no,
+                        'debit',
+                        'no',
+                        [
+                            'payment_against' => "Goods Received Note",
+                            'remarks' => "Goods Received Note"
+                        ]  
+                    );
+                }
 
             }
 

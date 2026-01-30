@@ -55,18 +55,6 @@ Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
 });
 
-Route::get("change-type", function() {
-   
-
-    $category = Category::where("name", "Store & Spare")->first();
-    $category->update([
-        // "category_type" => "general_items"
-        "is_protected" => "yes"
-    ]);
-
-    dd("Type changed");
-});
-
 Route::get("/procurement/delete-data", function() {
     
     PurchaseRequestData::query()->delete();
