@@ -3,9 +3,9 @@
     $i = 0;
 @endphp
 @foreach ($job_orders as $job_order)
-    @foreach ($job_order->packing_items as $packing_item)
+    @foreach ($job_order->packing_items as $index => $packing_item)
         @php
-            $i = $job_order->id . '-' . $packing_item->id;
+            $i = $job_order->id . '-' . $index;
         @endphp
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>

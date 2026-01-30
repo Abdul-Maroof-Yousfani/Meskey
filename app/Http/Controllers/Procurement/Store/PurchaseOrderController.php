@@ -571,15 +571,15 @@ class PurchaseOrderController extends Controller
         $pr_id = request()->pr_id;
        
         $quotations = PurchaseQuotation::with(["quotation_data", "quotation_data.purchase_order_data"])
-                    ->where("am_approval_status", "approved")
+                    ->whereIn("am_approval_status", ["approved", "partial approved"])
                     ->where("purchase_request_id", $pr_id)
                     ->get();
         
         $quotations = $quotations->filter(function($quotation) use (&$i) { // note the &
-            $totalQty = $quotation->quotation_data->sum("qty");
+            $totalQty = $quotation->quotation_data->where("am_approval_status", 'approved')->sum("qty");
             $po_qty = $quotation->quotation_data->sum(function ($qData) {
                 return $qData->purchase_order_data->sum('qty');
-                });
+            });
             return $po_qty < $totalQty;
         });
 
