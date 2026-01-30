@@ -152,7 +152,7 @@ class ReceiptVoucherController extends Controller
 
     public function getList(Request $request)
     {
-        $receiptVouchers = ReceiptVoucher::with(['account', 'customer'])
+        $receiptVouchers = ReceiptVoucher::with(['account', 'customer', 'items'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -162,7 +162,13 @@ class ReceiptVoucherController extends Controller
                 });
             })
             ->latest()
-            ->paginate(request('per_page', 25));
+            ->paginate(request('per_page', 25))
+            ->through(function($item) {
+                $item->is_advance = $item->items->where("reference_type", "sale_order")->isNotEmpty();
+                return $item;
+            });
+
+       
 
         return view('management.finance.receipt_voucher.getList', compact('receiptVouchers'));
     }
@@ -650,7 +656,7 @@ class ReceiptVoucherController extends Controller
 
             return [
                 'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : 'Sales Invoice',
-                'doc_no' => $docNo,
+                'doc_no' => $item->reference_type === 'sale_order' ? (SalesOrder::find($item->reference_id))->reference_no : (SalesInvoice::find($item->reference_id))->si_no ,
                 'customer' => $customer,
                 'amount' => $item->amount,
                 'tax_amount' => $item->tax_amount,

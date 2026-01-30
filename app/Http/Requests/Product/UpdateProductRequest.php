@@ -32,6 +32,7 @@ class UpdateProductRequest extends FormRequest
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'price' => 'nullable|numeric',
             'is_bag' => 'required',
+            'product_type' => 'required',
             'status' => 'required|in:active,inactive',
         ];
     }

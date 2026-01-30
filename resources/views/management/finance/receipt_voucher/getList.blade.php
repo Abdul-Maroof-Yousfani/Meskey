@@ -8,8 +8,8 @@
             <th>Document</th>
             <th>Account</th>
             <th>Bill/Ref No</th>
-            <th>Cheque No</th>
             <th>Amount</th>
+            <th>Type</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -19,12 +19,19 @@
                 <tr>
                     <td>{{ $voucher->unique_no }}</td>
                     <td>{{ optional($voucher->rv_date)->format('d-m-Y') }}</td>
-                    <td>{{ $voucher->is_direct ? "Direct RV" : "Via Document" }}</td>
+                    <td>{{ $voucher->is_direct ? "Direct RV" : "Via" . (($voucher->is_advance) ? ' Sale Order' : ' Sale Invoice') }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $voucher->voucher_type)) }}</td>
+                    <td>{{ $voucher->is_advance ? 'Sale Order' : 'Sale Invoice' }}</td>
                     <td>{{ $voucher->account->account_name ?? $voucher->account->name ?? 'N/A' }}</td>
                     <td>{{ $voucher->ref_bill_no ?? 'N/A' }}</td>
-                    <td>{{ $voucher->cheque_no ?? 'N/A' }}</td>
                     <td>{{ number_format($voucher->total_amount, 2) }}</td>
+                    <td>
+                        @if($voucher->is_advance)
+                            <span class="badge bg-success">Advance</span>
+                        @else
+                            <span class="badge bg-secondary">Not Advance</span>
+                        @endif
+                    </td>
                     <td>
                         <a onclick="openModal(this, '{{ route('receipt-voucher.show', $voucher->id) }}', 'View Receipt Voucher', true, '80%')"
                             class="info p-1 text-center mr-2 position-relative" title="View">

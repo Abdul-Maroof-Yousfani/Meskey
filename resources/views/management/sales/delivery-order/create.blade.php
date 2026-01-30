@@ -87,7 +87,7 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry()" class="form-control select2">
+                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()" class="form-control select2">
                             <option value="">Select SO</option>
                         </select>
                     </div>
@@ -879,6 +879,7 @@
             method: "GET",
             data: {
                 customer_id: $("#customer_id").val(),
+                sale_order_id: $("#sale_order").val()
             },
             dataType: "json",
             success: function(res) {

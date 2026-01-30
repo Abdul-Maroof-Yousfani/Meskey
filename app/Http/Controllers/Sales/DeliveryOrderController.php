@@ -373,20 +373,27 @@ class DeliveryOrderController extends Controller
     public function get_receipt_vouchers(Request $request)
     {
         $customer_id = $request->customer_id;
+        $sale_order_id = $request->sale_order_id;
+       
+        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')
+                                ->whereHas("items", function($query) use ($sale_order_id) {
+                                    $query->where("reference_type", "sale_order")
+                                            ->where("reference_id", $sale_order_id);
+                                })
+                                ->where("customer_id", $customer_id)
+                                ->select('id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
+                                ->get()
+                                ->map(function ($receipt_voucher) {
+                                    $sum = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
+                                    $receipt_voucher->spent_amount = $sum;
 
-        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')->where("customer_id", $customer_id)->select('id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
-            ->get()
-            ->map(function ($receipt_voucher) {
-                $sum = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
-                $receipt_voucher->spent_amount = $sum;
-
-                return $receipt_voucher;
-            });
+                                    return $receipt_voucher;
+                                });
 
         $data = [];
 
         foreach ($receipt_vouchers as $receipt_voucher) {
-            $remaining_amount = $receipt_voucher->total_amount - $receipt_voucher['spent_amount'];
+            $remaining_amount = $receipt_voucher->items->where("reference_id", $sale_order_id)->sum("net_amount") - $receipt_voucher['spent_amount'];
 
             if ($remaining_amount <= 0) {
                 continue;

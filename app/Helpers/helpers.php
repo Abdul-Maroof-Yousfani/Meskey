@@ -1703,3 +1703,10 @@ if(!function_exists("getArrivalLocations")) {
     }
 }
 
+// if(!function_exists("getSOReferenceNumber") {
+//     function getSOReferenceNumber($so_id) {
+//         $sale_order = SalesOrder::select("reference_no")->find($so_id);
+//         return $sale_order->reference_no;
+//     }
+// })
+
