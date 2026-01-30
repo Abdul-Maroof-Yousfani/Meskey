@@ -29,14 +29,15 @@
                                     <i class="ft-edit font-medium-3"></i>
                                 </a>
                             @endcan
-                        @endif
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('category.destroy', $row->id) }}','{{ route('get.category') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
+                            @can('role-delete')
+                                <a onclick="deletemodal('{{ route('category.destroy', $row->id) }}','{{ route('get.category') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative ">
 
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endcan
+                        @endif
+                        
                     </td>
                 </tr>
             @endforeach
