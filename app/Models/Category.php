@@ -10,6 +10,7 @@ class Category extends Model
         'parent_id',
         'category_type',
         'name',
+        'is_protected'
     ];
 
     // Relationship: Parent Category
