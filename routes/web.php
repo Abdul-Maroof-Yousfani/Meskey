@@ -3,6 +3,7 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Category;
 use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
@@ -52,6 +53,20 @@ use Spatie\Permission\Models\Permission;
 
 Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
+});
+
+Route::get("change-type", function() {
+    $category = Category::where("name", "Bags")->first();
+    $category->update([
+        "category_type" => "general_items"
+    ]);
+
+    $category = Category::where("name", "Store & Spare")->first();
+    $category->update([
+        "category_type" => "general_items"
+    ]);
+
+    dd("Type changed");
 });
 
 Route::get("/procurement/delete-data", function() {
