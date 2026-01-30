@@ -1,3 +1,4 @@
+
 <form method="POST" action="{{route('category.update', $category->id)}}" id="ajaxSubmit" enctype="multipart/form-data">
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.category') }}" />
@@ -18,8 +19,8 @@
                 <label>Parent Category <small>(Optional)</small></label>
                 <select class="form-control" name="parent_id">
                     <option value="">Select Parent Category</option>
-                    @foreach ($categories as $category)
-                        <option {{$category->parent_id == $category->id ? 'selected' : ''}} value="{{$category->id}}">{{$category->name}}</option>
+                    @foreach ($categories as $categoryItem)
+                        <option {{$category->parent_id == $categoryItem->id ? 'selected' : ''}} value="{{$categoryItem->id}}">{{$categoryItem->name}}</option>
                     @endforeach
 
                 </select>
