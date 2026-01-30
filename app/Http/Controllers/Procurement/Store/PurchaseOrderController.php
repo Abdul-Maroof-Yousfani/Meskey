@@ -226,6 +226,7 @@ class PurchaseOrderController extends Controller
             }
 
         }
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();

@@ -159,13 +159,14 @@
                 id="size_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
-            <select class="form-control select2" multiple disabled>
-                @foreach(getStitchingsByIds($data?->stitching ?? "") as $stitching)
-                    <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
-                @endforeach
-            </select>
-            <input style="width: 100px" type="hidden" readonly name="stitching[]" value="{{ $data->stitching ? $data->stitching : $data->purchase_request->stitching }}"
-                id="stitching_{{ $key }}" class="form-control" step="0.01" min="0">
+                <select class="form-control select2" multiple disabled>
+                    @foreach(getStitchingsByIds($data?->purchase_request->stitching ?? "") as $stitching)
+                        <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+                    @endforeach
+                </select>
+            <input style="width: 100px;" type="hidden" readonly name="stitching[]"
+                value="{{ $data->stitching }}" id="stitching_{{ $key }}"
+                class="form-control" step="0.01" min="0">
         </td>
          <td style="width: 30%">
             <input style="width: 100px" type="text" readonly name="micron[]" value="{{ $data->micron ? $data->micron : $data->purchase_request->micron }}"
