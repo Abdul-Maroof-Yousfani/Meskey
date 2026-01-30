@@ -56,14 +56,12 @@ Route::get("/receipt-vouchers/delete", function() {
 });
 
 Route::get("change-type", function() {
-    $category = Category::where("name", "Bags")->first();
-    $category->update([
-        "category_type" => "general_items"
-    ]);
+   
 
     $category = Category::where("name", "Store & Spare")->first();
     $category->update([
-        "category_type" => "general_items"
+        // "category_type" => "general_items"
+        "is_protected" => "yes"
     ]);
 
     dd("Type changed");
