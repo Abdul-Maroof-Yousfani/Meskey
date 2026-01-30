@@ -134,7 +134,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
+        {{-- <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
             <div class="form-group">
                 <label>Type:</label>
                 <br>
@@ -147,7 +147,7 @@
                 </label>
 
             </div>
-        </div>
+        </div> --}}
     </div>
     <div class="row bottom-button-bar">
         <div class="col-12">
