@@ -448,12 +448,12 @@ class ArrivalApproveController extends Controller
                     $approvalFormattedStatus = 'RF';
                 } elseif (isset($ticket->sauda_type_id)) {
                     // Use document_approval_status if available, otherwise use sampling_approved_status
-                    if ($ticket->document_approval_status == 'fully_approved') {
+                    if ($ticket->document_approval_status == 'approved') {
                         $docStatus = 'fully_approved';
-                    } elseif ($ticket->document_approval_status == 'half_approved') {
+                    } elseif ($ticket->document_approval_status == 'rejected') {
                         $docStatus = 'half_approved';
                     } else {
-                        $docStatus = 'RF--1';
+                        $docStatus = 'pending';
                     }
                     if ($ticket->sauda_type_id == 1) { // Pohanch
                         if ($docStatus === 'fully_approved') {
