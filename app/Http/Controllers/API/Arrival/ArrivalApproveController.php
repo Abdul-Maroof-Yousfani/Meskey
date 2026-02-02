@@ -453,7 +453,7 @@ class ArrivalApproveController extends Controller
                     } elseif ($ticket->document_approval_status == 'half_approved') {
                         $docStatus = 'half_approved';
                     } else {
-                        $docStatus = 'RF';
+                        $docStatus = 'RF--1';
                     }
                     if ($ticket->sauda_type_id == 1) { // Pohanch
                         if ($docStatus === 'fully_approved') {
@@ -475,7 +475,7 @@ class ArrivalApproveController extends Controller
                         $approvalFormattedStatus = 'RFtt';
                     }
                 } else {
-                    $approvalFormattedStatus = 'RF';
+                    $approvalFormattedStatus = 'RF-sls';
                 }
 
                 $qcFormattedStatus = 'RdddddF';
