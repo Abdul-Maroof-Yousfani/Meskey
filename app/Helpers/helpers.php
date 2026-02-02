@@ -1279,6 +1279,7 @@ if (!function_exists('getTicketDeductions')) {
 if (!function_exists('SlabTypeWisegetTicketDeductions')) {
     function SlabTypeWisegetTicketDeductions($ticket, $type = null)
     {
+        // dd($ticket);
 
         $result = [
             'is_lumpsum' => false,
