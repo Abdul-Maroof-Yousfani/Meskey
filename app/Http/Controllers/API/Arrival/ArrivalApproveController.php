@@ -462,7 +462,7 @@ class ArrivalApproveController extends Controller
                         } elseif ($docStatus === 'half_approved') {
                             $approvalFormattedStatus = 'P-RH';
                         } else {
-                            $approvalFormattedStatus = 'RF ---dh';
+                            $approvalFormattedStatus = 'Unknown Status';
                         }
                     } elseif ($ticket->sauda_type_id == 2) { // Thadda
                         if ($docStatus === 'fully_approved') {
