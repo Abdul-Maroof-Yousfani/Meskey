@@ -422,6 +422,7 @@ class ArrivalApproveController extends Controller
                     'arrival_sampling_requests.is_done as sampling_is_done',
                     'arrival_sampling_requests.is_re_sampling as sampling_is_re_sampling',
                     'arrival_sampling_requests.created_at as sampling_created_at',
+                    'arrival_sampling_requests.remark as purchaser_remarks',
                     'products.name as qc_product_name',   // ✅ Correct table name
                     'sauda_types.name as sauda_type_name'
 
