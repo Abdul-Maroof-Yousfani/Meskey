@@ -412,6 +412,7 @@ class ArrivalApproveController extends Controller
                     'arrival_tickets.unique_no',
                     'arrival_tickets.truck_no',
                     'arrival_tickets.bilty_no',
+                    'arrival_tickets.bags as no_of_bags',
                     'arrival_tickets.first_qc_status',
                     'arrival_tickets.second_qc_status',
                     'arrival_tickets.document_approval_status',
