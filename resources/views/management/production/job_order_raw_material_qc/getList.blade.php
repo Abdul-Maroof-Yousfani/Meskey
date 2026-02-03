@@ -21,7 +21,7 @@
                     </td>
                     <td>{{ \Carbon\Carbon::parse($qc->qc_date)->format('M d, Y') }}</td>
                     <td>
-                        <span class="badge badge-primary">{{ $qc->jobOrder->job_order_no }}</span>
+                        <span class="badge badge-primary">{{ $qc->jobOrder->job_order_no ?? 'N/A' }}</span>
                     </td>
                     <td>
                         {{ $qc->location->name ?? 'N/A' }}
