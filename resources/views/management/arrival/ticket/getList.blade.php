@@ -59,10 +59,7 @@
                 </label>
             </td>
             <td>
-                <p class="m-0 white-nowrap">
-                    {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }}
-                </p>
+                {!! dateFormatHtml($row->created_at) !!}
             </td>
             <td>
                 <div class="d-flex gap-2 align-items-center justify-content-">
