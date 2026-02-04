@@ -59,6 +59,10 @@ Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
 });
 
+Route::get("get-all-vouchers", function() {
+    dd(TransactionVoucherType::all());
+});
+
 Route::get("voucher-types", function() {
     TransactionVoucherType::create([
         "name" => "QC",
