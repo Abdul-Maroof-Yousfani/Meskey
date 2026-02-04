@@ -4,6 +4,7 @@ use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use App\Models\Category;
+use App\Models\Master\Account\Account;
 use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
@@ -53,6 +54,13 @@ use Spatie\Permission\Models\Permission;
 
 Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
+});
+
+Route::get("create-accounts", function() {
+    $products = DB::table("products")->whereNull("account_id")->get();
+    foreach($products as $product) {
+        Account::create(getParamsForAccountCreationByPath(1, $product->name, '1-2', 'Inventory'));
+    }
 });
 
 Route::get("change-type", function() {
