@@ -52,6 +52,9 @@ class PurchaseOrderReceivingRequest extends FormRequest
             // 'rate' => 'required|array|min:1',
             // 'rate.*' => 'required|numeric|min:0.01',
 
+            'receive_weight' => 'required',
+            'receive_weight.*' => 'required',
+
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
 

@@ -5,13 +5,13 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Date:</label>
-                    <input type="date" name="date" value="" id="date" class="form-control">
+                    <input type="date" name="date" value="{{ date('Y-m-d') }}" id="date" class="form-control" readonly>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">GRN:</label>
-                    <input type="text" name="grn" id="grn" value="{{ $grn }}" readonly class="form-control">
+                    <input type="text" name="grn" id="grn" value="{{ $grn }}" readonly class="form-control" readonly>
                 </div>
             </div>
         </div>

@@ -268,7 +268,7 @@ class PurchaseBillController extends Controller
             $query->where('am_approval_status', 'approved')
                     ->where("accepted_quantity", ">", 0);
         })
-            ->whereDoesntHave("bills")
+            // ->whereDoesntHave("bills")
             ->select('id', 'purchase_order_receiving_no')
             ->where('supplier_id', $supplier_id)
             ->get()

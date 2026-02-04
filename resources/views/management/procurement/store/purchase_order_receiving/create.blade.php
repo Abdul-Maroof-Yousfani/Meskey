@@ -69,8 +69,8 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description"
+                <label>Description:</label>
+                <textarea name="description" id="description" placeholder="Description"
                     class="form-control"></textarea>
             </div>
         </div>
@@ -284,7 +284,7 @@
                 // $("#location_name").trigger("change");
 
                 // $('#reference_no').val(master.reference_no);
-                $('#description').val(master.description);
+                // $('#description').val();
                 // $('#company_location_id').val(response.locations_id).trigger('change');
                 fetchUniqueNumber();
 

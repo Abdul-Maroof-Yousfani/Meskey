@@ -11,14 +11,20 @@ Route::prefix('payment-voucher')->group(function () {
     Route::post('generate-pv-number', [PaymentVoucherController::class, 'generatePvNumber'])->name('payment-voucher.generate-pv-number');
     Route::get('payment-requests/{purchaseOrderId}', [PaymentVoucherController::class, 'getPaymentRequests'])->name('payment-voucher.payment-requests');
     Route::get('account-payment-requests/{accountId}', [PaymentVoucherController::class, 'getAccountPaymentRequests'])->name('payment-voucher.account-payment-requests');
+    Route::get('purchase-bills/{supplierId}', [PaymentVoucherController::class, 'getPurchaseBills'])->name('payment-voucher.purchase-bills');
 });
 
 Route::resource('payment-voucher', PaymentVoucherController::class);
+
+Route::post("payment-voucher/bill/create", [PaymentVoucherController::class, "storeBill"])->name("payment-voucher.bill-store");
+Route::get("bill-payment-voucher/{id}/edit", [PaymentVoucherController::class, "editPaymentVoucher"])->name("payment-voucher.bill-edit");
+Route::put("bill-payment-voucher/{id}/edit", [PaymentVoucherController::class, "updateBillPaymentVoucher"])->name("payment-voucher.bill-update");
 Route::post('get-payment-voucher', [PaymentVoucherController::class, 'getList'])->name('get.payment-vouchers');
 
 // Direct Payment Voucher
 Route::get("/direct-payment-voucher", [PaymentVoucherController::class, "directPaymentVoucher"])->name("direct.payment-voucher");
 Route::post("/direct-payment-voucher/store", [PaymentVoucherController::class, "direct_payment_voucher_store"])->name("direct.payment-voucher.store");
+Route::get("/bill-payment-voucher", [PaymentVoucherController::class, "billPaymentVoucher"])->name("bill.payment-voucher");
 // In routes/web.php or your finance routes file
 Route::post('/payment-voucher/generate-pv-number', [PaymentVoucherController::class, 'generatePvNumber'])
     ->name('payment-voucher.generate-pv-number');

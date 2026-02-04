@@ -17,6 +17,17 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="form-label">Quotation</label>
+                <select id="quotation_no" name="quotation_no" class="form-control select2">
+                    <option value="">Select Quotation</option>
+
+                </select>
+                {{-- <input type="text" name="quotation_no" id="quotation_no" class="form-control"
+                    placeholder="Quotation number will appear here" value="" readonly> --}}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
@@ -26,17 +37,6 @@
                         </option>
                     @endforeach
                 </select>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="form-label">Quotation</label>
-                <select id="quotation_no" name="quotation_no" class="form-control select2">
-                    <option value="">Select Quotation</option>
-
-                </select>
-                {{-- <input type="text" name="quotation_no" id="quotation_no" class="form-control"
-                    placeholder="Quotation number will appear here" value="" readonly> --}}
             </div>
         </div>
         <div class="col-md-3">

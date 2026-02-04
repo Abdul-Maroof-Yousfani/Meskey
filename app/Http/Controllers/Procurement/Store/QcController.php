@@ -22,6 +22,16 @@ class QcController extends Controller
     public function index() {
         return view("management.procurement.store.qc.index");
     }
+    public function deleteQc(Request $request) {
+        $id = $request->id;
+
+        $bag_qc = PurchaseBagQC::find($id);
+        
+
+        $bag_qc->delete();
+
+        return response()->json("Purchase Bag Qc has been deleted!");
+    }
     public function updateAmounts(QCAmountRequest $request) {
         $id  = $request->id;
         $qc = PurchaseBagQC::find($id);

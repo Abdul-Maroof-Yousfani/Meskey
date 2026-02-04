@@ -9,12 +9,13 @@
         @endphp
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
-                <select name="category_id[]" id="category_id_{{ $i }}"
+                <input type="hidden" name="category_id[]" value="{{ getProductCategory($packing_item->bag_product_id) }}" />
+                <select id="category_id_{{ $i }}"
                     class="form-control item-select select2Dropdown jo-{{ $job_order->id }}"
-                    data-index="{{ $i }}" style="width:120px;">
+                    data-index="{{ $i }}" style="width:120px;" disabled>
                     <option value="">Select Category</option>
                     @foreach ($categories ?? [] as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}
+                        <option value="{{ $category->id }}" @selected(getProductCategory($packing_item->bag_product_id) == $category->id)>{{ $category->name }}
                             </option>
                     @endforeach
                 </select>
@@ -28,6 +29,9 @@
                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
                     @endforeach
                 </select>
+
+                <input type="hidden" name="module_type[]" value="packing" />
+                <input type="hidden" name="packing_id[]" value="{{ $packing_item->id }}" />
                 <input type="hidden" name="item_id[]" value="{{ $packing_item->bag_product_id }}" />
                 <input type="hidden" name="index[]" value="{{ $i }}" />
                 <input type="hidden" name="is_single_job_order[]" value="1" />
@@ -40,7 +44,7 @@
 
             <td>
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" style="width:120px;" value="{{ $packing_item->total_bags }}">
+                    min="0" placeholder="Qty" style="width:120px;" value="{{ jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id) }}">
             </td>
 
             <td>
@@ -139,15 +143,20 @@
         @foreach($packing_item->subItems as $sub_packing_item)
         @php
             $i = $job_order->id . '-' . $sub_packing_item->id;
+            $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($sub_packing_item->id);
+            if($balance <= 0) {
+                continue;
+            }
         @endphp
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
             <td>
-                <select name="category_id[]" id="category_id_{{ $i }}"
+                <input type="hidden" name="category_id[]" value="{{ getProductCategory($sub_packing_item->bag_product_id) }}" />
+                <select id="category_id_{{ $i }}"
                     class="form-control item-select select2Dropdown jo-{{ $job_order->id }}"
-                    data-index="{{ $i }}" style="width:120px;">
+                    data-index="{{ $i }}" style="width:120px;" disabled>
                     <option value="">Select Category</option>
                     @foreach ($categories ?? [] as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}
+                        <option value="{{ $category->id }}" @selected(getProductCategory($sub_packing_item->bag_product_id) == $category->id)>{{ $category->name }}
                             </option>
                     @endforeach
                 </select>
@@ -161,6 +170,9 @@
                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($sub_packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
                     @endforeach
                 </select>
+
+                <input type="hidden" name="module_type[]" value="subpacking" />
+                <input type="hidden" name="packing_id[]" value="{{ $sub_packing_item->id }}" />
                 <input type="hidden" name="item_id[]" value="{{ $sub_packing_item->bag_product_id }}" />
                 <input type="hidden" name="index[]" value="{{ $i }}" />
                 <input type="hidden" name="is_single_job_order[]" value="1" />
@@ -173,7 +185,7 @@
 
             <td>
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" style="width:120px;" value="{{ $sub_packing_item->total_bags }}">
+                    min="0" placeholder="Qty" style="width:120px;" value="{{ $balance }}">
             </td>
 
             <td>

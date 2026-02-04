@@ -17,7 +17,6 @@
 @if($remainingQty <= 0) @continue @endif
 
 
-   
 
    <tr id="row_{{ $key }}">
 
@@ -70,7 +69,7 @@
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="number" style="width: 100%;" name="receive_weight[]" id="receive_weight_{{ $key }}"
-                    class="form-control" step="0.01" min="0" value="" placeholder="Receive Weight">
+                    class="form-control" step="0.01" min="0" value="" placeholder="Receive Weight" required>
             </div>
         </div>
     </td>
@@ -125,7 +124,7 @@
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <select class="form-control select2" multiple disabled>
-                    @foreach(getStitchingsByIds($data?->stitching ?? "") as $stitching)
+                    @foreach(getStitchingsByIds($data?->purchase_request_data?->stitching ?? "") as $stitching)
                         <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
                     @endforeach
                 </select>

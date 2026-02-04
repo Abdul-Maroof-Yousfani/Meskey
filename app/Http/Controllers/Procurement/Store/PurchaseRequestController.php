@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Validator;
 
 class PurchaseRequestController extends Controller
 {
@@ -120,7 +121,26 @@ class PurchaseRequestController extends Controller
     public function create()
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'job_order_no')->get();
+        $job_orders = JobOrder::select('id', 'job_order_no')
+                                ->get()
+                                ->reject(function($job_order) {
+                                    $packings = $job_order->packing_items;
+                                    $subpackings = $job_order->sub_packing_items;
+                                    foreach($packings as $packing) {
+                                        $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing->id);
+                                        if($balance <= 0) {
+                                            return true;
+                                        }
+                                    }
+
+                                    foreach($subpackings as $subpacking) {
+                                        $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id);
+                                        if($balance <= 0) {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                });
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
       
@@ -169,6 +189,22 @@ class PurchaseRequestController extends Controller
                         ? implode(',', $request->stitching[$stitchingIndex]) 
                         : $request->stitching[$stitchingIndex];
                 }
+                $balance = null;
+                if($request->module_type && $request->module_type[$index] == 'packing' && $request->packing_id && $request->packing_id[$index]) {
+                    $balance = jobOrderPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                } else if($request->module_type && $request->module_type[$index] == 'subpacking' && $request->packing_id && $request->packing_id[$index]) {
+                    $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                }
+                if(!is_null($balance) && $balance < $request->qty[$index]) {
+                    DB::rollBack();
+                    $validator = Validator::make([], []);
+                    $validator->errors()->add(
+                        "qty[$index]", "Your qty balance is $balance, you can not exceed that balance."
+                    );
+                    return response()->json([
+                        "errors" => $validator->errors()
+                    ], 422);
+                }
 
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
@@ -185,6 +221,8 @@ class PurchaseRequestController extends Controller
                     'printing_sample' => $printingSamplePath,
                     'brand_id' => $request->brands[$index],
                     'remarks' => $request->remarks[$index] ?? null,
+                    'packing_id' => $request->packing_id[$index] ?? null,
+                    "module_type" => $request->module_type[$index] ?? null,
                     "is_single_job_order" => $request->is_single_job_order[$index] ?? false
 
                 ]);
@@ -234,11 +272,12 @@ class PurchaseRequestController extends Controller
         foreach ($locations_id as $location_id) {
             $location_names[] = get_location_name_by_id($location_id);
         }
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
 
-        return view('management.procurement.store.purchase_request.edit', compact('locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
+        return view('management.procurement.store.purchase_request.edit', compact('items', 'locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
     }
 
     public function manageApprovals($id)
@@ -274,7 +313,7 @@ class PurchaseRequestController extends Controller
     public function update(ProcurementPurchaseRequest $request, $id)
     {
         DB::beginTransaction();
-
+            
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
@@ -317,6 +356,26 @@ class PurchaseRequestController extends Controller
                                 : $request->stitching[$stitchingIndexUpdate];
                         }
 
+                        
+                        $balance = null;
+                        if($request->module_type && $request->module_type[$index] == 'packing' && $request->packing_id && $request->packing_id[$index]) {
+                            $balance = jobOrderPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                        } else if($request->module_type && $request->module_type[$index] == 'subpacking' && $request->packing_id && $request->packing_id[$index]) {
+                            $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                        }
+                        $current_qty = $request->current_qty[$index];
+                        if(!is_null($balance) && ($balance + $current_qty) < $request->qty[$index]) {
+                            DB::rollBack();
+                            $validator = Validator::make([], []);
+                            $remaining = $balance + $current_qty;
+                            $validator->errors()->add(
+                                "qty[$index]", "Your qty balance is {$remaining}, you can not exceed that balance."
+                            );
+                            return response()->json([
+                                "errors" => $validator->errors()
+                            ], 422);
+                        }
+
                         $requestData->update([
                             'category_id' => $request->category_id[$index],
                             'item_id' => $itemId,
@@ -330,6 +389,8 @@ class PurchaseRequestController extends Controller
                             'remarks' => $request->remarks[$index] ?? null,
                             'brand_id' => $request->brands[$index],
                             'micron' => $request->micron[$index],
+                            'packing_id' => $request->packing_id[$index] ?? null,
+                            "module_type" => $request->module_type[$index] ?? null,
                             "is_single_job_order" => $request->is_single_job_order[$index]
                         ]);
                         $submittedItems[] = $requestData->id;
@@ -361,6 +422,23 @@ class PurchaseRequestController extends Controller
                             : $request->stitching[$stitchingIndexNew];
                     }
 
+                    $balance = null;
+                    if($request->module_type && $request->module_type[$index] == 'packing' && $request->packing_id && $request->packing_id[$index]) {
+                        $balance = jobOrderPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                    } else if($request->module_type && $request->module_type[$index] == 'subpacking' && $request->packing_id && $request->packing_id[$index]) {
+                        $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                    }
+                    if(!is_null($balance) && $balance < $request->qty[$index]) {
+                        DB::rollBack();
+                        $validator = Validator::make([], []);
+                        $validator->errors()->add(
+                            "qty[$index]", "Your qty balance is $balance, you can not exceed that balance."
+                        );
+                        return response()->json([
+                            "errors" => $validator->errors()
+                        ], 422);
+                    }
+
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
                         'category_id' => $request->category_id[$index],
@@ -375,6 +453,8 @@ class PurchaseRequestController extends Controller
                         'printing_sample' => $printingSamplePath,
                         'brand_id' => $request->brands[$index],
                         'remarks' => $request->remarks[$index] ?? null,
+                        'packing_id' => $request->packing_id[$index] ?? null,
+                        "module_type" => $request->module_type[$index] ?? null,
                         'micron' => $request->micron[$index],
                     ]);
 

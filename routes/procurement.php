@@ -158,6 +158,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc/getList", [QcController::class, "getList"])->name("qc.getList");
+    Route::delete("qc/delete", [QcController::class, "deleteQc"])->name("qc.remove");
     Route::get("/qc/view", [QcController::class, "show"])->name("qc.view");
     Route::get("/qc/edit", [QcController::class, "edit"])->name("qc.edit");
     Route::get("/qc/create", [QcController::class, "create"])->name("qc.show-create");

@@ -12,6 +12,10 @@
             </div>
             <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                 <!-- Create Regular Payment Voucher -->
+
+                <a href="{{ route('bill.payment-voucher') }}" class="btn btn-warning position-relative mr-2">
+                    <i class="ft-plus"></i> Create Bill Payment Voucher
+                </a>
                 <a href="{{ route('payment-voucher.create') }}" class="btn btn-primary position-relative mr-2">
                     <i class="ft-plus"></i> Create Payment Voucher
                 </a>

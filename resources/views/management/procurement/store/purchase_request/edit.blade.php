@@ -57,7 +57,7 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
+            <button type="button" style="float: right; " class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn">
                 <i class="fa fa-plus"></i> &nbsp; Add New Item
             </button>
@@ -94,8 +94,10 @@
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
 
                 <td>
-                    <select name="category_id[]" id="category_id_{{ $index }}" onchange="filter_items(this.value,{{ $index }})"
-                        class="form-control item-select select2" data-index="{{ $index }}" style="width:150px;">
+
+                    <input type="hidden" name="category_id[]" value="{{ $item->category_id }}" />
+                    <select id="category_id_{{ $index }}" onchange="filter_items(this.value,{{ $index }})"
+                        class="form-control item-select select2" data-index="{{ $index }}" style="width:150px;" disabled>
                         <option value="">Select Category</option>
                         @foreach ($categories ?? [] as $category)
                         <option value="{{ $category->id }}" {{ $item->category_id == $category->id ? 'selected' : '' }}>
@@ -105,14 +107,19 @@
                 </td>
 
                 <td>
-                    <select name="item_id[]" id="item_id_{{ $index }}" onchange="get_uom({{ $index }})"
-                        class="form-control item-select select2" data-index="{{ $index }}" style="width:150px;">
-                        <option value="">Select Item</option>
-                        @if ($item->item)
-                        <option value="{{ $item->item->id }}" selected data-uom="{{ $item->item->unitOfMeasure->name ?? '' }}">
-                            {{ $item->item->name }}</option>
-                        @endif
-                    </select>
+                    <input type="hidden" name="item_id[]" value="{{ $item->item->id }}" />
+                        <select id="item_id_{{ $index }}" onchange="get_uom('{{ $index }}')"
+                            class="form-control item-select select2Dropdown" data-index="{{ $index }}" style="width:120px;" disabled>
+                            <option value="">Select Item</option>
+                            @foreach($items as $product)
+                                <option value="{{ $product->id }}" data-uom="{{ $product->unitOfMeasure->name }}" @selected($product->id == $item->item->id)>{{ $product->name }}</option>
+                            @endforeach
+                        </select>
+
+
+                <input type="hidden" name="current_qty[]" value="{{ $item->qty }}" />
+                <input type="hidden" name="module_type[]" value="{{ $item->module_type }}" />
+                <input type="hidden" name="packing_id[]" value="{{ $item->packing_id }}" />
                     <input type="hidden" name="index[]" value="{{ $index }}" />
                     <input type="hidden" name="is_single_job_order[]" value="{{ $item->is_single_job_order }}" />
                 </td>
@@ -129,7 +136,7 @@
                         <input type="hidden" name="job_order_id[{{ $index }}][]" value="{{ $item->JobOrder->pluck("job_order_id")->toArray()[0] }}" />
                     @endif
                     <select name="job_order_id[{{ $index }}][]" id="job_order_id_{{ $index }}" multiple
-                        class="form-control item-select select2" data-index="{{ $index }}"  style="width:180px;" @disabled($item->is_single_job_order)>
+                        class="form-control item-select select2" data-index="{{ $index }}"  style="width:180px;" @disabled($item->is_single_job_order != 1)>
                         <option value="">Select Job Order</option>
                         @foreach ($job_orders ?? [] as $job_order)
                         <option value="{{ $job_order->id }}"
@@ -142,8 +149,9 @@
                 </td>
 
                  <td>
-                    <select name="brands[]" id="brands_{{ $index }}" class="form-control item-select color-select"
-                        style="width:150px;">
+                    <input type="hidden" name="brands[]" value="{{ $item->brand_id }}" />
+                    <select id="brands_{{ $index }}" class="form-control item-select color-select"
+                        style="width:150px;" disabled>
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                         <option @selected($brand->id == getBrandById($item->brand_id)->id) value="{{ $brand->id }}">
@@ -153,12 +161,13 @@
                 </td>
                
                 <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" style="width:120px;"></td>
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" style="width:120px;" readonly></td>
 
            
                 <td>
-                    <select name="color[]" id="color_{{ $index }}" class="form-control item-select color-select"
-                        style="width:150px;">
+                    <input type="hidden" name="color[]" value="{{ $item->color }}" />
+                    <select id="color_{{ $index }}" class="form-control item-select color-select"
+                        style="width:150px;" disabled>
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                         <option @selected($color->id == getColorById($item->color)->id) value="{{ $color->id }}">
@@ -169,11 +178,12 @@
 
                 <td><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_0"
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
-                        placeholder="Cons./sq. in." style="width:120px;"></td>
+                        placeholder="Cons./sq. in." style="width:120px;" readonly></td>
 
                 <td>
-                    <select name="size[]" id="size_{{ $index }}" class="form-control item-select size-select"
-                        style="width:150px;">
+                    <input type="hidden" name="size[]" value="{{ $item->size }}" />
+                    <select id="size_{{ $index }}" class="form-control item-select size-select"
+                        style="width:150px;" disabled>
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
                         <option @selected($size->id == getSizeById($item->size)->id) value="{{ $size->id }}">
@@ -186,7 +196,8 @@
                     @php
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
-                    <select name="stitching[{{ $index }}][]" id="stitching_{{ $index }}" class="form-control item-select stitching-select select2" style="width:150px;" multiple>
+                    <input type="hidden" name="stitching[{{ $index }}][]" value="{{ $item->stitching }}" />
+                    <select disabled id="stitching_{{ $index }}" class="form-control item-select stitching-select select2" style="width:150px;" multiple>
                         <option value="">Select Stitching</option>
                         @foreach(getAllStitchings() ?? [] as $stitching)
                             <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
@@ -198,7 +209,7 @@
 
 
                 <td><input type="text" name="micron[]" id="micron_0" class="form-control" 
-                        min="0" value="{{ $item->micron }}" placeholder="Micron" style="width:120px;"></td>
+                        min="0" value="{{ $item->micron }}" placeholder="Micron" style="width:120px;" readonly></td>
 
                 <td>
                     <input type="file" name="printing_sample[]" id="printing_sample_{{ $loop->index }}"
@@ -309,10 +320,8 @@
     function addRow() {
 
         let index = `${purchaseRequestRowIndex++}0`;
-        let row = `
-            <tr id="row_${index}">
-                <input type="hidden" name="item_row_id[]" value="">
-                <td style="width: 10%">
+        let row = `<tr id="row_${index}">
+                    <td style="width: 10%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <select name="category_id[]" id="category_id_${index}"
@@ -331,11 +340,16 @@
                     <td style="width: 15%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
-                                    class="form-control item-select" data-index="0">
-                                    <option value="">Select Item</option>
+                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom(${index})"
+                                    class="form-control item-select item-list" data-index="0">
+                                    @foreach($items as $item)
+                                        <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}">{{ $item->name }}</option>
+                                    @endforeach
                                 </select>
+                                <input type="hidden" name="packing_id[]" value="" />
+                                <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
+         
                             </div>
                         </div>
                     </td>
@@ -353,16 +367,8 @@
                     <td style="width: 8%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control" step="0.01"
-                                    min="0" placeholder="Net Amount">
-                            </div>
-                        </div>
-                    </td>
-                    <td style="width: 8%">
-                        <div class="loop-fields">
-                            <div class="form-group mb-0">
                                 <select name="job_order_id[${index}][]" id="job_order_id_${index}" multiple
-                                    class="form-control item-select" data-index="0">
+                                    class="form-control item-select" data-index="0" disabled>
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
                                         <option value="{{ $job_order->id }}">
@@ -373,6 +379,12 @@
                             </div>
                         </div>
                     </td>
+                    <td><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select" style="width:150px;">
+                        <option value="">Select Brand</option>
+                        @foreach(getAllBrands() ?? [] as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select></td>
                     <td style="width: 7%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -381,28 +393,12 @@
                             </div>
                         </div>
                     </td>
-
-                <td>
-                    <select name="brands[]" id="brands_${index}" class="form-control item-select color-select"
-                        style="width:150px;">
-                        <option value="">Select Brand</option>
-                        @foreach(getAllBrands() ?? [] as $brand)
-                        <option @selected($brand->id == getBrandById($item->brand_id)->id) value="{{ $brand->id }}">
-                            {{ $brand->name }}</option>
+                    <td><select name="color[]" id="color_${index}" class="form-control item-select color-select" style="width:150px;">
+                        <option value="">Select Color</option>
+                        @foreach(getAllColors() ?? [] as $color)
+                            <option value="{{ $color->id }}">{{ $color->color }}</option>
                         @endforeach
-                    </select>
-                </td>
-
-                    <td>
-                        <select name="color[]" id="color_${index}" class="form-control item-select color-select"
-                            style="width:150px;">
-                            <option value="">Select Color</option>
-                            @foreach(getAllColors() ?? [] as $color)
-                            <option @selected($color->id == getColorById($item->color)->id) value="{{ $color->id }}">
-                                {{ $color->color }}</option>
-                            @endforeach
-                        </select>
-                    </td>
+                    </select></td>
                     
 
                     <td style="width: 7%">
@@ -414,20 +410,18 @@
                             </div>
                         </div>
                     </td>
-                    <td>
-                    <select name="size[]" id="size_${index}" class="form-control item-select size-select"
-                            style="width:150px;">
-                            <option value="">Select Size</option>
-                            @foreach(getAllSizes() ?? [] as $size)
-                            <option @selected($size->id == getSizeById($item->size)->id) value="{{ $size->id }}">
-                                {{ $size->size }}</option>
-                            @endforeach
-                        </select>
-                    </td>
-                    <td style="width: 6%">
+                    
+                    <td><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width:150px;">
+                        <option value="">Select Size</option>
+                        @foreach(getAllSizes() ?? [] as $size)
+                            <option value="{{ $size->id }}">{{ $size->size }}</option>
+                        @endforeach
+                    </select></td>
+
+                    <td >
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:150px;" multiple>
+                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:100%;" multiple>
                                     <option value="">Select Stitching</option>
                                     @foreach(getAllStitchings() ?? [] as $stitching)
                                         <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
@@ -436,8 +430,14 @@
                             </div>
                         </div>
                     </td>
-
-                <td><input type="text" name="micron[]" id="micron_${index}" class="form-control" placeholder="Micron" style="width:120px;"></td>
+                    <td style="width: 6%">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="micron[]" id="micron_${index}" class="form-control"
+                                    step="0.01" min="0" placeholder="Micron">
+                            </div>
+                        </div>
+                    </td>
                     <td style="width: 8%">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -452,11 +452,11 @@
                             placeholder="Remarks">
                     </td>
                     <td>
-                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow('${index}')">
+                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})">
                             <i class="fa fa-trash"></i>
                         </button>
                     </td>
-            </tr>`;
+                </tr>`;
 
         $('#purchaseRequestBody').append(row);
 

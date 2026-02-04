@@ -471,7 +471,7 @@ class PurchaseQuotationController extends Controller
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
             // })
             ->get();
-
+                
         $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             // ->where('am_approval_status', 'pending')

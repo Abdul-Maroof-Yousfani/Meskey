@@ -63,6 +63,7 @@ class ProductController extends Controller
      */
     public function create(Request $request)
     {
+        
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
         $parentProducts = Product::where('parent_id', null)->get();

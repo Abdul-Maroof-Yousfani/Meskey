@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, BillPaymentVoucherData, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseAgainstJobOrder, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseRequest, Procurement\Store\PurchaseRequestData, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, Production\JobOrder\JobOrderPackingItem, Production\JobOrder\JobOrderPackingSubItem, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -121,6 +121,7 @@ if(!function_exists('getUserCurrentCompanyArrivalLocations')) {
 
 function numberToWords($number)
 {
+    return "one";
     $number = floatval($number);
     $whole = floor($number);
     $fraction = round(($number - $whole) * 100);
@@ -1703,6 +1704,101 @@ if(!function_exists("getArrivalLocations")) {
         return ArrivalLocation::find($sub_arrival_id);
     }
 }
+
+function purchase_bill($purchase_bill_id) {
+    $purchase_bill = PurchaseBill::with("grn")->find($purchase_bill_id);
+
+    return $purchase_bill;
+}
+
+function getDebitNoteAmountOfBill(PurchaseBill $bill) {
+    $debit_note_items_amount = DebitNoteData::whereHas("debit_note", function($query) {
+                                            $query->where("am_approval_status", "approved");
+                                        })
+                                        ->where("bill_id", $bill->id)
+                                        ->sum("amount");
+    return $debit_note_items_amount;
+}
+
+function totalBill(PurchaseBill $bill) {
+    $total_qty = $bill->bill_data->sum('final_amount');
+    return $total_qty;
+}
+
+function spentBill(PurchaseBill $bill) {
+    $spent_qty = BillPaymentVoucherData::where("purchase_bill_id", $bill->id)->sum("amount");
+    return $spent_qty;
+}
+
+function getPaymentVoucherBillBalance(PurchaseBill $bill) {
+  
+    $debit_note_items_amount = getDebitNoteAmountOfBill($bill);
+
+    $total_qty = totalBill($bill);
+    $spent_qty = spentBill($bill);
+    $remaining_qty = ($total_qty - $spent_qty) - $debit_note_items_amount;
+    return $remaining_qty;
+}
+
+function jobOrderBalanceAgainstPurchaseRequest($job_order_id, $total_qty) {
+    $selected_job_orders = PurchaseAgainstJobOrder::where("job_order_id", $job_order_id)
+                                            ->get()
+                                            ->pluck("purchase_request_data_id")
+                                            ->toArray();
+
+    $used_qty = PurchaseRequestData::whereIn("id", $selected_job_orders)->sum("qty");
+    return $total_qty - $used_qty;
+                                                    
+}
+
+
+function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id) {
+    $used_qty = PurchaseRequestData::where("packing_id", $packing_id)
+                                                ->where("module_type", "packing")
+                                                ->sum("qty");
+    $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
+
+    return ($job_order_packing->total_bags) - $used_qty;
+}
+
+function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id) {
+    $used_qty = PurchaseRequestData::where("packing_id", $subpacking_id)
+                                                ->where("module_type", "subpacking")
+                                                ->sum("qty");
+
+    $job_order_sub_packing = JobOrderPackingSubItem::select("id", "total_bags")->find($subpacking_id);
+
+    return ($job_order_sub_packing->total_bags) - $used_qty;
+}
+
+function getDoQty($do_id) {
+    $delivery_order = DeliveryOrder::find($do_id);
+    if($delivery_order) {
+        return $delivery_order->delivery_order_data->sum("qty");
+    }
+
+    return "";
+}
+
+function getDoReferenceNo($do_id) {
+    $delivery_order = DeliveryOrder::find($do_id);
+    if($delivery_order) {
+        return $delivery_order->reference_no;
+    } else {
+        return "N/A";
+    }
+}
+
+function getProductCategory($product_id) {
+    $product = Product::select("id", "category_id")->find($product_id);
+
+    $category = null;
+    if($product) {
+        $category = Category::select("id", "name")->find($product->category_id);
+    }
+
+    return $category ? $category->id : null;
+} 
 
 // if(!function_exists("getSOReferenceNumber") {
 //     function getSOReferenceNumber($so_id) {

@@ -270,7 +270,7 @@
                                 </td>
                                 <td style="width: 30%">
                                       <select class="form-control select2" multiple disabled>
-                                            @foreach(getStitchingsByIds($data?->stitching ?? "") as $stitching)
+                                            @foreach(getStitchingsByIds($data?->purchase_request_data?->stitching ?? "") as $stitching)
                                                 <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
                                             @endforeach
                                         </select>

@@ -209,7 +209,7 @@
                                         <input type="text" readonly
                                             name="loading_program_items[{{ $index }}][do_qty]"
                                             class="form-control form-control-sm do_qty" required style="min-width: 100px;"
-                                            value="{{ $LoadingProgram->deliveryOrder?->delivery_order_data->first()->qty ?? '' }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ getDoQty($item->delivery_order_id) }}" @disabled($item->firstWeighbridge)>
                                     </div>
                                 </td>
                                 <td>

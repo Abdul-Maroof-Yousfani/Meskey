@@ -270,13 +270,16 @@
         </div>
     </td>
 
-    <td style="width: 180px; min-width: 180px;">
+     <td style="width: 8%">
         <div class="loop-fields">
             <div class="form-group mb-0">
-                <input type="text" style="width: 100%;" 
-                       name="stitching[]" id="stitching_{{ $key }}"
-                       value="{{ $data->purchase_order_data->stitching }}" 
-                       class="form-control" placeholder="Stitching">
+                    <select class="form-control select2" multiple disabled style="width: 100px">
+            @foreach(getStitchingsByIds($data?->purchase_order_data?->purchase_request_data?->stitching ?? "") as $stitching)
+                <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+            @endforeach
+        </select>
+                <input type="hidden" @readonly($data->qc?->am_approval_status == "approved") name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
+                    step="0.01" min="0" placeholder="Stitching">
             </div>
         </div>
     </td>

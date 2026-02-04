@@ -121,6 +121,7 @@ class DeliveryOrderController extends Controller
             $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
+            
 
             foreach ($request->item_id as $key => $item) {
                 $balance = delivery_order_balance($request->so_data_id[$key]);
@@ -129,7 +130,7 @@ class DeliveryOrderController extends Controller
                     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 }
                 if($remaining_qty < $request->qty[$key]) {
-                    return response()->json("Total remaining qty: $remaining_qty. you can not exceed this balance", 422);
+                    return response()->json("Total remaining qty(kg): $remaining_qty. you can not exceed this balance", 422);
                 }
 
                 $delivery_order->delivery_order_data()->create([
