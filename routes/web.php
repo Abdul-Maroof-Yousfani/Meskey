@@ -65,6 +65,10 @@ Route::get("get-all-vouchers", function() {
 
 Route::get("voucher-types", function() {
 
+    $all_transaction_types = TransactionVoucherType::all();
+    dd($all_transaction_types);
+    return;
+    
     $newTransaction = TransactionVoucherType::create([
         "name" => "Goods Receiving Note",
         "code" => "GRN",
