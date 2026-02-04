@@ -431,8 +431,6 @@ class ArrivalApproveController extends Controller
                 )
                 ->orderBy('arrival_tickets.id', 'desc')
                 ->get();
-
-            // dd($tickets);
             /* ===== Final Mapping ===== */
             $data = $tickets->map(function ($ticket) {
 
@@ -490,7 +488,7 @@ class ArrivalApproveController extends Controller
                 } elseif ($ticket->sampling_is_done == 'yes' && $ticket->sampling_approved_status == 'approved') {
                     $qcFormattedStatus = 'fully_approved';
                 } elseif ($ticket->sampling_is_done == 'yes' && $ticket->sampling_approved_status == 'rejected') {
-                    $qcFormattedStatus = 'full_rejected';
+                    $qcFormattedStatus = 'half_approved';
                 }
                 $ticket->qcFormattedStatus = $qcFormattedStatus;
                 $ticket->approvalFormattedStatus = $approvalFormattedStatus;
