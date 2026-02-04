@@ -29,12 +29,16 @@ class InnerSampleRequestController extends Controller
                 ->leftJoin('arrival_sampling_requests', function ($join) {
                     $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
                         ->where('sampling_type', 'inner')
-                        ->where('approved_status', 'pending');
+                        ->where('approved_status', 'pending')
+                        ->where('arrival_sampling_requests.deleted_at', null);
                 })
-                ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                    return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
-                        $query->where('arrival_location_id', $authUser->arrival_location_id);
-                    });
+                // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+                //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+                //     });
+                // })
+                ->whereHas('unloadingLocation', function ($q) {
+                    $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
                 ->whereNull('arrival_sampling_requests.id')
                 ->select('arrival_tickets.*')
@@ -98,13 +102,13 @@ class InnerSampleRequestController extends Controller
             }
 
             $arrivalSampleReq = ArrivalSamplingRequest::create([
-                'company_id'        => $validated['company_id'],
+                'company_id' => $validated['company_id'],
                 'arrival_ticket_id' => $validated['ticket_id'],
-                'sampling_type'     => 'inner',
-                'is_re_sampling'    => 'no',
-                'is_done'           => 'no',
-                'remark'            => $request->remark ?? null,
-                'created_by'        => auth()->id(),
+                'sampling_type' => 'inner',
+                'is_re_sampling' => 'no',
+                'is_done' => 'no',
+                'remark' => $request->remark ?? null,
+                'created_by' => auth()->id(),
             ]);
 
             $responseData = [
