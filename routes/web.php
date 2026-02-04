@@ -25,6 +25,8 @@ use App\Models\Production\JobOrder\JobOrder;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 
+use App\Models\Supplier;
+
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\FirstWeighbridge;
 use App\Models\Sales\LoadingProgram;
