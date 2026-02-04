@@ -1,3 +1,4 @@
+
 <form style="overflow-x: hidden" action="{{ route('store.purchase-order-receiving.update', optional($purchaseOrderReceiving)->id) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -190,13 +191,13 @@
                             <td style="width: 6%">
                                 <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc?->am_approval_status == "approved") step="0.01" min="0" max="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc) step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
                             <td style="width: 6%">
                                 <input style="width: 80px" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="receive_weight[]" value="{{ $data->receive_weight }}"
-                                    id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc?->am_approval_status == "approved")
+                                    id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc)
                                    >
                             </td>
                             <td style="width: 6%">
@@ -223,7 +224,7 @@
                             <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="number" style="width: 100px;" name="min_weight[]" @readonly($data->qc?->am_approval_status == "approved") id="min_weight_0" class="form-control"
+                                        <input type="number" style="width: 100px;" name="min_weight[]" @readonly($data->qc) id="min_weight_0" class="form-control"
                                             step="0.01" min="0" value="{{ $data->purchase_order_data->min_weight }}" placeholder="Min Weight">
                                     </div>
                                 </div>
@@ -232,7 +233,7 @@
                                 <input type="hidden" value="{{ !is_null($data->qc) }}" name="approval_status[]" />
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="brand[]"  style="width: 100px;" @readonly($data->qc?->am_approval_status == "approved") value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="brand[]"  style="width: 100px;" @readonly($data->qc) value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Brand">
                                     </div>
                                 </div>
@@ -240,7 +241,7 @@
                             <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="color[]"  style="width: 100px;" @readonly($data->qc?->am_approval_status == "approved") value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="color[]"  style="width: 100px;" @readonly($data->qc) value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Color">
                                     </div>
                                 </div>
@@ -251,7 +252,7 @@
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
                                         <input type="text" style="width: 100px;" name="construction_per_square_inch[]"
-                                            id="construction_per_square_inch_0" @readonly($data->qc?->am_approval_status == "approved") value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
+                                            id="construction_per_square_inch_0" @readonly($data->qc) value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
                                             placeholder="Cons./sq. in.">
                                     </div>
                                 </div>
@@ -259,7 +260,7 @@
                             <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="size[]" @readonly($data->qc?->am_approval_status == "approved") style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
+                                        <input type="text" name="size[]" @readonly($data->qc) style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
                                             min="0" placeholder="Size">
                                     </div>
                                 </div>
@@ -268,11 +269,11 @@
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
                                          <select class="form-control select2" multiple disabled style="width: 100px">
-                                    @foreach(getStitchingsByIds($data?->purchase_order_data->stitching ?? "") as $stitching)
+                                    @foreach(getStitchingsByIds($data?->purchase_order_data?->purchase_request_data?->stitching ?? "") as $stitching)
                                         <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
                                     @endforeach
                                 </select>
-                                        <input type="hidden" @readonly($data->qc?->am_approval_status == "approved") name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
+                                        <input type="hidden" @readonly($data->qc) name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
                                             step="0.01" min="0" placeholder="Stitching">
                                     </div>
                                 </div>
@@ -282,7 +283,7 @@
                             <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" @readonly($data->qc?->am_approval_status == "approved") name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
+                                        <input type="text" @readonly($data->qc) name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
                                             step="0.01" min="0" placeholder="Micron">
                                     </div>
                                 </div>
@@ -311,7 +312,7 @@
                                     min="0" name="total[]">
                             </td> --}}
                             <td style="width: 10%">
-                                <input style="width: 120px" @readonly($data->qc?->am_approval_status == "approved") name="remarks[]" type="text" value="{{ $data->remarks }}"
+                                <input style="width: 120px" @readonly($data->qc) name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">
                             </td>
                             <td style="width: 15%">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\BillPaymentVoucherData;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\Broker;
@@ -12,12 +13,14 @@ use App\Models\Master\Tax;
 use App\Models\Master\Vendor;
 use App\Models\PaymentVoucher;
 use App\Models\PaymentVoucherData;
+use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentVoucherController extends Controller
 {
@@ -27,6 +30,37 @@ class PaymentVoucherController extends Controller
     public function index()
     {
         return view('management.finance.payment_voucher.index');
+    }
+
+    public function billPaymentVoucher() {
+        $accounts = Account::where("hierarchy_path", "like", "2-2%")->get();
+        $bank_accounts = Account::where("hierarchy_path", "like", "1-1%")
+                                ->whereNot("hierarchy_path", "1-1")
+                                ->get();
+
+        $suppliers = Supplier::where("status", "active")->get();
+
+        
+        return view('management.finance.payment_voucher.billPaymentVoucher', compact('accounts', 'bank_accounts', 'suppliers'));
+    }
+     public function editPaymentVoucher(int $id) {
+        $payment_voucher = PaymentVoucher::find($id);
+
+        if($payment_voucher->module_type != 'bill_payment_voucher') {
+            return back();
+        }
+
+        $accounts = Account::where("hierarchy_path", "like", "2-2%")->get();
+        $bank_accounts = Account::where("hierarchy_path", "like", "1-1%")
+                                ->whereNot("hierarchy_path", "1-1")
+                                ->get();
+        
+        $suppliers = Supplier::where("status", "active")->get();
+
+      
+
+        $payment_voucher_data = BillPaymentVoucherData::where("payment_voucher_id", $payment_voucher->id)->get();
+        return view("management.finance.payment_voucher.editBillPayment", compact("payment_voucher", "payment_voucher_data", "accounts", "bank_accounts", "suppliers"));
     }
 
     /**
@@ -372,6 +406,27 @@ class PaymentVoucherController extends Controller
             'success' => true,
             'pv_number' => $uniqueNo,
             'accounts' => $accounts,
+        ]);
+    }
+
+    public function getPurchaseBills(string $supplierId)
+    {
+        $purchase_bill = PurchaseBill::with("grn", "bill_data")
+                                        ->where("supplier_id", $supplierId)
+                                        ->where("am_approval_status", "approved")
+                                        ->get();
+
+        $purchase_bill->each(function ($bill) {
+            $remaining_qty = getPaymentVoucherBillBalance($bill);
+            $bill->amount = $remaining_qty;
+            $bill->debit_amount = getDebitNoteAmountOfBill($bill);
+            $bill->total_bill = totalBill($bill);
+            $bill->spent_bill = spentBill($bill);
+        });
+      
+      
+        return view('management.finance.payment_voucher.purchaseBills', [
+            'purchase_bills' => $purchase_bill,
         ]);
     }
 
@@ -826,6 +881,222 @@ class PaymentVoucherController extends Controller
             }
             // dd($ticketNo);
 
+            $paymentVoucher->update(['total_amount' => $totalAmount]);
+        });
+
+        return response()->json([
+            'success' => 'Payment voucher created successfully!',
+            'redirect' => route('payment-voucher.index'),
+        ]);
+    }
+
+    
+    public function updateBillPaymentVoucher(Request $request, int $id) {
+        $request->validate([
+            'unique_no' => 'required',
+            'pv_date' => 'required|date',
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'supplier_id' => 'required|exists:accounts,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'remarks' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $id) {
+            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+
+            $datePrefix = $prefix.'-'.date('m-d-Y').'-';
+            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
+            // dd($request->all());
+         
+            $bankAccount = null;
+            $bankName = '';
+            $accountNumber = '';
+            if ($request->bank_account_type === 'company') {
+                $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id);
+            } elseif ($request->bank_account_type === 'owner') {
+                $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id);
+            }
+            if ($bankAccount) {
+                $bankName = $bankAccount->bank_name ?? '';
+                $accountNumber = $bankAccount->account_number ?? '';
+            }
+
+            $paymentVoucher = PaymentVoucher::find($id);
+            $paymentVoucher->update([
+                'unique_no' => $uniqueNo,
+                'pv_date' => $request->pv_date,
+                'ref_bill_no' => $request->ref_bill_no,
+                'bill_date' => $request->bill_date,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'supplier_id' => $request->supplier_id,
+                'bank_account_id' => $request->bank_account_id,
+                'bank_account_type' => $request->bank_account_type,
+                'request_account_id' => "-",
+                'model_id' => "-",
+                'module_id' => null,
+                // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
+                'module_type' => 'bill_payment_voucher',
+                'voucher_type' => $request->voucher_type,
+                'remarks' => $request->remarks,
+                'total_amount' => 0,
+            ]);
+
+            $totalAmount = 0;
+            $paymentVoucher->billPaymentVoucherData()->delete();
+
+            foreach($request->bill as $index => $bill) {
+
+                $paymentVoucher->billPaymentVoucherData()->create([
+                    "payment_voucher_id" => $id,
+                    "purchase_bill_id" => $request->purchase_bill_id[$index],
+                    "amount" => $request->amounts[$index]
+                ]);
+                
+                $totalAmount += $request->amounts[$index];
+            }
+
+            $paymentVoucher->update(['total_amount' => $totalAmount]);
+        });
+
+        return response()->json([
+            'success' => 'Payment voucher created successfully!',
+            'redirect' => route('payment-voucher.index'),
+        ]);
+    }
+
+     public function storeBill(Request $request)
+    {
+        $request->validate([
+            'unique_no' => 'required',
+            'pv_date' => 'required|date',
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'supplier_id' => 'required|exists:accounts,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'bank_account_id' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'bank_account_type' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'remarks' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+
+            $datePrefix = $prefix.'-'.date('m-d-Y').'-';
+            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
+            // dd($request->all());
+         
+            $bankAccount = null;
+            $bankName = '';
+            $accountNumber = '';
+            if ($request->bank_account_type === 'company') {
+                $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id);
+            } elseif ($request->bank_account_type === 'owner') {
+                $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id);
+            }
+            if ($bankAccount) {
+                $bankName = $bankAccount->bank_name ?? '';
+                $accountNumber = $bankAccount->account_number ?? '';
+            }
+
+            $paymentVoucher = PaymentVoucher::create([
+                'unique_no' => $uniqueNo,
+                'pv_date' => $request->pv_date,
+                'ref_bill_no' => $request->ref_bill_no,
+                'bill_date' => $request->bill_date,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'supplier_id' => $request->supplier_id,
+                'bank_account_id' => $request->bank_account_id,
+                'bank_account_type' => $request->bank_account_type,
+                'request_account_id' => "-",
+                'model_id' => "-",
+                'module_id' => null,
+                // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
+                'module_type' => 'bill_payment_voucher',
+                'voucher_type' => $request->voucher_type,
+                'remarks' => $request->remarks,
+                'total_amount' => 0,
+            ]);
+
+            $totalAmount = 0;
+            
+            foreach($request->bill as $index => $bill) {
+                $ref_no = $request->purchase_bill_id[$index];
+
+                $amount = number_format($request->amounts[$index], 2);
+
+                $remarks = "A payment of Rs. {$amount} has been made.";
+                if ($bankName) {
+                    $remarks .= " against bank '{$bankName}'";
+                }
+                if ($accountNumber) {
+                    $remarks .= " with account number '{$accountNumber}'";
+                }
+                if ($request->voucher_type === 'bank_payment_voucher') {
+                    $remarks .= ' through bank transfer.';
+                } else {
+                    $remarks .= ' in cash.';
+                }
+
+                createTransaction(
+                    $request->amounts[$index],
+                    $request->bank_account_id,
+                    1,
+                    $uniqueNo,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
+                        'payment_against' => "$ref_no",
+                        'against_reference_no' => purchase_bill($request->purchase_bill_id[$index])->reference_no,
+                        'counter_account_id' => $request->supplier_id,
+                        'remarks' => $remarks,
+                    ]
+                );
+
+                createTransaction(
+                    $request->amounts[$index],
+                    $request->supplier_id,
+                    1,
+                    $uniqueNo,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
+                        'payment_against' => "$ref_no",
+                        'counter_account_id' => $request->bank_account_id,
+                        'against_reference_no' => purchase_bill($request->purchase_bill_id[$index])->reference_no,
+                        'remarks' => $remarks,
+                    ]
+                );
+
+                $purchase_bill = PurchaseBill::find($request->purchase_bill_id[$index]);
+                $remaining_balance = getPaymentVoucherBillBalance($purchase_bill);
+                if($request->amounts[$index] > $remaining_balance) {
+                    DB::rollBack();
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "amounts.$index" => ["Your balance is $remaining_balance, you cannot exceed that balance."]
+                    ]);
+                }
+
+                $bill_payment_voucher_data = BillPaymentVoucherData::create([
+                    "payment_voucher_id" => $paymentVoucher->id,
+                    "purchase_bill_id" => $request->purchase_bill_id[$index],
+                    "amount" => $request->amounts[$index]
+                ]);
+
+                $totalAmount += $request->amounts[$index];
+            }
+
+           
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
 

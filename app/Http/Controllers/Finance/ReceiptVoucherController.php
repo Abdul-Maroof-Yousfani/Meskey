@@ -226,13 +226,13 @@ class ReceiptVoucherController extends Controller
             if ($item->reference_type === 'sale_order') {
                 $so = SalesOrder::with(['customer', 'sales_order_data'])->find($item->reference_id);
                 if ($so) {
-                    $docNo = $so->so_reference_no ?? $so->reference_no ?? $so->so_no ?? ('SO-' . $so->id);
+                    $docNo = SalesOrder::find($item->reference_id)->reference_no;
                     $customerName = $so->customer->name ?? '';
                     $date = $so->order_date ? Carbon::parse($so->order_date)->format('Y-m-d') : optional($so->created_at)->format('Y-m-d');
                     $quantityFromSource = $so->sales_order_data->sum(function ($row) {
                         return (float) ($row->qty ?? 0);
                     });
-                    $amountFromSource = $quantityFromSource;
+                    // $amountFromSource = $quantityFromSource;
                 }
             } else {
                 $inv = SalesInvoice::with(['customer', 'sales_invoice_data'])->find($item->reference_id);
@@ -246,13 +246,13 @@ class ReceiptVoucherController extends Controller
                     $quantityFromSource = $inv->sales_invoice_data->sum(function ($row) {
                         return (float) ($row->qty ?? 0);
                     });
-                    $amountFromSource = $quantityFromSource;
+                    // $amountFromSource = $quantityFromSource;
                 }
             }
 
             $netAmount = $amountFromSource + (float) ($item->tax_amount ?? 0);
 
-            return [
+            return (object) [
                 'reference_id' => $item->reference_id,
                 'reference_type' => $item->reference_type,
                 'number' => $docNo,
@@ -266,7 +266,6 @@ class ReceiptVoucherController extends Controller
                 'line_desc' => $item->line_desc,
             ];
         })->values();
-
         $isAdvance = $receiptVoucher->items->contains(function ($item) {
             return $item->reference_type === 'sale_order';
         });

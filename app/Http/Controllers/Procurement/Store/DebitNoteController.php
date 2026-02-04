@@ -46,6 +46,7 @@ class DebitNoteController extends Controller
             'reference_number' => $request->reference_number,
             'transaction_date' => $request->transaction_date,
             'created_by' => auth()->user()->id,
+            "am_change_made" => 1
         ]);
 
         // Create debit note items
@@ -62,7 +63,7 @@ class DebitNoteController extends Controller
                     'rate' => $request->rate[$key],
                     'amount' => $request->amount[$key],
                     'am_approval_status' => 'pending',
-                    'am_change_made' => 0,
+                    'am_change_made' => 1,
                     
                 ]);
             }

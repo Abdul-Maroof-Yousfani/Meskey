@@ -51,7 +51,7 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
+            <button type="button" style="float: right;" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div>
@@ -202,6 +202,8 @@
                                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}">{{ $item->name }}</option>
                                     @endforeach
                                 </select>
+                                <input type="hidden" name="packing_id[]" value="" />
+                                <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
          
                             </div>
@@ -222,7 +224,7 @@
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <select name="job_order_id[${index}][]" id="job_order_id_${index}" multiple
-                                    class="form-control item-select" data-index="0">
+                                    class="form-control item-select" data-index="0" disabled>
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
                                         <option value="{{ $job_order->id }}">

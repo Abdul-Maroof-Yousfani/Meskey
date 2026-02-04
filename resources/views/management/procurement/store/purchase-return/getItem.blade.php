@@ -16,13 +16,13 @@
             $rate = $billData->rate ?? 0;
             $grossAmount = $quantity * $rate;
             $discountPercent = $billData->discount_percent ?? 0;
-            $discountAmount = $billData->discount_amount  ?? 0;
+            $discountAmount = ($discountPercent / 100) * $grossAmount ?? 0;
 
             $taxPercent = $billData->tax_percent ?? 0;
-            $taxAmount = $billData->tax_amount ?? 0;
-
             $deduction = $billData->deduction  ?? 0;
             $amount = $grossAmount - $discountAmount - $deduction;
+            $taxAmount = ($taxPercent / 100) * $amount ?? 0;
+
             $netAmount = $amount + $taxAmount;
             $description = $billData->description ?? '';
         @endphp

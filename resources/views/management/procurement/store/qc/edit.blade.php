@@ -5,7 +5,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Date:</label>
-                    <input type="date" name="date" value="{{ $purchaseOrderReceivingData->qc->date }}" id="date" class="form-control">
+                    <input type="date" name="date" value="{{ $purchaseOrderReceivingData->qc->date }}" id="date" class="form-control" readonly>
                 </div>
             </div>
             <div class="col-md-6">
@@ -272,10 +272,45 @@
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <a onclick="deleteQc('{{ $purchaseOrderReceivingData->qc?->id }}')" class="btn btn-warning submitbutton">Delete</a>
         </div>
     </div>
 </form>
 <script>
+    function deleteQc(id) {
+        Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{{ route("store.qc.remove") }}',
+                method: 'DELETE',
+                data: { id }, 
+                success: function(response) {
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "The record has been deleted successfully.",
+                        icon: "success"
+                    });
+                    $(".modal-sidebar-close").trigger("click");
+                },
+                
+                error: function(xhr) {
+                    console.error('Failed:', xhr.status, xhr.responseText);
+                    alert('Error ' + xhr.status + ': ' + (xhr.responseJSON?.message || 'Unknown error'));
+                }
+            });
+        }
+    })
+        
+    }
      function calculateTotalWeight(element) {
         const el = $(element);
         

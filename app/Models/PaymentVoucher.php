@@ -70,6 +70,10 @@ class PaymentVoucher extends Model
         return $this->belongsTo(Account::class, 'account_id');
     }
 
+    public function bank_account() {
+        return $this->belongsTo(Account::class, 'bank_account_id');
+    }
+
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
@@ -78,5 +82,9 @@ class PaymentVoucher extends Model
     public function paymentVoucherData()
     {
         return $this->hasMany(PaymentVoucherData::class, 'payment_voucher_id');
+    }
+
+    public function billPaymentVoucherData() {
+        return $this->hasMany(BillPaymentVoucherData::class, 'payment_voucher_id');
     }
 }

@@ -101,7 +101,11 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label id="reference_label">Invoices (approved, receiving pending)</label>
+                                        @if($isAdvance)
+                                            <label id="reference_label">Sale Orders (approved)</label>
+                                        @else
+                                            <label id="reference_label">Invoices (approved, receiving pending)</label>
+                                        @endif
                                         <select id="reference_ids" class="form-control select2" multiple
                                             style="width: 100%;">
                                             @foreach ($salesInvoices as $inv)
@@ -157,7 +161,8 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody id="rv-data">
-                                                    @foreach ($receiptVoucher->items as $idx => $item)
+                                                    @foreach ($initialItems as $idx => $item)
+                                                        
                                                         @php
                                                             $balance = receipt_voucher_balance($item->reference_id, $item->reference_type);
                                                         @endphp
@@ -510,7 +515,7 @@
 
             // ==================== INITIALIZATION ON PAGE LOAD ====================
             // Load documents for customer while preserving pre-selected references
-            select_customer(true);
+            // select_customer(true);
             
             // Check select all checkbox if all rows are checked
             const totalRowsInit = referencesTableBody.find('.row-select').length;

@@ -70,6 +70,10 @@ class PurchaseRequest extends FormRequest
 
             'micron' => "required",
             'micron.*' => "required", 
+
+            'packing_id' => 'nullable',
+            'module_type' => 'nullable'
+
         ];
     }
 

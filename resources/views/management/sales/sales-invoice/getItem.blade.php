@@ -48,7 +48,7 @@
                     {{ sales_invoice_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ $qty }}">
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ $qty }}" disabled>
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">

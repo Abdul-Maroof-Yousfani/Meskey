@@ -92,6 +92,7 @@
                          <th>Rate</th>
                          <th>Total Amount</th>
                          <th>Remarks</th>
+                         <th>Status</th>
                          <th>Action</th>
                      </tr>
                  </thead>
@@ -243,8 +244,21 @@
                                  <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
                                      id="remark_{{ $key }}" class="form-control">
                                  <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
+                             </td>                          
+                             <td>
+                                @php
+                                    $badgeClass = match (strtolower($data->am_approval_status)) {
+                                        'approved' => 'badge-success',
+                                        'rejected' => 'badge-danger',
+                                        'pending' => 'badge-warning',
+                                        'returned' => 'badge-info',
+                                        default => 'badge-secondary',
+                                    };
+                                    @endphp
+                                    <span class="badge {{ $                                                                                                                                                          }}">
+                                        {{ $data->am_approval_status }}
+                                    </span>
                              </td>
-
                              <td>
                                  <button type="button" class="btn btn-danger btn-sm removeRowBtn"
                                      onclick="remove({{ $key }})"

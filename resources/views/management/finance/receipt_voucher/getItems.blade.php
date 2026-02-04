@@ -10,7 +10,7 @@
             <input type="hidden" name="items[{{ $idx }}][reference_id]" value="{{ $item->reference_id }}">
             <input type="hidden" name="items[{{ $idx }}][reference_type]" value="{{ $item->reference_type }}">
             <input type="hidden" class="hidden-amount" name="items[{{ $idx }}][amount]"
-                value="{{ $item->quantity }}">
+                value="{{ $balance }}">
         </td>
         <td>{{ $item->reference_type == 'sale_order' ? 'Sale Order' : 'Sale Invoice' }}</td>
         <td>{{ $item->number }}</td>

@@ -4,6 +4,7 @@ use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use App\Models\Category;
+use App\Models\Master\Account\Account;
 use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
@@ -23,6 +24,7 @@ use App\Models\Product;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
+
 
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\FirstWeighbridge;
@@ -53,6 +55,15 @@ use Spatie\Permission\Models\Permission;
 
 Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
+});
+
+Route::get("create-accounts", function() {
+    $products = Product::whereNull("account_id")->get();
+    foreach($products as $product) {
+        $account = Account::create(getParamsForAccountCreationByPath(1, $product->name, '1-2', 'Inventory'));
+        $product->account_id = $account->id;
+        $product->save();
+    }
 });
 
 Route::get("change-type", function() {

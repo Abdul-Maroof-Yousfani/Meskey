@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\ApprovalsModule;
 
+use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use Illuminate\Http\Request;
@@ -269,9 +270,20 @@ class ApprovalController extends Controller
                 $returnedParent = $parentRecord->reject($request->comments);
             } else { // approve
                 $NoRemainingPendingChild = $parentRecord->quotation_data()->where('am_approval_status', 'pending')->count() === 0;
-                // dd($NoRemainingPendingChild);
+                
 
                 if ($parentRecord->canApprove()) {
+                    $purchase_request_id = $parentRecord->purchase_request_id;
+                    $purchase_request = PurchaseRequest::find($purchase_request_id);
+                    $purchase_quotation_data = PurchaseQuotationData::whereIn("purchase_request_data_id", $purchase_request->PurchaseData->pluck("id"))
+                                                                    ->where("am_approval_status", "pending")
+                                                                    ->get();
+
+                    foreach($purchase_quotation_data as $data) {
+                        $data->reject($request->comments);
+                    }
+                    
+                    $pendingChildren = $parentRecord->quotation_data()->where("am_approval_status", 'pending')->get();
                     if (!$NoRemainingPendingChild) {
                         // dd("ok1");
                         $returnedParent = $parentRecord->partial_approve($request->comments);

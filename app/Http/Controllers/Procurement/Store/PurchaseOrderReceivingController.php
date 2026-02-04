@@ -46,6 +46,7 @@ class PurchaseOrderReceivingController extends Controller
             'item',
             'supplier'
         )
+            
             ->orderBy("purchase_order_receiving_id", "desc")
             ->paginate(request('per_page', 25));
 
@@ -448,7 +449,6 @@ class PurchaseOrderReceivingController extends Controller
 
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::find($id);
 
-
         try {
             if($purchaseOrderReceivingData->qc()?->exists()) {
                 $purchaseOrderReceivingData->qc()->update([
@@ -478,7 +478,6 @@ class PurchaseOrderReceivingController extends Controller
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $validated = $request->validate([
             'truck_no' => "required",
             "dc_no" => "required",
@@ -578,7 +577,7 @@ class PurchaseOrderReceivingController extends Controller
         if(!$PurchaseOrderReceiving->purchaseOrderReceivingData()->exists()) {
             $PurchaseOrderReceiving->delete();
         }
-       
+        
         return response()->json(['success' => 'Purchase Order Receiving deleted successfully.'], 200);
     }
 

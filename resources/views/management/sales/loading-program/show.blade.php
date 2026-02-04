@@ -126,10 +126,10 @@
                         @forelse($LoadingProgram->loadingProgramItems as $item)
                             <tr class="item-row">
                                 <td>
-                                    <input type="text" value="{{ $LoadingProgram->deliveryOrder->reference_no ?? 'N/A' }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
+                                    <input type="text" value="{{ getDoReferenceNo($item->delivery_order_id) }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
                                 </td>
                                 <td>
-                                    <input type="text" value="{{ $LoadingProgram->deliveryOrder?->delivery_order_data?->first()?->qty ?? 'N/A' }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
+                                    <input type="text" value="{{ getDoQty($item->delivery_order_id) }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
                                 </td>
                                 <td>
                                     <input type="text" value="{{ $item->truck_number }}" class="form-control form-control-sm" readonly style="min-width: 100px;">
