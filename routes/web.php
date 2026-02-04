@@ -60,13 +60,13 @@ Route::get("/receipt-vouchers/delete", function() {
 });
 
 Route::get("voucher-types", function() {
-    Transaction::create([
+    TransactionVoucherType::create([
         "name" => "QC",
         "code" => "QC",
         "status" => "active"
     ]);
 
-    Transaction::create([
+    TransactionVoucherType::create([
         "name" => "Sale Return",
         "code" => "SR",
         "status" => "active"
