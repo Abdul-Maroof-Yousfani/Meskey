@@ -64,17 +64,45 @@ Route::get("get-all-vouchers", function() {
 });
 
 Route::get("voucher-types", function() {
-    TransactionVoucherType::create([
-        "name" => "QC",
-        "code" => "QC",
+
+    $transaction = TransactionVoucherType::create([
+        "name" => "Purchase Return",
+        "code" => "PR",
         "status" => "active"
     ]);
 
-    TransactionVoucherType::create([
-        "name" => "Sale Return",
-        "code" => "SR",
+    $transaction->id = 6;
+    $transaction->save();
+
+    $transaction = TransactionVoucherType::create([
+        "name" => "Debit Note",
+        "code" => "DN",
         "status" => "active"
     ]);
+
+    $transaction->id = 7;
+    $transaction->save();
+
+    // $transaction = TransactionVoucherType::where("name", "Goods Receiving Note")->first();
+    // $transaction->id = 8;
+    // $transaction->save();
+    return;
+
+    $newTransaction = TransactionVoucherType::create([
+        "name" => "Goods Receiving Note",
+        "code" => "GRN",
+        "status" => "active",
+        "id" => 8
+    ]);
+
+    $transaction = TransactionVoucherType::where("name", "QC")->first();
+    $transaction->id = 9;
+    $transaction->save();
+
+
+    $transaction = TransactionVoucherType::where("name", "Sale Return")->first();
+    $transaction->id = 10;
+    $transaction->save();
 });
 
 Route::get("create-accounts", function() {
@@ -103,17 +131,18 @@ Route::get("change-type", function() {
 
 Route::get("/procurement/delete-data", function() {
     
-    PurchaseRequestData::query()->delete();
+Schema::disableForeignKeyConstraints();
     PurchaseRequest::query()->delete();
+    PurchaseRequestData::query()->delete();
 
-    PurchaseQuotationData::query()->delete();
     PurchaseQuotation::query()->delete();
+    PurchaseQuotationData::query()->delete();
     
-    PurchaseOrderData::query()->delete();
     PurchaseOrder::query()->delete();
+    PurchaseOrderData::query()->delete();
     
-    PurchaseOrderReceivingData::query()->delete();
     PurchaseOrderReceiving::query()->delete();
+    PurchaseOrderReceivingData::query()->delete();
     
     PurchaseBagQC::query()->delete();
     
@@ -122,6 +151,7 @@ Route::get("/procurement/delete-data", function() {
     
     PurchaseReturnData::query()->delete();
     PurchaseReturn::query()->delete();
+    Schema::enableForeignKeyConstraints();
 });
 
 Route::get("uom-fill", function() {
