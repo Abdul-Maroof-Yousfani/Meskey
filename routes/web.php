@@ -5,6 +5,7 @@ use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use App\Models\Category;
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
@@ -59,8 +60,17 @@ Route::get("/receipt-vouchers/delete", function() {
 });
 
 Route::get("voucher-types", function() {
-    $transactions = TransactionVoucherType::all();
-    dd($transactions);
+    Transaction::create([
+        "name" => "QC",
+        "code" => "QC",
+        "status" => "active"
+    ]);
+
+    Transaction::create([
+        "name" => "Sale Return",
+        "code" => "SR",
+        "status" => "active"
+    ]);
 });
 
 Route::get("create-accounts", function() {
