@@ -65,9 +65,18 @@ Route::get("get-all-vouchers", function() {
 
 Route::get("voucher-types", function() {
 
-    $transaction = TransactionVoucherType::where("name", "Goods Receiving Note")->first();
-    $transaction->id = 8;
+    $transaction = TransactionVoucherType::create([
+        "name" => "Purchase Bill",
+        "code" => "PB",
+        "status" => "active"
+    ]);
+
+    $transaction->id = 5;
     $transaction->save();
+
+    // $transaction = TransactionVoucherType::where("name", "Goods Receiving Note")->first();
+    // $transaction->id = 8;
+    // $transaction->save();
     return;
 
     $newTransaction = TransactionVoucherType::create([
