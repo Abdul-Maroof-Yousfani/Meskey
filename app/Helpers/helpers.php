@@ -71,20 +71,23 @@ if (!function_exists('canAccess')) {
 }
 
 
-if(!function_exists("getAllStitchings")) {
-    function getAllStitchings() {
+if (!function_exists("getAllStitchings")) {
+    function getAllStitchings()
+    {
         return Stitching::select("id", "name")->where("status", "active")->get();
     }
 }
 
-if(!function_exists("getStitchingById")) {
-    function getStitchingById($id) {
+if (!function_exists("getStitchingById")) {
+    function getStitchingById($id)
+    {
         return Stitching::where("id", $id)->where("status", "active")->first();
     }
 }
 
-if(!function_exists("getStitchingsByIds")) {
-    function getStitchingsByIds($ids) {
+if (!function_exists("getStitchingsByIds")) {
+    function getStitchingsByIds($ids)
+    {
         if (is_string($ids)) {
             $ids = array_filter(array_map('trim', explode(',', $ids)));
         }
@@ -95,8 +98,9 @@ if(!function_exists("getStitchingsByIds")) {
     }
 }
 
-if(!function_exists('getUserCompanyLocations')) {
-    function getUserCurrentCompanyLocations() {
+if (!function_exists('getUserCompanyLocations')) {
+    function getUserCurrentCompanyLocations()
+    {
         $user = Auth::user();
         $currentCompanyId = $user->current_company_id;
         $userLocations = $user->companies->where('id', $currentCompanyId)->first()->pivot->locations;
@@ -107,8 +111,9 @@ if(!function_exists('getUserCompanyLocations')) {
     }
 }
 
-if(!function_exists('getUserCurrentCompanyArrivalLocations')) {
-    function getUserCurrentCompanyArrivalLocations() {
+if (!function_exists('getUserCurrentCompanyArrivalLocations')) {
+    function getUserCurrentCompanyArrivalLocations()
+    {
         $user = Auth::user();
         $currentCompanyId = $user->current_company_id;
         $userLocationsArrivals = $user->companies->where('id', $currentCompanyId)->first()->pivot->arrival_locations;
@@ -148,14 +153,16 @@ if (!function_exists('getCurrentCompany')) {
     }
 }
 
-if(!function_exists("createdBy")) {
-    function createdBy($createdByUserId) {
+if (!function_exists("createdBy")) {
+    function createdBy($createdByUserId)
+    {
         return User::select("id", "name")->find($createdByUserId);
     }
 }
 
 
-function get_category_name($id) {
+function get_category_name($id)
+{
     $category = Category::where("id", $id)->first();
     return $category->name;
 }
@@ -190,14 +197,16 @@ if (!function_exists("isBag")) {
     }
 }
 
-function bag_type_name($bag_type_id) {
+function bag_type_name($bag_type_id)
+{
     $bag_type = BagType::select("id", "name")->where("id", $bag_type_id)->first();
 
     return $bag_type?->name ?? '';
 }
 
-if(!function_exists("totalBillQuantityCreated")) {
-    function totalBillQuantityCreated(int $purchase_order_receving_id, int $item_id) {
+if (!function_exists("totalBillQuantityCreated")) {
+    function totalBillQuantityCreated(int $purchase_order_receving_id, int $item_id)
+    {
         $purchase_bill_ids = (PurchaseBill::where("purchase_order_receiving_id", $purchase_order_receving_id)->get())->pluck("id");
         $data = PurchaseBillData::select(
             DB::raw("SUM(qty) AS billed_quantity")
@@ -206,13 +215,14 @@ if(!function_exists("totalBillQuantityCreated")) {
             ->where("item_id", $item_id)
             ->first();
 
-        return $data->billed_quantity; 
+        return $data->billed_quantity;
     }
 }
 
 
-if(!function_exists("arrival_name_by_id")) {
-    function arrival_name_by_id($arrival_id) {
+if (!function_exists("arrival_name_by_id")) {
+    function arrival_name_by_id($arrival_id)
+    {
         if (str_contains($arrival_id, ',')) {
             // Handle comma-separated values
             $ids = explode(',', $arrival_id);
@@ -225,8 +235,9 @@ if(!function_exists("arrival_name_by_id")) {
         }
     }
 }
-if(!function_exists("sub_arrival_name_by_id")) {
-    function sub_arrival_name_by_id($sub_arrival_id) {
+if (!function_exists("sub_arrival_name_by_id")) {
+    function sub_arrival_name_by_id($sub_arrival_id)
+    {
         if (str_contains($sub_arrival_id, ',')) {
             // Handle comma-separated values
             $ids = explode(',', $sub_arrival_id);
@@ -247,60 +258,61 @@ if(!function_exists("sub_arrival_name_by_id")) {
 //     }
 // }
 
-if(!function_exists("numberToOrdinalWord")) {
+if (!function_exists("numberToOrdinalWord")) {
     function numberToOrdinalWord(int $number): string
-{
-    $ordinals = [
-        1 => 'first',
-        2 => 'second',
-        3 => 'third',
-        4 => 'fourth',
-        5 => 'fifth',
-        6 => 'sixth',
-        7 => 'seventh',
-        8 => 'eighth',
-        9 => 'ninth',
-        10 => 'tenth',
-        11 => 'eleventh',
-        12 => 'twelfth',
-        13 => 'thirteenth',
-        14 => 'fourteenth',
-        15 => 'fifteenth',
-        16 => 'sixteenth',
-        17 => 'seventeenth',
-        18 => 'eighteenth',
-        19 => 'nineteenth',
-        20 => 'twentieth',
-    ];
+    {
+        $ordinals = [
+            1 => 'first',
+            2 => 'second',
+            3 => 'third',
+            4 => 'fourth',
+            5 => 'fifth',
+            6 => 'sixth',
+            7 => 'seventh',
+            8 => 'eighth',
+            9 => 'ninth',
+            10 => 'tenth',
+            11 => 'eleventh',
+            12 => 'twelfth',
+            13 => 'thirteenth',
+            14 => 'fourteenth',
+            15 => 'fifteenth',
+            16 => 'sixteenth',
+            17 => 'seventeenth',
+            18 => 'eighteenth',
+            19 => 'nineteenth',
+            20 => 'twentieth',
+        ];
 
-    if (isset($ordinals[$number])) {
-        return $ordinals[$number];
+        if (isset($ordinals[$number])) {
+            return $ordinals[$number];
+        }
+
+        $tens = [
+            20 => 'twenty',
+            30 => 'thirty',
+            40 => 'forty',
+            50 => 'fifty',
+            60 => 'sixty',
+            70 => 'seventy',
+            80 => 'eighty',
+            90 => 'ninety',
+        ];
+
+        $ten = intdiv($number, 10) * 10;
+        $unit = $number % 10;
+
+        if ($unit === 0) {
+            return $tens[$ten] . 'ieth'; // twentieth, thirtieth
+        }
+
+        return $tens[$ten] . '-' . $ordinals[$unit];
     }
-
-    $tens = [
-        20 => 'twenty',
-        30 => 'thirty',
-        40 => 'forty',
-        50 => 'fifty',
-        60 => 'sixty',
-        70 => 'seventy',
-        80 => 'eighty',
-        90 => 'ninety',
-    ];
-
-    $ten = intdiv($number, 10) * 10;
-    $unit = $number % 10;
-
-    if ($unit === 0) {
-        return $tens[$ten] . 'ieth'; // twentieth, thirtieth
-    }
-
-    return $tens[$ten] . '-' . $ordinals[$unit];
-}
 }
 
-if(!function_exists("getLoadingProgramBalance")) {
-    function getLoadingProgramBalance($delivery_order_id) {
+if (!function_exists("getLoadingProgramBalance")) {
+    function getLoadingProgramBalance($delivery_order_id)
+    {
         $delivery_order = DeliveryOrder::find($delivery_order_id);
         $total_qty = $delivery_order->delivery_order_data()->sum("qty");
         $used_qty = LoadingProgramItem::where("delivery_order_id", $delivery_order_id)->sum("qty");
@@ -311,8 +323,9 @@ if(!function_exists("getLoadingProgramBalance")) {
     }
 }
 
-if(!function_exists("getTaxById")) {
-    function getTaxPercentageById($tax_id) {
+if (!function_exists("getTaxById")) {
+    function getTaxPercentageById($tax_id)
+    {
         $tax = Tax::find($tax_id);
         return $tax->percentage ?? 0;
     }
@@ -395,8 +408,9 @@ if (!function_exists('image_path')) {
     }
 }
 
-if(!function_exists("job_orders")) {
-    function job_orders() {
+if (!function_exists("job_orders")) {
+    function job_orders()
+    {
         return JobOrder::all();
     }
 }
@@ -623,7 +637,7 @@ function generateUniversalUniqueNo($tableName, $options = [])
         preg_match('/(\d+)$/', $latestRecord->{$uniqueColumn}, $m);
         $lastNumber = isset($m[1]) ? intval($m[1]) : 0;
     }
-    
+
     $newNumber = str_pad($lastNumber + 1, $padLength, '0', STR_PAD_LEFT);
 
     // ----------------------------------
@@ -706,22 +720,26 @@ function get_product_by_category($id)
     return $Product;
 }
 
-function get_product_by_id($id) {
+function get_product_by_id($id)
+{
     $product = Product::with("unitOfMeasure")->where("id", $id)->get();
     return $product;
 }
 
 
-function get_customer_name($customer_id) {
+function get_customer_name($customer_id)
+{
     $customer = Customer::where("id", $customer_id)->first();
     return $customer?->name ?? "";
 }
 
-function get_inquiry_reference_number($inquiry_id) {
+function get_inquiry_reference_number($inquiry_id)
+{
     return SalesInquiry::find($inquiry_id)->value("inquiry_no");
 }
 
-function get_payment_term($payment_term_id) {
+function get_payment_term($payment_term_id)
+{
     return PaymentTerm::select("id", "desc")->where('status', 'active')->where("id", $payment_term_id)->first();
 }
 
@@ -732,7 +750,8 @@ function get_locations()
     return $CompanyLocation;
 }
 
-function get_so_locations($so_id) {
+function get_so_locations($so_id)
+{
     $saleOrder = SalesOrder::find($so_id);
     $locations = $saleOrder->locations->pluck('location_id')->toArray();
     $companyLocations = CompanyLocation::whereIn('id', $locations)->get();
@@ -740,71 +759,84 @@ function get_so_locations($so_id) {
 }
 
 
-function get_arrival_locations() {
+function get_arrival_locations()
+{
     $ArrivalLocations = ArrivalLocation::all();
     return $ArrivalLocations;
 }
 
-function get_sub_arrival_locations() {
+function get_sub_arrival_locations()
+{
     return ArrivalSubLocation::all();
 }
 
 
-function get_arrivals_by($location_id) {
+function get_arrivals_by($location_id)
+{
     $arrivals = ArrivalLocation::where("company_location_id", $location_id)->get();
     return $arrivals;
 }
 
 
-function get_arrival($arrival_id) {
+function get_arrival($arrival_id)
+{
     $arrival = ArrivalLocation::find($arrival_id);
     return $arrival;
 }
 
-function get_sub_arrivals_by($arrival_id) {
+function get_sub_arrivals_by($arrival_id)
+{
     $sub_arrival = ArrivalSubLocation::where("arrival_location_id", $arrival_id)->get();
     return $sub_arrival;
 }
 
-function get_sub_arrivals_by_multiple($arrival_ids) {
-    if (empty($arrival_ids)) return collect();
+function get_sub_arrivals_by_multiple($arrival_ids)
+{
+    if (empty($arrival_ids))
+        return collect();
     $sub_arrivals = ArrivalSubLocation::whereIn("arrival_location_id", $arrival_ids)->get();
     return $sub_arrivals;
 }
 
-function get_location_name_by_id($company_location_id) {
+function get_location_name_by_id($company_location_id)
+{
     return CompanyLocation::where("id", $company_location_id)->value("name");
 }
 
 
-function get_location_id_by_name($location_id) {
+function get_location_id_by_name($location_id)
+{
     $location = CompanyLocation::find($location_id);
     return $location->id;
 }
 
 
 
-function get_arrival_name_by_id($arrival_id) {
+function get_arrival_name_by_id($arrival_id)
+{
     return ArrivalLocation::where("id", $arrival_id)->value("name");
 }
 
 
-function get_storage_name_by_id($storage_id) {
+function get_storage_name_by_id($storage_id)
+{
     return ArrivalSubLocation::where("id", $storage_id)->value("name");
 }
 
-function delivery_order_balance($sale_order_data_id) {
+function delivery_order_balance($sale_order_data_id)
+{
     $data = DeliveryOrderData::where("so_data_id", $sale_order_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     $able_to_spend = (SalesOrderData::where("id", $sale_order_data_id)->first())->no_of_bags;
-    $balance = (int)$able_to_spend - (int)$spent;
+    $balance = (int) $able_to_spend - (int) $spent;
 
     return $balance;
 }
 
-function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_order_id = null) {
-    
+function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_order_id = null)
+{
+
     $overall_quantities = $loadingSlip->deliveryOrder->delivery_order_data->sum("qty");
     $spent_quantities = $loadingSlip->deliveryOrder->saleSecondWeighbridge->sum("net_weight");
     $remaining_quantities = $overall_quantities - $spent_quantities;
@@ -813,7 +845,8 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 
 }
 
-function get_second_weighbridge_balance_by_delivery_order($delivery_order_id) {
+function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
+{
 
     $delivery_order = DeliveryOrder::find($delivery_order_id);
     $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
@@ -825,80 +858,88 @@ function get_second_weighbridge_balance_by_delivery_order($delivery_order_id) {
 }
 
 
-function receipt_voucher_balance($reference_id, $type = "sale_order") {
+function receipt_voucher_balance($reference_id, $type = "sale_order")
+{
     $data = ReceiptVoucherItem::where("reference_id", $reference_id)->get();
     $total_spent = $data->sum(callback: "amount");
-    if($type == "sale_order") {
+    if ($type == "sale_order") {
         $total_overall_amount = SalesOrderData::where('sale_order_id', $reference_id)
-                                                ->selectRaw('SUM(qty * rate) as total')
-                                                ->value('total');
+            ->selectRaw('SUM(qty * rate) as total')
+            ->value('total');
     } else {
         $total_overall_amount = SalesInvoiceData::where('sales_invoice_id', $reference_id)
-                                                ->selectRaw('SUM(net_amount) as total')
-                                                ->value('total');
+            ->selectRaw('SUM(net_amount) as total')
+            ->value('total');
     }
-    
+
     $balance = $total_overall_amount - $total_spent;
 
     return $balance;
 }
 
-function delivery_order_bags_used($sale_order_data_id) {
+function delivery_order_bags_used($sale_order_data_id)
+{
     $data = DeliveryOrderData::where("so_data_id", $sale_order_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     return $spent;
 }
 
 
-function delivery_challan_bags_used($delivery_order_data_id) {
+function delivery_challan_bags_used($delivery_order_data_id)
+{
     $data = DeliveryChallanData::where("do_data_id", $delivery_order_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     return $spent;
 }
 
-function delivery_challan_balance($delivery_order_data_id) {
+function delivery_challan_balance($delivery_order_data_id)
+{
     $data = DeliveryChallanData::where("do_data_id", $delivery_order_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     $able_to_spend = (DeliveryOrderData::where("id", $delivery_order_data_id)->first())->no_of_bags;
-    $balance = (int)$able_to_spend - (int)$spent;
+    $balance = (int) $able_to_spend - (int) $spent;
 
     return $balance;
 }
 
 
-function sales_invoice_balance($delivery_challan_data_id) {
+function sales_invoice_balance($delivery_challan_data_id)
+{
     $data = SalesInvoiceData::where("dc_data_id", $delivery_challan_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     $able_to_spend = (DeliveryChallanData::where("id", $delivery_challan_data_id)->first())->no_of_bags;
-    $balance = (int)$able_to_spend - (int)$spent;
+    $balance = (int) $able_to_spend - (int) $spent;
 
     return $balance;
 }
 
-function sale_return_balance($sale_invoice_data_id) {
+function sale_return_balance($sale_invoice_data_id)
+{
     $data = SaleReturnData::where("sale_invoice_data_id", $sale_invoice_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     $able_to_spend = (SalesInvoiceData::where("id", $sale_invoice_data_id)->first())->no_of_bags;
-    $balance = (int)$able_to_spend - (int)$spent;
+    $balance = (int) $able_to_spend - (int) $spent;
 
     return $balance;
 }
 
-function sale_return_bags_used($sale_invoice_data_id) {
+function sale_return_bags_used($sale_invoice_data_id)
+{
     $data = SaleReturnData::where("sale_invoice_data_id", $sale_invoice_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     return $spent;
 }
 
-function sales_invoice_bags_used($delivery_challan_data_id) {
+function sales_invoice_bags_used($delivery_challan_data_id)
+{
     $data = SalesInvoiceData::where("dc_data_id", $delivery_challan_data_id)->get();
-    
+
     $spent = $data->sum("no_of_bags");
     return $spent;
 }
@@ -919,7 +960,8 @@ function get_uom($id)
     return $name;
 }
 
-function applyTax($number, $percentage) {
+function applyTax($number, $percentage)
+{
     // Ensure both inputs are numbers
     $number = floatval($number);
     $percentage = floatval($percentage);
@@ -1191,8 +1233,9 @@ if (!function_exists('createStockTransaction')) {
     }
 }
 
-if(!function_exists("get_grn")) {
-    function get_grn($grn_id) {
+if (!function_exists("get_grn")) {
+    function get_grn($grn_id)
+    {
         return PurchaseOrderReceiving::where("id", $grn_id)->value("purchase_order_receiving_no");
     }
 }
@@ -1299,6 +1342,12 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
             $result['total_deduction_kgs'] = $ticket->lumpsum_deduction_kgs;
 
             // return $result;
+        } else {
+            $result['is_lumpsum'] = false;
+            $result['lumpsum_deduction'] = $ticket->lumpsum_deduction;
+            $result['lumpsum_deduction_kgs'] = $ticket->lumpsum_deduction_kgs;
+            $result['total_deduction'] = $ticket->lumpsum_deduction;
+            $result['total_deduction_kgs'] = $ticket->lumpsum_deduction_kgs;
         }
 
         if ($type == null) {
@@ -1327,6 +1376,13 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
             $result['total_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
 
             // return $result;
+        } else {
+            $result['is_lumpsum'] = false;
+            $result['lumpsum_deduction'] = $samplingRequest->lumpsum_deduction;
+            $result['lumpsum_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
+            $result['total_deduction'] = $samplingRequest->lumpsum_deduction;
+            $result['total_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
+
         }
 
         $compulsoryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)
@@ -1560,15 +1616,17 @@ if (!function_exists('getUserMissingInfoAlert')) {
     }
 }
 
-if(!function_exists("getArrivalLocationsOfCompany")) {
-    function getArrivalLocationsOfCompany($company_id) {
+if (!function_exists("getArrivalLocationsOfCompany")) {
+    function getArrivalLocationsOfCompany($company_id)
+    {
         $arrival_locations = ArrivalLocation::where("company_location_id", $company_id)->get();
         return $arrival_locations;
     }
 }
 
-if(!function_exists("getByProductsById")) {
-    function getByProductsById($by_product_id) {
+if (!function_exists("getByProductsById")) {
+    function getByProductsById($by_product_id)
+    {
 
         $byProductId = $by_product_id;
         $byProduct = $byProductId ? Product::find($byProductId) : null;
@@ -1594,12 +1652,13 @@ if(!function_exists("getByProductsById")) {
 
         $byProducts = $productsQuery->orderBy('name')->get();
 
-        
+
         return $byProducts;
     }
 }
-if(!function_exists("getDebitNoteBalance")) {
-    function getDebitNoteBalance($purchase_bill_data_id, $exclude_debit_note_id = null) {
+if (!function_exists("getDebitNoteBalance")) {
+    function getDebitNoteBalance($purchase_bill_data_id, $exclude_debit_note_id = null)
+    {
         $query = DebitNoteData::where('purchase_bill_data_id', $purchase_bill_data_id);
 
         if ($exclude_debit_note_id) {
@@ -1619,8 +1678,9 @@ if(!function_exists("getDebitNoteBalance")) {
 }
 
 
-if(!function_exists('getAvailableReturnBalance')) {
-    function getAvailableReturnBalance($purchase_bill_data_id, $exclude_return_id = null) {
+if (!function_exists('getAvailableReturnBalance')) {
+    function getAvailableReturnBalance($purchase_bill_data_id, $exclude_return_id = null)
+    {
         // Get debit note balance (remaining quantity after debit notes)
         $debitNoteBalance = getDebitNoteBalance($purchase_bill_data_id);
 
@@ -1638,8 +1698,9 @@ if(!function_exists('getAvailableReturnBalance')) {
     }
 }
 
-if(!function_exists('purchaseBillDistribution')) {
-    function purchaseBillDistribution($purchase_bill_data_id) {
+if (!function_exists('purchaseBillDistribution')) {
+    function purchaseBillDistribution($purchase_bill_data_id)
+    {
         $purchase_bill_data = PurchaseBillData::find($purchase_bill_data_id);
         $debit_note = DebitNoteData::where('purchase_bill_data_id', $purchase_bill_data_id)->sum('debit_note_quantity');
         $purchase_return = PurchaseReturnData::where('purchase_bill_data_id', $purchase_bill_data_id)->sum('quantity');
@@ -1647,91 +1708,103 @@ if(!function_exists('purchaseBillDistribution')) {
     }
 }
 
-if(!function_exists("getPODataQty")) {
-    function getPODataQty($po_data_id) {
+if (!function_exists("getPODataQty")) {
+    function getPODataQty($po_data_id)
+    {
         $po_data = PurchaseOrderData::find($po_data_id);
         return $po_data->qty;
     }
 }
 
 
-if(!function_exists("getStockByGrnDataId")) {
-    function getStockByGrnDataId($po_data_id) {
+if (!function_exists("getStockByGrnDataId")) {
+    function getStockByGrnDataId($po_data_id)
+    {
         $stock_in = Stock::where("parent_id", $po_data_id)
-                            ->where("voucher_type", "grn")
-                            ->where("type", "stock-in")
-                            ->sum("qty");
-        
+            ->where("voucher_type", "grn")
+            ->where("type", "stock-in")
+            ->sum("qty");
+
         $stock_out = Stock::where("parent_id", $po_data_id)
-                            ->where("voucher_type", "qc")
-                            ->where("type", "stock-out")
-                            ->sum("qty");
+            ->where("voucher_type", "qc")
+            ->where("type", "stock-out")
+            ->sum("qty");
 
         return $stock_in - $stock_out;
     }
 }
 
-if(!function_exists("getSaleOrderLocation")) {
-    function getSaleOrderLocation($so_id) {
+if (!function_exists("getSaleOrderLocation")) {
+    function getSaleOrderLocation($so_id)
+    {
         $sale_order = SalesOrder::find($so_id);
         return $sale_order->locations;
     }
 }
 
-if(!function_exists("getSaleOrderSubArrival")) {
-    function getSaleOrderSubArrival($so_id) {
+if (!function_exists("getSaleOrderSubArrival")) {
+    function getSaleOrderSubArrival($so_id)
+    {
         $sale_order = SalesOrder::find($so_id);
         return $sale_order->sections;
     }
 }
 
-if(!function_exists("subArrivalLocationId")) {
-    function subArrivalLocationId($subarrival_location_id) {
+if (!function_exists("subArrivalLocationId")) {
+    function subArrivalLocationId($subarrival_location_id)
+    {
         $sub_arrival = ArrivalSubLocation::with("arrivalLocation")->find($subarrival_location_id);
         return $sub_arrival;
     }
 }
 
-if(!function_exists("getLocation")) {
-    function getLocation($location_id) {
+if (!function_exists("getLocation")) {
+    function getLocation($location_id)
+    {
         $company_location = CompanyLocation::find($location_id);
         return $company_location;
     }
 }
 
-if(!function_exists("getArrivalLocations")) {
-    function getArrivalLocations($sub_arrival_id) {
+if (!function_exists("getArrivalLocations")) {
+    function getArrivalLocations($sub_arrival_id)
+    {
         return ArrivalLocation::find($sub_arrival_id);
     }
 }
 
-function purchase_bill($purchase_bill_id) {
+function purchase_bill($purchase_bill_id)
+{
     $purchase_bill = PurchaseBill::with("grn")->find($purchase_bill_id);
 
     return $purchase_bill;
 }
 
-function getDebitNoteAmountOfBill(PurchaseBill $bill) {
-    $debit_note_items_amount = DebitNoteData::whereHas("debit_note", function($query) {
-                                            $query->where("am_approval_status", "approved");
-                                        })
-                                        ->where("bill_id", $bill->id)
-                                        ->sum("amount");
+function getDebitNoteAmountOfBill(PurchaseBill $bill)
+{
+    $debit_note_items_amount = DebitNoteData::whereHas("debit_note", function ($query) {
+        $query->where("am_approval_status", "approved");
+    })
+        ->where("bill_id", $bill->id)
+        ->sum("amount");
     return $debit_note_items_amount;
 }
 
-function totalBill(PurchaseBill $bill) {
+function totalBill(PurchaseBill $bill)
+{
     $total_qty = $bill->bill_data->sum('final_amount');
     return $total_qty;
 }
 
-function spentBill(PurchaseBill $bill) {
+function spentBill(PurchaseBill $bill)
+{
     $spent_qty = BillPaymentVoucherData::where("purchase_bill_id", $bill->id)->sum("amount");
     return $spent_qty;
 }
 
-function getPaymentVoucherBillBalance(PurchaseBill $bill) {
-  
+function getPaymentVoucherBillBalance(PurchaseBill $bill)
+{
+
     $debit_note_items_amount = getDebitNoteAmountOfBill($bill);
 
     $total_qty = totalBill($bill);
@@ -1740,65 +1813,71 @@ function getPaymentVoucherBillBalance(PurchaseBill $bill) {
     return $remaining_qty;
 }
 
-function jobOrderBalanceAgainstPurchaseRequest($job_order_id, $total_qty) {
+function jobOrderBalanceAgainstPurchaseRequest($job_order_id, $total_qty)
+{
     $selected_job_orders = PurchaseAgainstJobOrder::where("job_order_id", $job_order_id)
-                                            ->get()
-                                            ->pluck("purchase_request_data_id")
-                                            ->toArray();
+        ->get()
+        ->pluck("purchase_request_data_id")
+        ->toArray();
 
     $used_qty = PurchaseRequestData::whereIn("id", $selected_job_orders)->sum("qty");
     return $total_qty - $used_qty;
-                                                    
+
 }
 
 
-function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id) {
+function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id)
+{
     $used_qty = PurchaseRequestData::where("packing_id", $packing_id)
-                                                ->where("module_type", "packing")
-                                                ->sum("qty");
+        ->where("module_type", "packing")
+        ->sum("qty");
     $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
 
     return ($job_order_packing->total_bags) - $used_qty;
 }
 
-function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id) {
+function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
+{
     $used_qty = PurchaseRequestData::where("packing_id", $subpacking_id)
-                                                ->where("module_type", "subpacking")
-                                                ->sum("qty");
+        ->where("module_type", "subpacking")
+        ->sum("qty");
 
     $job_order_sub_packing = JobOrderPackingSubItem::select("id", "total_bags")->find($subpacking_id);
 
     return ($job_order_sub_packing->total_bags) - $used_qty;
 }
 
-function getDoQty($do_id) {
+function getDoQty($do_id)
+{
     $delivery_order = DeliveryOrder::find($do_id);
-    if($delivery_order) {
+    if ($delivery_order) {
         return $delivery_order->delivery_order_data->sum("qty");
     }
 
     return "";
 }
 
-function getDoReferenceNo($do_id) {
+function getDoReferenceNo($do_id)
+{
     $delivery_order = DeliveryOrder::find($do_id);
-    if($delivery_order) {
+    if ($delivery_order) {
         return $delivery_order->reference_no;
     } else {
         return "N/A";
     }
 }
 
-function getProductCategory($product_id) {
+function getProductCategory($product_id)
+{
     $product = Product::select("id", "category_id")->find($product_id);
 
     $category = null;
-    if($product) {
+    if ($product) {
         $category = Category::select("id", "name")->find($product->category_id);
     }
 
     return $category ? $category->id : null;
-} 
+}
 
 // if(!function_exists("getSOReferenceNumber") {
 //     function getSOReferenceNumber($so_id) {
