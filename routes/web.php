@@ -57,7 +57,7 @@ Route::get("/receipt-vouchers/delete", function() {
 });
 
 Route::get("create-accounts", function() {
-    $products = DB::table("products")->whereNull("account_id")->get();
+    $products = Product::whereNull("account_id")->get();
     foreach($products as $product) {
         $account = Account::create(getParamsForAccountCreationByPath(1, $product->name, '1-2', 'Inventory'));
         $product->account_id = $account->id;
