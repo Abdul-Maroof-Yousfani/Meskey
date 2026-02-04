@@ -145,11 +145,11 @@ Route::get("/procurement/delete-data", function() {
     
     PurchaseBagQC::query()->delete();
     
-    PurchaseBillData::query()->delete();
-    PurchaseBill::query()->delete();
+    // PurchaseBillData::query()->delete();
+    // PurchaseBill::query()->delete();
     
-    PurchaseReturnData::query()->delete();
-    PurchaseReturn::query()->delete();
+    // PurchaseReturnData::query()->delete();
+    // PurchaseReturn::query()->delete();
 });
 
 Route::get("uom-fill", function() {
