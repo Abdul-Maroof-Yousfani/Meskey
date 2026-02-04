@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::table('debit_notes', function (Blueprint $table) {
             $table->boolean("am_change_made")->default(1);
-            $table->string("am_change_made")->default("pending");
-            
+
         });
     }
 
