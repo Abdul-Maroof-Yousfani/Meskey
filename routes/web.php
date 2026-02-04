@@ -64,17 +64,22 @@ Route::get("get-all-vouchers", function() {
 });
 
 Route::get("voucher-types", function() {
-    TransactionVoucherType::create([
-        "name" => "QC",
-        "code" => "QC",
-        "status" => "active"
+
+    $newTransaction = Transaction::create([
+        "name" => "Goods Receiving Note",
+        "code" => "GRN",
+        "status" => "active",
+        "id" => 8
     ]);
 
-    TransactionVoucherType::create([
-        "name" => "Sale Return",
-        "code" => "SR",
-        "status" => "active"
-    ]);
+    $transaction = TransactionVoucherType::where("name", "QC")->first();
+    $transaction->id = 9;
+    $transaction->save();
+
+
+    $transaction = TransactionVoucherType::where("name", "Sale Return")->first();
+    $transaction->id = 10;
+    $transaction->save();
 });
 
 Route::get("create-accounts", function() {
