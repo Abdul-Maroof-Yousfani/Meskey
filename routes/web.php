@@ -131,17 +131,17 @@ Route::get("change-type", function() {
 
 Route::get("/procurement/delete-data", function() {
     
-    PurchaseRequestData::query()->delete();
     PurchaseRequest::query()->delete();
+    PurchaseRequestData::query()->delete();
 
-    PurchaseQuotationData::query()->delete();
     PurchaseQuotation::query()->delete();
+    PurchaseQuotationData::query()->delete();
     
-    PurchaseOrderData::query()->delete();
     PurchaseOrder::query()->delete();
+    PurchaseOrderData::query()->delete();
     
-    PurchaseOrderReceivingData::query()->delete();
     PurchaseOrderReceiving::query()->delete();
+    PurchaseOrderReceivingData::query()->delete();
     
     PurchaseBagQC::query()->delete();
     
