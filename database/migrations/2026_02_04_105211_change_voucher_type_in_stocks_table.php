@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('stocks', function (Blueprint $table) {
-            $table->enum("voucher_type", ['grn','gdn','sale_return','purchase_return','delivery_challan','qc']);
+            $table->enum("voucher_type", ['grn','gdn','sale_return','purchase_return','delivery_challan','qc'])->change();
         });
     }
 
