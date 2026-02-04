@@ -5,6 +5,7 @@ use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use App\Models\Category;
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
@@ -55,6 +56,11 @@ use Spatie\Permission\Models\Permission;
 
 Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
+});
+
+Route::get("voucher-types", function() {
+    $transactions = TransactionVoucherType::all();
+    dd($transactions);
 });
 
 Route::get("create-accounts", function() {
