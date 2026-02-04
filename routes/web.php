@@ -131,6 +131,7 @@ Route::get("change-type", function() {
 
 Route::get("/procurement/delete-data", function() {
     
+Schema::disableForeignKeyConstraints();
     PurchaseRequest::query()->delete();
     PurchaseRequestData::query()->delete();
 
@@ -145,11 +146,12 @@ Route::get("/procurement/delete-data", function() {
     
     PurchaseBagQC::query()->delete();
     
-    // PurchaseBillData::query()->delete();
-    // PurchaseBill::query()->delete();
+    PurchaseBillData::query()->delete();
+    PurchaseBill::query()->delete();
     
-    // PurchaseReturnData::query()->delete();
-    // PurchaseReturn::query()->delete();
+    PurchaseReturnData::query()->delete();
+    PurchaseReturn::query()->delete();
+    Schema::enableForeignKeyConstraints();
 });
 
 Route::get("uom-fill", function() {
