@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
 use App\Http\Controllers\Master\CountryCityController;
+use App\Http\Controllers\Master\LabourRateController;
 use App\Http\Controllers\Master\StitchingController;
 use Illuminate\Support\Facades\Route;
 
@@ -162,3 +163,6 @@ Route::get('/get-cities/{country_id}', [PortController::class, 'getCities']);
 // weighbridge amounts
 Route::resource('weighbridge-amount', WeighbridgeAmountController::class);
 Route::post('/get-weighbridge-amount', [WeighbridgeAmountController::class, 'getList'])->name('get.weighbridge-amount');
+
+Route::resource("labour-rates", LabourRateController::class);
+Route::post("labour-rate/getList", [LabourRateController::class, "getList"])->name("get.labour-rate");
