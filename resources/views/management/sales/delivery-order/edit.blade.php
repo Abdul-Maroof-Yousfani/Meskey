@@ -419,20 +419,20 @@
 
     function validate_expiry(el) {
 
-        const do_date = $("#dispatch_date").val();
-        const delivery_date = $("#delivery_date").val();
+        // const do_date = $("#dispatch_date").val();
+        // const delivery_date = $("#delivery_date").val();
      
-        const dispatchDate = new Date(do_date);
-        const deliveryDate = new Date(delivery_date);
+        // const dispatchDate = new Date(do_date);
+        // const deliveryDate = new Date(delivery_date);
 
-        if(dispatchDate > deliveryDate) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Expired!',
-                text: 'Dispatch date cannot be greater than delivery date.',
-                confirmButtonText: 'OK'
-            });
-        }
+        // if(dispatchDate > deliveryDate) {
+        //     Swal.fire({
+        //         icon: 'error',
+        //         title: 'Expired!',
+        //         text: 'Dispatch date cannot be greater than delivery date.',
+        //         confirmButtonText: 'OK'
+        //     });
+        // }
     }
 
     function check_balance(el, target) {
