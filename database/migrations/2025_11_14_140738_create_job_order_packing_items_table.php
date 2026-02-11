@@ -28,6 +28,8 @@ return new class extends Migration {
             $table->integer('no_of_containers')->default(0);
             $table->foreignId('brand_id')->constrained('brands');
             $table->foreignId('bag_color_id')->constrained('colors');
+            $table->foreignId('thread_color_id')->nullable()->constrained('colors');
+            $table->foreignId('stitching_id')->nullable()->constrained('stitchings');
             $table->decimal('min_weight_empty_bags', 8, 2)->default(0);
             $table->date('delivery_date')->nullable();
             $table->json('fumigation_company_id')->nullable(); // JSON for multiple fumigation companies

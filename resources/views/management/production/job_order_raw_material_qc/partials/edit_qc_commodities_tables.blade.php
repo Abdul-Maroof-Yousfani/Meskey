@@ -39,6 +39,7 @@
                     <thead class="thead-dark">
                         <tr>
                             <th width="20%">Location</th>
+                            <th width="20%">Sub Location</th>
                             <th width="15%">Sugg. QTY (kgs)</th>
                             @foreach($qcParameters as $parameter)
                                 @php
@@ -58,6 +59,15 @@
                     <tbody id="commodity-{{ $commodityId }}-tbody">
                         @foreach($items as $index => $item)
                         <tr class="location-row">
+                        <td>
+                                <select name="qc_data[{{ $commodityId }}][locations][{{ $index }}][location_id]" 
+                                        class="form-control form-control-sm sublocation-select" required>
+                                    <option value="">Select Location</option>
+                                    @foreach($locations as $location)
+                                        <option value="{{ $location->id }}" {{ $item->arrival_location_id == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
                             <td>
                                 <select name="qc_data[{{ $commodityId }}][locations][{{ $index }}][sublocation_id]" 
                                         class="form-control form-control-sm sublocation-select" required>
@@ -118,8 +128,8 @@
                     </tbody>
                     <tfoot class="bg-light">
                         <tr class="weighted-average-row">
-                            <td><strong>Weighted Avg.</strong></td>
-                            <td class="total-quantity"><strong>{{ $items->sum('suggested_quantity') }}</strong></td>
+                            <td colspan="2"><strong>Weighted Avg.</strong></td>
+                            <td  class="total-quantity"><strong>{{ $items->sum('suggested_quantity') }}</strong></td>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramField = Illuminate\Support\Str::slug($parameter, '_');

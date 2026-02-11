@@ -267,9 +267,20 @@
                                 <select name="packing_items[{{ $packingIndex }}][thread_color_id]" class="form-control">
                                     <option value="">Select Color</option>
                                     @foreach($bagColors as $color)
-                                        <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
+                                        <option value="{{ $color->id }}" {{ $packingItem->thread_color_id == $color->id ? 'selected' : '' }}>
                                             {{ $color->color }}
                                         </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>Stitching:</label>
+                                <select name="packing_items[0][stitching_id]" class="form-control select2">
+                                    <option value="">Select Stitching</option>
+                                    @foreach($stitchings as $stitching)
+                                        <option value="{{ $stitching->id }}" {{ $packingItem->stitching_id == $stitching->id ? 'selected' : '' }}>{{ $stitching->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -381,7 +392,7 @@
                                     </button>
                                 </div>
                                 <div class="card-body p-0">
-                                    <div class="table-responsive">
+                                    <div class="table-responsive special">
                                         <table class="table table-bordered table-sm mb-0">
                                             <thead class="thead-light">
                                                 <tr>

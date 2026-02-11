@@ -14,6 +14,7 @@ class JobOrderRawMaterialQcItem extends Model
     protected $fillable = [
         'job_order_rm_qc_id',
         'product_id',
+        'arrival_location_id',
         'arrival_sub_location_id',
         'suggested_quantity'
     ];
@@ -35,6 +36,6 @@ class JobOrderRawMaterialQcItem extends Model
 
     public function parameters()
     {
-        return $this->hasMany(JobOrderRawMaterialQcParameter::class,'job_order_qc_item_id','id');
+        return $this->hasMany(JobOrderRawMaterialQcParameter::class, 'job_order_qc_item_id', 'id');
     }
 }

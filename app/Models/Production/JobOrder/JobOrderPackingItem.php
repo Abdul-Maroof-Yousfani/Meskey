@@ -30,6 +30,8 @@ class JobOrderPackingItem extends Model
         'no_of_containers',
         'brand_id',
         'bag_color_id',
+        'thread_color_id',
+        'stitching_id',
         'delivery_date',
         'fumigation_company_id',
         'min_weight_empty_bags',

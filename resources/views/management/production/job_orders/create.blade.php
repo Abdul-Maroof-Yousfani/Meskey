@@ -194,13 +194,24 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-1">
                         <div class="form-group">
                             <label>Thread Color:</label>
                             <select name="packing_items[0][thread_color_id]" class="form-control select2">
                                 <option value="">Select Color</option>
                                 @foreach($bagColors as $color)
                                     <option value="{{ $color->id }}">{{ $color->color }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Stitching:</label>
+                            <select name="packing_items[0][stitching_id]" class="form-control select2">
+                                <option value="">Select Stitching</option>
+                                @foreach($stitchings as $stitching)
+                                    <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -335,7 +346,7 @@
                                 </button>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive">
+                                <div class="table-responsive special">
                                     <table class="table table-bordered table-sm mb-0">
                                         <thead class="thead-light">
                                             <tr>
@@ -522,7 +533,8 @@
             </td>
             <td>
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_primary_bags]"
-                    class="form-control form-control-sm sub-no-of-primary-bags"  placeholder="Enter No of Primary Bags fit in master bag">
+                    class="form-control form-control-sm sub-no-of-primary-bags"
+                    placeholder="Enter No of Primary Bags fit in master bag">
             </td>
 
             <td>
@@ -608,14 +620,14 @@
         $(document).off('.jobOrderEdit .jobOrderCreate');
         $('#productSelect').off('.jobOrderEdit .jobOrderCreate');
         $('input[name="job_order_date"]').off('.jobOrderEdit .jobOrderCreate');
-        
+
         // Destroy any existing Select2 instances to prevent multiple initializations
-        $('.select2').each(function() {
+        $('.select2').each(function () {
             if ($(this).data('select2')) {
                 $(this).select2('destroy');
             }
         });
-        
+
         // Initialize Select2 for all multi-selects (excluding templates)
         $('.select2').not('.sub-packing-item-template .select2').not('.container-protection-item-template .select2').select2();
 
@@ -640,7 +652,7 @@
 
         // Add new packing item function
         var isAddingItem = false;
-      function addNewPackingItem() {
+        function addNewPackingItem() {
             if (isAddingItem) return;
             isAddingItem = true;
 
@@ -660,7 +672,7 @@
                 }
                 $this.val(''); // safe for both input & select
             });
-            
+
 
             // 3. Update data-index attributes
             $newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
@@ -688,7 +700,7 @@
             // 7. Finally append
             $('#packingItems').append($newItem);
 
-        
+
             // 8. Initialize fresh Select2 **only after** append
             $newItem.find('select').select2();
 
@@ -701,7 +713,7 @@
         // Duplicate packing item - PROPERLY FIXED VERSION
         $(document).off('click.jobOrderCreate', '.duplicate-packing-item').on('click.jobOrderCreate', '.duplicate-packing-item', function () {
             var currentItem = $(this).closest('.packing-item');
-            
+
             // Pehle original item ki values capture karo BEFORE destroying Select2
             var originalValues = {};
             currentItem.find('select').each(function () {
