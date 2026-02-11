@@ -164,13 +164,8 @@
                                                                     <i class="{{ auth()->user()->current_company_id == $v->id ? 'ft-check active' : 'ft-arrow-up-right primary' }}"
                                                                         style="font-size: 30px;"></i>
                                                                 </small>
-
-
-
-
-                                                            </h6><small class="noti-text">Commented on your
-                                                                photo</small>
-
+                                                            </h6>
+                                                            <small class="noti-text">Commented on your photo</small>
                                                         </div>
                                                     </div>
                                                 </a>
