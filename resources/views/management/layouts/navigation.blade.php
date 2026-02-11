@@ -1065,6 +1065,14 @@
                     </li>
                     @endcanAccess
 
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('labour-rates.index') }}"
+                            onclick="loadPageContent('{{ route('labour-rates.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Labour Rates</span>
+                        </a>
+                    </li>
+
                     @canAccess('raw-material-customer')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('customer.index') }}"

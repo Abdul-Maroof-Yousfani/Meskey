@@ -354,20 +354,20 @@
     }
 
     function validateExpiry() {
-        const inquiryDate = $('#inquiry_date').val();
-        const requiredDate = $('#required_date').val();
-        if (inquiryDate && requiredDate) {
-            if (inquiryDate > requiredDate) {
-                $('#required_date').addClass('is-invalid');
+        // const inquiryDate = $('#inquiry_date').val();
+        // const requiredDate = $('#required_date').val();
+        // if (inquiryDate && requiredDate) {
+        //     if (inquiryDate > requiredDate) {
+        //         $('#required_date').addClass('is-invalid');
 
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Expired!',
-                    text: 'Inquiry date cannot be greater than required date.',
-                    confirmButtonText: 'OK'
-                });
-            }
-        }
+        //         Swal.fire({
+        //             icon: 'error',
+        //             title: 'Expired!',
+        //             text: 'Inquiry date cannot be greater than required date.',
+        //             confirmButtonText: 'OK'
+        //         });
+        //     }
+        // }
     }
 
     function addRow() {
