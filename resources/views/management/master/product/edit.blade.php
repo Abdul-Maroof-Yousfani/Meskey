@@ -1,4 +1,5 @@
-<form method="POST" action="{{ route('product.update', $product->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form method="POST" action="{{ route('product.update', $product->id) }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.product') }}" />
@@ -54,21 +55,21 @@
                 <select class="form-control" name="category_id">
                     <option value="">Select Category</option>
                     @foreach ($categories as $category)
-                        <option {{ $category->id == $product->category_id ? 'selected' : '' }}
-                            value="{{ $category->id }}">
+                        <option {{ $category->id == $product->category_id ? 'selected' : '' }} value="{{ $category->id }}">
                             {{ $category->name }}
                         </option>
                     @endforeach
                 </select>
             </div>
         </div>
-          <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Parent Product:</label>
                 <select class="form-control" name="parent_id" id="parent_id">
                     <option value="">Select Parent Product</option>
                     @foreach ($parentProducts as $parentProduct)
-                        <option {{ $parentProduct->id == $product->parent_id ? 'selected' : '' }} value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
+                        <option {{ $parentProduct->id == $product->parent_id ? 'selected' : '' }}
+                            value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
 
                     @endforeach
 
@@ -91,26 +92,26 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="name" value="{{ $product->name }}" placeholder="Name"
-                    class="form-control" />
+                <input type="text" name="name" value="{{ $product->name }}" placeholder="Name" class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
-                <textarea name="description" value="{{ $product->description }}" placeholder="Description" class="form-control"></textarea>
+                <textarea name="description" value="{{ $product->description }}" placeholder="Description"
+                    class="form-control"></textarea>
             </div>
         </div>
 
-        <div class="col-xs-6 col-sm-6 col-md-6 showhide" style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide"
+            style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
             <div class="form-group">
                 <label>Bag Weight for Purchasing:</label>
-                <input type="text" name="bag_weight_for_purchasing"
-                    value="{{ $product->bag_weight_for_purchasing }}" placeholder="Bag Weight for Purchasing"
-                    class="form-control" />
+                <input type="text" name="bag_weight_for_purchasing" value="{{ $product->bag_weight_for_purchasing }}"
+                    placeholder="Bag Weight for Purchasing" class="form-control" />
             </div>
         </div>
-        
+
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Barcode:</label>
@@ -118,11 +119,31 @@
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6 showhide" style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
+        <div class="col-xs-6 col-sm-6 col-md-6 showhide"
+            style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
             <div class="form-group">
                 <label>Price:</label>
                 <input type="text" name="price" value="{{ $product->price }}" placeholder="Price"
                     class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Child/By Product:</label>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="checkbox checkbox-success" bis_skin_checked="1">
+                            <input type="checkbox" name="is_child_product" {{ $product->is_child_product === 'yes' ? 'checked' : '' }} value="yes" id="color-checkbox-1">
+                            <label for="color-checkbox-1"><span>Child Product</span></label>
+                        </div>
+                    </li>
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="checkbox checkbox-success" bis_skin_checked="1">
+                            <input type="checkbox" name="is_by_product" {{ $product->is_by_product == 'yes' ? 'checked' : '' }} value="yes" id="color-checkbox-3" >
+                            <label for="color-checkbox-3"><span>By Product</span></label>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -155,5 +176,5 @@
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
-    
+
 </form>

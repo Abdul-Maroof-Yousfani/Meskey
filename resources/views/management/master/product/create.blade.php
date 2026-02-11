@@ -97,15 +97,7 @@
                 <input type="text" name="price" placeholder="Price" class="form-control" />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Status:</label>
-                <select class="form-control" name="status">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-            </div>
-        </div>
+
         {{-- <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
             <div class="form-group">
                 <label>Type:</label>
@@ -120,6 +112,36 @@
 
             </div>
         </div> --}}
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Child/By Product:</label>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="checkbox checkbox-success" bis_skin_checked="1">
+                            <input type="checkbox" name="is_child_product" id="color-checkbox-1" value="yes">
+                            <label for="color-checkbox-1"><span>Child Product</span></label>
+                        </div>
+                    </li>
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="checkbox checkbox-success" bis_skin_checked="1">
+                            <input type="checkbox" name="is_by_product" id="color-checkbox-3" value="yes">
+                            <label for="color-checkbox-3"><span>By Product</span></label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Status:</label>
+                <select class="form-control" name="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <div class="row bottom-button-bar">
