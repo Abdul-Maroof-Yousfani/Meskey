@@ -33,7 +33,7 @@ class SalesOrderRequest extends FormRequest
             "sauda_type" => "required|in:pohanch,x-mill,thadda",
             "company_id" => "required",
             'pay_type_id' => 'required',
-            'token_money' => 'required|numeric',
+            'token_money' => 'nullable|numeric',
             "remarks" => "nullable",
             "contact_person" => "nullable|string|max:255",
             "arrival_location_id" => "nullable|array",
