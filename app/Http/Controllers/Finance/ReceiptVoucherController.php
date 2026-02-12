@@ -632,7 +632,7 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
-    public function show($id)
+     public function show($id)
     {
         $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items'])->findOrFail($id);
 
@@ -644,17 +644,21 @@ class ReceiptVoucherController extends Controller
                 $so = SalesOrder::with('customer')->find($item->reference_id);
                 $docNo = $so->so_reference_no ?? $so->reference_no ?? $so->so_no ?? ('SO-' . $item->reference_id);
                 $customer = $so->customer->name ?? '';
-            } else {
+            } elseif($item->reference_type == 'sale_invoice') {
                 $inv = SalesInvoice::with('customer')->find($item->reference_id);
                 $docNo = $inv->si_no ?? ('INV-' . $item->reference_id);
                 if ($inv && $inv->reference_number) {
                     $docNo .= ' | Ref: ' . $inv->reference_number;
                 }
                 $customer = $inv->customer->name ?? '';
+            } else {
+                $account_id = $item->account_id;
+                $account = Account::find($account_id);
+                $customer = $account->name;
             }
 
             return [
-                'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : 'Sales Invoice',
+                'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : ($item->reference_type == 'sale_invoice' ? 'Sale Invoice' : 'Direct RV'),
                 'doc_no' => $item->reference_type === 'sale_order' ? (SalesOrder::find($item->reference_id))->reference_no : (SalesInvoice::find($item->reference_id))?->si_no ?? null ,
                 'customer' => $customer,
                 'amount' => $item->amount,
