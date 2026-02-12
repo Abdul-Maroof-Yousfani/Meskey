@@ -118,7 +118,7 @@ class ProductSlabController extends Controller
 
             return response()->json([
                 'success' => 'Product slabs created successfully.',
-                'redirect' => route('get.product-slab')
+                // 'redirect' => route('get.product-slab')
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
