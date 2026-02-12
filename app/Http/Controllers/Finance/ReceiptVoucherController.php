@@ -655,7 +655,7 @@ class ReceiptVoucherController extends Controller
 
             return [
                 'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : 'Sales Invoice',
-                'doc_no' => $item->reference_type === 'sale_order' ? (SalesOrder::find($item->reference_id))->reference_no : (SalesInvoice::find($item->reference_id))->si_no ,
+                'doc_no' => $item->reference_type === 'sale_order' ? (SalesOrder::find($item->reference_id))->reference_no : (SalesInvoice::find($item->reference_id))?->si_no ?? null ,
                 'customer' => $customer,
                 'amount' => $item->amount,
                 'tax_amount' => $item->tax_amount,
