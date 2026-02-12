@@ -14,6 +14,7 @@ class ProductionOutput extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'job_order_packing_item_id',
         'production_voucher_id',
         'slot_id',
         'job_order_id',

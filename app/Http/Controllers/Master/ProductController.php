@@ -63,7 +63,7 @@ class ProductController extends Controller
      */
     public function create(Request $request)
     {
-        
+
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
         $parentProducts = Product::where('parent_id', null)->get();
@@ -117,8 +117,10 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
+        // dd($request);
         $data = $request->validated();
-
+        $data['is_child_product'] = $request->is_child_product ?? 'no';
+        $data['is_by_product'] = $request->is_by_product ?? 'no';
         if (empty($product->account_id)) {
             $account = Account::create(getParamsForAccountCreation(
                 $request->company_id,

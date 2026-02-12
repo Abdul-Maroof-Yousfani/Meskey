@@ -244,25 +244,9 @@
                         <label>Job Ord. No:</label>
                         <select name="job_order_id[]" id="job_order_id" class="form-control select2" multiple required onchange="loadPackingItems();loadHeadProductsData();loadData();">
                             <option value="">Select Job Order</option>
-                            @php
-                                $locationId = $productionVoucher->location_id ?? null;
-                                $currentProductId = $productionVoucher->product_id ?? null;
-                                $selectedJobOrderIds = $productionVoucher->jobOrders->pluck('id')->toArray();
-                                
-                                // Get job orders for current location and product
-                                $jobOrders = [];
-                                if ($locationId && $currentProductId) {
-                                    $jobOrders = \App\Models\Production\JobOrder\JobOrder::with('product')
-                                        ->where('status', 1)
-                                        ->where('product_id', $currentProductId)
-                                        ->whereHas('packingItems', function ($q) use ($locationId) {
-                                            $q->where('company_location_id', $locationId);
-                                        })
-                                        ->get();
-                                }
-                            @endphp
+
                             @foreach($jobOrders as $jobOrder)
-                                <option value="{{ $jobOrder->id }}" {{ in_array($jobOrder->id, $selectedJobOrderIds) ? 'selected' : '' }}>
+                                <option value="{{ $jobOrder->id }}" {{ in_array($jobOrder->id, $jobOrderIds) ? 'selected' : '' }}>
                                     {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif
                                 </option>
                             @endforeach
@@ -536,7 +520,9 @@
                             'arrivalSubLocations' => $arrivalSubLocations,
                             'brands' => $brands,
                             'jobOrders' => $jobOrders,
-                            'headProductOutputs' => $headProductOutputs
+                            'headProductOutputs' => $headProductOutputs,
+                            'productionVoucher' => $productionVoucher,
+                            'jobOrderPackings' =>$jobOrderPackings
                         ])
                     </div>
                 </div>
@@ -560,7 +546,9 @@
                             'arrivalSubLocations' => $arrivalSubLocations,
                             'brands' => $brands,
                             'jobOrders' => $jobOrders,
-                            'byProductOutputs' => $byProductOutputs
+                            'byProductOutputs' => $byProductOutputs,
+                          //  'jobOrderPackings'=>$jobOrderPackingsByProduct
+                            'jobOrderPackings'=>collect()
                         ])
                     </div>
                 </div>
@@ -705,9 +693,9 @@
         $('#packingItemsBody').empty();
 
         if (!locationId || !productId) {
-            if (triggerChange) {
+            // if (triggerChange) {
                 jobOrderSelect.trigger('change');
-            }
+            // }
             return Promise.resolve();
         }
 
@@ -736,9 +724,9 @@
                 }
                 // Reinitialize select2 to show selected values
                 jobOrderSelect.trigger('change.select2');
-                if (triggerChange) {
+                // if (triggerChange) {
                     jobOrderSelect.trigger('change');
-                }
+                // }
             },
             error: function(xhr) {
                 console.error('Error loading job orders:', xhr);
