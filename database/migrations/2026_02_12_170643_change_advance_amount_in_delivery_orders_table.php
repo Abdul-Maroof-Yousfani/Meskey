@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('delivery_order', function (Blueprint $table) {
             $table->decimal("advance_amount", 15, 2)->change();
             $table->decimal("withhold_amount", 15, 2)->change();
+            
         });
     }
 
