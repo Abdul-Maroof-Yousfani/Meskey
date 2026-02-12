@@ -67,7 +67,7 @@ class SalesInquiryRequest extends FormRequest
             "pack_size" => "nullable|array",
             "pack_size.*" => "required",
 
-            "token_money" => "required|numeric",
+            "token_money" => "nullable|numeric",
 
             "rate_per_mond" => "required",
             "rate_per_mond.*" => "required"
