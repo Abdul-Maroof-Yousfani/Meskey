@@ -288,7 +288,8 @@ class SamplingMonitoringController extends Controller
             }
 
             $ArrivalSamplingRequest->update([
-                'remark' => $request->remarks,
+                'approved_remarks' => $request->remarks,
+                //'remark' => $request->remarks,
                 'decision_making' => $isDecisionMaking,
                 'lumpsum_deduction' => (float) $request->lumpsum_deduction ?? 0.00,
                 'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,
