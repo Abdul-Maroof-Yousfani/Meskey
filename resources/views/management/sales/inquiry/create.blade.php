@@ -3,9 +3,26 @@
     body {
         overflow-x: hidden;
     }
-    .required::after {
-        content: '*';
-        color: red
+
+    .amount-info-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .amount-info-box .form-group {
+        margin-bottom: 10px;
+    }
+
+    .amount-info-box .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .amount-info-box .form-label {
+        font-weight: 600;
+        font-size: 13px;
     }
 </style>
 
@@ -17,112 +34,118 @@
         $selectedFactories = old('arrival_location_id', []);
         $selectedSections = old('arrival_sub_location_id', []);
     @endphp
-    <div class="row">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label required">Inquiry Number:</label>
-                <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label required">Inquiry Date:</label>
-                <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()"  id="inquiry_date" class="form-control">
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label required">Contract Type:</label>
-                <select name="contract_type" id="contract_type" class="form-control select2">
-                    <option value="">Select Contract Type</option>
-                    <option value="x-mill">X-Mill</option>
-                    <option value="pohanch">Pohanch</option>
-                </select>
-            </div>
-        </div>
-    </div>
+    <div class="row form-mar">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry Number: <span class="text-danger">*</span></label>
+                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry Date: <span class="text-danger">*</span></label>
+                        <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date" class="form-control" value="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type: <span class="text-danger">*</span></label>
+                        <select name="contract_type" id="contract_type" class="form-control select2">
+                            <option value="">Select Contract Type</option>
+                            <option value="x-mill">X-Mill</option>
+                            <option value="pohanch">Pohanch</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date: <span class="text-danger">*</span></label>
+                        <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control">
+                    </div>
+                </div>
 
-    <div class="row">
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label required">Customer:</label>
-                <select name="customer" id="customer" class="form-control select2 required">
-                    <option value="">Select Customer</option>
-                    @foreach ($customers ?? [] as $customer)
-                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Contact Person:</label>
-                <input type="text" name="contact_person" id="contact_person" class="form-control">
-            </div>
-        </div>
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label required">Delivery Date:</label>
-                <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control">
-            </div>
-        </div>
-    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Customer: <span class="text-danger">*</span></label>
+                        <select name="customer" id="customer" class="form-control select2 required">
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person:</label>
+                        <input type="text" name="contact_person" id="contact_person" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="reference_number" id="reference_number" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Token Money: <span class="text-danger">*</span></label>
+                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
 
-    <div class="row">
-        <div class="col-md-6 mt-3">
-            <div class="form-group">
-                <label class="form-label">Reference Number:</label>
-                <input type="text" name="reference_number" id="reference_number" class="form-control">
-            </div>
-        </div>
-        <div class="col-md-6 mt-3">
-            <div class="form-group">
-                <label class="form-label required">Token Money:</label>
-                <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
-            </div>
-        </div>
-    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Locations: <span class="text-danger">*</span></label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple>
+                            @foreach (get_locations() as $location)
+                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                            <option value="">Select Factory</option>
+                            @foreach ($arrivalLocations as $factory)
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Section:</label>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                            <option value="">Select Section</option>
+                            @foreach ($arrivalSubLocations as $section)
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
 
-    <div class="row">
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label required">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple>
-                    @foreach (get_locations() as $location)
-                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Factory:</label>
-                <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
-                    <option value="">Select Factory</option>
-                    @foreach ($arrivalLocations as $factory)
-                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} -- {{ $factory->company_location_id }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Section:</label>
-                <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
-                    <option value="">Select Section</option>
-                    @foreach ($arrivalSubLocations as $section)
-                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12 mt-3">
-            <div class="form-group">
-                <label class="form-label">Remarks:</label>
-                <textarea name="remarks" id="remarks" class="form-control" rows="2"></textarea>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -137,7 +160,7 @@
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
-                <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
+                <table class="table table-bordered" id="salesInquiryTable" style="min-width: 1500px;">
                     <thead>
                         <tr>
                             <th class="required">Item</th>
@@ -171,9 +194,13 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="text" name="bag_size[]" id="bag_size_0"
-                                    class="form-control bag_size" onkeyup="calc(this)" step="0.01"
-                                    min="0">
+                                <select name="bag_size[]" id="bag_size_0"
+                                    class="form-control bag_size select2" onchange="calc(this)">
+                                    <option value="">Select Packing</option>
+                                    @foreach ($packings as $packing)
+                                        <option value="{{ $packing }}">{{ $packing }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td>
                             <input type="text" name="no_of_bags[]" id="no_of_bags_0"
@@ -308,6 +335,7 @@
 
         populateFactories();
         populateSections();
+        $('#inquiry_date').trigger('change');
     });
 
     function calc(el) {
@@ -327,20 +355,20 @@
     }
 
     function validateExpiry(){
-            // const inquiryDate = $('#inquiry_date').val();
-            // const requiredDate = $('#required_date').val();
-            // if (inquiryDate && requiredDate) {
-            //     if (inquiryDate > requiredDate) {
-            //         $('#required_date').addClass('is-invalid');
+        // const inquiryDate = $('#inquiry_date').val();
+        // const requiredDate = $('#required_date').val();
+        // if (inquiryDate && requiredDate) {
+        //     if (inquiryDate > requiredDate) {
+        //         $('#required_date').addClass('is-invalid');
 
-            //         Swal.fire({
-            //             icon: 'error',
-            //             title: 'Expired!',
-            //             text: 'Inquiry date cannot be greater than required date.',
-            //             confirmButtonText: 'OK'
-            //         });
-            //     }
-            // }
+        //         Swal.fire({
+        //             icon: 'error',
+        //             title: 'Expired!',
+        //             text: 'Inquiry date cannot be greater than required date.',
+        //             confirmButtonText: 'OK'
+        //         });
+        //     }
+        // }
         }
 
     function addRow() {
@@ -365,9 +393,13 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="text" name="bag_size[]" id="bag_size_${index}"
-                                    class="form-control bag_size" onkeyup="calc(this)" step="0.01"
-                                    min="0">
+                                <select name="bag_size[]" id="bag_size_${index}"
+                                    class="form-control bag_size select2" onchange="calc(this)">
+                                    <option value="">Select Packing</option>
+                                    @foreach ($packings as $packing)
+                                        <option value="{{ $packing }}">{{ $packing }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td>
                                 <input type="text" name="no_of_bags[]" id="no_of_bags_${index}"
@@ -408,6 +440,7 @@
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
         $(`#bag_type_${index}`).select2();
+        $(`#bag_size_${index}`).select2();
         $(`#brand_id_${index}`).select2();
         $('#row_0 .removeRowBtn').prop('disabled', true);
         $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);

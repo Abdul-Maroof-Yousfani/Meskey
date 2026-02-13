@@ -68,6 +68,7 @@ class DeliveryChallanController extends Controller
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
+                "labour_status" => $request->labour_status ?? 'paid',
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
                 "labour_amount" => $request->labour_amount,
@@ -76,6 +77,7 @@ class DeliveryChallanController extends Controller
                 "inhouse-weighbridge" => $request->weighbridge,
                 "weighbridge-amount" => $request->weighbridge_amount,
                 "remarks" => $request->remarks,
+                'labour_rate' => ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : $request->labour_rate,
                 "created_by_id" => auth()->user()->id,
             ]);
 
@@ -117,7 +119,7 @@ class DeliveryChallanController extends Controller
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
-                    "bilty_no" => $request->bilty_no[$index],
+                    "container_number" => $request->container_number[$index],
                     "do_data_id" => $request->do_data_id[$index],
                     "bag_type" => $request->bag_type[$index],
                     "ticket_id" => $request->ticket_id[$index]
@@ -168,6 +170,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function destroy(DeliveryChallan $delivery_challan) {
+        $delivery_challan->receivingRequest()->delete();
         $delivery_challan->delete();
 
         return response()->json(["message" => "Delivery Challan has been deleted!"]);
@@ -199,6 +202,7 @@ class DeliveryChallanController extends Controller
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
+                "labour_status" => $request->labour_status ?? 'paid',
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
                 "labour_amount" => $request->labour_amount,
@@ -209,6 +213,7 @@ class DeliveryChallanController extends Controller
                 "remarks" => $request->remarks,
                 "arrival_id" => $arrival_location_csv,
                 "section_id" => $storage_location_csv,
+                'labour_rate' => ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : $request->labour_rate,
                 "created_by_id" => auth()->user()->id,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
@@ -217,16 +222,9 @@ class DeliveryChallanController extends Controller
             $delivery_challan->delivery_order()->sync($do_id);
             $delivery_challan->delivery_challan_data()->delete();
 
+            $createdItems = [];
             foreach($request->item_id as $index => $item) {
-                
-
-                // $balance = delivery_challan_balance($request->do_data_id[$index]);
-
-                // if($request->no_of_bags[$index] > $balance) {
-                //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
-                // }
-
-                $delivery_challan->delivery_challan_data()->create([
+                $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
@@ -235,16 +233,68 @@ class DeliveryChallanController extends Controller
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
-                    "bilty_no" => $request->bilty_no[$index],
+                    "container_number" => $request->container_number[$index],
                     "ticket_id" => $request->ticket_id[$index],
                     "do_data_id" => $request->do_data_id[$index],
                     "bag_type" => $request->bag_type[$index]
+                ]);
+                $createdItems[] = $dcData;
+            }
+
+            // Sync Receiving Request
+            $receivingRequest = $delivery_challan->receivingRequest;
+            if ($receivingRequest) {
+                $receivingRequest->update([
+                    'dc_no' => $delivery_challan->dc_no,
+                    'dc_date' => $delivery_challan->dispatch_date,
+                    'truck_number' => $request->truck_no[0] ?? null,
+                    'bilty' => $request->bilty_no[0] ?? null,
+                    'labour' => $delivery_challan->labour,
+                    'transporter' => $delivery_challan->transporter,
+                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                ]);
+            } else {
+                $receivingRequest = ReceivingRequest::create([
+                    'delivery_challan_id' => $delivery_challan->id,
+                    'dc_no' => $delivery_challan->dc_no,
+                    'dc_date' => $delivery_challan->dispatch_date,
+                    'truck_number' => $request->truck_no[0] ?? null,
+                    'bilty' => $request->bilty_no[0] ?? null,
+                    'labour' => $delivery_challan->labour,
+                    'transporter' => $delivery_challan->transporter,
+                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                    'company_id' => $delivery_challan->company_id,
+                    'created_by_id' => $delivery_challan->created_by_id,
+                ]);
+            }
+
+            // Sync Receiving Request Items
+            $receivingRequest->items()->delete();
+            foreach ($createdItems as $dcData) {
+                $product = Product::find($dcData->item_id);
+                ReceivingRequestItem::create([
+                    'receiving_request_id' => $receivingRequest->id,
+                    'delivery_challan_data_id' => $dcData->id,
+                    'item_id' => $dcData->item_id,
+                    'item_name' => $product?->name ?? 'N/A',
+                    'dispatch_weight' => $dcData->qty ?? 0,
+                    'receiving_weight' => 0,
+                    'difference_weight' => $dcData->qty ?? 0,
+                    'seller_portion' => 0,
+                    'remaining_amount' => $dcData->qty ?? 0,
                 ]);
             }
 
             DB::commit();
         } catch(\Exception $e) {
-            dd($e->getMessage());
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
 
         return response()->json(["Delivery Challan has been created"]);
@@ -315,7 +365,8 @@ class DeliveryChallanController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $delivery_challans = DeliveryChallan::latest()
+        $delivery_challans = DeliveryChallan::with(['delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
+            ->latest()
             ->paginate($perPage);
 
         $groupedData = [];
@@ -332,6 +383,7 @@ class DeliveryChallanController extends Controller
             foreach ($items as $itemData) {
                 $itemRows[] = [
                     'item_data' => $itemData,
+                    'accepted_qc_id' => $itemData->loadingProgramItem->acceptedDispatchQc->id ?? null,
                 ];
             }
 
@@ -528,10 +580,9 @@ class DeliveryChallanController extends Controller
      * Get tickets with accepted Dispatch QC for initial selection in Delivery Challan
      */
     public function getTicketsWithDispatchQc(Request $request) {
-        // Get tickets that have:
-        // 1. Dispatch QC with status = 'accept'
-        // 2. Are NOT already used in any delivery challan
-        $tickets = LoadingProgramItem::with([
+        $delivery_challan_id = $request->delivery_challan_id;
+
+        $query = LoadingProgramItem::with([
                 'loadingProgram.deliveryOrder.customer',
                 'loadingProgram.deliveryOrder',
                 'loadingProgram.saleOrder',
@@ -540,9 +591,20 @@ class DeliveryChallanController extends Controller
                 'subArrivalLocation',
                 'loadingSlip.secondWeighbridge'
             ])
-            ->whereHas("loadingSlip.secondWeighbridge")
-            ->whereDoesntHave('delivery_challan_data')
-            ->get()
+            ->whereHas("loadingSlip.secondWeighbridge");
+
+        if ($delivery_challan_id) {
+            $query->where(function($q) use ($delivery_challan_id) {
+                $q->whereDoesntHave('delivery_challan_data')
+                  ->orWhereHas('delivery_challan_data', function($subQ) use ($delivery_challan_id) {
+                      $subQ->where('delivery_challan_id', $delivery_challan_id);
+                  });
+            });
+        } else {
+            $query->whereDoesntHave('delivery_challan_data');
+        }
+
+        $tickets = $query->get()
             ->map(function($ticket) {
                 return [
                     'id' => $ticket->id,
@@ -606,6 +668,25 @@ class DeliveryChallanController extends Controller
             }
         }
 
+        $packing = $ticket->packing;
+        $bag_packing =  \App\Models\BagPacking::select("id")
+                                    ->where("name", $packing . " kg")
+                                    ->orWhere("name", $packing . "KG")
+                                    ->where("status", 1)
+                                    ->first();
+        $arrival_location_id = $ticket->arrival_location_id;
+        $delivery_order_id = $ticket->delivery_order_id;
+        $delivery_order = DeliveryOrder::find($delivery_order_id);
+        $product = Product::find($delivery_order->delivery_order_data[0]->item_id);
+        $category_id = $product->category_id;
+
+        $labour_rate = \App\Models\Master\LabourRate::select("id", "rate")
+                                    ->where("category_id", $category_id)
+                                    ->where("factory_id", $arrival_location_id)
+                                    ->where("bag_packing_id", $bag_packing->id)
+                                    ->where("status", 1)
+                                    ->first();
+       
         $subArrivalLocations = [];
         $subArrivalLocationIds = [];
         if ($ticket->sub_arrival_location_id) {
@@ -622,6 +703,7 @@ class DeliveryChallanController extends Controller
 
         $data = [
             'success' => true,
+            'rate' => $labour_rate ? $labour_rate->rate : "N/A",
             'ticket' => [
                 'id' => $ticket->id,
                 'transaction_number' => $ticket->transaction_number,
@@ -644,7 +726,8 @@ class DeliveryChallanController extends Controller
                 'sub_arrival_locations' => $subArrivalLocations,
                 'sub_arrival_location_ids' => $subArrivalLocationIds,
             ],
-            'loading_slip_labour' => $loadingSlipLabour
+            'loading_slip_labour' => $loadingSlipLabour,
+            'is_labour_editable' => (strtolower($deliveryOrder->sauda_type ?? '') == 'x-mill' || strtolower($deliveryOrder->sauda_type ?? '') == 'xmill')
         ];
 
         return response()->json($data);

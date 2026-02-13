@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sales;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesInquiryRequest;
 use App\Models\BagType;
+use App\Models\BagPacking;
 use App\Models\Master\Customer;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\ArrivalSubLocation;
@@ -27,7 +28,14 @@ class SalesInquiryController extends Controller
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
         $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations"));
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
+
+        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings"));
     }
 
     public function getList(Request $request)
@@ -279,8 +287,14 @@ class SalesInquiryController extends Controller
         // dd($arrivalLocations[0]->compa);
         $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
 
-        return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations"));
+        return view("management.sales.inquiry.view", compact("sales_inquiry", "customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings"));
     }
 
     public function edit(SalesInquiry $sales_inquiry) {
@@ -292,7 +306,14 @@ class SalesInquiryController extends Controller
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
         $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types", "arrivalLocations", "arrivalSubLocations"));
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
+
+        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings"));
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {

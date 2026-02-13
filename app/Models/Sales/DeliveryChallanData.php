@@ -26,6 +26,11 @@ class DeliveryChallanData extends Model
         return $this->belongsTo(DeliveryOrderData::class, "do_data_id");
     }
 
+    public function loadingProgramItem()
+    {
+        return $this->belongsTo(LoadingProgramItem::class, 'ticket_id');
+    }
+
     public static function booted() {
         static::created(function($delivery_challan_data) {
             $customer_id = $delivery_challan_data->deliveryChallan->customer_id;

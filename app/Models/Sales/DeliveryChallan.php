@@ -31,6 +31,8 @@ class DeliveryChallan extends Model
         "subarrival_id",
         "created_by_id",
         "section_id",
+        'labour_rate',
+        "labour_status",
         "am_approval_status",
         "am_change_made"
     ];

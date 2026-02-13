@@ -3,6 +3,27 @@
     body {
         overflow-x: hidden;
     }
+
+    .amount-info-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .amount-info-box .form-group {
+        margin-bottom: 10px;
+    }
+
+    .amount-info-box .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .amount-info-box .form-label {
+        font-weight: 600;
+        font-size: 13px;
+    }
 </style>
 
 <form action="{{ route('sales.sale-order.store') }}" method="POST" id="ajaxSubmit2" autocomplete="off">
@@ -10,138 +31,159 @@
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
     <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">SO No:</label>
-                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
-            </div>
-        </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Inquiry No:</label>
-                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2" disabled>
-                    <option value="">Select Inquiry</option>
-                    @foreach ($inquiries ?? [] as $inquiry)
-                        <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Date:</label>
-                <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Contract Type:</label>
-                <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
-                    <option value="">Select Contract Type</option>
-                    <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
-                    <option value="x-mill" @selected(strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Customer:</label>
-                <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Contact Person:</label>
-                <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
-            </div>
-        </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="{{ $sale_order->payment_term_id ? 'col-md-4' : 'col-md-6'}}">
-            <div class="form-group">
-                <label class="form-label">Reference Number:</label>
-                <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="{{ $sale_order->payment_term_id ? 'col-md-4' : 'col-md-6'}}">
-            <div class="form-group">
-                <label class="form-label">Pay Type:</label>
-                <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control" readonly>
-            </div>
-        </div>
-        @if($sale_order->payment_term_id)
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
-                    <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
                 </div>
-            </div>
-        @endif
-    </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">SO No:</label>
+                        <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Date:</label>
+                        <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry No:</label>
+                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2" disabled>
+                            <option value="">Select Inquiry</option>
+                            @foreach ($inquiries ?? [] as $inquiry)
+                                <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Contract Type</option>
+                            <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected(strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
 
-    @php
-        $selectedFactories = $sale_order->factories?->pluck('arrival_location_id')->toArray() ?? [];
-        if (empty($selectedFactories) && $sale_order->arrival_location_id) {
-            $selectedFactories = [$sale_order->arrival_location_id];
-        }
-        $selectedSections = $sale_order->sections?->pluck('arrival_sub_location_id')->toArray() ?? [];
-        if (empty($selectedSections) && $sale_order->arrival_sub_location_id) {
-            $selectedSections = [$sale_order->arrival_sub_location_id];
-        }
-    @endphp
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer Details</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person:</label>
+                        <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Token Money:</label>
+                        <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0" readonly>
+                    </div>
+                </div>
 
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
-                    <option value="">Select Locations</option>
-                    @foreach(get_locations() as $location)
-                        <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Factory:</label>
-                <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
-                    <option value="">Select Factory</option>
-                    @foreach($arrivalLocations as $factory)
-                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Pay Type:</label>
+                        <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control" readonly>
+                    </div>
+                </div>
+                @if($sale_order->payment_term_id)
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
+                            <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
                 @php
-                    $selectedFactoryNames = [];
-                    if (!empty($selectedFactories)) {
-                        $selectedFactoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $selectedFactories)->pluck('name')->toArray();
+                    $selectedFactories = $sale_order->factories?->pluck('arrival_location_id')->toArray() ?? [];
+                    if (empty($selectedFactories) && $sale_order->arrival_location_id) {
+                        $selectedFactories = [$sale_order->arrival_location_id];
                     }
-                    $factoryNamesString = !empty($selectedFactoryNames) ? ' (' . implode(', ', $selectedFactoryNames) . ')' : '';
+                    $selectedSections = $sale_order->sections?->pluck('arrival_sub_location_id')->toArray() ?? [];
+                    if (empty($selectedSections) && $sale_order->arrival_sub_location_id) {
+                        $selectedSections = [$sale_order->arrival_sub_location_id];
+                    }
                 @endphp
-                <label class="form-label">Section{{ $factoryNamesString }}:</label>
-                <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
-                    <option value="">Select Section</option>
-                    @foreach($arrivalSubLocations as $section)
-                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} ({{ $section->arrivalLocation->name }})</option>
-                    @endforeach
-                </select>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Locations:</label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
+                            <option value="">Select Locations</option>
+                            @foreach(get_locations() as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
+                            <option value="">Select Factory</option>
+                            @foreach($arrivalLocations as $factory)
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @php
+                            $selectedFactoryNames = [];
+                            if (!empty($selectedFactories)) {
+                                $selectedFactoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $selectedFactories)->pluck('name')->toArray();
+                            }
+                            $factoryNamesString = !empty($selectedFactoryNames) ? ' (' . implode(', ', $selectedFactoryNames) . ')' : '';
+                        @endphp
+                        <label class="form-label">Section{{ $factoryNamesString }}:</label>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
+                            <option value="">Select Section</option>
+                            @foreach($arrivalSubLocations as $section)
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} ({{ $section->arrivalLocation->name }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3" readonly>{{ $sale_order->remarks }}</textarea>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

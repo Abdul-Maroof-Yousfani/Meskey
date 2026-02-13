@@ -3,6 +3,27 @@
     body {
         overflow-x: hidden;
     }
+
+    .amount-info-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .amount-info-box .form-group {
+        margin-bottom: 10px;
+    }
+
+    .amount-info-box .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .amount-info-box .form-label {
+        font-weight: 600;
+        font-size: 13px;
+    }
 </style>
 
 <form action="{{ route('sales.sale-order.update', ['sale_order' => $sale_order->id]) }}" method="POST" id="ajaxSubmit"
@@ -11,174 +32,178 @@
     {{ method_field('PUT') }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
     <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">SO No:</label>
-                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}"
-                    class="form-control" readonly>
-            </div>
-        </div>
-    </div>
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">SO No:</label>
+                        <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}"
+                            class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Date:</label>
+                        <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
+                            class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry No:</label>
+                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
+                            <option value="">Select Inquiry</option>
+                            @foreach ($inquiries ?? [] as $inquiry)
+                                <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                {{-- @dd($sale_order) --}}
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <select @if(!$sale_order->inquiry_id) name="sauda_type" @endif id="sauda_type" class="form-control select2">
+                            <option value="">Select Contract Type</option>
+                            <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected( strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
+                        </select>
+                        <input type="hidden" @if($sale_order->inquiry_id) name="sauda_type" @endif value="{{ strtolower($sale_order->sauda_type) }}" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
+                            id="delivery_date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}"
+                            class="form-control">
+                    </div>
+                </div>
 
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Inquiry No:</label>
-                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
-                    <option value="">Select Inquiry</option>
-                    @foreach ($inquiries ?? [] as $inquiry)
-                        <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Date:</label>
-                <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
-                    class="form-control">
-            </div>
-        </div>
-        {{-- @dd($sale_order) --}}
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Contract Type:</label>
-                <select @if(!$sale_order->inquiry_id) name="sauda_type" @endif id="sauda_type" class="form-control select2">
-                    <option value="">Select Contract Type</option>
-                    <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
-                    <option value="x-mill" @selected( strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
-                </select>
-                <input type="hidden" @if($sale_order->inquiry_id) name="sauda_type" @endif value="{{ strtolower($sale_order->sauda_type) }}" />
-            </div>
-        </div>
-    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer Details</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <select @if(!$sale_order->inquiry_id) name="customer_id" @endif id="customer_id" class="form-control select2">
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}" @selected($customer->id == $sale_order->customer_id)>{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" @if($sale_order->inquiry_id) name="customer_id" @endif value="{{ $sale_order->customer_id }}" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person:</label>
+                        <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" @if($sale_order->inquiry_id) readonly @endif>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Token Money:</label>
+                        <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
 
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Customer:</label>
-                <select @if(!$sale_order->inquiry_id) name="customer_id" @endif id="customer_id" class="form-control select2">
-                    <option value="">Select Customer</option>
-                    @foreach ($customers ?? [] as $customer)
-                        <option value="{{ $customer->id }}" @selected($customer->id == $sale_order->customer_id)>{{ $customer->name }}</option>
-                    @endforeach
-                </select>
-                <input type="hidden" @if($sale_order->inquiry_id) name="customer_id" @endif value="{{ $sale_order->customer_id }}" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Contact Person:</label>
-                <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" @if($sale_order->inquiry_id) readonly @endif>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
-                    id="delivery_date" class="form-control">
-            </div>
-        </div>
-    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Pay Type:</label>
+                        <select name="pay_type_id" id="pay_type_id" class="form-control select2" onchange="is_type_credit(this)">
+                            <option value="">Select Pay Type</option>
+                            @foreach ($pay_types as $pay_type)
+                                <option value="{{ $pay_type->id }}" @selected($sale_order->pay_type_id == $pay_type->id)>{{ $pay_type->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Payment Terms:</label>
+                        <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" @disabled($sale_order->pay_type_id != 8)>
+                            <option value="">Select Payment Term</option>
+                            @foreach ($payment_terms as $payment_term)
+                                <option value="{{ $payment_term->id }}" @selected($payment_term->id == $sale_order->payment_term_id)>{{ $payment_term->desc }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
 
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Reference Number:</label>
-                <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}"
-                    class="form-control">
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Pay Type:</label>
-                <select name="pay_type_id" id="pay_type_id" class="form-control select2" onchange="is_type_credit(this)">
-                    <option value="">Select Pay Type</option>
-                    @foreach ($pay_types as $pay_type)
-                        <option value="{{ $pay_type->id }}" @selected($sale_order->pay_type_id == $pay_type->id)>{{ $pay_type->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Payment Terms:</label>
-                <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" @disabled($sale_order->pay_type_id != 8)>
-                    <option value="">Select Payment Term</option>
-                    @foreach ($payment_terms as $payment_term)
-                        <option value="{{ $payment_term->id }}" @selected($payment_term->id == $sale_order->payment_term_id)>{{ $payment_term->desc }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
+                @php
+                    $selectedFactories = $sale_order->factories?->pluck('arrival_location_id')->toArray() ?? [];
+                    if (empty($selectedFactories) && $sale_order->arrival_location_id) {
+                        $selectedFactories = [$sale_order->arrival_location_id];
+                    }
+                    $selectedSections = $sale_order->sections?->pluck('arrival_sub_location_id')->toArray() ?? [];
+                    if (empty($selectedSections) && $sale_order->arrival_sub_location_id) {
+                        $selectedSections = [$sale_order->arrival_sub_location_id];
+                    }
+                    $oldFactories = old('arrival_location_id', $selectedFactories);
+                    $oldSections = old('arrival_sub_location_id', $selectedSections);
+                @endphp
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Locations:</label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple>
+                            <option value="">Select Locations</option>
+                            @foreach (get_locations() as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck('location_id')->toArray()))>{{ $location->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple @if($sale_order->inquiry_id) disabled @endif>
+                            <option value="">Select Factory</option>
+                            @foreach ($arrivalLocations as $factory)
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $oldFactories))>{{ $factory->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Section:</label>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple @if($sale_order->inquiry_id) disabled @endif>
+                            <option value="">Select Section</option>
+                            @foreach ($arrivalSubLocations as $section)
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $oldSections))>{{ $section->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
 
-    @php
-        $selectedFactories = $sale_order->factories?->pluck('arrival_location_id')->toArray() ?? [];
-        if (empty($selectedFactories) && $sale_order->arrival_location_id) {
-            $selectedFactories = [$sale_order->arrival_location_id];
-        }
-        $selectedSections = $sale_order->sections?->pluck('arrival_sub_location_id')->toArray() ?? [];
-        if (empty($selectedSections) && $sale_order->arrival_sub_location_id) {
-            $selectedSections = [$sale_order->arrival_sub_location_id];
-        }
-        $oldFactories = old('arrival_location_id', $selectedFactories);
-        $oldSections = old('arrival_sub_location_id', $selectedSections);
-    @endphp
-
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple>
-                    <option value="">Select Locations</option>
-                    @foreach (get_locations() as $location)
-                        <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck('location_id')->toArray()))>{{ $location->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3">{{ $sale_order->remarks }}</textarea>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Factory:</label>
-                <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple @if($sale_order->inquiry_id) disabled @endif>
-                    <option value="">Select Factory</option>
-                    @foreach ($arrivalLocations as $factory)
-                        <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $oldFactories))>{{ $factory->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Section:</label>
-                <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple @if($sale_order->inquiry_id) disabled @endif>
-                    <option value="">Select Section</option>
-                    @foreach ($arrivalSubLocations as $section)
-                        <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $oldSections))>{{ $section->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Token Money:</label>
-                <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0">
-            </div>
-        </div>
-
-        <div class="col-md-8">
-            <div class="form-group">
-                <label class="form-label">Remarks:</label>
-                <textarea name="remarks" id="remarks"  class="form-control">{{ $sale_order->remarks }}</textarea>
-            </div>
-        </div>
-
     </div>
 
     <div class="row form-mar">
@@ -232,9 +257,12 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
-                                        value="{{ $data->bag_size }}" onkeyup="calcBagTypes(this)" class="form-control bag_size"
-                                        step="0.01" min="0">
+                                    <select name="bag_size[]" id="bag_size_{{ $index }}" class="form-control bag_size select2" onchange="calcBagTypes(this)">
+                                        <option value="">Select Packing</option>
+                                        @foreach ($packings as $packing)
+                                            <option value="{{ $packing }}" @selected($data->bag_size == $packing)>{{ $packing }}</option>
+                                        @endforeach
+                                    </select>
                                     <input type="hidden" name="sales_inquiry_id[]"
                                         id="sales_inquiry_id_{{ $index }}" value="{{ $data->sales_inquiry_id }}"
                                         class="form-control">
@@ -501,6 +529,10 @@
             dataType: "html",
             success: function(res) {
                 $("#salesInquiryBody").html(res);
+                $('#salesInquiryBody').find('.select2').select2();
+                if ($("#inquiry_id").val()) {
+                    disableTableFields();
+                }
             },
             error: function(error) {
                 console.log(error);
@@ -589,7 +621,12 @@
                 </select>
             </td>
             <td>
-                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calcBagTypes(this)" step="0.01" min="0">
+                <select name="bag_size[]" id="bag_size_${index}" class="form-control bag_size select2" onchange="calcBagTypes(this)">
+                    <option value="">Select Packing</option>
+                    @foreach ($packings as $packing)
+                        <option value="{{ $packing }}">{{ $packing }}</option>
+                    @endforeach
+                </select>
                 <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_${index}" value="" class="form-control">
             </td>
             <td>
@@ -625,6 +662,7 @@
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
         $(`#bag_type_id_${index}`).select2();
+        $(`#bag_size_${index}`).select2();
         $(`#brand_id_${index}`).select2();
     }
 
@@ -718,35 +756,100 @@
         // Ensure disabled values for item_id, brand_id, and bag_type are posted
         $('#salesInquiryTable tbody tr').each(function() {
             const $row = $(this);
-            const itemVal = $row.find('select[name="item_id[]"]').val() || '';
-            const brandVal = $row.find('select[name="brand_id[]"]').val() || '';
-            const bagTypeVal = $row.find('select[name="bag_type_id[]"], select[name="bag_type[]"]').val() || '';
+            const itemVal = $row.find('select[name="item_id[]"], input[name="item_id[]"]').val() || '';
+            const brandVal = $row.find('select[name="brand_id[]"], input[name="brand_id[]"]').val() || '';
+            const bagTypeVal = $row.find('select[name="bag_type_id[]"], select[name="bag_type[]"], input[name="bag_type[]"]').val() || '';
+            const bagSizeVal = $row.find('select[name="bag_size[]"], input[name="bag_size[]"]').val() || '';
 
             $row.find('.hidden_item_id').remove();
             $row.find('.hidden_brand_id').remove();
             $row.find('.hidden_bag_type').remove();
+            $row.find('.hidden_bag_size').remove();
 
-            $('<input>', {
-                type: 'hidden',
-                name: 'item_id[]',
-                class: 'hidden_item_id',
-                value: itemVal
-            }).appendTo($row);
+            if (itemVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'item_id[]',
+                    class: 'hidden_item_id',
+                    value: itemVal
+                }).appendTo($row);
+            }
 
-            $('<input>', {
-                type: 'hidden',
-                name: 'brand_id[]',
-                class: 'hidden_brand_id',
-                value: brandVal
-            }).appendTo($row);
+            if (brandVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'brand_id[]',
+                    class: 'hidden_brand_id',
+                    value: brandVal
+                }).appendTo($row);
+            }
 
-            $('<input>', {
-                type: 'hidden',
-                name: 'bag_type[]',
-                class: 'hidden_bag_type',
-                value: bagTypeVal
-            }).appendTo($row);
+            if (bagTypeVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'bag_type[]',
+                    class: 'hidden_bag_type',
+                    value: bagTypeVal
+                }).appendTo($row);
+            }
+
+            if (bagSizeVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'bag_size[]',
+                    class: 'hidden_bag_size',
+                    value: bagSizeVal
+                }).appendTo($row);
+            }
         });
+    }
+
+    function enableTableFields() {
+        $('#salesInquiryTable').find('input, select, textarea, button').each(function() {
+            const $el = $(this);
+            if ($el.is('select')) {
+                $el.prop('disabled', false);
+            } else if ($el.is('button')) {
+                $el.prop('disabled', false);
+            } else {
+                $el.prop('readonly', false);
+            }
+        });
+
+        $('#salesInquiryTable tbody tr').each(function() {
+            const $row = $(this);
+            $row.find('.hidden_item_id').remove();
+            $row.find('.hidden_brand_id').remove();
+            $row.find('.hidden_bag_type').remove();
+            $row.find('.hidden_bag_size').remove();
+        });
+    }
+
+    function enableInquiryFields() {
+        // Enable fields when no inquiry selected
+        $("#delivery_date").prop('readonly', false);
+        $("#customer_id").prop('disabled', false);
+        $("#sauda_type").prop('disabled', false);
+        $("#locations").prop('disabled', false);
+        $("#token_money").prop('readonly', false);
+        $("#contact_person").prop('readonly', false);
+        $("#arrival_location_id").prop('disabled', false).trigger('change.select2');
+        $("#arrival_sub_location_id").prop('disabled', false).trigger('change.select2');
+
+        // Restore name attributes and remove hidden inputs
+        $("#customer_id").attr('name', 'customer_id');
+        $("#sauda_type").attr('name', 'sauda_type');
+        $("#locations").attr('name', 'locations[]');
+        $("#arrival_location_id").attr('name', 'arrival_location_id[]');
+        $("#arrival_sub_location_id").attr('name', 'arrival_sub_location_id[]');
+
+        $('#customer_id_hidden').remove();
+        $('#sauda_type_hidden').remove();
+        $('.locations_hidden').remove();
+        $('.arrival_location_hidden').remove();
+        $('.arrival_sub_location_hidden').remove();
+        
+        enableTableFields();
     }
 
     function calc(el) {

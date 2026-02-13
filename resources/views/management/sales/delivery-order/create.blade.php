@@ -32,17 +32,18 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-order.list') }}" />
 
     <div class="row form-mar">
-        <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
             <div class="row">
-
-                <div class="col-md-4">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Do No:</label>
                         <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
                         <input
@@ -55,8 +56,7 @@
                         >
                     </div>
                 </div>
-
-                <div class="col-md-4 ">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Contract Type:</label>
                         <input type="hidden" name="sauda_type" id="sauda_type_hidden">
@@ -67,10 +67,23 @@
                         </select>
                     </div>
                 </div>
-            </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="ref_no" id="ref_no" class="form-control">
+                    </div>
+                </div>
 
-            <div class="row">
-                <div class="col-md-4">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers()"
@@ -82,8 +95,7 @@
                         </select>
                     </div>
                 </div>
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
@@ -93,7 +105,10 @@
                     </div>
                 </div>
 
-                <div class="col-md-4 advanced">
+                <div class="col-12 mt-3 advanced">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-3 advanced">
                     <div class="form-group">
                         <label class="form-label">Receipt Vouchers:</label>
                         <select name="receipt_vouchers[]" id="receipt_vouchers"
@@ -103,27 +118,21 @@
                         </select>
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 advanced">
+                <div class="col-md-3 advanced">
                     <div class="form-group">
                         <label class="form-label">Advance Amount:</label>
                         <input type="number" name="advance_amount" onchange="" id="advance_amount"
                             class="form-control" readonly>
                     </div>
                 </div>
-
-                <div class="col-md-4 advanced">
+                <div class="col-md-3 advanced">
                     <div class="form-group">
                         <label class="form-label">Withhold Amount:</label>
                         <input type="number" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
                             id="withhold_amount" class="form-control">
-
                     </div>
                 </div>
-
-                <div class="col-md-4 advanced">
+                <div class="col-md-3 advanced">
                     <div class="form-group">
                         <label class="form-label">Withhold for RV:</label>
                         <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
@@ -131,24 +140,10 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Reference Number:</label>
-                        <input type="text" name="line_desc" id="line_desc" class="form-control">
-                    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
@@ -184,13 +179,13 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <div class="row">
-                <div class="col-md-12">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label">Remarks:</label>
-                        <textarea name="remarks" id="remarks" class="form-control"></textarea>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
             </div>
@@ -270,10 +265,7 @@
         // const dispatchDate = new Date(do_date);
         // const deliveryDate = new Date(delivery_date);
 
-        // console.log(dispatchDate);
-        // console.log(delivery_date);
-
-        // if(dispatchDate > deliveryDate) {
+        // if(do_date > delivery_date) {
         //     Swal.fire({
         //         icon: 'error',
         //         title: 'Expired!',
@@ -943,5 +935,10 @@
         });
     }
 
-    
+    $('.select2').on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>
