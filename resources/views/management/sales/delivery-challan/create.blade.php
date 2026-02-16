@@ -32,139 +32,119 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-challan.list') }}" />
 
     <div class="row form-mar">
-        <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
-            <!-- Row 1: Dispatch Date, Do No -->
-
-            <div class="row" style="margin-top: 10px">
-                <div class="col-md-4">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">DC NO:</label>
-                        <input type="text" name="dc_no" id="dc_no" id="text" class="form-control" readonly>
+                        <input type="text" name="dc_no" id="dc_no" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Date:</label>
-                        <input 
-                            type="date" 
-                            name="date" 
-                            onchange="getNumber()" 
-                            id="date" 
-                            class="form-control"
-                            value="{{ date('Y-m-d') }}"
-                            readonly
-                        >
+                        <input type="date" name="date" onchange="getNumber()" id="date" class="form-control" value="{{ date('Y-m-d') }}" readonly>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Contract Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2">
-                        <option value="">Select Contract type</option>
-                        <option value="pohanch">Pohanch</option>
-                        <option value="x-mill">X-mill</option>
-                    </select>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Select Ticket: <span class="text-danger">*</span></label>
+                        <select name="initial_ticket_id" id="initial_ticket_id" onchange="onInitialTicketSelect(this)" class="form-control select2">
+                            <option value="">Select Ticket</option>
+                        </select>
+                    </div>
                 </div>
-                {{-- <div class="col-md-4">
-                    <label class="form-label">Customer:</label>
-                    <select name="customer_id" id="customer_id" onchange="get_delivery_orders()"
-                        class="form-control select2">
-                        <option value="">Select Customer</option>
-                        @foreach ($customers ?? [] as $customer)
-                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                        @endforeach
-                    </select>
-                </div> --}}
-
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="form-label">Select Ticket: <span class="text-danger">*</span></label>
-                    <select name="initial_ticket_id" id="initial_ticket_id" onchange="onInitialTicketSelect(this)"
-                        class="form-control select2">
-                        <option value="">Select Ticket</option>
-                    </select>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <select id="customer_id_display" class="form-control select2" disabled>
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="customer_id" id="customer_id">
+                    </div>
                 </div>
-                
-
-                <div class="col-md-4">
-                    <label class="form-label">Customer:</label>
-                    <select id="customer_id_display" 
-                        class="form-control select2" disabled>
-                        <option value="">Select Customer</option>
-                        @foreach ($customers ?? [] as $customer)
-                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                        @endforeach
-                    </select>
-                    <input type="hidden" name="customer_id" id="customer_id">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">DO Number:</label>
+                        <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2" disabled>
+                            <option value="">Select Delivery Order</option>
+                        </select>
+                        <input type='hidden' name="delivery_order_id" id="delivery_order_id" />
+                    </div>
                 </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">DO Number:</label>
-                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2" disabled>
-                        <option value="">Select Delivery Order</option>
-                    </select>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2">
+                            <option value="">Select Contract type</option>
+                            <option value="pohanch">Pohanch</option>
+                            <option value="x-mill">X-mill</option>
+                        </select>
+                    </div>
                 </div>
-
-                <input type='hidden' name="delivery_order_id" id="delivery_order_id" />
-            </div>
-
-            <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="reference_number" id="reference_number" class="form-control" disabled>
                     </div>
                 </div>
-                
-          
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Ticket Labour:</label>
-                        <input type="text" id="ticket_labour" class="form-control" readonly placeholder="Select a ticket first">
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="form-label">Locations:</label>
-                    <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
-                        <option value="">Select Locations</option>
-                    </select>
-                    <div id="locations_hidden">
+                        <label class="form-label">Ticket Labour Status:</label>
+                        <select name="labour_status" id="labour_status" class="form-control select2" disabled>
+                            <option value="paid">Paid</option>
+                            <option value="not_paid">Not Paid</option>
+                        </select>
                     </div>
                 </div>
 
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
                 <div class="col-md-4">
-                    <label class="form-label">Factory:</label>
-                    <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
-                        <option value="">Select Factory</option>
-                    </select>
-                    <div id="arrivals_hidden">
+                    <div class="form-group">
+                        <label class="form-label">Locations:</label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
+                            <option value="">Select Locations</option>
+                        </select>
+                        <div id="locations_hidden"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
+                            <option value="">Select Factory</option>
+                        </select>
+                        <div id="arrivals_hidden">
+                            <div id="storages_hidden">
+                                <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Gala:</label>
+                        <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
+                            <option value="">Select Gala</option>
+                        </select>
                         <div id="storages_hidden">
-                            <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" />
+                            <input type="hidden" name="storage_location_csv" id="storage_location_csv" />
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Gala:</label>
-                    <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
-                        <option value="">Select Gala</option>
-                    </select>
-                    <div id="storages_hidden">
-                        <input type="hidden" name="storage_location_csv" id="storage_location_csv" />
-                    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Service Providers</h6>
                 </div>
-            </div>
-
-            <div class="row">
-             
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" onchange="" class="form-control select2">
@@ -174,8 +154,7 @@
                         </select>
                     </div>
                 </div>
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select name="transporter" id="transporter" onchange="" class="form-control select2">
@@ -185,7 +164,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">In-house Weighbridge:</label>
                         <select name="weighbridge" id="weighbridge" onchange="" class="form-control select2">
@@ -195,94 +174,44 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-           
-
-            <div class="row">
-                
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Financials</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Rates:</label>
+                        <input type="text" name="labour_rate" id="standard_labour_rate" class="form-control" readonly style="background-color: #f8f9fa;">
+                    </div>
+                </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour Amount:</label>
-                        <input type="number" name="labour_amount" onchange="" id="labour_amount"
-                            class="form-control">
+                        <input type="number" name="labour_amount" id="labour_amount" class="form-control" readonly style="background-color: #f8f9fa;">
+                        <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount" onchange="" id="transporter_amount"
-                            class="form-control">
+                        <input type="number" name="transporter_amount" onchange="" id="transporter_amount" class="form-control">
                     </div>
                 </div>
-
-                <div class="col-md-4">
+                <div class="col-md-3" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">Weighbridge Amount:</label>
-                        <input type="number" name="weighbridge_amount" onchange="" id="weighbridge_amount"
-                            class="form-control">
+                        <input type="number" name="weighbridge_amount" onchange="" id="weighbridge_amount" class="form-control">
                     </div>
                 </div>
-                {{-- <div class="col-md-4">
-                    <label class="form-label">Sauda Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2">
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="form-label">Labour:</label>
-                    <select name="labour" id="labour" onchange="" class="form-control select2">
-                        <option value="">Select Labours</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="form-label">Labour Amount:</label>
-                    <input type="number" name="labour_amount" onchange="" id="labour_amount" class="form-control">
-                </div>
-            </div>
 
-                        <option value="pohanch">Pohanch</option>
-                        <option value="x-mill">X-mill</option>
-                    </select>
-                </div> --}}
-            </div>
-
-            <div class="row">
-                
-              
-                {{-- <div class="col-md-4">
-                    <label class="form-label">DO Numbers:</label>
-                    <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
-                        multiple>
-                        <option value="">Select Delivery Orders</option>
-
-                    </select>
-                </div> --}}
-            </div>
-
-            <div class="row">
-                
-                
-                <div class="col-md-12">
-                    <label class="form-label">Remarks:</label>
-                    <textarea name="remarks" id="remarks" class="form-control"></textarea>
+                <div class="col-12 mt-3">
+                    <div class="form-group">
+                        <label class="form-label">Remarks:</label>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
+                    </div>
                 </div>
             </div>
         </div>
-
-
-    </div>
-
-
-
-    <!-- Row 3: Customer, Contract Terms, Locations -->
-
-
-
-
-
-
     </div>
 
     <div class="row form-mar">
@@ -309,7 +238,7 @@
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
-                            <th>Bilty No.</th>
+                            <th>Container Number</th>
                             <th>Desc</th>
                             <th style="display: none">Packing</th>
                             <th>Action</th>
@@ -372,7 +301,6 @@
     // Handle initial ticket selection - auto-fill form fields
     function onInitialTicketSelect(el) {
         const ticketId = $(el).val();
-        
         if (!ticketId) {
             // Clear all fields
             resetFormFields();
@@ -399,11 +327,24 @@
                 
                 if (response.success) {
                     // Set Ticket Labour (readonly)
+                    // Set Ticket Labour
                     if (response.loading_slip_labour) {
-                        const labourDisplay = response.loading_slip_labour === 'paid' ? 'Paid' : 'Not Paid';
-                        $("#ticket_labour").val(labourDisplay);
+                        $("#labour_status").val(response.loading_slip_labour).trigger('change');
+                    }
+                    
+                    if (response.is_labour_editable) {
+                        $("#labour_status").prop('disabled', false);
                     } else {
-                        $("#ticket_labour").val('N/A');
+                        $("#labour_status").prop('disabled', true);
+                    }
+
+                    // Set Standard Labour Rate
+                    if (response.rate) {
+                        $("#standard_labour_rate").val(response.rate);
+                        calculateLabourAmount();
+                    } else {
+                        $("#standard_labour_rate").val('N/A');
+                        $("#labour_amount").val(0);
                     }
 
                     // Set Contract Type (readonly)
@@ -511,7 +452,8 @@
         $("#dcTableBody").empty();
         $("#addTicketContainer").hide();
         $("#add_ticket_id").empty().append('<option value="">Select Ticket to Add</option>');
-        $("#ticket_labour").val('');
+        $("#labour_status").val('paid').trigger('change').prop('disabled', true);
+        $("#standard_labour_rate").val('');
         addedTicketIds = [];
         doMeta = {};
     }
@@ -1190,4 +1132,28 @@
             }
         });
     }
+    function calculateLabourAmount() {
+        let totalBags = 0;
+        $(".no_of_bags").each(function() {
+            let bags = parseFloat($(this).val()) || 0;
+            totalBags += bags;
+        });
+
+        let rate = parseFloat($("#standard_labour_rate").val()) || 0;
+        let amount = totalBags * rate;
+        $("#labour_amount").val(amount.toFixed(2));
+    }
+
+    // Override the existing calc function or ensure it calls calculateLabourAmount
+    const originalCalc = calc;
+    calc = function(el) {
+        originalCalc(el);
+        calculateLabourAmount();
+    };
+
+    const originalCalcAmount = calcAmount;
+    calcAmount = function(el) {
+        originalCalcAmount(el);
+        calculateLabourAmount();
+    };
 </script>

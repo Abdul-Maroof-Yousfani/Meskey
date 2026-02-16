@@ -27,69 +27,67 @@
 </style>
 
 <div class="row form-mar">
-    <!-- Left side fields (2 columns) -->
     <div class="col-md-12">
-        <!-- Row 1: DC NO, Date, Contract Types -->
-        <div class="row" style="margin-top: 10px">
-            <div class="col-md-4">
+        <div class="row">
+            <div class="col-12">
+                <h6 class="header-heading-sepration">General Information</h6>
+            </div>
+            <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">DC NO:</label>
                     <input type="text" value="{{ $delivery_challan->dc_no }}" class="form-control" readonly>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Date:</label>
                     <input type="date" value="{{ $delivery_challan->dispatch_date }}" class="form-control" readonly>
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Contract Types:</label>
-                <select class="form-control select2" disabled>
-                    <option value="">Select Contract type</option>
-                    <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
-                    <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
-                </select>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Ticket:</label>
+                    @php
+                        $firstTicket = $delivery_challan->delivery_challan_data->first();
+                        $ticketModel = $firstTicket ? \App\Models\Sales\LoadingProgramItem::find($firstTicket->ticket_id) : null;
+                        $ticketDisplay = $ticketModel ? ($ticketModel->transaction_number . ' -- ' . $ticketModel->truck_number) : 'N/A';
+                    @endphp
+                    <input type="text" class="form-control" value="{{ $ticketDisplay }}" disabled>
+                </div>
             </div>
-        </div>
-
-        <!-- Row 2: Ticket (display only), Customer, DO Number -->
-        <div class="row">
-            <div class="col-md-4">
-                <label class="form-label">Ticket:</label>
-                @php
-                    $firstTicket = $delivery_challan->delivery_challan_data->first();
-                    $ticketModel = $firstTicket ? \App\Models\Sales\LoadingProgramItem::find($firstTicket->ticket_id) : null;
-                    $ticketDisplay = $ticketModel ? ($ticketModel->transaction_number . ' -- ' . $ticketModel->truck_number) : 'N/A';
-                @endphp
-                <input type="text" class="form-control" value="{{ $ticketDisplay }}" disabled>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Customer:</label>
+                    <select class="form-control select2" disabled>
+                        <option value="">Select Customer</option>
+                        @foreach ($customers ?? [] as $customer)
+                            <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Customer:</label>
-                <select class="form-control select2" disabled>
-                    <option value="">Select Customer</option>
-                    @foreach ($customers ?? [] as $customer)
-                        <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}</option>
-                    @endforeach
-                </select>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">DO Number:</label>
+                    <select class="form-control select2" disabled>
+                        <option value="">Select Delivery Order</option>
+                        @foreach ($delivery_orders as $delivery_order)
+                            <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
+                                {{ $delivery_order->reference_no }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
-
-            <div class="col-md-4">
-                <label class="form-label">DO Number:</label>
-                <select class="form-control select2" disabled>
-                    <option value="">Select Delivery Order</option>
-                    @foreach ($delivery_orders as $delivery_order)
-                        <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
-                            {{ $delivery_order->reference_no }}</option>
-                    @endforeach
-                </select>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Contract Type:</label>
+                    <select class="form-control select2" disabled>
+                        <option value="">Select Contract type</option>
+                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
+                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
+                    </select>
+                </div>
             </div>
-        </div>
-
-        <!-- Row 3: Reference Number -->
-        <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Reference Number:</label>
@@ -98,11 +96,11 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Ticket Labour:</label>
+                    <label class="form-label">Ticket Labour Status:</label>
                     @php
                         $firstTicketData = $delivery_challan->delivery_challan_data->first();
-                        $ticketLabour = null;
-                        if ($firstTicketData && $firstTicketData->ticket_id) {
+                        $ticketLabour = $delivery_challan->labour_status;
+                        if (!$ticketLabour && $firstTicketData && $firstTicketData->ticket_id) {
                             $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
                             $ticketLabour = $loadingSlip?->labour;
                         }
@@ -110,52 +108,54 @@
                     <input type="text" class="form-control" value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
                 </div>
             </div>
-        </div>
 
-        <!-- Row 4: Locations, Factory, Gala -->
-        <div class="row">
-            <div class="col-md-4">
-                <label class="form-label">Locations:</label>
-                <select class="form-control select2" multiple disabled>
-                    <option value="">Select Locations</option>
-                    @foreach (($locations ?? collect()) as $location)
-                        <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id))>
-                            {{ $location->name }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="col-12 mt-3">
+                <h6 class="header-heading-sepration">Location Details</h6>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Locations:</label>
+                    <select class="form-control select2" multiple disabled>
+                        <option value="">Select Locations</option>
+                        @foreach (($locations ?? collect()) as $location)
+                            <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id))>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Factory:</label>
+                    <select class="form-control select2" multiple disabled>
+                        <option value="">Select Factory</option>
+                        @foreach (($arrivalLocations ?? collect()) as $location)
+                            <option value="{{ $location->id }}" selected>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Gala:</label>
+                    <select class="form-control select2" multiple disabled>
+                        <option value="">Select Gala</option>
+                        @foreach (($sections ?? collect()) as $section)
+                            <option value="{{ $section->id }}" selected>
+                                {{ $section->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
-            <div class="col-md-4">
-                <label class="form-label">Factory:</label>
-                <select class="form-control select2" multiple disabled>
-                    <option value="">Select Factory</option>
-                    @foreach (($arrivalLocations ?? collect()) as $location)
-                        <option value="{{ $location->id }}" selected>
-                            {{ $location->name }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="col-12 mt-3">
+                <h6 class="header-heading-sepration">Service Providers</h6>
             </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Gala:</label>
-                <select class="form-control select2" multiple disabled>
-                    <option value="">Select Gala</option>
-                    @foreach (($sections ?? collect()) as $section)
-                        <option value="{{ $section->id }}" selected>
-                            {{ $section->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <!-- Row 5: Ticket Labour, Labour, Transporter -->
-        <div class="row">
-            
-
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Labour:</label>
                     <select class="form-control select2" disabled>
@@ -165,8 +165,7 @@
                     </select>
                 </div>
             </div>
-
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Transporter:</label>
                     <select class="form-control select2" disabled>
@@ -176,7 +175,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">In-house Weighbridge:</label>
                     <select class="form-control select2" disabled>
@@ -186,38 +185,41 @@
                     </select>
                 </div>
             </div>
-        </div>
 
-
-        <!-- Row 6: Labour Amount, Transporter Amount, Weighbridge Amount -->
-        <div class="row">
+            <div class="col-12 mt-3">
+                <h6 class="header-heading-sepration">Financials</h6>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Labour Rate:</label>
+                    <input type="text" value="{{ $delivery_challan->labour_rate ?? 'N/A' }}" class="form-control" readonly style="background-color: #f8f9fa;">
+                </div>
+            </div>
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Labour Amount:</label>
-                    <input type="number" value="{{ $delivery_challan->labour_amount }}" class="form-control" readonly>
+                    <input type="number" value="{{ $delivery_challan->labour_amount }}" class="form-control" readonly style="background-color: #f8f9fa;">
+                    <small class="text-muted">(Rate * Total Bags)</small>
                 </div>
             </div>
-
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Transporter Amount:</label>
                     <input type="number" value="{{ $delivery_challan->transporter_amount }}" class="form-control" readonly>
                 </div>
             </div>
-
-            <div class="col-md-4">
+            <div class="col-md-3" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">Weighbridge Amount:</label>
                     <input type="number" value="{{ $delivery_challan->{"weighbridge-amount"} }}" class="form-control" readonly>
                 </div>
             </div>
-        </div>
 
-        <!-- Row 7: Remarks -->
-        <div class="row">
-            <div class="col-md-12">
-                <label class="form-label">Remarks:</label>
-                <textarea class="form-control" readonly>{{ $delivery_challan->remarks }}</textarea>
+            <div class="col-12 mt-3">
+                <div class="form-group">
+                    <label class="form-label">Remarks:</label>
+                    <textarea class="form-control" readonly rows="3">{{ $delivery_challan->remarks }}</textarea>
+                </div>
             </div>
         </div>
     </div>
@@ -239,7 +241,7 @@
                         <th>Amount</th>
                         <th>Brand</th>
                         <th>Truck No.</th>
-                        <th>Bilty No.</th>
+                        <th>Container Number</th>
                         <th>Desc</th>
                     </tr>
                 </thead>
@@ -284,7 +286,7 @@
                             <input type="text" value="{{ $data->truck_no }}" class="form-control" readonly>
                         </td>
                         <td>
-                            <input type="text" value="{{ $data->bilty_no }}" class="form-control" readonly>
+                            <input type="text" value="{{ $data->loadingProgramItem->container_number ?? '' }}" class="form-control" readonly>
                         </td>
                         <td>
                             <input type="text" value="{{ $data->description }}" class="form-control" readonly>

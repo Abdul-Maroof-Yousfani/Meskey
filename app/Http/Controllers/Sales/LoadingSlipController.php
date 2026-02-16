@@ -152,7 +152,7 @@ class LoadingSlipController extends Controller
                 'no_of_bags' => $request->no_of_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
-                'delivery_order_id' => $DeliveryOrder?->id,
+                'delivery_order_id' => $DeliveryOrder ? $DeliveryOrder->id : null,
                 'remarks' => $request->remarks,
                 'created_by' => auth()->user()->id,
                 'labour' => $request->labour,
@@ -336,6 +336,16 @@ class LoadingSlipController extends Controller
 
         $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
         $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
+        
+        $sauda_type = null;
+        if ($DeliveryOrder) {
+            $sauda_type = $DeliveryOrder->sauda_type;
+        } elseif ($SaleOrder) {
+            $sauda_type = $SaleOrder->sauda_type;
+        }
+
+        $is_pohanch = (strtolower($sauda_type ?? '') == 'pohanch');
+
         // Prepare data for the form
         if ($DeliveryOrder) {
             $data = [
@@ -349,7 +359,8 @@ class LoadingSlipController extends Controller
                     \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $LoadingProgramItem->arrival_location_id))->pluck('name')->toArray() : [],
                 'gala_names' => $LoadingProgramItem->sub_arrival_location_id ?
                     \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $LoadingProgramItem->sub_arrival_location_id))->pluck('name')->toArray() : [],
-                'bag_size' => $DeliveryOrder->delivery_order_data->first()->bag_size ?? 0
+                'bag_size' => $DeliveryOrder->delivery_order_data->first()->bag_size ?? 0,
+                'is_pohanch' => $is_pohanch
             ];
         } else {
             $data = [
@@ -363,7 +374,8 @@ class LoadingSlipController extends Controller
                     \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $LoadingProgramItem->arrival_location_id))->pluck('name')->toArray() : [],
                 'gala_names' => $LoadingProgramItem->sub_arrival_location_id ?
                     \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $LoadingProgramItem->sub_arrival_location_id))->pluck('name')->toArray() : [],
-                'bag_size' => $SaleOrder->sales_order_data->first()->bag_size ?? 0
+                'bag_size' => $SaleOrder->sales_order_data->first()->bag_size ?? 0,
+                'is_pohanch' => $is_pohanch
             ];
         }
 

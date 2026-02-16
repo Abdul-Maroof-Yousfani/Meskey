@@ -90,7 +90,7 @@
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                 <div class="btn-group" role="group">
                                     <a class="btn btn-sm btn-info"
-                                        onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')"
+                                        onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '60%')"
                                         title="View" style="margin-right: 10px;">
                                         <i class="ft-eye"></i>
                                     </a>
@@ -98,7 +98,7 @@
                                         @if ($group['status'] == 'pending' || $group['status'] == 'reverted')
 
                                             <button
-                                                onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
+                                                onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '60%')"
                                                 class="btn btn-sm btn-warning" title="Edit"
                                                 style="margin-right: 10px;">
                                                 <i class="ft-edit"></i>

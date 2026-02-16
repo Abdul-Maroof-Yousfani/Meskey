@@ -14,7 +14,7 @@
 
 
             <input type="hidden" name="item_id[]" id="item_id_{{ $i }}" value="{{ $data->item_id }}"
-                class="form-control" min="0" readonly>
+                class="form-control hidden_item_id" min="0" readonly>
         </td>
 
         <td>
@@ -25,21 +25,23 @@
 
 
             <input type="hidden" name="bag_type[]" id="bag_type_{{ $i }}" value="{{ $data->bag_type }}"
-                class="form-control" min="0" readonly>
+                class="form-control hidden_bag_type" min="0" readonly>
         </td>
 
 
         <td>
+            <select name="bag_size[]" id="bag_size_{{ $i }}" class="form-control bag_size select2" disabled>
+                <option value="">Select Packing</option>
+                @foreach ($packings ?? [] as $packing)
+                    <option value="{{ $packing }}" @selected(strtolower($data->bag_size) == strtolower($packing))>{{ $packing }}</option>
+                @endforeach
+            </select>
+
+            <input type="hidden" name="bag_size[]" id="bag_size_hidden_{{ $i }}" value="{{ $data->bag_size }}"
+                class="form-control hidden_bag_size" min="0" readonly>
 
 
-            <input type="text" value="{{ $data->bag_size }}" class="form-control qty" min="0" readonly>
-
-
-            <input type="hidden" name="bag_size[]" id="bag_size_{{ $i }}" value="{{ $data->bag_size }}"
-                class="form-control" min="0" readonly>
-
-
-            <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_0" value="{{ $data->id }}"
+            <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_{{ $i }}" value="{{ $data->id }}"
                 class="form-control sales_inquiry_id" onkeyup="calc(this)" step="0.01" min="0">
         </td>
 
@@ -73,8 +75,8 @@
                 min="0" readonly>
 
 
-            <input type="hidden" name="brand_id[]" id="rate_{{ $i }}" value="{{ $data->brand_id }}"
-                class="form-control" min="0" readonly>
+            <input type="hidden" name="brand_id[]" id="brand_id_hidden_{{ $i }}" value="{{ $data->brand_id }}"
+                class="form-control hidden_brand_id" min="0" readonly>
         </td>
 
 

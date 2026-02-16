@@ -478,12 +478,24 @@
 
                 if (!items.length) {
                     referencesTableBody.html(
-                        '<tr><td colspan="6" class="text-center text-muted">No data found for selected references.</td></tr>'
+                        '<tr><td colspan="12" class="text-center text-muted">No data found for selected references.</td></tr>'
                         );
                     selectAll.prop('checked', false);
                     updateSelectedDocsList();
                     return;
                 }
+
+                referencesTableBody.html(`
+                    <tr>
+                        <td colspan="12" class="text-center">
+                            <div class="d-flex justify-content-center align-items-center">
+                                <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                Loading items...
+                            </div>
+                        </td>
+                    </tr>
+                `);
+
                 console.log(items);
                 $.ajax({
                     url: "{{ route('receipt-voucher.get.rows') }}",
@@ -505,7 +517,7 @@
                         console.error(error);
                         console.error(xhr.responseText);
                         referencesTableBody.html(
-                            '<tr><td colspan="6" class="text-center text-danger">Error loading rows.</td></tr>'
+                            '<tr><td colspan="12" class="text-center text-danger">Error loading rows.</td></tr>'
                             );
                     }
                 });
@@ -549,6 +561,17 @@
                     return;
                 }
 
+                referencesTableBody.html(`
+                    <tr>
+                        <td colspan="12" class="text-center">
+                            <div class="d-flex justify-content-center align-items-center">
+                                <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                Loading references...
+                            </div>
+                        </td>
+                    </tr>
+                `);
+
                 $.post(`{{ route('receipt-voucher.reference-details') }}`, {
                     _token: '{{ csrf_token() }}',
                     reference_type: refType,
@@ -558,12 +581,12 @@
                         buildRows(resp.items || []);
                     } else {
                         referencesTableBody.html(
-                            '<tr><td colspan="6" class="text-center text-danger">No data returned.</td></tr>'
+                            '<tr><td colspan="12" class="text-center text-danger">No data returned.</td></tr>'
                             );
                     }
                 }).fail(function() {
                     referencesTableBody.html(
-                        '<tr><td colspan="6" class="text-center text-danger">Failed to load details.</td></tr>'
+                        '<tr><td colspan="12" class="text-center text-danger">Failed to load details.</td></tr>'
                         );
                 });
             });

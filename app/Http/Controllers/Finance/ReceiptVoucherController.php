@@ -592,7 +592,7 @@ class ReceiptVoucherController extends Controller
                     return [
                         'reference_id' => $order->id,
                         'reference_type' => 'sale_order',
-                        'number' => $order->so_no ?? ('SO-' . $order->id),
+                        'number' => $order->reference_no ?? ('SO-' . $order->id),
                         'date' => $order->order_date
                             ? Carbon::parse($order->order_date)->format('Y-m-d')
                             : optional($order->created_at)->format('Y-m-d'),

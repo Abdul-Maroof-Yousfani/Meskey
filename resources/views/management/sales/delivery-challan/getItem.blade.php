@@ -106,8 +106,8 @@
                     class="form-control truck_no" readonly>
             </td>
             <td>
-                <input type="text" name="bilty_no[]" id="bilty_no_{{ $index }}" value=""
-                    class="form-control bilty_no">
+                <input type="text" name="container_number[]" id="container_number_{{ $index }}" value="{{ $loading_program_item->container_number }}"
+                    class="form-control container_number" readonly>
             </td>
             <td>
                 <input type="text" name="desc[]" id="desc_{{ $index }}" class="form-control">

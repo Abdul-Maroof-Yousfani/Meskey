@@ -32,153 +32,158 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-challan.list') }}" />
 
     <div class="row form-mar">
-        <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
-            <!-- Row 1: DC NO, Date, Contract Types -->
-            <div class="row" style="margin-top: 10px">
-                <div class="col-md-4">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">DC NO:</label>
-                        <input type="text" name="dc_no" value="{{ $delivery_challan->dc_no }}" id="dc_no"
-                            class="form-control" readonly>
+                        <input type="text" name="dc_no" value="{{ $delivery_challan->dc_no }}" id="dc_no" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Date:</label>
-                        <input type="date" readonly name="date" onchange="getNumber()"
-                            value="{{ $delivery_challan->dispatch_date }}" id="date" class="form-control">
+                        <input type="date" readonly name="date" onchange="getNumber()" value="{{ $delivery_challan->dispatch_date }}" id="date" class="form-control">
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Contract Types:</label>
-                    <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
-                        <option value="">Select Contract type</option>
-                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
-                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
-                    </select>
-                    <input type="hidden" name="sauda_type" value="{{ $delivery_challan->sauda_type }}">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Select Ticket: <span class="text-danger">*</span></label>
+                        <select name="initial_ticket_id" id="initial_ticket_id" onchange="onInitialTicketSelect(this)" class="form-control select2">
+                            <option value="">Select Ticket</option>
+                            @php
+                                $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                                $currentTicketId = $firstTicketData ? $firstTicketData->ticket_id : null;
+                                $currentTicket = $currentTicketId ? \App\Models\Sales\LoadingProgramItem::find($currentTicketId) : null;
+                            @endphp
+                            @if($currentTicket)
+                                <option value="{{ $currentTicket->id }}" selected>
+                                    {{ $currentTicket->transaction_number . ' -- ' . $currentTicket->truck_number }}
+                                </option>
+                            @endif
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Row 2: Ticket (display only), Customer, DO Number -->
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="form-label">Ticket:</label>
-                    @php
-                        $firstTicket = $delivery_challan->delivery_challan_data->first();
-                        $ticketModel = $firstTicket ? \App\Models\Sales\LoadingProgramItem::find($firstTicket->ticket_id) : null;
-                        $ticketDisplay = $ticketModel ? ($ticketModel->transaction_number . ' -- ' . $ticketModel->truck_number) : 'N/A';
-                    @endphp
-                    <input type="text" class="form-control" value="{{ $ticketDisplay }}" disabled>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <select id="customer_id_display" class="form-control select2" disabled>
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="customer_id" id="customer_id" value="{{ $delivery_challan->customer_id }}">
+                    </div>
                 </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Customer:</label>
-                    <select id="customer_id_display" class="form-control select2" disabled>
-                        <option value="">Select Customer</option>
-                        @foreach ($customers ?? [] as $customer)
-                            <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}</option>
-                        @endforeach
-                    </select>
-                    <input type="hidden" name="customer_id" id="customer_id" value="{{ $delivery_challan->customer_id }}">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">DO Number:</label>
+                        <select name="do_no[]" id="do_no" class="form-control select2" disabled>
+                            <option value="">Select Delivery Order</option>
+                            @foreach ($delivery_orders as $delivery_order)
+                                <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
+                                    {{ $delivery_order->reference_no }}</option>
+                            @endforeach
+                        </select>
+                        <input type='hidden' name="delivery_order_id" id="delivery_order_id"  value="{{ $delivery_challan->delivery_order->pluck('id')->toArray()[0] }}"/>
+                    </div>
                 </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">DO Number:</label>
-                    <select name="do_no[]" id="do_no" class="form-control select2" disabled>
-                        <option value="">Select Delivery Order</option>
-                        @foreach ($delivery_orders as $delivery_order)
-                            <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
-                                {{ $delivery_order->reference_no }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Contract type</option>
+                            <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
+                        </select>
+                        <input type="hidden" name="sauda_type" id="sauda_type_hidden" value="{{ $delivery_challan->sauda_type }}">
+                    </div>
                 </div>
-
-                <input type='hidden' name="delivery_order_id" id="delivery_order_id"  value="{{ $delivery_challan->delivery_order->pluck('id')->toArray()[0] }}"/>
-            </div>
-
-            <!-- Row 3: Reference Number, Add More Tickets -->
-            <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
-                        <input type="text" name="reference_number" id="reference_number"
-                            value="{{ $delivery_challan->reference_number }}" class="form-control">
+                        <input type="text" name="reference_number" id="reference_number" value="{{ $delivery_challan->reference_number }}" class="form-control">
                     </div>
                 </div>
-
-
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Ticket Labour:</label>
+                        <label class="form-label">Ticket Labour Status:</label>
                         @php
                             $firstTicketData = $delivery_challan->delivery_challan_data->first();
-                            $ticketLabour = null;
-                            if ($firstTicketData && $firstTicketData->ticket_id) {
+                            $ticketLabour = $delivery_challan->labour_status;
+                            if (!$ticketLabour && $firstTicketData && $firstTicketData->ticket_id) {
                                 $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
                                 $ticketLabour = $loadingSlip?->labour;
                             }
+                            
+                            $sauda_type = strtolower($delivery_challan->sauda_type ?? '');
+                            $is_labour_editable = ($sauda_type == 'x-mill' || $sauda_type == 'xmill');
                         @endphp
-                        <input type="text" class="form-control" value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
-                    </div>
-                </div>
-                
-            </div>
-
-            <!-- Row 4: Locations, Factory, Gala -->
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="form-label">Locations:</label>
-                    <select name="locations[]" id="locations" class="form-control select2" disabled>
-                        <option value="">Select Locations</option>
-                        @foreach (get_locations() as $location)
-                            <option value="{{ $location->id }}" @selected($location->id == $delivery_challan->location_id)>
-                                {{ $location->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div id="locations_hidden">
+                        <select name="labour_status" id="labour_status" class="form-control select2" {{ !$is_labour_editable ? 'disabled' : '' }}>
+                            <option value="paid" @selected($ticketLabour == 'paid')>Paid</option>
+                            <option value="not_paid" @selected($ticketLabour == 'not_paid')>Not Paid</option>
+                        </select>
                     </div>
                 </div>
 
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
                 <div class="col-md-4">
-                    <label class="form-label">Factory:</label>
-                    <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
-                        <option value="">Select Factory</option>
-                        @foreach (($arrivalLocations ?? collect()) as $location)
-                            <option value="{{ $location->id }}" @selected(in_array($location->id, explode(",", $delivery_challan->arrival_id)))>
-                                {{ $location->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div id="arrivals_hidden">
-                        <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" value="{{ $delivery_challan->arrival_id }}" />
+                    <div class="form-group">
+                        <label class="form-label">Locations:</label>
+                        <select name="locations[]" id="locations" class="form-control select2" disabled>
+                            <option value="">Select Locations</option>
+                            @foreach (get_locations() as $location)
+                                <option value="{{ $location->id }}" @selected($location->id == $delivery_challan->location_id)>
+                                    {{ $location->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div id="locations_hidden"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_locations[]" id="arrivals" class="form-control select2" multiple disabled>
+                            <option value="">Select Factory</option>
+                            @foreach (($arrivalLocations ?? collect()) as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, explode(",", $delivery_challan->arrival_id)))>
+                                    {{ $location->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div id="arrivals_hidden">
+                            <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" value="{{ $delivery_challan->arrival_id }}" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Gala:</label>
+                        <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
+                            <option value="">Select Gala</option>
+                            @foreach (($sections ?? collect()) as $section)
+                                <option value="{{ $section->id }}" @selected(in_array($section->id, explode(",", $delivery_challan->section_id)))>
+                                    {{ $section->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div id="storages_hidden">
+                            <input type="hidden" name="storage_location_csv" id="storage_location_csv" value="{{ $delivery_challan->section_id }}" />
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Gala:</label>
-                    <select name="storage_id[]" id="storages" class="form-control select2" multiple disabled>
-                        <option value="">Select Gala</option>
-                        @foreach (($sections ?? collect()) as $section)
-                            <option value="{{ $section->id }}" @selected(in_array($section->id, explode(",", $delivery_challan->section_id)))>
-                                {{ $section->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div id="storages_hidden">
-                        <input type="hidden" name="storage_location_csv" id="storage_location_csv" value="{{ $delivery_challan->section_id }}" />
-                    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Service Providers</h6>
                 </div>
-            </div>
-
-            <!-- Row 5: Ticket Labour, Labour, Transporter -->
-            <div class="row">
-                
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" class="form-control select2">
@@ -188,8 +193,7 @@
                         </select>
                     </div>
                 </div>
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select name="transporter" id="transporter" class="form-control select2">
@@ -199,7 +203,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">In-house Weighbridge:</label>
                         <select name="weighbridge" id="weighbridge" class="form-control select2">
@@ -209,215 +213,336 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <!-- Row 5b: Weighbridge -->
-          
-
-            <!-- Row 6: Labour Amount, Transporter Amount, Weighbridge Amount -->
-            <div class="row">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Financials</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Rate:</label>
+                        <input type="text" name="labour_rate" id="standard_labour_rate" class="form-control" value="{{ $delivery_challan->labour_rate ?? 'N/A' }}" readonly style="background-color: #f8f9fa;">
+                    </div>
+                </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour Amount:</label>
-                        <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
-                            id="labour_amount" class="form-control">
+                        <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}" id="labour_amount" class="form-control" readonly style="background-color: #f8f9fa;">
+                        <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount"
-                            value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
-                            class="form-control">
+                        <input type="number" name="transporter_amount" value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount" class="form-control">
                     </div>
                 </div>
-
-                <div class="col-md-4">
+                <div class="col-md-3" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">Weighbridge Amount:</label>
-                        <input type="number" name="weighbridge_amount"
-                            value="{{ $delivery_challan->{"weighbridge-amount"} }}"
-                            id="weighbridge_amount" class="form-control">
+                        <input type="number" name="weighbridge_amount" value="{{ $delivery_challan->{"weighbridge-amount"} }}" id="weighbridge_amount" class="form-control">
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <div class="form-group">
+                        <label class="form-label">Remarks:</label>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3">{{ $delivery_challan->remarks }}</textarea>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Row 7: Remarks -->
-            <div class="row">
-                <div class="col-md-12">
-                    <label class="form-label">Remarks:</label>
-                    <textarea name="remarks" id="remarks" class="form-control">{{ $delivery_challan->remarks }}</textarea>
+        <!-- <div class="row mt-4" id="addTicketContainer" style="display: none;">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Add More Tickets:</label>
+                    <select id="add_ticket_id" class="form-control select2">
+                        <option value="">Select Ticket to Add</option>
+                    </select>
+                    <small class="text-muted">Only tickets from the selected Delivery Orders can be added.</small>
+                </div>
+            </div> -->
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12 d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0 font-weight-bold color-dark">Item Details</h6>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()" id="addRowBtn" disabled>
+                    <i class="fa fa-plus"></i>&nbsp; Add New Item
+                </button>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="salesInquiryTable" style="min-width:1800px;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Bag Type</th>
+                                <th>Packing</th>
+                                <th>No of Bags</th>
+                                <th>Quantity (kg)</th>
+                                <th>Rate (Kg)</th>
+                                <th>Rate (Mond)</th>
+                                <th>Amount</th>
+                                <th>Brand</th>
+                                <th>Truck No.</th>
+                                <th>Container Number</th>
+                                <th>Desc</th>
+                                <th style="display: none">Packing</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dcTableBody">
+                            @foreach ($delivery_challan->delivery_challan_data as $index => $data)
+                            @php
+                                $index = "TICKET-" . $data->ticket_id;
+                            @endphp
+                            <tr id="row_{{ $index }}">
+                                <td>
+                                    <input type="text" name="" id="item_id_read_only{{ $index }}"
+                                        value="{{ getItem($data->item_id)?->name }}" onkeyup="calc(this)"
+                                        class="form-control bag_type" step="0.01" min="0" readonly>
+                                    <input type="hidden" name="item_id[]" id="item_id_{{ $index }}" value="{{ $data->item_id }}" class="item_id">
+                                    <input type="hidden" name="ticket_id[]" id="ticket_id_{{ $index }}" value="{{ $data->ticket_id }}" class="ticket_id">
+                                    <input type="hidden" name="do_data_id[]" id="do_data_id_{{ $index }}" value="{{ $data->do_data_id }}" class="do_data_id">
+                                </td>
+                                <td>
+                                    <input type="text" name="" id="bag_type_display_{{ $index }}"
+                                        value="{{ $data->bag_type ? bag_type_name($data->bag_type) : '' }}" class="form-control" readonly>
+                                    <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}" value="{{ $data->bag_type }}">
+                                    <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}" value="{{ $data->id }}">
+                                </td>
+                                <td>
+                                    <input type="text" name="bag_size[]" id="bag_size_{{ $index }}" value="{{ $data->bag_size }}" class="form-control bag_size" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" oninput="calc(this)" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                        value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond ?? '' }}" class="form-control rate" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control amount" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="" id="brand_id_display_{{ $index }}"
+                                        value="{{ getBrandById($data->brand_id)?->name }}" class="form-control" readonly>
+                                    <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}" value="{{ $data->brand_id }}">
+                                </td>
+                                <td>
+                                    <input type="text" name="truck_no[]" id="truck_no_{{ $index }}" class="form-control truck_no" value="{{ $data->truck_no }}" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="container_number[]" id="container_number_{{ $index }}" value="{{ $data->loadingProgramItem->container_number ?? '' }}" class="form-control container_number" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="desc[]" id="desc_{{ $index }}" class="form-control" value="{{ $data->description }}">
+                                </td>
+                                <td>
+                                    @php
+                                        $ticket = \App\Models\Sales\LoadingProgramItem::find($data->ticket_id);
+                                        $ticketText = $ticket ? ($ticket->transaction_number . ' -- ' . $ticket->truck_number) : '';
+                                    @endphp
+                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                        data-ticket-id="{{ $data->ticket_id }}"
+                                        data-ticket-text="{{ $ticketText }}"
+                                        onclick="removeTicketRow(this)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn" disabled>
-                <i class="fa fa-plus"></i>&nbsp; Add New Item
-            </button>
-        </div>
+        <input type="hidden" id="rowCount" value="0">
 
-        <div class="col-md-12">
-            <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
-                <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Bag Type</th>
-                            <th>Packing</th>
-                            <th>No of Bags</th>
-                            <th>Quantity (kg)</th>
-                            <th>Rate per Kg</th>
-                            <th>Rate per Mond</th>
-                            <th>Amount</th>
-                            <th>Brand</th>
-                            <th>Truck No.</th>
-                            <th>Bilty No.</th>
-                            <th>Desc</th>
-                            <th style="display: none">Packing</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dcTableBody">
-                        @foreach ($delivery_challan->delivery_challan_data as $index => $data)
-                        @php
-                            $index = "TICKET-" . $data->ticket_id;
-                        @endphp
-                        <tr id="row_{{ $index }}">
-                            <td>
-                                <input type="text" name="" id="item_id_read_only{{ $index }}"
-                                    value="{{ getItem($data->item_id)?->name }}" onkeyup="calc(this)"
-                                    class="form-control bag_type" step="0.01" min="0" readonly>
-
-                                <input type="hidden" name="item_id[]" id="item_id_{{ $index }}"
-                                    value="{{ $data->item_id }}" onkeyup="calc(this)"
-                                    class="form-control item_id" step="0.01" min="0">
-
-                                <input type="hidden" name="ticket_id[]" id="ticket_id_{{ $index }}" value="{{ $data->ticket_id }}"
-                                    onkeyup="calc(this)" class="form-control ticket_id" step="0.01" min="0">
-
-                                <input type="hidden" name="do_data_id[]" id="do_data_id_{{ $index }}"
-                                    value="{{ $data->do_data_id }}" onkeyup="calc(this)"
-                                    class="form-control do_data_id" step="0.01" min="0">
-                            </td>
-                            
-                            <td>
-                                <input type="text" name="" id="bag_type_{{ $index }}"
-                                    value="{{ $data->bag_type ? bag_type_name($data->bag_type) : '' }}" onkeyup="calc(this)"
-                                    class="form-control bag_type" step="0.01" min="0" readonly>
-
-                                <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}"
-                                    value="{{ $data->bag_type }}" onkeyup="calc(this)"
-                                    class="form-control bag_type" step="0.01" min="0">
-
-                                <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
-                                    value="{{ $data->id }}" onkeyup="calc(this)"
-                                    class="form-control so_data_id" step="0.01" min="0">
-                            </td>
-                          
-                            <td>
-                                <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
-                                    value="{{ $data->bag_size }}"
-                                    class="form-control bag_size" step="0.01" min="0" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                    value="{{ $data->no_of_bags }}"
-                                    class="form-control no_of_bags" step="0.01" min="0" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                    value="{{ $data->qty }}"
-                                    class="form-control qty" step="0.01" min="0" oninput="calc(this)" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="rate[]" id="rate_{{ $index }}"
-                                    value="{{ $data->rate }}" class="form-control rate" step="0.01"
-                                    min="0" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
-                                    value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}" class="form-control rate" step="0.01"
-                                    min="0" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                    value="{{ $data->rate * ($data->qty ?? 0) }}"
-                                    class="form-control amount" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="" id="brand_id_read_only{{ $index }}"
-                                    value="{{ getBrandById($data->brand_id)?->name }}" onkeyup="calc(this)"
-                                    class="form-control brand_id" step="0.01" min="0" readonly>
-
-                                <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}"
-                                    value="{{ $data->brand_id }}" onkeyup="calc(this)"
-                                    class="form-control item_id" step="0.01" min="0">
-                            </td>
-                            <td>
-                                <input type="text" name="truck_no[]" id="truck_no_{{ $index }}"
-                                    class="form-control truck_no" value="{{ $data->truck_no }}" readonly>
-                            </td>
-                            <td>
-                                <input type="text" name="bilty_no[]" id="bilty_no_{{ $index }}"
-                                    value="{{ $data->bilty_no }}" class="form-control bilty_no">
-                            </td>
-                            <td>
-                                <input type="text" name="desc[]" id="desc_{{ $index }}"
-                                    class="form-control" value="{{ $data->description }}">
-                            </td>
-
-                            <td>
-                                @php
-                                    $ticket = \App\Models\Sales\LoadingProgramItem::find($data->ticket_id);
-                                    $ticketText = $ticket ? ($ticket->transaction_number . ' -- ' . $ticket->truck_number) : '';
-                                @endphp
-                                <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                    data-ticket-id="{{ $data->ticket_id }}"
-                                    data-ticket-text="{{ $ticketText }}"
-                                    onclick="removeTicketRow(this)"
-                                    style="width:60px;">
-                                    <i class="fa fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+        <div class="row bottom-button-bar text-right">
+            <div class="col-12">
+                <a type="button" class="btn btn-danger modal-sidebar-close me-2">Close</a>
+                <button type="submit" class="btn btn-primary submitbutton">Update Delivery Challan</button>
             </div>
-        </div>
-    </div>
-
-    <input type="hidden" id="rowCount" value="0">
-
-    <div class="row bottom-button-bar">
-        <div class="col-12 text-end">
-            <a type="button"
-                class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
 
 <script>
-    salesInquiryRowIndex = 1;
-    
     // Track which tickets have been added
-    addedTicketIds = @json($delivery_challan->delivery_challan_data->pluck('ticket_id')->filter()->unique()->values());
-    
+    addedTicketIds = @json($delivery_challan->delivery_challan_data->pluck('ticket_id')->filter()->unique()->map(fn($id) => (int)$id)->values());
+    doMeta = {};
+    initialTicketId = "{{ $currentTicketId }}";
+
     $(document).ready(function() {
         $('.select2').select2();
         
-        // Load additional tickets on page load
+        // Load tickets with accepted Dispatch QC on page load
+        loadTicketsWithDispatchQc();
+        
+        // Load additional tickets if DOs are already selected
         const selectedDos = $("#do_no").val();
         if (selectedDos && selectedDos.length > 0) {
             loadAdditionalTickets(Array.isArray(selectedDos) ? selectedDos : [selectedDos]);
         }
+
+        // Calculate labour amount on load
+        calculateLabourAmount();
     });
+
+    // Load tickets with accepted Dispatch QC
+    function loadTicketsWithDispatchQc() {
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-tickets-with-dispatch-qc') }}",
+            method: "GET",
+            data: { delivery_challan_id: {{ $delivery_challan->id }} },
+            dataType: "json",
+            success: function(response) {
+                const select = $("#initial_ticket_id");
+                const currentValue = select.val() || initialTicketId;
+                
+                select.empty().append('<option value="">Select Ticket</option>');
+                
+                if (response.tickets && response.tickets.length > 0) {
+                    response.tickets.forEach(function(ticket) {
+                        select.append(`<option value="${ticket.id}" ${ticket.id == currentValue ? 'selected' : ''}>${ticket.text}</option>`);
+                    });
+                }
+                
+                select.select2();
+            },
+            error: function(error) {
+                console.error('Error loading tickets:', error);
+            }
+        });
+    }
+
+    // Handle initial ticket selection - auto-fill form fields
+    function onInitialTicketSelect(el) {
+        const ticketId = $(el).val();
+        if (!ticketId) {
+            resetFormFields();
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-ticket-data') }}",
+            method: "GET",
+            data: { ticket_id: ticketId },
+            dataType: "json",
+            beforeSend: function() {
+                Swal.fire({
+                    title: "Loading...",
+                    text: "Fetching ticket data",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+            success: function(response) {
+                Swal.close();
+                
+                if (response.success) {
+                    // Update Ticket Labour Status
+                    // Update Ticket Labour Status
+                    $("#labour_status").val(response.loading_slip_labour || 'paid').trigger('change');
+                    
+                    if (response.is_labour_editable) {
+                        $("#labour_status").prop('disabled', false);
+                    } else {
+                        $("#labour_status").prop('disabled', true);
+                    }
+
+                    // Set Labour Rate
+                    $("#standard_labour_rate").val(response.rate || 'N/A');
+
+                    // Set Sauda Type
+                    $("#sauda_type").val(response.delivery_order.sauda_type).trigger('change');
+                    $("#sauda_type_hidden").val(response.delivery_order.sauda_type);
+
+                    // Set Customer
+                    $("#customer_id_display").val(response.customer.id).trigger('change');
+                    $("#customer_id").val(response.customer.id);
+
+                    // Set DO Number
+                    const doSelect = $("#do_no");
+                    doSelect.empty().append('<option value="">Select Delivery Order</option>');
+                    doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
+                    doSelect.trigger('change');
+                    $("#delivery_order_id").val(response.delivery_order.id);
+
+                    // Set Locations
+                    const locSelect = $("#locations");
+                    locSelect.empty();
+                    response.locations.company_locations.forEach(loc => {
+                        locSelect.append(`<option value="${loc.id}" selected>${loc.text}</option>`);
+                    });
+                    locSelect.trigger('change');
+                    setHidden("locations", response.locations.company_location_ids);
+
+                    // Set Factory
+                    const arrSelect = $("#arrivals");
+                    arrSelect.empty();
+                    response.locations.arrival_locations.forEach(loc => {
+                        arrSelect.append(`<option value="${loc.id}" selected>${loc.text}</option>`);
+                    });
+                    arrSelect.trigger('change');
+                    $("#arrival_location_csv").val(response.locations.arrival_location_ids.join(','));
+
+                    // Set Gala
+                    const secSelect = $("#storages");
+                    secSelect.empty();
+                    response.locations.sub_arrival_locations.forEach(loc => {
+                        secSelect.append(`<option value="${loc.id}" selected>${loc.text}</option>`);
+                    });
+                    secSelect.trigger('change');
+                    $("#storage_location_csv").val(response.locations.sub_arrival_location_ids.join(','));
+
+                    // Load Item Details for the initial ticket
+                    loadInitialTicketItems(ticketId);
+                    
+                    // Load additional tickets for the same DO
+                    loadAdditionalTickets([response.delivery_order.id]);
+                }
+            },
+            error: function(error) {
+                Swal.close();
+                console.error('Error fetching ticket data:', error);
+            }
+        });
+    }
+
+    function loadInitialTicketItems(ticketId) {
+        $.ajax({
+            url: "{{ route('sales.delivery-challan.get-ticket-items') }}",
+            method: "GET",
+            data: { ticket_id: ticketId },
+            dataType: "html",
+            success: function(res) {
+                $("#dcTableBody").empty().append(res);
+                addedTicketIds = [parseInt(ticketId)];
+                calculateLabourAmount();
+            }
+        });
+    }
+
+    function resetFormFields() {
+        $("#labour_status").val('paid').trigger('change').prop('disabled', true);
+        $("#standard_labour_rate, #customer_id, #delivery_order_id, #arrival_location_csv, #storage_location_csv").val('');
+        $("#customer_id_display, #do_no, #sauda_type, #locations, #arrivals, #storages").val('').trigger('change');
+        $("#dcTableBody").empty();
+        addedTicketIds = [];
+    }
 
     // Load additional tickets for the same delivery order
     function loadAdditionalTickets(deliveryOrderIds) {
@@ -489,6 +614,8 @@
                 $("#add_ticket_id option[value='" + ticketId + "']").remove();
                 $("#add_ticket_id").val('').trigger('change');
                 
+                calculateLabourAmount();
+                
                 // Hide the dropdown if no more tickets available
                 if ($("#add_ticket_id option").length <= 1) {
                     $("#addTicketContainer").hide();
@@ -525,12 +652,13 @@
         
         // Show the dropdown if it was hidden
         $("#addTicketContainer").show();
+        
+        calculateLabourAmount();
     }
 
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
-    doMeta = {};
 
     function setHidden(name, values) {
         const container = $(`#${name}_hidden`);
@@ -594,4 +722,28 @@
     }
 
     $(".select2").select2();
+    function calculateLabourAmount() {
+        let totalBags = 0;
+        $(".no_of_bags").each(function() {
+            let bags = parseFloat($(this).val()) || 0;
+            totalBags += bags;
+        });
+
+        let rate = parseFloat($("#standard_labour_rate").val()) || 0;
+        let amount = totalBags * rate;
+        $("#labour_amount").val(amount.toFixed(2));
+    }
+
+    // Override the existing calc function or ensure it calls calculateLabourAmount
+    originalCalc = calc;
+    calc = function(el) {
+        originalCalc(el);
+        calculateLabourAmount();
+    };
+
+    originalCalcAmount = calcAmount;
+    calcAmount = function(el) {
+        originalCalcAmount(el);
+        calculateLabourAmount();
+    };
 </script>

@@ -37,7 +37,6 @@
                                     </td>
                                 @endif
 
-                                {{-- Item Details --}}
                                 <td class="align-middle" style="background-color: #f8fff8;">
                                     <strong>{{ getItem($itemRow["item_data"]->item_id)?->name ?? 'N/A' }}</strong>
                                     @if($itemRow['item_data']->description)
@@ -85,14 +84,29 @@
                                         <div class="btn-group" role="group">
 
                                             <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '100%')" title="View" style="margin-right: 10px;">
+                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '60%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
+
+                                            {{-- Gate Out Pass Buttons for each item --}}
+                                            @if(strtolower($group['status']) === 'approved')
+                                                @foreach($group['items'] as $item)
+                                                    @if(!empty($item['accepted_qc_id']))
+                                                        <a onclick="openModal(this,'{{ route('sales.get.dispatch-qc.gate-out', $item['accepted_qc_id']) }}', 'Gate Out', true, '100%')"
+                                                            class="btn btn-sm btn-success" 
+                                                            title="Gate Out Pass" 
+                                                            style="margin-right: 10px;">
+                                                            <i class="ft-file"></i>
+                                                        </a>
+                                                    @endif
+                                                @endforeach
+                                            @endif
+
                                             @if(auth()->user()->id == $group['created_by_id'])
                                                 @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         
                                                     <button 
-                                                        onclick="openModal(this,'{{ route('sales.delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Delivery Challan', false, '100%')"
+                                                        onclick="openModal(this,'{{ route('sales.delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Delivery Challan', false, '60%')"
                                                         class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                         <i class="ft-edit"></i>
                                                     </button>

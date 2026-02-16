@@ -36,6 +36,7 @@ class DeliveryChallanRequest extends FormRequest
             // "weighbridge" => [ "required" ],  
             // "weighbridge_amount" => [ "required" ],
             "sauda_type" => [ "required" ],
+            "labour_rate" => [ "required" ],
             // "remarks" => [ "required" ],
 
             // "truck_no" => ["required"],

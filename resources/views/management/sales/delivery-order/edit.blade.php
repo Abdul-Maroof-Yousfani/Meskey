@@ -33,26 +33,26 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-order.list') }}" />
 
     <div class="row form-mar">
-        <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Do No:</label>
                         <input type="text" name="reference_no" id="reference_no"
                             value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
                         <input type="date" name="dispatch_date" readonly onchange="getNumber(); validate_expiry()" id="dispatch_date"
                             value="{{ $delivery_order->dispatch_date }}" class="form-control">
                     </div>
                 </div>
-
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Contract Type:</label>
                         <input type="hidden" name="sauda_type" id="sauda_type_hidden"
@@ -64,12 +64,25 @@
                         </select>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date"
+                            value="{{ $delivery_order->delivery_date }}" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="ref_no" id="ref_no" class="form-control"
+                            value="{{ $delivery_order->ref_no }}">
+                    </div>
+                </div>
 
-           
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <select name="customer_id" id="customer_id" onchange="get_sale_orders()"
@@ -82,7 +95,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
@@ -98,7 +111,10 @@
                 </div>
 
                 @if ($sale_order_of_delivery_order->pay_type_id == 10)
-                    <div class="col-md-4 advanced">
+                    <div class="col-12 mt-3">
+                        <h6 class="header-heading-sepration">Payment Details</h6>
+                    </div>
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Receipt Vouchers:</label>
                             <select name="receipt_vouchers[]" id="receipt_vouchers"
@@ -115,13 +131,7 @@
                             </select>
                         </div>
                     </div>
-                @endif
-            </div>
-
-            <div class="row">
-                @if ($sale_order_of_delivery_order->pay_type_id == 10)
-
-                    <div class="col-md-4 advanced">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Advance Amount:</label>
                             <input type="number" name="advance_amount" onchange=""
@@ -129,8 +139,7 @@
                                 readonly>
                         </div>
                     </div>
-
-                    <div class="col-md-4 advanced">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Withhold Amount:</label>
                             <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
@@ -139,8 +148,7 @@
                                 class="form-control">
                         </div>
                     </div>
-
-                    <div class="col-md-4 advanced">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Withhold for RV:</label>
                             <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2">
@@ -153,28 +161,11 @@
                             </select>
                         </div>
                     </div>
-
                 @endif
 
-                     <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date"
-                            value="{{ $delivery_order->delivery_date }}" class="form-control">
-                    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
                 </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no"
-                            value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
-                    </div>
-                </div>
-
-
-
-            </div>
-            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
@@ -221,27 +212,13 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <!-- Row 2: Sale Orders, Sauda Type -->
-            <div class="row">
-                {{-- <div class="col-md-6">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label">Payment Terms:</label>
-                        <select name="payment_term_id" id="payment_term_id" class="form-control select2">
-                            <option value="">Select Payment Term</option>
-                            @foreach ($payment_terms as $payment_term)
-                                <option value="{{ $payment_term->id }}" @selected($payment_term->id == $delivery_order->payment_term_id)>
-                                    {{ $payment_term->desc }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div> --}}
-                
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Remarks:</label>
-                        <textarea name="remarks" id="remarks" class="form-control">{{ $delivery_order->line_desc }}</textarea>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3">{{ $delivery_order->remarks }}</textarea>
                     </div>
                 </div>
             </div>
@@ -1184,4 +1161,11 @@
             }
         });
     }
+
+     $('.select2').on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

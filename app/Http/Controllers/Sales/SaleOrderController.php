@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SalesOrderRequest;
+use App\Models\BagPacking;
 use App\Models\BagType;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\ArrivalSubLocation;
@@ -39,7 +40,14 @@ class SaleOrderController extends Controller
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
         $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations'));
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
+
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings'));
     }
 
     public function edit(int $id)
@@ -54,7 +62,14 @@ class SaleOrderController extends Controller
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
         $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations'));
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
+
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings'));
     }
 
     public function view(Request $request, int $id)
@@ -67,7 +82,14 @@ class SaleOrderController extends Controller
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
         $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
 
-        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations'));
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
+
+        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings'));
     }
 
     public function store(SalesOrderRequest $request)
@@ -341,7 +363,13 @@ class SaleOrderController extends Controller
             ]);
         }
 
-        return view('management.sales.orders.getItems', compact('inquiry', 'items'));
+        $packings = BagPacking::all()->filter(function ($packing) {
+            return preg_match('/\d+/', $packing->name);
+        })->map(function ($packing) {
+            preg_match('/\d+/', $packing->name, $matches);
+            return $matches[0];
+        })->unique()->sort()->values();
+        return view('management.sales.orders.getItems', compact('inquiry', 'items', 'packings'));
     }
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)

@@ -43,25 +43,25 @@
     <div class="row">
         <div class="col-xs-12 col-sm-6 col-md-3">
             <div class="form-group">
-                <label>Customer:</label>
+                <label>Customer: <span class="text-danger">*</span></label>
                 <input type="text" name="customer" value="{{ $loadingSlip->customer ?? '' }}" class="form-control" readonly />
             </div>
         </div>
         <div class="col-xs-12 col-sm-6 col-md-3">
             <div class="form-group">
-                <label>Commodity:</label>
+                <label>Commodity: <span class="text-danger">*</span></label>
                 <input type="text" name="commodity" value="{{ $loadingSlip->commodity ?? '' }}" class="form-control" readonly />
             </div>
         </div>
         <div class="col-xs-12 col-sm-6 col-md-3">
             <div class="form-group">
-                <label>SO Qty:</label>
+                <label>SO Qty: <span class="text-danger">*</span></label>
                 <input type="number" name="so_qty" value="{{ $loadingSlip->so_qty ?? '' }}" class="form-control" readonly step="0.01" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-6 col-md-3">
             <div class="form-group">
-                <label>DO Qty:</label>
+                <label>DO Qty: <span class="text-danger">*</span></label>
                 <input type="number" name="do_qty" value="{{ $loadingSlip->do_qty ?? '' }}" class="form-control" readonly step="0.01" />
             </div>
         </div>
@@ -71,16 +71,6 @@
             <div class="form-group">
                 <label>Factory:</label>
                 <select class="form-control select2 w-100" name="factory_display[]" id="factory_display" multiple disabled style="width: 100% !important;">
-                    {{-- @php
-                        $deliveryOrder = $loadingSlip->loadingProgramItem->loadingProgram->deliveryOrder ?? null;
-                        if ($deliveryOrder && $deliveryOrder->arrival_location_id) {
-                            $arrivalLocationIds = explode(',', $deliveryOrder->arrival_location_id);
-                            $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
-                            foreach($arrivalLocations as $location) {
-                                echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
-                            }
-                        }
-                    @endphp --}}
                     <option value="" selected>{{ $loadingSlip->factory ?? '' }}</option>
                 </select>
                 <input type="hidden" name="factory" value="{{ $loadingSlip->factory ?? '' }}" />
@@ -90,7 +80,6 @@
             <div class="form-group">
                 <label>Gala:</label>
                 <select class="form-control select2 w-100" name="gala_display[]" id="gala_display" multiple disabled style="width: 100% !important;">
-        
                     <option value="" selected>{{ $loadingSlip->gala ?? '' }}</option>
                 </select>
                 <input type="hidden" name="gala" value="{{ $loadingSlip->gala ?? '' }}" />
@@ -98,31 +87,38 @@
         </div>
         <div class="col-xs-12 col-sm-6 col-md-4">
             <div class="form-group">
-                <label>Bag Size:</label>
+                <label>Bag Size: <span class="text-danger">*</span></label>
                 <input type="number" name="bag_size" value="{{ $loadingSlip->bag_size ?? '' }}" class="form-control" readonly step="0.01" />
             </div>
         </div>
     </div>
     <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-4">
+        <div class="col-xs-12 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>No. of Bags: <span class="text-danger">*</span></label>
                 <input type="number" name="no_of_bags" id="no_of_bags" value="{{ $loadingSlip->no_of_bags }}" class="form-control" min="1" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
             </div>
         </div>
-        <div class="col-xs-12 col-sm-6 col-md-4">
+        @php
+            $sauda_type = $loadingSlip->deliveryOrder->sauda_type ?? $loadingSlip->loadingProgramItem->loadingProgram->saleOrder->sauda_type ?? '';
+            $is_pohanch = (strtolower($sauda_type) == 'pohanch');
+            $is_xmill = (strtolower($sauda_type) == 'x-mill' || strtolower($sauda_type) == 'xmill');
+            $labour_editable = $is_xmill && !(isset($canEdit) && !$canEdit);
+        @endphp
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Labour</label>
+                <select name='labour_select' id='labour_select' class='form-control select2' {{ (!$labour_editable && ($is_pohanch || (isset($canEdit) && !$canEdit))) ? 'disabled' : '' }}>
+                    <option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option>
+                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid' || $is_pohanch)>Not Paid</option>    
+                </select>
+                <input type="hidden" name="labour" id="labour_hidden" value="{{ $is_pohanch ? 'not_paid' : $loadingSlip->labour }}">
+            </div>
+        </div>
+        <div style="display: none;">
             <div class="form-group">
                 <label>Kilogram:</label>
                 <input type="number" name="kilogram" id="kilogram" value="{{ $loadingSlip->kilogram ?? '' }}" class="form-control" readonly step="0.01" />
-            </div>
-        </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group">
-                <label>Labour</label>
-                <select name='labour' class='form-control select2' {{ (isset($canEdit) && !$canEdit) ? 'disabled' : '' }}>
-                    <option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option>
-                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option>    
-                </select>
             </div>
         </div>
     </div>
@@ -137,7 +133,7 @@
 
     <div class="row bottom-button-bar">
         <div class="col-12">
-            <a href="{{ route('sales.loading-slip.index') }}" class="btn btn-secondary">Cancel</a>
+            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             @if(isset($canEdit) && $canEdit)
             <button type="submit" class="btn btn-primary submitbutton">Update</button>
             @else
@@ -197,5 +193,9 @@
             var kilogram = noOfBags * bagSize;
             $('#kilogram').val(kilogram.toFixed(2));
         }
+
+        $('#labour_select').on('change', function() {
+            $('#labour_hidden').val($(this).val());
+        });
     });
 </script>
