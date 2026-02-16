@@ -41,7 +41,9 @@ class ProductionVoucherController extends Controller
             $query->where('id', $request->by_product_id)
                 ->orWhere('parent_id', $request->by_product_id);
         })
-            ->where('is_by_product', 'yes');
+            // ->where('is_by_product', 'yes');
+            ->where('product_category_flags', 'by');
+
 
         $productIds = $Product->pluck('id')->toArray();
         $jobOrderPackings = JobOrderPackingItem::with([
@@ -54,10 +56,10 @@ class ProductionVoucherController extends Controller
             ->whereHas('jobOrder', function ($query) use ($productIds) {
                 $query->whereIn('product_id', $productIds);
             });
-           
 
 
-           
+
+
         // $byProduct = $byProductId ? Product::find($byProductId) : null;
         $byProduct = $Product;
         $locationId = $request->location_id;
@@ -106,14 +108,16 @@ class ProductionVoucherController extends Controller
             'jobOrderPackings'
         ));
     }
-    public function getHeadProductsData(Request $request)
+    public function getHeadProductsDatdddda(Request $request)
     {
 
 
         $productId = $request->product_id;
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
-        $productIds = Product::where('id', $request->product_id)->orWhere('parent_id', $request->product_id)->pluck('id')->toArray();
+        $productIds = Product::where('id', $request->product_id)->orWhere('parent_id', $request->product_id)
+            ->whereIn('product_category_flags', ['head', 'b2'])
+            ->pluck('id')->toArray();
 
         $headProduct = Product::where('status', 1)->where('id', $productId)->first();
 
@@ -134,6 +138,8 @@ class ProductionVoucherController extends Controller
             $jobOrderPackings = collect();
         }
 
+
+        // $Otherproduct
         // dd($jobOrderPackings);
 
         $headProductOutputs = [];
@@ -158,6 +164,100 @@ class ProductionVoucherController extends Controller
             'jobOrderPackings',
         ));
     }
+
+    public function getHeadProductsData(Request $request)
+    {
+        // Optional validation
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'location_id' => 'required|exists:arrival_locations,id',
+            'company_id' => 'required|exists:companies,id',
+        ]);
+
+        $productId = $request->product_id;
+        $locationId = $request->location_id;
+        $jobOrderIds = $request->job_order_ids ?? [];
+
+        // Get all related product IDs (head and b2)
+        $productIds = Product::where('id', $request->product_id)
+            ->orWhere('parent_id', $request->product_id)
+            ->whereIn('product_category_flags', ['head', 'b2'])
+            ->pluck('id')
+            ->toArray();
+
+        $headProduct = Product::where('status', 1)->where('id', $productId)->first();
+
+        // Initialize collections
+        $packingItemsProducts = collect();
+        $nonPackingItemsProducts = collect();
+        $jobOrderPackings = collect();
+
+        if ($request->has('job_order_ids') && count($request->job_order_ids) > 0) {
+            $jobOrderPackings = JobOrderPackingItem::with([
+                'jobOrder:id,job_order_no,product_id',
+                'jobOrder.product:id,name'  // product relation jobOrder ke through hai
+            ])
+                ->whereIn('job_order_id', $request->job_order_ids)
+                ->whereHas('jobOrder', function ($query) use ($productIds) {
+                    $query->whereIn('product_id', $productIds);
+                })
+                ->get();
+
+            // Packing items wale products - jobOrder ke through product nikalenge
+            $packingItemsProducts = $jobOrderPackings->map(function ($packingItem) {
+                // Product jobOrder ke through available hai
+                if ($packingItem->jobOrder && $packingItem->jobOrder->product) {
+                    return $packingItem->jobOrder->product;
+                }
+                return null;
+            })->filter()->unique('id');
+
+            // Debug: Check packing items products count
+            // \Log::info('Packing Items Products Count: ' . $packingItemsProducts->count());
+
+            // Non-packing items wale products
+            $productIdsWithPackingItems = $packingItemsProducts->pluck('id')->toArray();
+
+            $nonPackingItemsProducts = Product::whereIn('id', $productIds)
+                ->whereNotIn('id', $productIdsWithPackingItems)
+                ->where('status', 1)
+                ->get();
+        }
+
+        $headProductOutputs = [];
+        if ($request->filled('production_voucher_id')) {
+            $productionVoucher = ProductionVoucher::with('outputs')->find($request->production_voucher_id);
+            if ($productionVoucher) {
+                $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->product_id);
+            }
+        }
+
+        $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
+            ->where('company_id', $request->company_id)
+            ->where('status', 'active')
+            ->get();
+
+        $brands = Brands::where('company_id', $request->company_id)->get();
+
+        $jobOrders = collect();
+        if (!empty($jobOrderIds)) {
+            $jobOrders = JobOrder::where('company_id', $request->company_id)
+                ->whereIn('id', $jobOrderIds)
+                ->get();
+        }
+
+        return view('management.production.production_voucher.partials.head_products_table', compact(
+            'headProduct',
+            'arrivalSubLocations',
+            'brands',
+            'jobOrders',
+            'headProductOutputs',
+            'jobOrderPackings',
+            'packingItemsProducts',
+            'nonPackingItemsProducts'
+        ));
+    }
+
 
     public function getList(Request $request)
     {
@@ -716,7 +816,7 @@ class ProductionVoucherController extends Controller
         }
     }
 
-    public function edit($id)
+    public function editbkk($id)
     {
         $productionVoucher = ProductionVoucher::with([
             'jobOrder.product',
@@ -762,24 +862,24 @@ class ProductionVoucherController extends Controller
             })
             ->get();
 
-            $jobOrderPackingsByProduct = JobOrderPackingItem::with([
-                'jobOrder:id,job_order_no,product_id', // product_id zaroor add karein
-                'jobOrder.product:id,name'
-    
-            ])
-    
-                ->whereIn('job_order_id', $jobOrderIds)
-                ->whereHas('jobOrder', function ($query) use ($byProductIds) {
-                    $query->whereIn('product_id', $byProductIds);
-                });
-                // dd($jobOrderIds,$jobOrderPackingsByProduct->get(),$byProductIds);
+        $jobOrderPackingsByProduct = JobOrderPackingItem::with([
+            'jobOrder:id,job_order_no,product_id', // product_id zaroor add karein
+            'jobOrder.product:id,name'
+
+        ])
+
+            ->whereIn('job_order_id', $jobOrderIds)
+            ->whereHas('jobOrder', function ($query) use ($byProductIds) {
+                $query->whereIn('product_id', $byProductIds);
+            });
+        // dd($jobOrderIds,$jobOrderPackingsByProduct->get(),$byProductIds);
 
         // dd($jobOrderPackings);
 
         $jobOrderRawMaterialQcs = JobOrderRawMaterialQc::whereIn('job_order_id', $productionVoucher->jobOrders->pluck('id'))->get();
 
         $jobOrders = JobOrder::where('status', 1)->get();
-  
+
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $supervisors = User::where('status', 'active')->get();
         $products = Product::where('status', 1)->get();
@@ -799,6 +899,134 @@ class ProductionVoucherController extends Controller
             'jobOrderIds',
             'brands',
             'plants'
+        ));
+    }
+
+
+    public function edit($id)
+    {
+        $productionVoucher = ProductionVoucher::with([
+            'jobOrder.product',
+            'jobOrders.product',
+            'location',
+            'product',
+            'supervisor',
+            'inputs.product',
+            'inputs.location',
+            'outputs.product',
+            'outputs.storageLocation',
+            'outputs.brand',
+            'slots.breaks'
+        ])->findOrFail($id);
+
+        $productIds = Product::where('id', $productionVoucher->product_id)
+            ->orWhere('parent_id', $productionVoucher->product_id)
+            ->pluck('id')
+            ->toArray();
+
+        $jobOrderIds = $productionVoucher->jobOrders->pluck('id')->toArray();
+
+        $byProductIds = Product::where(function ($query) use ($productionVoucher) {
+            $query->where('id', $productionVoucher->by_product_id)
+                ->orWhere('parent_id', $productionVoucher->by_product_id);
+        })
+            // ->where('is_by_product', 'yes')
+            ->where('product_category_flags', 'by')
+
+            ->pluck('id')
+            ->toArray();
+
+        // Get all related product IDs for head products (including children)
+        $allHeadProductIds = Product::where('id', $productionVoucher->product_id)
+            ->orWhere('parent_id', $productionVoucher->product_id)
+            ->whereIn('product_category_flags', ['head', 'b2'])
+            ->pluck('id')
+            ->toArray();
+
+        // Initialize collections for head products
+        $packingItemsProducts = collect();
+        $nonPackingItemsProducts = collect();
+        $jobOrderPackings = collect();
+
+        if (!empty($jobOrderIds)) {
+            // Get job order packings
+            $jobOrderPackings = JobOrderPackingItem::with([
+                'jobOrder:id,job_order_no,product_id',
+                'jobOrder.product:id,name,product_category_flags'
+            ])
+                ->whereIn('job_order_id', $jobOrderIds)
+                ->whereHas('jobOrder', function ($query) use ($allHeadProductIds) {
+                    $query->whereIn('product_id', $allHeadProductIds);
+                })
+                ->whereHas('jobOrder.product', function ($query) {
+                    $query->whereIn('product_category_flags', ['head', 'b2']);
+                })
+                ->get();
+
+            // Get products that have packing items
+            $packingItemsProducts = $jobOrderPackings->map(function ($packingItem) {
+                if ($packingItem->jobOrder && $packingItem->jobOrder->product) {
+                    return $packingItem->jobOrder->product;
+                }
+                return null;
+            })->filter()->unique('id');
+
+            // Get products that don't have packing items
+            $productIdsWithPackingItems = $packingItemsProducts->pluck('id')->toArray();
+
+            $nonPackingItemsProducts = Product::whereIn('id', $allHeadProductIds)
+                ->whereNotIn('id', $productIdsWithPackingItems)
+                ->where('status', 1)
+                ->get();
+        } else {
+            // If no job orders, all products are non-packing items
+            $nonPackingItemsProducts = Product::whereIn('id', $allHeadProductIds)
+                ->where('status', 1)
+                ->get();
+        }
+
+        $jobOrderPackingsByProduct = JobOrderPackingItem::with([
+            'jobOrder:id,job_order_no,product_id',
+            'jobOrder.product:id,name,product_category_flags'
+        ])
+            ->whereIn('job_order_id', $jobOrderIds)
+            ->whereHas('jobOrder', function ($query) use ($byProductIds) {
+                $query->whereIn('product_id', $byProductIds);
+            })
+            ->whereHas('jobOrder.product', function ($query) {
+                $query->whereIn('product_category_flags', ['by']);
+            })
+        ;
+
+        $jobOrderRawMaterialQcs = JobOrderRawMaterialQc::whereIn('job_order_id', $productionVoucher->jobOrders->pluck('id'))->get();
+
+        $jobOrders = JobOrder::where('status', 1)->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $supervisors = User::where('status', 'active')->get();
+        $products = Product::where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $plants = \App\Models\Master\Plant::where('status', 'active')->get();
+
+        // IMPORTANT: Convert headProductOutputs to collection
+        $headProductOutputs = collect($productionVoucher->outputs->where('product_id', $productionVoucher->product_id));
+
+        return view('management.production.production_voucher.edit', compact(
+            'productionVoucher',
+            'jobOrders',
+            'companyLocations',
+            'supervisors',
+            'products',
+            'sublocations',
+            'jobOrderPackings',
+            'jobOrderPackingsByProduct',
+            'jobOrderIds',
+            'brands',
+            'plants',
+            'packingItemsProducts',
+            'nonPackingItemsProducts',
+            'allHeadProductIds',
+            'headProductOutputs' // Ab ye collection hai
         ));
     }
 
