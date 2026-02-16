@@ -20,6 +20,33 @@
             </div>
         </div>
     </div>
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="form-group">
+            <label>Product Sort Type:</label>
+            <ul class="list-unstyled mb-0">
+                <li class="d-inline-block mr-2 mb-2">
+                    <div class="radio radio-success">
+                        <input type="radio" name="product_category_flags" id="head-product" value="head"  {{ $product->product_category_flags == 'head' ? 'checked' : '' }}>
+                        <label for="head-product"><span>Head Product</span></label>
+                    </div>
+                </li>
+
+                <li class="d-inline-block mr-2 mb-2">
+                    <div class="radio radio-success">
+                        <input type="radio" name="product_category_flags" id="b2-product" value="b2"  {{ $product->product_category_flags == 'b2' ? 'checked' : '' }}>
+                        <label for="b2-product"><span>B2 Product</span></label>
+                    </div>
+                </li>
+
+                <li class="d-inline-block mr-2 mb-2">
+                    <div class="radio radio-success">
+                        <input type="radio" name="product_category_flags" id="by-product" value="by" {{ $product->product_category_flags == 'by' ? 'checked' : '' }}>
+                        <label for="by-product"><span>By Product</span></label>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
     <div class="row">
         <div class="col-xs-6 col-sm-6 col-md-6">
 
@@ -139,7 +166,7 @@
                     </li>
                     <li class="d-inline-block mr-2 mb-2">
                         <div class="checkbox checkbox-success" bis_skin_checked="1">
-                            <input type="checkbox" name="is_by_product" {{ $product->is_by_product == 'yes' ? 'checked' : '' }} value="yes" id="color-checkbox-3" >
+                            <input type="checkbox" name="is_by_product" {{ $product->is_by_product == 'yes' ? 'checked' : '' }} value="yes" id="color-checkbox-3">
                             <label for="color-checkbox-3"><span>By Product</span></label>
                         </div>
                     </li>

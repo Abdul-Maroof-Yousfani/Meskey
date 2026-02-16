@@ -79,6 +79,7 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
+        // dd($request);
         $data = $request->all();
         $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory', 'yes'));
 
@@ -119,8 +120,10 @@ class ProductController extends Controller
     {
         // dd($request);
         $data = $request->validated();
-        $data['is_child_product'] = $request->is_child_product ?? 'no';
-        $data['is_by_product'] = $request->is_by_product ?? 'no';
+        $data['parent_id'] = $request->parent_id ?? null;
+
+        // $data['is_child_product'] = $request->is_child_product ?? 'no';
+        // $data['is_by_product'] = $request->is_by_product ?? 'no';
         if (empty($product->account_id)) {
             $account = Account::create(getParamsForAccountCreation(
                 $request->company_id,

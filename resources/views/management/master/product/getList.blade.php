@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th class="col-sm-1">Image </th>
+            <th class="col-sm-1">Type </th>
             <th class="col-sm-3">Name </th>
             <th class="col-sm-3">Parent</th>
             <th class="col-sm-1">Product Type</th>
@@ -14,10 +15,13 @@
     <tbody>
         @if ($products->count() > 0)
             @foreach ($products as $parent)
-
                 {{-- ==== Parent Product Row ==== --}}
                 <tr style="background: #f7f7f7;">
                     <td><img src="{{ image_path($parent->image) }}" class="avatar lisiavatarlogo" /></td>
+                    <td class="text-uppercase" style="background: #f7f7f7;">
+                        <label for=""
+                            class="badge bg-light-secondary"><small>{{ $parent->product_category_flags }}</small></label>
+                    </td>
                     <td style="background: #f7f7f7; font-weight: bold;">{{ $parent->name }}</td>
                     <td>—</td>
                     <td><small>{{ formatEnumValue($parent->product_type) ?? '--' }}</small></td>
@@ -39,11 +43,14 @@
                         @endcan
                     </td>
                 </tr>
-
                 {{-- ==== Child Products Under Same Parent ==== --}}
                 @foreach ($parent->children as $child)
                     <tr>
                         <td><img src="{{ image_path($child->image) }}" class="avatar lisiavatarlogo" /></td>
+                        <td class="text-uppercase">
+                            <label for=""
+                                class="badge bg-light-secondary"><small>{{ $child->product_category_flags }}</small></label>
+                        </td>
                         <td>—— {{ $child->name }}</td>
                         <td>{{ $parent->name }}</td>
                         <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
@@ -95,9 +102,6 @@
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}
-
-
-
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         {{ $products->links() }}

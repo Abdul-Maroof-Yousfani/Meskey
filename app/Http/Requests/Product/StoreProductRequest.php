@@ -27,8 +27,9 @@ class StoreProductRequest extends FormRequest
             'price' => 'nullable|numeric',
             // 'is_bag' => 'required',
 
-            'is_child_product' => 'nullable|in:yes,no',
-            'is_by_product' => 'nullable|in:yes,no',
+            'product_category_flags' => 'nullable|in:head,by,b2',
+            // 'is_child_product' => 'nullable|in:yes,no',
+            // 'is_by_product' => 'nullable|in:yes,no',
             'status' => 'required|in:active,inactive'
         ];
     }

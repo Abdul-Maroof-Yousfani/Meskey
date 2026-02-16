@@ -30,8 +30,7 @@ class Product extends Model
         'price',
         'name',
         'is_bag',
-        'is_by_product',
-        'is_child_product'
+        'product_category_flags',
     ];
 
     // Relationships

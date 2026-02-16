@@ -32,8 +32,10 @@ class UpdateProductRequest extends FormRequest
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'price' => 'nullable|numeric',
             // 'is_bag' => 'required',
-            'is_child_product' => 'nullable|in:yes,no',
-            'is_by_product' => 'nullable|in:yes,no',
+            // 'is_child_product' => 'nullable|in:yes,no',
+            // 'is_by_product' => 'nullable|in:yes,no',
+            'product_category_flags' => 'nullable|in:head,by,b2',
+
             'product_type' => 'required',
             'status' => 'required|in:active,inactive',
         ];

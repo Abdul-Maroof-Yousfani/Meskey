@@ -20,6 +20,33 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
+                <label>Product Sort Type:</label>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="radio radio-success">
+                            <input type="radio" name="product_category_flags" id="head-product" value="head" checked>
+                            <label for="head-product"><span>Head Product</span></label>
+                        </div>
+                    </li>
+
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="radio radio-success">
+                            <input type="radio" name="product_category_flags" id="b2-product" value="b2">
+                            <label for="b2-product"><span>B2 Product</span></label>
+                        </div>
+                    </li>
+
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="radio radio-success">
+                            <input type="radio" name="product_category_flags" id="by-product" value="by">
+                            <label for="by-product"><span>By Product</span></label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
                 <label>Product Type:</label>
                 <select class="form-control" onchange="check(this.value)" name="product_type">
                     <option value="">Select Product Type</option>
@@ -113,25 +140,7 @@
             </div>
         </div> --}}
 
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Child/By Product:</label>
-                <ul class="list-unstyled mb-0">
-                    <li class="d-inline-block mr-2 mb-2">
-                        <div class="checkbox checkbox-success" bis_skin_checked="1">
-                            <input type="checkbox" name="is_child_product" id="color-checkbox-1" value="yes">
-                            <label for="color-checkbox-1"><span>Child Product</span></label>
-                        </div>
-                    </li>
-                    <li class="d-inline-block mr-2 mb-2">
-                        <div class="checkbox checkbox-success" bis_skin_checked="1">
-                            <input type="checkbox" name="is_by_product" id="color-checkbox-3" value="yes">
-                            <label for="color-checkbox-3"><span>By Product</span></label>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
+
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
