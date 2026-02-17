@@ -370,8 +370,8 @@
                     const allFactoryIds = res.map(loc => String(loc.id));
                     $("#arrivals").val(allFactoryIds).trigger('change.select2');
                     
-                    // Populate and select all sections for all selected factories
-                    selectAllStoragesFromServer(allFactoryIds);
+                    // Clear sections as no mapping exists
+                    $("#storages").empty().prop("disabled", true).trigger('change.select2');
                 },
                 error: function(error) {
 
@@ -404,57 +404,9 @@
             const allSectionIds = allSections.map(s => String(s.id));
             $("#storages").val(allSectionIds).trigger('change.select2');
         } else {
-            // Fallback: fetch sections from server for each factory
-            selectAllStoragesFromServer(factoryIds);
+            // No sections in mapping, clear list and disable
+            $("#storages").empty().prop("disabled", true).trigger('change.select2');
         }
-    }
-    
-    // Function to fetch and select all sections from server for multiple factories
-    function selectAllStoragesFromServer(factoryIds) {
-        $("#storages").prop("disabled", false).empty();
-        
-        let allSections = [];
-        let completedRequests = 0;
-        
-        if (factoryIds.length === 0) {
-            return;
-        }
-        
-        factoryIds.forEach(factoryId => {
-            $.ajax({
-                url: "{{ route('sales.get.storage-locations') }}",
-                method: "GET",
-                data: {
-                    arrival_id: factoryId
-                },
-                dataType: "json",
-                success: function(res) {
-                    res.forEach(section => {
-                        // Avoid duplicates
-                        if (!allSections.find(s => s.id === section.id)) {
-                            allSections.push(section);
-                        }
-                    });
-                    
-                    completedRequests++;
-                    
-                    // Once all requests complete, populate and select all sections
-                    if (completedRequests === factoryIds.length) {
-                        $("#storages").empty();
-                        allSections.forEach(section => {
-                            $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
-                        });
-                        
-                        // Auto-select ALL sections
-                        const allSectionIds = allSections.map(s => String(s.id));
-                        $("#storages").val(allSectionIds).trigger('change.select2');
-                    }
-                },
-                error: function(error) {
-                    completedRequests++;
-                }
-            });
-        });
     }
 
     function selectStorage(el) {
@@ -469,21 +421,8 @@
         // Convert to array if single value
         const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
         
-        // Check if we have SO mapping for any of the selected factories
-        let hasMapping = false;
-        factoryIds.forEach(factoryId => {
-            if (soSectionMap[String(factoryId)] && soSectionMap[String(factoryId)].length > 0) {
-                hasMapping = true;
-            }
-        });
-
-        if (hasMapping) {
-            // Use SO mapping
-            selectAllStorages(factoryIds);
-        } else {
-            // Fetch from server
-            selectAllStoragesFromServer(factoryIds);
-        }
+        // We strictly use mapping data, no server fallback
+        selectAllStorages(factoryIds);
     }
 
     function add_advance_amount() {

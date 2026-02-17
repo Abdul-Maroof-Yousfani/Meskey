@@ -79,6 +79,7 @@ class DeliveryOrderController extends Controller
                 // 'line_desc' => $request->line_desc,
                 'delivery_date' => $request->delivery_date,
                 'line_desc' => $request->remarks ?? "",
+                'remarks' => $request->remarks ?? "",
                 'company_id' => $request->company_id,
                 'created_by' => auth()->user()->id,
                 'am_approval_status' => 'pending',
@@ -478,6 +479,7 @@ class DeliveryOrderController extends Controller
                 'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
                 'delivery_date' => $request->delivery_date,
                 'line_desc' => $request->remarks ?? "",
+                'remarks' => $request->remarks ?? "",
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1
             ]);
