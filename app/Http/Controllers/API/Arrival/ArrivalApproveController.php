@@ -382,6 +382,7 @@ class ArrivalApproveController extends Controller
             $authUser = auth()->user();
 
             $tickets = ArrivalTicket::with([
+                'unloadingLocation:arrival_location_id',
                 'unloadingLocation.arrivalLocation:id,name',
             ])
                 ->where('arrival_tickets.first_weighbridge_status', 'completed')
@@ -401,12 +402,12 @@ class ArrivalApproveController extends Controller
                     ) AS arrival_sampling_requests
                 "), 'arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
                 // ->where('arrival_sampling_requests.approved_status', 'approved')
-                // ->whereHas('unloadingLocation', function ($query) {
-                //     $query->whereIn(
-                //         'arrival_location_id',
-                //         getUserCurrentCompanyArrivalLocations()
-                //     );
-                // })
+                ->whereHas('unloadingLocation', function ($query) {
+                    $query->whereIn(
+                        'arrival_location_id',
+                        getUserCurrentCompanyArrivalLocations()
+                    );
+                })
                 ->select(
                     'arrival_tickets.id',
                     'arrival_tickets.unique_no',
