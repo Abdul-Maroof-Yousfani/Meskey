@@ -35,7 +35,7 @@ class DeliveryOrderRequest extends FormRequest
             'remarks' => 'nullable|string',
             "location_id" => "required|numeric",
             "arrival_id" => "required",
-            "storage_id" => "required",
+            "storage_id" => "nullable",
 
             'item_id' => 'required',
             'item_id.*' => 'required',
