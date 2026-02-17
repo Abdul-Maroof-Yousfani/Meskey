@@ -382,6 +382,7 @@ class ArrivalApproveController extends Controller
             $authUser = auth()->user();
 
             $tickets = ArrivalTicket::with([
+                'unloadingLocation',
                 'unloadingLocation.arrivalLocation:id,name',
             ])
                 ->where('arrival_tickets.first_weighbridge_status', 'completed')
@@ -401,12 +402,12 @@ class ArrivalApproveController extends Controller
                     ) AS arrival_sampling_requests
                 "), 'arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
                 // ->where('arrival_sampling_requests.approved_status', 'approved')
-                // ->whereHas('unloadingLocation', function ($query) {
-                //     $query->whereIn(
-                //         'arrival_location_id',
-                //         getUserCurrentCompanyArrivalLocations()
-                //     );
-                // })
+                ->whereHas('unloadingLocation', function ($query) {
+                    $query->whereIn(
+                        'arrival_location_id',
+                        getUserCurrentCompanyArrivalLocations()
+                    );
+                })
                 ->select(
                     'arrival_tickets.id',
                     'arrival_tickets.unique_no',
@@ -423,7 +424,7 @@ class ArrivalApproveController extends Controller
                     'arrival_sampling_requests.is_done as sampling_is_done',
                     'arrival_sampling_requests.is_re_sampling as sampling_is_re_sampling',
                     'arrival_sampling_requests.created_at as sampling_created_at',
-                    'arrival_sampling_requests.remark as purchaser_remarks',
+                    'arrival_sampling_requests.approved_remarks as purchaser_remarks',
                     'products.name as qc_product_name',   // ✅ Correct table name
                     'sauda_types.name as sauda_type_name'
 
