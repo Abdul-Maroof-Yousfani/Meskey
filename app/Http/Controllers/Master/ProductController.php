@@ -22,7 +22,7 @@ class ProductController extends Controller
     /**
      * Get list of categories.
      */
-    public function getList(Request $request)
+    public function getListbk(Request $request)
     {
         $products = Product::with('children') // Eager load children
             ->when($request->filled('search'), function ($q) use ($request) {
@@ -31,7 +31,47 @@ class ProductController extends Controller
             })
             ->where('company_id', $request->company_id)
             ->whereNull('parent_id') // Only fetch top-level parents
+            ->orderByRaw("
+            CASE 
+                WHEN product_category_flags = 'head' THEN 1
+                WHEN product_category_flags = 'b2' THEN 2
+                ELSE 3
+            END
+        ")
             ->latest()
+            ->paginate($request->get('per_page', 25));
+
+        return view('management.master.product.getList', compact('products'));
+    }
+
+    public function getList(Request $request)
+    {
+        $products = Product::with([
+            'children' => function ($q) {
+                $q->orderByRaw("
+                CASE 
+                    WHEN product_category_flags = 'head' THEN 1
+                    WHEN product_category_flags = 'b2' THEN 2
+                    ELSE 3
+                END
+            ")
+                    ->orderBy('created_at', 'desc');
+            }
+        ])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where('name', 'like', $searchTerm);
+            })
+            ->where('company_id', $request->company_id)
+            ->whereNull('parent_id')
+            ->orderByRaw("
+            CASE 
+                WHEN product_category_flags = 'head' THEN 1
+                WHEN product_category_flags = 'b2' THEN 2
+                ELSE 3
+            END
+        ")
+            ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 25));
 
         return view('management.master.product.getList', compact('products'));
