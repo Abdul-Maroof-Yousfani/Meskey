@@ -19,8 +19,13 @@
                 <tr style="background: #f7f7f7;">
                     <td><img src="{{ image_path($parent->image) }}" class="avatar lisiavatarlogo" /></td>
                     <td class="text-uppercase" style="background: #f7f7f7;">
-                        <label for=""
-                            class="badge bg-light-secondary"><small>{{ $parent->product_category_flags }}</small></label>
+                        <label class="badge 
+                        bg-light-{{ 
+                            $parent->product_category_flags == 'head' ? 'success' :
+                    ($parent->product_category_flags == 'b2' ? 'warning' : 'secondary') 
+                        }}">
+                            <small>{{ $parent->product_category_flags }}</small>
+                        </label>
                     </td>
                     <td style="background: #f7f7f7; font-weight: bold;">{{ $parent->name }}</td>
                     <td>—</td>
@@ -48,8 +53,13 @@
                     <tr>
                         <td><img src="{{ image_path($child->image) }}" class="avatar lisiavatarlogo" /></td>
                         <td class="text-uppercase">
-                            <label for=""
-                                class="badge bg-light-secondary"><small>{{ $child->product_category_flags }}</small></label>
+                            <label class="badge 
+                    bg-light-{{ 
+                        $parent->product_category_flags == 'head' ? 'success' :
+                            ($parent->product_category_flags == 'b2' ? 'warning' : 'secondary') 
+                    }}">
+                                <small>——{{ $parent->product_category_flags }}</small>
+                            </label>
                         </td>
                         <td>—— {{ $child->name }}</td>
                         <td>{{ $parent->name }}</td>
