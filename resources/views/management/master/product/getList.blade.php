@@ -55,10 +55,10 @@
                         <td class="text-uppercase">
                             <label class="badge 
                     bg-light-{{ 
-                        $parent->product_category_flags == 'head' ? 'success' :
-                            ($parent->product_category_flags == 'b2' ? 'warning' : 'secondary') 
+                        $child->product_category_flags == 'head' ? 'success' :
+                            ($child->product_category_flags == 'b2' ? 'warning' : 'secondary') 
                     }}">
-                                <small>——{{ $parent->product_category_flags }}</small>
+                                <small>——{{ $child->product_category_flags }}</small>
                             </label>
                         </td>
                         <td>—— {{ $child->name }}</td>
