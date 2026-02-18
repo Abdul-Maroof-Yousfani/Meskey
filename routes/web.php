@@ -334,7 +334,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('logouts', function (Request $request) {
         $user = Auth::user();
         if ($user) {
-            $user->current_company_id = null;
+            // $user->current_company_id = null;
             $user->save();
         }
         Auth::logout();
