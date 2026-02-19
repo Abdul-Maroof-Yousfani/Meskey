@@ -539,13 +539,13 @@
                     <div class="pl-0 col-md-6"> 
                         <div class="form-group">
                             <label>Min Quantity (kg):</label>
-                            <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" min="25000" value="{{ $arrivalPurchaseOrder->min_quantity ?? '' }}" />
+                            <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" value="{{ $arrivalPurchaseOrder->min_quantity ?? '' }}" />
                         </div>
                     </div>
                     <div class="pr-0 col-md-6">
                         <div class="form-group">
                             <label>Max Quantity (kg):</label>
-                            <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control" min="25000" value="{{ $arrivalPurchaseOrder->max_quantity ?? '' }}" />
+                            <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control"  value="{{ $arrivalPurchaseOrder->max_quantity ?? '' }}" />
                         </div>
                     </div>
                 </div>

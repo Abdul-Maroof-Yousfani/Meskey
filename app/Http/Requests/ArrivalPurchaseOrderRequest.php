@@ -74,7 +74,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             $data = $this->all();
 
             if (
-                (!empty($data['broker_one_commission']) && (empty($data['broker_one_id']) || $data['broker_one_id'] == null))
+                (!empty($data['broker_one_commission']) && $data['broker_one_commission'] != 0 && (empty($data['broker_one_id']) || $data['broker_one_id'] == null))
             ) {
                 $validator->errors()->add('broker_one_id', 'Broker 1 is required if commission is entered.');
             }
@@ -85,7 +85,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             }
 
             if (
-                (!empty($data['broker_two_commission']) && (empty($data['broker_two_id']) || $data['broker_two_id'] == null))
+                (!empty($data['broker_two_commission']) && $data['broker_two_commission'] != 0 && (empty($data['broker_two_id']) || $data['broker_two_id'] == null))
             ) {
                 $validator->errors()->add('broker_two_id', 'Broker 2 is required if commission is entered.');
             }
@@ -96,7 +96,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             }
 
             if (
-                (!empty($data['broker_three_commission']) && (empty($data['broker_three_id']) || $data['broker_three_id'] == null))
+                (!empty($data['broker_three_commission']) && $data['broker_three_commission'] != 0 && (empty($data['broker_three_id']) || $data['broker_three_id'] == null))
             ) {
                 $validator->errors()->add('broker_three_id', 'Broker 3 is required if commission is entered.');
             }
