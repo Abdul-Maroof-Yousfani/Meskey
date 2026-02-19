@@ -1239,7 +1239,7 @@
                 <div class="form-group ">
                     <label>Your Remarks (Optional):</label>
                     <textarea name="remarks" row="4" class="form-control"
-                        placeholder="Description">{{ $arrivalSamplingRequest->remark }}</textarea>
+                        placeholder="Description">{{ $arrivalSamplingRequest->approved_remarks }}</textarea>
                 </div>
             </div>
         </div>
