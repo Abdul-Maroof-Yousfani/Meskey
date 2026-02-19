@@ -310,8 +310,8 @@ class PurchaseOrderController extends Controller
                 $updateData['total_quantity'] = $data['total_quantity'] ?? null;
             }
 
-            $updateData['min_quantity'] = $data['min_quantity'] ?? null;
-            $updateData['max_quantity'] = $data['max_quantity'] ?? null;
+            $updateData['min_quantity'] = $data['min_quantity_input'] ?? null;
+            $updateData['max_quantity'] = $data['max_quantity_input'] ?? null;
             $updateData['min_bags'] = $data['min_bags'] ?? null;
             $updateData['max_bags'] = $data['max_bags'] ?? null;
 
