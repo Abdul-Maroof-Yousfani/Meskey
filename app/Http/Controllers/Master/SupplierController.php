@@ -38,7 +38,7 @@ class SupplierController extends Controller
 
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
-            });
+            })->orWhere("owner_name", "like", $searchTerm);
         })
             ->where('company_id', $request->company_id)
             ->latest()
