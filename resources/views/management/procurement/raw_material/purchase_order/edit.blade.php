@@ -550,6 +550,9 @@
                     </div>
                 </div>
             `);
+            $('#min_quantity_input, #max_quantity_input').on('input change', function() {
+                        calculateQuantityAndBags();
+                    });
              }
          }
 
@@ -590,6 +593,12 @@
              calculateRates('rate_per_100kg');
          });
 
+
+
+         $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change',
+                function() {
+                    calculateQuantityAndBags();
+                });
          // Quantity and bags calculation
          function calculateQuantityAndBags() {
              const MIN_QTY = 0;

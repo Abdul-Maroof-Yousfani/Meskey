@@ -626,7 +626,7 @@
                 });
 
             function calculateQuantityAndBags() {
-                const MIN_QTY = 25000; // Minimum allowed quantity
+                const MIN_QTY = 0; // Minimum allowed quantity
                 const bagWeight = $('#product_id option:selected').data('bag-weight') || 1;
                 let minQuantity, maxQuantity;
 
@@ -639,8 +639,11 @@
                     if (minQuantity < MIN_QTY) {
                         minQuantity = MIN_QTY;
                         maxQuantity = Math.max(MIN_QTY, maxQuantity);
-                        $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
+                        // $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
+                        $('#no_of_trucks').val(Math.ceil(1));
                     }
+                    
+
                 } else {
                     minQuantity = parseInt($('#min_quantity_input').val()) || MIN_QTY;
                     maxQuantity = parseInt($('#max_quantity_input').val()) || minQuantity;
