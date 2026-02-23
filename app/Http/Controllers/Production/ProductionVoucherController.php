@@ -178,13 +178,32 @@ class ProductionVoucherController extends Controller
         $locationId = $request->location_id;
         $jobOrderIds = $request->job_order_ids ?? [];
 
+        $product = Product::find($request->product_id);
+
+        if (!$product) {
+            return [];
+        }
+
+        $parentId = $product->parent_id ? $product->parent_id : $product->id;
+
+
         // Get all related product IDs (head and b2)
-        $productIds = Product::where('id', $request->product_id)
+        $productIdddds = Product::where('id', $request->product_id)
             ->orWhere('parent_id', $request->product_id)
             ->whereIn('product_category_flags', ['head', 'b2'])
             ->pluck('id')
             ->toArray();
 
+
+
+        $productIds = Product::where(function ($q) use ($parentId) {
+            $q->where('id', $parentId)         // parent
+                ->orWhere('parent_id', $parentId); // children
+        })
+            ->whereIn('product_category_flags', ['head', 'b2'])
+            ->pluck('id')
+            ->toArray();
+        // dd($productIds);
         $headProduct = Product::where('status', 1)->where('id', $productId)->first();
 
         // Initialize collections
