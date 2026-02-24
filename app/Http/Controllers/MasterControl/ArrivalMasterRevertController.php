@@ -131,7 +131,10 @@ class ArrivalMasterRevertController extends Controller
 
             $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
+            
+            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)
+                                                            ->where("company_location_id", $arrivalTicket->location_id)
+                                                            ->get();
             $sampleTakenByUsers = User::all();
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
