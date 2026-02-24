@@ -48,9 +48,9 @@ class DebitNote extends Model
                     $purchase_bill_data = PurchaseBillData::find($debit_note_data->purchase_bill_data_id);
 
                     // Decreasing quantity of GRN, due to adjustment in debit note
-                    $grn_data = $purchase_bill_data->PurchaseOrderReceivingData;
-                    $grn_data->qty -= $debit_note_data->debit_note_quantity;
-                    $grn_data->save();
+                    // $grn_data = $purchase_bill_data->PurchaseOrderReceivingData;
+                    // $grn_data->qty -= $debit_note_data->debit_note_quantity;
+                    // $grn_data->save();
 
                     createTransaction(
                         $debit_note_data->amount,
