@@ -570,6 +570,7 @@ class ArrivalMasterRevertController extends Controller
             'bilty_no' => 'required|string|max:255',
             'truck_no' => 'required|string|max:255',
             'bags' => 'required|numeric',
+            'product_id' => 'nullable',
             'truck_type_id' => 'required|max:255',
             'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',
