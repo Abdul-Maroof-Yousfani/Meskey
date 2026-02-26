@@ -131,7 +131,10 @@ class ArrivalMasterRevertController extends Controller
 
             $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
+            
+            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)
+                                                            ->where("company_location_id", $arrivalTicket->location_id)
+                                                            ->get();
             $sampleTakenByUsers = User::all();
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
@@ -567,6 +570,7 @@ class ArrivalMasterRevertController extends Controller
             'bilty_no' => 'required|string|max:255',
             'truck_no' => 'required|string|max:255',
             'bags' => 'required|numeric',
+            'product_id' => 'nullable',
             'truck_type_id' => 'required|max:255',
             'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',

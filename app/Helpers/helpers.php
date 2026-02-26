@@ -126,7 +126,6 @@ if (!function_exists('getUserCurrentCompanyArrivalLocations')) {
 
 function numberToWords($number)
 {
-    return "one";
     $number = floatval($number);
     $whole = floor($number);
     $fraction = round(($number - $whole) * 100);
