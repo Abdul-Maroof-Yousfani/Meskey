@@ -37,7 +37,7 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Sauda Type:</label>
-                 <select name="sauda_type_id" id="sauda_type_id" class="form-control ">
+                 <select name="sauda_type_id" id="sauda_type_id{{ $ticketcounts != 0 ? 'ub-nh-chlunga' : '' }}" class="form-control ">
                      <option value="{{ $arrivalPurchaseOrder->saudaType->id ?? null }}">
                          {{ $arrivalPurchaseOrder->saudaType?->name ?? 'Sauda Type Name' }}</option>
                  </select>
