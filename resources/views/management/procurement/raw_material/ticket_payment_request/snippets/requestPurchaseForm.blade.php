@@ -78,7 +78,7 @@
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
-    dd($requestedAmount);
+    // dd($requestedAmount);
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
