@@ -123,7 +123,7 @@ class ArrivalApproveController extends Controller
             // 'bag_condition_id' => 'required|exists:bag_conditions,id',
             // 'bag_packing_id' => 'required|exists:bag_packings,id',
             'bag_packing_approval' => 'required|in:Half Approved,Full Approved',
-            'total_bags' => 'required|integer|min:1',
+            'total_bags' => 'nullable|integer',
             'total_rejection' => 'nullable|integer',
             'amanat' => 'required|in:Yes,No',
             'note' => 'nullable|string'
@@ -132,7 +132,10 @@ class ArrivalApproveController extends Controller
         $gala_name = ArrivalSubLocation::where('id', $request->gala_id)->value('name');
 
         $validator->sometimes('total_rejection', 'required|integer|min:1', function ($input) {
-            return $input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket);
+            return ($input->bag_packing_approval === 'Half Approved' || isset($input->is_rejected_ticket)) && $input->bag_type_id != '15';
+        });
+        $validator->sometimes('total_bags', 'required|integer|min:1', function ($input) {
+            return $input->bag_type_id != '15';
         });
 
         if ($validator->fails()) {
