@@ -3,6 +3,8 @@
     calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
     $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
     $Deductionfromhelperfunction = $paymentDetails['deductions']['sampling_deduction_details'];
+
+
     // dd($Deductionfromhelperfunction);
     // $lumpsumDeduction = $paymentDetails->lumpsumDeduction;
     // $lumpsumDeductionKgs = $paymentDetails->lumpsumDeductionKgs;
@@ -76,6 +78,7 @@
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
+    dd($requestedAmount);
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
@@ -322,12 +325,13 @@
                             </tr>
                         </thead>
                         <tbody id="sampling-results-tbody">
-                            <tr>
+                        <tr data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
                                 <td>Lumpsum Deduction Rupees</td>
                                 <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
-                                <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }} Rs.</td>
+                                <td >
+                                {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }} Rs.</td>
                             </tr>
-                            <tr>
+                            <tr data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
                                 <td>Lumpsum Deduction KG's</td>
                                 <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
                                 <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} Rs.</td>
@@ -703,7 +707,8 @@
     @php
         $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
-        $totalwithCommision = $totalAmount + $totalSupplierCommission;
+        $totalwithCommisio = $totalAmount + $totalSupplierCommission;
+       $totalwithCommision =  $paymentDetails['calculations']['supplier_net_amount'] ?? $totalwithCommisio
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
@@ -763,6 +768,13 @@
 
 @if ($hasLoadingWeight)
     <script>
+         var showLumpSum = <?= $showLumpSum ? 'true' : 'false' ?>;
+    var isSlabs = <?= $isSlabs ? 'true' : 'false' ?>;
+    var isCompulsury = <?= $isCompulsury ? 'true' : 'false' ?>;
+    
+    if(showLumpSum && !isSlabs && !isCompulsury) {
+        console.log('true');
+    }
         $(document).ready(function() {
             $('[data-toggle="tooltip"]').tooltip();
             $('.select_b').select2();
@@ -866,12 +878,14 @@
 
                 window.samplingData.samplingResults.forEach(slabData => {
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
+                    console.log(calculatedValue+'ddddjjj');
                     totalSamplingAmount += calculatedValue;
 
                     $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
                         .toFixed(2));
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
                 });
+                
 
                 window.samplingData.compulsoryResults.forEach(slabData => {
                     const calculatedValue = slabData.applied_deduction * netWeight;
@@ -881,6 +895,18 @@
                         calculatedValue.toFixed(2));
                 });
 
+
+        
+                if(showLumpSum && !isSlabs && !isCompulsury) {
+                    var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount')|| 0;
+                    var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount')|| 0;
+                    console.log(lumpsumAmount)
+
+                    totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
+                    totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
+// console.log(totalSamplingAmount+'Wow');
+                    
+                }
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
 

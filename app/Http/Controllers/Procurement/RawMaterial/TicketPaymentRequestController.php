@@ -56,6 +56,7 @@ class TicketPaymentRequestController extends Controller
             'paymentRequestData' => function ($query) {
                 $query->with(['paymentRequests' => function ($q) {
                     $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                    ->where('status','!=','rejected')
                         ->groupBy('payment_request_data_id', 'request_type', 'status');
                 }]);
             }
@@ -610,6 +611,7 @@ class TicketPaymentRequestController extends Controller
                 ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
         })
             ->where('request_type', 'payment')
+            ->where('status','!=','rejected')
             ->sum('amount');
         // dd($requestedAmount, $arrivalTicket->arrival_purchase_order_id, $id);
         $approvedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {

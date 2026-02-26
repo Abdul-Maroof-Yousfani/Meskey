@@ -1632,7 +1632,10 @@ if (!function_exists("getByProductsById")) {
         $byProduct = $byProductId ? Product::find($byProductId) : null;
 
         // Filter products based on parent_id logic
-        $productsQuery = Product::where('status', 1);
+        $productsQuery = Product::where('status', 1)
+        ->whereIn('product_category_flags', ['by', 'by'])
+
+        ;
 
         if ($byProduct) {
             if ($byProduct->parent_id) {
