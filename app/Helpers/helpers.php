@@ -1423,6 +1423,22 @@ if (!function_exists('SlabTypeWisegetTicketDeductions')) {
         return $result;
     }
 }
+
+
+
+if (!function_exists('getQcRequestExceptResampling')) {
+    function getQcRequestExceptResampling($ticket_id, $type = null)
+    {
+        $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket_id)
+            // ->where('sampling_type', $type)
+            ->where('approved_remarks', '!=', null)
+            ->latest()
+            ->first();
+// dd($samplingRequest);
+        return $samplingRequest;
+    }
+}
+
 if (!function_exists('SlabTypeWisegetTicketQcResults')) {
     function SlabTypeWisegetTicketQcResults($ticket, $type = null)
     {
@@ -1632,7 +1648,7 @@ if (!function_exists("getByProductsById")) {
 
         // Filter products based on parent_id logic
         $productsQuery = Product::where('status', 1)
-        ->whereIn('product_category_flags', ['by', 'by'])
+            ->whereIn('product_category_flags', ['by', 'by'])
 
         ;
 

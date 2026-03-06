@@ -439,6 +439,7 @@ class ArrivalApproveController extends Controller
                 $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
                 unset($ticket->unloadingLocation);
                 $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
+                $ticket->purchaser_remarks = $ticket->second_qc_status == 'resampling' ? getQcRequestExceptResampling($ticket->id)->approved_remarks ?? null : $ticket->purchaser_remarks;
 
 
                 $approvalFormattedStatus = 'RF'; // Default
