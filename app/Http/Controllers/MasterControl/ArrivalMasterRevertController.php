@@ -583,6 +583,10 @@ class ArrivalMasterRevertController extends Controller
         // Update or create approval record
         if ($arrivalTicket) {
 
+            if (!empty($requestData['arrival_purchase_order_id'])) {
+                $ArrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($requestData['arrival_purchase_order_id']);
+                $requestData['sauda_type_id'] = $ArrivalPurchaseOrder->sauda_type_id;
+            }
             if (!empty($requestData['station'])) {
                 $station = Station::firstOrCreate(
                     [

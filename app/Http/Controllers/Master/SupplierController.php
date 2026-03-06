@@ -37,7 +37,8 @@ class SupplierController extends Controller
             $searchTerm = '%'.$request->search.'%';
 
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
+                $sq->where('name', 'like', $searchTerm)
+                ->orWhere('company_name','like', $searchTerm);
             })->orWhere("owner_name", "like", $searchTerm);
         })
             ->where('company_id', $request->company_id)

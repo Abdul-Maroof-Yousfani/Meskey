@@ -231,7 +231,7 @@ class PurchaseOrderController extends Controller
         $data['products'] = Product::where('product_type', 'raw_material')->get();
         $data['brokers'] = Broker::all();
         $po = $data['arrivalPurchaseOrder'];
-        $data['ticketcounts'] = $po->arrivalTickets()->where('is_ticket_verified', 1)->count() ?? 0;
+        $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
