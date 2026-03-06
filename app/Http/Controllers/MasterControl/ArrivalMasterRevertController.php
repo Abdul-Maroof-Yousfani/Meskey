@@ -131,10 +131,29 @@ class ArrivalMasterRevertController extends Controller
 
             $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
-            
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)
-                                                            ->where("company_location_id", $arrivalTicket->location_id)
-                                                            ->get();
+
+            // $arrivalPurchaseOrders = ArrivalPurchaseOrder::
+            // when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
+            //     $q->where('product_id', $arrivalTicket->qc_product)
+            // })
+            // ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
+            //     $q->where('product_id', $arrivalTicket->product_id)
+            // })
+            // ->where('product_id', $arrivalTicket->qc_product)
+            //     ->where("company_location_id", $arrivalTicket->location_id)
+            //     ->get();
+
+
+
+            $arrivalPurchaseOrders = ArrivalPurchaseOrder::when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
+                $q->where('product_id', $arrivalTicket->qc_product);
+            })
+            ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
+                $q->where('product_id', $arrivalTicket->product_id);
+            })
+            ->where("company_location_id", $arrivalTicket->location_id)
+            ->get();
+                // dd($arrivalPurchaseOrders,$arrivalSamplingRequest->arrivalTicket->product_id);
             $sampleTakenByUsers = User::all();
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
@@ -601,7 +620,7 @@ class ArrivalMasterRevertController extends Controller
 
 
             if (!empty($requestData['accounts_of'])) {
-              //  dd($requestData['accounts_of']);
+                //  dd($requestData['accounts_of']);
                 $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
                 $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
                 $requestData['accounts_of_name'] = $requestData['accounts_of'];
