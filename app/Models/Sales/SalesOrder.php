@@ -34,7 +34,8 @@ class SalesOrder extends Model
         "arrival_location_id",
         "arrival_sub_location_id",
         "created_by",
-        "am_change_made"
+        "am_change_made",
+        "transporter_used"
     ];
 
     protected function paymentTermId(): Attribute{

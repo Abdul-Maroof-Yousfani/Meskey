@@ -32,4 +32,8 @@ class SecondWeighbridge extends Model
     public function createdBy() {
         return $this->belongsTo(\App\Models\User::class, "created_by");
     }
+
+    public function items() {
+        return $this->hasMany(SecondWeighbridgeItem::class, "second_weighbridge_id");
+    }
 }

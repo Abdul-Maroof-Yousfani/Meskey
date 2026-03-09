@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Master\Account\Account;
+use App\Models\ReceiptVoucher;
+use App\Models\Sales\SalesOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,6 +16,8 @@ class JournalVoucherDetail extends Model
     protected $fillable = [
         'journal_voucher_id',
         'acc_id',
+        'receipt_voucher_id',
+        'sales_order_id',
         'debit_amount',
         'credit_amount',
         'description',
@@ -36,5 +40,15 @@ class JournalVoucherDetail extends Model
     public function account()
     {
         return $this->belongsTo(Account::class, 'acc_id');
+    }
+
+    public function receiptVoucher()
+    {
+        return $this->belongsTo(ReceiptVoucher::class, 'receipt_voucher_id');
+    }
+
+    public function salesOrder()
+    {
+        return $this->belongsTo(SalesOrder::class, 'sales_order_id');
     }
 }

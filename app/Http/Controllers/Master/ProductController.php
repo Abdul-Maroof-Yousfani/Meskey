@@ -84,7 +84,13 @@ class ProductController extends Controller
             $category_id = $request->query('category_id');
 
             // Fetch categories based on category_type
-            $products = Product::with('unitOfMeasure')->where('category_id', $category_id)->get();
+            $products = Product::with('unitOfMeasure')
+                ->where('status', 'active')
+                ->when($category_id, function ($q) use ($category_id) {
+                    return $q->where('category_id', $category_id)
+                        ->orWhere('product_type', 'general_items');
+                })
+                ->get();
 
             return response()->json([
                 'success' => true,

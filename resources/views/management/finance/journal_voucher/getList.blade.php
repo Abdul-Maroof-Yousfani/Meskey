@@ -32,7 +32,7 @@
                                 href="{{ route('journal-voucher.edit', $voucher->id) }}" title="Edit">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
-                            <a onclick="deleteRecord('{{ route('journal-voucher.destroy', $voucher->id) }}', 'Journal Voucher')"
+                            <a onclick="deletemodal('{{ route('journal-voucher.destroy', $voucher->id) }}', '{{ route('get.journal-vouchers') }}')"
                                 class="danger p-1 text-center mr-2 position-relative" title="Delete">
                                 <i class="ft-trash-2 font-medium-3"></i>
                             </a>

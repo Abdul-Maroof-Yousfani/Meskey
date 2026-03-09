@@ -28,6 +28,7 @@ class SalesOrderRequest extends FormRequest
             "order_date" => "required|date|before_or_equal:delivery_date",
             "reference_no" => "nullable",
             "so_reference_no" => "nullable|string|max:255",
+            "transporter_used" => "nullable|in:yes,no",
             "customer_id" => "required|numeric",
             "inquiry_id" => "nullable|numeric",
             "sauda_type" => "required|in:pohanch,x-mill,thadda",

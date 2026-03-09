@@ -19,86 +19,165 @@
         </div>
     </div>
 
-    <div class="row" id="ticketDataContainer" style="margin-left: 4px; margin-right; 4px;">
-        <div class="row">
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>Customer:</label>
-                    <input type="text" name="customer" value="{{ $SalesQc->customer ?? '' }}" class="form-control" readonly />
-                </div>
+    <div class="row" id="ticketDataContainer" style="margin-left: 4px; margin-right: 4px; width: 100%;">
+        @php
+            $item = $SalesQc->loadingProgramItem;
+            $orders = [];
+
+            // Handle Delivery Orders from many-to-many relationship
+            if ($item->deliveryOrders->isNotEmpty()) {
+                foreach ($item->deliveryOrders as $do) {
+                    $factoryNames = [];
+                    $galaNames = [];
+                    if ($do->arrival_location_id) {
+                        $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+                    }
+                    if ($do->sub_arrival_location_id) {
+                        $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+                    }
+
+                    $orders[] = [
+                        'type' => 'DO',
+                        'number' => $do->reference_no,
+                        'customer' => $do->customer->name ?? '',
+                        'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                        'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                        'do_qty' => $do->delivery_order_data->sum('qty'),
+                        'factory_names' => $factoryNames,
+                        'gala_names' => $galaNames
+                    ];
+                }
+            } 
+            // Fallback to single delivery order if exists
+            elseif ($item->loadingProgram && $item->loadingProgram->deliveryOrder) {
+                $do = $item->loadingProgram->deliveryOrder;
+                $factoryNames = [];
+                $galaNames = [];
+                if ($do->arrival_location_id) {
+                    $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+                }
+                if ($do->sub_arrival_location_id) {
+                    $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+                }
+
+                $orders[] = [
+                    'type' => 'DO',
+                    'number' => $do->reference_no,
+                    'customer' => $do->customer->name ?? '',
+                    'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'do_qty' => $do->delivery_order_data->sum('qty'),
+                    'factory_names' => $factoryNames,
+                    'gala_names' => $galaNames
+                ];
+            }
+
+            // Handle Sale Orders if no DOs or as additional info
+            if ($item->saleOrders->isNotEmpty()) {
+                foreach ($item->saleOrders as $so) {
+                    if (empty($orders)) {
+                        $orders[] = [
+                            'type' => 'SO',
+                            'number' => $so->reference_no,
+                            'customer' => $so->customer->name ?? '',
+                            'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                            'so_qty' => $so->sales_order_data->sum('qty'),
+                            'do_qty' => 0,
+                            'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
+                            'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : []
+                        ];
+                    }
+                }
+            } elseif (empty($orders) && $item->loadingProgram && $item->loadingProgram->saleOrder) {
+                $so = $item->loadingProgram->saleOrder;
+                $orders[] = [
+                    'type' => 'SO',
+                    'number' => $so->reference_no,
+                    'customer' => $so->customer->name ?? '',
+                    'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                    'so_qty' => $so->sales_order_data->sum('qty'),
+                    'do_qty' => 0,
+                    'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
+                    'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : []
+                ];
+            }
+        @endphp
+
+        @if(count($orders) > 0)
+            <ul class="nav nav-tabs nav-justified w-100" id="orderTabs" role="tablist">
+                @foreach($orders as $index => $order)
+                    <li class="nav-item">
+                        <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab" href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
+                            {{ $order['type'] }}: {{ $order['number'] }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+            <div class="tab-content pt-1 w-100" id="orderTabsContent">
+                @foreach($orders as $index => $order)
+                    <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}" role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>Customer:</label>
+                                    <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>Commodity:</label>
+                                    <input type="text" value="{{ $order['commodity'] }}" class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>SO Qty:</label>
+                                    <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly step="0.01" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>DO Qty:</label>
+                                    <input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly step="0.01" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Factory:</label>
+                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                        @foreach($order['factory_names'] as $name)
+                                            <option selected>{{ $name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>Gala:</label>
+                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                        @foreach($order['gala_names'] as $name)
+                                            <option selected>{{ $name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>Commodity:</label>
-                    <input type="text" name="commodity" value="{{ $SalesQc->commodity ?? '' }}" class="form-control" readonly />
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>SO Qty:</label>
-                    <input type="number" name="so_qty" value="{{ $SalesQc->so_qty ?? '' }}" class="form-control" readonly step="0.01" />
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>DO Qty:</label>
-                    <input type="number" name="do_qty" value="{{ $SalesQc->do_qty ?? '' }}" class="form-control" readonly step="0.01" />
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xs-12 col-sm-6 col-md-6">
-                <div class="form-group">
-                    <label>Factory:</label>
-                    <select class="form-control select2 w-100" name="factory_display[]" id="factory_display" multiple disabled style="width: 100% !important;">
-                        @php
-                            $deliveryOrder = $SalesQc->loadingProgramItem->loadingProgram->deliveryOrder ?? null;
-                            $loadingProgramItem = $SalesQc->loadingProgramItem ?? null;
-                            
-                            if ($deliveryOrder && $deliveryOrder->arrival_location_id) {
-                                // Get from delivery order
-                                $arrivalLocationIds = explode(',', $deliveryOrder->arrival_location_id);
-                                $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
-                                foreach($arrivalLocations as $location) {
-                                    echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
-                                }
-                            } elseif ($loadingProgramItem && $loadingProgramItem->arrival_location_id) {
-                                // Fallback to loading program item
-                                $arrivalLocation = \App\Models\Master\ArrivalLocation::find($loadingProgramItem->arrival_location_id);
-                                if ($arrivalLocation) {
-                                    echo '<option value="' . $arrivalLocation->id . '" selected>' . $arrivalLocation->name . '</option>';
-                                }
-                            }
-                        @endphp
-                    </select>
-                    <input type="hidden" name="factory" value="{{ $SalesQc->factory ?? '' }}" />
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-6">
-                <div class="form-group">
-                    <label>Gala:</label>
-                    <select class="form-control select2 w-100" name="gala_display[]" id="gala_display" multiple disabled style="width: 100% !important;">
-                        @php
-                            if ($deliveryOrder && $deliveryOrder->sub_arrival_location_id) {
-                                // Get from delivery order
-                                $subArrivalLocationIds = explode(',', $deliveryOrder->sub_arrival_location_id);
-                                $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
-                                foreach($subArrivalLocations as $location) {
-                                    echo '<option value="' . $location->id . '" selected>' . $location->name . '</option>';
-                                }
-                            } elseif ($loadingProgramItem && $loadingProgramItem->sub_arrival_location_id) {
-                                // Fallback to loading program item
-                                $subArrivalLocation = \App\Models\Master\ArrivalSubLocation::find($loadingProgramItem->sub_arrival_location_id);
-                                if ($subArrivalLocation) {
-                                    echo '<option value="' . $subArrivalLocation->id . '" selected>' . $subArrivalLocation->name . '</option>';
-                                }
-                            }
-                        @endphp
-                    </select>
-                    <input type="hidden" name="gala" value="{{ $SalesQc->gala ?? '' }}" />
-                </div>
-            </div>
-        </div>
+            
+            {{-- Hidden inputs for backward compatibility --}}
+            <input type="hidden" name="customer" value="{{ $SalesQc->customer }}" />
+            <input type="hidden" name="commodity" value="{{ $SalesQc->commodity }}" />
+            <input type="hidden" name="so_qty" value="{{ $SalesQc->so_qty }}" />
+            <input type="hidden" name="do_qty" value="{{ $SalesQc->do_qty }}" />
+            <input type="hidden" name="factory" value="{{ $SalesQc->factory }}" />
+            <input type="hidden" name="gala" value="{{ $SalesQc->gala }}" />
+        @else
+            <div class="col-12 text-center">No order data found.</div>
+        @endif
     </div>
 
     <div class="row">
@@ -213,49 +292,98 @@
     });
 
     function populateTicketData(data) {
-        var html = `
-            <div class="row">
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>Customer:</label>
-                    <input type="text" name="customer" value="${data.customer}" class="form-control" readonly />
+        if (!data.orders || data.orders.length === 0) {
+            $('#ticketDataContainer').html('<div class="col-12 text-center">No order data found.</div>');
+            return;
+        }
+
+        var tabsHtml = '<ul class="nav nav-tabs nav-justified w-100" id="orderTabs" role="tablist">';
+        var contentHtml = '<div class="tab-content pt-1 w-100" id="orderTabsContent">';
+
+        data.orders.forEach((order, index) => {
+            var activeClass = index === 0 ? 'active' : '';
+            var selectedAttr = index === 0 ? 'true' : 'false';
+            var tabId = `order-tab-${index}`;
+            var contentId = `order-content-${index}`;
+
+            tabsHtml += `
+                <li class="nav-item">
+                    <a class="nav-link ${activeClass}" id="${tabId}" data-toggle="tab" href="#${contentId}" role="tab" aria-controls="${contentId}" aria-selected="${selectedAttr}">
+                        ${order.type}: ${order.number}
+                    </a>
+                </li>
+            `;
+
+            var factoryOptions = order.factory_names && order.factory_names.length > 0 ?
+                order.factory_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
+            var galaOptions = order.gala_names && order.gala_names.length > 0 ?
+                order.gala_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
+
+            contentHtml += `
+                <div class="tab-pane fade show ${activeClass}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Customer:</label>
+                                <input type="text" value="${order.customer}" class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Commodity:</label>
+                                <input type="text" value="${order.commodity}" class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>SO Qty:</label>
+                                <input type="number" value="${order.so_qty}" class="form-control" readonly step="0.01" />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>DO Qty:</label>
+                                <input type="number" value="${order.do_qty}" class="form-control" readonly step="0.01" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Factory:</label>
+                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    ${factoryOptions}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Gala:</label>
+                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    ${galaOptions}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>Commodity:</label>
-                    <input type="text" name="commodity" value="${data.commodity}" class="form-control" readonly />
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>SO Qty:</label>
-                    <input type="number" name="so_qty" value="${data.so_qty}" class="form-control" readonly step="0.01" />
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="form-group">
-                    <label>DO Qty:</label>
-                    <input type="number" name="do_qty" value="${data.do_qty}" class="form-control" readonly step="0.01" />
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xs-12 col-sm-6 col-md-6">
-                <div class="form-group">
-                    <label>Factory:</label>
-                    <input type="text" name="factory" value="${data.factory}" class="form-control" readonly />
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6 col-md-6">
-                <div class="form-group">
-                    <label>Gala:</label>
-                    <input type="text" name="gala" value="${data.gala}" class="form-control" readonly />
-                </div>
-            </div>
-        </div>
+            `;
+        });
+
+        tabsHtml += '</ul>';
+        contentHtml += '</div>';
+
+        // Add hidden inputs for the main form submission (using data from first order for backward compatibility)
+        var hiddenInputs = `
+            <input type="hidden" name="customer" value="${data.customer}" />
+            <input type="hidden" name="commodity" value="${data.commodity}" />
+            <input type="hidden" name="so_qty" value="${data.so_qty}" />
+            <input type="hidden" name="do_qty" value="${data.do_qty}" />
+            <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />
+            <input type="hidden" name="gala" value="${data.gala_names ? data.gala_names.join(', ') : ''}" />
         `;
 
-        $('#ticketDataContainer').html(html);
+        $('#ticketDataContainer').html(tabsHtml + contentHtml + hiddenInputs);
+        // Initialize select2 for the new elements
+        $('.select2').select2();
     }
 </script>

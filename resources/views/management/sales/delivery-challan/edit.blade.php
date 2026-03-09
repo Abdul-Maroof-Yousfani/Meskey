@@ -24,6 +24,15 @@
         font-weight: 600;
         font-size: 13px;
     }
+
+    .packing-select + .select2-container .select2-selection--multiple {
+        min-width: 130px !important;
+        width: 130px !important;
+    }
+
+    #salesInquiryTable td {
+        padding: 5px 10px !important;
+    }
 </style>
 
 <form action="{{ route('sales.delivery-challan.update', [ 'delivery_challan' => $delivery_challan->id ]) }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -279,7 +288,7 @@
                             <tr>
                                 <th>Item</th>
                                 <th>Bag Type</th>
-                                <th>Packing</th>
+                                <th style="min-width: 130px; width: 130px;">Packing</th>
                                 <th>No of Bags</th>
                                 <th>Quantity (kg)</th>
                                 <th>Rate (Kg)</th>
@@ -314,7 +323,17 @@
                                     <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}" value="{{ $data->id }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_size[]" id="bag_size_{{ $index }}" value="{{ $data->bag_size }}" class="form-control bag_size" readonly>
+                                    <input type="hidden" name="bag_size[]" id="bag_size_{{ $index }}" value="{{ $data->bag_size }}" class="form-control bag_size">
+                                    <select class="form-select select2 packing-select" multiple disabled>
+                                        @php
+                                            $packings = explode(',', $data->bag_size);
+                                        @endphp
+                                        @foreach($packings as $p)
+                                            @if(trim($p))
+                                                <option value="{{ trim($p) }}" selected>{{ trim($p) }}</option>
+                                            @endif
+                                        @endforeach
+                                    </select>
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
@@ -605,7 +624,7 @@
             dataType: "html",
             success: function(res) {
                 $("#dcTableBody").append(res);
-                $(".select2").select2();
+                $(".select2").select2({ width: '100%' });
                 
                 // Track this ticket as added
                 addedTicketIds.push(parseInt(ticketId));
@@ -721,7 +740,7 @@
         });
     }
 
-    $(".select2").select2();
+    $(".select2").select2({ width: '100%' });
     function calculateLabourAmount() {
         let totalBags = 0;
         $(".no_of_bags").each(function() {

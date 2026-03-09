@@ -143,7 +143,12 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label>Selected References</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="mb-0">Selected References</label>
+                                            <button type="button" class="btn btn-sm btn-info" id="add-advance-btn" onclick="addAdvanceRow()">
+                                                <i class="fa fa-plus"></i> Add Advance
+                                            </button>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-bordered" id="referencesTable">
                                                 <thead>
@@ -158,6 +163,7 @@
                                                         <th width="12%">Tax Amount</th>
                                                         <th width="12%">Net Amount</th>
                                                         <th width="18%">Line Desc</th>
+                                                        <th width="5%">Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="rv-data">
@@ -176,11 +182,21 @@
                                                                 <input type="hidden"
                                                                     name="items[{{ $idx }}][reference_type]"
                                                                     value="{{ $item->reference_type }}">
+                                                                @if($item->reference_type === 'advance')
+                                                                    <input type="hidden" name="items[{{ $idx }}][adv_no]" value="{{ $item->adv_no }}">
+                                                                @endif
                                                                 <input type="hidden" class="hidden-amount"
                                                                     name="items[{{ $idx }}][amount]"
                                                                     value="{{ $item->quantity }}">
                                                             </td>
-                                                            <td>{{ $item->reference_type == 'sale_order' ? 'Sale Order' : 'Sale Invoice' }}
+                                                            <td>
+                                                                @if($item->reference_type === 'advance')
+                                                                    Advance
+                                                                @elseif($item->reference_type === 'sale_order')
+                                                                    Sale Order
+                                                                @else
+                                                                    Sale Invoice
+                                                                @endif
                                                             </td>
                                                             <td>{{ $item->number }}</td>
                                                             <td>{{ \Carbon\Carbon::parse($receiptVoucher->rv_date)->format("d-M-Y")  }}</td>
@@ -223,6 +239,13 @@
                                                                     name="items[{{ $idx }}][line_desc]"
                                                                     value="{{ $item->line_desc }}"
                                                                     placeholder="Line description">
+                                                            </td>
+                                                            <td class="text-center">
+                                                                @if($item->reference_type === 'advance')
+                                                                    <button type="button" class="btn btn-sm btn-danger remove-advance-row">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -269,9 +292,173 @@
     <script>
         // Pre-selected references from server
         var preSelectedReferences = @json($selectedReferences ?? []);
+        let advanceCount = {{ $receiptVoucher->advances->count() }};
+        let nextAdvNo = null;
+
+        function addAdvanceRow() {
+            const customerId = $("#customer_id").val();
+            if (!customerId) {
+                Swal.fire('Warning', 'Please select a customer first.', 'warning');
+                return;
+            }
+
+            if (nextAdvNo === null) {
+                $.ajax({
+                    url: '{{ route("receipt-voucher.generate-advance-number") }}',
+                    method: 'GET',
+                    async: false,
+                    success: function(resp) {
+                        if (resp.success) {
+                            nextAdvNo = resp.next_number;
+                        }
+                    }
+                });
+            } else {
+                let numPart = parseInt(nextAdvNo.replace('ADV-', '')) + 1;
+                nextAdvNo = 'ADV-' + String(numPart).padStart(3, '0');
+            }
+
+            const customerName = $("#customer_id option:selected").text();
+            const date = new Date().toISOString().split('T')[0];
+            advanceCount++;
+            const advNo = nextAdvNo;
+            const idx = `adv_${advanceCount}`;
+
+            const rowHtml = `
+                <tr class="advance-row">
+                    <td class="text-center">
+                        <input type="checkbox" class="row-select" checked data-row="${idx}">
+                        <input type="hidden" name="items[${idx}][reference_id]" value="0">
+                        <input type="hidden" name="items[${idx}][reference_type]" value="advance">
+                        <input type="hidden" name="items[${idx}][adv_no]" value="${advNo}">
+                        <input type="hidden" class="hidden-amount" name="items[${idx}][amount]" value="0">
+                    </td>
+                    <td>Advance</td>
+                    <td>${advNo}</td>
+                    <td>${date}</td>
+                    <td>${customerName}</td>
+                    <td>
+                        <input type="number" step="0.01" class="form-control amount-input" name="items[${idx}][amount_display]" value="0.00">
+                    </td>
+                    <td>
+                        <select class="form-control tax-select" name="items[${idx}][tax_id]">
+                            <option value="">No Tax</option>
+                            @foreach($taxes as $tax)
+                                <option value="{{ $tax->id }}" data-percent="{{ $tax->percentage }}">{{ $tax->name }} ({{ $tax->percentage }}%)</option>
+                            @endforeach
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" readonly class="form-control tax-amount" name="items[${idx}][tax_amount]" value="0.00">
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" readonly class="form-control net-amount" name="items[${idx}][net_amount]" value="0.00">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control line-desc" name="items[${idx}][line_desc]" placeholder="Line description">
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-danger remove-advance-row">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            const tbody = $("#rv-data");
+            if (tbody.find('td[colspan]').length) {
+                tbody.empty();
+            }
+            tbody.append(rowHtml);
+            
+            if (typeof updateSelectedDocsList === "function") {
+                updateSelectedDocsList();
+            }
+        }
+
+        // ==================== CORE FUNCTION: Update Selected Documents List with TOTAL ====================
+        function updateSelectedDocsList() {
+            const selected = [];
+            let total = 0;
+            const referencesTableBody = $('#referencesTable tbody');
+            const listContainer = $('.selected-docs-list');
+            const emptyMessage = $('.selected-docs-container p');
+
+            referencesTableBody.find('tr').each(function() {
+                const row = $(this);
+                const checkbox = row.find('.row-select');
+                if (checkbox.length && checkbox.is(':checked')) {
+                    const type = row.find('td').eq(1).text().trim() || '';
+                    const number = row.find('td').eq(2).text().trim() || '';
+                    const date = row.find('td').eq(3).text().trim() || '';
+                    const customer = row.find('td').eq(4).text().trim() || '';
+                    const netAmount = parseFloat(row.find('.net-amount').val()) || 0;
+
+                    selected.push({
+                        type,
+                        number,
+                        date,
+                        customer,
+                        amount: netAmount,
+                        idx: checkbox.data('row')
+                    });
+                    total += netAmount;
+                }
+            });
+
+            listContainer.empty();
+
+            if (!selected.length) {
+                emptyMessage.show();
+                listContainer.hide();
+                $('#selected-total-amount').hide();
+                return;
+            }
+
+            emptyMessage.hide();
+            listContainer.show();
+
+            selected.forEach(function(item) {
+                listContainer.append(`
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${item.number}</strong> <span class="text-muted">(${item.type})</span>
+                        <div class="small text-muted">${item.date} • ${item.customer}</div>
+                    </div>
+                    <span class="badge badge-primary badge-pill">${item.amount.toFixed(2)}</span>
+                </li>
+            `);
+            });
+
+            $('#selected-total-row').remove();
+            listContainer.append(`
+                <li id="selected-total-row" class="list-group-item active d-flex justify-content-between align-items-center font-weight-bold" style="background-color: #e9ecef; border-top: 3px double #ccc;">
+                    <div class="text-dark">
+                        <strong>Total Amount</strong>
+                    </div>
+                    <span class="badge badge-dark badge-pill" style="font-size: 1.1em;">
+                        ${total.toFixed(2)}
+                    </span>
+                </li>
+            `);
+
+            if ($('#total_receipt_amount').length) {
+                $('#total_receipt_amount').val(total.toFixed(2));
+            }
+            if ($('#display_total_amount').length) {
+                $('#display_total_amount').text(total.toFixed(2));
+            }
+        }
         
         // This function can stay outside if it's called from elsewhere (e.g., onchange of customer)
         function select_customer(preserveSelection = false) {
+            // If customer changes, we should usually clear advances unless explicitly preserving
+            if (!preserveSelection) {
+                advanceCount = 0;
+                $("#rv-data").html('<tr><td colspan="12" class="text-center text-muted">Select references to load details.</td></tr>');
+                updateSelectedDocsList();
+            }
+
             // Save current selection if we want to preserve it
             var currentSelection = preserveSelection ? ($("#reference_ids").val() || preSelectedReferences) : [];
             
@@ -310,84 +497,6 @@
             const taxes = @json($taxes ?? []);
 
 
-            // ==================== CORE FUNCTION: Update Selected Documents List ====================
-            // ==================== CORE FUNCTION: Update Selected Documents List with TOTAL ====================
-            function updateSelectedDocsList() {
-                const selected = [];
-                let total = 0;
-
-                referencesTableBody.find('tr').each(function() {
-                    const row = $(this);
-                    const checkbox = row.find('.row-select');
-                    if (checkbox.length && checkbox.is(':checked')) {
-                        const type = row.find('td').eq(1).text().trim() || '';
-                        const number = row.find('td').eq(2).text().trim() || '';
-                        const date = row.find('td').eq(3).text().trim() || '';
-                        const customer = row.find('td').eq(4).text().trim() || '';
-                        const netAmount = parseFloat(row.find('.net-amount').val()) || 0;
-
-                        selected.push({
-                            type,
-                            number,
-                            date,
-                            customer,
-                            amount: netAmount,
-                            idx: checkbox.data('row')
-                        });
-                        total += netAmount;
-                    }
-                });
-
-                listContainer.empty();
-
-                if (!selected.length) {
-                    emptyMessage.show();
-                    listContainer.hide();
-                    // Also hide/clear total if exists
-                    $('#selected-total-amount').hide();
-                    return;
-                }
-
-                emptyMessage.hide();
-                listContainer.show();
-
-                // Add each selected document
-                selected.forEach(function(item) {
-                    listContainer.append(`
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${item.number}</strong> <span class="text-muted">(${item.type})</span>
-                            <div class="small text-muted">${item.date} • ${item.customer}</div>
-                        </div>
-                        <span class="badge badge-primary badge-pill">${item.amount.toFixed(2)}</span>
-                    </li>
-                `);
-                });
-
-                // =============== ADD TOTAL AMOUNT AT BOTTOM ===============
-                // First, remove any existing total row
-                $('#selected-total-row').remove();
-
-                // Append a strong total row
-                listContainer.append(`
-                <li id="selected-total-row" class="list-group-item active d-flex justify-content-between align-items-center font-weight-bold" style="background-color: #e9ecef; border-top: 3px double #ccc;">
-                    <div class="text-dark">
-                        <strong>Total Amount</strong>
-                    </div>
-                    <span class="badge badge-dark badge-pill" style="font-size: 1.1em;">
-                        ${total.toFixed(2)}
-                    </span>
-                </li>
-            `);
-
-                // Optional: Also update a dedicated total field if you have one (e.g., for form submission display)
-                if ($('#total_receipt_amount').length) {
-                    $('#total_receipt_amount').val(total.toFixed(2));
-                }
-                if ($('#display_total_amount').length) {
-                    $('#display_total_amount').text(total.toFixed(2));
-                }
-            }
 
             // ==================== Toggle Reference Options Based on Advance Checkbox ====================
             function toggleReferenceOptions() {
@@ -406,9 +515,11 @@
                 referenceSelect.trigger('change.select2');
                 referenceLabel.text(isAdvance ? 'Sale Orders (approved)' :
                 'Invoices (approved, receiving pending)');
-                referencesTableBody.html(
-                    '<tr><td colspan="12" class="text-center text-muted">Select references to load details.</td></tr>'
-                    );
+                referencesTableBody.find('tr').not('.advance-row').remove();
+                if (referencesTableBody.find('tr').length === 0) {
+                     referencesTableBody.html('<tr><td colspan="11" class="text-center text-muted">Select references to load details.</td></tr>');
+                }
+                
                 selectAll.prop('checked', false);
                 updateSelectedDocsList();
             }
@@ -461,16 +572,17 @@
 
             // ==================== Bind Events to Dynamic Rows ====================
             function bindRowEvents() {
-                referencesTableBody.find('.amount-input').off('input').on('input', function() {
-                    const row = $(this).closest('tr');
-                    recalcRow(row);
-                });
-
-                referencesTableBody.find('.tax-select').off('change').on('change', function() {
-                    const row = $(this).closest('tr');
-                    recalcRow(row);
-                });
+                // Using delegation now
             }
+
+            // Event delegation for calculations
+            $('#referencesTable').on('input', '.amount-input', function () {
+                recalcRow($(this).closest('tr'));
+            });
+
+            $('#referencesTable').on('change', '.tax-select', function () {
+                recalcRow($(this).closest('tr'));
+            });
 
             // ==================== Build Table Rows from Selected References ====================
             function buildRows(items) {
@@ -608,6 +720,19 @@
                 updateSelectedDocsList();
             });
 
+            // Remove advance row
+            $(document).on('click', '.remove-advance-row', function() {
+                const row = $(this).closest('tr');
+                row.remove();
+                
+                // If table empty, show message
+                if (referencesTableBody.find('tr').length === 0) {
+                    referencesTableBody.html('<tr><td colspan="11" class="text-center text-muted">Select references to load details.</td></tr>');
+                }
+                
+                updateSelectedDocsList();
+            });
+
             // ==================== Form Submission ====================
             $('form').off('submit').on('submit', function(e) {
                 e.preventDefault();
@@ -681,61 +806,4 @@
         });
     </script>
 
-<script>
-    
-    $(document).ready(function() {
-
-        
-
-    // Function to recalc tax and net for a row
-    function recalcRow(row) {
-        const amountInput = row.find('.amount-input');
-        const taxSelect = row.find('.tax-select');
-        const taxAmountInput = row.find('.tax-amount');
-        const netAmountInput = row.find('.net-amount');
-
-        const amount = parseFloat(amountInput.val()) || 0;
-        const taxPercent = parseFloat(taxSelect.find('option:selected').data('percent')) || 0;
-        const taxAmount = amount * taxPercent / 100;
-        const netAmount = amount + taxAmount;
-
-        taxAmountInput.val(taxAmount.toFixed(2));
-        netAmountInput.val(netAmount.toFixed(2));
-    }
-
-    // Bind events to each row
-    $('#referencesTable').on('input', '.amount-input', function() {
-        const row = $(this).closest('tr');
-        recalcRow(row);
-        updateSelectedDocsList();
-        updateTotal();
-    });
-
-    $('#referencesTable').on('change', '.tax-select', function() {
-        const row = $(this).closest('tr');
-        recalcRow(row);
-        updateSelectedDocsList();
-        updateTotal();
-    });
-
-    // Optional: recalc total of all selected rows
-    function updateTotal() {
-        let total = 0;
-        $('#referencesTable tbody tr').each(function() {
-            const checkbox = $(this).find('.row-select');
-            if (checkbox.length && checkbox.is(':checked')) {
-                const net = parseFloat($(this).find('.net-amount').val()) || 0;
-                total += net;
-            }
-        });
-        $('#totalAmount').text(total.toFixed(2)); // You can create an element with id="totalAmount" to display
-    }
-
-    // Trigger initial calculation for existing rows
-    $('#referencesTable tbody tr').each(function() {
-        recalcRow($(this));
-    });
-});
-
-</script>
 @endsection

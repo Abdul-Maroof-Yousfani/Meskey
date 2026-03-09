@@ -12,6 +12,8 @@ use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
+use App\Models\Master\Department;
+use App\Models\Master\RequestBy;
 use App\Models\Product;
 use App\Models\Sales\JobOrder;
 use Carbon\Carbon;
@@ -115,9 +117,6 @@ class PurchaseRequestController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
@@ -142,9 +141,11 @@ class PurchaseRequestController extends Controller
                                     return false;
                                 });
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+        $departments = Department::where('status', 'active')->get();
+        $request_bies = RequestBy::where('status', 'active')->get();
 
       
-        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items'));
+        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items', 'departments', 'request_bies'));
     }
 
     /**
@@ -160,6 +161,9 @@ class PurchaseRequestController extends Controller
                 'purchase_date' => $request->purchase_date,
                 'location_id' => (CompanyLocation::first())->id,
                 'company_id' => $request->company_id,
+                'category_id' => $request->category_id_header,
+                'department_id' => $request->department_id,
+                'request_by_id' => $request->request_by_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
@@ -208,7 +212,7 @@ class PurchaseRequestController extends Controller
 
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
-                    'category_id' => $request->category_id[$index],
+                    'category_id' => $request->category_id_header,
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'approved_qty' => 0,
@@ -219,7 +223,7 @@ class PurchaseRequestController extends Controller
                     'stitching' => $stitchingValue,
                     'micron' => $request->micron[$index] ?? null,
                     'printing_sample' => $printingSamplePath,
-                    'brand_id' => $request->brands[$index],
+                    'brand_id' => $request->brands[$index] ?? null,
                     'remarks' => $request->remarks[$index] ?? null,
                     'packing_id' => $request->packing_id[$index] ?? null,
                     "module_type" => $request->module_type[$index] ?? null,
@@ -276,8 +280,10 @@ class PurchaseRequestController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
+        $departments = Department::where('status', 'active')->get();
+        $request_bies = RequestBy::where('status', 'active')->get();
 
-        return view('management.procurement.store.purchase_request.edit', compact('items', 'locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
+        return view('management.procurement.store.purchase_request.edit', compact('items', 'locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations', 'departments', 'request_bies'));
     }
 
     public function manageApprovals($id)
@@ -294,6 +300,8 @@ class PurchaseRequestController extends Controller
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
         $locations = CompanyLocation::all();
+        $departments = Department::where('status', 'active')->get();
+        $request_bies = RequestBy::where('status', 'active')->get();
 
         // dd($purchaseRequest);
         return view('management.procurement.store.purchase_request.approvalCanvas', [
@@ -306,7 +314,8 @@ class PurchaseRequestController extends Controller
             'locations_id' => $locations_id,
             'items' => $items,
             'location_names' => $location_names,
-
+            'departments' => $departments,
+            'request_bies' => $request_bies
         ]);
     }
 
@@ -320,6 +329,9 @@ class PurchaseRequestController extends Controller
             $updateData = [
                 'purchase_date' => $request->purchase_date,
                 'company_id' => $request->company_id,
+                'category_id' => $request->category_id_header,
+                'department_id' => $request->department_id,
+                'request_by_id' => $request->request_by_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'am_change_made' => 1,
@@ -337,6 +349,7 @@ class PurchaseRequestController extends Controller
             $submittedItems = [];
 
             foreach ($request->item_id as $index => $itemId) {
+                $printingSamplePath = null;
                 if (! empty($request->item_row_id[$index])) {
                     $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
                     $printingSamplePath = $requestData->printing_sample;
@@ -377,7 +390,7 @@ class PurchaseRequestController extends Controller
                         }
 
                         $requestData->update([
-                            'category_id' => $request->category_id[$index],
+                            'category_id' => $request->category_id_header,
                             'item_id' => $itemId,
                             'qty' => $request->qty[$index],
                             'min_weight' => $request->min_weight[$index] ?? null,
@@ -387,11 +400,11 @@ class PurchaseRequestController extends Controller
                             'stitching' => $stitchingValue,
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
-                            'brand_id' => $request->brands[$index],
-                            'micron' => $request->micron[$index],
+                            'brand_id' => $request->brands[$index] ?? null,
+                            'micron' => $request->micron[$index] ?? null,
                             'packing_id' => $request->packing_id[$index] ?? null,
                             "module_type" => $request->module_type[$index] ?? null,
-                            "is_single_job_order" => $request->is_single_job_order[$index]
+                            "is_single_job_order" => $request->is_single_job_order[$index] ?? false
                         ]);
                         $submittedItems[] = $requestData->id;
 
@@ -441,7 +454,7 @@ class PurchaseRequestController extends Controller
 
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
-                        'category_id' => $request->category_id[$index],
+                        'category_id' => $request->category_id_header,
                         'item_id' => $itemId,
                         'qty' => $request->qty[$index],
                         'approved_qty' => 0,
@@ -451,11 +464,12 @@ class PurchaseRequestController extends Controller
                         'size' => $request->size[$index] ?? null,
                         'stitching' => $stitchingValueNew,
                         'printing_sample' => $printingSamplePath,
-                        'brand_id' => $request->brands[$index],
+                        'brand_id' => $request->brands[$index] ?? null,
                         'remarks' => $request->remarks[$index] ?? null,
                         'packing_id' => $request->packing_id[$index] ?? null,
                         "module_type" => $request->module_type[$index] ?? null,
-                        'micron' => $request->micron[$index],
+                        "is_single_job_order" => $request->is_single_job_order[$index] ?? false,
+                        'micron' => $request->micron[$index] ?? null,
                     ]);
 
                     $submittedItems[] = $requestData->id;

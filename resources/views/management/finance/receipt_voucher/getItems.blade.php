@@ -41,6 +41,7 @@
             <input type="text" class="form-control line-desc" name="items[{{ $idx }}][line_desc]"
                 placeholder="Line description">
         </td>
+        <td class="text-center"></td>
     </tr>
 @endforeach
 

@@ -104,6 +104,7 @@ class SaleOrderController extends Controller
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
         $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
+        $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
         $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
         // $payload["reference_n"]  =  !$request->contact_person ? '' : $request->contact_person;
         
@@ -165,6 +166,7 @@ class SaleOrderController extends Controller
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
             $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
+            $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
             $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
      
 

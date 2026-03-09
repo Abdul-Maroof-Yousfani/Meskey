@@ -78,20 +78,20 @@
         </div> --}}
         <div class="col-md-12">
         <div style="overflow-x: auto; white-space: nowrap;">
-            <table class="table table-bordered" id="purchaseRequestTable">
+            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
                 <thead>
                     <tr>
                         <th>Category</th>
                         <th>Item</th>
                         <th>Item UOM</th>
-                        <th class="col-sm-2">Min Weight</th>
-                        <th class="col-sm-2">Brands</th>
-                        <th class="col-sm-2">Color</th>
-                        <th class="col-sm-2">Cons./sq. in.</th>
-                        <th class="col-sm-2">Size</th>
-                        <th class="col-sm-2">Stitching</th>
-                        <th class="col-sm-2">Micron</th>
-                        <th class="col-sm-2">Printing Sample</th>
+                        <th class="bag-only">Min Weight</th>
+                        <th class="bag-only">Brands</th>
+                        <th class="bag-only">Color</th>
+                        <th class="bag-only">Cons./sq. in.</th>
+                        <th class="bag-only">Size</th>
+                        <th class="bag-only">Stitching</th>
+                        <th class="bag-only">Micron</th>
+                        <th class="bag-only">Printing Sample</th>
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Total Amount</th>
@@ -370,6 +370,11 @@
                     placeholder: 'Please Select',
                     width: '100%'
                 });
+
+                // ✅ Toggle visibility based on category
+                if (master && master.category_id) {
+                    toggleVisibility(master.category_id);
+                }
             },
             error: function () {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');
@@ -392,6 +397,18 @@
 
         var total = qty * rate;
         $('#total_' + num).val(total);
+    }
+
+    // ✅ Toggle visibility for Bag-specific columns
+    function toggleVisibility(categoryId) {
+        const bagCategoryIds = [11, 38]; // "Bags" category IDs are 11 and 38
+        const isBag = bagCategoryIds.includes(parseInt(categoryId));
+
+        if (isBag) {
+            $('.bag-only').show();
+        } else {
+            $('.bag-only').hide();
+        }
     }
 
 </script>

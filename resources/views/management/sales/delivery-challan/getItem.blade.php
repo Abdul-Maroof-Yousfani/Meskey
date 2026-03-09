@@ -23,7 +23,9 @@
             $index = "TICKET-" . $loading_program_item->id;
             
             $net_weight = $second_weighbridge->net_weight ?? 0;
-            $packing = $loading_program_item->packing ?: 1; // Prevent division by zero
+            $packing_raw = $loading_program_item->packing ?: 1;
+            $packing = is_numeric($packing_raw) ? $packing_raw : (float) explode(',', (string)$packing_raw)[0];
+            $packing = $packing ?: 1; // Prevent division by zero
         @endphp
         <tr id="row_{{ $index }}">
             <td>
@@ -57,9 +59,18 @@
                     min="0">
             </td>
             <td>
-                <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
-                    value="{{ $loading_program_item->packing }}" class="form-control bag_size" step="0.01"
-                    min="0" readonly>
+                <input type="hidden" name="bag_size[]" id="bag_size_{{ $index }}"
+                    value="{{ $loading_program_item->packing }}" class="form-control bag_size">
+                <select class="form-select select2 packing-select" multiple disabled>
+                    @php
+                        $packings = explode(',', $loading_program_item->packing);
+                    @endphp
+                    @foreach($packings as $p)
+                        @if(trim($p))
+                            <option value="{{ trim($p) }}" selected>{{ trim($p) }}</option>
+                        @endif
+                    @endforeach
+                </select>
             </td>
             <td>
                 <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
@@ -181,5 +192,5 @@
         calcAmount(el);
     }
 
-    $(".select2").select2();
+    $(".select2").select2({ width: '100%' });
 </script>

@@ -179,6 +179,15 @@ class SalesQcController extends Controller
         $SalesQc = SalesQc::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.saleOrder.customer',
+            'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.item',
+            'loadingProgramItem.arrivalLocation',
+            'loadingProgramItem.subArrivalLocation',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
             'attachments'
         ])->findOrFail($id);
 
@@ -193,10 +202,17 @@ class SalesQcController extends Controller
         $SalesQc = SalesQc::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
             'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
             'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
             'loadingProgramItem.loadingProgram.saleOrder.customer',
             'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.item',
+            'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.salesOrderData',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
             'loadingProgramItem.arrivalLocation',
             'loadingProgramItem.subArrivalLocation',
             'attachments'
@@ -362,48 +378,126 @@ class SalesQcController extends Controller
     {
         $LoadingProgramItem = LoadingProgramItem::with([
             'loadingProgram.deliveryOrder.customer',
-            'loadingProgram.deliveryOrder.salesOrder',
             'loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
-            'loadingProgram.deliveryOrder.arrivalLocation',
-            'loadingProgram.deliveryOrder.subArrivalLocation',
             'loadingProgram.saleOrder.customer',
             'loadingProgram.saleOrder.sales_order_data.item',
+            'deliveryOrders.customer',
+            'deliveryOrders.delivery_order_data.item',
+            'deliveryOrders.delivery_order_data.salesOrderData',
+            'saleOrders.customer',
+            'saleOrders.sales_order_data.item',
             'arrivalLocation',
             'subArrivalLocation'
         ])->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
+        $orders = [];
 
-        // Get factory and gala from loading program item
-        $factoryName = $LoadingProgramItem->arrivalLocation->name ?? '';
-        $galaName = $LoadingProgramItem->subArrivalLocation->name ?? '';
+        // Handle Delivery Orders from many-to-many relationship
+        if ($LoadingProgramItem->deliveryOrders->isNotEmpty()) {
+            foreach ($LoadingProgramItem->deliveryOrders as $do) {
+                $factoryNames = [];
+                $galaNames = [];
+                
+                if ($do->arrival_location_id) {
+                    $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+                }
+                if ($do->sub_arrival_location_id) {
+                    $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+                }
 
-        // Prepare data for the form
-        if ($DeliveryOrder) {
-            $data = [
-                'customer' => $DeliveryOrder->customer->name ?? '',
-                'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
-                'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
-                'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
-                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
-                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
-                'factory_names' => $factoryName ? [$factoryName] : [],
-                'gala_names' => $galaName ? [$galaName] : []
-            ];
-        } else {
-            $data = [
-                'customer' => $LoadingProgramItem->loadingProgram->saleOrder->customer->name ?? '',
-                'commodity' => $LoadingProgramItem->loadingProgram->saleOrder->sales_order_data->first()->item->name ?? '',
-                'so_qty' => $LoadingProgramItem->loadingProgram->saleOrder->sales_order_data->first()->qty ?? 0,
-                'do_qty' => 0,
-                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
-                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
-                'factory_names' => $factoryName ? [$factoryName] : [],
-                'gala_names' => $galaName ? [$galaName] : []
+                $orders[] = [
+                    'type' => 'DO',
+                    'number' => $do->reference_no,
+                    'customer' => $do->customer->name ?? '',
+                    'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'do_qty' => $do->delivery_order_data->sum('qty'),
+                    'factory_names' => $factoryNames,
+                    'gala_names' => $galaNames
+                ];
+            }
+        } 
+        // Fallback to single delivery order if exists
+        elseif ($LoadingProgramItem->loadingProgram && $LoadingProgramItem->loadingProgram->deliveryOrder) {
+            $do = $LoadingProgramItem->loadingProgram->deliveryOrder;
+            $factoryNames = [];
+            $galaNames = [];
+            
+            if ($do->arrival_location_id) {
+                $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+            }
+            if ($do->sub_arrival_location_id) {
+                $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+            }
+
+            $orders[] = [
+                'type' => 'DO',
+                'number' => $do->reference_no,
+                'customer' => $do->customer->name ?? '',
+                'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                'do_qty' => $do->delivery_order_data->sum('qty'),
+                'factory_names' => $factoryNames,
+                'gala_names' => $galaNames
             ];
         }
 
-        return response()->json(['success' => true, 'data' => $data]);
+        // Handle Sale Orders if no DOs or as additional info
+        if ($LoadingProgramItem->saleOrders->isNotEmpty()) {
+            foreach ($LoadingProgramItem->saleOrders as $so) {
+                if (empty($orders)) {
+                    $orders[] = [
+                        'type' => 'SO',
+                        'number' => $so->reference_no,
+                        'customer' => $so->customer->name ?? '',
+                        'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                        'so_qty' => $so->sales_order_data->sum('qty'),
+                        'do_qty' => 0,
+                        'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
+                        'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []
+                    ];
+                }
+            }
+        } elseif (empty($orders) && $LoadingProgramItem->loadingProgram && $LoadingProgramItem->loadingProgram->saleOrder) {
+            $so = $LoadingProgramItem->loadingProgram->saleOrder;
+            $orders[] = [
+                'type' => 'SO',
+                'number' => $so->reference_no,
+                'customer' => $so->customer->name ?? '',
+                'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                'so_qty' => $so->sales_order_data->sum('qty'),
+                'do_qty' => 0,
+                'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
+                'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []
+            ];
+        }
+
+        // If still empty, use defaults from LoadingProgramItem directly
+        if (empty($orders)) {
+             $orders[] = [
+                'type' => 'Ticket',
+                'number' => $LoadingProgramItem->transaction_number,
+                'customer' => 'N/A',
+                'commodity' => 'N/A',
+                'so_qty' => 0,
+                'do_qty' => 0,
+                'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
+                'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []
+            ];
+        }
+
+        return response()->json([
+            'success' => true, 
+            'data' => [
+                'orders' => $orders,
+                'customer' => $orders[0]['customer'],
+                'commodity' => $orders[0]['commodity'],
+                'so_qty' => $orders[0]['so_qty'],
+                'do_qty' => $orders[0]['do_qty'],
+                'factory_names' => $orders[0]['factory_names'],
+                'gala_names' => $orders[0]['gala_names']
+            ]
+        ]);
     }
 }

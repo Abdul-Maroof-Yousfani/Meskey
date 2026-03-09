@@ -1,67 +1,132 @@
-
 <div class="col-12">
     <h6 class="header-heading-sepration">
         Sale Order Details
     </h6>
+    <div class="card card-outline-info">
+        <div class="card-header p-0 pt-1">
+            <ul class="nav nav-tabs horizontal-scrollable-tabs" id="so-details-tabs" role="tablist" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap;">
+                @foreach($SalesOrders as $index => $so)
+                    <li class="nav-item" style="flex: 0 0 auto;">
+                        <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="so-tab-{{ $so->id }}" data-toggle="pill" href="#so-content-{{ $so->id }}" role="tab" aria-controls="so-content-{{ $so->id }}" aria-selected="{{ $index == 0 ? 'true' : 'false' }}">
+                            {{ $so->reference_no }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="so-details-tabs-content">
+                @foreach($SalesOrders as $index => $so)
+                    <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" id="so-content-{{ $so->id }}" role="tabpanel" aria-labelledby="so-tab-{{ $so->id }}">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>Buyer:</label>
+                                    <input type="text" value="{{ $so->customer->name ?? 'N/A' }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>Commodity:</label>
+                                    <input type="text" value="{{ $so->sales_order_data->first()->item->name ?? 'N/A' }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>SO Date:</label>
+                                    <input type="text" value="{{ $so->order_date ? $so->order_date : 'N/A' }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>SO Qty:</label>
+                                    <input type="text" value="{{ $so->sales_order_data->first()->qty ?? 'N/A' }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 </div>
 
-{{-- Sale Order Details Section --}}
-    <div class="col-xs-12 col-sm-6 col-md-3">
-        <div class="form-group">
-            <label>Buyer:</label>
-            <input type="text" value="{{ $SalesOrder->customer->name ?? 'N/A' }}"
-                disabled class="form-control" autocomplete="off" readonly />
+<div class="col-12 mt-3" id="do-details-section">
+    <h6 class="header-heading-sepration">
+        Delivery Order Details
+    </h6>
+    <div class="card card-outline-info">
+        <div class="card-header p-0 pt-1">
+            <ul class="nav nav-tabs horizontal-scrollable-tabs" id="do-details-tabs" role="tablist" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap;">
+                @foreach($DeliveryOrders as $index => $do)
+                    <li class="nav-item" style="flex: 0 0 auto;">
+                        <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab" aria-controls="do-content-{{ $do->id }}" aria-selected="{{ $index == 0 ? 'true' : 'false' }}">
+                            {{ $do->reference_no }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="do-details-tabs-content">
+                @if($DeliveryOrders->isEmpty())
+                    <p class="text-center text-muted">No delivery orders available for selection.</p>
+                @endif
+                @foreach($DeliveryOrders as $index => $do)
+                    <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" id="do-content-{{ $do->id }}" role="tabpanel" aria-labelledby="do-tab-{{ $do->id }}">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-6 col-md-4">
+                                <div class="form-group">
+                                    <label>Delivery Order No:</label>
+                                    <input type="text" value="{{ $do->reference_no }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-4">
+                                <div class="form-group">
+                                    <label>Total Qty:</label>
+                                    <input type="text" value="{{ $do->delivery_order_data_sum_qty }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-4">
+                                <div class="form-group">
+                                    <label>Balance Qty:</label>
+                                    <input type="text" value="{{ get_second_weighbridge_balance_by_delivery_order($do->id) }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
-
-    <div class="col-xs-12 col-sm-6 col-md-3">
-        <div class="form-group">
-            <label>Commodity:</label>
-            <input type="text" value="{{ $SalesOrder->sales_order_data->first()->item->name ?? 'N/A' }}"
-                disabled class="form-control" autocomplete="off" readonly />
-        </div>
-    </div>
-
-    <div class="col-xs-12 col-sm-6 col-md-3">
-        <div class="form-group">
-            <label>SO Date:</label>
-            <input type="text" value="{{ $SalesOrder->order_date ? $SalesOrder->order_date : 'N/A' }}"
-                disabled class="form-control" autocomplete="off" readonly />
-        </div>
-    </div>
-
-    <div class="col-xs-12 col-sm-6 col-md-3">
-        <div class="form-group">
-            <label>SO Qty:</label>
-            <input type="text" value="{{ $SalesOrder->sales_order_data->first()->qty ?? 'N/A' }}"
-                disabled class="form-control" autocomplete="off" readonly />
-        </div>
 </div>
-
 
 <script>
-    $(document).ready(function() {
+    (function() {
         // Update delivery order dropdown
-        var currentSelectedDeliveryOrder = $('#delivery_order_id').val();
-        $('#delivery_order_id').empty().append('<option value="">Select Delivery Order</option>');
+        var currentSelectedDeliveryOrders = $('#delivery_order_id').val() || [];
+        $('#delivery_order_id').empty();
+        
         @foreach($DeliveryOrders as $deliveryOrder)
-            var selected = (currentSelectedDeliveryOrder == '{{ $deliveryOrder->id }}') ? 'selected' : '';
+            var selected = currentSelectedDeliveryOrders.includes('{{ $deliveryOrder->id }}') ? 'selected' : '';
             $('#delivery_order_id').append('<option value="{{ $deliveryOrder->id }}" ' + selected + '>{{ $deliveryOrder->reference_no }}</option>');
         @endforeach
+        $('#delivery_order_id').trigger('change');
 
-        // Populate and pre-select company locations
+        // Populate and pre-select locations
         var companyLocationsSelect = $('#company_locations');
-        companyLocationsSelect.empty();
-
-        // Populate and pre-select arrival locations
         var arrivalLocationsSelect = $('#arrival_locations');
-        arrivalLocationsSelect.empty();
-
-        // Populate and pre-select sub arrival locations
         var subArrivalLocationsSelect = $('#sub_arrival_locations');
+
+        companyLocationsSelect.empty();
+        arrivalLocationsSelect.empty();
         subArrivalLocationsSelect.empty();
 
-        @if($SalesOrder->pay_type_id != 11)
+        @php
+            $isAllType11 = $SalesOrders->every(function($so) { return $so->pay_type_id == 11; });
+        @endphp
+
+        @if(!$isAllType11)
             @php
                 $companyLocationIds = $DeliveryOrders->pluck('location_id')->unique()->toArray();
                 $arrivalLocationIds = $DeliveryOrders->pluck('arrival_location_id')->unique()->toArray();
@@ -73,179 +138,94 @@
             @endphp
 
             @foreach($companyLocations as $location)
-                var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                companyLocationsSelect.append(option);
-                companyLocationsSelect.prop("multiple", true)
-                companyLocationsSelect.prop("disabled", true)
+                companyLocationsSelect.append(new Option('{{ $location->name }}', '{{ $location->id }}', true, true));
             @endforeach
+            // Added multiple and disabled back
+            companyLocationsSelect.attr('multiple', 'multiple').prop('disabled', true);
+            arrivalLocationsSelect.attr('multiple', 'multiple').prop('disabled', true);
+            subArrivalLocationsSelect.attr('multiple', 'multiple').prop('disabled', true);
 
             @foreach($arrivalLocations as $location)
-                var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                arrivalLocationsSelect.append(option);
+                arrivalLocationsSelect.append(new Option('{{ $location->name }}', '{{ $location->id }}', true, true));
             @endforeach
 
             @foreach($subArrivalLocations as $location)
-                var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                subArrivalLocationsSelect.append(option);
+                subArrivalLocationsSelect.append(new Option('{{ $location->name }}', '{{ $location->id }}', true, true));
             @endforeach
         @else
             @php
-                // Get company location from Sale Order's locations relationship
-                $soCompanyLocationIds = $SalesOrder->locations->pluck('location_id')->toArray();
-                $soArrivalLocationId = $SalesOrder->factories->pluck('arrival_location_id')->toArray();
-                $soSectionLocationId = $SalesOrder->sections->pluck('arrival_sub_location_id')->toArray();
+                $soCompanyLocationIds = $SalesOrders->flatMap(function($so) { return $so->locations->pluck('location_id'); })->unique()->toArray();
+                $soArrivalLocationIds = $SalesOrders->flatMap(function($so) { return $so->factories->pluck('arrival_location_id'); })->unique()->toArray();
+                $soSectionLocationIds = $SalesOrders->flatMap(function($so) { return $so->sections->pluck('arrival_sub_location_id'); })->unique()->toArray();
                 
-                $soCompanyLocation = $soCompanyLocationIds ? \App\Models\Master\CompanyLocation::whereIn('id', $soCompanyLocationIds)->get() : null;
-                
-                $soArrivalLocation = \App\Models\Master\ArrivalLocation::whereIn('id', $soArrivalLocationId)->get();
-                $soSubArrivalLocation = \App\Models\Master\ArrivalSubLocation::whereIn('id', $soSectionLocationId)->get();
+                $soCompanyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $soCompanyLocationIds)->get();
+                $soArrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', $soArrivalLocationIds)->get();
+                $soSubArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', $soSectionLocationIds)->get();
             @endphp
-            @if($soCompanyLocation)
-                @foreach($soCompanyLocation as $location)
-                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                    companyLocationsSelect.append(option);
-                    companyLocationsSelect.prop("multiple", false)
-                    companyLocationsSelect.prop("disabled", false)
-                @endforeach
-            @endif
+            
+            @foreach($soCompanyLocations as $location)
+                companyLocationsSelect.append(new Option('{{ $location->name }}', '{{ $location->id }}', true, true));
+            @endforeach
 
-            @if($soArrivalLocation)
-                @foreach($soArrivalLocation as $location)
-                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                    arrivalLocationsSelect.append(option);
-                @endforeach
-            @endif
+            @foreach($soArrivalLocations as $location)
+                arrivalLocationsSelect.append(new Option('{{ $location->name }}', '{{ $location->id }}', true, true));
+            @endforeach
 
-            @if($soSubArrivalLocation)
-                @foreach($soSubArrivalLocation as $location)
-                    var option = new Option('{{ $location->name }}', '{{ $location->id }}', true, true);
-                    subArrivalLocationsSelect.append(option);
-                @endforeach
-            @endif
+            @foreach($soSubArrivalLocations as $location)
+                subArrivalLocationsSelect.append(new Option('{{ $location->name }}', '{{ $location->id }}', true, true));
+            @endforeach
         @endif
 
-        // Trigger change to refresh select2
+
         companyLocationsSelect.trigger('change');
         arrivalLocationsSelect.trigger('change');
         subArrivalLocationsSelect.trigger('change');
+        
+        // Define tab visibility logic
+        window.updateTabsVisibility = function() {
+            var selectedSOIds = $('#sale_order_id').val() || [];
+            var selectedDOIds = $('#delivery_order_id').val() || [];
 
-        // Note: Packing and brand will be set when delivery order is selected or from sale order if no DO
-    });
-</script>
-<script>
-       function updateItemLocations() {
-            const selectedArrivalLocations = $('#arrival_locations').val() || [];
-            const selectedSubArrivalLocations = $('#sub_arrival_locations').val() || [];
-
-            // Update arrival location options
-            $('.arrival-location-select').each(function() {
-                const $select = $(this);
-                const currentValue = $select.val(); // Store current selected value
-                $select.empty().append('<option value="">Select Location</option>');
-
-                // Get location names from the main arrival_locations select
-                $('#arrival_locations option').each(function() {
-                    const value = $(this).val();
-                    const text = $(this).text();
-                    if (value && selectedArrivalLocations.includes(value)) {
-                        const option = new Option(text, value, false, currentValue == value);
-                        $select.append(option);
-                    }
-                });
-
-                // Trigger change to update corresponding gala dropdown
-                if ($select.val()) {
-                    $select.trigger('change');
+            // Filter SO Tabs
+            $('#so-details-tabs .nav-item').each(function() {
+                var soId = $(this).find('a').attr('id').replace('so-tab-', '');
+                if (selectedSOIds.includes(soId)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
                 }
             });
 
-            // Update sub arrival location options based on selected factory
-            updateGalaOptionsForAllRows();
-        }
-         function updateGalaOptionsForAllRows() {
-            $('.arrival-location-select').each(function() {
-                updateGalaOptions($(this));
-            });
-        }
-        function updateGalaOptions($factorySelect) {
-            const selectedFactoryId = $factorySelect.val();
-            const $row = $factorySelect.closest('tr');
-            const $galaSelect = $row.find('.sub-arrival-location-select');
-            const currentGalaValue = $galaSelect.val();
-            const selectedSubArrivalLocations = $('#sub_arrival_locations').val() || [];
-
-            $galaSelect.empty().append('<option value="">Select Sub Location</option>');
-
-            if (selectedFactoryId) {
-                // Filter sub arrival locations that:
-                // 1. Belong to the selected factory (arrival_location_id matches)
-                // 2. Are in the delivery order's sub arrival locations
-                allSubArrivalLocations.forEach(function(subLocation) {
-                    if (subLocation.arrival_location_id == selectedFactoryId &&
-                        selectedSubArrivalLocations.includes(subLocation.id.toString())) {
-                        const option = new Option(subLocation.name, subLocation.id, false,
-                            currentGalaValue == subLocation.id);
-                        $galaSelect.append(option);
+            // Filter DO Tabs
+            if (selectedDOIds.length === 0) {
+                $('#do-details-section').hide();
+            } else {
+                $('#do-details-section').show();
+                $('#do-details-tabs .nav-item').each(function() {
+                    var doId = $(this).find('a').attr('id').replace('do-tab-', '');
+                    if (selectedDOIds.includes(doId)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
                     }
                 });
             }
 
-            // Reinitialize select2
-            $galaSelect.select2();
-        }
-    $("#company_locations").change(function() {
-        if(!$(this).prop("multiple")) {
-            const company_location = $(this).val();
-            const sale_order_id = $("#sale_order_id").val();
-        
-            $.ajax({
-                url: "{{ route('sales.get.locations') }}",      
-                type: 'GET',                
-                data: {
-                    sale_order_id,
-                    company_location
-                },
-                dataType: 'json',           
-                success: function(response) {
-                    const [arrivalLocation, subArrivalLocation] = response;
-                    // sub_arrival_locations
-                    // Destroy old Select2 and empty
-                    $('#arrival_locations').select2('destroy');
-                    $('#arrival_locations').empty();
+            // Ensure active tab is visible
+            if ($('#so-details-tabs .nav-link.active:visible').length === 0) {
+                $('#so-details-tabs .nav-link:visible:first').tab('show');
+            }
+            if ($('#do-details-tabs .nav-link.active:visible').length === 0) {
+                $('#do-details-tabs .nav-link:visible:first').tab('show');
+            }
+        };
 
-                    // Append all options
-                    arrivalLocation.forEach(function(loc){
-                        let option = new Option(loc.text, loc.id, true, true); // true = selected
-                        $('#arrival_locations').append(option);
-                    });
+        // Initialize visibility
+        window.updateTabsVisibility();
 
-                    // Re-init Select2
-                    $('#arrival_locations').select2();
-                    // do something with response
-
-
-
-                    $('#sub_arrival_locations').select2('destroy');
-                    $('#sub_arrival_locations').empty();
-
-                    // Append all options
-                    subArrivalLocation.forEach(function(loc){
-                        let option = new Option(loc.text, loc.id, true, true); // true = selected
-                        $('#sub_arrival_locations').append(option);
-                    });
-
-                    // Re-init Select2
-                    $('#sub_arrival_locations').select2();
-                    // do something with response
-
-                    updateItemLocations();
-
-                },
-                error: function(xhr, status, error) {
-                    // handle errors
-                }
-            });
-        }
-    })
+        // Listen for changes locally if needed
+        $('#delivery_order_id').on('change.tabs', function() {
+            window.updateTabsVisibility();
+        });
+    })();
 </script>
-

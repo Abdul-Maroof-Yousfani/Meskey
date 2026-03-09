@@ -57,4 +57,9 @@ class ReceiptVoucher extends Model
     public function delivery_orders() {
         return $this->belongsToMany(DeliveryOrder::class, "delivery_order_receipt_voucher", "receipt_voucher_id", "delivery_order_id")->withPivot("amount");
     }
+
+    public function advances()
+    {
+        return $this->hasMany(ReceiptVoucherAdvance::class, 'receipt_voucher_id');
+    }
 }

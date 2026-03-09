@@ -178,6 +178,11 @@ class LoadingSlipController extends Controller
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
             'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
             'createdBy'
         ])->findOrFail($id);
 
@@ -194,6 +199,11 @@ class LoadingSlipController extends Controller
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
             'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
             'loadingProgramItem.dispatchQc',
             'createdBy',
             'logs'
@@ -327,59 +337,138 @@ class LoadingSlipController extends Controller
     {
         $LoadingProgramItem = LoadingProgramItem::with([
             'loadingProgram.deliveryOrder.customer',
-            'loadingProgram.deliveryOrder.salesOrder',
             'loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
-            'loadingProgram.deliveryOrder.arrivalLocation',
-            'loadingProgram.deliveryOrder.subArrivalLocation'
+            'loadingProgram.saleOrder.customer',
+            'loadingProgram.saleOrder.sales_order_data.item',
+            'deliveryOrders.customer',
+            'deliveryOrders.delivery_order_data.item',
+            'deliveryOrders.delivery_order_data.salesOrderData',
+            'saleOrders.customer',
+            'saleOrders.sales_order_data.item',
+            'arrivalLocation',
+            'subArrivalLocation'
         ])->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
-        $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
-        
-        $sauda_type = null;
-        if ($DeliveryOrder) {
-            $sauda_type = $DeliveryOrder->sauda_type;
-        } elseif ($SaleOrder) {
-            $sauda_type = $SaleOrder->sauda_type;
+        $orders = [];
+
+        // Handle Delivery Orders from many-to-many relationship
+        if ($LoadingProgramItem->deliveryOrders->isNotEmpty()) {
+            foreach ($LoadingProgramItem->deliveryOrders as $do) {
+                $factoryNames = [];
+                $galaNames = [];
+                
+                if ($do->arrival_location_id) {
+                    $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+                }
+                if ($do->sub_arrival_location_id) {
+                    $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+                }
+
+                $orders[] = [
+                    'type' => 'DO',
+                    'number' => $do->reference_no,
+                    'customer' => $do->customer->name ?? '',
+                    'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'do_qty' => $do->delivery_order_data->sum('qty'),
+                    'factory_names' => $factoryNames,
+                    'gala_names' => $galaNames,
+                    'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                    'is_pohanch' => (strtolower($do->sauda_type ?? '') == 'pohanch')
+                ];
+            }
+        } 
+        // Fallback to single delivery order if exists
+        elseif ($LoadingProgramItem->loadingProgram && $LoadingProgramItem->loadingProgram->deliveryOrder) {
+            $do = $LoadingProgramItem->loadingProgram->deliveryOrder;
+            $factoryNames = [];
+            $galaNames = [];
+            
+            if ($do->arrival_location_id) {
+                $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+            }
+            if ($do->sub_arrival_location_id) {
+                $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+            }
+
+            $orders[] = [
+                'type' => 'DO',
+                'number' => $do->reference_no,
+                'customer' => $do->customer->name ?? '',
+                'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                'do_qty' => $do->delivery_order_data->sum('qty'),
+                'factory_names' => $factoryNames,
+                'gala_names' => $galaNames,
+                'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                'is_pohanch' => (strtolower($do->sauda_type ?? '') == 'pohanch')
+            ];
         }
 
-        $is_pohanch = (strtolower($sauda_type ?? '') == 'pohanch');
-
-        // Prepare data for the form
-        if ($DeliveryOrder) {
-            $data = [
-                'customer' => $DeliveryOrder->customer->name ?? '',
-                'commodity' => $DeliveryOrder->delivery_order_data->first()->item->name ?? '',
-                'so_qty' => $DeliveryOrder->delivery_order_data->first()->salesOrderData->qty ?? 0,
-                'do_qty' => $DeliveryOrder->delivery_order_data->first()->qty ?? 0,
-                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
-                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
-                'factory_names' => $LoadingProgramItem->arrival_location_id ?
-                    \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $LoadingProgramItem->arrival_location_id))->pluck('name')->toArray() : [],
-                'gala_names' => $LoadingProgramItem->sub_arrival_location_id ?
-                    \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $LoadingProgramItem->sub_arrival_location_id))->pluck('name')->toArray() : [],
-                'bag_size' => $DeliveryOrder->delivery_order_data->first()->bag_size ?? 0,
-                'is_pohanch' => $is_pohanch
-            ];
-        } else {
-            $data = [
-                'customer' => $SaleOrder->customer->name ?? '',
-                'commodity' => $SaleOrder->sales_order_data->first()->item->name ?? '',
-                'so_qty' => $SaleOrder->sales_order_data->first()->qty ?? 0,
+        // Handle Sale Orders if no DOs or as additional info
+        if ($LoadingProgramItem->saleOrders->isNotEmpty()) {
+            foreach ($LoadingProgramItem->saleOrders as $so) {
+                if (empty($orders)) {
+                    $orders[] = [
+                        'type' => 'SO',
+                        'number' => $so->reference_no,
+                        'customer' => $so->customer->name ?? '',
+                        'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                        'so_qty' => $so->sales_order_data->sum('qty'),
+                        'do_qty' => 0,
+                        'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
+                        'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
+                        'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                        'is_pohanch' => (strtolower($so->sauda_type ?? '') == 'pohanch')
+                    ];
+                }
+            }
+        } elseif (empty($orders) && $LoadingProgramItem->loadingProgram && $LoadingProgramItem->loadingProgram->saleOrder) {
+            $so = $LoadingProgramItem->loadingProgram->saleOrder;
+            $orders[] = [
+                'type' => 'SO',
+                'number' => $so->reference_no,
+                'customer' => $so->customer->name ?? '',
+                'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                'so_qty' => $so->sales_order_data->sum('qty'),
                 'do_qty' => 0,
-                'factory' => $LoadingProgramItem->arrival_location_id ?? '',
-                'gala' => $LoadingProgramItem->sub_arrival_location_id ?? '',
-                'factory_names' => $LoadingProgramItem->arrival_location_id ?
-                    \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $LoadingProgramItem->arrival_location_id))->pluck('name')->toArray() : [],
-                'gala_names' => $LoadingProgramItem->sub_arrival_location_id ?
-                    \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $LoadingProgramItem->sub_arrival_location_id))->pluck('name')->toArray() : [],
-                'bag_size' => $SaleOrder->sales_order_data->first()->bag_size ?? 0,
-                'is_pohanch' => $is_pohanch
+                'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
+                'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
+                'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                'is_pohanch' => (strtolower($so->sauda_type ?? '') == 'pohanch')
             ];
         }
 
+        // If still empty, use defaults from LoadingProgramItem directly
+        if (empty($orders)) {
+             $orders[] = [
+                'type' => 'Ticket',
+                'number' => $LoadingProgramItem->transaction_number,
+                'customer' => 'N/A',
+                'commodity' => 'N/A',
+                'so_qty' => 0,
+                'do_qty' => 0,
+                'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
+                'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
+                'bag_size' => 0,
+                'is_pohanch' => false
+            ];
+        }
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return response()->json([
+            'success' => true, 
+            'data' => [
+                'orders' => $orders,
+                'customer' => $orders[0]['customer'],
+                'commodity' => $orders[0]['commodity'],
+                'so_qty' => $orders[0]['so_qty'],
+                'do_qty' => $orders[0]['do_qty'],
+                'factory_names' => $orders[0]['factory_names'],
+                'gala_names' => $orders[0]['gala_names'],
+                'bag_size' => $orders[0]['bag_size'],
+                'is_pohanch' => $orders[0]['is_pohanch']
+            ]
+        ]);
     }
 }

@@ -43,7 +43,10 @@ class LoadingProgramController extends Controller
         $LoadingPrograms = LoadingProgram::with([
                 'saleOrder.customer', 
                 'saleOrder.sales_order_data.item',
+                'saleOrders.customer',
+                'saleOrders.sales_order_data.item',
                 'deliveryOrder', 
+                'deliveryOrders',
                 'createdBy',
                 'loadingProgramItems.arrivalLocation',
                 'loadingProgramItems.subArrivalLocation',
@@ -54,7 +57,11 @@ class LoadingProgramController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereHas('saleOrder', function ($query) use ($searchTerm) {
                         $query->where('reference_no', 'like', $searchTerm);
+                    })->orWhereHas('saleOrders', function ($query) use ($searchTerm) {
+                        $query->where('reference_no', 'like', $searchTerm);
                     })->orWhereHas('deliveryOrder', function ($query) use ($searchTerm) {
+                        $query->where('reference_no', 'like', $searchTerm);
+                    })->orWhereHas('deliveryOrders', function ($query) use ($searchTerm) {
                         $query->where('reference_no', 'like', $searchTerm);
                     })->orWhereHas('loadingProgramItems', function ($query) use ($searchTerm) {
                         $query->where('transaction_number', 'like', $searchTerm)
@@ -73,41 +80,10 @@ class LoadingProgramController extends Controller
      */
     public function create()
     {
-
-        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
-                                    ->get()
-                                    ->filter(function ($sale_order) {
-                                        if ($sale_order->pay_type_id == 11) {
-                                            return true;
-                                        }
-                                        
-                                        $delivery_orders = $sale_order->delivery_orders()->where("am_approval_status", "approved")->get();
-                                        foreach ($delivery_orders as $delivery_order) {
-                                            $balance = getLoadingProgramBalance($delivery_order->id);
-                                            if ($balance > 0) {
-                                                return true;
-                                            }
-                                        }
-
-                                        return false;
-                                    });
-
-        // $SaleOrders = $SaleOrders->reject(function($sale_order) {
-        //     if($sale_order->pay_type_id == 11) return false;
-            
-        //     $delivery_orders = $sale_order->delivery_orders;
-
-        //     foreach($delivery_orders as $delivery_order) {
-        //         $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
-        //         if($balance > 0) return false;
-        //     }
-
-        //     return true;
-        // });
-        
         $data = [
-            'SaleOrders' => $SaleOrders,
-            'DeliveryOrders' => collect(), // Empty collection initially
+            'SaleOrders' => collect(),
+            'DeliveryOrders' => collect(),
+            'Brands' => \App\Models\Master\Brands::where('status', 1)->get(),
         ];
 
         return view('management.sales.loading-program.create', $data);
@@ -121,31 +97,54 @@ class LoadingProgramController extends Controller
         // Debug: Log the incoming data
         \Log::info('Loading Program Store Data:', $request->all());
 
-
-        // Check if sale order has pay_type_id = 11 (delivery order not required)
-        $saleOrder = SalesOrder::find($request->sale_order_id);
-        $isDeliveryOrderOptional = $saleOrder && $saleOrder->pay_type_id == 11;
         $validationRules = [
-            'sale_order_id' => 'required|exists:sales_orders,id',
+            'main_company_location_id' => 'required|exists:model_location,id',
+            'sale_order_id' => 'required|array|min:1',
+            'sale_order_id.*' => 'exists:sales_orders,id',
             'loading_program_items' => 'required|array|min:1',
-            'loading_program_items.*.truck_number' => 'required|string',
+            'loading_program_items.*.truck_number' => 'required|string|distinct',
             'loading_program_items.*.brand_id' => 'nullable|exists:brands,id',
             'loading_program_items.*.arrival_location_id' => 'required|exists:arrival_locations,id',
             'loading_program_items.*.sub_arrival_location_id' => 'required|exists:arrival_sub_locations,id',
             'remark' => 'nullable|string'
         ];
 
-        // dd($saleOrder->pay_type_id);
+        // Check if any sale order has pay_type_id != 11
+        $saleOrders = SalesOrder::whereIn('id', $request->sale_order_id)->get();
+        $isAnyDeliveryOrderRequired = $saleOrders->contains(function ($so) {
+            return $so->pay_type_id != 11;
+        });
 
-        // Make delivery_order_id required only if pay_type_id is not 11
-        if (!$isDeliveryOrderOptional) {
-            $validationRules['delivery_order_id'] = 'required|min:1';
+        if ($isAnyDeliveryOrderRequired) {
+            $validationRules['delivery_order_id'] = 'required|array|min:1';
             $validationRules['delivery_order_id.*'] = 'exists:delivery_order,id';
-            $validationRules['loading_program_items.*.delivery_order_id'] = 'required|min:1|exists:delivery_order,id';
         } else {
-            $validationRules['delivery_order_id'] = 'nullable';
+            $validationRules['delivery_order_id'] = 'nullable|array';
             $validationRules['delivery_order_id.*'] = 'exists:delivery_order,id';
-            $validationRules['loading_program_items.*.delivery_order_id'] = 'nullable|exists:delivery_order,id';
+        }
+
+        // Row-level validation for DO
+        if ($request->has('loading_program_items')) {
+            $allSaleOrders = SalesOrder::whereIn('id', collect($request->loading_program_items)->pluck('sale_order_id')->flatten()->unique())->get()->keyBy('id');
+            
+            foreach ($request->loading_program_items as $index => $itemData) {
+                $itemSoIds = (array)($itemData['sale_order_id'] ?? []);
+                $isItemDORequired = false;
+                
+                foreach ($itemSoIds as $soId) {
+                    if (isset($allSaleOrders[$soId]) && $allSaleOrders[$soId]->pay_type_id != 11) {
+                        $isItemDORequired = true;
+                        break;
+                    }
+                }
+
+                if ($isItemDORequired) {
+                    $validationRules["loading_program_items.$index.delivery_order_id"] = 'required|array|min:1';
+                } else {
+                    $validationRules["loading_program_items.$index.delivery_order_id"] = 'nullable|array';
+                }
+                $validationRules["loading_program_items.$index.delivery_order_id.*"] = 'exists:delivery_order,id';
+            }
         }
 
         $validator = Validator::make($request->all(), $validationRules);
@@ -154,81 +153,105 @@ class LoadingProgramController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-
         $request['created_by'] = auth()->user()->id;
-        $request['company_id'] = $request->company_id;
 
-        // Get location data from delivery order if available, otherwise from sale order
+        // Get location data from delivery orders if available
         $companyLocationIds = [];
         $arrivalLocationIds = [];
         $subArrivalLocationIds = [];
 
-        if ($request->delivery_order_id && is_array($request->delivery_order_id) && count($request->delivery_order_id) > 0) {
+        if ($request->delivery_order_id && count($request->delivery_order_id) > 0) {
             $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
-            $companyLocationIds = $deliveryOrders->pluck('location_id')->unique()->toArray();
-            $arrivalLocationIds = $deliveryOrders->pluck('arrival_location_id')->filter()->unique()->toArray();
-            $subArrivalLocationIds = $deliveryOrders->pluck('sub_arrival_location_id')->filter()->unique()->toArray();
+            $companyLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
+            $arrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->arrival_location_id))->filter()->unique()->toArray();
+            $subArrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->sub_arrival_location_id))->filter()->unique()->toArray();
         } else {
-            $saleOrderWithLocations = SalesOrder::with('locations')->find($request->sale_order_id);
-            if ($saleOrderWithLocations) {
-                $companyLocationId = $saleOrderWithLocations->locations->first()?->location_id;
-                if ($companyLocationId) {
-                    $companyLocationIds = [$companyLocationId];
+            $mainLoc = $request->main_company_location_id;
+            foreach ($saleOrders as $so) {
+                foreach ($so->locations as $loc) {
+                    if (!$mainLoc || $loc->location_id == $mainLoc) $companyLocationIds[] = $loc->location_id;
                 }
-                // Get arrival and sub-arrival locations from sale order
-                if ($saleOrderWithLocations->arrival_location_id) {
-                    $arrivalLocationIds = [$saleOrderWithLocations->arrival_location_id];
-                }
-                if ($saleOrderWithLocations->arrival_sub_location_id) {
-                    $subArrivalLocationIds = [$saleOrderWithLocations->arrival_sub_location_id];
-                }
+                foreach ($so->factories as $fc) $arrivalLocationIds[] = $fc->arrival_location_id;
+                foreach ($so->sections as $sec) $subArrivalLocationIds[] = $sec->arrival_sub_location_id;
             }
+            $companyLocationIds = array_unique($companyLocationIds);
+            $arrivalLocationIds = array_unique($arrivalLocationIds);
+            $subArrivalLocationIds = array_unique($subArrivalLocationIds);
+        }
+
+        if ($request->main_company_location_id && !is_array($request->main_company_location_id) && !in_array($request->main_company_location_id, $companyLocationIds)) {
+            $companyLocationIds[] = $request->main_company_location_id;
         }
 
         DB::beginTransaction();
         try {
-           
+
             $loadingProgram = LoadingProgram::create([
                 'company_id' => $request->company_id,
-                'sale_order_id' => $request->sale_order_id,
-                'delivery_order_id' => is_array($request->delivery_order_id) ? ($request->delivery_order_id[0] ?? null) : ($request->delivery_order_id ?: null),
-                'company_locations' =>  ($isDeliveryOrderOptional) ? request()->company_locations : $companyLocationIds,
+                'sale_order_id' => $request->sale_order_id[0], // Keep for backward compatibility if needed, but we use pivot
+                'delivery_order_id' => isset($request->delivery_order_id[0]) ? $request->delivery_order_id[0] : null,
+                'company_locations' => $companyLocationIds,
+                'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
                 'remark' => $request->remark,
                 'created_by' => $request->created_by
             ]);
-    
+
+            // Sync main Loading Program relationships
+            $loadingProgram->saleOrders()->sync($request->sale_order_id);
+            if ($request->delivery_order_id) {
+                $loadingProgram->deliveryOrders()->sync($request->delivery_order_id);
+            }
+
             if (isset($request->loading_program_items) && is_array($request->loading_program_items)) {
                 foreach ($request->loading_program_items as $index => $itemData) {
-                    $delivery_order_id = $request->loading_program_items[$index]['delivery_order_id'];
-
-                    if($delivery_order_id)
-                        $balance = getLoadingProgramBalance($delivery_order_id);
-                        $qty = $request->loading_program_items[$index]['qty'];
-
-                    if($delivery_order_id && $balance < $qty) {
-                        DB::rollBack();
-
-                        $validator->errors()->add(
-                            "loading_program_items[$index][qty]", "Your qty balance is $balance, you can not exceed that balance."
-                        );
-                        return response()->json([
-                            "errors" => $validator->errors()
-                        ], 422);
-                    }
+                    $selected_do_ids = $itemData['delivery_order_id'] ?? [];
                     
-                    $itemData['loading_program_id'] = $loadingProgram->id;
-                    $itemData['transaction_number'] = self::getNumber($request);
-                    $itemData["delivery_order_id"] = $request->loading_program_items[$index]['delivery_order_id'];
-                    LoadingProgramItem::create($itemData);
+                    // Logic for balance check if needed (re-implemented for multi-DO)
+                    foreach ($selected_do_ids as $do_id) {
+                        $lpBalance = getLoadingProgramBalance($do_id);
+                        $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                        $balance = min($lpBalance, $swbBalance);
+                        $qty = $itemData['qty']; // Qty is per truck, usually.
+                        
+                        if ($balance < $qty) {
+                            DB::rollBack();
+                            return response()->json([
+                                "errors" => ["loading_program_items.$index.qty" => ["Your available balance (taking Second Weighbridge into account) for DO $do_id is $balance, you can not exceed that balance."]]
+                            ], 422);
+                        }
+                    }
+
+                    $loadingProgramItem = LoadingProgramItem::create([
+                        'loading_program_id' => $loadingProgram->id,
+                        'transaction_number' => self::getNumber($request),
+                        'truck_number' => $itemData['truck_number'],
+                        'container_number' => $itemData['container_number'] ?? null,
+                        'packing' => $itemData['packing'] ?? null,
+                        'brand_id' => $itemData['brand_id'] ?? null,
+                        'arrival_location_id' => $itemData['arrival_location_id'],
+                        'sub_arrival_location_id' => $itemData['sub_arrival_location_id'],
+                        'driver_name' => $itemData['driver_name'] ?? null,
+                        'contact_details' => $itemData['contact_details'] ?? null,
+                        'qty' => $itemData['qty'] ?? 0,
+                        'delivery_order_id' => $selected_do_ids[0] ?? null, // Backward compatibility
+                    ]);
+
+                    // Sync Item relationships
+                    if (isset($itemData['sale_order_id']) && is_array($itemData['sale_order_id'])) {
+                        $loadingProgramItem->saleOrders()->sync($itemData['sale_order_id']);
+                    }
+                    if (!empty($selected_do_ids)) {
+                        $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
+                    }
                 }
             }
             DB::commit();
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
             return response()->json($e->getMessage(), 500);
-        } 
+        }
 
         return response()->json(['success' => 'Loading Program created successfully.', 'data' => $loadingProgram], 201);
     }
@@ -238,14 +261,29 @@ class LoadingProgramController extends Controller
      */
     public function show($id)
     {
-        $data['LoadingProgram'] = LoadingProgram::with([
+        $LoadingProgram = LoadingProgram::with([
             'loadingProgramItems.arrivalLocation',
             'loadingProgramItems.subArrivalLocation',
+            'loadingProgramItems.brand',
+            'loadingProgramItems.saleOrders',
+            'loadingProgramItems.deliveryOrders',
             'saleOrder.customer',
             'saleOrder.sales_order_data.item',
             'saleOrder.locations',
-            'deliveryOrder'
+            'deliveryOrder',
+            'saleOrders.customer',
+            'saleOrders.sales_order_data.item',
+            'saleOrders.sales_order_data.brand',
+            'saleOrders.locations',
+            'deliveryOrders.customer',
+            'deliveryOrders.delivery_order_data.item',
+            'deliveryOrders.delivery_order_data.brand'
         ])->findOrFail($id);
+
+        $data['LoadingProgram'] = $LoadingProgram;
+        $data['SalesOrders'] = $LoadingProgram->saleOrders->isEmpty() ? collect([$LoadingProgram->saleOrder]) : $LoadingProgram->saleOrders;
+        $data['DeliveryOrders'] = $LoadingProgram->deliveryOrders->isEmpty() ? collect([$LoadingProgram->deliveryOrder])->filter() : $LoadingProgram->deliveryOrders;
+        $data['Brands'] = \App\Models\Master\Brands::where('status', 1)->get();
 
         return view('management.sales.loading-program.show', $data);
     }
@@ -281,8 +319,9 @@ class LoadingProgramController extends Controller
             }
             
             foreach ($sale_order->delivery_orders as $delivery_order) {
-                $balance = getLoadingProgramBalance($delivery_order->id); 
-                if ($balance > 0) { 
+                $lpBalance = getLoadingProgramBalance($delivery_order->id); 
+                $swbBalance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
+                if ($lpBalance > 0 && $swbBalance > 0) { 
                     return true;
                 }
             }
@@ -365,7 +404,9 @@ class LoadingProgramController extends Controller
                 if(in_array($delivery_order->id, $loading_program_dos)) {
                     return false;
                 }
-                return getLoadingProgramBalance($delivery_order->id) <= 0;
+                $lpBalance = getLoadingProgramBalance($delivery_order->id);
+                $swbBalance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
+                return $lpBalance <= 0 || $swbBalance <= 0;
             });
 
 
@@ -378,8 +419,10 @@ class LoadingProgramController extends Controller
         $data["locations"] = $locations;
         $data['DeliveryOrders'] = $deliveryOrders;
         $data["LoadingProgramDos"] = $loading_program_dos;
+        $data['Brands'] = \App\Models\Master\Brands::where('status', 1)->get();
 
         
+        // dd($locations);
         return view('management.sales.loading-program.edit', $data);
     }
 
@@ -388,118 +431,156 @@ class LoadingProgramController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Check if sale order has pay_type_id = 11 (delivery order not required)
-        $saleOrder = SalesOrder::find($request->sale_order_id);
-        $isDeliveryOrderOptional = $saleOrder && $saleOrder->pay_type_id == 11;
         $validationRules = [
-            'sale_order_id' => 'required|exists:sales_orders,id',
+            'main_company_location_id' => 'required|exists:model_location,id',
+            'sale_order_id' => 'required|array|min:1',
+            'sale_order_id.*' => 'exists:sales_orders,id',
             'loading_program_items' => 'required|array|min:1',
-            'loading_program_items.*.truck_number' => 'required|string',
+            'loading_program_items.*.truck_number' => 'required|string|distinct',
             'loading_program_items.*.brand_id' => 'nullable|exists:brands,id',
             'loading_program_items.*.arrival_location_id' => 'required|exists:arrival_locations,id',
             'loading_program_items.*.sub_arrival_location_id' => 'required|exists:arrival_sub_locations,id',
             'remark' => 'nullable|string'
         ];
 
-        // dd($saleOrder->pay_type_id);
+        $saleOrders = SalesOrder::whereIn('id', $request->sale_order_id)->get();
+        $isAnyDeliveryOrderRequired = $saleOrders->contains(function ($so) {
+            return $so->pay_type_id != 11;
+        });
 
-        // Make delivery_order_id required only if pay_type_id is not 11
-        if (!$isDeliveryOrderOptional) {
-            $validationRules['delivery_order_id'] = 'required|min:1';
+        if ($isAnyDeliveryOrderRequired) {
+            $validationRules['delivery_order_id'] = 'required|array|min:1';
             $validationRules['delivery_order_id.*'] = 'exists:delivery_order,id';
-            $validationRules['loading_program_items.*.delivery_order_id'] = 'required|min:1|exists:delivery_order,id';
         } else {
-            $validationRules['delivery_order_id'] = 'nullable';
+            $validationRules['delivery_order_id'] = 'nullable|array';
             $validationRules['delivery_order_id.*'] = 'exists:delivery_order,id';
-            $validationRules['loading_program_items.*.delivery_order_id'] = 'nullable|exists:delivery_order,id';
+        }
+
+        // Row-level validation for DO
+        if ($request->has('loading_program_items')) {
+            $allSaleOrders = SalesOrder::whereIn('id', collect($request->loading_program_items)->pluck('sale_order_id')->flatten()->unique())->get()->keyBy('id');
+            
+            foreach ($request->loading_program_items as $index => $itemData) {
+                $itemSoIds = (array)($itemData['sale_order_id'] ?? []);
+                $isItemDORequired = false;
+                
+                foreach ($itemSoIds as $soId) {
+                    if (isset($allSaleOrders[$soId]) && $allSaleOrders[$soId]->pay_type_id != 11) {
+                        $isItemDORequired = true;
+                        break;
+                    }
+                }
+
+                if ($isItemDORequired) {
+                    $validationRules["loading_program_items.$index.delivery_order_id"] = 'required|array|min:1';
+                } else {
+                    $validationRules["loading_program_items.$index.delivery_order_id"] = 'nullable|array';
+                }
+                $validationRules["loading_program_items.$index.delivery_order_id.*"] = 'exists:delivery_order,id';
+            }
         }
 
         $validator = Validator::make($request->all(), $validationRules);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
-            }
+        }
 
         $loadingProgram = LoadingProgram::findOrFail($id);
 
-        // Check if delivery order already has a loading program (excluding current one)
-        // if ($request->delivery_order_id) {
-        //     $existingLoadingProgram = LoadingProgram::where('delivery_order_id', $request->delivery_order_id)
-        //         ->where('id', '!=', $id)
-        //         ->first();
-        //     if ($existingLoadingProgram) {
-        //         return response()->json(['errors' => ['delivery_order_id' => 'Loading program already exists for this delivery order.']], 422);
-        //     }
-        // }
-        // Get location data from delivery order if available, otherwise from sale order
         $companyLocationIds = [];
         $arrivalLocationIds = [];
         $subArrivalLocationIds = [];
 
-        if ($request->delivery_order_id && is_array($request->delivery_order_id) && count($request->delivery_order_id) > 0) {
+        if ($request->delivery_order_id && count($request->delivery_order_id) > 0) {
             $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
-            $companyLocationIds = $deliveryOrders->pluck('location_id')->unique()->toArray();
-            $arrivalLocationIds = $deliveryOrders->pluck('arrival_location_id')->filter()->unique()->toArray();
-            $subArrivalLocationIds = $deliveryOrders->pluck('sub_arrival_location_id')->filter()->unique()->toArray();
+            $companyLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
+            $arrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->arrival_location_id))->filter()->unique()->toArray();
+            $subArrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->sub_arrival_location_id))->filter()->unique()->toArray();
         } else {
-            // Get locations from Sale Order when delivery order is not selected
-            $saleOrderWithLocations = SalesOrder::with('locations')->find($request->sale_order_id);
-            if ($saleOrderWithLocations) {
-                // Get company location from sale order's locations relationship
-                $companyLocationId = $saleOrderWithLocations->locations->first()?->location_id;
-                if ($companyLocationId) {
-                    $companyLocationIds = [$companyLocationId];
+            $mainLoc = $request->main_company_location_id;
+            $saleOrders = SalesOrder::whereIn('id', $request->sale_order_id)->get();
+            foreach ($saleOrders as $so) {
+                foreach ($so->locations as $loc) {
+                    if (!$mainLoc || $loc->location_id == $mainLoc) $companyLocationIds[] = $loc->location_id;
                 }
-                // Get arrival and sub-arrival locations from sale order
-                if ($saleOrderWithLocations->arrival_location_id) {
-                    $arrivalLocationIds = [$saleOrderWithLocations->arrival_location_id];
-                }
-                if ($saleOrderWithLocations->arrival_sub_location_id) {
-                    $subArrivalLocationIds = [$saleOrderWithLocations->arrival_sub_location_id];
-                }
+                foreach ($so->factories as $fc) $arrivalLocationIds[] = $fc->arrival_location_id;
+                foreach ($so->sections as $sec) $subArrivalLocationIds[] = $sec->arrival_sub_location_id;
             }
+            $companyLocationIds = array_unique($companyLocationIds);
+            $arrivalLocationIds = array_unique($arrivalLocationIds);
+            $subArrivalLocationIds = array_unique($subArrivalLocationIds);
+        }
+
+        if ($request->main_company_location_id && !is_array($request->main_company_location_id) && !in_array($request->main_company_location_id, $companyLocationIds)) {
+            $companyLocationIds[] = $request->main_company_location_id;
         }
 
         DB::beginTransaction();
         try {
             $loadingProgram->update([
-                'sale_order_id' => $request->sale_order_id,
-                'delivery_order_id' => is_array($request->delivery_order_id) ? ($request->delivery_order_id[0] ?? null) : ($request->delivery_order_id ?: null),
-                'company_locations' => ($isDeliveryOrderOptional) ? request()->company_locations : $companyLocationIds,
+                'sale_order_id' => $request->sale_order_id[0],
+                'delivery_order_id' => isset($request->delivery_order_id[0]) ? $request->delivery_order_id[0] : null,
+                'company_locations' => $companyLocationIds,
+                'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
                 'remark' => $request->remark
             ]);
-    
-            // Delete existing items and create new ones
+
+            // Sync main Loading Program relationships
+            $loadingProgram->saleOrders()->sync($request->sale_order_id);
+            if ($request->delivery_order_id) {
+                $loadingProgram->deliveryOrders()->sync($request->delivery_order_id);
+            } else {
+                $loadingProgram->deliveryOrders()->detach();
+            }
+
+            // Delete existing items and create new ones (keeping logic consistent with original and multi-sync)
             $loadingProgram->loadingProgramItems()->whereDoesntHave("firstWeighbridge")->delete();
-    
+
             if (isset($request->loading_program_items) && is_array($request->loading_program_items)) {
                 foreach ($request->loading_program_items as $index => $itemData) {
-                    $delivery_order_id = $itemData["delivery_order_id"];
+                    $selected_do_ids = $itemData['delivery_order_id'] ?? [];
 
-                    if($delivery_order_id)
-                        $balance = getLoadingProgramBalance($delivery_order_id);
+                    foreach ($selected_do_ids as $do_id) {
+                        $lpBalance = getLoadingProgramBalance($do_id);
+                        $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                        $balance = min($lpBalance, $swbBalance);
                         $qty = $itemData['qty'];
-                   
-                    if($delivery_order_id && $balance < $qty) {
-                        DB::rollBack();
+                        if ($balance < $qty) {
+                            DB::rollBack();
+                            return response()->json([
+                                "errors" => ["loading_program_items.$index.qty" => ["Your available balance (taking Second Weighbridge into account) for DO $do_id is $balance, you can not exceed that balance."]]
+                            ], 422);
+                        }
+                    }
 
-                        $validator->errors()->add(
-                            "loading_program_items[$index][qty]", "Your qty balance is $balance, you can not exceed that balance."
-                        );
-                        return response()->json([
-                            "errors" => $validator->errors()
-                        ], 422);
+                    $loadingProgramItem = LoadingProgramItem::create([
+                        'loading_program_id' => $loadingProgram->id,
+                        'transaction_number' => $itemData['transaction_number'] ?? self::getNumber($request),
+                        'truck_number' => $itemData['truck_number'],
+                        'container_number' => $itemData['container_number'] ?? null,
+                        'packing' => $itemData['packing'] ?? null,
+                        'brand_id' => $itemData['brand_id'] ?? null,
+                        'arrival_location_id' => $itemData['arrival_location_id'],
+                        'sub_arrival_location_id' => $itemData['sub_arrival_location_id'],
+                        'driver_name' => $itemData['driver_name'] ?? null,
+                        'contact_details' => $itemData['contact_details'] ?? null,
+                        'qty' => $itemData['qty'] ?? 0,
+                        'delivery_order_id' => $selected_do_ids[0] ?? null,
+                    ]);
+
+                    // Sync Item relationships
+                    if (isset($itemData['sale_order_id']) && is_array($itemData['sale_order_id'])) {
+                        $loadingProgramItem->saleOrders()->sync($itemData['sale_order_id']);
                     }
-                    $itemData['loading_program_id'] = $loadingProgram->id;
-                    if(!$itemData['transaction_number']) {
-                        $itemData["transaction_number"] = self::getNumber($request);
+                    if (!empty($selected_do_ids)) {
+                        $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
                     }
-                    LoadingProgramItem::create($itemData);
                 }
             }
             DB::commit();
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
@@ -519,50 +600,55 @@ class LoadingProgramController extends Controller
 
     public function getSaleOrderRelatedData(Request $request)
     {
-        $SalesOrder = SalesOrder::with('customer', 'sales_order_data.item', 'sales_order_data.brand', 'locations')->findOrFail($request->sale_order_id);
+        $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
+        $company_location_id = $request->company_location_id;
+
+        $SalesOrders = SalesOrder::with('customer', 'sales_order_data.item', 'sales_order_data.brand', 'locations')->whereIn('id', $sale_order_ids)->get();
         
-        $DeliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
-            // ->whereDoesntHave('loadingProgram')
-            // ->with("loadingPrograms")
-            ->withSum("saleSecondWeighbridge", "net_weight")
-            ->withSum("delivery_order_data", "qty")
+        $DeliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
+            ->when($company_location_id, function($q) use ($company_location_id) {
+                // Filter for strictly matching location_id (prevents multiple locations)
+                return $q->where('location_id', (string)$company_location_id);
+            })
+            ->withSum('delivery_order_data', 'qty')
+            ->withSum('loadingProgramItems', 'qty')
             ->get()
             ->reject(function($delivery_order) {
-                return $delivery_order->sale_second_weighbridge_sum_net_weight < $delivery_order->sale_second_weighbridge_sum_net_weight;
+                return getLoadingProgramBalance($delivery_order->id) <= 0 || get_second_weighbridge_balance_by_delivery_order($delivery_order->id) <= 0;
+            })
+            ->map(function($delivery_order) {
+                $location_name = getLocation($delivery_order->location_id)?->name ?? 'N/A';
+                $delivery_order->reference_no = $delivery_order->reference_no . " - " . $location_name;
+                return $delivery_order;
             });
 
+        $html = view('management.sales.loading-program.getSaleOrderRelatedData', compact('SalesOrders', 'DeliveryOrders'))->render();
 
-      
-        // Summed up value is in delivery_order_data_sum_qty
+        // Check if any delivery order is optional (pay_type_id = 11)
+        $isAnyDeliveryOrderOptional = $SalesOrders->contains(function($so) {
+            return $so->pay_type_id == 11;
+        });
 
-        // dd($DeliveryOrders);
-        // Render view with the sales order data
-        $html = view('management.sales.loading-program.getSaleOrderRelatedData', compact('SalesOrder', 'DeliveryOrders'))->render();
-
-        // Check if delivery order is optional (pay_type_id = 11)
-        $isDeliveryOrderOptional = $SalesOrder->pay_type_id == 11;
-
-        // Get sale order data for packing, brand, factory, gala, and company location
-        $firstSoData = $SalesOrder->sales_order_data->first();
-        
-        // Get company location from sale order's locations relationship
-        $companyLocationId = $SalesOrder->locations->first()?->location_id;
+        // Get sale order data for first SO for default population
+        $firstSo = $SalesOrders->first();
+        $firstSoData = $firstSo->sales_order_data->first();
+        $companyLocationId = $firstSo->locations->first()?->location_id;
         
         $saleOrderData = [
             'packing' => $firstSoData->bag_size ?? null,
             'brand_id' => $firstSoData->brand_id ?? null,
             'brand_name' => $firstSoData->brand->name ?? null,
-            'arrival_location_id' => $SalesOrder->arrival_location_id,
-            'sub_arrival_location_id' => $SalesOrder->arrival_sub_location_id,
+            'arrival_location_id' => $firstSo->arrival_location_id,
+            'sub_arrival_location_id' => $firstSo->arrival_sub_location_id,
             'company_location_id' => $companyLocationId,
         ];
 
         return response()->json([
             'success' => true, 
             'html' => $html,
-            'is_delivery_order_optional' => $isDeliveryOrderOptional,
-            'pay_type_id' => $SalesOrder->pay_type_id,
+            'is_delivery_order_optional' => $isAnyDeliveryOrderOptional,
+            'pay_type_id' => $firstSo->pay_type_id,
             'sale_order_data' => $saleOrderData
         ]);
     }
@@ -570,33 +656,33 @@ class LoadingProgramController extends Controller
 
     public function getDeliveryOrdersBySaleOrder(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'sale_order_id' => 'required|exists:sales_orders,id'
-        ]);
+        $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
+        $company_location_id = $request->company_location_id;
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
-            // ->whereDoesntHave(relation: 'loadingProgram')
+        $deliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
+            ->when($company_location_id, function($q) use ($company_location_id) {
+                // Filter for strictly matching location_id (prevents multiple locations)
+                return $q->where('location_id', (string)$company_location_id);
+            })
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
 
         $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder){
-            $balance = getLoadingProgramBalance($deliveryOrder->id);
-            return !$balance;
+            $lpBalance = getLoadingProgramBalance($deliveryOrder->id);
+            $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
+            return $lpBalance <= 0 || $swbBalance <= 0;
         });
 
         $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
-            $deliveryOrder->reference_no = $deliveryOrder->reference_no . " - " . getLocation($deliveryOrder->location_id)?->name;
+            $locationIds = explode(',', $deliveryOrder->location_id);
+            $locationNames = \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->pluck('name')->toArray();
+            $locationNameStr = implode(', ', $locationNames);
+            $deliveryOrder->reference_no = $deliveryOrder->reference_no . " - " . ($locationNameStr ?: 'N/A');
             return $deliveryOrder;
         });
         
-
-
         return response()->json([
             'success' => true,
             'delivery_orders' => $deliveryOrders->values()
@@ -605,14 +691,9 @@ class LoadingProgramController extends Controller
 
     public function getDeliveryOrdersBySaleOrderEdit(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'sale_order_id' => 'required|exists:sales_orders,id'
-        ]);
+        $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-        $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
+        $deliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
@@ -665,6 +746,22 @@ class LoadingProgramController extends Controller
         return $delivery_order_data->qty;
     }
 
+    public function fetchSaleOrdersByLocation(Request $request)
+    {
+        $location_id = $request->location_id;
+        
+        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
+            ->whereHas('locations', function($q) use ($location_id) {
+                $q->where('location_id', $location_id);
+            })
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'sale_orders' => $SaleOrders
+        ]);
+    }
+
     public function getLocations(Request $request) {
         $so_id = $request->so_id;
         $sale_order = SalesOrder::with("factories", "sections")->find($so_id);
@@ -705,14 +802,26 @@ class LoadingProgramController extends Controller
     }
 
     public function getLocationsOfSaleOrder(Request $request) {
-        $sale_order_id = $request->sale_order_id;
+        $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
         $company_location = $request->company_location;
 
-        $saleOrder = SalesOrder::find($sale_order_id);
+        $factoryArrivalLocationIds = \App\Models\Procurement\Store\FactoryLocation::where('factoryable_type', \App\Models\Sales\SalesOrder::class)
+            ->whereIn('factoryable_id', $sale_order_ids)
+            ->pluck('arrival_location_id')
+            ->unique()
+            ->toArray();
+
         $arrivalLocations = ArrivalLocation::where("company_location_id", $company_location)
-                                            ->whereIn("id", $saleOrder->factories->pluck("arrival_location_id"))
+                                            ->whereIn("id", $factoryArrivalLocationIds)
                                             ->get();
-        $subArrrivalLocations = ArrivalSubLocation::whereIn("id", $saleOrder->sections->pluck("arrival_sub_location_id")->toArray())
+
+        $sectionSubArrivalLocationIds = \App\Models\Procurement\Store\SectionLocation::where('sectionable_type', \App\Models\Sales\SalesOrder::class)
+            ->whereIn('sectionable_id', $sale_order_ids)
+            ->pluck('arrival_sub_location_id')
+            ->unique()
+            ->toArray();
+
+        $subArrrivalLocations = ArrivalSubLocation::whereIn("id", $sectionSubArrivalLocationIds)
                                                     ->whereIn("arrival_location_id", $arrivalLocations->pluck("id")->toArray())
                                                     ->get();
 

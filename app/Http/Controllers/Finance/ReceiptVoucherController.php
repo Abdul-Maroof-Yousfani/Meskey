@@ -195,7 +195,7 @@ class ReceiptVoucherController extends Controller
 
     public function edit($id)
     {
-        $receiptVoucher = ReceiptVoucher::with(['items', 'account', 'customer'])->findOrFail($id);
+        $receiptVoucher = ReceiptVoucher::with(['items', 'advances', 'account', 'customer'])->findOrFail($id);
 
         $customers = Customer::select('id', 'name')->get();
         $accounts = Account::whereHas('parent', function ($q) {
@@ -266,6 +266,26 @@ class ReceiptVoucherController extends Controller
                 'line_desc' => $item->line_desc,
             ];
         })->values();
+
+        $advanceItems = $receiptVoucher->advances->map(function ($adv) {
+            return (object) [
+                'reference_id' => 0,
+                'reference_type' => 'advance',
+                'adv_no' => $adv->adv_no,
+                'number' => $adv->adv_no,
+                'date' => $adv->created_at->format('Y-m-d'),
+                'customer_name' => $adv->customer->name ?? 'N/A',
+                'amount' => $adv->amount,
+                'quantity' => $adv->amount,
+                'tax_id' => $adv->tax_id,
+                'tax_amount' => $adv->tax_amount,
+                'net_amount' => $adv->net_amount,
+                'line_desc' => $adv->line_desc,
+            ];
+        });
+
+        $initialItems = $initialItems->concat($advanceItems);
+
         $isAdvance = $receiptVoucher->items->contains(function ($item) {
             return $item->reference_type === 'sale_order';
         });
@@ -478,17 +498,29 @@ class ReceiptVoucherController extends Controller
             ]);
 
             foreach ($items as $item) {
-                ReceiptVoucherItem::create([
-                    'receipt_voucher_id' => $receiptVoucher->id,
-                    'reference_type' => $item['reference_type'],
-                    'reference_id' => $item['reference_id'],
-                    'amount' => $item['amount'] ?? 0,
-                    'tax_id' => $item['tax_id'] ?? null,
-                    'account_id' => null,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
-                    'line_desc' => $item['line_desc'] ?? null,
-                ]);
+                if ($item['reference_type'] === 'advance') {
+                    $receiptVoucher->advances()->create([
+                        'customer_id' => $payload['customer_id'],
+                        'adv_no' => $item['adv_no'] ?? 'ADV-001',
+                        'amount' => $item['amount'] ?? 0,
+                        'tax_id' => $item['tax_id'] ?? null,
+                        'tax_amount' => $item['tax_amount'] ?? 0,
+                        'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
+                        'line_desc' => $item['line_desc'] ?? null,
+                    ]);
+                } else {
+                    ReceiptVoucherItem::create([
+                        'receipt_voucher_id' => $receiptVoucher->id,
+                        'reference_type' => $item['reference_type'],
+                        'reference_id' => $item['reference_id'],
+                        'amount' => $item['amount'] ?? 0,
+                        'tax_id' => $item['tax_id'] ?? null,
+                        'account_id' => null,
+                        'tax_amount' => $item['tax_amount'] ?? 0,
+                        'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
+                        'line_desc' => $item['line_desc'] ?? null,
+                    ]);
+                }
             }
 
             // Create transactions (debit bank/cash, credit customer)
@@ -632,34 +664,33 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
-     public function show($id)
+    public function show($id)
     {
-        $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items'])->findOrFail($id);
+        $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items.account', 'advances.customer'])->findOrFail($id);
 
-        // resolve reference labels
-        $items = $receiptVoucher->items->map(function ($item) {
+        // resolve items
+        $standardItems = $receiptVoucher->items->map(function ($item) {
             $docNo = '';
             $customer = '';
             if ($item->reference_type === 'sale_order') {
                 $so = SalesOrder::with('customer')->find($item->reference_id);
-                $docNo = $so->so_reference_no ?? $so->reference_no ?? $so->so_no ?? ('SO-' . $item->reference_id);
+                $docNo = $so->reference_no ?? ('SO-' . $item->reference_id);
                 $customer = $so->customer->name ?? '';
-            } elseif($item->reference_type == 'sale_invoice') {
+            } elseif ($item->reference_type === 'sales_invoice') {
                 $inv = SalesInvoice::with('customer')->find($item->reference_id);
                 $docNo = $inv->si_no ?? ('INV-' . $item->reference_id);
                 if ($inv && $inv->reference_number) {
                     $docNo .= ' | Ref: ' . $inv->reference_number;
                 }
                 $customer = $inv->customer->name ?? '';
-            } else {
-                $account_id = $item->account_id;
-                $account = Account::find($account_id);
-                $customer = $account->name;
+            } elseif ($item->reference_type === 'direct') {
+                $docNo = 'Direct';
+                $customer = $item->account->name ?? 'N/A';
             }
 
             return [
-                'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : ($item->reference_type == 'sale_invoice' ? 'Sale Invoice' : 'Direct RV'),
-                'doc_no' => $item->reference_type === 'sale_order' ? (SalesOrder::find($item->reference_id))->reference_no : (SalesInvoice::find($item->reference_id))?->si_no ?? null ,
+                'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : ($item->reference_type === 'sales_invoice' ? 'Sale Invoice' : 'Direct RV'),
+                'doc_no' => $docNo,
                 'customer' => $customer,
                 'amount' => $item->amount,
                 'tax_amount' => $item->tax_amount,
@@ -667,6 +698,21 @@ class ReceiptVoucherController extends Controller
                 'line_desc' => $item->line_desc,
             ];
         });
+
+        // resolve advances
+        $advanceItems = $receiptVoucher->advances->map(function ($adv) {
+            return [
+                'type' => 'Advance',
+                'doc_no' => '-',
+                'customer' => $adv->customer->name ?? 'N/A',
+                'amount' => $adv->amount,
+                'tax_amount' => $adv->tax_amount,
+                'net_amount' => $adv->net_amount ?: ($adv->amount + $adv->tax_amount),
+                'line_desc' => $adv->line_desc,
+            ];
+        });
+
+        $items = $standardItems->concat($advanceItems);
 
         return view('management.finance.receipt_voucher.show', [
             'receiptVoucher' => $receiptVoucher,
@@ -713,19 +759,33 @@ class ReceiptVoucherController extends Controller
             'total_amount' => $totalNetAmount,
         ]);
         
-        // Delete old items and recreate
+        // Delete old items and advances and recreate
         ReceiptVoucherItem::where('receipt_voucher_id', $receiptVoucher->id)->delete();
+        $receiptVoucher->advances()->delete();
+
         foreach ($request->items as $item) {
-            ReceiptVoucherItem::create([
-                'receipt_voucher_id' => $receiptVoucher->id,
-                'reference_type' => $item['reference_type'],
-                'reference_id' => $item['reference_id'],
-                'amount' => $item["amount_display"],
-                'tax_id' => $item['tax_id'] ?? null,
-                'tax_amount' => $item['tax_amount'] ?? 0,
-                'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
-                'line_desc' => $item['line_desc'] ?? null,
-            ]);
+            if ($item['reference_type'] === 'advance') {
+                $receiptVoucher->advances()->create([
+                    'customer_id' => $payload['customer_id'],
+                    'adv_no' => $item['adv_no'] ?? 'ADV-001',
+                    'amount' => $item["amount_display"] ?? 0,
+                    'tax_id' => $item['tax_id'] ?? null,
+                    'tax_amount' => $item['tax_amount'] ?? 0,
+                    'net_amount' => $item['net_amount'] ?? ($item['amount_display'] ?? 0),
+                    'line_desc' => $item['line_desc'] ?? null,
+                ]);
+            } else {
+                ReceiptVoucherItem::create([
+                    'receipt_voucher_id' => $receiptVoucher->id,
+                    'reference_type' => $item['reference_type'],
+                    'reference_id' => $item['reference_id'],
+                    'amount' => $item["amount_display"],
+                    'tax_id' => $item['tax_id'] ?? null,
+                    'tax_amount' => $item['tax_amount'] ?? 0,
+                    'net_amount' => $item['net_amount'] ?? ($item['amount_display'] ?? 0),
+                    'line_desc' => $item['line_desc'] ?? null,
+                ]);
+            }
         }
 
         // Remove old transactions

@@ -21,9 +21,11 @@
                     <thead>
                         <tr>
                             <th>Item</th>
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <th>Size</th>
                             <th>Brand</th>
                             <th>Job Order</th>
+                            @endif
                             <th>DC No</th>
                             <th>Required Weight Per Bag (grams)</th>
                             <th>Average Weight of 1 Bag (grams)</th>
@@ -38,6 +40,7 @@
                                 <input type="text" name="item" id="item" value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
                                     class="form-control">
                             </td>
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
                                 <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}" readonly
                                     class="form-control">
@@ -64,6 +67,7 @@
                                     @endforeach
                                 </select>
                             </td>
+                            @endif
 
                             <td>
                                 <input type="text" name="dc_no" id="dc_no" value="{{ $purchaseOrderReceivingData->purchase_order_receiving->dc_no }}" readonly
@@ -71,7 +75,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
+                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
 
                             <td>

@@ -92,24 +92,26 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
         }
 
-        $loadingProgramItem = LoadingProgramItem::with('loadingProgram.deliveryOrder')->findOrFail($request->loading_program_item_id);
-        $deliveryOrder = DeliveryOrder::find($loadingProgramItem->delivery_order_id);
+        $loadingProgramItem = LoadingProgramItem::with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+    $deliveryOrders = $loadingProgramItem->deliveryOrders;
 
-        $request['created_by'] = auth()->user()->id;
-        $request['company_id'] = $request->company_id;
+    $request['created_by'] = auth()->user()->id;
+    $request['company_id'] = $request->company_id;
 
-        // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and company location
-        $companyLocationId = null;
-        
-        if ($deliveryOrder) {
-            $companyLocationId = $deliveryOrder->location_id;
-            $request["delivery_order_id"] = $deliveryOrder->id;
-        } else {
-            // Get company location from loading program when no delivery order
-            $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-            $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-            $request["delivery_order_id"] = null;
-        }
+    // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and company location
+    $companyLocationId = null;
+    
+    if ($deliveryOrders->isNotEmpty()) {
+        $companyLocationId = $deliveryOrders->first()->location_id;
+        // Keep delivery_order_id for backward compatibility if column exists, using the first one
+        $request["delivery_order_id"] = $deliveryOrders->first()->id;
+    } else {
+        // Get company location from loading program when no delivery order
+        $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
+        $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+        $request["delivery_order_id"] = null;
+    }
+    
 
         if ($companyLocationId) {
             $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
@@ -136,23 +138,22 @@ class FirstWeighBridgeController extends Controller
     public function edit($id)
     {
         $data['FirstWeighbridge'] = FirstWeighbridge::with([
-            'loadingProgramItem.loadingProgram.deliveryOrder.customer',
-            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
-            'loadingProgramItem.loadingProgram.deliveryOrder.salesOrder',
-            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
-            'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
-            'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
-            'loadingProgramItem.loadingProgram.saleOrder.customer',
-            'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.item',
-            'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.brand'
-        ])->findOrFail($id);
+        'loadingProgramItem.saleOrders.customer',
+        'loadingProgramItem.saleOrders.sales_order_data.item',
+        'loadingProgramItem.saleOrders.sales_order_data.brand',
+        'loadingProgramItem.deliveryOrders.customer',
+        'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+        'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+        'loadingProgramItem.deliveryOrders.arrivalLocation',
+        'loadingProgramItem.deliveryOrders.subArrivalLocation'
+    ])->findOrFail($id);
 
-        $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
-        $data['DeliveryOrder'] = $data['FirstWeighbridge']->loadingProgramItem->loadingProgram->deliveryOrder;
-        $data['SaleOrder'] = $data['FirstWeighbridge']->loadingProgramItem->loadingProgram->saleOrder;
+    $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
+    $data['DeliveryOrders'] = $data['FirstWeighbridge']->loadingProgramItem->deliveryOrders;
+    $data['SalesOrders'] = $data['FirstWeighbridge']->loadingProgramItem->saleOrders;
 
-        return view('management.sales.first-weighbridge.edit', $data);
-    }
+    return view('management.sales.first-weighbridge.edit', $data);
+}
 
     /**
      * Update the specified resource in storage.
@@ -180,20 +181,21 @@ class FirstWeighBridgeController extends Controller
         }
 
         $firstWeighbridge = FirstWeighbridge::findOrFail($id);
-        $loadingProgramItem = LoadingProgramItem::with('loadingProgram.deliveryOrder')->findOrFail($request->loading_program_item_id);
-        $deliveryOrder = DeliveryOrder::find($loadingProgramItem->delivery_order_id);
-        $request['company_id'] = $request->company_id;
+    $loadingProgramItem = LoadingProgramItem::with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+    $deliveryOrders = $loadingProgramItem->deliveryOrders;
+    $request['company_id'] = $request->company_id;
 
-        // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and company location
-        $companyLocationId = null;
-        
-        if ($deliveryOrder) {
-            $companyLocationId = $deliveryOrder->location_id;
-        } else {
-            // Get company location from loading program when no delivery order
-            $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-            $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-        }
+    // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and company location
+    $companyLocationId = null;
+    
+    if ($deliveryOrders->isNotEmpty()) {
+        $companyLocationId = $deliveryOrders->first()->location_id;
+    } else {
+        // Get company location from loading program when no delivery order
+        $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
+        $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+    }
+    
 
         if ($companyLocationId) {
             $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
@@ -227,23 +229,22 @@ class FirstWeighBridgeController extends Controller
     public function getFirstWeighbridgeRelatedData(Request $request)
     {
         $LoadingProgramItem = LoadingProgramItem::with([
-            'loadingProgram.deliveryOrder.customer',
-            'loadingProgram.deliveryOrder.salesOrder',
-            'loadingProgram.deliveryOrder.delivery_order_data.item',
-            'loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
-            'loadingProgram.deliveryOrder.arrivalLocation',
-            'loadingProgram.deliveryOrder.subArrivalLocation',
-            'loadingProgram.saleOrder.customer',
-            'loadingProgram.saleOrder.sales_order_data.item',
-            'loadingProgram.saleOrder.sales_order_data.brand'
+            'saleOrders.customer',
+            'saleOrders.sales_order_data.item',
+            'saleOrders.sales_order_data.brand',
+            'deliveryOrders.customer',
+            'deliveryOrders.delivery_order_data.item',
+            'deliveryOrders.delivery_order_data.salesOrderData',
+            'deliveryOrders.arrivalLocation',
+            'deliveryOrders.subArrivalLocation'
         ])->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
-        $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
+        $DeliveryOrders = $LoadingProgramItem->deliveryOrders;
+        $SalesOrders = $LoadingProgramItem->saleOrders;
         $ArrivalTruckTypes = \App\Models\Master\ArrivalTruckType::where('status', 'active')->get();
             
         // Render view with the delivery order data (or sale order if no delivery order)
-        $html = view('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', compact('DeliveryOrder', 'SaleOrder', 'ArrivalTruckTypes', 'LoadingProgramItem'))->with('FirstWeighbridge', null)->render();
+        $html = view('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', compact('DeliveryOrders', 'SalesOrders', 'ArrivalTruckTypes', 'LoadingProgramItem'))->with('FirstWeighbridge', null)->render();
 
         return response()->json(['success' => true, 'html' => $html]);
     }
@@ -259,19 +260,20 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $loadingProgramItem = LoadingProgramItem::with('loadingProgram.deliveryOrder')->findOrFail($request->loading_program_item_id);
-        $deliveryOrder = $loadingProgramItem->loadingProgram->deliveryOrder;
+        $loadingProgramItem = LoadingProgramItem::with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+    $deliveryOrders = $loadingProgramItem->deliveryOrders;
+
+    // Get company location from delivery order or loading program
+    $companyLocationId = null;
     
-        // Get company location from delivery order or loading program
-        $companyLocationId = null;
-        
-        if ($deliveryOrder) {
-            $companyLocationId = $deliveryOrder->location_id;
-        } else {
-            // Get company location from loading program when no delivery order
-            $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-            $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-        }
+    if ($deliveryOrders->isNotEmpty()) {
+        $companyLocationId = $deliveryOrders->first()->location_id;
+    } else {
+        // Get company location from loading program when no delivery order
+        $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
+        $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+    }
+    
 
         if (!$companyLocationId) {
             return response()->json([

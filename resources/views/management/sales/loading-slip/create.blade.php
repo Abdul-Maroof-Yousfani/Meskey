@@ -91,60 +91,95 @@
     });
 
     function populateTicketData(data) {
-        var html = `
-            <div class="row">
-                <div class="col-xs-12 col-sm-6 col-md-3">
-                    <div class="form-group">
-                        <label>Customer: <span class="text-danger">*</span></label>
-                        <input type="text" name="customer" value="${data.customer}" class="form-control" readonly required />
+        if (!data.orders || data.orders.length === 0) {
+            $('#ticketDataContainer').html('<div class="col-12 text-center">No order data found.</div>');
+            return;
+        }
+
+        var tabsHtml = '<ul class="nav nav-tabs nav-justified w-100" id="orderTabs" role="tablist">';
+        var contentHtml = '<div class="tab-content pt-1 w-100" id="orderTabsContent">';
+
+        data.orders.forEach((order, index) => {
+            var activeClass = index === 0 ? 'active' : '';
+            var selectedAttr = index === 0 ? 'true' : 'false';
+            var tabId = `order-tab-${index}`;
+            var contentId = `order-content-${index}`;
+
+            tabsHtml += `
+                <li class="nav-item">
+                    <a class="nav-link ${activeClass}" id="${tabId}" data-toggle="tab" href="#${contentId}" role="tab" aria-controls="${contentId}" aria-selected="${selectedAttr}">
+                        ${order.type}: ${order.number}
+                    </a>
+                </li>
+            `;
+
+            var factoryOptions = order.factory_names && order.factory_names.length > 0 ?
+                order.factory_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
+            var galaOptions = order.gala_names && order.gala_names.length > 0 ?
+                order.gala_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
+
+            contentHtml += `
+                <div class="tab-pane fade show ${activeClass}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Customer:</label>
+                                <input type="text" value="${order.customer}" class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Commodity:</label>
+                                <input type="text" value="${order.commodity}" class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>SO Qty:</label>
+                                <input type="number" value="${order.so_qty}" class="form-control" readonly step="0.01" />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>DO Qty:</label>
+                                <input type="number" value="${order.do_qty}" class="form-control" readonly step="0.01" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="form-group">
+                                <label>Factory:</label>
+                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    ${factoryOptions}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="form-group">
+                                <label>Gala:</label>
+                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    ${galaOptions}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="form-group">
+                                <label>Bag Size:</label>
+                                <input type="number" value="${order.bag_size}" class="form-control" readonly step="0.01" />
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-3">
-                    <div class="form-group">
-                        <label>Commodity: <span class="text-danger">*</span></label>
-                        <input type="text" name="commodity" value="${data.commodity}" class="form-control" readonly required />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-3">
-                    <div class="form-group">
-                        <label>SO Qty: <span class="text-danger">*</span></label>
-                        <input type="number" name="so_qty" value="${data.so_qty}" class="form-control" readonly required step="0.01" />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-3">
-                    <div class="form-group">
-                        <label>DO Qty: <span class="text-danger">*</span></label>
-                        <input type="number" name="do_qty" value="${data.do_qty}" class="form-control" readonly required step="0.01" />
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-xs-12 col-sm-6 col-md-4">
-                    <div class="form-group">
-                        <label>Factory:</label>
-                        <select class="form-control select2 w-100" name="factory_display[]" id="factory_display" multiple disabled style="width: 100% !important;">
-                            ${data.factory_names && data.factory_names.length > 0 ? data.factory_names.map(name => `<option value="" selected>${name}</option>`).join('') : ''}
-                        </select>
-                        <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-4">
-                    <div class="form-group">
-                        <label>Gala:</label>
-                        <select class="form-control select2 w-100" name="gala_display[]" id="gala_display" multiple disabled style="width: 100% !important;">
-                            ${data.gala_names && data.gala_names.length > 0 ? data.gala_names.map(name => `<option value="" selected>${name}</option>`).join('') : ''}
-                        </select>
-                        <input type="hidden" name="gala" value="${data.gala_names ? data.gala_names.join(', ') : ''}" />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-4">
-                    <div class="form-group">
-                        <label>Bag Size: <span class="text-danger">*</span></label>
-                        <input type="number" name="bag_size" value="${data.bag_size}" class="form-control" readonly required step="0.01" />
-                    </div>
-                </div>
-            </div>
-            <div class="row">
+            `;
+        });
+
+        tabsHtml += '</ul>';
+        contentHtml += '</div>';
+
+        // Add common inputs and hidden inputs for main form submission
+        var commonInputsHtml = `
+            <div class="row pt-2">
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>No. of Bags: <span class="text-danger">*</span></label>
@@ -154,10 +189,7 @@
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Labour:</label>
-                        @php
-                            $is_pohanch = false; // Initial state
-                        @endphp
-                        <select name='labour_select' id='labour_select' class='form-control select2' ${data.is_pohanch ? 'disabled' : ''}>
+                        <select name='labour_select' id='labour_select' class='form-control'>
                             <option value='paid' ${!data.is_pohanch ? 'selected' : ''}>Paid</option>
                             <option value='not_paid' ${data.is_pohanch ? 'selected' : ''}>Not Paid</option>    
                         </select>
@@ -170,10 +202,18 @@
                         <input type="number" name="kilogram" id="kilogram" value="0.00" class="form-control" readonly required step="0.01" />
                     </div>
                 </div>
+                <input type="hidden" name="bag_size" value="${data.bag_size}" />
             </div>
+
+            <input type="hidden" name="customer" value="${data.customer}" />
+            <input type="hidden" name="commodity" value="${data.commodity}" />
+            <input type="hidden" name="so_qty" value="${data.so_qty}" />
+            <input type="hidden" name="do_qty" value="${data.do_qty}" />
+            <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />
+            <input type="hidden" name="gala" value="${data.gala_names ? data.gala_names.join(', ') : ''}" />
         `;
 
-        $('#ticketDataContainer').html(html);
+        $('#ticketDataContainer').html(tabsHtml + contentHtml + commonInputsHtml);
         // Initialize select2 for the new elements
         $('.select2').select2();
 

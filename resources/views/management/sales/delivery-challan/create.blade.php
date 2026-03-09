@@ -24,6 +24,15 @@
         font-weight: 600;
         font-size: 13px;
     }
+
+    .packing-select + .select2-container .select2-selection--multiple {
+        min-width: 130px !important;
+        width: 130px !important;
+    }
+
+    #salesInquiryTable td {
+        padding: 5px 10px !important;
+    }
 </style>
 
 <form action="{{ route('sales.delivery-challan.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -230,7 +239,7 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Packing</th>
+                            <th style="min-width: 130px; width: 130px;">Packing</th>
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
                             <th>Rate per Kg</th>
@@ -267,7 +276,7 @@
     salesInquiryRowIndex = 1;
 
     $(document).ready(function() {
-        $('.select2').select2();
+        $('.select2').select2({ width: '100%' });
         
         // Load tickets with accepted Dispatch QC on page load
         loadTicketsWithDispatchQc();

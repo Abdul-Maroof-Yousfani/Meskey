@@ -74,6 +74,14 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Vendor</th>
+                     <th class="bag-only">Min Weight</th>
+                     <th class="bag-only">Brands</th>
+                     <th class="bag-only">Color</th>
+                     <th class="bag-only">Cons./sq. in.</th>
+                     <th class="bag-only">Size</th>
+                     <th class="bag-only">Stitching</th>
+                     <th class="bag-only">Micron</th>
+                     <th class="bag-only">Printing Sample</th>
                      <th>Qty</th>
                      <th>Rate</th>
                      <th>Total Amount</th>
@@ -119,7 +127,7 @@
                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
             </td>
 
-            <td style="width: 20%">
+             <td style="width: 20%">
                 <select id="supplier_id_{{ $key }}" name="supplier_id[]" disabled
                     class="form-control item-select select2" data-index="{{ $key }}">
                     <option value="">Select Vendor</option>
@@ -129,6 +137,41 @@
                         </option>
                     @endforeach
                 </select>
+            </td>
+
+            <td class="bag-only">
+                <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->min_weight ?? null }}" class="form-control">
+            </td>
+            <td class="bag-only">
+                <input style="width: 100px" type="text" readonly value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}" class="form-control">
+            </td>
+            <td class="bag-only">
+                <input style="width: 100px" type="text" readonly value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}" class="form-control">
+            </td>
+            <td class="bag-only">
+                <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}" class="form-control">
+            </td>
+            <td class="bag-only">
+                <input style="width: 100px" type="text" readonly value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}" class="form-control">
+            </td>
+            <td class="bag-only">
+                <select class="form-control select2" multiple disabled style="width: 120px">
+                    @foreach(getStitchingsByIds($data?->purchase_request->stitching ?? "") as $stitching)
+                        <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td class="bag-only">
+                <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->micron ?? null }}" class="form-control">
+            </td>
+            <td class="bag-only">
+                @if (!empty($data->purchase_request->printing_sample))
+                    <small>
+                        <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
+                            View file
+                        </a>
+                    </small>
+                @endif
             </td>
 
             <td style="width: 10%">
@@ -183,6 +226,14 @@
      $('.select2').select2({
          placeholder: 'Please Select',
          width: '100%'
+     });
+
+     // ✅ Initialize visibility on load for Approval
+     $(document).ready(function() {
+         const initialCategoryId = "{{ optional($purchaseQuotation->purchase_request)->category_id ?? 0 }}";
+         if (initialCategoryId) {
+             toggleVisibility(initialCategoryId);
+         }
      });
 
      let rowIndex = 1;
@@ -312,5 +363,17 @@
 
          $('#total_' + num).val(total);
 
+     }
+
+     // ✅ Toggle visibility for Bag-specific columns
+     function toggleVisibility(categoryId) {
+         const bagCategoryIds = [11, 38]; // "Bags" category IDs are 11 and 38
+         const isBag = bagCategoryIds.includes(parseInt(categoryId));
+
+         if (isBag) {
+             $('.bag-only').show();
+         } else {
+             $('.bag-only').hide();
+         }
      }
  </script>

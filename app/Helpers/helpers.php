@@ -835,25 +835,47 @@ function delivery_order_balance($sale_order_data_id)
 
 function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_order_id = null)
 {
+    $item = $loadingSlip->loadingProgramItem;
+    $deliveryOrders = collect();
+    
+    // If a specific DO is requested, use it
+    if ($delivery_order_id) {
+        $deliveryOrders->push(DeliveryOrder::with(['delivery_order_data', 'saleSecondWeighbridge'])->find($delivery_order_id));
+    } 
+    // Otherwise, if the ticket (item) has multiple DOs, use all of them (Aggregate Balance)
+    elseif ($item && $item->deliveryOrders->isNotEmpty()) {
+        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'saleSecondWeighbridge']);
+    }
+    // Fallback to the single DO on the loading slip if it exists
+    elseif ($loadingSlip->deliveryOrder) {
+        $deliveryOrders->push($loadingSlip->deliveryOrder->loadMissing(['delivery_order_data', 'saleSecondWeighbridge']));
+    }
 
-    $overall_quantities = $loadingSlip->deliveryOrder->delivery_order_data->sum("qty");
-    $spent_quantities = $loadingSlip->deliveryOrder->saleSecondWeighbridge->sum("net_weight");
-    $remaining_quantities = $overall_quantities - $spent_quantities;
+    if ($deliveryOrders->isEmpty()) {
+        return 0;
+    }
 
-    return $remaining_quantities;
+    $overall_quantities = 0;
+    $spent_quantities = 0;
 
+    foreach ($deliveryOrders as $do) {
+        if (!$do) continue;
+        $overall_quantities += $do->delivery_order_data->sum("qty");
+        $spent_quantities += $do->saleSecondWeighbridge->sum("net_weight");
+    }
+
+    return $overall_quantities - $spent_quantities;
 }
 
 function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
 {
-
-    $delivery_order = DeliveryOrder::find($delivery_order_id);
+    $delivery_order = DeliveryOrder::with(['delivery_order_data', 'saleSecondWeighbridge'])->find($delivery_order_id);
+    if (!$delivery_order) return 0;
+    
     $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
     $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
-    $remaining_quantities = $overall_quantities - $spent_quantities;
-
-    return $remaining_quantities;
-
+    
+    return $overall_quantities - $spent_quantities;
 }
 
 
@@ -871,7 +893,11 @@ function receipt_voucher_balance($reference_id, $type = "sale_order")
             ->value('total');
     }
 
-    $balance = $total_overall_amount - $total_spent;
+    $balance = round($total_overall_amount - $total_spent, 2);
+    
+    if (abs($balance) < 0.01) {
+        $balance = 0;
+    }
 
     return $balance;
 }

@@ -21,7 +21,7 @@ class DeliveryOrder extends Model
     }
 
     public function receipt_vouchers() {
-        return $this->belongsToMany(ReceiptVoucher::class, "delivery_order_receipt_voucher", "delivery_order_id", "receipt_voucher_id")->withPivot("amount", "receipt_voucher_id");
+        return $this->belongsToMany(ReceiptVoucher::class, "delivery_order_receipt_voucher", "delivery_order_id", "receipt_voucher_id")->withPivot("amount", "receipt_voucher_id", "receipt_voucher_advance_id", "withhold_amount");
     }
 
     public function customer() {
@@ -67,7 +67,7 @@ class DeliveryOrder extends Model
     }
 
     public function saleSecondWeighbridge() {
-        return $this->hasMany(SecondWeighbridge::class, "delivery_order_id");
+        return $this->hasMany(SecondWeighbridgeItem::class, "delivery_order_id");
     }
 
     public function loadingProgram() {
@@ -78,7 +78,7 @@ class DeliveryOrder extends Model
         return $this->hasMany(LoadingSlip::class, "delivery_order_id");
     }
 
-    public function loadingPrograms() {
-        return $this->hasMany(LoadingProgram::class, "delivery_order_id");
+    public function loadingProgramItems() {
+        return $this->hasMany(LoadingProgramItem::class, "delivery_order_id");
     }
 }

@@ -105,10 +105,10 @@
                     </div>
                 </div>
 
-                <div class="col-12 mt-3 advanced">
+                <div class="col-12 mt-3 advanced" style="display: none">
                     <h6 class="header-heading-sepration">Payment Details</h6>
                 </div>
-                <div class="col-md-3 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Receipt Vouchers:</label>
                         <select name="receipt_vouchers[]" id="receipt_vouchers"
@@ -118,21 +118,21 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Advance Amount:</label>
-                        <input type="number" name="advance_amount" onchange="" id="advance_amount"
+                        <input type="number" step="any" name="advance_amount" onchange="" id="advance_amount"
                             class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-3 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Withhold Amount:</label>
-                        <input type="number" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
+                        <input type="number" step="any" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
                             id="withhold_amount" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-3 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Withhold for RV:</label>
                         <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
@@ -450,29 +450,30 @@
     function change_withhold_amount() {
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
-        if(advance <= 0 && withhold >= 0) {
-            return;
-        }
-        remaining_amount = advance - withhold;
-        receipt_vouchers = $("#receipt_vouchers");
-       
-       
-        bag_size = $("#bag_size_0").val();
-        rate = $("#rate_0").val();
-        const qtyVal = ((remaining_amount / rate)).toFixed(2);
-        $("#qty_0").val(qtyVal);
-        $("#qty_0").prop("readonly", true);
-        $("#amount_0").val(parseFloat(rate) * parseFloat(qtyVal));
-        no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-      
-        if(isNaN(no_of_bags)) {
-            $("#no_of_bags_0").val(0);
-        } else {
-            $("#no_of_bags_0").val(no_of_bags);
+        
+        // Basic calculation for first row
+        if (advance > 0 || withhold > 0) {
+            remaining_amount = advance - withhold;
+            bag_size = $("#bag_size_0").val() || 0;
+            rate = $("#rate_0").val() || 0;
+            
+            if (rate > 0) {
+                const qtyVal = ((remaining_amount / rate)).toFixed(2);
+                $("#qty_0").val(qtyVal);
+                $("#qty_0").prop("readonly", true);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(2));
+                
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+                }
+            }
         }
 
-        // Populate withhold_for_rv with only selected receipt vouchers
+        const receipt_vouchers = $("#receipt_vouchers");
         let withholdSelect = $("#withhold_for_rv");
+        let currentWithholdVal = withholdSelect.val();
+        
         withholdSelect.empty();
         withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
         
@@ -482,40 +483,26 @@
             const text = $(this).text();
             const amount = $(this).data('amount');
             
-            if (val) { // Only add if it's a valid option (not empty)
+            if (val) {
                 withholdSelect.append(
                     `<option value="${val}" data-amount="${amount}">${text}</option>`
                 );
             }
         });
 
-        if($("#withhold_amount").val() > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
-            $("#withhold_for_rv").prop("disabled", false);
-        } else {
-            $("#withhold_for_rv").prop("disabled", true);
+        // Re-select previous value if still exists
+        if (currentWithholdVal && withholdSelect.find(`option[value="${currentWithholdVal}"]`).length > 0) {
+            withholdSelect.val(currentWithholdVal);
         }
 
-        $("#withhold_for_rv").val("").trigger("change");
-        $('#withhold_for_rv').select2({
-            templateResult: function(data) {
-                if (!data.id) return data.text;
-
-                let amount = $(data.element).data('amount');
-
-                if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
-                    return null; // Hides this option
-                }
-
-                let $item = $(`
-                    <span>
-                        ${data.text}
-                        <strong style="color: green; margin-left: 6px;">(${amount})</strong>
-                    </span>
-                `);
-
-                return $item;
-            }
-        });
+        if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+            withholdSelect.prop("disabled", false);
+        } else {
+            withholdSelect.prop("disabled", true);
+            withholdSelect.val("").trigger("change");
+        }
+        
+        withholdSelect.trigger('change.select2');
     }
 
     function addRow() {
@@ -816,6 +803,7 @@
             success: function(res) {
                 // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
+                let selectedValues = select.val() || [];
                 select.empty();
                 select.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
@@ -830,7 +818,12 @@
                     );
                 });
 
-                select.select2();
+                select.val(selectedValues).trigger('change.select2');
+                add_advance_amount();
+
+                if (res.length > 0) {
+                    // $(".advanced").show();
+                }
 
                 // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
                 let withholdSelect = $("#withhold_for_rv");

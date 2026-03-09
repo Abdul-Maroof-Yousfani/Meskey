@@ -4,6 +4,7 @@ use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
 use App\Models\Category;
+use App\Models\JournalVoucher;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\Account\TransactionVoucherType;
@@ -186,6 +187,7 @@ Route::get("checking-data", function() {
     SalesInvoice::query()->delete();
     SalesReturn::query()->delete();
     ReceiptVoucher::query()->delete();
+    JournalVoucher::query()->delete();
 
 });
 
