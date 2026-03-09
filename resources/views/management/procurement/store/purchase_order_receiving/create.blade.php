@@ -116,7 +116,9 @@
 
 
 <script>
-    $(".select2").select2();
+    $(".select2").select2({
+        dropdownParent: $('#modal-sidebar')
+    });
     
 
     rowIndex = 1;
@@ -275,7 +277,8 @@
                     .empty()
                     .select2({
                         data: response.location_dropdowns,
-                        width: '100%'
+                        width: '100%',
+                        dropdownParent: $('#modal-sidebar')
                     })
                     .trigger('change');
                     
@@ -301,7 +304,8 @@
 
                 $('.select2').select2({
                     placeholder: 'Please Select',
-                    width: '100%'
+                    width: '100%',
+                    dropdownParent: $('#modal-sidebar')
                 });
             },
             error: function () {
@@ -328,4 +332,9 @@
         $('#total_' + num).val(total);
 
     }
+
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
 </script>

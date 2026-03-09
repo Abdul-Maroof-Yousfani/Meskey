@@ -398,7 +398,8 @@ $(document).ready(function () {
     });
     $('.select2').select2({
         placeholder: 'Please Select',
-        width: '100%'
+        width: '100%',
+        dropdownParent: $('#modal-sidebar')
     });
 
     rowIndex = {{ $purchaseOrderReceivingDataCount ?? 1 }};
@@ -585,7 +586,8 @@ $(document).ready(function () {
                 // Reinitialize select2
                 $('.select2').select2({
                     placeholder: 'Please Select',
-                    width: '100%'
+                    width: '100%',
+                    dropdownParent: $('#modal-sidebar')
                 });
             },
             error: function () {
@@ -610,4 +612,8 @@ $(document).ready(function () {
         $('#total_' + num).val(total);
     }
 
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
 </script>
