@@ -37,6 +37,7 @@ class UpdateProductRequest extends FormRequest
             'product_category_flags' => 'nullable|in:head,by,b2',
 
             'product_type' => 'required',
+            'bag_weight_for_purchasing' => 'required',
             'status' => 'required|in:active,inactive',
         ];
     }
