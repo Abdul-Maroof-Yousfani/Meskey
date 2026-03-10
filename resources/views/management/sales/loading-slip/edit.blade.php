@@ -227,11 +227,10 @@
         <div class="col-xs-12 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Labour</label>
-                <select name='labour_select' id='labour_select' class='form-control select2'>
+                <select name='labour' id='labour' class='form-control select2'>
                     <option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option>
-                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid' || $is_pohanch)>Not Paid</option>    
+                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option>    
                 </select>
-                <input type="hidden" name="labour" id="labour_hidden" value="{{ $is_pohanch ? 'not_paid' : $loadingSlip->labour }}">
             </div>
         </div>
         <div style="display: none;">
@@ -300,7 +299,9 @@
 
 <script>
     $(document).ready(function() {
-        $(".select2").select2();
+        $(".select2").select2({
+            dropdownParent: $('#modal-sidebar')
+        });
         // Calculate kilogram when no_of_bags changes
         $('#no_of_bags').on('input', function() {
             calculateKilogram();
@@ -312,9 +313,5 @@
             var kilogram = noOfBags * bagSize;
             $('#kilogram').val(kilogram.toFixed(2));
         }
-
-        $('#labour_select').on('change', function() {
-            $('#labour_hidden').val($(this).val());
-        });
     });
 </script>

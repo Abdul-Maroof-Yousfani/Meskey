@@ -16,4 +16,9 @@ class LogisticsItem extends Model
     {
         return $this->belongsTo(Logistics::class, 'logistics_id');
     }
+
+    public function transporter()
+    {
+        return $this->belongsTo(\App\Models\Master\Transporter::class, 'transporter_id');
+    }
 }

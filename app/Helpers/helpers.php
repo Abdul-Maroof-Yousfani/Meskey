@@ -14,6 +14,7 @@ use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\Size;
 use App\Models\Master\Supplier;
+use App\Models\Master\Transporter;
 use App\Models\Master\Color;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

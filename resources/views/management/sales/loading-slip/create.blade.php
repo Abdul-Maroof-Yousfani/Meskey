@@ -189,11 +189,10 @@
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Labour:</label>
-                        <select name='labour_select' id='labour_select' class='form-control'>
-                            <option value='paid' ${!data.is_pohanch ? 'selected' : ''}>Paid</option>
-                            <option value='not_paid' ${data.is_pohanch ? 'selected' : ''}>Not Paid</option>    
+                        <select name='labour' id='labour' class='form-control select2'>
+                            <option value='paid' ${data.labour === 'paid' ? 'selected' : ''}>Paid</option>
+                            <option value='not_paid' ${data.labour === 'not_paid' ? 'selected' : ''}>Not Paid</option>    
                         </select>
-                        <input type="hidden" name="labour" id="labour_hidden" value="${data.is_pohanch ? 'not_paid' : 'paid'}">
                     </div>
                 </div>
                 <div style="display: none;">
@@ -203,6 +202,7 @@
                     </div>
                 </div>
                 <input type="hidden" name="bag_size" value="${data.bag_size}" />
+                <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}" />
             </div>
 
             <input type="hidden" name="customer" value="${data.customer}" />
@@ -215,7 +215,9 @@
 
         $('#ticketDataContainer').html(tabsHtml + contentHtml + commonInputsHtml);
         // Initialize select2 for the new elements
-        $('.select2').select2();
+        $('.select2').select2({
+            dropdownParent: $('#modal-sidebar')
+        });
 
         // Calculate kilogram when no_of_bags changes
         $('#no_of_bags').on('input', function() {
@@ -228,10 +230,5 @@
             var kilogram = noOfBags * bagSize;
             $('#kilogram').val(kilogram.toFixed(2));
         }
-
-        // Sync hidden labour input
-        $('#labour_select').on('change', function() {
-            $('#labour_hidden').val($(this).val());
-        });
     }
 </script>

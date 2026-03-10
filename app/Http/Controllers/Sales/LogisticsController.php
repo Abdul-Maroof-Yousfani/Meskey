@@ -36,7 +36,9 @@ class LogisticsController extends Controller
                 return !$hasApprovedLogistic;
             });
 
-        return view('management.sales.logistics.create', compact('saleOrders'));
+        $transporters = \App\Models\Master\Transporter::where('status', 'active')->get();
+
+        return view('management.sales.logistics.create', compact('saleOrders', 'transporters'));
     }
 
     public function getOrderDetails($id)
@@ -90,6 +92,7 @@ class LogisticsController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
+            'type' => 'required|string',
             'sale_order_id' => 'required|exists:sales_orders,id',
             'items' => 'required|array|min:1',
             'items.*.rate_type' => 'required|string',
@@ -108,6 +111,7 @@ class LogisticsController extends Controller
             
             $logistics->fill([
                 'date' => $request->date,
+                'type' => $request->type,
                 'loading_request' => $request->loading_request,
                 'so_no' => $request->so_no,
                 'so_qty' => $request->so_qty,
@@ -125,11 +129,25 @@ class LogisticsController extends Controller
             $logistics->items()->delete();
 
             foreach ($request->items as $item) {
+                $transporterRaw = $item['transporter'];
+                $transporterId = null;
+                $transporterName = $transporterRaw;
+
+                // Check if the submitted transporter is an existing ID
+                if (is_numeric($transporterRaw)) {
+                    $existingTransporter = \App\Models\Master\Transporter::find($transporterRaw);
+                    if ($existingTransporter) {
+                        $transporterId = $existingTransporter->id;
+                        $transporterName = $existingTransporter->company_name;
+                    }
+                }
+
                 LogisticsItem::create([
                     'logistics_id' => $logistics->id,
                     'rate_type' => $item['rate_type'],
                     'rate' => $item['rate'],
-                    'transporter' => $item['transporter'],
+                    'transporter_id' => $transporterId,
+                    'transporter_name' => $transporterName,
                     'qty' => $item['qty'],
                 ]);
             }
@@ -146,13 +164,14 @@ class LogisticsController extends Controller
     {
         $search = $request->search;
         
-        $logistics = LogisticsItem::with('logistics')
+        $logistics = Logistics::with('items')
             ->when($search, function($query) use ($search) {
-                $query->where('transporter', 'like', "%$search%")
-                    ->orWhereHas('logistics', function($q) use ($search) {
-                        $q->where('so_no', 'like', "%$search%")
-                          ->orWhere('customer', 'like', "%$search%")
-                          ->orWhere('commodity', 'like', "%$search%");
+                $query->where('so_no', 'like', "%$search%")
+                    ->orWhere('customer', 'like', "%$search%")
+                    ->orWhere('commodity', 'like', "%$search%")
+                    ->orWhere('type', 'like', "%$search%")
+                    ->orWhereHas('items', function($q) use ($search) {
+                        $q->where('transporter_name', 'like', "%$search%");
                     });
             })
             ->orderBy('id', 'desc')

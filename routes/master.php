@@ -40,7 +40,8 @@ use App\Http\Controllers\Master\{
     PortController,
     WeighbridgeAmountController,
     DepartmentController,
-    RequestByController
+    RequestByController,
+    TransporterController
 };
 
 
@@ -94,6 +95,9 @@ Route::post('/get-division', [DivisionController::class, 'getList'])->name('get.
 
 Route::resource('broker', BrokerController::class);
 Route::post('/get-broker', [BrokerController::class, 'getList'])->name('get.broker');
+
+Route::resource('transporter', TransporterController::class);
+Route::post('/get-transporter', [TransporterController::class, 'getList'])->name('get.transporter');
 
 Route::resource('product-slab-type', ProductSlabTypeController::class);
 Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getList'])->name('get.product-slab-type');
