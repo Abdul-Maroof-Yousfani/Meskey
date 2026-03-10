@@ -32,7 +32,15 @@ class DeliveryOrderController extends Controller
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
         $customers = Customer::all();
         $delivery_order = DeliveryOrder::with(['delivery_order_data', 'receipt_vouchers.advances', 'withheld_receipt_voucher'])->find($id);
-        $sales_orders = SalesOrder::where('customer_id', $delivery_order->customer_id)->where('am_approval_status', 'approved')->get();
+        $sales_orders = SalesOrder::where('customer_id', $delivery_order->customer_id)
+            ->where('am_approval_status', 'approved')
+            ->get()
+            ->filter(function ($so) {
+                if ($so->transporter_used == 'yes') {
+                    return $so->logistics()->where('am_approval_status', 'approved')->exists();
+                }
+                return true;
+            });
         
         $receipt_vouchers = $delivery_order->receipt_vouchers->map(function($rv) {
             if ($rv->pivot->receipt_voucher_advance_id) {
@@ -56,7 +64,15 @@ class DeliveryOrderController extends Controller
 
     public function create()
     {
-        $sale_orders = SalesOrder::select('reference_no', 'id')->where('am_approval_status', 'approved')->get();
+        $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
+            ->where('am_approval_status', 'approved')
+            ->get()
+            ->filter(function ($so) {
+                if ($so->transporter_used == 'yes') {
+                    return $so->logistics()->where('am_approval_status', 'approved')->exists();
+                }
+                return true;
+            });
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();
@@ -298,11 +314,21 @@ class DeliveryOrderController extends Controller
         $customer_id = $request->customer_id;
 
         $saleOrders = SalesOrder::with("locations")
-            ->select('reference_no', 'id', 'pay_type_id')
+            ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->where('customer_id', $customer_id)
             ->get()
             ->filter(function ($saleOrder) {
+                if ($saleOrder->transporter_used == 'yes') {
+                    $hasApprovedLogistics = $saleOrder->logistics()
+                        ->where('am_approval_status', 'approved')
+                        ->exists();
+
+                    if (!$hasApprovedLogistics) {
+                        return false;
+                    }
+                }
+
                 foreach ($saleOrder->sales_order_data as $data) {
                     $balance = delivery_order_balance($data->id);
                     if ($balance > 0) {
@@ -512,7 +538,16 @@ class DeliveryOrderController extends Controller
     public function edit(DeliveryOrder $delivery_order)
     {
         $delivery_order->load('receipt_vouchers', 'locations');
-        $sale_orders = SalesOrder::with("locations")->select('reference_no', 'id', 'pay_type_id')->where('am_approval_status', 'approved')->get();
+        $sale_orders = SalesOrder::with("locations")
+            ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
+            ->where('am_approval_status', 'approved')
+            ->get()
+            ->filter(function ($so) {
+                if ($so->transporter_used == 'yes') {
+                    return $so->logistics()->where('am_approval_status', 'approved')->exists();
+                }
+                return true;
+            });
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();

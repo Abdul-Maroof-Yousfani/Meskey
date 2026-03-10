@@ -97,6 +97,11 @@ Route::name("sales.")->group(function () {
     Route::get('/get-dispatch-qc-ticket-data', [\App\Http\Controllers\Sales\DispatchQCController::class, 'getTicketRelatedData'])->name('getDispatchQcTicketData');
     Route::post("get-dispatch-qc", [\App\Http\Controllers\Sales\DispatchQCController::class, "getList"])->name("get.dispatch-qc");
     Route::get("/dispatch-qc/{id}/gate-out", [\App\Http\Controllers\Sales\DispatchQCController::class, "get_gate_out"])->name("get.dispatch-qc.gate-out");
+
+    Route::resource("logistics", \App\Http\Controllers\Sales\LogisticsController::class);
+    Route::post("get-logistics", [\App\Http\Controllers\Sales\LogisticsController::class, "getList"])->name("get.logistics.list");
+    Route::get("logistics/get-order-details/{id}", [\App\Http\Controllers\Sales\LogisticsController::class, "getOrderDetails"])->name("logistics.getOrderDetails");
+
     Route::resource("loading-slip", \App\Http\Controllers\Sales\LoadingSlipController::class);
     Route::post("get-loading-slip", [\App\Http\Controllers\Sales\LoadingSlipController::class, "getList"])->name("get.loading-slip");
     Route::get('/get-loading-slip-ticket-data', [\App\Http\Controllers\Sales\LoadingSlipController::class, 'getTicketRelatedData'])->name('getLoadingSlipTicketData');

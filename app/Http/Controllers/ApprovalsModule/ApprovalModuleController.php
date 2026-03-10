@@ -88,6 +88,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Sales\SalesQc',
                 'label' => 'Sales QC'
             ],
+            [
+                'value' => 'App\Models\Sales\Logistics',
+                'label' => 'Logistics'
+            ],
                 [
                 'value' => 'App\Models\Procurement\Store\PurchaseOrderReceiving',
                 'label' => 'Purchase Order Receiving'

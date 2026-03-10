@@ -653,6 +653,24 @@
                     </li> --}}
                 </ul>
             </li>
+
+            <li class="dropdown nav-item {{ request()->is('logistics*') ? 'active' : '' }}" data-menu="dropdown"><a
+                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+                    data-toggle="dropdown"><i class="ft-package"></i><span data-i18n="Apps">Logistics</span></a>
+                <ul class="dropdown-menu">
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('logistics.logistics.index') }}"
+                            onclick="loadPageContent('{{ route('logistics.logistics.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Logistics</span>
+                        </a>
+                    </li>
+                    
+                </ul>
+            </li>
+
+            
+
             {{-- @endcanAccess --}}
             @canAccess('procurement-raw-material')
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a

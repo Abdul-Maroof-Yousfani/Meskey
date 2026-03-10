@@ -91,4 +91,8 @@ class SalesOrder extends Model
     public function saleSecondWeighbridge() {
         return $this->hasMany(SecondWeighbridge::class, "sale_order_id");
     }
+
+    public function logistics() {
+        return $this->hasMany(Logistics::class, "sale_order_id");
+    }
 }
