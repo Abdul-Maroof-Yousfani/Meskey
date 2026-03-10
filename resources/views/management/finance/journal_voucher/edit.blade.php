@@ -47,12 +47,29 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label>Journal Entries</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="mb-0">Journal Entries</label>
+                                            <div class="custom-control custom-switch">
+                                                @php
+                                                    $isReceiving = false;
+                                                    foreach($journalVoucher->journalVoucherDetails as $detail) {
+                                                        if($detail->receipt_voucher_id || $detail->sales_order_id) {
+                                                            $isReceiving = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                @endphp
+                                                <input type="checkbox" class="custom-control-input" id="receivingToggle" {{ $isReceiving ? 'checked' : '' }}>
+                                                <label class="custom-control-label" for="receivingToggle">Receiving</label>
+                                            </div>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-bordered" id="journalEntriesTable">
                                                 <thead>
                                                     <tr>
                                                         <th>Account</th>
+                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }} width: 200px;">Receipt Voucher</th>
+                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }} width: 200px;">Sales order</th>
                                                         <th>Description</th>
                                                         <th>Debit</th>
                                                         <th>Credit</th>
@@ -72,6 +89,37 @@
                                                                         </option>
                                                                     @endforeach
                                                                 </select>
+                                                            </td>
+                                                            <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
+                                                                @if($index == 0 || $index > 1)
+                                                                    <select name="details[{{ $index }}][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 200px;">
+                                                                        <option value="">Select Receipt Voucher</option>
+                                                                        @foreach ($receiptVouchers as $rv)
+                                                                            <option value="{{ $rv->id }}" 
+                                                                                data-remaining-amount="{{ $rv->remaining_amount }}"
+                                                                                {{ $detail->receipt_voucher_id == $rv->id ? 'selected' : '' }}>
+                                                                                {{ $rv->unique_no }} (Rem: {{ number_format($rv->remaining_amount, 2) }})
+                                                                            </option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                @else
+                                                                    {{-- Empty for second row --}}
+                                                                @endif
+                                                            </td>
+                                                            <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
+                                                                @if($index == 1 || $index > 1)
+                                                                    <select name="details[{{ $index }}][sales_order_id]" class="form-control select2 sales-order-select" style="width: 200px;">
+                                                                        <option value="">Select Sales Order</option>
+                                                                        @foreach ($salesOrders as $so)
+                                                                            <option value="{{ $so->id }}" 
+                                                                                {{ $detail->sales_order_id == $so->id ? 'selected' : '' }}>
+                                                                                {{ $so->reference_no }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                @else
+                                                                    {{-- Empty for first row --}}
+                                                                @endif
                                                             </td>
                                                             <td>
                                                                 <input type="text" name="details[{{ $index }}][description]" class="form-control description-input" placeholder="Line description" value="{{ $detail->description }}">
@@ -97,25 +145,25 @@
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <td colspan="2" class="text-right"><strong>Total Debits:</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Debits:</strong></td>
                                                         <td><strong id="totalDebits">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="2" class="text-right"><strong>Total Credits:</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Credits:</strong></td>
                                                         <td></td>
                                                         <td><strong id="totalCredits">0.00</strong></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="2" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                                         <td><strong id="difference">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="5">
+                                                        <td colspan="7">
                                                             <button type="button" class="btn btn-sm btn-primary" id="addRow">
                                                                 <i class="ft-plus"></i> Add Row
                                                             </button>
@@ -147,8 +195,28 @@
             // Initialize select2
             $('.select2').select2();
 
+            // Toggle receiving columns
+            function toggleReceivingColumns() {
+                if ($('#receivingToggle').is(':checked')) {
+                    $('.receiving-col').show();
+                    $('#journalEntriesTable tfoot td.text-right').attr('colspan', 4);
+                    $('#addRow').closest('td').attr('colspan', 7);
+                } else {
+                    $('.receiving-col').hide();
+                    $('#journalEntriesTable tfoot td.text-right').attr('colspan', 2);
+                    $('#addRow').closest('td').attr('colspan', 5);
+                }
+            }
+
+            $('#receivingToggle').change(function () {
+                toggleReceivingColumns();
+            });
+
             // Add new row
             $('#addRow').click(function () {
+                const isReceiving = $('#receivingToggle').is(':checked');
+                const displayStyle = isReceiving ? '' : 'display: none;';
+
                 const newRow = `
                     <tr>
                         <td>
@@ -156,6 +224,22 @@
                                 <option value="">Select Account</option>
                                 @foreach ($accounts as $account)
                                     <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td class="receiving-col" style="${displayStyle}">
+                            <select name="details[${rowCount}][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 200px;">
+                                <option value="">Select Receipt Voucher</option>
+                                @foreach ($receiptVouchers as $rv)
+                                    <option value="{{ $rv->id }}" data-remaining-amount="{{ $rv->remaining_amount }}">{{ $rv->unique_no }} (Rem: {{ number_format($rv->remaining_amount, 2) }})</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td class="receiving-col" style="${displayStyle}">
+                            <select name="details[${rowCount}][sales_order_id]" class="form-control select2 sales-order-select" style="width: 200px;">
+                                <option value="">Select Sales Order</option>
+                                @foreach ($salesOrders as $so)
+                                    <option value="{{ $so->id }}">{{ $so->reference_no }}</option>
                                 @endforeach
                             </select>
                         </td>
@@ -176,10 +260,21 @@
                     </tr>
                 `;
                 $('#journalEntriesBody').append(newRow);
-                $('.select2').select2();
+                $('#journalEntriesBody tr:last .select2').select2();
                 rowCount++;
                 updateRemoveButtons();
                 calculateTotals();
+            });
+
+            // Receipt Voucher selection auto-fill
+            $(document).on('change', '.receipt-voucher-select', function () {
+                const remainingAmount = $(this).find(':selected').data('remaining-amount');
+                if (remainingAmount) {
+                    const $row = $(this).closest('tr');
+                    $row.find('.debit-input').val(parseFloat(remainingAmount).toFixed(2));
+                    $row.find('.credit-input').val('');
+                    calculateTotals();
+                }
             });
 
             // Remove row

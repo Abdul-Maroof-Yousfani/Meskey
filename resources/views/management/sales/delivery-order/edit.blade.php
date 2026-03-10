@@ -99,69 +99,91 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(); validate_expiry()"
+                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(), check_so_type(); validate_expiry()"
                             class="form-control select2">
                             <option value="">Select SO</option>
                             @foreach ($sale_orders as $sale_order)
-                                <option value="{{ $sale_order->id }}" @selected($delivery_order->so_id == $sale_order->id)>
+                                <option value="{{ $sale_order->id }}" data-type="{{ $sale_order->pay_type_id }}" @selected($delivery_order->so_id == $sale_order->id)>
                                     {{ $sale_order->reference_no }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
+                
+                <div class="col-12 mt-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Receipt Vouchers:</label>
+                        <select name="receipt_vouchers[]" id="receipt_vouchers"
+                            onchange="add_advance_amount(); change_withhold_amount()" class="form-control select2"
+                            multiple>
+                            <option value="">Select Receipt Vouchers</option>
 
-                @if ($sale_order_of_delivery_order->pay_type_id == 10)
-                    <div class="col-12 mt-3">
-                        <h6 class="header-heading-sepration">Payment Details</h6>
+                            @foreach ($receipt_vouchers as $item)
+                                @php
+                                    $isSelected = false;
+                                    if (str_starts_with($item->unified_id, 'adv_')) {
+                                        $adv_id = str_replace('adv_', '', $item->unified_id);
+                                        $isSelected = $delivery_order->receipt_vouchers->where('pivot.receipt_voucher_advance_id', $adv_id)->isNotEmpty();
+                                    } else {
+                                        $rv_id = str_replace('rv_', '', $item->unified_id);
+                                        $isSelected = $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->where('id', $rv_id)->isNotEmpty();
+                                    }
+                                @endphp
+                                <option value="{{ $item->unified_id }}"
+                                    data-amount="{{ $item->remaining_amount }}"
+                                    @selected($isSelected)>
+                                    {{ $item->unified_text }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label class="form-label">Receipt Vouchers:</label>
-                            <select name="receipt_vouchers[]" id="receipt_vouchers"
-                                onchange="add_advance_amount(); change_withhold_amount()" class="form-control select2"
-                                multiple>
+                </div>
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Advance Amount:</label>
+                        <input type="number" step="any" name="advance_amount" onchange=""
+                            value="{{ $delivery_order->advance_amount }}" id="advance_amount" class="form-control"
+                            readonly>
+                    </div>
+                </div>
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Withhold Amount:</label>
+                        <input type="number" step="any" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
+                            onkeyup="change_withhold_amount()" id="withhold_amount"
+                            class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Withhold for RV:</label>
+                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2"
+                            @disabled(!$delivery_order->receipt_vouchers->sum('pivot.withhold_amount'))>
                                 <option value="">Select Receipt Vouchers</option>
-
-                                @foreach ($receipt_vouchers as $receipt_voucher)
-                                    <option value="{{ $receipt_voucher->id }}"
-                                        data-amount="{{ $receipt_voucher->remaining_amount ?? ($receipt_voucher->withhold_amount ?? 0) }}"
-                                        @selected(in_array($receipt_voucher->id, $delivery_order->receipt_vouchers->pluck('id')->toArray()))>
-                                        {{ $receipt_voucher->unique_no }}</option>
+                                @foreach ($receipt_vouchers as $item)
+                                    @php
+                                        $pivotRow = null;
+                                        if (str_starts_with($item->unified_id, 'adv_')) {
+                                            $adv_id = str_replace('adv_', '', $item->unified_id);
+                                            $pivotRow = $delivery_order->receipt_vouchers->where('pivot.receipt_voucher_advance_id', $adv_id)->first();
+                                        } else {
+                                            $rv_id = str_replace('rv_', '', $item->unified_id);
+                                            $pivotRow = $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->where('id', $rv_id)->first();
+                                        }
+                                        $isWithheld = $pivotRow && $pivotRow->pivot->withhold_amount > 0;
+                                    @endphp
+                                    <option value="{{ $item->unified_id }}"
+                                        data-amount="{{ $item->remaining_amount }}"
+                                        @selected($isWithheld)>
+                                        {{ $item->unified_text }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label class="form-label">Advance Amount:</label>
-                            <input type="number" name="advance_amount" onchange=""
-                                value="{{ $delivery_order->advance_amount }}" id="advance_amount" class="form-control"
-                                readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label class="form-label">Withhold Amount:</label>
-                            <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                                value="0" onkeyup="change_withhold_amount()" id="withhold_amount"
-                                readonly
-                                class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label class="form-label">Withhold for RV:</label>
-                            <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2">
-                                <option value="">Select Receipt Vouchers</option>
-                                @foreach ($receipt_vouchers as $receipt_voucher)
-                                    <option value="{{ $receipt_voucher->id }}" @selected($receipt_voucher->id == $delivery_order->withhold_for_rv_id)
-                                        data-amount="{{ $receipt_voucher->remaining_amount ?? ($receipt_voucher->withhold_amount ?? 0) }}">
-                                        {{ $receipt_voucher->unique_no }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                @endif
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
@@ -412,6 +434,15 @@
         // }
     }
 
+    function check_so_type() {
+        const type = $("#sale_order").find("option:selected").data("type");
+        if (type == 10) {
+            $(".advanced").show();
+        } else {
+            $(".advanced").hide();
+        }
+    }
+
     function check_balance(el, target) {
       const balance = $(el).data("balance");
       const value = $("#" + target).val();
@@ -639,63 +670,61 @@
     }
 
     function change_withhold_amount() {
-
-
-
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
-        remaining_amount = advance - withhold;
-        receipt_vouchers = $("#receipt_vouchers");
-
-        bag_size = $("#bag_size_0").val();
-        rate = $("#rate_0").val();
-        const qtyVal = ((remaining_amount / rate)).toFixed(2);
-        $("#qty_0").val(qtyVal);
-        no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-
-
-        if (isNaN(no_of_bags)) {
-            $("#no_of_bags_0").val(0);
-        } else {
-            $("#no_of_bags_0").val(no_of_bags);
+        
+        // Basic calculation for first row
+        if (advance > 0 || withhold > 0) {
+            remaining_amount = advance - withhold;
+            bag_size = $("#bag_size_0").val() || 0;
+            rate = $("#rate_0").val() || 0;
+            
+            if (rate > 0) {
+                const qtyVal = ((remaining_amount / rate)).toFixed(2);
+                $("#qty_0").val(qtyVal);
+                $("#qty_0").prop("readonly", true);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(2));
+                
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+                }
+            }
         }
 
+        const receipt_vouchers = $("#receipt_vouchers");
+        let withholdSelect = $("#withhold_for_rv");
+        let currentWithholdVal = withholdSelect.val();
+        
+        withholdSelect.empty();
+        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        
+        // Get selected receipt vouchers and add them to withhold_for_rv
+        $("#receipt_vouchers option:selected").each(function() {
+            const val = $(this).val();
+            const text = $(this).text();
+            const amount = $(this).data('amount');
+            
+            if (val) {
+                withholdSelect.append(
+                    `<option value="${val}" data-amount="${amount}">${text}</option>`
+                );
+            }
+        });
 
-        if ($("#withhold_amount").val() > 0 && receipt_vouchers.val()) {
-            $("#withhold_for_rv").prop("disabled", false);
-        } else {
-
-            $("#withhold_for_rv").prop("disabled", true);
+        // Re-select previous value if still exists
+        if (currentWithholdVal && withholdSelect.find(`option[value="${currentWithholdVal}"]`).length > 0) {
+            withholdSelect.val(currentWithholdVal);
         }
 
-
-
-
-
-        // $("#withhold_for_rv").val("").trigger("change");
-        // $('#withhold_for_rv').select2({
-        //     templateResult: function(data) {
-
-        //         if (!data.id) return data.text;
-
-        //         let amount = $(data.element).data('amount');
-
-
-        //         if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
-        //             return null; // Hides this option
-        //         }
-
-        //         let $item = $(`
-        //             <span>
-        //                 ${data.text}
-        //                 <strong style="color: green; margin-left: 6px;">(${amount})</strong>
-        //             </span>
-        //         `);
-
-        //         return $item;
-        //     }
-        // });
-
+        if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+            withholdSelect.prop("disabled", false);
+        } else {
+            withholdSelect.prop("disabled", true);
+            withholdSelect.val("").trigger("change");
+        }
+        
+        withholdSelect.trigger('change.select2');
     }
 
     function addRow() {
@@ -1018,13 +1047,14 @@
             url: "{{ route('sales.get.delivery-order.getRvAgainstSo') }}",
             method: "GET",
             data: {
-                so_no: $("#sale_order option:selected").text(),
+                customer_id: $("#customer_id").val(),
+                sale_order_id: $("#sale_order").val()
             },
             dataType: "json",
             success: function(res) {
-                // withhold_for_rv
-
+                // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
+                let selectedValues = select.val() || [];
                 select.empty();
                 select.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
@@ -1039,27 +1069,24 @@
                     );
                 });
 
-                select.select2();
+                select.val(selectedValues).trigger('change.select2');
+                add_advance_amount();
 
+                if (res.length > 0) {
+                    // $(".advanced").show();
+                }
 
-                select = $("#withhold_for_rv");
-                select.empty();
-
-                select.append(
+                // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
+                let withholdSelect = $("#withhold_for_rv");
+                let selectedWithhold = withholdSelect.val();
+                withholdSelect.empty();
+                withholdSelect.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
                 );
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
-
-                select.select2();
-
-
+                
+                // We'll re-populate withholdSelect in change_withhold_amount() call from trigger('change.select2') above 
+                // but let's be explicit if needed.
+                change_withhold_amount();
             },
             error: function(error) {
                 // Handle errors here

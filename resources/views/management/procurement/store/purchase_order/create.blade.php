@@ -89,7 +89,7 @@
     <div class="row form-mar">
         <div class="col-md-12">
             <div style="overflow-x: auto; width: 100%;">
-                <table class="table table-bordered" id="purchaseRequestTable">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -102,14 +102,14 @@
                             <th>Tax Amount</th>
                             <th>Duty</th>
                             <th>Net Amount</th>
-                            <th>Min Weight</th>
-                            <th>Brand</th>
-                            <th>Color</th>
-                            <th>Cons./sq. in.</th>
-                            <th>Size</th>
-                            <th>Stitching</th>
-                            <th>Micron</th>
-                            <th>Printing Sample</th>
+                            <th class="bag-only">Min Weight</th>
+                            <th class="bag-only">Brand</th>
+                            <th class="bag-only">Color</th>
+                            <th class="bag-only">Cons./sq. in.</th>
+                            <th class="bag-only">Size</th>
+                            <th class="bag-only">Stitching</th>
+                            <th class="bag-only">Micron</th>
+                            <th class="bag-only">Printing Sample</th>
                             <th>Remarks</th>
                             <th>Action</th>
                         </tr>
@@ -289,6 +289,7 @@
                 console.log(response.locations_id);
                 $('#company_location_id').val(response.locations_id).trigger('change');
                 $('#purchaseOrderBody').html(html);
+                toggleVisibility(response.category_id);
                 $('.select2').select2({
                     placeholder: 'Please Select',
                     width: '100%'
@@ -323,5 +324,13 @@
         var total = subtotal + tax_amount + excise_duty;
 
         $('#total_' + num).val(total.toFixed(2));
+    }
+
+    function toggleVisibility(categoryId) {
+        if (categoryId == 11 || categoryId == 38) {
+            $('.bag-only').show();
+        } else {
+            $('.bag-only').hide();
+        }
     }
 </script>

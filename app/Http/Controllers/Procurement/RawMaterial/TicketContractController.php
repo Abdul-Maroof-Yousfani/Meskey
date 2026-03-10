@@ -134,6 +134,7 @@ class TicketContractController extends Controller
             'selected_freight' => 'nullable|exists:purchase_freights,id'
         ]);
 
+
         try {
             DB::beginTransaction();
 

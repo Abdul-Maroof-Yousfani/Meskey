@@ -92,8 +92,8 @@
                             <th>Gross Amount</th>
                             <th>Discount %</th>
                             <th>Discount Amount</th>
-                            <th>Deduction Per Piece</th>
-                            <th>Deduction</th>
+                            <th class="deduction-header">Deduction Per Piece</th>
+                            <th class="deduction-header">Deduction</th>
                             <th>Amount</th>
                             <th>Printing Samples</th>
                             <th>GST %</th>
@@ -105,7 +105,7 @@
 
                     <tbody id="billBody">
                         @foreach ($purchaseBillData as $key => $data)
-                            <tr id="row_{{ $key }}">
+                            <tr id="row_{{ $key }}" data-category-id="{{ $data->PurchaseOrderReceivingData->category_id }}">
 
                                 <td style="width: 20%">
                                     
@@ -158,19 +158,24 @@
                                         id="discount_amount_{{ $key }}" class="form-control discount_amount"
                                         step="0.01" min="0" readonly>
                                 </td>
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
-                                        id="deduction_per_piece_{{ $key }}"
-                                        value="{{ $data->deduction_per_piece }}"
-                                        class="form-control deduction_per_piece" step="0.01" min="0"
-                                        readonly>
-                                </td>
+                                @if($data->PurchaseOrderReceivingData->category_id == 38)
+                                    <td style="width: 30%" class="deduction-col">
+                                        <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
+                                            id="deduction_per_piece_{{ $key }}"
+                                            value="{{ $data->deduction_per_piece }}"
+                                            class="form-control deduction_per_piece" step="0.01" min="0"
+                                            readonly>
+                                    </td>
 
-                                <td style="width: 30%">
-                                    <input style="width: 100px" type="number" readonly name="deduction[]"
-                                        value="{{ $data->deduction }}" id="deduction_{{ $key }}"
-                                        class="form-control deduction" step="0.01" min="0" readonly>
-                                </td>
+                                    <td style="width: 30%" class="deduction-col">
+                                        <input style="width: 100px" type="number" readonly name="deduction[]"
+                                            value="{{ $data->deduction }}" id="deduction_{{ $key }}"
+                                            class="form-control deduction" step="0.01" min="0" readonly>
+                                    </td>
+                                @else
+                                    <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
+                                    <input type="hidden" name="deduction[]" value="0" class="deduction">
+                                @endif
 
                                 <td style="width: 30%">
                                     <input style="width: 100px" type="number" readonly name="net_amount[]"
@@ -247,6 +252,11 @@
 
 <script>
     $(document).ready(function() {
+        const firstRow = $('#billBody').find('tr').first();
+        const categoryId = firstRow.data('category-id');
+        if (categoryId && categoryId != 38) {
+            $('.deduction-header').hide();
+        }
 
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
@@ -282,7 +292,13 @@
                 },
                 success: function(response) {
                     $('#billBody').html(response.html);
-
+                    const firstRow = $('#billBody').find('tr').first();
+                    const categoryId = firstRow.data('category-id');
+                    if (categoryId != 38) {
+                        $('.deduction-header').hide();
+                    } else {
+                        $('.deduction-header').show();
+                    }
                 },
                 error: function() {
                     $('#purchaseRequestBody').html('<p>Error loading data.</p>');
@@ -464,7 +480,9 @@
     const tax_percent = row.find(".tax_id");
     const percent_amount = row.find(".percent_amount");
     const net_amount = row.find(".net_amount");
-    const deduction_amount = row.find(".deduction").val();
+    const deduction_input = row.find(".deduction");
+    const categoryId = row.data("category-id");
+    const deduction_amount = (categoryId == 38) ? (parseFloat(deduction_input.val()) || 0) : 0;
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;

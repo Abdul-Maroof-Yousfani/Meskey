@@ -962,6 +962,22 @@
                                         data-i18n="Extended">Truck Type</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('department')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('department.index') }}"
+                                    onclick="loadPageContent('{{ route('department.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Department</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('request-by')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('request-by.index') }}"
+                                    onclick="loadPageContent('{{ route('request-by.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Extended">Request By</span></a>
+                            </li>
+                            @endcanAccess
                             @canAccess('truck-size-range')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('truck-size-ranges.index') }}"

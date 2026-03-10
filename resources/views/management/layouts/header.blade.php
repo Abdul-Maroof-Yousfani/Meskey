@@ -61,6 +61,15 @@
         const IS_LOCAL = @json(env('IS_LOCAL', false));
         let purchaseRequestRowIndex = 1;
     </script>
+    <style>
+        .custom-switch .custom-control-label::before {
+            background-color: #e9ecef; /* Default bootstrap grey */
+        }
+        .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #007bff; /* Primary blue */
+            border-color: #007bff;
+        }
+    </style>
 </head>
 
 <body

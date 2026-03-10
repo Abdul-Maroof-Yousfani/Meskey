@@ -8,6 +8,7 @@ use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
 use App\Models\ApprovalsModule\ApprovalModule;
 use App\Models\ApprovalsModule\ApprovalModuleRole;
 use App\Models\Category;
+use App\Models\Master\Account\Account;
 use App\Models\Master\Account\GoodReceiveNote;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\CompanyLocation;
@@ -329,6 +330,7 @@ class PurchaseOrderReceivingController extends Controller
                 "dc_no" => $request->dc_no,
                 'created_by' => auth()->user()->id,
             ]);
+            
             $grnNumber = GrnNumber::create([
                 'model_id' => $PurchaseOrderReceiving->id,
                 'model_type' => 'purchase-order-receiving',
@@ -336,6 +338,7 @@ class PurchaseOrderReceivingController extends Controller
                 'unique_no' => $grn
             ]);
             foreach ($request->item_id as $index => $itemId) {
+                $product = Product::find($itemId);
                 $requestData = PurchaseOrderReceivingData::create([
                     'purchase_order_receiving_id' => $PurchaseOrderReceiving->id,
                     'category_id' => $request->category_id[$index],
@@ -346,7 +349,7 @@ class PurchaseOrderReceivingController extends Controller
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
                     'receive_weight' => $request->receive_weight[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
+                    'remarks' => $request->input('remarks.'.$index),
                 ]);
 
                 $price = ($request->qty[$index] ?? 0) * ($requestData->purchase_order_data->rate ?? 0);
@@ -374,6 +377,9 @@ class PurchaseOrderReceivingController extends Controller
                         'debit',
                         'no',
                         [
+                            'grn_no' => $grnNumber->unique_no,
+                            'purpose' => 'goods-receiving-note',
+                            'against_reference_number' => $grnNumber->unique_no,
                             'payment_against' => "Goods Received Note",
                             'remarks' => "Goods Received Note"
                         ]  
@@ -538,7 +544,7 @@ class PurchaseOrderReceivingController extends Controller
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
                     'receive_weight' => $request->receive_weight[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
+                    'remarks' => $request->input('remarks.'.$index),
                 ]);
             }
 

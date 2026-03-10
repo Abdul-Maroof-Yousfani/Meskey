@@ -11,53 +11,150 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>Customer:</label>
-                <input type="text" value="{{ $SalesQc->customer ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>Commodity:</label>
-                <input type="text" value="{{ $SalesQc->commodity ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>SO Qty:</label>
-                <input type="text" value="{{ $SalesQc->so_qty ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>DO Qty:</label>
-                <input type="text" value="{{ $SalesQc->do_qty ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
-            </div>
-        </div>
-    </div>
+    @php
+        $item = $SalesQc->loadingProgramItem;
+        $orders = [];
 
-    <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Factory:</label>
-                <input type="text" value="{{ $SalesQc->factory ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
-            </div>
+        // Handle Delivery Orders from many-to-many relationship
+        if ($item->deliveryOrders->isNotEmpty()) {
+            foreach ($item->deliveryOrders as $do) {
+                $factoryNames = [];
+                $galaNames = [];
+                if ($do->arrival_location_id) {
+                    $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+                }
+                if ($do->sub_arrival_location_id) {
+                    $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+                }
+
+                $orders[] = [
+                    'type' => 'DO',
+                    'number' => $do->reference_no,
+                    'customer' => $do->customer->name ?? '',
+                    'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'do_qty' => $do->delivery_order_data->sum('qty'),
+                    'factory_names' => $factoryNames,
+                    'gala_names' => $galaNames
+                ];
+            }
+        } 
+        // Fallback to single delivery order if exists
+        elseif ($item->loadingProgram && $item->loadingProgram->deliveryOrder) {
+            $do = $item->loadingProgram->deliveryOrder;
+            $factoryNames = [];
+            $galaNames = [];
+            if ($do->arrival_location_id) {
+                $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
+            }
+            if ($do->sub_arrival_location_id) {
+                $galaNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', explode(',', $do->sub_arrival_location_id))->pluck('name')->toArray();
+            }
+
+            $orders[] = [
+                'type' => 'DO',
+                'number' => $do->reference_no,
+                'customer' => $do->customer->name ?? '',
+                'commodity' => $do->delivery_order_data->first()->item->name ?? '',
+                'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                'do_qty' => $do->delivery_order_data->sum('qty'),
+                'factory_names' => $factoryNames,
+                'gala_names' => $galaNames
+            ];
+        }
+
+        // Handle Sale Orders if no DOs or as additional info
+        if ($item->saleOrders->isNotEmpty()) {
+            foreach ($item->saleOrders as $so) {
+                if (empty($orders)) {
+                    $orders[] = [
+                        'type' => 'SO',
+                        'number' => $so->reference_no,
+                        'customer' => $so->customer->name ?? '',
+                        'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                        'so_qty' => $so->sales_order_data->sum('qty'),
+                        'do_qty' => 0,
+                        'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
+                        'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : []
+                    ];
+                }
+            }
+        } elseif (empty($orders) && $item->loadingProgram && $item->loadingProgram->saleOrder) {
+            $so = $item->loadingProgram->saleOrder;
+            $orders[] = [
+                'type' => 'SO',
+                'number' => $so->reference_no,
+                'customer' => $so->customer->name ?? '',
+                'commodity' => $so->sales_order_data->first()->item->name ?? '',
+                'so_qty' => $so->sales_order_data->sum('qty'),
+                'do_qty' => 0,
+                'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
+                'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : []
+            ];
+        }
+    @endphp
+
+    @if(count($orders) > 0)
+        <ul class="nav nav-tabs nav-justified" id="orderTabs" role="tablist">
+            @foreach($orders as $index => $order)
+                <li class="nav-item">
+                    <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab" href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
+                        {{ $order['type'] }}: {{ $order['number'] }}
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+        <div class="tab-content pt-1" id="orderTabsContent">
+            @foreach($orders as $index => $order)
+                <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}" role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Customer:</label>
+                                <input type="text" value="{{ $order['customer'] }}" disabled class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Commodity:</label>
+                                <input type="text" value="{{ $order['commodity'] }}" disabled class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>SO Qty:</label>
+                                <input type="text" value="{{ $order['so_qty'] }}" disabled class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>DO Qty:</label>
+                                <input type="text" value="{{ $order['do_qty'] }}" disabled class="form-control" readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Factory:</label>
+                                <input type="text" value="{{ implode(', ', $order['factory_names']) }}" disabled class="form-control" readonly />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Gala:</label>
+                                <input type="text" value="{{ implode(', ', $order['gala_names']) }}" disabled class="form-control" readonly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Gala:</label>
-                <input type="text" value="{{ $SalesQc->gala ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
-            </div>
+    @else
+        <div class="row">
+            <div class="col-12 text-center">No order data found.</div>
         </div>
-    </div>
+    @endif
 
     <div class="row">
         <div class="col-xs-12 col-sm-6 col-md-6">

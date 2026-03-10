@@ -88,6 +88,15 @@
                             class="form-control">
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Transporter used:</label>
+                        <select name="transporter_used" id="transporter_used" class="form-control select2">
+                            <option value="no" @selected($sale_order->transporter_used == 'no')>No</option>
+                            <option value="yes" @selected($sale_order->transporter_used == 'yes')>Yes</option>
+                        </select>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>

@@ -70,7 +70,7 @@
      
        <div class="col-md-4">
             <div class="form-group">
-                <label>>Reference No:</label>
+                <label>Reference No:</label>
                 <input readonly type="text" id="reference_no"
                     value="{{ optional($purchaseOrderReceiving)->reference_no }}" name="reference_no"
                     class="form-control">
@@ -104,10 +104,13 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
+@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                     <th>Recieve Weight</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
+@endif
+                     @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                      <th>Min Weight</th>
                      <th>Brand</th>
                      <th>Color</th>
@@ -116,6 +119,7 @@
                      <th>Stitching</th>
                      <th>Micron</th>
                      <th>Printing Sample</th>
+                     @endif
                      {{-- <th>Rate</th>
                      <th>Total Amount</th> --}}
                      <th>Remarks</th>
@@ -175,6 +179,7 @@
         <input type="hidden" name="qty[]" value="{{ $data->qty }}">
     </td>
 
+@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
     <td style="width: 160px; min-width: 160px;">
         <input style="width: 100%;" type="number" 
                onkeyup="calc({{ $key }})"
@@ -212,7 +217,9 @@
                id="deduction_per_bag_{{ $key }}" class="form-control deduction_per_bag" 
                placeholder="Deduction Per Bag" step="0.01" min="0">
     </td>
+@endif
 
+    @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
     <td style="width: 160px; min-width: 160px;">
         <div class="loop-fields">
             <div class="form-group mb-0">
@@ -307,6 +314,7 @@
             </small>
         @endif
     </td>
+    @endif
 
     <td style="width: 260px; min-width: 260px;">
         <input style="width: 100%;" type="text" readonly 
@@ -335,11 +343,11 @@
      </div>
  </div>
  <input type="hidden" id="rowCount" value="0">
- <div class="row">
-     <div class="col-12">
-         <x-approval-status :model="$data1" />
-     </div>
- </div>
+ @if (optional($purchaseOrderReceiving->purchase_request)->category_id != 38 && $purchaseOrderReceiving->purchase_request_id)
+    <div class="approval-status-container">
+        <x-approval-status :model="$data1" />
+    </div>
+ @endif
  <div class="row bottom-button-bar">
      <div class="col-12">
          <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>

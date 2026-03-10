@@ -31,9 +31,21 @@ class DeliveryOrderController extends Controller
 
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
         $customers = Customer::all();
-        $delivery_order = DeliveryOrder::with('delivery_order_data', 'receipt_vouchers', 'withheld_receipt_voucher')->find($id);
+        $delivery_order = DeliveryOrder::with(['delivery_order_data', 'receipt_vouchers.advances', 'withheld_receipt_voucher'])->find($id);
         $sales_orders = SalesOrder::where('customer_id', $delivery_order->customer_id)->where('am_approval_status', 'approved')->get();
-        $receipt_vouchers = $delivery_order->receipt_vouchers;
+        
+        $receipt_vouchers = $delivery_order->receipt_vouchers->map(function($rv) {
+            if ($rv->pivot->receipt_voucher_advance_id) {
+                $adv = \App\Models\ReceiptVoucherAdvance::find($rv->pivot->receipt_voucher_advance_id);
+                $rv->unified_id = "adv_{$rv->pivot->receipt_voucher_advance_id}";
+                $rv->unified_text = "advance (" . ($adv->net_amount ?? '0') . ")";
+            } else {
+                $rv->unified_id = "rv_{$rv->id}";
+                $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
+            }
+            $rv->remaining_amount = $rv->pivot->amount;
+            return $rv;
+        });
         
         $sale_order_of_delivery_order = $sales_orders->filter(function($sale_order) use ($delivery_order) {
             return $delivery_order->so_id == $sale_order->id;
@@ -57,17 +69,18 @@ class DeliveryOrderController extends Controller
     {
         DB::beginTransaction();
 
-        $receipt_vouchers = ReceiptVoucher::whereIn('id', $request?->receipt_vouchers ?? [])->get();
-        // $locations = $request->locations;
+        $withhold_rv_id = null;
+        if ($request->withhold_for_rv && str_starts_with($request->withhold_for_rv, 'rv_')) {
+            $withhold_rv_id = str_replace('rv_', '', $request->withhold_for_rv);
+        }
 
-        
         try {
             $delivery_order = DeliveryOrder::create([
                 'customer_id' => $request->customer_id,
                 'so_id' => $request->sale_order_id,
                 'advance_amount' => $request->advance_amount ?? 0,
                 'withhold_amount' => $request->withhold_amount ?? 0,
-                'withhold_for_rv_id' => $request->withhold_for_rv,
+                'withhold_for_rv_id' => $withhold_rv_id,
                 'dispatch_date' => $request->dispatch_date,
                 'reference_no' => $request->reference_no,
                 'ref_no' => $request->ref_no,
@@ -91,32 +104,71 @@ class DeliveryOrderController extends Controller
             //     ]);
             // }
 
-            // Run it if user intends to apply withhold amounts
-
+            $raw_vouchers = $request->receipt_vouchers ?? [];
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            if ($salesOrder->pay_type_id == 10) {
-                $syncData  =  [];
-                foreach ($receipt_vouchers as $rv) {
-                    $last_withheld_amount = $rv->withhold_amount;
+            
+            if ($salesOrder && $salesOrder->pay_type_id == 10) {
+                foreach ($raw_vouchers as $rv_val) {
+                    if (str_starts_with($rv_val, 'adv_')) {
+                        $adv_id = str_replace('adv_', '', $rv_val);
+                        $adv = \App\Models\ReceiptVoucherAdvance::find($adv_id);
+                        if ($adv) {
+                            $spent = DB::table('delivery_order_receipt_voucher')
+                                ->where('receipt_voucher_advance_id', $adv->id)
+                                ->sum('amount');
+                            $remaining = doubleval($adv->net_amount) - doubleval($spent);
+                            
+                            $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
-                    $withhold_amount = 0;
-                    $spent_amount = $rv->delivery_orders?->sum(fn ($do) => $do->pivot->amount) ?? 0;
-                    $remaining_amount = $rv->total_amount - $spent_amount;
+                            DB::table('delivery_order_receipt_voucher')->insert([
+                                'delivery_order_id' => $delivery_order->id,
+                                'receipt_voucher_id' => $adv->receipt_voucher_id,
+                                'receipt_voucher_advance_id' => $adv->id,
+                                'amount' => $remaining - $withhold_amount,
+                                'withhold_amount' => $withhold_amount,
+                                'last_withhold_amount' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    } else {
+                        $rv_id = str_replace('rv_', '', $rv_val);
+                        $rv = ReceiptVoucher::with('items')->find($rv_id);
+                        if ($rv) {
+                            $linked_amount = $rv->items->where("reference_type", "sale_order")
+                                                      ->where("reference_id", $request->sale_order_id)
+                                                      ->sum("net_amount");
+                            
+                            $spent = DB::table('delivery_order_receipt_voucher')
+                                ->where('receipt_voucher_id', $rv->id)
+                                ->whereNull('receipt_voucher_advance_id')
+                                ->sum('amount');
+                            
+                            $jv_spent = DB::table('journal_voucher_details')
+                                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                                ->whereNull('journal_vouchers.deleted_at')
+                                ->whereNull('journal_voucher_details.deleted_at')
+                                ->where('receipt_voucher_id', $rv->id)
+                                ->sum('debit_amount');
+                            
+                            $spent += $jv_spent;
+                            
+                            $remaining = doubleval($linked_amount) - doubleval($spent);
+                            $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
-                    if ($rv->id == $request->withhold_for_rv) {
-                        $withhold_amount = $request->withhold_amount;
+                            DB::table('delivery_order_receipt_voucher')->insert([
+                                'delivery_order_id' => $delivery_order->id,
+                                'receipt_voucher_id' => $rv->id,
+                                'receipt_voucher_advance_id' => null,
+                                'amount' => $remaining - $withhold_amount,
+                                'withhold_amount' => $withhold_amount,
+                                'last_withhold_amount' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
-
-                    $syncData[$rv->id] = [
-                        'amount' => $remaining_amount - $withhold_amount,
-                        'withhold_amount' => $rv->withhold_amount,
-                        'last_withhold_amount' => $last_withheld_amount,
-                    ];
-
-                    $rv->save();
                 }
-
-                $delivery_order->receipt_vouchers()->sync($syncData);
             }
 
 
@@ -377,36 +429,68 @@ class DeliveryOrderController extends Controller
     {
         $customer_id = $request->customer_id;
         $sale_order_id = $request->sale_order_id;
-       
-        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')
-                                ->whereHas("items", function($query) use ($sale_order_id) {
-                                    $query->where("reference_type", "sale_order")
-                                            ->where("reference_id", $sale_order_id);
-                                })
-                                ->where("customer_id", $customer_id)
-                                ->select('id', 'unique_no', 'withhold_amount', 'total_amount', 'ref_bill_no')
-                                ->get()
-                                ->map(function ($receipt_voucher) {
-                                    $sum = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
-                                    $receipt_voucher->spent_amount = $sum;
-
-                                    return $receipt_voucher;
-                                });
-
         $data = [];
 
-        foreach ($receipt_vouchers as $receipt_voucher) {
-            $remaining_amount = $receipt_voucher->items->where("reference_id", $sale_order_id)->sum("net_amount") - $receipt_voucher['spent_amount'];
+        // 1. Fetch Advances for the customer
+        $advances = \App\Models\ReceiptVoucherAdvance::where('customer_id', $customer_id)
+            ->get()
+            ->map(function ($adv) {
+                // Calculate spent amount for this specific advance
+                $spent = DB::table('delivery_order_receipt_voucher')
+                    ->where('receipt_voucher_advance_id', $adv->id)
+                    ->sum('amount');
+                $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
+                return $adv;
+            })
+            ->filter(fn($adv) => $adv->remaining_amount > 0);
 
-            if ($remaining_amount <= 0) {
-                continue;
-            }
-
+        foreach ($advances as $adv) {
             $data[] = [
-                'id' => $receipt_voucher->id,
-                'text' => "{$receipt_voucher->unique_no} ($receipt_voucher->ref_bill_no)",
-                'amount' => $remaining_amount,
+                'id' => "adv_{$adv->id}",
+                'text' => "advance ({$adv->net_amount})",
+                'amount' => $adv->remaining_amount,
             ];
+        }
+
+        // 2. Fetch Regular RVs linked to the Sale Order
+        if ($sale_order_id) {
+            $receipt_vouchers = ReceiptVoucher::with(['delivery_orders', 'items'])
+                ->whereHas("items", function($query) use ($sale_order_id) {
+                    $query->where("reference_type", "sale_order")
+                          ->where("reference_id", $sale_order_id);
+                })
+                ->where("customer_id", $customer_id)
+                ->get();
+
+            foreach ($receipt_vouchers as $rv) {
+                $linked_amount = $rv->items->where("reference_type", "sale_order")
+                                          ->where("reference_id", $sale_order_id)
+                                          ->sum("net_amount");
+                
+                $spent = DB::table('delivery_order_receipt_voucher')
+                    ->where('receipt_voucher_id', $rv->id)
+                    ->whereNull('receipt_voucher_advance_id')
+                    ->sum('amount');
+                
+                $jv_spent = DB::table('journal_voucher_details')
+                    ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                    ->whereNull('journal_vouchers.deleted_at')
+                    ->whereNull('journal_voucher_details.deleted_at')
+                    ->where('receipt_voucher_id', $rv->id)
+                    ->sum('debit_amount');
+                
+                $spent += $jv_spent;
+                
+                $remaining = doubleval($linked_amount) - doubleval($spent);
+
+                if ($remaining > 0) {
+                    $data[] = [
+                        'id' => "rv_{$rv->id}",
+                        'text' => "{$rv->unique_no} ({$rv->ref_bill_no})",
+                        'amount' => $remaining,
+                    ];
+                }
+            }
         }
 
         return $data;
@@ -414,6 +498,10 @@ class DeliveryOrderController extends Controller
 
     public function destroy(DeliveryOrder $delivery_order)
     {
+
+        if($delivery_order) {
+            $delivery_order->delivery_order_data()->delete();
+        }
 
         $delivery_order->delete();
 
@@ -435,22 +523,64 @@ class DeliveryOrderController extends Controller
         })->first();
 
 
-        $receipt_vouchers = ReceiptVoucher::with('delivery_orders')
-            ->select('total_amount', 'id', 'unique_no', 'withhold_amount', 'ref_bill_no', 'customer_id')
-            ->where('customer_id', $delivery_order->customer_id)
+        // 1. Fetch Advances for the customer
+        $advancesList = \App\Models\ReceiptVoucherAdvance::where('customer_id', $delivery_order->customer_id)
             ->get()
-            ->map(function ($receipt_voucher) {
-                $spent_amount = $receipt_voucher->delivery_orders->sum(fn ($do) => $do->pivot->amount);
-                $receipt_voucher->remaining_amount = $receipt_voucher->total_amount - $spent_amount;
+            ->map(function ($adv) use ($delivery_order) {
+                $spent = DB::table('delivery_order_receipt_voucher')
+                    ->where('receipt_voucher_advance_id', $adv->id)
+                    ->where('delivery_order_id', '!=', $delivery_order->id)
+                    ->sum('amount');
+                $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
+                $adv->unified_id = "adv_{$adv->id}";
+                $adv->unified_text = "advance ({$adv->net_amount})";
+                return $adv;
+            })
+            ->filter(function ($adv) use ($delivery_order) {
+                return $adv->remaining_amount > 0 || $delivery_order->receipt_vouchers->contains('pivot.receipt_voucher_advance_id', $adv->id);
+            });
 
-                return $receipt_voucher;
-            })
-            ->filter(function ($receipt_voucher) use ($delivery_order) {
-                return $receipt_voucher->remaining_amount > 0
-                    || $delivery_order->receipt_vouchers->contains('id', $receipt_voucher->id)
-                    || $receipt_voucher->id == $delivery_order->withhold_for_rv_id;
-            })
-            ->values();
+        // 2. Fetch Regular RVs linked to the Sale Order of this DO
+        $rvsList = collect();
+        if ($delivery_order->so_id) {
+            $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
+                ->whereHas("items", function($query) use ($delivery_order) {
+                    $query->where("reference_type", "sale_order")
+                          ->where("reference_id", $delivery_order->so_id);
+                })
+                ->where("customer_id", $delivery_order->customer_id)
+                ->get()
+                ->map(function ($rv) use ($delivery_order) {
+                    $linked_amount = $rv->items->where("reference_type", "sale_order")
+                                              ->where("reference_id", $delivery_order->so_id)
+                                              ->sum("net_amount");
+                    
+                    $spent = DB::table('delivery_order_receipt_voucher')
+                        ->where('receipt_voucher_id', $rv->id)
+                        ->whereNull('receipt_voucher_advance_id')
+                        ->where('delivery_order_id', '!=', $delivery_order->id)
+                        ->sum('amount');
+                    
+                    $jv_spent = DB::table('journal_voucher_details')
+                        ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                        ->whereNull('journal_vouchers.deleted_at')
+                        ->whereNull('journal_voucher_details.deleted_at')
+                        ->where('receipt_voucher_id', $rv->id)
+                        ->sum('debit_amount');
+                    
+                    $spent += $jv_spent;
+                    
+                    $rv->remaining_amount = doubleval($linked_amount) - doubleval($spent);
+                    $rv->unified_id = "rv_{$rv->id}";
+                    $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
+                    return $rv;
+                })
+                ->filter(function ($rv) use ($delivery_order) {
+                    return $rv->remaining_amount > 0 || $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->contains('id', $rv->id);
+                });
+        }
+
+        $receipt_vouchers = $advancesList->concat($rvsList)->values();
 
 
         return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types'));
@@ -460,15 +590,18 @@ class DeliveryOrderController extends Controller
     public function update(DeliveryOrderRequest $request, DeliveryOrder $delivery_order)
     {
         DB::beginTransaction();
-        $receipt_vouchers = ReceiptVoucher::whereIn('id', $request?->receipt_vouchers ?? [])->get();
-        $locations = $request->locations;
+        $withhold_rv_id = null;
+        if ($request->withhold_for_rv && str_starts_with($request->withhold_for_rv, 'rv_')) {
+            $withhold_rv_id = str_replace('rv_', '', $request->withhold_for_rv);
+        }
 
         try {
             $delivery_order->update([
                 'customer_id' => $request->customer_id,
                 'so_id' => $request->sale_order_id,
                 'advance_amount' => $request->advance_amount ?? 0,
-                'withhold_for_rv_id' => $request->withhold_for_rv,
+                'withhold_amount' => $request->withhold_amount ?? 0,
+                'withhold_for_rv_id' => $withhold_rv_id,
                 'dispatch_date' => $request->dispatch_date,
                 'reference_no' => $request->reference_no,
                 'ref_no' => $request->ref_no,
@@ -491,28 +624,75 @@ class DeliveryOrderController extends Controller
             //     ]);
             // }
 
+            $raw_vouchers = $request->receipt_vouchers ?? [];
             $delivery_order->receipt_vouchers()->detach();
-            $syncData = [];
 
-            foreach ($receipt_vouchers as $rv) {
-                $last_withheld_amount = $rv->withhold_amount;
+            $salesOrder = SalesOrder::find($request->sale_order_id);
+            if ($salesOrder && $salesOrder->pay_type_id == 10) {
+                foreach ($raw_vouchers as $rv_val) {
+                    if (str_starts_with($rv_val, 'adv_')) {
+                        $adv_id = str_replace('adv_', '', $rv_val);
+                        $adv = \App\Models\ReceiptVoucherAdvance::find($adv_id);
+                        if ($adv) {
+                            $spent = DB::table('delivery_order_receipt_voucher')
+                                ->where('receipt_voucher_advance_id', $adv->id)
+                                ->where('delivery_order_id', '!=', $delivery_order->id)
+                                ->sum('amount');
+                            $remaining = doubleval($adv->net_amount) - doubleval($spent);
+                            
+                            $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
-                $spent_amount = $rv->delivery_orders?->filter(fn($do) => $do->pivot->delivery_order_id != $delivery_order->id)
-                                                    ?->sum(fn ($do) => $do->pivot->amount) ?? 0;
-                $remaining_amount = $rv->total_amount - $spent_amount;
+                            DB::table('delivery_order_receipt_voucher')->insert([
+                                'delivery_order_id' => $delivery_order->id,
+                                'receipt_voucher_id' => $adv->receipt_voucher_id,
+                                'receipt_voucher_advance_id' => $adv->id,
+                                'amount' => $remaining - $withhold_amount,
+                                'withhold_amount' => $withhold_amount,
+                                'last_withhold_amount' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    } else {
+                        $rv_id = str_replace('rv_', '', $rv_val);
+                        $rv = ReceiptVoucher::with('items')->find($rv_id);
+                        if ($rv) {
+                            $linked_amount = $rv->items->where("reference_type", "sale_order")
+                                                      ->where("reference_id", $request->sale_order_id)
+                                                      ->sum("net_amount");
+                            
+                            $spent = DB::table('delivery_order_receipt_voucher')
+                                ->where('receipt_voucher_id', $rv->id)
+                                ->whereNull('receipt_voucher_advance_id')
+                                ->where('delivery_order_id', '!=', $delivery_order->id)
+                                ->sum('amount');
+                            
+                            $jv_spent = DB::table('journal_voucher_details')
+                                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                                ->whereNull('journal_vouchers.deleted_at')
+                                ->whereNull('journal_voucher_details.deleted_at')
+                                ->where('receipt_voucher_id', $rv->id)
+                                ->sum('debit_amount');
+                            
+                            $spent += $jv_spent;
+                            
+                            $remaining = doubleval($linked_amount) - doubleval($spent);
+                            $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
-                $withhold_amount = ($rv->id == $request->withhold_for_rv)
-                    ? $request->withhold_amount
-                    : 0;
-
-                $syncData[$rv->id] = [
-                    'amount' => $remaining_amount - $withhold_amount,
-                    'withhold_amount' => $rv->withhold_amount,
-                    'last_withhold_amount' => $last_withheld_amount,
-                ];
+                            DB::table('delivery_order_receipt_voucher')->insert([
+                                'delivery_order_id' => $delivery_order->id,
+                                'receipt_voucher_id' => $rv->id,
+                                'receipt_voucher_advance_id' => null,
+                                'amount' => $remaining - $withhold_amount,
+                                'withhold_amount' => $withhold_amount,
+                                'last_withhold_amount' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
             }
-
-            $delivery_order->receipt_vouchers()->sync($syncData);
 
             $salesOrder = SalesOrder::find($delivery_order->so_id);
 

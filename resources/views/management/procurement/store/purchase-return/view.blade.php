@@ -24,6 +24,10 @@
         font-weight: 600;
         font-size: 13px;
     }
+
+    #purchaseBillTable .select2-container {
+        width: 100% !important;
+    }
 </style>
 
 <form action="{{ route('store.purchase-return.store') }}" method="POST" id="ajaxSubmit2" autocomplete="off">
@@ -163,7 +167,7 @@
                             <tr id="row_{{ $rowIndex }}">
                                 <td style="min-width: 200px;">
                                     <select name="item_id[]" id="item_id_{{ $rowIndex }}"
-                                        class="form-control select2" disabled>
+                                        class="form-control select2" style="width: 100%;" disabled>
                                         <option value="">Select Item</option>
                                         @foreach (\App\Models\Product::all() ?? [] as $item)
                                             <option value="{{ $item->id }}"

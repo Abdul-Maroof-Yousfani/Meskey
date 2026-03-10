@@ -23,6 +23,36 @@
                     $ticketCount = $tickets->count();
                     $rowspan = $ticketCount > 0 ? $ticketCount : 1;
                     $isFirstRow = true;
+
+                    // Support multiple SOs and DOs
+                    $soReferences = $loadingProgram->saleOrders->pluck('reference_no')->toArray();
+                    if ($loadingProgram->saleOrder && !in_array($loadingProgram->saleOrder->reference_no, $soReferences)) {
+                        array_unshift($soReferences, $loadingProgram->saleOrder->reference_no);
+                    }
+                    $soReferences = array_unique(array_filter($soReferences));
+
+                    $doReferences = $loadingProgram->deliveryOrders->pluck('reference_no')->toArray();
+                    if ($loadingProgram->deliveryOrder && !in_array($loadingProgram->deliveryOrder->reference_no, $doReferences)) {
+                        array_unshift($doReferences, $loadingProgram->deliveryOrder->reference_no);
+                    }
+                    $doReferences = array_unique(array_filter($doReferences));
+
+                    $customerNames = $loadingProgram->saleOrders->pluck('customer.name')->toArray();
+                    if ($loadingProgram->saleOrder && !in_array($loadingProgram->saleOrder->customer->name, $customerNames)) {
+                        array_unshift($customerNames, $loadingProgram->saleOrder->customer->name);
+                    }
+                    $customerNames = array_unique(array_filter($customerNames));
+
+                    $commodities = [];
+                    foreach ($loadingProgram->saleOrders as $so) {
+                        $item = $so->sales_order_data->first()?->item?->name;
+                        if ($item) $commodities[] = $item;
+                    }
+                    if ($loadingProgram->saleOrder) {
+                        $item = $loadingProgram->saleOrder->sales_order_data->first()?->item?->name;
+                        if ($item) $commodities[] = $item;
+                    }
+                    $commodities = array_unique(array_filter($commodities));
                 @endphp
 
                 @if($ticketCount > 0)
@@ -31,20 +61,24 @@
                             {{-- Parent columns with rowspan (only on first row) --}}
                             @if($isFirstRow)
                                 <td rowspan="{{ $rowspan }}" style="background-color: #e3f2fd; vertical-align: middle;">
-                                    <p class="m-0 font-weight-bold">
-                                        {{ $loadingProgram->saleOrder->reference_no ?? 'N/A' }}
-                                    </p>
+                                    @forelse($soReferences as $ref)
+                                        <div class="badge badge-secondary mb-1 d-block">{{ $ref }}</div>
+                                    @empty
+                                        N/A
+                                    @endforelse
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="background-color: #e8f5e8; vertical-align: middle;">
-                                    <p class="m-0 font-weight-bold">
-                                        {{ $loadingProgram->deliveryOrder->reference_no ?? 'N/A' }}
-                                    </p>
+                                    @forelse($doReferences as $ref)
+                                        <div class="badge badge-success mb-1 d-block">{{ $ref }}</div>
+                                    @empty
+                                        N/A
+                                    @endforelse
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    {{ $loadingProgram->saleOrder->customer->name ?? 'N/A' }}
+                                    {{ implode(', ', $customerNames) ?: 'N/A' }}
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    {{ $loadingProgram->saleOrder?->sales_order_data->first()->item->name ?? 'N/A' }}
+                                    {{ implode(', ', $commodities) ?: 'N/A' }}
                                 </td>
                             @endif
 
@@ -76,12 +110,12 @@
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
                                     <div class="d-flex gap-1">
                                         @if($loadingProgram?->loadingProgramItems()->whereDoesntHave("firstWeighbridge")->count() > 0)
-                                        <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false)"
+                                        <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false, '90%')"
                                                 class="warning p-1 text-center mr-1 position-relative" title="Edit">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
                                         @endif
-                                        <a onclick="openModal(this,'{{ route('sales.loading-program.show', $loadingProgram->id) }}','View Loading Program', true)"
+                                        <a onclick="openModal(this,'{{ route('sales.loading-program.show', $loadingProgram->id) }}','View Loading Program', true, '90%')"
                                             class="info p-1 text-center mr-1 position-relative" title="View">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
@@ -95,20 +129,24 @@
                     {{-- No tickets - show single row with N/A for ticket columns --}}
                     <tr>
                         <td style="background-color: #e3f2fd; vertical-align: middle;">
-                            <p class="m-0 font-weight-bold">
-                                {{ $loadingProgram->saleOrder->reference_no ?? 'N/A' }}
-                            </p>
+                            @forelse($soReferences as $ref)
+                                <div class="badge badge-secondary mb-1 d-block">{{ $ref }}</div>
+                            @empty
+                                N/A
+                            @endforelse
                         </td>
                         <td style="background-color: #e8f5e8; vertical-align: middle;">
-                            <p class="m-0 font-weight-bold">
-                                {{ $loadingProgram->deliveryOrder->reference_no ?? 'N/A' }}
-                            </p>
+                            @forelse($doReferences as $ref)
+                                <div class="badge badge-success mb-1 d-block">{{ $ref }}</div>
+                            @empty
+                                N/A
+                            @endforelse
                         </td>
                         <td>
-                            {{ $loadingProgram->saleOrder->customer->name ?? 'N/A' }}
+                            {{ implode(', ', $customerNames) ?: 'N/A' }}
                         </td>
                         <td>
-                            {{ $loadingProgram->saleOrder->sales_order_data->first()->item->name ?? 'N/A' }}
+                            {{ implode(', ', $commodities) ?: 'N/A' }}
                         </td>
                         <td colspan="6" class="text-center text-muted">
                             No tickets added

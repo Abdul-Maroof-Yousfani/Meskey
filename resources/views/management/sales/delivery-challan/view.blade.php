@@ -233,7 +233,7 @@
                     <tr>
                         <th>Item</th>
                         <th>Bag Type</th>
-                        <th>Packing</th>
+                        <th style="width: 250px;">Packing</th>
                         <th>No of Bags</th>
                         <th>Quantity (kg)</th>
                         <th>Rate per Kg</th>
@@ -262,7 +262,16 @@
                         </td>
                       
                         <td>
-                            <input type="text" value="{{ $data->bag_size }}" class="form-control" readonly>
+                            <select class="form-select select2 packing-select" multiple disabled>
+                                @php
+                                    $packings = explode(',', $data->bag_size);
+                                @endphp
+                                @foreach($packings as $p)
+                                    @if(trim($p))
+                                        <option value="{{ trim($p) }}" selected>{{ trim($p) }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
                         </td>
                         <td>
                             <input type="text" value="{{ $data->no_of_bags }}" class="form-control" readonly>
@@ -314,6 +323,6 @@
 
 <script>
     $(document).ready(function() {
-        $('.select2').select2();
+        $('.select2').select2({ width: '100%' });
     });
 </script>

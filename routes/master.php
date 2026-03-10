@@ -38,7 +38,9 @@ use App\Http\Controllers\Master\{
     PaymentTermController,
     PayTypeController,
     PortController,
-    WeighbridgeAmountController
+    WeighbridgeAmountController,
+    DepartmentController,
+    RequestByController
 };
 
 
@@ -163,6 +165,13 @@ Route::get('/get-cities/{country_id}', [PortController::class, 'getCities']);
 // weighbridge amounts
 Route::resource('weighbridge-amount', WeighbridgeAmountController::class);
 Route::post('/get-weighbridge-amount', [WeighbridgeAmountController::class, 'getList'])->name('get.weighbridge-amount');
+
+Route::resource('department', DepartmentController::class);
+Route::post('/get-department', [DepartmentController::class, 'getList'])->name('get.department');
+
+Route::resource('request-by', RequestByController::class);
+Route::post('/get-request-by', [RequestByController::class, 'getList'])->name('get.request-by');
+Route::get('/get-request-by-department/{department_id}', [RequestByController::class, 'getByDepartment'])->name('get.request-by-department');
 
 Route::resource("labour-rates", LabourRateController::class);
 Route::post("labour-rate/getList", [LabourRateController::class, "getList"])->name("get.labour-rate");

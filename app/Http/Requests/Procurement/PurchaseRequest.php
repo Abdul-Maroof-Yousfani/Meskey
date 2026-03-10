@@ -20,8 +20,7 @@ class PurchaseRequest extends FormRequest
             'reference_no'          => 'nullable|string|max:255',
             'description'           => 'nullable|string',
 
-            'category_id'           => 'required|array|min:1',
-            'category_id.*'         => 'required|exists:categories,id',
+            'category_id_header'    => 'required|exists:categories,id',
 
             'item_id'               => 'required|array|min:1',
             'item_id.*'             => [
@@ -29,23 +28,16 @@ class PurchaseRequest extends FormRequest
                 'exists:products,id',
                 // Custom rule to prevent duplicate items within same category
                 function ($attribute, $value, $fail) {
-                    $index = explode('.', $attribute)[1]; // Get the current index
-                    $currentCategoryId = $this->input("category_id.{$index}");
+                    $currentCategoryId = $this->input("category_id_header");
 
-                    // Get all category-item pairs
-                    $categoryItemPairs = [];
-                    foreach ($this->input('category_id', []) as $i => $categoryId) {
-                        if (isset($this->input('item_id')[$i])) {
-                            $categoryItemPairs[] = $categoryId . '-' . $this->input('item_id')[$i];
-                        }
-                    }
+                    // Get all item IDs
+                    $itemIds = $this->input('item_id', []);
+                    
+                    // Check for duplicates of the same item
+                    $occurrences = array_count_values($itemIds);
 
-                    // Check for duplicates
-                    $currentPair = $currentCategoryId . '-' . $value;
-                    $occurrences = array_count_values($categoryItemPairs);
-
-                    if (isset($occurrences[$currentPair]) && $occurrences[$currentPair] > 1) {
-                        $fail('The same item cannot be added multiple times for the same category.');
+                    if (isset($occurrences[$value]) && $occurrences[$value] > 1) {
+                        $fail('The same item cannot be added multiple times.');
                     }
                 }
             ],
@@ -53,11 +45,11 @@ class PurchaseRequest extends FormRequest
             'uom'                   => 'nullable|array',
             'uom.*'                 => 'nullable|string|max:255',
 
-            'size' => 'required',
-            'size.*' => 'required',
+            'size'                  => 'required_if:category_id_header,38',
+            'size.*'                => 'required_if:category_id_header,38',
 
-            'brands' => 'required',
-            'brands.*' => 'required',
+            'brands'                => 'required_if:category_id_header,38',
+            'brands.*'              => 'required_if:category_id_header,38',
 
             'qty'                   => 'required|array|min:1',
             'qty.*'                 => 'required|numeric|min:0.01',
@@ -68,11 +60,11 @@ class PurchaseRequest extends FormRequest
             'remarks'               => 'nullable|array',
             'remarks.*'             => 'nullable|string|max:1000',
 
-            'micron' => "required",
-            'micron.*' => "required", 
+            'micron'                => 'required_if:category_id_header,38',
+            'micron.*'              => 'required_if:category_id_header,38', 
 
-            'packing_id' => 'nullable',
-            'module_type' => 'nullable'
+            'packing_id'            => 'nullable',
+            'module_type'           => 'nullable'
 
         ];
     }
@@ -91,11 +83,8 @@ class PurchaseRequest extends FormRequest
 
             'description.string' => 'The description must be a string.',
 
-            'category_id.required' => 'At least one category is required.',
-            'category_id.array' => 'The category field must be an array.',
-            'category_id.min' => 'At least one category must be selected.',
-            'category_id.*.required' => 'Each category is required.',
-            'category_id.*.exists' => 'The selected category is invalid.',
+            'category_id_header.required' => 'The category field is required.',
+            'category_id_header.exists' => 'The selected category is invalid.',
 
             'item_id.required' => 'At least one item is required.',
             'item_id.array' => 'The item field must be an array.',
@@ -128,25 +117,16 @@ class PurchaseRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $categoryItemPairs = [];
-            $duplicates = [];
-            foreach ($this->input('category_id', []) as $i => $categoryId) {
-                if (isset($this->input('item_id')[$i])) {
-                    $pair = $categoryId . '-' . $this->input('item_id')[$i];
+            $itemIds = $this->input('item_id', []);
+            $occurrences = array_count_values($itemIds);
 
-                    if (in_array($pair, $categoryItemPairs)) {
-                        $duplicates[] = $i;
-                    } else {
-                        $categoryItemPairs[] = $pair;
-                    }
+            foreach ($itemIds as $index => $itemId) {
+                if (isset($occurrences[$itemId]) && $occurrences[$itemId] > 1) {
+                    $validator->errors()->add(
+                        "item_id.{$index}",
+                        'The same item cannot be added multiple times.'
+                    );
                 }
-            }
-
-            foreach ($duplicates as $index) {
-                $validator->errors()->add(
-                    "item_id.{$index}",
-                    'The same item cannot be added multiple times for the same category.'
-                );
             }
         });
     }

@@ -640,8 +640,19 @@ class DeliveryChallanController extends Controller
 
         $loadingSlip = \App\Models\Sales\LoadingSlip::where("loading_program_item_id", $ticket_id)->first();
 
+        if (!$loadingSlip) {
+            return response()->json(['error' => 'Loading slip not found for this ticket'], 404);
+        }
+
         $deliveryOrder = $loadingSlip->deliveryOrder;
+        if (!$deliveryOrder) {
+            return response()->json(['error' => 'Delivery order not found for this loading slip'], 404);
+        }
+
         $loadingProgram = $ticket->loadingProgram;
+        if (!$loadingProgram) {
+            return response()->json(['error' => 'Loading program not found for this ticket'], 404);
+        }
         
         // Get location names from loading program (for company locations)
         $companyLocationIds = $loadingProgram->company_locations ?? [];
@@ -669,23 +680,36 @@ class DeliveryChallanController extends Controller
         }
 
         $packing = $ticket->packing;
-        $bag_packing =  \App\Models\BagPacking::select("id")
-                                    ->where("name", $packing . " kg")
-                                    ->orWhere("name", $packing . "KG")
+        // Handle comma-separated values to find a single numeric packing for bag lookup
+        $clean_packing = is_numeric($packing) ? $packing : trim(explode(',', (string)$packing)[0]);
+
+        $bag_packing = \App\Models\BagPacking::select("id")
+                                    ->where(function($q) use ($clean_packing) {
+                                        $q->where("name", $clean_packing . " kg")
+                                          ->orWhere("name", $clean_packing . "KG");
+                                    })
                                     ->where("status", 1)
                                     ->first();
+
         $arrival_location_id = $ticket->arrival_location_id;
         $delivery_order_id = $ticket->delivery_order_id;
-        $delivery_order = DeliveryOrder::find($delivery_order_id);
-        $product = Product::find($delivery_order->delivery_order_data[0]->item_id);
-        $category_id = $product->category_id;
+        $delivery_order = \App\Models\Sales\DeliveryOrder::find($delivery_order_id);
+        
+        $category_id = null;
+        if ($delivery_order && $delivery_order->delivery_order_data->isNotEmpty()) {
+            $product = \App\Models\Product::find($delivery_order->delivery_order_data[0]->item_id);
+            $category_id = $product ? $product->category_id : null;
+        }
 
-        $labour_rate = \App\Models\Master\LabourRate::select("id", "rate")
-                                    ->where("category_id", $category_id)
-                                    ->where("factory_id", $arrival_location_id)
-                                    ->where("bag_packing_id", $bag_packing->id)
-                                    ->where("status", 1)
-                                    ->first();
+        $labour_rate = null;
+        if ($category_id && $arrival_location_id && $bag_packing) {
+            $labour_rate = \App\Models\Master\LabourRate::select("id", "rate")
+                                        ->where("category_id", $category_id)
+                                        ->where("factory_id", $arrival_location_id)
+                                        ->where("bag_packing_id", $bag_packing->id)
+                                        ->where("status", 1)
+                                        ->first();
+        }
        
         $subArrivalLocations = [];
         $subArrivalLocationIds = [];

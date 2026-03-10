@@ -63,7 +63,7 @@
              @php
                 $locations_id = optional($purchaseOrderReceiving->purchase_request)->locations->pluck("location_id")->toArray();
              @endphp
-             <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()">
+             <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()" required>
                  <option value="">Select Location</option>
                  @foreach ($location_dropdowns as $loc)
                      <option
@@ -85,13 +85,13 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Truck No:</label>
-                <input type="text" name="truck_no" value="{{ optional($purchaseOrderReceiving)->truck_no }}" id="truck_no" class="form-control" placeholder="Truck No">
+                <input type="text" name="truck_no" value="{{ optional($purchaseOrderReceiving)->truck_no }}" id="truck_no" class="form-control" placeholder="Truck No" required>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>DC No:</label>
-                <input type="text" name="dc_no" id="dc_no" value="{{ optional($purchaseOrderReceiving)->dc_no }}" class="form-control" placeholder="DC NO">
+                <input type="text" name="dc_no" id="dc_no" value="{{ optional($purchaseOrderReceiving)->dc_no }}" class="form-control" placeholder="DC NO" required>
             </div>
         </div>
        
@@ -128,10 +128,13 @@
                      <th>Item</th>
                      <th>Item UOM</th>
                      <th>Qty</th>
+@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                      <th>Receive Weight (kg)</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
+@endif
+                     @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                      <th>Min Weight</th>
                      <th>Brand</th>
                     <th>Color</th>
@@ -140,6 +143,7 @@
                     <th>Stitching</th>
                     <th>Micron</th>
                     <th>Printing Sample</th>
+                    @endif
                      {{-- <th>Rate</th>
                      <th>Total Amount</th> --}}
                      <th>Remarks</th>
@@ -194,6 +198,7 @@
                                     id="qty_{{ $key }}" class="form-control" @readonly($data->qc) step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
+@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                             <td style="width: 6%">
                                 <input style="width: 80px" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="receive_weight[]" value="{{ $data->receive_weight }}"
@@ -220,7 +225,8 @@
                                     id="deduction_per_bag{{ $key }}" class="form-control deduction_per_bag" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
-
+@endif
+                            @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                             <td style="width: 8%">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
@@ -299,6 +305,7 @@
                                     </small>
                                 @endif
                             </td>
+                            @endif
 
                             {{-- <td style="width: 20%">
                                 <input style="width: 100px" type="number" readonly onkeyup="calc({{ $key }})"
@@ -322,8 +329,12 @@
                                         @disabled($data->qc?->am_approval_status == "approved")
                                         data-id="{{ $key }}">Remove</button>
 
+                                    @if($data->category_id == 38)
                                     <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 70px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
                                     <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->am_approval_status == "approved" || !$data->qc?->exists()) style="width: 70px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                    @else
+                                    <span class="badge badge-secondary">Not a Bag</span>
+                                    @endif
                                     {{-- <button onclick="viewQc('{{ $data->id }}', '{{ $key }}')" style="width: 70px;" type="button" class="btn btn-primary btn-sm viewQc">View QC</button>
               --}}
                                 </div>
@@ -387,7 +398,8 @@ $(document).ready(function () {
     });
     $('.select2').select2({
         placeholder: 'Please Select',
-        width: '100%'
+        width: '100%',
+        dropdownParent: $('#modal-sidebar')
     });
 
     rowIndex = {{ $purchaseOrderReceivingDataCount ?? 1 }};
@@ -574,7 +586,8 @@ $(document).ready(function () {
                 // Reinitialize select2
                 $('.select2').select2({
                     placeholder: 'Please Select',
-                    width: '100%'
+                    width: '100%',
+                    dropdownParent: $('#modal-sidebar')
                 });
             },
             error: function () {
@@ -599,4 +612,8 @@ $(document).ready(function () {
         $('#total_' + num).val(total);
     }
 
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
 </script>

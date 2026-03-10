@@ -97,6 +97,9 @@
      <div class="col-md-12">
          <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
             <table class="table table-bordered" id="purchaseRequestTable">
+                @php
+                    $isBag = optional($purchaseOrder->purchase_request)->category_id == 38;
+                @endphp
                 <thead>
                     <tr>
                          <th>Category</th>
@@ -108,15 +111,18 @@
                             <th>Gross Amount</th>
                             <th>Tax</th>
                             <th>Tax Amount</th>
+
                             <th>Duty</th>
-                            <th>Min Weight</th>
-                            <th>Brand</th>
-                            <th>Color</th>
-                            <th>Cons./sq. in.</th>
-                            <th>Size</th>
-                            <th>Stitching</th>
-                            <th>Micron</th>
-                            <th>Printing Sample</th>
+                            @if($isBag)
+                                <th>Min Weight</th>
+                                <th>Brand</th>
+                                <th>Color</th>
+                                <th>Cons./sq. in.</th>
+                                <th>Size</th>
+                                <th>Stitching</th>
+                                <th>Micron</th>
+                                <th>Printing Sample</th>
+                            @endif
                             <th>Remarks</th>
                             <th>Net Amount</th>
                             <th>Action</th>
@@ -229,6 +235,7 @@
                                         min="0" readonly>
                                 </td>
 
+                                @if($isBag)
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="number" readonly name="min_weight[]"
                                         value="{{ $data->min_weight }}" id="min_weight_{{ $key }}"
@@ -295,6 +302,7 @@
                                         </div>
                                     </div>
                                 </td>
+                                @endif
                                 <td style="width: 25%">
                                     <input style="width: 100px" name="remarks[]" type="text"
                                         value="{{ $data->remarks }}" id="remark_{{ $key }}"

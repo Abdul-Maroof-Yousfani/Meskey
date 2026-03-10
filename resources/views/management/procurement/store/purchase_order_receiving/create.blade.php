@@ -47,7 +47,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Location:</label>
-                <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()">
+                <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()" required>
                     <option value="">Select Location</option>
                     @foreach (get_locations() as $value)
                         <option value="{{ $value->id }}">{{ $value->name }}</option>
@@ -58,13 +58,13 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Truck No:</label>
-                <input type="text" name="truck_no" id="truck_no" class="form-control" placeholder="Truck No">
+                <input type="text" name="truck_no" id="truck_no" class="form-control" placeholder="Truck No" required>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>DC No:</label>
-                <input type="text" name="dc_no" id="dc_no" class="form-control" placeholder="DC NO">
+                <input type="text" name="dc_no" id="dc_no" class="form-control" placeholder="DC NO" required>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -84,15 +84,15 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th>Qty</th>
-                        <th>Receive Weight (kg)</th>
-                        <th>Min Weight</th>
-                        <th>Brands</th>
-                        <th>Color</th>
-                        <th>Cons./sq. in.</th>
-                        <th>Size</th>
-                        <th>Stitching</th>
-                        <th>Micron</th>
-                        <th>Printing Sample</th>
+                        <th class="bag-only">Receive Weight (kg)</th>
+                        <th class="bag-only">Min Weight</th>
+                        <th class="bag-only">Brands</th>
+                        <th class="bag-only">Color</th>
+                        <th class="bag-only">Cons./sq. in.</th>
+                        <th class="bag-only">Size</th>
+                        <th class="bag-only">Stitching</th>
+                        <th class="bag-only">Micron</th>
+                        <th class="bag-only">Printing Sample</th>
                         {{-- <th>Rate</th>
                         <th>Amount</th> --}}
                         <th>Remarks</th>
@@ -116,7 +116,9 @@
 
 
 <script>
-    $(".select2").select2();
+    $(".select2").select2({
+        dropdownParent: $('#modal-sidebar')
+    });
     
 
     rowIndex = 1;
@@ -275,7 +277,8 @@
                     .empty()
                     .select2({
                         data: response.location_dropdowns,
-                        width: '100%'
+                        width: '100%',
+                        dropdownParent: $('#modal-sidebar')
                     })
                     .trigger('change');
                     
@@ -292,9 +295,17 @@
 
                 $('#purchaseOrderBody').html(html);
 
+                // Toggle bag-only columns
+                if (master.purchase_order && master.purchase_order.category_id == 38 || master.category_id == 38 || master.purchase_request?.category_id == 38) {
+                    $(".bag-only").show();
+                } else {
+                    $(".bag-only").hide();
+                }
+
                 $('.select2').select2({
                     placeholder: 'Please Select',
-                    width: '100%'
+                    width: '100%',
+                    dropdownParent: $('#modal-sidebar')
                 });
             },
             error: function () {
@@ -321,4 +332,9 @@
         $('#total_' + num).val(total);
 
     }
+
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
 </script>

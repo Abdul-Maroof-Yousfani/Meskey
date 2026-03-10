@@ -53,6 +53,7 @@ class PurchaseBagQC extends Model
                     "avg_price_per_kg" => $bag_qc->rejected_quantity * $rate,
                     'parent_id' => $bag_qc->grn->purchase_order_data_id
                 ]);
+                
 
                 createTransaction(
                     $bag_qc->rejected_quantity * $rate,
@@ -62,8 +63,11 @@ class PurchaseBagQC extends Model
                     'credit',
                     'no',
                     [
-                        'payment_against' => "Againt QC",
-                        'remarks' => "Items rejected are returning"
+                        'grn_no' => $bag_qc->grn->purchase_order_receiving_no,
+                        'purpose' => 'purchase-bag-qc',
+                        'against_reference_number' => $bag_qc->grn->purchase_order_receiving_no,
+                        'payment_against' => "QC",
+                        'remarks' => "Purchase Bag QC"
                     ]  
                 );
 

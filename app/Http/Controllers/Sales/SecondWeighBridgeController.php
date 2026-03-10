@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sales\SecondWeighbridge;
+use App\Models\Sales\SecondWeighbridgeItem;
 use App\Models\Sales\LoadingSlip;
 use App\Models\Sales\FirstWeighbridge;
 use App\Models\Sales\SalesOrder;
@@ -81,19 +82,23 @@ class SecondWeighBridgeController extends Controller
      */
     public function store(Request $request)
     {
-        // Get loading slip to check if it has delivery_order_id
-        $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge', 'loadingProgramItem.loadingProgram.saleOrder')
+        // Get loading slip
+        $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge', 'loadingProgramItem.deliveryOrders.delivery_order_data')
             ->find($request->loading_slip_id);
 
-        // Build validation rules - delivery_order_id required only if loading slip doesn't have one
+        if (!$loadingSlip) {
+            return response()->json(['errors' => ['loading_slip_id' => 'Loading slip not found.']], 422);
+        }
+
+        // Build validation rules
         $validationRules = [
             'loading_slip_id' => 'required|exists:loading_slips,id',
             'second_weight' => 'required|numeric',
             'remark' => 'nullable|string'
         ];
 
-        // If loading slip doesn't have delivery_order_id, it's required in the form
-        if (!$loadingSlip || !$loadingSlip->delivery_order_id) {
+        // If loading slip doesn't have delivery_order_id, it might be required in the form
+        if (!$loadingSlip->delivery_order_id) {
             $validationRules['delivery_order_id'] = 'required|exists:delivery_order,id';
         }
 
@@ -104,56 +109,69 @@ class SecondWeighBridgeController extends Controller
         }
 
         $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
-        $delivery_order = $loadingSlip->deliveryOrder;
+        if (!$firstWeighbridge) {
+            return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
+        }
+
         $first_weight = $firstWeighbridge->first_weight;
         $second_weight = $request->second_weight;
-        $net_weight = $second_weight - $first_weight;        
-        // $loaded_weight = $loadingSlip->kilogram;
-        $balance = 0;
-
-        if($delivery_order) {
-            $balance = get_second_weighbridge_balance($loadingSlip);
-        } else {
-            $balance = get_second_weighbridge_balance_by_delivery_order($request->delivery_order_id);
-        }
-        
-        $remaining_quantities = $balance - $net_weight;
-        
-
-        // if($net_weight > $loaded_weight) {
-        //     return response()->json("Net weight can not be greater than loaded weight", 422);
-        // }
+        $net_weight = $second_weight - $first_weight;
 
         if($second_weight < $first_weight) {
             return response()->json("Second Weight can not be less than First Weight", 422);
         }
 
-
-        if($remaining_quantities < 0) {
-            return response()->json("Your total net weight balance is: " . $balance, 422);
-        }
-
-
-        if (!$firstWeighbridge) {
-            return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
+        // Get aggregate balance for all DOs on the ticket
+        $balance = get_second_weighbridge_balance($loadingSlip);
+        
+        if($net_weight > $balance) {
+            return response()->json("Your total remaining net weight balance for all associated DOs on this ticket is: " . number_format($balance, 2), 422);
         }
 
         // If loading slip didn't have delivery_order_id, update it now
         if (!$loadingSlip->delivery_order_id && $request->delivery_order_id) {
             $loadingSlip->update(['delivery_order_id' => $request->delivery_order_id]);
-            // update sales qc, frst weighbridge, of that lloading slip, you need to update delivery_order_id
-            $loadingSlip->loadingProgramItem->salesQc->update(['delivery_order_id' => $request->delivery_order_id]);
-            $loadingSlip->loadingProgramItem->firstWeighbridge->update(['delivery_order_id' => $request->delivery_order_id]);
+            if ($loadingSlip->loadingProgramItem->salesQc) {
+                $loadingSlip->loadingProgramItem->salesQc->update(['delivery_order_id' => $request->delivery_order_id]);
+            }
+            if ($loadingSlip->loadingProgramItem->firstWeighbridge) {
+                $loadingSlip->loadingProgramItem->firstWeighbridge->update(['delivery_order_id' => $request->delivery_order_id]);
+            }
         }
-        
 
-        $request['created_by'] = auth()->user()->id;
-        $request['company_id'] = $request->company_id;
-        $request['first_weight'] = $firstWeighbridge->first_weight;
-        $request["delivery_order_id"] = $delivery_order ? $delivery_order->id : $request->delivery_order_id;
-        $request['net_weight'] = $request->second_weight - $firstWeighbridge->first_weight;
+        $requestData = $request->all();
+        $requestData['created_by'] = auth()->user()->id;
+        $requestData['first_weight'] = $first_weight;
+        $requestData['net_weight'] = $net_weight;
+        $requestData['balance_kg'] = $balance - $net_weight;
+        $requestData['delivery_order_id'] = $loadingSlip->delivery_order_id ?: $request->delivery_order_id;
 
-        $secondWeighbridge = SecondWeighbridge::create($request->all());
+        $secondWeighbridge = SecondWeighbridge::create($requestData);
+
+        // FIFO Deduction logic
+        $remainingWeight = $net_weight;
+        $item = $loadingSlip->loadingProgramItem;
+        $deliveryOrders = collect();
+        if ($item && $item->deliveryOrders->isNotEmpty()) {
+            $deliveryOrders = $item->deliveryOrders->sortBy('id');
+        } elseif ($loadingSlip->deliveryOrder) {
+            $deliveryOrders->push($loadingSlip->deliveryOrder);
+        }
+
+        foreach ($deliveryOrders as $do) {
+            if ($remainingWeight <= 0) break;
+            
+            $doBalance = get_second_weighbridge_balance_by_delivery_order($do->id);
+            if ($doBalance > 0) {
+                $deduct = min($doBalance, $remainingWeight);
+                SecondWeighbridgeItem::create([
+                    'second_weighbridge_id' => $secondWeighbridge->id,
+                    'delivery_order_id' => $do->id,
+                    'net_weight' => $deduct
+                ]);
+                $remainingWeight -= $deduct;
+            }
+        }
 
         return response()->json(['success' => 'Second Weighbridge created successfully.', 'data' => $secondWeighbridge], 201);
     }
@@ -165,9 +183,13 @@ class SecondWeighBridgeController extends Controller
     {
         $authUser = auth()->user();
         $data['SecondWeighbridge'] = SecondWeighbridge::with([
-            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
-            'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
-            'loadingSlip.loadingProgramItem.loadingProgram.saleOrder'
+            'loadingSlip.loadingProgramItem.deliveryOrders.customer',
+            'loadingSlip.loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingSlip.loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingSlip.loadingProgramItem.deliveryOrders.arrivalLocation',
+            'loadingSlip.loadingProgramItem.deliveryOrders.subArrivalLocation',
+            'loadingSlip.loadingProgramItem.saleOrders.customer',
+            'loadingSlip.loadingProgramItem.saleOrders.sales_order_data.item',
         ])->findOrFail($id);
         $data['LoadingSlips'] = LoadingSlip::where(function($q) use ($data) {
                 $q->whereDoesntHave('secondWeighbridge')
@@ -177,11 +199,13 @@ class SecondWeighBridgeController extends Controller
             })
             ->orWhere('id', $data['SecondWeighbridge']->loading_slip_id)
             ->with([
-                'loadingProgramItem.loadingProgram.deliveryOrder.customer',
-                'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
-                'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
-                'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
-                'loadingProgramItem.loadingProgram.saleOrder'
+                'loadingProgramItem.deliveryOrders.customer',
+                'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+                'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+                'loadingProgramItem.deliveryOrders.arrivalLocation',
+                'loadingProgramItem.deliveryOrders.subArrivalLocation',
+                'loadingProgramItem.saleOrders.customer',
+                'loadingProgramItem.saleOrders.sales_order_data.item',
             ])
             ->get();
 
@@ -209,19 +233,24 @@ class SecondWeighBridgeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Get loading slip to check if it has delivery_order_id
+        $secondWeighbridge = SecondWeighbridge::findOrFail($id);
+
+        // Get loading slip
         $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge')
             ->find($request->loading_slip_id);
 
-        // Build validation rules - delivery_order_id required only if loading slip doesn't have one
+        if (!$loadingSlip) {
+            return response()->json(['errors' => ['loading_slip_id' => 'Loading slip not found.']], 422);
+        }
+
+        // Build validation rules
         $validationRules = [
             'loading_slip_id' => 'required|exists:loading_slips,id',
             'second_weight' => 'required|numeric',
             'remark' => 'nullable|string'
         ];
 
-        // If loading slip doesn't have delivery_order_id, it's required in the form
-        if (!$loadingSlip || !$loadingSlip->delivery_order_id) {
+        if (!$loadingSlip->delivery_order_id) {
             $validationRules['delivery_order_id'] = 'required|exists:delivery_order,id';
         }
 
@@ -231,12 +260,25 @@ class SecondWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $secondWeighbridge = SecondWeighbridge::findOrFail($id);
-
         $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
-
         if (!$firstWeighbridge) {
             return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
+        }
+
+        $first_weight = $firstWeighbridge->first_weight;
+        $second_weight = $request->second_weight;
+        $net_weight = $second_weight - $first_weight;
+
+        if($second_weight < $first_weight) {
+            return response()->json("Second Weight can not be less than First Weight", 422);
+        }
+
+        // Calculate available balance (add current record's weight back to get true remaining)
+        $current_balance = get_second_weighbridge_balance($loadingSlip);
+        $available_balance = $current_balance + $secondWeighbridge->net_weight;
+
+        if($net_weight > $available_balance) {
+            return response()->json("Your total remaining net weight balance for all associated DOs on this ticket is: " . number_format($available_balance, 2), 422);
         }
 
         // If loading slip didn't have delivery_order_id, update it now
@@ -244,11 +286,38 @@ class SecondWeighBridgeController extends Controller
             $loadingSlip->update(['delivery_order_id' => $request->delivery_order_id]);
         }
 
-        $request['company_id'] = $request->company_id;
-        $request['first_weight'] = $firstWeighbridge->first_weight;
-        $request['net_weight'] = $request->second_weight - $firstWeighbridge->first_weight;
+        $updateData = $request->all();
+        $updateData['first_weight'] = $first_weight;
+        $updateData['net_weight'] = $net_weight;
+        $updateData['balance_kg'] = $available_balance - $net_weight;
 
-        $secondWeighbridge->update($request->all());
+        $secondWeighbridge->update($updateData);
+
+        // Update FIFO Deductions
+        $secondWeighbridge->items()->delete();
+        $remainingWeight = $net_weight;
+        $item = $loadingSlip->loadingProgramItem;
+        $deliveryOrders = collect();
+        if ($item && $item->deliveryOrders->isNotEmpty()) {
+            $deliveryOrders = $item->deliveryOrders->sortBy('id');
+        } elseif ($loadingSlip->deliveryOrder) {
+            $deliveryOrders->push($loadingSlip->deliveryOrder);
+        }
+
+        foreach ($deliveryOrders as $do) {
+            if ($remainingWeight <= 0) break;
+            
+            $doBalance = get_second_weighbridge_balance_by_delivery_order($do->id);
+            if ($doBalance > 0) {
+                $deduct = min($doBalance, $remainingWeight);
+                SecondWeighbridgeItem::create([
+                    'second_weighbridge_id' => $secondWeighbridge->id,
+                    'delivery_order_id' => $do->id,
+                    'net_weight' => $deduct
+                ]);
+                $remainingWeight -= $deduct;
+            }
+        }
 
         return response()->json(['success' => 'Second Weighbridge updated successfully.', 'data' => $secondWeighbridge], 200);
     }
@@ -267,13 +336,17 @@ class SecondWeighBridgeController extends Controller
     {
         $LoadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
-            'loadingProgramItem.loadingProgram.deliveryOrder.salesOrder',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.salesOrderData',
             'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
             'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
             'loadingProgramItem.loadingProgram.saleOrder.customer',
             'loadingProgramItem.loadingProgram.saleOrder.sales_order_data.item',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
             'loadingProgramItem.firstWeighbridge'
         ])->findOrFail($request->loading_slip_id);
 

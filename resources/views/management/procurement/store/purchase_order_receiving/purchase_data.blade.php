@@ -65,16 +65,16 @@
         </div>
     </td>
 
-    <td style="width: 160px; min-width: 160px;">
+    <td style="width: 160px; min-width: 160px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="number" style="width: 100%;" name="receive_weight[]" id="receive_weight_{{ $key }}"
-                    class="form-control" step="0.01" min="0" value="" placeholder="Receive Weight" required>
+                    class="form-control" step="0.01" min="0" value="" placeholder="Receive Weight">
             </div>
         </div>
     </td>
 
-    <td style="width: 140px; min-width: 140px;">
+    <td style="width: 140px; min-width: 140px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="number" style="width: 100%;" name="min_weight[]" id="min_weight_{{ $key }}"
@@ -83,7 +83,7 @@
         </div>
     </td>
 
-    <td style="width: 180px; min-width: 180px;">
+    <td style="width: 180px; min-width: 180px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="brand[]" id="brand_{{ $key }}"
@@ -92,7 +92,7 @@
         </div>
     </td>
 
-    <td style="width: 160px; min-width: 160px;">
+    <td style="width: 160px; min-width: 160px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="color[]" id="color_{{ $key }}"
@@ -101,7 +101,7 @@
         </div>
     </td>
 
-    <td style="width: 170px; min-width: 170px;">
+    <td style="width: 170px; min-width: 170px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="construction_per_square_inch[]"
@@ -111,7 +111,7 @@
         </div>
     </td>
 
-    <td style="width: 140px; min-width: 140px;">
+    <td style="width: 140px; min-width: 140px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="size[]" id="size_{{ $key }}"
@@ -120,7 +120,7 @@
         </div>
     </td>
 
-    <td style="width: 220px; min-width: 220px;">
+    <td style="width: 220px; min-width: 220px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <select class="form-control select2" multiple disabled>
@@ -134,7 +134,7 @@
         </div>
     </td>
 
-    <td style="width: 140px; min-width: 140px;">
+    <td style="width: 140px; min-width: 140px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="micron[]" id="micron_{{ $key }}"
@@ -143,7 +143,7 @@
         </div>
     </td>
 
-    <td style="width: 220px; min-width: 220px;">
+    <td style="width: 220px; min-width: 220px;" class="bag-only">
         <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled
             class="form-control" accept="image/*,application/pdf">
         @if (!empty($data->printing_sample))

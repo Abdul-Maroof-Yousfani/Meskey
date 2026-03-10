@@ -81,6 +81,12 @@
                         <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Transporter used:</label>
+                        <input type="text" name="transporter_used" id="transporter_used" value="{{ ucfirst($sale_order->transporter_used) }}" class="form-control" readonly>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>

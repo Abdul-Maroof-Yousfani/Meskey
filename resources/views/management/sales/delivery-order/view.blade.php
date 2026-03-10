@@ -114,10 +114,9 @@
                             <select name="receipt_vouchers[]" id="receipt_vouchers" class="form-control select2" disabled
                                 multiple>
                                 <option value="">Select Receipt Vouchers</option>
-                                @foreach ($receipt_vouchers as $receipt_voucher)
-                                    <option value="{{ $receipt_voucher->id }}"
-                                        @selected(in_array($receipt_voucher->id, $delivery_order->receipt_vouchers->pluck('id')->toArray()))>
-                                        {{ $receipt_voucher->unique_no }}</option>
+                                @foreach ($receipt_vouchers as $item)
+                                    <option value="{{ $item->unified_id }}" selected>
+                                        {{ $item->unified_text }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -125,14 +124,14 @@
                     <div class="col-md-3 advanced">
                         <div class="form-group">
                             <label class="form-label">Advance Amount:</label>
-                            <input type="number" name="advance_amount" id="advance_amount" class="form-control"
+                            <input type="number" step="any" name="advance_amount" id="advance_amount" class="form-control"
                                 value="{{ $delivery_order->advance_amount }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-3 advanced">
                         <div class="form-group">
                             <label class="form-label">Withhold Amount:</label>
-                            <input type="number" name="withhold_amount" id="withhold_amount" class="form-control"
+                            <input type="number" step="any" name="withhold_amount" id="withhold_amount" class="form-control"
                                 value="{{ $delivery_order->withhold_amount }}" readonly>
                         </div>
                     </div>
@@ -141,9 +140,9 @@
                             <label class="form-label">Withhold for RV:</label>
                             <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
                                 <option value="">Select Receipt Voucher</option>
-                                @foreach ($receipt_vouchers as $receipt_voucher)
-                                    <option value="{{ $receipt_voucher->id }}" @selected($receipt_voucher->id == $delivery_order->withhold_for_rv_id)>
-                                        {{ $receipt_voucher->unique_no }}</option>
+                                @foreach ($receipt_vouchers as $item)
+                                    <option value="{{ $item->unified_id }}" @selected($item->pivot->withhold_amount > 0)>
+                                        {{ $item->unified_text }}</option>
                                 @endforeach
                             </select>
                         </div>

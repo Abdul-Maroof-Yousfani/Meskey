@@ -26,7 +26,7 @@ class ReceiptVoucherRequest extends FormRequest
             'remarks' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.reference_id' => ['required', 'integer'],
-            'items.*.reference_type' => ['required', 'in:sale_order,sales_invoice'],
+            'items.*.reference_type' => ['required', 'in:sale_order,sales_invoice,advance'],
             'items.*.amount' => ['nullable', 'numeric'],
             'items.*.tax_id' => ['nullable', 'integer', 'exists:taxes,id'],
             'items.*.tax_amount' => ['nullable', 'numeric'],

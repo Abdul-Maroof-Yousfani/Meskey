@@ -9,7 +9,7 @@
             <th class="col-sm-3">PO Receiving No </th>
             <th class="col-sm-3">Purchase Request No</th>
             <th class="col-sm-3">Purchase Order No</th>
-            <th class="col-sm-3">DC No</th>
+            <th class="col-sm-1">DC No</th>
             <th class="col-sm-3">Category- item</th>
             <th class="col-sm-3">Supplier</th>
             <th class="col-sm-1">Qty</th>
@@ -17,11 +17,9 @@
             <th class="col-sm-1">Total Amount</th>
             <th class="col-sm-1">QC</th>
             <th class="col-sm-1">QC Status</th>
-            <th class="col-sm-1" style="display: none;">Item Status</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
-    <tbody>
     <tbody>
         {{-- @php dd($GroupedPurchaseOrderReceiving); @endphp --}}
         @if (count($GroupedPurchaseOrderReceiving) != 0)
@@ -46,10 +44,27 @@
                             {{-- Purchase Order No --}}
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
+                                    class="text-center"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
+                                    @if($supplierRow['data']->category_id != 38)
+                                        @php
+                                            $badgeClass = match (strtolower($approvalStatus)) {
+                                                'approved' => 'badge-success',
+                                                'rejected' => 'badge-danger',
+                                                'pending' => 'badge-warning',
+                                                'returned' => 'badge-info',
+                                                default => 'badge-secondary',
+                                            };
+                                        @endphp
+                                        <div class="mt-1">
+                                            <span class="badge {{ $badgeClass }}" style="font-size: 10px; padding: 2px 5px;">
+                                                {{ $approvalStatus }}
+                                            </span>
+                                        </div>
+                                    @endif
                                 </td>
                             @endif
 
@@ -117,31 +132,35 @@
 
                             <td>
                                 @if($requestGroup['created_by_id'] == auth()->user()->id || $requestGroup["canApprove"])
-                                    @if($itemGroup["qc_status"] != 'pending' && $itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
-                                        <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
-                                    @elseif($itemGroup["qc_status"] != "approved")
-                                        <span
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            title="testing"
-                                        >
-                                            <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')"  style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
-                                        </span>
-                                    @else
-                                        <span
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            title="QC has been created and approved"
-                                        >
-                                            <button
-                                                style="width: 100px;"
-                                                type="button"
-                                                class="btn btn-warning btn-sm createQc"
-                                                disabled
+                                    @if($supplierRow['data']->category_id == 38)
+                                        @if($itemGroup["qc_status"] != 'pending' && $itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
+                                            <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                        @elseif($itemGroup["qc_status"] != "approved")
+                                            <span
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title="testing"
                                             >
-                                                Edit QC
-                                            </button>
-                                        </span>
+                                                <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')"  style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                            </span>
+                                        @else
+                                            <span
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title="QC has been created and approved"
+                                            >
+                                                <button
+                                                    style="width: 100px;"
+                                                    type="button"
+                                                    class="btn btn-warning btn-sm createQc"
+                                                    disabled
+                                                >
+                                                    Edit QC
+                                                </button>
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="badge badge-secondary">Not a bag</span>
                                     @endif
                                 @else
                                     <button style="width: 100px;" type="button" class="btn btn-secondary" disabled>Edit QC</button>
@@ -158,23 +177,26 @@
                                             default => 'badge-secondary',
                                         };
                                     @endphp
-                                    @if($itemGroup["qc_status"] == 'pending')
-                                        <span class="badge badge-warning">
-                                            Pending
-                                        </span>
-                                    @elseif($itemGroup["qc_status"] == 'approved')
-                                        <span class="badge badge-success">
-                                            Approved
-                                        </span>
-
-                                    @elseif($itemGroup["qc_status"] == 'rejected')
-                                        <span class="badge badge-success">
-                                            Approved
-                                        </span>
+                                    @if($supplierRow['data']->category_id == 38)
+                                        @if($itemGroup["qc_status"] == 'pending')
+                                            <span class="badge badge-warning">
+                                                Pending
+                                            </span>
+                                        @elseif($itemGroup["qc_status"] == 'approved')
+                                            <span class="badge badge-success">
+                                                Approved
+                                            </span>
+                                        @elseif($itemGroup["qc_status"] == 'rejected')
+                                            <span class="badge badge-success">
+                                                Approved
+                                            </span>
+                                        @else
+                                            <span class="badge badge-info">
+                                                Not Created
+                                            </span>
+                                        @endif
                                     @else
-                                        <span class="badge badge-info">
-                                            Not Created
-                                        </span>
+                                        <span class="badge badge-secondary">Not a bag</span>
                                     @endif
                                 </p>
                             </td>
@@ -187,22 +209,7 @@
                                 </p>
                             </td> --}}
 
-                            {{-- Approval Status + Actions --}}
                             @if ($isFirstRequestRow)
-                                <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="display: none;">
-                                    @php
-                                        $badgeClass = match (strtolower($approvalStatus)) {
-                                            'approved' => 'badge-success',
-                                            'rejected' => 'badge-danger',
-                                            'pending' => 'badge-warning',
-                                            'returned' => 'badge-info',
-                                            default => 'badge-secondary',
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ $approvalStatus }}
-                                    </span>
-                                </td>
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                     <div class="d-flex gap-2">
                                         @php

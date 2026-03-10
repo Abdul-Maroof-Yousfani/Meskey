@@ -227,6 +227,8 @@ class PurchaseOrderController extends Controller
 
         }
 
+        
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
@@ -236,7 +238,8 @@ class PurchaseOrderController extends Controller
             'html' => $html,
             'master' => $master,
             'quotation' => $quotation,
-            'locations_id' => $locations_id
+            'locations_id' => $locations_id,
+            'category_id' => $dataItems->first()->category_id ?? null
         ]);
     }
 
@@ -484,17 +487,17 @@ class PurchaseOrderController extends Controller
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
                     'supplier_id' => $request->supplier_id,
-                    'tax_id' => $request->tax_id[$index] ?? null,
-                    'excise_duty' => $request->excise_duty[$index] ?? 0,
-                    'min_weight' => $request->min_weight[$index],
-                    'color' => $request->color[$index],
-                    'brand' => $request->brand[$index],
-                    'construction_per_square_inch' => $request->construction_per_square_inch[$index],
-                    'size' => $request->size[$index],
-                    'stitching' => $request->stitching[$index],
-                    'micron' => $request->micron[$index],
-                    'printing_sample' => $request->printing_sample[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
+                    'tax_id' => $request->input('tax_id.'.$index),
+                    'excise_duty' => $request->input('excise_duty.'.$index, 0),
+                    'min_weight' => $request->input('min_weight.'.$index),
+                    'color' => $request->input('color.'.$index),
+                    'brand' => $request->input('brand.'.$index),
+                    'construction_per_square_inch' => $request->input('construction_per_square_inch.'.$index),
+                    'size' => $request->input('size.'.$index),
+                    'stitching' => $request->input('stitching.'.$index),
+                    'micron' => $request->input('micron.'.$index),
+                    'printing_sample' => $request->input('printing_sample.'.$index),
+                    'remarks' => $request->input('remarks.'.$index),
                     
                 ]);
             }
@@ -522,8 +525,14 @@ class PurchaseOrderController extends Controller
      */
     public function destroy($id)
     {
-        $purchaseOrder= PurchaseOrder::where("id", $id)->delete();
-        $PurchaseOrderData = PurchaseOrderData::where('id', $id)->delete();
+        $purchaseOrder = PurchaseOrder::where("id", $id)->first();
+
+        if($purchaseOrder != null) {
+            $purchaseOrder->purchaseOrderData()->delete();
+        }
+
+        $purchaseOrder->delete();
+
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
@@ -642,6 +651,7 @@ class PurchaseOrderController extends Controller
             'master' => $master,
             'allowed_categories' => $categoryIds,
             'allowed_items' => $itemIds,
+            'category_id' => $dataItems->first()->category_id ?? null
         ]);
     }
 

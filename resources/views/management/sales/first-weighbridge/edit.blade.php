@@ -27,8 +27,8 @@
     </div>
     <div class="row" id="slabsContainer">
         @include('management.sales.first-weighbridge.getFirstWeighbridgeRelatedData', [
-            'DeliveryOrder' => $DeliveryOrder ?? null, 
-            'SaleOrder' => $SaleOrder ?? null,
+            'DeliveryOrders' => $DeliveryOrders ?? null, 
+            'SalesOrders' => $SalesOrders ?? null,
             'FirstWeighbridge' => $FirstWeighbridge, 
             'ArrivalTruckTypes' => $ArrivalTruckTypes, 
             'LoadingProgramItem' => $FirstWeighbridge->loadingProgramItem

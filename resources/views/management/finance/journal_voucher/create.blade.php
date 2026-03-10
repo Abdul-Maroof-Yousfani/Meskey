@@ -43,6 +43,10 @@
 
                             <div class="row">
                                 <div class="col-md-12">
+                                    <div class="custom-control custom-switch mb-2">
+                                        <input type="checkbox" class="custom-control-input" id="receivingToggle" name="is_receiving">
+                                        <label class="custom-control-label" for="receivingToggle">Receiving</label>
+                                    </div>
                                     <div class="form-group">
                                         <label>Journal Entries</label>
                                         <div class="table-responsive">
@@ -50,6 +54,8 @@
                                                 <thead>
                                                     <tr>
                                                         <th>Account</th>
+                                                        <th class="receiving-col" style="display: none; width: 200px;">Receipt Voucher</th>
+                                                        <th class="receiving-col" style="display: none; width: 200px;">Sales order</th>
                                                         <th>Description</th>
                                                         <th>Debit</th>
                                                         <th>Credit</th>
@@ -57,7 +63,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody id="journalEntriesBody">
-                                                    <tr>
+                                                     <tr>
                                                         <td>
                                                             <select name="details[0][acc_id]" class="form-control select2 account-select" required>
                                                                 <option value="">Select Account</option>
@@ -65,6 +71,17 @@
                                                                     <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
                                                                 @endforeach
                                                             </select>
+                                                        </td>
+                                                        <td class="receiving-col" style="display: none;">
+                                                            <select name="details[0][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 200px;">
+                                                                <option value="">Select Receipt Voucher</option>
+                                                                @foreach ($receiptVouchers as $rv)
+                                                                    <option value="{{ $rv->id }}" data-remaining-amount="{{ $rv->remaining_amount }}">{{ $rv->unique_no }} (Rem: {{ number_format($rv->remaining_amount, 2) }})</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td class="receiving-col" style="display: none;">
+                                                            {{-- Empty for first row --}}
                                                         </td>
                                                         <td>
                                                             <input type="text" name="details[0][description]" class="form-control description-input" placeholder="Line description">
@@ -90,6 +107,17 @@
                                                                 @endforeach
                                                             </select>
                                                         </td>
+                                                        <td class="receiving-col" style="display: none;">
+                                                            {{-- Empty for second row --}}
+                                                        </td>
+                                                        <td class="receiving-col" style="display: none;">
+                                                            <select name="details[1][sales_order_id]" class="form-control select2 sales-order-select" style="width: 200px;">
+                                                                <option value="">Select Sales Order</option>
+                                                                @foreach ($salesOrders as $so)
+                                                                    <option value="{{ $so->id }}">{{ $so->reference_no }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
                                                         <td>
                                                             <input type="text" name="details[1][description]" class="form-control description-input" placeholder="Line description">
                                                         </td>
@@ -108,25 +136,25 @@
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <td colspan="2" class="text-right"><strong>Total Debits:</strong></td>
+                                                        <td colspan="4" class="text-right"><strong>Total Debits:</strong></td>
                                                         <td><strong id="totalDebits">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
-                <tr>
-                                                        <td colspan="2" class="text-right"><strong>Total Credits:</strong></td>
+                                                    <tr>
+                                                        <td colspan="4" class="text-right"><strong>Total Credits:</strong></td>
                                                         <td></td>
                                                         <td><strong id="totalCredits">0.00</strong></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="2" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
+                                                        <td colspan="4" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                                         <td><strong id="difference">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="5">
+                                                        <td colspan="7">
                                                             <button type="button" class="btn btn-sm btn-primary" id="addRow">
                                                                 <i class="ft-plus"></i> Add Row
                                                             </button>
@@ -158,6 +186,36 @@
             // Initialize select2 for existing selects
             $('.select2').select2();
 
+            // Toggle receiving columns
+            function toggleReceivingColumns() {
+                if ($('#receivingToggle').is(':checked')) {
+                    $('.receiving-col').show();
+                    $('#journalEntriesTable tfoot td:first-child').attr('colspan', 4);
+                    $('#addRow').closest('td').attr('colspan', 7);
+                } else {
+                    $('.receiving-col').hide();
+                    $('#journalEntriesTable tfoot td:first-child').attr('colspan', 2);
+                    $('#addRow').closest('td').attr('colspan', 5);
+                }
+            }
+
+            $('#receivingToggle').change(function () {
+                toggleReceivingColumns();
+            });
+
+            // Auto-fill debit amount on RV selection
+            $(document).on('change', '.receipt-voucher-select', function () {
+                const $option = $(this).find('option:selected');
+                const remainingAmount = $option.data('remaining-amount');
+                if (remainingAmount) {
+                    const $row = $(this).closest('tr');
+                    $row.find('.debit-input').val(remainingAmount).trigger('input');
+                }
+            });
+
+            // Set initial state
+            toggleReceivingColumns();
+
             // Generate JV number function
             function generateJvNumber() {
                 const jvDate = $('#jv_date').val();
@@ -188,6 +246,9 @@
 
             // Add new row
             $('#addRow').click(function () {
+                const isReceiving = $('#receivingToggle').is(':checked');
+                const displayStyle = isReceiving ? '' : 'display: none;';
+
                 const newRow = `
                     <tr>
                         <td>
@@ -195,6 +256,22 @@
                                 <option value="">Select Account</option>
                                 @foreach ($accounts as $account)
                                     <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td class="receiving-col" style="${displayStyle}">
+                            <select name="details[${rowCount}][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 200px;">
+                                <option value="">Select Receipt Voucher</option>
+                                @foreach ($receiptVouchers as $rv)
+                                    <option value="{{ $rv->id }}" data-remaining-amount="{{ $rv->remaining_amount }}">{{ $rv->unique_no }} (Rem: {{ number_format($rv->remaining_amount, 2) }})</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td class="receiving-col" style="${displayStyle}">
+                            <select name="details[${rowCount}][sales_order_id]" class="form-control select2 sales-order-select" style="width: 200px;">
+                                <option value="">Select Sales Order</option>
+                                @foreach ($salesOrders as $so)
+                                    <option value="{{ $so->id }}">{{ $so->reference_no }}</option>
                                 @endforeach
                             </select>
                         </td>
@@ -215,7 +292,7 @@
                     </tr>
                 `;
                 $('#journalEntriesBody').append(newRow);
-                $('.select2').select2();
+                $('#journalEntriesBody tr:last .select2').select2();
                 rowCount++;
                 updateRemoveButtons();
                 calculateTotals();

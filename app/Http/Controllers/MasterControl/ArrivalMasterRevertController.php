@@ -588,6 +588,7 @@ class ArrivalMasterRevertController extends Controller
             'station' => 'required|string|max:255',
             'bilty_no' => 'required|string|max:255',
             'truck_no' => 'required|string|max:255',
+            'product_id' => 'nullable',
             'bags' => 'required|numeric',
             'product_id' => 'nullable',
             'truck_type_id' => 'required|max:255',
