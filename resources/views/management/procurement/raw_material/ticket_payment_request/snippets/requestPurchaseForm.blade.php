@@ -319,10 +319,10 @@
                 </div>
             </div>
 
-@if(isset($paymentRequests))
+@if(isset($paymentRequests) && count($paymentRequests) != 0)
             <div class="col-md-12">
             <h6 class="header-heading-sepration togglehistory">
-            Request History
+            Request History ({{ count($paymentRequests) }})
         </h6>
             <table class="table m-0 togglehistorytable">
                      <thead>
