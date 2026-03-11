@@ -46,7 +46,7 @@
     $noOfBags = $arrivalTicket->bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
-    //$grossFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
+    $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount ?? $arrivalTicket->freight->gross_freight_amount ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
@@ -82,7 +82,7 @@
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
-    $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $grossFreightAmount;
+    $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $arrivalFreightAmount;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
@@ -104,6 +104,12 @@
 @endphp
 
 <style>
+    .togglehistorytable{
+    display:none;
+}
+.togglehistory{
+    cursor:pointer;
+}
     .tooltip-container {
         position: relative;
         cursor: pointer;
@@ -312,6 +318,51 @@
                         readonly>
                 </div>
             </div>
+
+@if(isset($paymentRequests))
+            <div class="col-md-12">
+            <h6 class="header-heading-sepration togglehistory">
+            Request History
+        </h6>
+            <table class="table m-0 togglehistorytable">
+                     <thead>
+                        <tr>
+                            <th>
+                                Request Date
+                            </th>
+                            <th>
+                                Amount
+                            </th>
+                            <th>
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($paymentRequests as $paymentRequest)
+                        <tr>
+                            <td>
+                                {{$paymentRequest->created_at}}
+                            </td>
+                            <td>
+                                {{$paymentRequest->amount}}
+                            </td>
+                            <td>
+                                @if($paymentRequest->status == 'pending')
+                                <label class="badge badge-warning">Pending</label>
+                                @elseif($paymentRequest->status == 'approved')
+                                <label class="badge badge-success">Approved</label>
+                                @elseif($paymentRequest->status == 'rejected')
+                                <label class="badge badge-danger">Rejected</label>
+                                @endif
+                            </td>
+                           
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
 
             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
             <div class="col-12">
@@ -635,9 +686,9 @@
                             <td>
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
-                                    value="{{ number_format($grossFreightAmount, 2) }}" readonly>
+                                    value="{{ number_format($arrivalFreightAmount, 2) }}" readonly>
                                 <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
-                                    id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
+                                    id="freight_deduction_amount" value="{{ $arrivalFreightAmount }}" readonly>
                             </td>
                         </tr>
                         <tr>
@@ -738,7 +789,7 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Remaining</label>
+                    <label>Remaining {{ $totalAmount - $requestedAmount }}</label>
                     <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
                         value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
                 </div>
@@ -761,6 +812,10 @@
                 </div>
             @endif
         </div>
+
+
+
+     
     </div>
     {{-- @endif --}}
 
@@ -935,11 +990,12 @@
             function updatePaymentRequestCalculations() {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                const requested_amount = parseFloat($('#requested_amount').val()) || 0;
                 const paymentRequestInput = $('.payment-request-input');
                 const percentageInput = $('.percentage-input');
                 
                 const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const remainingAmount = totalAmount - requested_amount;
 
                 // Update remaining amount
                 $('#remaining_amount').val(remainingAmount.toFixed(2));
@@ -980,7 +1036,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                    {{ $arrivalFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
@@ -1011,8 +1067,10 @@
             $('.payment-request-input').on('input', function() {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                const requested_amount = parseFloat($('#requested_amount').val()) || 0;
                 const newRequested = parseFloat($(this).val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                // const remainingAmount = totalAmount - paidAmount;
+                const remainingAmount = totalAmount - requested_amount;
 
                 // Ensure payment request doesn't exceed remaining amount
                 if (newRequested > remainingAmount) {
@@ -1040,13 +1098,17 @@
 
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const requested_amount = parseFloat($('#requested_amount').val()) || 0;
+
+                // const remainingAmount = totalAmount - paidAmount;
+                const remainingAmount = totalAmount - requested_amount;
+
                 const amount = (remainingAmount * percentage) / 100;
                 
                 $('.payment-request-input').val(amount.toFixed(2));
                 
                 // Update remaining amount
-                const finalRemaining = totalAmount - (paidAmount + amount);
+                const finalRemaining = totalAmount - (requested_amount + amount);
                 $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
 
@@ -1091,6 +1153,12 @@
 
             $loadingRadio.on('change', toggleSections);
             $withoutLoadingRadio.on('change', toggleSections);
+
+
+            $(".togglehistory").click(function(){
+    $(".togglehistorytable").slideToggle(400);
+    $(this).toggleClass("active");
+});
         });
     </script>
 @endif

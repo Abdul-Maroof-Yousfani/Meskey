@@ -20,7 +20,7 @@
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                Basic Information  ffff
+                Basic Information
             </h6>
         </div>
         <div class="col-md-6">
@@ -380,9 +380,9 @@
 
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Remaining</label>
+                    <label>Remaining ddd</label>
                     <input type="text" class="form-control" name="remaining_amount"
-                        value="{{ $paymentRequestData->remaining_amount }}" readonly>
+                        value="{{ $paymentRequestData->total_amount - $requestedAmount }} ddd" readonly>
                 </div>
             </div>
 
