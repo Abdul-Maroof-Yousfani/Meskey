@@ -38,11 +38,11 @@
                 if ($isReplacement == 'Yes') {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks;
                    // $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn;
-                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucks - $owntruckminuable;
+                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucks + $owntruckminuable;
                 } else {
                     $balanceTrucks = $orderedTrucks - $arrivedTrucks - $rejectedTrucks;
                  //   $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucksWithoutOwn - $rejectedTrucks;
-                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucks - $owntruckminuable - $rejectedTrucks;
+                    $balanceTrucksWithoutOwn = $orderedTrucks - $arrivedTrucks + $owntruckminuable - $rejectedTrucks;
                 }
                 $arrivedQty = $contract['total_loading_weight'] ?? 0;
                 $minQty = $contract['min_quantity'] ?? 0;
