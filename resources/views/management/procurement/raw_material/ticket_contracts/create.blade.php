@@ -276,8 +276,7 @@
                                                         <div class="form-group">
                                                             <label>Avg. Weight per Bag</label>
                                                             <input type="text" class="form-control"
-                                                                value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
-                                                                readonly>
+                                                            value="{{ $arrivalTicket->bags > 0 ? $arrivalTicket->net_weight / $arrivalTicket->bags : 'N/A' }}"                                                                readonly>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-3">
