@@ -85,6 +85,7 @@
                         <th>Item</th>
                         <th>Qty</th>
                         <th>Rate</th>
+                        <th>Total Amount</th>
                         <th>Item UOM</th>
                         <th class="bag-only">Min Weight (KG)</th>
                         <th class="bag-only">Brands</th>
@@ -94,7 +95,6 @@
                         <th class="bag-only">Stitching</th>
                         <th class="bag-only">Micron</th>
                         <th class="bag-only">Printing Sample</th>
-                        <th>Total Amount</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
@@ -209,6 +209,7 @@
                 </td>
                 <td style="width: 10%"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 20%"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                 
                 <td class="bag-only"></td>
@@ -219,8 +220,6 @@
                 <td class="bag-only"></td>
                 <td class="bag-only"></td>
                 <td class="bag-only"></td>
-
-                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 25%"><input style="width: 140px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;

@@ -85,6 +85,7 @@
                          <th class="col-sm-3">Item</th>
                          <th>Qty</th>
                          <th>Rate</th>
+                         <th>Total Amount</th>
                          <th class="col-sm-3">Item uom</th>
                          <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
@@ -94,7 +95,6 @@
                          <th class="col-sm-3 bag-only">Stitching</th>
                          <th class="col-sm-3 bag-only">Micron</th>
                          <th class="col-sm-3 bag-only">Printing Sample</th>
-                         <th>Total Amount</th>
                          <th>Remarks</th>
                      </tr>
                  </thead>
@@ -152,6 +152,13 @@
                                  <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                                      onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
                                      disabled id="rate_{{ $key }}" class="form-control" step="0.01"
+                                     min="{{ $key }}">
+                             </td>
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     onblur="calc({{ $key }})" name="amount[]"
+                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
+                                     id="rate_{{ $key }}" class="form-control" step="0.01"
                                      min="{{ $key }}">
                              </td>
                              <td style="width: 30%">
@@ -228,17 +235,6 @@
                                     @endforeach
                                 @endif
                             </td>
-
-
-
-
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="amount[]"
-                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
-                                     id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
 
                              <td style="width: 30%">
                                  <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"

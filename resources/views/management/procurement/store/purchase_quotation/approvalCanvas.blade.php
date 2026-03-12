@@ -79,6 +79,7 @@
                     <th>Item</th>
                     <th>Qty</th>
                     <th>Rate</th>
+                    <th>Total Amount</th>
                     <th>Item UOM</th>
                     <th>Vendor</th>
                     <th class="bag-only">Min Weight (KG)</th>
@@ -89,7 +90,6 @@
                     <th class="bag-only">Stitching</th>
                     <th class="bag-only">Micron</th>
                     <th class="bag-only">Printing Sample</th>
-                    <th>Total Amount</th>
                     <th>Remarks</th>
                 </tr>
              </thead>
@@ -141,6 +141,11 @@
                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}" disabled
                     id="rate_{{ $key }}" class="form-control" step="0.01" min="{{ $key }}">
+            </td>
+
+            <td style="width: 20%">
+                <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
+                    id="total_{{ $key }}" class="form-control" step="0.01" min="0" readonly name="total[]">
             </td>
 
             <td style="width: 15%">
@@ -196,13 +201,6 @@
                         </small>
                     @endforeach
                 @endif
-            </td>
-
-
-
-            <td style="width: 20%">
-                <input style="width: 100px" type="number" readonly value="{{ $data->total }}"
-                    id="total_{{ $key }}" class="form-control" step="0.01" min="0" readonly name="total[]">
             </td>
 
             <td style="width: 25%">
@@ -270,8 +268,7 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                 <td style="width: 20%">
+                <td style="width: 20%">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
                         <option value="">Select Vendor</option>
                         @foreach (get_supplier() as $supplier)
@@ -279,9 +276,10 @@
                         @endforeach
                     </select>
                 </td>
-                {{-- <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td> --}}
+                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                {{-- <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td> --}}
+                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                 <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>

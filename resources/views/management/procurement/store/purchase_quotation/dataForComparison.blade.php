@@ -75,11 +75,17 @@
              <table class="table table-bordered" id="purchaseRequestTable">
                  <thead>
                      <tr>
+                          <th style="width: 50px; min-width: 50px; vertical-align: middle !important;">
+                              <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                  <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                              </div>
+                          </th>
                          <th class="col-sm-4">PQ No.</th>
                          <th class="col-sm-3">Supplier</th>
                          <th class="col-sm-3">Item</th>
                          <th>Qty</th>
                          <th>Rate</th>
+                         <th>Total Amount</th>
                          <th class="col-sm-3">Item uom</th>
                          <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
@@ -89,7 +95,6 @@
                          <th class="col-sm-3 bag-only">Stitching</th>
                          <th class="col-sm-3 bag-only">Micron</th>
                          <th class="col-sm-3 bag-only">Printing Sample</th>
-                         <th>Total Amount</th>
                          <th>Remarks</th>
                          <th>Status</th>
                          <th>Action</th>
@@ -98,6 +103,11 @@
                  <tbody id="purchaseRequestBody">
                      @forelse ($PurchaseQuotationData ?? [] as $key => $data)
                          <tr id="row_{{ $key }}">
+                              <td style="vertical-align: middle !important;">
+                                  <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                      <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                                  </div>
+                              </td>
                              <td style="width: 30%">
                                  <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                  <input style="width: 100%" type="text" readonly
@@ -147,9 +157,16 @@
                                      min="{{ $key }}">
                              </td>
                              <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     onblur="calc({{ $key }})" name="amount[]"
+                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
+                                     id="total_{{ $key }}" class="form-control" step="0.01"
+                                     min="{{ $key }}">
+                             </td>
+                             <td style="width: 30%">
                                  <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
                                      onkeyup="calc({{ $key }})" disabled onblur="calc({{ $key }})"
-                                     id="uom{{ $key }}" id="qty_{{ $key }}" class="form-control"
+                                     id="uom{{ $key }}" class="form-control"
                                      step="0.01" min="0">
                              </td>
 
@@ -224,14 +241,6 @@
 
 
                              <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="amount[]"
-                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
-                                     id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
-
-                             <td style="width: 30%">
                                  <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
                                      id="remark_{{ $key }}" class="form-control">
                                  <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
@@ -271,6 +280,11 @@
  </div>
  </div>
  <input type="hidden" id="rowCount" value="0">
+ <div class="row">
+     <div class="col-12">
+         <x-approval-status :model="$data1" />
+     </div>
+ </div>
 
  <div class="row bottom-button-bar">
      <div class="col-12">
@@ -291,6 +305,10 @@
          if (initialCategoryId) {
              toggleVisibility(initialCategoryId);
          }
+
+          $('#check-all').on('change', function() {
+              $('.item-checkbox').prop('checked', $(this).prop('checked'));
+          });
      });
 
     rowIndex = 1;

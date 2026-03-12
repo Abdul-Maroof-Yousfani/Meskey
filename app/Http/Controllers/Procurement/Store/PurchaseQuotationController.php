@@ -472,9 +472,12 @@ class PurchaseQuotationController extends Controller
             // })
             ->get();
                 
-        $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            // ->where('am_approval_status', 'pending')
+            ->where('am_approval_status', 'pending')
+            ->latest()->first() 
+            ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             ->latest()->first();
       
         return view('management.procurement.store.purchase_quotation.dataForComparison', [
@@ -522,9 +525,12 @@ class PurchaseQuotationController extends Controller
             ->get();
 
 
-        $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            // ->where('am_approval_status', 'pending')
+            ->where('am_approval_status', 'pending')
+            ->latest()->first() 
+            ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             ->latest()->first();
       
         return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
@@ -614,13 +620,17 @@ class PurchaseQuotationController extends Controller
 
             ->get();
 
+        $pendingData = PurchaseQuotationData::where('purchase_quotation_id', $id)
+            ->where('am_approval_status', 'pending')
+            ->first();
+
         return view('management.procurement.store.purchase_quotation.approvalCanvas', [
             'purchaseQuotation' => $purchaseQuotation,
             'categories' => $categories,
             'locations' => $locations,
             'job_orders' => $job_orders,
             'purchaseQuotationData' => $purchaseQuotationData,
-            'data1' => $purchaseQuotation,
+            'data1' => $pendingData ?? $purchaseQuotation,
         ]);
     }
 

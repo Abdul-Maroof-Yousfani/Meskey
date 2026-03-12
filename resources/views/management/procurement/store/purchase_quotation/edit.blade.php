@@ -92,6 +92,7 @@
                             <th>Item</th>
                             <th>Qty</th>
                             <th>Rate</th>
+                            <th>Total Amount</th>
                             <th>Item UOM</th>
                             <th class="bag-only">Min Weight (KG)</th>
                             <th class="bag-only">Brands</th>
@@ -101,7 +102,6 @@
                             <th class="bag-only">Stitching</th>
                             <th class="bag-only">Micron</th>
                             <th class="bag-only">Printing Sample</th>
-                            <th>Total Amount</th>
                             <th>Remarks</th>
                             <th>Action</th>
                         </tr>
@@ -169,6 +169,12 @@
                                             value="{{ $data->rate }}" id="rate_{{ $key }}"
                                             onkeyup="calc('{{ $key }}')"
                                             class="form-control" step="0.01" min="0">
+                                    </td>
+
+                                    <td style="min-width: 120px;">
+                                        <input  type="number" value="{{ $data->total }}"
+                                            id="total_{{ $key }}" class="form-control" step="0.01"
+                                            min="0" name="total[]" readonly>
                                     </td>
 
                                 <td style="min-width: 100px;">
@@ -248,12 +254,6 @@
                                     @endif
                                 </td>
 
-                                <td style="min-width: 120px;">
-                                    <input  type="number" value="{{ $data->total }}"
-                                        id="total_{{ $key }}" class="form-control" step="0.01"
-                                        min="0" name="total[]" readonly>
-                                </td>
-
                                 <td style="width: 12%">
                                     <input style="width: 140px" name="remarks[{{ $data->id }}]" type="text" value="{{ $data->remarks }}"
                                         id="remark_{{ $key }}" class="form-control">
@@ -319,6 +319,14 @@
                     </select>
                 </td>
                 <td >
+                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                        <option value="">Select Vendor</option>
+                        @foreach (get_supplier() as $supplier)
+                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td >
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
                         <option value="">Select Item</option>
                     
@@ -328,19 +336,10 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
-                <td ><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                 <td >
-                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
-                        <option value="">Select Vendor</option>
-                        @foreach (get_supplier() as $supplier)
-                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                        @endforeach
-                    </select>
-                </td>
-                {{-- <td ><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td> --}}
+                <td ><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
                 <td ><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                {{-- <td ><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td> --}}
-                <td ><input  type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
+                <td ><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
+                <td ><input  type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;

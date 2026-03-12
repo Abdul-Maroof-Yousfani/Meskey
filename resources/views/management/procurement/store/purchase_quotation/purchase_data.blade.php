@@ -44,6 +44,14 @@
                 </div>
             </div>
         </td>
+        <td style="min-width: 120px;">
+            <div class="loop-fields">
+                <div class="form-group mb-0">
+                    <input  type="number" readonly value="" id="total_{{ $key }}"
+                        class="form-control" step="0.01" min="0" name="total[]">
+                </div>
+            </div>
+        </td>
         <td style="min-width: 100px;">
             <input  type="text" id="uom_{{ $key }}" class="form-control uom"
                 value="{{ get_uom($data->item_id) }}" disabled readonly>
@@ -117,14 +125,6 @@
                @endif
            </td>
        
-        <td style="min-width: 120px;">
-            <div class="loop-fields">
-                <div class="form-group mb-0">
-                    <input  type="number" readonly value="" id="total_{{ $key }}"
-                        class="form-control" step="0.01" min="0" name="total[]">
-                </div>
-            </div>
-        </td>
         <td style="min-width: 250px;">
             <input  type="text" name="remarks[]" value="" id="remark_{{ $key }}"
                 class="form-control">
