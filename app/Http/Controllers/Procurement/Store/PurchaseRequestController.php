@@ -34,7 +34,7 @@ class PurchaseRequestController extends Controller
     public function getItems(Request $request)
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::with('packing_items')->where('id', request()->job_order)->get();
+        $job_orders = JobOrder::with('packing_items.subItems')->where('id', request()->job_order)->get();
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
 

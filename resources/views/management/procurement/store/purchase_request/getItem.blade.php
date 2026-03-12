@@ -7,10 +7,9 @@
         @php
             $i = $job_order->id . '-' . $index;
             $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id);
-            if ($balance <= 0) {
-                continue;
-            }
         @endphp
+
+        @if ($balance > 0)
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
             <td style="min-width: 250px;">
@@ -128,7 +127,7 @@
                 </button>
             </td>
         </tr>
-
+        @endif
 
         {{-- Sub Packing Item --}}
         @foreach($packing_item->subItems as $sub_packing_item)
