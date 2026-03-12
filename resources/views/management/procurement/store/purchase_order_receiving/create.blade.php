@@ -337,4 +337,11 @@
     $(document).on('wheel', 'input[type=number]', function (e) {
         $(this).blur();
     });
+
+    $(document).on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>
