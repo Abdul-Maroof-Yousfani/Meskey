@@ -65,6 +65,7 @@
                                         $statusColor = match(strtolower($statusText)) {
                                             'approved' => 'text-success',
                                             'rejected' => 'text-danger',
+                                            'neglected' => 'text-danger',
                                             'returned' => 'text-primary',
                                             'pending' => 'text-warning',
                                             default => 'text-muted',
@@ -100,6 +101,7 @@
                                         $badgeClass = match(strtolower($approvalStatus)) {
                                             'approved' => 'badge-success',
                                             'rejected' => 'badge-danger',
+                                            'neglected' => 'badge-danger',
                                             'pending' => 'badge-warning',
                                             'returned' => 'badge-info',
                                             default => 'badge-secondary',

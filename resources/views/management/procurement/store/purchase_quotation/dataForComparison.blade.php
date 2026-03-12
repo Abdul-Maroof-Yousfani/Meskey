@@ -250,6 +250,7 @@
                                     $badgeClass = match (strtolower($data->am_approval_status)) {
                                         'approved' => 'badge-success',
                                         'rejected' => 'badge-danger',
+                                        'neglected' => 'badge-danger',
                                         'pending' => 'badge-warning',
                                         'returned' => 'badge-info',
                                         default => 'badge-secondary',

@@ -275,7 +275,7 @@ class ApprovalController extends Controller
                 $parentRecord->save();
 
                 $allChildren = $parentRecord->quotation_data()->get();
-                $pendingCount = $allChildren->whereNotIn('am_approval_status', ['approved', 'rejected'])->count();
+                $pendingCount = $allChildren->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->count();
                 $approvedCount = $allChildren->where('am_approval_status', 'approved')->count();
 
                 if ($reqType == 'reject' && $pendingCount == 0 && $approvedCount == 0) {
@@ -294,22 +294,23 @@ class ApprovalController extends Controller
                     }
                 }
             } else { // approve
-                $NoRemainingPendingChild = $parentRecord->quotation_data()->whereNotIn('am_approval_status', ['approved', 'rejected'])->count() === 0;
+                $NoRemainingPendingChild = $parentRecord->quotation_data()->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->count() === 0;
                 
 
                 if ($parentRecord->canApprove()) {
                     $purchase_request_id = $parentRecord->purchase_request_id;
                     $purchase_request = PurchaseRequest::find($purchase_request_id);
                     $purchase_quotation_data = PurchaseQuotationData::whereIn("purchase_request_data_id", $processedApprovedIds)
-                                                                    ->whereIn("am_approval_status", ["pending", "reverted"])
+                                                                    ->where("am_approval_status", "pending")
                                                                     ->get();
 
                     foreach($purchase_quotation_data as $data) {
-                        $data->reject($request->comments);
+                        $data->update(['am_approval_status' => 'neglected']);
+                        $data->approvalRows()->update(['status' => 'neglected']);
                     }
                     
-                    // Re-calculate NoRemainingPendingChild after rejection loop
-                    $NoRemainingPendingChild = $parentRecord->quotation_data()->whereNotIn('am_approval_status', ['approved', 'rejected'])->count() === 0;
+                    // Re-calculate NoRemainingPendingChild after neglected loop
+                    $NoRemainingPendingChild = $parentRecord->quotation_data()->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->count() === 0;
                     
                     if (!$NoRemainingPendingChild) {
                         $returnedParent = $parentRecord->partial_approve($request->comments);
