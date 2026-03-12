@@ -113,10 +113,6 @@
                                             'pending' => 'text-warning',
                                             default => 'text-muted',
                                         };
-
-                                        if (strtolower($statusText) === 'neglected') {
-                                            $statusText = 'Pending';
-                                        }
                                     }
                                 @endphp
 

@@ -246,18 +246,19 @@
                                  <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                              </td>                          
                              <td>
-                                    $badgeClass = match (strtolower($data->am_approval_status)) {
-                                        'approved' => 'badge-success',
-                                        'rejected' => 'badge-danger',
-                                        'neglected' => 'badge-warning',
-                                        'pending' => 'badge-warning',
-                                        'returned' => 'badge-info',
-                                        default => 'badge-secondary',
-                                    };
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ strtolower($data->am_approval_status) === 'neglected' ? 'pending' : $data->am_approval_status }}
-                                    </span>
+                                 @php
+                                     $badgeClass = match (strtolower($data->am_approval_status)) {
+                                         'approved' => 'badge-success',
+                                         'rejected' => 'badge-danger',
+                                         'neglected' => 'badge-warning',
+                                         'pending' => 'badge-warning',
+                                         'returned' => 'badge-info',
+                                         default => 'badge-secondary',
+                                     };
+                                     @endphp
+                                     <span class="badge {{ $badgeClass }}">
+                                         {{ $data->am_approval_status }}
+                                     </span>
                              </td>
                              <td>
                                  <button type="button" class="btn btn-danger btn-sm removeRowBtn"

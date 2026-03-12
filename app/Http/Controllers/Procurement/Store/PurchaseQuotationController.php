@@ -544,11 +544,12 @@ class PurchaseQuotationController extends Controller
 
         $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            ->where('am_approval_status', 'pending')
+            ->whereIn('am_approval_status', ['pending', 'neglected'])
             ->latest()->first() 
             ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             ->latest()->first();
+        
       
         return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
             'purchaseRequest' => $purchaseRequest,

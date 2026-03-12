@@ -129,8 +129,8 @@
                                             class="info p-1 text-center" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
-                                        @if(!in_array(strtolower($requestGroup['request_status']), ['approved','rejected','partial approved']) || ($requestGroup['has_pending_or_reverted_item'] ?? false))
-                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}','Edit Purchase Quotation',false,'100%')"
+                                        @if(!in_array(strtolower($requestGroup['request_status']), ['approved','rejected','partial approved']))
+                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'100%')"
                                                 class="info p-1 text-center">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
