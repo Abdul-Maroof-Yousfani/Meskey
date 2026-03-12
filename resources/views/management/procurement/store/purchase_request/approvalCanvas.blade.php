@@ -113,7 +113,7 @@
                 <th style="min-width: 100px;">Item UOM</th>
                 <th style="min-width: 100px;">Qty</th>
                 <th class="bag-only" style="min-width: 250px;">Job Orders</th>
-                <th class="bag-only" style="min-width: 120px;">Min Weight</th>
+                <th class="bag-only" style="min-width: 120px;">Min Weight (KG)</th>
                 <th class="bag-only" style="min-width: 150px;">Brands</th>
                 <th class="bag-only" style="min-width: 150px;">Color</th>
                 <th class="bag-only" style="min-width: 150px;">Cons./sq. in.</th>
@@ -225,12 +225,14 @@
                         min="0" value="{{ $item->micron }}" placeholder="Micron" readonly></td>
 
                 <td class="bag-only" style="min-width: 250px;">
-                    <input type="file" name="printing_sample[]" id="printing_sample_{{ $rowIdApproval }}"
-                        class="form-control" accept="image/*,application/pdf" disabled>
+                    <input type="file" name="printing_sample[{{ $rowIdApproval }}][]" id="printing_sample_{{ $rowIdApproval }}"
+                        class="form-control" accept="image/*,application/pdf" multiple disabled>
                     @if (!empty($item->printing_sample))
-                    <small>
-                        <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">View existing file</a>
-                    </small>
+                        @foreach((array)$item->printing_sample as $sample)
+                            <small class="d-block">
+                                <a href="{{ asset('storage/' . $sample) }}" target="_blank">View file</a>
+                            </small>
+                        @endforeach
                     @endif
                 </td>
 
@@ -479,9 +481,9 @@
                     <td style="min-width: 250px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="file" name="printing_sample[]" id="printing_sample_${index}"
+                                <input type="file" name="printing_sample[${index}][]" id="printing_sample_${index}"
                                     class="form-control" accept="image/*,application/pdf"
-                                    placeholder="Printing Sample">
+                                    placeholder="Printing Sample" multiple>
                             </div>
                         </div>
                     </td>

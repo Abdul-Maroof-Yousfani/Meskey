@@ -42,6 +42,7 @@ class PurchaseRequestData extends Model
         'quotation_status' => 'integer',
         'po_status' => 'integer',
         'status' => 'boolean',
+        'printing_sample' => 'array',
     ];
 
     protected $guarded = [];

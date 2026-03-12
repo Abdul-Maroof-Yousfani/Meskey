@@ -42,7 +42,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Order Date:</label>
-                <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_date" class="form-control">
             </div>
         </div>
         <div class="col-md-3">
@@ -102,7 +102,7 @@
                             <th>Tax Amount</th>
                             <th>Duty</th>
                             <th>Net Amount</th>
-                            <th class="bag-only">Min Weight</th>
+                            <th class="bag-only">Min Weight (KG)</th>
                             <th class="bag-only">Brand</th>
                             <th class="bag-only">Color</th>
                             <th class="bag-only">Cons./sq. in.</th>

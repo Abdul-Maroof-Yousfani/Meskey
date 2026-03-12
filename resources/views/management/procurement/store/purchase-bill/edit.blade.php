@@ -46,7 +46,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Bill Date:</label>
-                <input type="date" id="purchase_date" name="purchase_bill_date"
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_bill_date"
                     value="{{ $purchase_bill->bill_date }}" class="form-control">
             </div>
         </div>

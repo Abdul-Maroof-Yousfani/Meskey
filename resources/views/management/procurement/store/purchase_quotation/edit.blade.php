@@ -87,11 +87,13 @@
                 <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
                     <thead>
                         <tr>
-                            <th>PQ No.</th>
+                            <th>Category</th>
                             <th>Supplier</th>
                             <th>Item</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
                             <th>Item UOM</th>
-                            <th class="bag-only">Min Weight</th>
+                            <th class="bag-only">Min Weight (KG)</th>
                             <th class="bag-only">Brands</th>
                             <th class="bag-only">Color</th>
                             <th class="bag-only">Cons./sq. in.</th>
@@ -99,8 +101,6 @@
                             <th class="bag-only">Stitching</th>
                             <th class="bag-only">Micron</th>
                             <th class="bag-only">Printing Sample</th>
-                            <th>Qty</th>
-                            <th>Rate</th>
                             <th>Total Amount</th>
                             <th>Remarks</th>
                             <th>Action</th>
@@ -129,7 +129,7 @@
                                         value="{{ $data->purchase_request_data_id }}">
                                 </td>
 
-                                <td style="min-width: 200px;">
+                                 <td style="min-width: 200px;">
                                     <select  id="supplier_id_{{ $key }}"
                                         name="supplier_id[]" class="form-control item-select select2"
                                         disabled
@@ -143,18 +143,33 @@
                                     </select>
                                 </td>
 
-                                       <td style="min-width: 250px;">
-                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
-                    class="form-control item-select select2" data-index="{{ $key }}">
-                    @foreach (get_product_by_id($data->item_id) as $item)
-                        <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
-                            {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                            {{ $item->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
-            </td>
+                                <td style="min-width: 250px;">
+                                    <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
+                                        class="form-control item-select select2" data-index="{{ $key }}">
+                                        @foreach (get_product_by_id($data->item_id) as $item)
+                                            <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
+                                                {{ $item->id == $data->item_id ? 'selected' : '' }}>
+                                                {{ $item->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                                </td>
+
+                                    <td style="min-width: 100px;">
+                                        <input  name="qty[{{ $data->id }}]" type="number"
+                                            value="{{ $data->qty }}" id="qty_{{ $key }}"
+                                            onkeyup="calc('{{ $key }}')"
+                                            class="form-control" step="0.01" min="0"
+                                            max="{{ $data->qty }}">
+                                    </td>
+
+                                    <td style="min-width: 100px;">
+                                        <input  type="number" name="rate[{{ $data->id }}]"
+                                            value="{{ $data->rate }}" id="rate_{{ $key }}"
+                                            onkeyup="calc('{{ $key }}')"
+                                            class="form-control" step="0.01" min="0">
+                                    </td>
 
                                 <td style="min-width: 100px;">
                                     <input  type="text" value="{{ get_uom($data->item_id) }}"
@@ -221,29 +236,16 @@
                                 </td>
 
                                 <td style="min-width: 150px;" class="bag-only">
-                                    <input disabled type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" class="form-control" accept="image/*,application/pdf" >
+                                    <input disabled type="file" class="form-control" accept="image/*,application/pdf" multiple>
                                     @if (!empty($data->purchase_request->printing_sample))
-                                        <small>
-                                            <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
-                                                View existing file
-                                            </a>
-                                        </small>
+                                        @foreach((array)$data->purchase_request->printing_sample as $sample)
+                                            <small class="d-block">
+                                                <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                                    View file
+                                                </a>
+                                            </small>
+                                        @endforeach
                                     @endif
-                                </td>
-
-                                <td style="min-width: 100px;">
-                                    <input  name="qty[{{ $data->id }}]" type="number"
-                                        value="{{ $data->qty }}" id="qty_{{ $key }}"
-                                        onkeyup="calc('{{ $key }}')"
-                                        class="form-control" step="0.01" min="0"
-                                        max="{{ $data->qty }}">
-                                </td>
-
-                                <td style="min-width: 100px;">
-                                    <input  type="number" name="rate[{{ $data->id }}]"
-                                        value="{{ $data->rate }}" id="rate_{{ $key }}"
-                                        onkeyup="calc('{{ $key }}')"
-                                        class="form-control" step="0.01" min="0">
                                 </td>
 
                                 <td style="min-width: 120px;">

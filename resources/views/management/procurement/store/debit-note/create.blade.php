@@ -27,7 +27,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Date:</label>
-                <input type="date" class="form-control" name="transaction_date" id="transaction_date" onchange="get_transaction_number()">
+                <input type="date" min="{{ date('Y-m-d') }}" class="form-control" name="transaction_date" id="transaction_date" onchange="get_transaction_number()">
             </div>
         </div>
          <div class="col-md-6">

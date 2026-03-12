@@ -52,7 +52,7 @@
          <div class="col-md-4">
             <div class="form-group">
                 <label>Receiving Date:</label>
-                <input readonly type="date" id="receiving_date"
+                <input readonly type="date" min="{{ date('Y-m-d') }}" id="receiving_date"
                     value="{{ optional($purchaseOrderReceiving)->order_receiving_date }}" name="receiving_date"
                     class="form-control" readonly>
             </div>
@@ -135,7 +135,7 @@
                      <th>Deduction Per KG</th>
 @endif
                      @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                     <th>Min Weight</th>
+                     <th>Min Weight (KG)</th>
                      <th>Brand</th>
                     <th>Color</th>
                     <th>Cons./sq. in.</th>
@@ -298,11 +298,13 @@
                             <td style="width: 12%">
                                 <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf" style="width: 140px">
                                 @if (!empty($data->purchase_order_data->printing_sample))
-                                    <small>
-                                        <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
-                                            View existing file
-                                        </a>
-                                    </small>
+                                    @foreach((array)$data->purchase_order_data->printing_sample as $sample)
+                                        <small class="d-block">
+                                            <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                                View file
+                                            </a>
+                                        </small>
+                                    @endforeach
                                 @endif
                             </td>
                             @endif

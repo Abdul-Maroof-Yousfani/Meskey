@@ -22,7 +22,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Purchase Date:</label>
-                <input type="date" name="purchase_date" class="form-control" id="purchase_date">
+                <input type="date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}" id="purchase_date">
             </div>
         </div>
         <div class="col-md-4">
@@ -106,10 +106,10 @@
                 <th style="min-width: 100px;">Qty</th>
                 <th class="bag-only" style="min-width: 250px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 150px;">Brands</th>
-                <th class="bag-only" style="min-width: 120px;">Min Weight</th>
+                <th class="bag-only" style="min-width: 120px;">Min Weight (KG)</th>
                 <th class="bag-only" style="min-width: 150px;">Color</th>
                 <th class="bag-only" style="min-width: 150px;">Cons./sq. in.</th>
-                <th class="bag-only" style="min-width: 150px;">Size</th>
+                <th class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">Size</th>
                 <th class="bag-only" style="min-width: 200px;">Stitching</th>
                 <th class="bag-only" style="min-width: 120px;">Micron</th>
                 <th class="bag-only" style="min-width: 250px;">Printing Sample</th>
@@ -143,8 +143,11 @@
     $(document).ready(function () {
         $('#category_id_0').select2();
         $(".color-select").select2();
-        $(".brand-select").select2();
-        $(".size-select").select2();
+        $(".size-select").select2({
+            tags: true,
+            placeholder: "Select or add size",
+            allowClear: true
+        });
         $(".stitching-select").select2();
         $(".select2").select2();
         $('#job_order_id_0').select2({
@@ -350,7 +353,7 @@
                         </div>
                     </td>
                     
-                    <td class="bag-only" style="min-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select">
+                    <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
                             <option value="{{ $size->id }}">{{ $size->size }}</option>
@@ -380,9 +383,9 @@
                     <td class="bag-only" style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="file" name="printing_sample[]" id="printing_sample_${index}"
+                                <input type="file" name="printing_sample[${index}][]" id="printing_sample_${index}"
                                     class="form-control" accept="image/*,application/pdf"
-                                    placeholder="Printing Sample">
+                                    placeholder="Printing Sample" multiple>
                             </div>
                         </div>
                     </td>
@@ -412,7 +415,11 @@
 
         $("#brands_" + index).select2();
         $("#color_" + index).select2();
-        $("#size_" + index).select2();
+        $("#size_" + index).select2({
+            tags: true,
+            placeholder: "Select or add size",
+            allowClear: true
+        });
         $("#stitching_" + index).select2();
 
 

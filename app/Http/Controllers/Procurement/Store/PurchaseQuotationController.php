@@ -514,7 +514,7 @@ class PurchaseQuotationController extends Controller
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->whereNotIn("am_approval_status", ["rejected", "approved"])
+            ->whereNotIn("am_approval_status", ["rejected", "approved", "reverted"])
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
@@ -1036,7 +1036,7 @@ class PurchaseQuotationController extends Controller
         try {
             // $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
             $PurchaseQuotations = PurchaseQuotation::where("purchase_request_id", $id)
-                                                    ->whereIn("am_approval_status", ["pending", "reverted"])
+                                                    ->whereIn("am_approval_status", ["pending", "reverted", "partial approved", "approved"])
                                                     ->get();
             
             $updated_ids = [];
@@ -1045,7 +1045,7 @@ class PurchaseQuotationController extends Controller
 
                 $PurchaseQuotation->update([
                     'description' => $request->description,
-                    'am_change_made' => 0,
+                    'am_change_made' => 1,
                     "am_approval_status" => "pending"
                 ]);
 
@@ -1078,7 +1078,7 @@ class PurchaseQuotationController extends Controller
                         'rate'    => $rate,
                         'total'   => $qty * $rate,
                         "am_approval_status" => "pending",
-                        "am_change_made" => 0,
+                        "am_change_made" => 1,
                         'remarks' => $request->remarks[$row->id] ?? null,
                     ]);
                 }

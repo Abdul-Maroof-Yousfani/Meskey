@@ -78,8 +78,10 @@
                          <th class="col-sm-4">PQ No.</th>
                          <th class="col-sm-3">Supplier</th>
                          <th class="col-sm-3">Item</th>
+                         <th>Qty</th>
+                         <th>Rate</th>
                          <th class="col-sm-3">Item uom</th>
-                         <th class="col-sm-3 bag-only">Min Weight</th>
+                         <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
                          <th class="col-sm-3 bag-only">Color</th>
                          <th class="col-sm-3 bag-only">Cons./sq. in.</th>
@@ -87,9 +89,6 @@
                          <th class="col-sm-3 bag-only">Stitching</th>
                          <th class="col-sm-3 bag-only">Micron</th>
                          <th class="col-sm-3 bag-only">Printing Sample</th>
-                         {{-- <th>Item UOM</th> --}}
-                         <th>Qty</th>
-                         <th>Rate</th>
                          <th>Total Amount</th>
                          <th>Remarks</th>
                          <th>Status</th>
@@ -132,6 +131,20 @@
                                      @endforeach
                                  </select>
                                  <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                             </td>
+
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
+                                     id="qty_{{ $key }}" class="form-control" step="0.01"
+                                     min="0">
+                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+                             </td>
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
+                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
+                                     min="{{ $key }}">
                              </td>
                              <td style="width: 30%">
                                  <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
@@ -206,19 +219,7 @@
                                     </small>
                                 @endif
                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                                     id="qty_{{ $key }}" class="form-control" step="0.01"
-                                     min="0">
-                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
-                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
+
 
 
 

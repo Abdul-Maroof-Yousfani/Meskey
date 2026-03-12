@@ -75,11 +75,18 @@
              <table class="table table-bordered" id="purchaseRequestTable">
                  <thead>
                      <tr>
+                         <th style="width: 50px; min-width: 50px; vertical-align: middle !important;">
+                             <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                 <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                             </div>
+                         </th>
                          <th class="col-sm-4">PQ No.</th>
                          <th class="col-sm-3">Supplier</th>
                          <th class="col-sm-3">Item</th>
+                         <th>Qty</th>
+                         <th>Rate</th>
                          <th class="col-sm-3">Item uom</th>
-                         <th class="col-sm-3 bag-only">Min Weight</th>
+                         <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
                          <th class="col-sm-3 bag-only">Color</th>
                          <th class="col-sm-3 bag-only">Cons./sq. in.</th>
@@ -87,17 +94,18 @@
                          <th class="col-sm-3 bag-only">Stitching</th>
                          <th class="col-sm-3 bag-only">Micron</th>
                          <th class="col-sm-3 bag-only">Printing Sample</th>
-                         {{-- <th>Item UOM</th> --}}
-                         <th>Qty</th>
-                         <th>Rate</th>
                          <th>Total Amount</th>
                          <th>Remarks</th>
-                         <th>Action</th>
                      </tr>
                  </thead>
                  <tbody id="purchaseRequestBody">
                      @forelse ($PurchaseQuotationData ?? [] as $key => $data)
                          <tr id="row_{{ $key }}">
+                             <td style="vertical-align: middle !important;">
+                                 <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                     <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                                 </div>
+                             </td>
                              <td style="width: 30%">
                                  <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                  <input style="width: 100%" type="text" readonly
@@ -131,6 +139,20 @@
                                      @endforeach
                                  </select>
                                  <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                             </td>
+
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
+                                     id="qty_{{ $key }}" class="form-control" step="0.01"
+                                     min="0">
+                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+                             </td>
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
+                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
+                                     min="{{ $key }}">
                              </td>
                              <td style="width: 30%">
                                  <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
@@ -195,28 +217,18 @@
                                      value="{{ $data->purchase_request?->micron ?? null }}">
                              </td>
                             <td style="width:150px;" class="bag-only">
-                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                <input type="file" disabled class="form-control" accept="image/*,application/pdf" multiple>
                                 @if (!empty($data->purchase_request->printing_sample))
-                                    <small>
-                                        <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
-                                            View existing file
-                                        </a>
-                                    </small>
+                                    @foreach((array)$data->purchase_request->printing_sample as $sample)
+                                        <small class="d-block">
+                                            <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                                View file
+                                            </a>
+                                        </small>
+                                    @endforeach
                                 @endif
                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                                     id="qty_{{ $key }}" class="form-control" step="0.01"
-                                     min="0">
-                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
-                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
+
 
 
 
@@ -234,11 +246,7 @@
                                  <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                              </td>
 
-                             <td>
-                                 <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                     onclick="remove({{ $key }})"
-                                     data-id="{{ $key }}">Remove</button>
-                             </td>
+
                          </tr>
                      @empty
                          <tr>
@@ -281,6 +289,10 @@
          if (initialCategoryId) {
              toggleVisibility(initialCategoryId);
          }
+
+         $('#check-all').on('change', function() {
+             $('.item-checkbox').prop('checked', $(this).prop('checked'));
+         });
      });
 
     rowIndex = 1;
