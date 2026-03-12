@@ -440,13 +440,15 @@ class ArrivalApproveController extends Controller
 
                 // Warehouse
                 $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
-                // unset($ticket->unloadingLocation);
-                $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
+                unset($ticket->unloadingLocation);
                 $ticket->purchaser_remarks = $ticket->second_qc_status == 'resampling' ? getQcRequestExceptResampling($ticket->id)->approved_remarks ?? null : $ticket->purchaser_remarks;
 
 
                 $approvalFormattedStatus = 'RF'; // Default
 
+
+
+                // if()
                 // If first QC is rejected, always RF
                 if ($ticket->first_qc_status === 'rejected') {
                     $approvalFormattedStatus = 'RF';
@@ -483,22 +485,27 @@ class ArrivalApproveController extends Controller
                 }
 
                 $qcFormattedStatus = 'RdddddF';
-                if ($ticket->sampling_is_done == 'no') {
-                    $qcFormattedStatus = 'Sampling Pending';
+                if ($ticket->sampling_is_re_sampling == 'yes' && $ticket->sampling_approved_status == 'pending') {
+                    $qcFormattedStatus = 'Resampling Required';
                     $approvalFormattedStatus = 'In-Process';
-                } elseif ($ticket->sampling_is_done == 'yes' && $ticket->sampling_approved_status == 'pending') {
-                    $qcFormattedStatus = 'Waiting for Approval';
+                } elseif ($ticket->sampling_approved_status == 'pending') {
+                    $qcFormattedStatus = 'Pending';
                     $approvalFormattedStatus = 'In-Process';
 
-                } elseif ($ticket->sampling_is_done == 'yes' && $ticket->sampling_approved_status == 'approved') {
+                } elseif ($ticket->sampling_approved_status == 'approved') {
                     $qcFormattedStatus = 'fully_approved';
-                } elseif ($ticket->sampling_is_done == 'yes' && $ticket->sampling_approved_status == 'rejected') {
+                } elseif ($ticket->sampling_approved_status == 'rejected') {
                     $qcFormattedStatus = 'half_approved';
                 }
                 $ticket->qcFormattedStatus = $qcFormattedStatus;
                 $ticket->approvalFormattedStatus = $approvalFormattedStatus;
 
+                $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
+
                 return $ticket;
+
+
+
             });
 
             return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
