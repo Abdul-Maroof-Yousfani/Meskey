@@ -16,15 +16,30 @@
     <tbody>
         @if (count($GroupedPurchaseQuotation) != 0)
             @php
-                $previousRequestNo = null; // Track previous request number
-                $previousQuotationNo = null;
-                $isFirstRequestRow = true;
+                $previousRequestNo = null; 
             @endphp
-        
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
+                    $is_editing_allowed = false;
                     $currentRequestNo = $requestGroup['purchase_request_no'];
-                    // $totalRequestRowspan = $requestGroup['request_rowspan'];
+
+                    // Check if ANY item in ANY quotation belonging to this PR is pending or reverted
+                    foreach ($GroupedPurchaseQuotation as $row) {
+                        if ($row['purchase_request_no'] === $currentRequestNo) {
+                            foreach ($row['items'] as $itemGroup) {
+                                foreach ($itemGroup['suppliers'] as $supplierRowData) {
+                                    $status = strtolower(
+                                        $supplierRowData['data']?->{$supplierRowData['data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? ''
+                                    );
+                                    if (in_array($status, ['pending', 'reverted'])) {
+                                        $is_editing_allowed = true;
+                                        break 3;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     $totalRequestRowspan = array_sum(
                         array_column(
                             array_filter($GroupedPurchaseQuotation, function ($row) use ($currentRequestNo) {
@@ -33,8 +48,6 @@
                             'request_rowspan'
                         )
                     );
-
-                    // $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
@@ -167,9 +180,8 @@
 
                                         </a>
                                     </div>
-                                    {{--  --}}
-                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
-                                        @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted' || $requestGroup['request_status'] == 'partial approved')
+                                    @if($requestGroup['created_by_id'] == auth()->user()->id)
+                                        @if($is_editing_allowed)
                                    
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
@@ -179,14 +191,6 @@
 
                                             </a>
                                         </div>
-                                    {{-- </td>
-                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
-                                    {{-- <div class="d-flex gap-2">
-                                        <a onclick="deletemodal('{{ route('store.purchase-quotation.destroy', $requestGroup['request_data']->id) }}', '{{ route('store.purchase-quotation.comparison-list.show') }}')"
-                                            class="info p-1 text-center mr-2 position-relative" title="View Approved">
-                                            <i class="ft-x font-medium-3"></i>
-                                        </a>
-                                    </div> --}}
                                     @endif
                                     @endif
                                 </td>

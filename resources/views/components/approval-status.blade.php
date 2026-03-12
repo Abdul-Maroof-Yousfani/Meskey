@@ -359,31 +359,6 @@
 
     <script>
         function confirmApproval(type) {
-            let approvedQtys = [];
-            let modelClass = $('input[name="class"]').val();
-            let isPurchasing = ['PurchaseQuotationData', 'PurchaseQuotation'].includes(modelClass);
-
-            // Check if there are any checkboxes for individual selection
-            if ($('.item-checkbox').length > 0) {
-                $('.item-checkbox:checked').each(function () {
-                    let dataId = $(this).closest('tr').find('input[name="data_id[]"]').val();
-                    if (dataId) {
-                        approvedQtys.push(dataId);
-                    }
-                });
-                
-                // Only enforce selection validation for Purchase Quotation module
-                if (isPurchasing && approvedQtys.length === 0) {
-                    Swal.fire({
-                        title: 'Selection Required',
-                        text: 'Please select at least one item to proceed.',
-                        icon: 'warning',
-                        confirmButtonColor: '#27489a',
-                    });
-                    return;
-                }
-            }
-
             let msg =
                 type === 'approve'
                     ? 'Are you sure you want to grant approval?'
@@ -409,10 +384,10 @@
                 type === 'approve'
                     ? 'question'
                     : type === 'revert'
-                        ? 'info'
+                        ? 'primary'
                         : 'warning';
 
-            Swal.fire({
+            return Swal.fire({
                 title: 'Please Confirm',
                 text: msg,
                 icon: icon,
@@ -423,16 +398,32 @@
                 cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Collect IDs again if not purchasing (or if they were modified)
-                    if (approvedQtys.length === 0) {
+                    let approvedQtys = [];
+                    // Check if there are any checkboxes for individual selection
+                    if ($('.item-checkbox').length > 0) {
+                        $('.item-checkbox:checked').each(function () {
+                            // Find the corresponding data_id input in the same row
+                            let dataId = $(this).closest('tr').find('input[name="data_id[]"]').val();
+                            if (dataId) {
+                                approvedQtys.push(dataId);
+                            }
+                        });
+                        
+                        if (approvedQtys.length === 0) {
+                            Swal.fire('Warning', 'Please select at least one item.', 'warning');
+                            return;
+                        }
+                    } else {
+                        // Fallback to original behavior for modules without checkboxes
                         $('input[name="data_id[]"]').each(function () {
                             approvedQtys.push($(this).val());
                         });
                     }
-
                     $('#model_data_ids').val(JSON.stringify(approvedQtys));
+
                     $('#approvalTypeInput').val(type);
                     $('#ajaxSubmit').submit();
+                    // location.reload();
                 }
             });
         }
