@@ -84,7 +84,7 @@ class ArrivalApproveController extends Controller
                 ->select('arrival_tickets.*')
                 ->get()
                 ->map(function ($ticket) {
-                    $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
+                    $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation->name ?? null;
 
                     unset($ticket->unloadingLocation);
                     $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
@@ -389,8 +389,8 @@ class ArrivalApproveController extends Controller
                 ->whereNull('arrival_tickets.document_approval_status')
                 ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product')
                 ->leftJoin('sauda_types', 'sauda_types.id', '=', 'arrival_tickets.sauda_type_id')
-                /* ===== Latest Sampling Request ===== */
-                ->leftJoin(DB::raw("
+                ->leftJoin('arrival_location_transfers', 'arrival_location_transfers.arrival_ticket_id', '=', 'arrival_tickets.id')
+                ->leftJoin('arrival_locations', 'arrival_locations.id', '=', 'arrival_location_transfers.arrival_location_id')->leftJoin(DB::raw("
                     (
                         SELECT r1.*
                         FROM arrival_sampling_requests r1
@@ -426,7 +426,10 @@ class ArrivalApproveController extends Controller
                     'arrival_sampling_requests.created_at as sampling_created_at',
                     'arrival_sampling_requests.approved_remarks as purchaser_remarks',
                     'products.name as qc_product_name',   // ✅ Correct table name
-                    'sauda_types.name as sauda_type_name'
+                    'sauda_types.name as sauda_type_name',
+                    'arrival_locations.id as arrival_location_id',
+                    'arrival_locations.name as arrival_location_name'
+
 
 
                 )
@@ -437,7 +440,7 @@ class ArrivalApproveController extends Controller
 
                 // Warehouse
                 $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
-                unset($ticket->unloadingLocation);
+                // unset($ticket->unloadingLocation);
                 $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
                 $ticket->purchaser_remarks = $ticket->second_qc_status == 'resampling' ? getQcRequestExceptResampling($ticket->id)->approved_remarks ?? null : $ticket->purchaser_remarks;
 
