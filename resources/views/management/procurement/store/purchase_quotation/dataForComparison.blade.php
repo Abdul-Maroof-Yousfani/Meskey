@@ -227,13 +227,15 @@
                                      value="{{ $data->purchase_request?->micron ?? null }}">
                              </td>
                             <td style="width:150px;" class="bag-only">
-                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf" multiple>
                                 @if (!empty($data->purchase_request->printing_sample))
-                                    <small>
-                                        <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
-                                            View existing file
-                                        </a>
-                                    </small>
+                                    @foreach((array)$data->purchase_request->printing_sample as $sample)
+                                        <small class="d-block">
+                                            <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                                View file
+                                            </a>
+                                        </small>
+                                    @endforeach
                                 @endif
                             </td>
 
