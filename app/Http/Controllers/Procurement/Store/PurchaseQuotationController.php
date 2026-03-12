@@ -846,7 +846,7 @@ class PurchaseQuotationController extends Controller
         $purchase_request_id = request()->purchase_request_id ?? $purchaseQuotation->purchase_request_id;
    
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-                                                ->whereIn("am_approval_status", ["pending", "reverted", "partial approved", "neglected"])
+                                                ->whereIn("am_approval_status", ["pending", "reverted", "partial approved"])
                                                 ->pluck('id');
 
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
@@ -854,7 +854,7 @@ class PurchaseQuotationController extends Controller
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->whereIn("am_approval_status", ["pending", "reverted", "neglected"])
+            ->whereIn("am_approval_status", ["pending", "reverted"])
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
