@@ -6,6 +6,10 @@
     @foreach ($job_order->packing_items as $index => $packing_item)
         @php
             $i = $job_order->id . '-' . $index;
+            $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id);
+            if ($balance <= 0) {
+                continue;
+            }
         @endphp
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
@@ -31,7 +35,7 @@
 
             <td style="min-width: 100px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" value="{{ jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id) }}">
+                    min="0" placeholder="Qty" value="{{ $balance }}">
             </td>
 
             <td class="bag-only" style="min-width: 250px;">

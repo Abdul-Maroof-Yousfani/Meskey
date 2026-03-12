@@ -126,21 +126,26 @@ class PurchaseRequestController extends Controller
                                 ->get()
                                 ->reject(function($job_order) {
                                     $packings = $job_order->packing_items;
-                                    $subpackings = $job_order->sub_packing_items;
+                                    
+                                    $any_item_has_balance = false;
+
                                     foreach($packings as $packing) {
-                                        $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing->id);
-                                        if($balance <= 0) {
-                                            return true;
+                                        if (jobOrderPackingBalanceAgainstPurchaseRequest($packing->id) > 0) {
+                                            $any_item_has_balance = true;
+                                            break;
                                         }
+
+                                        foreach($packing->subItems as $subpacking) {
+                                            if (jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id) > 0) {
+                                                $any_item_has_balance = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if ($any_item_has_balance) break;
                                     }
 
-                                    foreach($subpackings as $subpacking) {
-                                        $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id);
-                                        if($balance <= 0) {
-                                            return true;
-                                        }
-                                    }
-                                    return false;
+                                    return !$any_item_has_balance;
                                 });
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $departments = Department::where('status', 'active')->get();
