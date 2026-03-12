@@ -246,18 +246,17 @@
                                  <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                              </td>                          
                              <td>
-                                @php
                                     $badgeClass = match (strtolower($data->am_approval_status)) {
                                         'approved' => 'badge-success',
                                         'rejected' => 'badge-danger',
-                                        'neglected' => 'badge-danger',
+                                        'neglected' => 'badge-warning',
                                         'pending' => 'badge-warning',
                                         'returned' => 'badge-info',
                                         default => 'badge-secondary',
                                     };
                                     @endphp
                                     <span class="badge {{ $badgeClass }}">
-                                        {{ $data->am_approval_status }}
+                                        {{ strtolower($data->am_approval_status) === 'neglected' ? 'pending' : $data->am_approval_status }}
                                     </span>
                              </td>
                              <td>

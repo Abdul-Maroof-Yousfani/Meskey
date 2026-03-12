@@ -95,8 +95,8 @@
                                         strtolower($approvalStatus) === 'partial approved' &&
                                         strtolower($approvalDataStatus) === 'pending'
                                     ) {
-                                        $statusText = 'Neglected';
-                                        $statusColor = 'text-danger';
+                                        $statusText = 'Pending';
+                                        $statusColor = 'text-warning';
                                     } elseif (
                                         strtolower($approvalStatus) === 'rejected' &&
                                         strtolower($approvalDataStatus) === 'pending'
@@ -108,10 +108,15 @@
                                         $statusColor = match (strtolower($statusText)) {
                                             'approved' => 'text-success',
                                             'rejected' => 'text-danger',
+                                            'neglected' => 'text-warning',
                                             'returned' => 'text-primary',
                                             'pending' => 'text-warning',
                                             default => 'text-muted',
                                         };
+
+                                        if (strtolower($statusText) === 'neglected') {
+                                            $statusText = 'Pending';
+                                        }
                                     }
                                 @endphp
 
@@ -168,7 +173,7 @@
                                     </div>
                                     {{--  --}}
                                      @if($requestGroup['created_by_id'] == auth()->user()->id)
-                                        @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
+                                        @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted' || $requestGroup['request_status'] == 'partial approved')
                                    
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"

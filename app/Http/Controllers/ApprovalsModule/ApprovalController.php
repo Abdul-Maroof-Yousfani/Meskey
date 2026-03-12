@@ -298,15 +298,16 @@ class ApprovalController extends Controller
                 
 
                 if ($parentRecord->canApprove()) {
-                    $purchase_request_id = $parentRecord->purchase_request_id;
-                    $purchase_request = PurchaseRequest::find($purchase_request_id);
+                    // Re-calculate NoRemainingPendingChild
+                    $NoRemainingPendingChild = $parentRecord->quotation_data()->whereNotIn('am_approval_status', ['approved', 'rejected'])->count() === 0;
+
                     $purchase_quotation_data = PurchaseQuotationData::whereIn("purchase_request_data_id", $processedApprovedIds)
                                                                     ->where("am_approval_status", "pending")
                                                                     ->get();
 
                     foreach($purchase_quotation_data as $data) {
                         $data->update(['am_approval_status' => 'neglected']);
-                        $data->approvalRows()->update(['status' => 'neglected']);
+                        $data->approvalRows()->update(['status' => 'rejected']);
                     }
                     
                     // Re-calculate NoRemainingPendingChild after neglected loop

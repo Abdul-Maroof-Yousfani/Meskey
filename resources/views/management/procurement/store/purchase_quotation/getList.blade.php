@@ -55,8 +55,8 @@
                                     $statusText = '';
                                     $statusColor = '';
                                     if(strtolower($approvalStatus) === 'partial approved' && strtolower($approvalDataStatus) === 'pending') {
-                                        $statusText = 'Neglected';
-                                        $statusColor = 'text-danger';
+                                        $statusText = 'Pending';
+                                        $statusColor = 'text-warning';
                                     } elseif(strtolower($approvalStatus) === 'rejected' && strtolower($approvalDataStatus) === 'pending') {
                                         $statusText = 'Rejected';
                                         $statusColor = 'text-danger';
@@ -65,11 +65,15 @@
                                         $statusColor = match(strtolower($statusText)) {
                                             'approved' => 'text-success',
                                             'rejected' => 'text-danger',
-                                            'neglected' => 'text-danger',
+                                            'neglected' => 'text-warning',
                                             'returned' => 'text-primary',
                                             'pending' => 'text-warning',
                                             default => 'text-muted',
                                         };
+
+                                        if (strtolower($statusText) === 'neglected') {
+                                            $statusText = 'Pending';
+                                        }
                                     }
                                 @endphp
                                 @if($statusText)
@@ -101,11 +105,15 @@
                                         $badgeClass = match(strtolower($approvalStatus)) {
                                             'approved' => 'badge-success',
                                             'rejected' => 'badge-danger',
-                                            'neglected' => 'badge-danger',
+                                            'neglected' => 'badge-warning',
                                             'pending' => 'badge-warning',
                                             'returned' => 'badge-info',
                                             default => 'badge-secondary',
                                         };
+
+                                        if (strtolower($approvalStatus) === 'neglected') {
+                                            $approvalStatus = 'Pending';
+                                        }
                                     @endphp
                                     <span class="badge {{ $badgeClass }}">
                                         {{ $approvalStatus }}
@@ -121,8 +129,8 @@
                                             class="info p-1 text-center" title="Approval">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
-                                        @if(!in_array(strtolower($requestGroup['request_status']), ['approved','rejected','partial approved']))
-                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'100%')"
+                                        @if(!in_array(strtolower($requestGroup['request_status']), ['approved','rejected','partial approved']) || ($requestGroup['has_pending_or_reverted_item'] ?? false))
+                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}','Edit Purchase Quotation',false,'100%')"
                                                 class="info p-1 text-center">
                                                 <i class="ft-edit font-medium-3"></i>
                                             </a>
