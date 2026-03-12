@@ -486,7 +486,7 @@ class ArrivalApproveController extends Controller
 
                 $qcFormattedStatus = 'RdddddF';
                 if ($ticket->sampling_is_re_sampling == 'yes' && $ticket->sampling_approved_status == 'pending') {
-                    $qcFormattedStatus = 'Resampling Required';
+                    $qcFormattedStatus = 'Resampling';
                     $approvalFormattedStatus = 'In-Process';
                 } elseif ($ticket->sampling_approved_status == 'pending') {
                     $qcFormattedStatus = 'Pending';
