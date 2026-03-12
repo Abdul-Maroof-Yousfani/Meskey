@@ -1865,7 +1865,12 @@ function jobOrderBalanceAgainstPurchaseRequest($job_order_id, $total_qty)
         ->pluck("purchase_request_data_id")
         ->toArray();
 
-    $used_qty = PurchaseRequestData::whereIn("id", $selected_job_orders)->where("am_approval_status", "!=", "rejected")->sum("qty");
+    $used_qty = PurchaseRequestData::whereIn("id", $selected_job_orders)
+        ->where("am_approval_status", "!=", "rejected")
+        ->whereHas('purchase_request', function ($query) {
+            $query->where('am_approval_status', '!=', 'rejected');
+        })
+        ->sum("qty");
     return $total_qty - $used_qty;
 
 }
@@ -1876,6 +1881,9 @@ function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id)
     $used_qty = PurchaseRequestData::where("packing_id", $packing_id)
         ->where("module_type", "packing")
         ->where("am_approval_status", "!=", "rejected")
+        ->whereHas('purchase_request', function ($query) {
+            $query->where('am_approval_status', '!=', 'rejected');
+        })
         ->sum("qty");
     $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
 
@@ -1887,6 +1895,9 @@ function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
     $used_qty = PurchaseRequestData::where("packing_id", $subpacking_id)
         ->where("module_type", "subpacking")
         ->where("am_approval_status", "!=", "rejected")
+        ->whereHas('purchase_request', function ($query) {
+            $query->where('am_approval_status', '!=', 'rejected');
+        })
         ->sum("qty");
 
     $job_order_sub_packing = JobOrderPackingSubItem::select("id", "total_bags")->find($subpacking_id);
