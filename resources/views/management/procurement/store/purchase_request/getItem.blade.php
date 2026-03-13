@@ -34,7 +34,7 @@
 
             <td style="min-width: 100px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" value="{{ $balance }}">
+                    min="0" placeholder="Qty" value="{{ $balance }}" readonly>
             </td>
 
             <td class="bag-only" style="min-width: 250px;">
@@ -163,7 +163,7 @@
 
             <td>
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" style="width:120px;" value="{{ $balance }}">
+                    min="0" placeholder="Qty" style="width:120px;" value="{{ $balance }}" readonly>
             </td>
 
             <td class="bag-only">
