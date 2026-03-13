@@ -159,8 +159,8 @@
                 <td style="min-width: 100px;"><input type="text" name="uom[]" id="uom_{{ $rowId }}" class="form-control uom" readonly
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
 
-                <td style="min-width: 100px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control bg-white"
-                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}"></td>
+                <td style="min-width: 100px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
+                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" @readonly($item->is_single_job_order == 1)></td>
 
                 
                 <td class="bag-only" style="min-width: 250px;">
@@ -426,12 +426,13 @@
                     <td style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom(${index})"
+                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom('${index}')"
                                     class="form-control item-select item-list" data-index="0" style="width: 100%;">
                                 </select>
                                 <input type="hidden" name="packing_id[]" value="" />
                                 <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
+                                <input type="hidden" name="is_single_job_order[]" value="0" />
          
                             </div>
                         </div>
@@ -442,7 +443,7 @@
                     <td style="min-width: 100px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01"
+                                <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
                                     min="0" placeholder="Qty">
                             </div>
                         </div>

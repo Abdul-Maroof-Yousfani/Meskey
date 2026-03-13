@@ -140,6 +140,7 @@
 </form>
 
 <script>
+    purchaseRequestRowIndex = 0;
     $(document).ready(function () {
         $('#category_id_0').select2();
         $(".color-select").select2();
@@ -285,12 +286,13 @@
                     <td style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom(${index})"
+                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom('${index}')"
                                     class="form-control item-select item-list" data-index="0" style="width: 100%;">
                                 </select>
                                 <input type="hidden" name="packing_id[]" value="" />
                                 <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
+                                <input type="hidden" name="is_single_job_order[]" value="0" />
          
                             </div>
                         </div>
@@ -301,7 +303,7 @@
                     <td style="min-width: 100px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01"
+                                <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
                                     min="0" placeholder="Qty">
                             </div>
                         </div>
