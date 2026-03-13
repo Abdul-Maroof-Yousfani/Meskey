@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('purchase_return', function (Blueprint $table) {
+        Schema::table('purchase_returns', function (Blueprint $table) {
             $table->enum("am_approval_status", ["pending", "approved", "rejected", "reverted"])->default("pending")->change();
         });
     }
